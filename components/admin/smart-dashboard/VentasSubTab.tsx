@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useCallback } from "react";
 import {
   TrendingUp,
@@ -11,7 +12,7 @@ import {
   X,
   PieChart as PieChartIcon,
   Target,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import type {
@@ -151,8 +152,8 @@ export function VentasSubTab(props: VentasSubTabProps) {
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-              <h2 className="text-sm font-bold text-gray-800 dark:text-zinc-200">Mis Graficos</h2>
+              <BarChart3 className="w-4 h-4 text-[var(--text-secondary)] dark:text-zinc-400" />
+              <SectionTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-200">Mis Graficos</SectionTitle>
             </div>
             <div className="relative">
               <button
@@ -161,7 +162,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                   activeCharts.length >= 6
-                    ? "bg-gray-100 dark:bg-zinc-700 text-gray-400 cursor-not-allowed"
+                    ? "bg-gray-100 dark:bg-zinc-700 text-[var(--text-tertiary)] cursor-not-allowed"
                     : "bg-primary text-white hover:bg-primary-dark"
                 )}
               >
@@ -169,18 +170,18 @@ export function VentasSubTab(props: VentasSubTabProps) {
                 Agregar grafico
               </button>
               {showChartPicker && (
-                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-2 w-64">
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-xl p-2 w-64">
                   {CHART_OPTIONS.filter(o => !activeCharts.includes(o.id)).map(option => (
                     <button
                       key={option.id}
                       onClick={() => addChart(option.id)}
-                      className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                      className="w-full text-left px-3 py-2 text-xs text-[var(--text-primary)] dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg transition-colors"
                     >
                       {option.label}
                     </button>
                   ))}
                   {CHART_OPTIONS.filter(o => !activeCharts.includes(o.id)).length === 0 && (
-                    <p className="text-xs text-gray-400 px-3 py-2">Todos los graficos ya estan activos</p>
+                    <p className="text-xs text-[var(--text-tertiary)] px-3 py-2">Todos los graficos ya estan activos</p>
                   )}
                 </div>
               )}
@@ -188,25 +189,25 @@ export function VentasSubTab(props: VentasSubTabProps) {
           </div>
 
           {activeCharts.length === 0 ? (
-            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-gray-300 dark:border-zinc-600 p-8 text-center">
-              <PieChartIcon className="w-8 h-8 text-gray-300 dark:text-zinc-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-400 dark:text-zinc-500">Agrega graficos para visualizar tus datos</p>
-              <p className="text-xs text-gray-300 dark:text-zinc-600 mt-1">Haz click en &quot;+ Agregar grafico&quot; arriba</p>
+            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-zinc-600 p-8 text-center">
+              <PieChartIcon className="w-8 h-8 text-[var(--text-tertiary)] dark:text-zinc-600 mx-auto mb-2" />
+              <p className="text-sm text-[var(--text-tertiary)] dark:text-zinc-500">Agrega graficos para visualizar tus datos</p>
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-600 mt-1">Haz click en &quot;+ Agregar grafico&quot; arriba</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activeCharts.map((chartId, index) => (
-                <div key={chartId} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+                <div key={chartId} className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{chartLabel(chartId)}</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{chartLabel(chartId)}</span>
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => moveChart(index, "up")} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-30 transition-colors">
-                        <ChevronUp className="w-3 h-3 text-gray-400" />
+                        <ChevronUp className="w-3 h-3 text-[var(--text-tertiary)]" />
                       </button>
                       <button onClick={() => moveChart(index, "down")} disabled={index === activeCharts.length - 1} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-30 transition-colors">
-                        <ChevronDown className="w-3 h-3 text-gray-400" />
+                        <ChevronDown className="w-3 h-3 text-[var(--text-tertiary)]" />
                       </button>
-                      <button onClick={() => removeChart(chartId)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors">
+                      <button onClick={() => removeChart(chartId)} className="p-1 rounded hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -248,15 +249,15 @@ export function VentasSubTab(props: VentasSubTabProps) {
           .sort((a, b) => b.ventas - a.ventas)
           .slice(0, 3);
         return (
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+          <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">Rendimiento cajeros hoy</span>
+              <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Rendimiento cajeros hoy</span>
             </div>
             <div className="flex flex-wrap gap-3">
               {ranking.map((c, i) => (
-                <span key={c.name} className="text-xs text-gray-700 dark:text-zinc-300">
-                  <span className={cn("font-bold", i === 0 && "text-amber-600")}>{i + 1}.</span>{" "}
+                <span key={c.name} className="text-xs text-[var(--text-primary)] dark:text-zinc-300">
+                  <span className={cn("font-bold", i === 0 && "text-[var(--data-warning)]")}>{i + 1}.</span>{" "}
                   {c.name}: <strong>{fmtR(c.ventas)}</strong> ({c.count} ventas)
                 </span>
               ))}
@@ -271,14 +272,14 @@ export function VentasSubTab(props: VentasSubTabProps) {
         try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
         const dailyGoalPct = dailyGoal > 0 ? (revenueToday / dailyGoal) * 100 : 0;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" /> Meta del dia
               </p>
               <span className="text-xs font-bold text-primary">{dailyGoalPct.toFixed(0)}%</span>
             </div>
-            <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, dailyGoalPct)}%` }} />
             </div>
           </div>
@@ -289,28 +290,28 @@ export function VentasSubTab(props: VentasSubTabProps) {
       {filteredSections.map((sectionId) => (
         <div key={sectionId}>
           {sectionId === "top-productos" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 10 productos mas vendidos</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Top 10 productos mas vendidos</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={10} />
               ) : topProducts.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-zinc-500">No hay datos de ventas aun.</p>
+                <p className="text-sm text-[var(--text-tertiary)] dark:text-zinc-500">No hay datos de ventas aun.</p>
               ) : (
                 <div className="space-y-2">
                   {topProducts.map((prod, idx) => {
                     const pct = Math.max(4, (prod.qty / maxProductQty) * 100);
                     return (
                       <div key={String(prod.id)} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 text-right text-xs text-gray-400 dark:text-zinc-500 font-mono shrink-0">{idx + 1}</span>
-                        <span className="w-36 sm:w-44 truncate text-gray-700 dark:text-zinc-300 shrink-0 text-xs" title={prod.name}>{prod.name}</span>
+                        <span className="w-5 text-right text-xs text-[var(--text-tertiary)] dark:text-zinc-500 font-mono shrink-0">{idx + 1}</span>
+                        <span className="w-36 sm:w-44 truncate text-[var(--text-primary)] dark:text-zinc-300 shrink-0 text-xs" title={prod.name}>{prod.name}</span>
                         <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "var(--color-primary)" : "var(--color-primary)60" }} />
-                          <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
+                          <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{prod.qty} uds</span>
                         </div>
-                        <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0 w-20 text-right tabular-nums">{fmtR(prod.revenue)}</span>
+                        <span className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 w-20 text-right tabular-nums">{fmtR(prod.revenue)}</span>
                       </div>
                     );
                   })}
@@ -320,15 +321,15 @@ export function VentasSubTab(props: VentasSubTabProps) {
           )}
 
           {sectionId === "horario-pico" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por hora (hoy)</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Ventas por hora (hoy)</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={4} />
               ) : salesToday.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-zinc-500">Sin ventas registradas hoy.</p>
+                <p className="text-sm text-[var(--text-tertiary)] dark:text-zinc-500">Sin ventas registradas hoy.</p>
               ) : (
                 <div className="space-y-1">
                   {hourBuckets.map((bucket) => {
@@ -336,12 +337,12 @@ export function VentasSubTab(props: VentasSubTabProps) {
                     const isActive = bucket.hour === new Date().getHours();
                     return (
                       <div key={bucket.hour} className="flex items-center gap-2 text-xs">
-                        <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
+                        <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-[var(--data-warning)] font-bold" : "text-[var(--text-tertiary)] dark:text-zinc-500")}>{bucket.label}</span>
                         <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
-                          {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
+                          {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
                         </div>
-                        {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[10px]">--</span>}
+                        {pct === 0 && <span className="text-[var(--text-tertiary)] dark:text-zinc-600 text-[length:var(--ts-2xs)]">--</span>}
                       </div>
                     );
                   })}

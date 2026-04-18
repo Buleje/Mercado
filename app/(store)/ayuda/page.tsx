@@ -1,137 +1,523 @@
+/**
+ * /ayuda — Centro de Ayuda Buleje.
+ *
+ * Server Component puro (sin "use client" en este archivo).
+ * FAQ con details/summary nativo para 0-JS expand/collapse.
+ * Ilustraciones DS, tokens DS, 0 emojis, estilo Holded enterprise.
+ */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
+import {
+  MessageCircle,
+  Phone,
+  Mail,
+  MessageSquare,
+  ChevronDown,
+  ShoppingCart,
+  CreditCard,
+  User,
+  Tag,
+  RotateCcw,
+  Store,
+  Shield,
+  Info,
+} from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import {
+  PageTitle,
+  SectionTitle,
+  CardTitle,
+  BodyText,
+  Caption,
+  Kicker,
+} from "@buleje/design-system";
+import { FEATURED_FAQS } from "@/lib/mock-faq";
+
+// Ilustraciones via dynamic para no bloquear SSR con SVG pesado
+const CorazonLatiendo = dynamic(
+  () =>
+    import("@/components/ui-system/illustrations/contextual").then(
+      (m) => m.CorazonLatiendo
+    ),
+  { ssr: true }
+);
+const BodegaAbriendo = dynamic(
+  () =>
+    import("@/components/ui-system/illustrations/contextual").then(
+      (m) => m.BodegaAbriendo
+    ),
+  { ssr: true }
+);
+const PedidoLlegando = dynamic(
+  () =>
+    import("@/components/ui-system/illustrations/empty-states").then(
+      (m) => m.PedidoLlegando
+    ),
+  { ssr: true }
+);
+const DoniaElena = dynamic(
+  () =>
+    import("@/components/ui-system/illustrations/pucallpa-locals").then(
+      (m) => m.DoniaElena
+    ),
+  { ssr: true }
+);
+const MotoRuta = dynamic(
+  () =>
+    import("@/components/ui-system/illustrations/contextual").then(
+      (m) => m.MotoRuta
+    ),
+  { ssr: true }
+);
 
 export const metadata: Metadata = {
   title: "Centro de Ayuda — Buleje",
   description:
-    "Preguntas frecuentes, guias de uso y soporte para Buleje ERP. Aprende a usar inventario, POS, delivery, fiado digital y facturacion SUNAT.",
+    "Preguntas frecuentes, guías de uso y soporte para compradores y bodegueros de Buleje. Encuentra respuestas rápidas o escríbenos por WhatsApp.",
   alternates: { canonical: "https://www.buleje.pe/ayuda" },
+  openGraph: {
+    title: "Centro de Ayuda — Buleje",
+    description:
+      "Soporte rápido para compradores y bodegas. Respondemos en 5 minutos por WhatsApp.",
+    type: "website",
+    locale: "es_PE",
+  },
 };
 
-const FAQS = [
-  {
-    category: "Pedidos",
-    items: [
-      { q: "¿Como hago un pedido?", a: "Agrega productos al carrito desde la tienda, ingresa tus datos y confirma el pedido. Puedes pagar con Yape, Plin o efectivo contra entrega." },
-      { q: "¿Como sigo mi pedido?", a: "Despues de hacer tu pedido, recibes un link de seguimiento por WhatsApp. Tambien puedes verlo en Mi Cuenta > Mis Pedidos." },
-      { q: "¿Puedo cancelar un pedido?", a: "Si, puedes cancelar desde Mis Pedidos si el estado es 'Pendiente'. Una vez confirmado por la tienda, contacta directamente." },
-      { q: "¿Cuanto demora el delivery?", a: "El tiempo estimado es 30-60 minutos dependiendo de tu zona. Te notificamos por WhatsApp cuando sale el pedido." },
-    ],
-  },
-  {
-    category: "Pagos",
-    items: [
-      { q: "¿Que metodos de pago aceptan?", a: "Yape, Plin, efectivo contra entrega y transferencia bancaria. La tienda elige cuales activar." },
-      { q: "¿Es seguro pagar aqui?", a: "Si. Los pagos con Yape/Plin se procesan directamente en esas apps. Nunca guardamos datos de tarjetas." },
-      { q: "¿Puedo comprar al credito (fiado)?", a: "Si la tienda tiene Fiado Digital activado, puedes ver tu credito disponible en /mi-credito. Se calcula automaticamente segun tu historial." },
-    ],
-  },
-  {
-    category: "Mi Cuenta",
-    items: [
-      { q: "¿Como creo una cuenta?", a: "Al hacer tu primer pedido, se crea automaticamente con tu numero de telefono. Tambien puedes registrarte en /registro." },
-      { q: "¿Donde veo mis puntos de lealtad?", a: "En Mi Cuenta > Puntos. Ganas puntos con cada compra y puedes canjearlos por descuentos." },
-      { q: "¿Como invito a un amigo?", a: "En Mi Cuenta encontraras tu codigo de referido. Compartelo y ambos ganan puntos cuando tu amigo hace su primera compra." },
-    ],
-  },
-  {
-    category: "Para Tiendas (Dueños)",
-    items: [
-      { q: "¿Como registro mi bodega en Buleje?", a: "Ve a /registro, elige un plan (hay plan gratuito) y configura tu tienda en 5 minutos con el wizard de onboarding." },
-      { q: "¿Buleje emite boletas SUNAT?", a: "Si, con integracion a Nubefact. Configura tu RUC y token en Ajustes > Facturacion y emite boletas/facturas automaticamente." },
-      { q: "¿Cuanto cuesta Buleje?", a: "Plan gratuito para empezar (50 productos, 1 usuario). Planes de pago desde S/49/mes con mas funciones." },
-      { q: "¿Funciona en todo el Peru?", a: "Si, Buleje funciona en cualquier ciudad del Peru. Fue creado en Pucallpa y tiene cobertura nacional." },
-    ],
-  },
-];
+// ─── JSON-LD FAQPage ───────────────────────────────────────────────────────────
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FEATURED_FAQS.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: { "@type": "Answer", text: faq.answer },
+  })),
+};
 
-function FAQSection({ category, items }: { category: string; items: { q: string; a: string }[] }) {
+// ─── Secciones de categorias ───────────────────────────────────────────────────
+const HELP_CATEGORIES = [
+  {
+    icon: ShoppingCart,
+    title: "Pedidos y entrega",
+    description: "Cómo hacer, seguir y cancelar pedidos",
+    articles: 8,
+    illustration: PedidoLlegando,
+    href: "/ayuda#pedidos",
+  },
+  {
+    icon: CreditCard,
+    title: "Pagos",
+    description: "Yape, Plin, efectivo y transferencia",
+    articles: 5,
+    illustration: null,
+    href: "/ayuda#pagos",
+  },
+  {
+    icon: User,
+    title: "Mi cuenta",
+    description: "Perfil, direcciones y puntos de lealtad",
+    articles: 6,
+    illustration: DoniaElena,
+    href: "/ayuda#cuenta",
+  },
+  {
+    icon: Tag,
+    title: "Cupones y promos",
+    description: "Descuentos, referidos y beneficios",
+    articles: 4,
+    illustration: null,
+    href: "/ayuda#cupones",
+  },
+  {
+    icon: RotateCcw,
+    title: "Devoluciones",
+    description: "Cambios y reembolsos paso a paso",
+    articles: 3,
+    illustration: null,
+    href: "/ayuda#devoluciones",
+  },
+  {
+    icon: Store,
+    title: "Tu bodega online",
+    description: "Registro, planes y configuración",
+    articles: 12,
+    illustration: BodegaAbriendo,
+    href: "/negocios",
+  },
+  {
+    icon: Shield,
+    title: "Seguridad",
+    description: "Privacidad y protección de tu cuenta",
+    articles: 4,
+    illustration: null,
+    href: "/privacidad",
+  },
+  {
+    icon: Info,
+    title: "Sobre Buleje",
+    description: "Quiénes somos, misión y valores",
+    articles: 5,
+    illustration: null,
+    href: "/about",
+  },
+] as const;
+
+// ─── Quick actions ─────────────────────────────────────────────────────────────
+const QUICK_ACTIONS = [
+  {
+    icon: MessageCircle,
+    title: "WhatsApp",
+    subtitle: "Respondemos en 5 min",
+    href: "https://wa.me/51900000000?text=Hola%20Buleje%2C%20necesito%20ayuda",
+    external: true,
+    accent: true,
+  },
+  {
+    icon: Phone,
+    title: "Llamar ahora",
+    subtitle: "Lun-Sáb 8am-8pm",
+    href: "tel:+51900000000",
+    external: false,
+    accent: false,
+  },
+  {
+    icon: Mail,
+    title: "Email",
+    subtitle: "Respuesta en 24h",
+    href: "mailto:soporte@buleje.pe",
+    external: false,
+    accent: false,
+  },
+  {
+    icon: MessageSquare,
+    title: "Chat soporte",
+    subtitle: "Próximamente",
+    href: "#",
+    external: false,
+    accent: false,
+  },
+] as const;
+
+// ─── Componentes ───────────────────────────────────────────────────────────────
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <section className="mb-8">
-      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">{category}</h2>
-      <div className="space-y-3">
-        {items.map((faq) => (
-          <details key={faq.q} className="group rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <summary className="cursor-pointer px-5 py-3 font-medium text-sm text-slate-700 dark:text-slate-200 hover:text-emerald-700 transition-colors list-none flex items-center justify-between">
-              {faq.q}
-              <svg className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="px-5 pb-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
-          </details>
-        ))}
+    <details className="group border-b border-[var(--rule-soft)] last:border-0">
+      <summary className="flex cursor-pointer items-center justify-between gap-4 py-4 text-sm font-medium text-[var(--text-primary)] hover:text-[var(--brand-ink)] transition-colors duration-[var(--dur-fast)] list-none select-none">
+        <span>{question}</span>
+        <ChevronDown
+          className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-fast)] group-open:rotate-180"
+          aria-hidden="true"
+        />
+      </summary>
+      <div className="pb-4 pr-8 text-sm leading-relaxed text-[var(--text-secondary)]">
+        {answer}
       </div>
-    </section>
+    </details>
   );
 }
 
-export default function AyudaPage() {
-  // JSON-LD FAQPage for SEO
-  const allFaqs = FAQS.flatMap((c) => c.items);
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: allFaqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
+function CategoryCard({
+  icon: Icon,
+  title,
+  description,
+  articles,
+  href,
+}: (typeof HELP_CATEGORIES)[number]) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col gap-3 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow duration-[var(--dur-fast)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)] focus-visible:ring-offset-2"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--surface-sunken)]">
+        <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
+      </div>
+      <div>
+        <CardTitle className="mb-1 text-sm">{title}</CardTitle>
+        <BodyText className="text-xs text-[var(--text-secondary)] leading-snug">
+          {description}
+        </BodyText>
+      </div>
+      <Caption className="mt-auto font-medium text-[var(--brand-ink)]">
+        {articles} artículos
+      </Caption>
+    </Link>
+  );
+}
 
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
+export default function AyudaPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <BreadcrumbSchema items={[
-        { name: "Buleje", url: "https://www.buleje.pe" },
-        { name: "Ayuda", url: "https://www.buleje.pe/ayuda" },
-      ]} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: "Buleje", url: "https://www.buleje.pe" },
+          { name: "Ayuda", url: "https://www.buleje.pe/ayuda" },
+        ]}
+      />
       <Header />
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
-      <main id="main-content" className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
-          Centro de Ayuda
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 mb-8">
-          Encuentra respuestas rapidas o contactanos por WhatsApp.
-        </p>
 
-        {FAQS.map((section) => (
-          <FAQSection key={section.category} {...section} />
-        ))}
+      <main id="main-content" className="bg-[var(--surface-canvas)]">
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
+        <section className="border-b border-[var(--rule-soft)]">
+          <div className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+            <nav aria-label="Breadcrumb" className="mb-6">
+              <ol className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+                <li>
+                  <Link href="/" className="hover:text-[var(--text-secondary)] transition-colors">
+                    Inicio
+                  </Link>
+                </li>
+                <li aria-hidden="true">/</li>
+                <li className="text-[var(--text-secondary)] font-medium">Ayuda</li>
+              </ol>
+            </nav>
 
-        {/* Contact options */}
-        <div className="mt-10 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-6 text-center">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">
-            ¿No encontraste lo que buscas?
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-            Nuestro equipo te ayuda por WhatsApp de lunes a sabado, 8am a 8pm.
-          </p>
-          <a
-            href="https://wa.me/51900000000?text=Hola%20Buleje%2C%20necesito%20ayuda"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-white font-semibold shadow hover:bg-[#20BD5A] transition-colors"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-            Escribir por WhatsApp
-          </a>
-        </div>
+            <div className="flex items-center justify-between gap-8">
+              <div className="max-w-xl">
+                <Kicker className="mb-3 block">AYUDA · ESTAMOS PARA VOS</Kicker>
+                <PageTitle className="mb-3">
+                  ¿En qué podemos ayudarte?
+                </PageTitle>
+                <BodyText className="mb-8 text-base text-[var(--text-secondary)] leading-relaxed">
+                  Encontrá respuestas rápidas o contactanos por WhatsApp. Nuestro equipo responde en menos de 5 minutos.
+                </BodyText>
 
-        {/* Links utiles */}
-        <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm">
-          <Link href="/pricing" className="text-emerald-600 hover:text-emerald-700 font-medium">Ver planes</Link>
-          <Link href="/registro" className="text-emerald-600 hover:text-emerald-700 font-medium">Crear tienda</Link>
-          <Link href="/tienda" className="text-emerald-600 hover:text-emerald-700 font-medium">Ver productos</Link>
-          <Link href="/privacidad" className="text-emerald-600 hover:text-emerald-700 font-medium">Privacidad</Link>
-        </div>
+                {/* Search decorativo — sin JS, redirige a buscar */}
+                <Link
+                  href="/buscar"
+                  className="flex w-full max-w-md items-center gap-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text-tertiary)] transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
+                  aria-label="Buscar en la ayuda"
+                >
+                  <svg
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 5.25 5.25a7.5 7.5 0 0 0 11.4 11.4z"
+                    />
+                  </svg>
+                  Buscar en la ayuda...
+                </Link>
+              </div>
+
+              {/* Ilustración hero — oculta en mobile */}
+              <div
+                className="hidden shrink-0 text-[var(--text-tertiary)] opacity-70 dark:opacity-50 lg:block"
+                aria-hidden="true"
+              >
+                <CorazonLatiendo size={200} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Quick actions ─────────────────────────────────────────────── */}
+        <section className="border-b border-[var(--rule-soft)]">
+          <div className="mx-auto max-w-5xl px-4 py-8">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {QUICK_ACTIONS.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <a
+                    key={action.title}
+                    href={action.href}
+                    {...(action.external
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                    className={[
+                      "flex flex-col items-center gap-2 rounded-lg border p-4 text-center transition-shadow duration-[var(--dur-fast)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)] focus-visible:ring-offset-2",
+                      action.accent
+                        ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white hover:opacity-90"
+                        : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)]",
+                    ].join(" ")}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                    <span className="text-xs font-semibold">{action.title}</span>
+                    <Caption
+                      className={
+                        action.accent
+                          ? "text-white/80"
+                          : "text-[var(--text-tertiary)]"
+                      }
+                    >
+                      {action.subtitle}
+                    </Caption>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Categorias ────────────────────────────────────────────────── */}
+        <section className="border-b border-[var(--rule-soft)]">
+          <div className="mx-auto max-w-5xl px-4 py-12">
+            <div className="mb-6">
+              <Kicker className="mb-2 block">TEMAS POPULARES</Kicker>
+              <SectionTitle>Navega por categoría</SectionTitle>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {HELP_CATEGORIES.map((cat) => (
+                <CategoryCard key={cat.title} {...cat} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ──────────────────────────────────────────────────────── */}
+        <section className="border-b border-[var(--rule-soft)]" id="faq">
+          <div className="mx-auto max-w-5xl px-4 py-12">
+            <div className="grid gap-10 lg:grid-cols-[280px_1fr]">
+              {/* Columna izquierda — copy + ilustracion */}
+              <div>
+                <Kicker className="mb-2 block">FRECUENTES</Kicker>
+                <SectionTitle className="mb-3">
+                  Preguntas más comunes
+                </SectionTitle>
+                <BodyText className="text-[var(--text-secondary)] leading-relaxed">
+                  Estas son las consultas que recibimos con más frecuencia. Si no encontrás lo que buscás, el equipo de soporte está disponible por WhatsApp.
+                </BodyText>
+
+                <div
+                  className="mt-8 hidden text-[var(--text-tertiary)] opacity-60 dark:opacity-40 lg:block"
+                  aria-hidden="true"
+                >
+                  <MotoRuta size={160} />
+                </div>
+              </div>
+
+              {/* Columna derecha — accordion nativo */}
+              <div className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 divide-y-0">
+                {FEATURED_FAQS.map((faq) => (
+                  <FaqItem
+                    key={faq.id}
+                    question={faq.question}
+                    answer={faq.answer}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Contacto ─────────────────────────────────────────────────── */}
+        <section className="border-b border-[var(--rule-soft)]" id="contacto">
+          <div className="mx-auto max-w-5xl px-4 py-12">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-8">
+              <div className="mb-6">
+                <Kicker className="mb-2 block">
+                  ¿NO ENCONTRASTE LO QUE BUSCABAS?
+                </Kicker>
+                <SectionTitle className="mb-2">
+                  Nuestro equipo te responde
+                </SectionTitle>
+                <BodyText className="text-[var(--text-secondary)]">
+                  Elige el canal que prefieras. Siempre hay alguien disponible.
+                </BodyText>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {/* WhatsApp */}
+                <a
+                  href="https://wa.me/51900000000?text=Hola%20Buleje%2C%20necesito%20ayuda"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
+                >
+                  <MessageCircle className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" />
+                  <CardTitle className="text-sm">WhatsApp</CardTitle>
+                  <Caption className="text-[var(--text-tertiary)]">
+                    Respondemos en 5 min
+                  </Caption>
+                </a>
+
+                {/* Email */}
+                <a
+                  href="mailto:soporte@buleje.pe"
+                  className="flex flex-col gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
+                >
+                  <Mail className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Email</CardTitle>
+                  <Caption className="text-[var(--text-tertiary)]">
+                    Respuesta en 24h
+                  </Caption>
+                </a>
+
+                {/* Teléfono */}
+                <a
+                  href="tel:+51900000000"
+                  className="flex flex-col gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
+                >
+                  <Phone className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Teléfono</CardTitle>
+                  <Caption className="text-[var(--text-tertiary)]">
+                    Lun-Sáb 8am-8pm
+                  </Caption>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA final + links útiles ─────────────────────────────────── */}
+        <section>
+          <div className="mx-auto max-w-5xl px-4 py-10">
+            <div className="flex flex-col items-center gap-6 text-center">
+              <BodyText className="text-[var(--text-secondary)]">
+                ¿Sos dueño de una bodega?
+              </BodyText>
+              <Link
+                href="/negocios"
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
+              >
+                <Store className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
+                Ver Buleje para negocios
+              </Link>
+
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[var(--text-tertiary)]">
+                <Link href="/guias" className="hover:text-[var(--text-secondary)] transition-colors">
+                  Guías y consejos
+                </Link>
+                <Link href="/pricing" className="hover:text-[var(--text-secondary)] transition-colors">
+                  Ver planes
+                </Link>
+                <Link href="/recetas" className="hover:text-[var(--text-secondary)] transition-colors">
+                  Recetario
+                </Link>
+                <Link href="/privacidad" className="hover:text-[var(--text-secondary)] transition-colors">
+                  Privacidad
+                </Link>
+                <Link href="/terminos" className="hover:text-[var(--text-secondary)] transition-colors">
+                  Términos
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-      <Suspense fallback={null}><Footer /></Suspense>
+
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </>
   );
 }

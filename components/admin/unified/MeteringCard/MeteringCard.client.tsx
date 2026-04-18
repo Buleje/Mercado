@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 /**
  * MeteringCard.client — componentes interactivos (sparklines + tooltips)
  * "use client" se ubica aquí, lo más abajo posible en el árbol.
@@ -71,13 +72,13 @@ interface QuotaBarProps {
 }
 
 const LIGHT_COLORS: Record<TrafficLight, string> = {
-  green:  "bg-emerald-500 dark:bg-emerald-400",
-  yellow: "bg-amber-400  dark:bg-amber-300",
-  red:    "bg-red-500    dark:bg-red-400",
+  green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
+  yellow: "bg-[var(--data-warning)]  dark:bg-[var(--data-warning)]",
+  red:    "bg-[var(--data-error)]    dark:bg-[var(--data-error)]",
 };
 
 const LIGHT_TEXT: Record<TrafficLight, string> = {
-  green:  "text-emerald-700 dark:text-emerald-300",
+  green:  "text-[var(--data-success)] dark:text-[var(--data-success)]",
   yellow: "text-amber-700   dark:text-amber-300",
   red:    "text-red-700     dark:text-red-400",
 };
@@ -97,7 +98,7 @@ function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
         aria-label={`${pct}% de cuota utilizada para ${label}`}
       >
         <div
-          className={`h-full rounded-full transition-all duration-300 ${LIGHT_COLORS[light]}`}
+          className={`h-full rounded-full transition-all duration-[var(--dur-base)] ${LIGHT_COLORS[light]}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -131,11 +132,11 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
 
   return (
     <div
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 flex flex-col gap-2 min-h-[44px]"
+      className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-2 min-h-[44px]"
       aria-label={`Métrica: ${label}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate pr-2">
+        <span className="text-xs font-medium text-[var(--text-tertiary)] truncate pr-2">
           {label}
         </span>
         <span
@@ -144,7 +145,7 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
         />
       </div>
 
-      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+      <p className="text-2xl font-bold text-[var(--text-primary)] leading-tight">
         {used.toLocaleString("es-PE")}
       </p>
 
@@ -162,10 +163,10 @@ interface PlanBadgeProps {
 }
 
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
-  free:       "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
-  starter:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-emerald-900/40 dark:text-emerald-300",
-  enterprise: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  free:       "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]",
+  starter:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
 };
 
 export function PlanBadge({ plan }: PlanBadgeProps) {
@@ -214,18 +215,18 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
   return (
     <section
       aria-label="Uso facturable del mes"
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex flex-col gap-5"
+      className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex flex-col gap-5"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">
             Uso facturable
-          </h2>
+          </SectionTitle>
           <PlanBadge plan={snapshot.plan} />
           {hasCritical && (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]"
               role="alert"
               aria-live="polite"
             >
@@ -234,7 +235,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           )}
           {!hasCritical && hasWarning && (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]"
               role="status"
               aria-live="polite"
             >
@@ -245,8 +246,8 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Costo estimado</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            <p className="text-xs text-[var(--text-tertiary)]">Costo estimado</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">
               USD {snapshot.estimatedCostUsd.toFixed(2)}
             </p>
           </div>
@@ -273,7 +274,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       {allEvents.length > PRIORITY_EVENTS.length && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="min-h-[44px] text-sm text-primary-dark dark:text-emerald-400 hover:underline font-medium self-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
+          className="min-h-[44px] text-sm text-primary-dark dark:text-[var(--data-success)] hover:underline font-medium self-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
           aria-expanded={expanded}
           aria-controls="metering-all-metrics"
         >
@@ -282,7 +283,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       )}
 
       {/* Período */}
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-auto">
+      <p className="text-xs text-[var(--text-tertiary)] mt-auto">
         Período:{" "}
         {new Date(snapshot.period.from).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
         {" – "}

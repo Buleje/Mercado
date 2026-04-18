@@ -1,16 +1,17 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Database, Cpu, Zap } from "lucide-react";
+import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Database, Cpu, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { HealthPayload, HealthService } from "@/app/api/admin/health/route";
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  operativo: { icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", label: "Operativo" },
-  degradado:  { icon: AlertTriangle, color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-900/20",   label: "Degradado" },
-  caido:      { icon: XCircle,       color: "text-red-500",    bg: "bg-red-50 dark:bg-red-900/20",       label: "Caído" },
+  operativo: { icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Operativo" },
+  degradado:  { icon: AlertTriangle, color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",   label: "Degradado" },
+  caido:      { icon: XCircle,       color: "text-[var(--data-error)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",       label: "Caído" },
 };
 
 const SERVICE_ICONS: Record<string, React.ElementType> = {
@@ -67,11 +68,11 @@ export default function SystemHealthTab() {
   if (loading) return <HealthSkeleton />;
 
   if (error) return (
-    <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-3 sm:p-6 text-center">
-      <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-      <p className="font-bold text-red-700 dark:text-red-400">Error al cargar health check</p>
-      <p className="text-xs text-red-500 mt-1">{error}</p>
-      <button onClick={() => load()} className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-red-500 hover:bg-red-600">
+    <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 p-3 sm:p-6 text-center">
+      <XCircle className="h-8 w-8 text-[var(--data-error)] mx-auto mb-2" />
+      <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Error al cargar health check</p>
+      <p className="text-xs text-[var(--data-error)] mt-1">{error}</p>
+      <button onClick={() => load()} className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]">
         Reintentar
       </button>
     </div>
@@ -95,10 +96,10 @@ export default function SystemHealthTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" /> Salud del Sistema
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             Monitoreo de servicios en tiempo real · Última verificación: {fmtDate(data.checkedAt)}
           </p>
         </div>
@@ -123,10 +124,10 @@ export default function SystemHealthTab() {
               ? "Algunos servicios degradados"
               : "Servicios caídos detectados"}
           </h3>
-          <p className="text-xs text-gray-500 dark:text-muted">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
             {operativeCount}/{services.length} servicios operativos
             {incidents.filter(i => i.status === "open").length > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-bold">
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] font-bold">
                 {incidents.filter(i => i.status === "open").length} incidente(s) activo(s)
               </span>
             )}
@@ -141,32 +142,32 @@ export default function SystemHealthTab() {
           const SIcon = SC.icon;
           const ServiceIcon = SERVICE_ICONS[s.id] ?? Activity;
           return (
-            <div key={s.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+            <div key={s.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <ServiceIcon className="h-4 w-4 text-gray-400" />
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{s.name}</h4>
+                  <ServiceIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{s.name}</h4>
                 </div>
-                <span className={cn("flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
+                <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
                   <SIcon className="h-3 w-3" />{SC.label}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-muted mb-3">{s.description}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">{s.description}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{s.uptime}</p>
-                  <p className="text-[9px] text-gray-400">Uptime</p>
+                  <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{s.uptime}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Uptime</p>
                 </div>
                 <div>
                   <p className={cn(
                     "text-xs font-extrabold",
-                    s.responseTime < 200 ? "text-emerald-500" : s.responseTime < 500 ? "text-amber-500" : "text-red-500"
+                    s.responseTime < 200 ? "text-[var(--data-success)]" : s.responseTime < 500 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
                   )}>{s.responseTime}ms</p>
-                  <p className="text-[9px] text-gray-400">Latencia</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Latencia</p>
                 </div>
                 <div>
-                  <p className="text-[9px] text-gray-400">{fmtDate(s.lastCheck)}</p>
-                  <p className="text-[9px] text-gray-400">Verificado</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(s.lastCheck)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Verificado</p>
                 </div>
               </div>
             </div>
@@ -176,22 +177,22 @@ export default function SystemHealthTab() {
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
             <Cpu className="h-4 w-4 text-primary" /> Métricas clave
-          </h3>
+          </CardTitle>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
             {metrics.map(m => {
               const pct = Math.min(100, (m.value / m.max) * 100);
               const barColor =
-                m.status === "critical" ? "bg-red-500" :
-                m.status === "warning"  ? "bg-amber-500" :
-                "bg-emerald-500";
+                m.status === "critical" ? "bg-[var(--data-error)]" :
+                m.status === "warning"  ? "bg-[var(--data-warning)]" :
+                "bg-[var(--accent-soft)]";
               return (
                 <div key={m.label}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-gray-700 dark:text-foreground">{m.label}</span>
-                    <span className="text-xs font-extrabold text-gray-900 dark:text-foreground">{m.value} {m.unit}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{m.label}</span>
+                    <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{m.value} {m.unit}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
@@ -204,32 +205,32 @@ export default function SystemHealthTab() {
       )}
 
       {/* Incidents */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500" /> Incidentes
-        </h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" /> Incidentes
+        </CardTitle>
         {incidents.length === 0 ? (
-          <div className="flex flex-wrap items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
             <CheckCircle className="h-4 w-4" />
             <span className="font-semibold">Sin incidentes activos</span>
           </div>
         ) : (
           <div className="space-y-2">
             {incidents.map(inc => (
-              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-gray-100 dark:border-card-border last:border-0">
+              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
-                  inc.severity === "critical" ? "bg-red-500" : inc.severity === "warning" ? "bg-amber-500" : "bg-emerald-500"
+                  inc.severity === "critical" ? "bg-[var(--data-error)]" : inc.severity === "warning" ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]"
                 )} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{inc.title}</p>
-                  <p className="text-[10px] text-gray-400">{fmtDate(inc.createdAt)}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{inc.title}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(inc.createdAt)}</p>
                 </div>
                 <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                  "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   inc.status === "resolved"
-                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}>
                   {inc.status === "resolved" ? "Resuelto" : "Activo"}
                 </span>

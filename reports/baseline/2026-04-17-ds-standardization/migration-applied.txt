@@ -1,0 +1,17 @@
+# Migration to DS — APPLIED
+Scanned: 675 files in components/admin, app/admin
+Files changed: 567
+Total replacements: 10903
+Lucide imports rewritten: 506
+
+## By transform
+  text-gray-400-to-tertiary: 3052
+  text-gray-500-to-secondary: 2733
+  text-gray-900-to-primary: 1669
+  text-gray-600-to-secondary: 1205
+  text-gray-700-to-primary: 1048
+  lucide-import-to-ds: 506
+  text-gray-300-to-tertiary: 376
+  text-gray-800-to-primary: 314
+
+## Report-only patterns (require manual decision): 0 hits

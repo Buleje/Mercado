@@ -7,18 +7,13 @@
  */
 
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { LoadingState } from "@buleje/design-system";
 
 const KioskPOS = dynamic(
   () => import("@/components/admin/KioskPOS"),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex flex-col items-center justify-center h-screen bg-black gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-teal-500" />
-        <p className="text-gray-500 text-sm font-medium">Cargando modo caja...</p>
-      </div>
-    ),
+    loading: () => <LoadingState variant="fullscreen" size="lg" message="Cargando modo caja..." />,
   }
 );
 

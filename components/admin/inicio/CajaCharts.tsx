@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell, AreaChart, Area,
@@ -15,7 +16,7 @@ function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs">
-      <p className="mb-1 font-medium text-gray-300">{label}</p>
+      <p className="mb-1 font-medium text-[var(--text-tertiary)]">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.color ?? "#fff" }} className="font-bold">
           {p.name}: S/ {Number(p.value).toFixed(2)}
@@ -38,7 +39,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
             <YAxis tick={AXIS_TICK} tickFormatter={v => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
             <Tooltip content={<ChartTooltip />} />
             <Legend />
-            <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} barSize={24} />
+            <Bar dataKey="ingresos" name="Ingresos" fill="#00B4A6" radius={[4, 4, 0, 0]} barSize={24} />
             <Bar dataKey="egresos" name="Egresos" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={24} />
             <Line dataKey="balance" name="Balance" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: "#3b82f6" }} />
           </ComposedChart>
@@ -60,8 +61,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
             {data.metodosPago.map((m, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: m.color }} />
-                <span className="text-gray-600 dark:text-muted flex-1 truncate">{m.metodo}</span>
-                <span className="font-bold text-gray-900 dark:text-foreground">{m.porcentaje.toFixed(0)}%</span>
+                <span className="text-[var(--text-secondary)] dark:text-muted flex-1 truncate">{m.metodo}</span>
+                <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{m.porcentaje.toFixed(0)}%</span>
               </div>
             ))}
           </div>
@@ -91,7 +92,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
             <XAxis dataKey="dia" tick={AXIS_TICK} />
             <YAxis tick={AXIS_TICK} tickFormatter={v => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
             <Tooltip content={<ChartTooltip />} />
-            <Area type="monotone" dataKey="ingreso" name="Ingreso" stroke="#10b981" fill="#10b98120" strokeWidth={2} />
+            <Area type="monotone" dataKey="ingreso" name="Ingreso" stroke="#00B4A6" fill="#00B4A620" strokeWidth={2} />
             <Area type="monotone" dataKey="egreso" name="Egreso" stroke="#ef4444" fill="#ef444420" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
@@ -106,7 +107,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
             <YAxis tick={AXIS_TICK} tickFormatter={v => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
             <Tooltip content={<ChartTooltip />} />
             <Legend />
-            <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="ingresos" name="Ingresos" fill="#00B4A6" radius={[4, 4, 0, 0]} />
             <Bar dataKey="egresos" name="Egresos" fill="#ef4444" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -130,10 +131,10 @@ export default function CajaCharts({ data }: { data: CajaData }) {
 
 function ChartCard({ title, subtitle, children, span }: { title: string; subtitle?: string; children: React.ReactNode; span?: string }) {
   return (
-    <div className={`bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ${span ?? ""}`}>
+    <div className={`bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ${span ?? ""}`}>
       <div className="mb-4">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">{title}</h3>
-        {subtitle && <p className="text-[11px] text-gray-400 dark:text-muted">{subtitle}</p>}
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{title}</CardTitle>
+        {subtitle && <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">{subtitle}</p>}
       </div>
       {children}
     </div>

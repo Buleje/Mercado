@@ -20,7 +20,7 @@ export function CardGridSkeleton({ count = 6 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 animate-pulse"
+          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 animate-pulse"
         >
           <div className="flex items-center gap-2 mb-3">
             <div className="w-4 h-4 rounded bg-gray-200 dark:bg-gray-700" />
@@ -38,8 +38,8 @@ export function CardGridSkeleton({ count = 6 }: { count?: number }) {
 
 export function TableSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100 dark:border-gray-800 animate-pulse">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="flex items-center gap-4 px-4 py-3 border-b border-[var(--rule-base)] animate-pulse">
         <div className="h-3 flex-1 rounded bg-gray-200 dark:bg-gray-700" />
         <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
         <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-700" />
@@ -49,7 +49,7 @@ export function TableSkeleton({ count = 5 }: { count?: number }) {
           key={i}
           className={[
             "flex items-center gap-4 px-4 py-3 animate-pulse",
-            i < count - 1 ? "border-b border-gray-100 dark:border-gray-800" : "",
+            i < count - 1 ? "border-b border-[var(--rule-base)]" : "",
           ].join(" ")}
         >
           <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
@@ -73,10 +73,10 @@ export function ChartSkeleton({ count = 1 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 animate-pulse"
+          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 animate-pulse"
         >
           <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
-          <div className="h-48 w-full rounded-xl bg-gray-100 dark:bg-gray-800" />
+          <div className="h-48 w-full rounded-xl bg-[var(--surface-sunken)]" />
         </div>
       ))}
     </>
@@ -87,7 +87,7 @@ export function ChartSkeleton({ count = 1 }: { count?: number }) {
 export { TableSkeleton as SATableSkeleton };
 export function SAStatCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm dark:shadow-none animate-pulse">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 shadow-sm dark:shadow-none animate-pulse">
       <SASkeleton className="h-4 w-24 mb-3" />
       <SASkeleton className="h-8 w-16 mb-1" />
       <SASkeleton className="h-3 w-20" />

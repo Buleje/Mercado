@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
@@ -15,7 +16,7 @@ import {
   ChevronDown,
   Check,
   Package,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type ProductOption = {
@@ -56,14 +57,14 @@ type KardexLine = {
 };
 
 const TYPE_META: Record<string, { label: string; color: string; bg: string; dir: "in" | "out" }> = {
-  compra: { label: "Compra", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", dir: "in" },
-  devolucion: { label: "Devolucion", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", dir: "in" },
-  ajuste_positivo: { label: "Ajuste (+)", color: "text-sky-700 dark:text-sky-400", bg: "bg-sky-100 dark:bg-sky-900/30", dir: "in" },
-  venta: { label: "Venta POS", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30", dir: "out" },
-  venta_online: { label: "Venta Online", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30", dir: "out" },
-  ajuste_negativo: { label: "Ajuste (-)", color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30", dir: "out" },
-  merma: { label: "Pérdida", color: "text-rose-700 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30", dir: "out" },
-  transferencia: { label: "Transferencia", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/30", dir: "out" },
+  compra: { label: "Compra", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
+  devolucion: { label: "Devolucion", color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
+  ajuste_positivo: { label: "Ajuste (+)", color: "text-[var(--data-info)] dark:text-[var(--data-info)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info)]/30", dir: "in" },
+  venta: { label: "Venta POS", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", dir: "out" },
+  venta_online: { label: "Venta Online", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", dir: "out" },
+  ajuste_negativo: { label: "Ajuste (-)", color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30", dir: "out" },
+  merma: { label: "Pérdida", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dir: "out" },
+  transferencia: { label: "Transferencia", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dir: "out" },
 };
 
 function fmt(n: number) {
@@ -88,16 +89,16 @@ function ModuleTooltip() {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
+        className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none"
         aria-label="Ayuda sobre Movimientos"
       >
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-gray-200 bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Movimientos del Producto</p>
-          <p className="mb-3 text-gray-600 dark:text-muted">Te muestra todo lo que entró y salió de cada producto, para que sepas exactamente cuánto tienes.</p>
-          <p className="text-gray-500 dark:text-muted">Ejemplo: si entra una compra de 24 unidades y luego se venden 5, aquí puedes ver ambas operaciones y el saldo exacto.</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Movimientos del Producto</p>
+          <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Te muestra todo lo que entró y salió de cada producto, para que sepas exactamente cuánto tienes.</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: si entra una compra de 24 unidades y luego se venden 5, aquí puedes ver ambas operaciones y el saldo exacto.</p>
         </div>
       )}
     </div>
@@ -261,7 +262,7 @@ export default function KardexTab() {
 
   if (loadingProducts) {
     return (
-      <div className="flex items-center justify-center py-20 text-sm text-gray-500 dark:text-muted">
+      <div className="flex items-center justify-center py-20 text-sm text-[var(--text-secondary)] dark:text-muted">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando productos...
       </div>
     );
@@ -270,8 +271,8 @@ export default function KardexTab() {
   if (products.length === 0 || !product) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-lg font-bold text-gray-400 dark:text-muted">Sin productos registrados</p>
-        <p className="mt-1 text-sm text-gray-400 dark:text-muted">Agrega productos desde el modulo de inventario.</p>
+        <p className="text-lg font-bold text-[var(--text-tertiary)] dark:text-muted">Sin productos registrados</p>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)] dark:text-muted">Agrega productos desde el modulo de inventario.</p>
       </div>
     );
   }
@@ -280,29 +281,29 @@ export default function KardexTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">
+          <PageTitle className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
             <BookOpen className="h-6 w-6 text-primary" /> Movimientos del Producto <ModuleTooltip />
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-muted">Historial por producto: qué entró, qué salió y cuánto queda</p>
+          </PageTitle>
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)] dark:text-muted">Historial por producto: qué entró, qué salió y cuánto queda</p>
         </div>
         <button
           onClick={() => exportToCSV(lines.map((line) => ({ fecha: line.date, tipo: TYPE_META[line.type]?.label || line.type, referencia: line.reference, descripcion: line.description, entrada: line.qtyIn || "", salida: line.qtyOut || "", saldo: line.balance, costo_unit: line.costUnit, costo_total: line.totalCost, almacen: line.warehouse })), `kardex-${product.name}`)}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
         >
           <Download className="h-4 w-4" /> Descargar movimientos
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-card-border dark:bg-card">
-        <label className="mb-2 block text-xs font-bold text-gray-500 dark:text-muted">Seleccionar producto</label>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-card-border dark:bg-card">
+        <label className="mb-2 block text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar producto</label>
 
         {/* Selected product display */}
         {product && !dropdownOpen && (
           <div className="mb-3 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10">
             <Package className="h-5 w-5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-gray-900 dark:text-foreground">{product.name}</p>
-              <p className="text-xs text-gray-500 dark:text-muted">Stock: {product.stock} {product.unit} {product.costPrice != null ? `· Costo: S/ ${product.costPrice.toFixed(2)}` : ""}</p>
+              <p className="truncate text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{product.name}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock: {product.stock} {product.unit} {product.costPrice != null ? `· Costo: S/ ${product.costPrice.toFixed(2)}` : ""}</p>
             </div>
             <button
               type="button"
@@ -310,7 +311,7 @@ export default function KardexTab() {
                 setDropdownOpen(true);
                 setTimeout(() => productInputRef.current?.focus(), 0);
               }}
-              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
             >
               Cambiar
             </button>
@@ -320,7 +321,7 @@ export default function KardexTab() {
         {/* Searchable dropdown */}
         <div ref={dropdownRef} className="relative">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
             <input
               ref={productInputRef}
               type="text"
@@ -331,15 +332,15 @@ export default function KardexTab() {
               }}
               onFocus={() => setDropdownOpen(true)}
               placeholder="Buscar producto..."
-              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-10 text-sm text-gray-700 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-9 pr-10 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
             />
-            <ChevronDown className={cn("absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 transition-transform", dropdownOpen && "rotate-180")} />
+            <ChevronDown className={cn("absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)] transition-transform", dropdownOpen && "rotate-180")} />
           </div>
 
           {dropdownOpen && (
-            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
               {filteredProducts.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-muted">
+                <div className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">
                   No se encontraron productos
                 </div>
               ) : (
@@ -359,10 +360,10 @@ export default function KardexTab() {
                       <div className="h-4 w-4 shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className={cn("truncate font-semibold", selectedProduct === item.id ? "text-primary" : "text-gray-700 dark:text-foreground")}>
+                      <p className={cn("truncate font-semibold", selectedProduct === item.id ? "text-primary" : "text-[var(--text-primary)] dark:text-foreground")}>
                         {item.name}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-muted">Stock: {item.stock} {item.unit}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Stock: {item.stock} {item.unit}</p>
                     </div>
                   </button>
                 ))
@@ -370,91 +371,91 @@ export default function KardexTab() {
             </div>
           )}
         </div>
-        <p className="mt-2 text-xs text-gray-400 dark:text-muted">{products.length} productos disponibles</p>
+        <p className="mt-2 text-xs text-[var(--text-tertiary)] dark:text-muted">{products.length} productos disponibles</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">
-        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
-        <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
+        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-[var(--data-success)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
+        <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-[var(--data-success)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
         <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/30" />
-        <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-violet-600" bg="bg-violet-50 dark:bg-violet-950/30" />
+        <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-[var(--text-secondary)]" bg="bg-[var(--surface-sunken)]" />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-xs flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
         </div>
-        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground">
+        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {Object.keys(TYPE_META).map((type) => (
             <option key={type} value={type}>{TYPE_META[type].label}</option>
           ))}
         </select>
         {warehouses.length > 0 && (
-          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground">
+          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
             <option value="todos">Todos los almacenes</option>
             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             <option value="sin-almacen">Sin almacén asignado</option>
           </select>
         )}
-        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
-        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-card-border">
-          <span className="text-sm font-bold text-gray-700 dark:text-foreground">{product.name} - {product.unit}</span>
-          <span className="text-xs text-gray-400 dark:text-muted">{lines.length} movimientos</span>
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
+        <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-5 py-3 dark:border-card-border">
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{product.name} - {product.unit}</span>
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{lines.length} movimientos</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50 dark:border-card-border dark:bg-surface/50">
+            <thead className="border-b border-[var(--rule-base)] bg-gray-50 dark:border-card-border dark:bg-surface/50">
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Fecha</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Tipo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Referencia</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Descripcion</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600">Entrada</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-red-500">Salida</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted">Saldo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted">Costo u.</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted">Costo total</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Almacen</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Referencia</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripcion</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success)]">Entrada</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-error)]">Salida</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Saldo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo u.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo total</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Almacen</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
               {loadingMovements && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-muted">
+                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">
                     <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando movimientos...
                   </td>
                 </tr>
               )}
               {!loadingMovements && lines.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-muted">Sin movimientos con los filtros actuales.</td>
+                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">Sin movimientos con los filtros actuales.</td>
                 </tr>
               )}
               {lines.map((line) => {
                 const meta = TYPE_META[line.type] ?? TYPE_META.ajuste_negativo;
                 return (
                   <tr key={line.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-surface/30">
-                    <td className="whitespace-nowrap px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(line.date)}</td>
+                    <td className="whitespace-nowrap px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", meta.bg, meta.color)}>
                         {meta.dir === "in" ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-gray-700 dark:text-foreground">{line.reference}</td>
-                    <td className="max-w-60 truncate px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{line.description}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-emerald-600">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-red-500">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
-                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-red-500" : line.balance <= 10 ? "text-amber-500" : "text-gray-800 dark:text-foreground")}>{line.balance}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500 dark:text-muted">{fmt(line.costUnit)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{fmt(line.totalCost)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-400 dark:text-muted">{line.warehouse}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{line.reference}</td>
+                    <td className="max-w-60 truncate px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{line.description}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-success)]">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-error)]">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-[var(--data-error)]" : line.balance <= 10 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{line.balance}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(line.costUnit)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(line.totalCost)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)] dark:text-muted">{line.warehouse}</td>
                   </tr>
                 );
               })}
@@ -470,9 +471,9 @@ function KCard({ label, value, sub, icon: Icon, color, bg }: { label: string; va
   return (
     <div className={cn("rounded-xl p-4", bg)}>
       <Icon className={cn("mb-2 h-5 w-5", color)} />
-      <p className="mb-1 text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+      <p className="mb-1 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
       <p className={cn("text-lg font-extrabold leading-tight", color)}>{value}</p>
-      <p className="mt-0.5 text-xs text-gray-400 dark:text-muted">{sub}</p>
+      <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-muted">{sub}</p>
     </div>
   );
 }

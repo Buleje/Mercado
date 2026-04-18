@@ -20,27 +20,60 @@ import {
   Wallet,
 } from "lucide-react";
 import { useSettings } from "@/contexts/settings-context";
+import LocaleSwitcher from "@/components/ui-system/LocaleSwitcher";
+import CurrencySwitcher from "@/components/ui-system/CurrencySwitcher";
+import { BulejeWordmark } from "@/components/ui-system/illustrations";
 
 
-const quickLinks = [
-  { href: "/", label: "Inicio" },
-  { href: "/tienda", label: "Tienda" },
-  { href: "/recetas", label: "Recetario" },
-  { href: "/#beneficios", label: "Beneficios" },
-  { href: "/#preguntas", label: "Preguntas Frecuentes" },
-  { href: "/#contacto", label: "Contacto" },
-  { href: "/privacidad", label: "Privacidad" },
-  { href: "/terminos", label: "Términos y Condiciones" },
+// ── Columna 1: Marketplace ──────────────────────────────────────────────
+const marketplaceLinks = [
+  { href: "/marketplace", label: "Explorar marketplace" },
+  { href: "/marketplace/explorar", label: "Catálogo completo" },
+  { href: "/marketplace/comparar", label: "Comparar productos" },
+  { href: "/marketplace/gift-cards", label: "Gift Cards" },
+  { href: "/marketplace/en-vivo", label: "Buleje en Vivo" },
+  { href: "/marketplace/ofertas", label: "Ofertas flash" },
+  { href: "/recetas", label: "Recetas" },
+  { href: "/asistente", label: "Asistente IA" },
 ];
 
 const categoryLinks = [
-  { href: "/tienda/categoria/abarrotes",   label: "Abarrotes" },
-  { href: "/tienda/categoria/bebidas",     label: "Bebidas" },
-  { href: "/tienda/categoria/golosinas",   label: "Golosinas y Snacks" },
-  { href: "/tienda/categoria/carnes",      label: "Carne y Pollo" },
-  { href: "/tienda/categoria/limpieza",    label: "Productos de Limpieza" },
-  { href: "/tienda/categoria/lacteos",     label: "Lácteos" },
-  { href: "/tienda",                       label: "Ver todas →" },
+  { href: "/tienda/categoria/abarrotes", label: "Abarrotes" },
+  { href: "/tienda/categoria/bebidas", label: "Bebidas" },
+  { href: "/tienda/categoria/carnes", label: "Carne y Pollo" },
+  { href: "/tienda/categoria/lacteos", label: "Lácteos" },
+];
+
+// ── Columna 2: Mi cuenta ────────────────────────────────────────────────
+const cuentaLinks = [
+  { href: "/cuenta", label: "Resumen" },
+  { href: "/cuenta/pedidos", label: "Mis pedidos" },
+  { href: "/cuenta/suscripciones", label: "Bodega al Mes" },
+  { href: "/cuenta/socio-buleje", label: "Socio Buleje" },
+  { href: "/cuenta/cupones", label: "Cupones" },
+  { href: "/cuenta/gift-cards", label: "Gift Cards" },
+  { href: "/marketplace/favoritos", label: "Favoritos" },
+  { href: "/cuenta/notificaciones", label: "Notificaciones" },
+];
+
+// ── Columna 3: Vendé en Buleje ──────────────────────────────────────────
+const businessLinks = [
+  { href: "/vender", label: "Vendé en Buleje" },
+  { href: "/vender/registro", label: "Registrá tu tienda" },
+  { href: "/planes", label: "Planes y precios" },
+  { href: "/vender/mi-tienda", label: "Seller Central" },
+  { href: "/negocios", label: "Software para bodegas" },
+  { href: "/ayuda", label: "Soporte vendedor" },
+];
+
+// ── Columna 4: Ayuda ────────────────────────────────────────────────────
+const helpLinks = [
+  { href: "/ayuda", label: "Centro de ayuda" },
+  { href: "/ayuda#guias", label: "Guías paso a paso" },
+  { href: "/ayuda#faq", label: "Preguntas frecuentes" },
+  { href: "/tracking", label: "Seguí tu pedido" },
+  { href: "/descubri", label: "Qué hay de nuevo" },
+  { href: "/about", label: "Acerca de nosotros" },
 ];
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -198,35 +231,145 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Main Footer */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
-                <Store className="h-4 w-4 text-white" strokeWidth={1.75} aria-hidden />
-              </div>
-              <div>
-                <span className="text-base font-extrabold block leading-tight tracking-tight">{storeTheme?.name || "Buleje"}</span>
-                <span className="text-[10px] text-white/40 font-bold uppercase tracking-[0.18em]">Ucayali · Perú</span>
-              </div>
+      {/* Main Footer — Mega footer rediseñado (5 columnas ricas) */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10">
+          {/* ── Columna 1: Marketplace ── */}
+          <nav aria-label="Marketplace">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+              Marketplace
+            </h3>
+            <ul className="space-y-2.5">
+              {marketplaceLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-white/65 hover:text-white transition-colors text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <h4 className="mt-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-3">
+              Categorías
+            </h4>
+            <ul className="space-y-2">
+              {categoryLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-white/55 hover:text-white transition-colors text-xs"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* ── Columna 2: Mi cuenta ── */}
+          <nav aria-label="Mi cuenta">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+              Mi cuenta
+            </h3>
+            <ul className="space-y-2.5">
+              {cuentaLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-white/65 hover:text-white transition-colors text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* ── Columna 3: Vendé en Buleje ── */}
+          <nav aria-label="Vendé en Buleje">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+              Vendé en Buleje
+            </h3>
+            <ul className="space-y-2.5">
+              {businessLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-white/65 hover:text-white transition-colors text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <a
+              href="/vender"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+            >
+              <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+              Abrí tu tienda
+            </a>
+          </nav>
+
+          {/* ── Columna 4: Ayuda ── */}
+          <nav aria-label="Ayuda">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+              Ayuda
+            </h3>
+            <ul className="space-y-2.5">
+              {helpLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-white/65 hover:text-white transition-colors text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <a
+              href={`${storeTheme?.whatsapp || hp.footerWhatsApp}${(storeTheme?.whatsapp || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent("Hola Buleje, necesito ayuda")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+            >
+              <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+              WhatsApp
+            </a>
+          </nav>
+
+          {/* ── Columna 5: Identidad ── */}
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <div className="mb-4 flex items-center gap-2 text-white">
+              <BulejeWordmark
+                size={32}
+                strokeWidth={1.75}
+                textSize={16}
+                className="text-white"
+              />
             </div>
-            <div className="flex items-center gap-1.5 mb-3">
+            <p className="text-white/50 text-sm leading-relaxed mb-3">
+              {storeTheme?.description || hp.footerDescription}
+            </p>
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mb-4">
+              <MapPin className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+              Pucallpa · Ucayali
+            </div>
+            <div className="flex items-center gap-1.5 mb-4">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-3 w-3 fill-white text-white" strokeWidth={1.5} aria-hidden />
               ))}
               <span className="text-white/55 text-[11px] ml-1.5 tabular-nums">{hp.footerRating}</span>
             </div>
-            <p className="text-white/45 text-sm leading-relaxed mb-5">
-              {storeTheme?.description || hp.footerDescription}
-            </p>
             <div className="flex items-center gap-2 flex-wrap">
               <a
                 href={`${storeTheme?.whatsapp || hp.footerWhatsApp}${(storeTheme?.whatsapp || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hola ${storeTheme?.name || "Buleje"}, quiero hacer un pedido`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold text-gray-900 bg-white transition-colors hover:bg-gray-100"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
                 aria-label="WhatsApp"
               >
                 <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -253,102 +396,21 @@ export default function Footer() {
                 Instagram
               </a>
             </div>
-          </div>
-
-          {/* Quick Links */}
-          <nav aria-label="Navegación rápida">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
-              Navegación
-            </h3>
-            <ul className="space-y-2.5">
-              {quickLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Categories */}
-          <nav aria-label="Categorías de productos">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
-              Categorías
-            </h3>
-            <ul className="space-y-2.5">
-              {categoryLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Contact Info */}
-          <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
-              Contacto
-            </h3>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="h-3.5 w-3.5 text-white/55 mt-0.5 shrink-0" strokeWidth={1.75} aria-hidden />
-                <span className="text-sm text-white/65">
-                  Jr. Ucayali 450, Ucayali
-                </span>
-              </li>
-              {(storeTheme?.phone || storeTheme?.email) && (
-                <li className="flex items-center gap-2.5">
-                  <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                  {storeTheme?.phone ? (
-                    <a
-                      href={`tel:${storeTheme.phone}`}
-                      className="text-sm text-white/65 hover:text-white transition-colors tabular-nums"
-                    >
-                      {storeTheme.phone}
-                    </a>
-                  ) : (
-                    <span className="text-sm text-white/65 tabular-nums">916 409 675</span>
-                  )}
-                </li>
-              )}
-              {!storeTheme?.phone && !storeTheme?.email && (
-                <li className="flex items-center gap-2.5">
-                  <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                  <a
-                    href="tel:+51916409675"
-                    className="text-sm text-white/65 hover:text-white transition-colors tabular-nums"
-                  >
-                    916 409 675
-                  </a>
-                </li>
-              )}
-              {storeTheme?.email && (
-                <li className="flex items-center gap-2.5">
-                  <Mail className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                  <a
-                    href={`mailto:${storeTheme.email}`}
-                    className="text-sm text-white/65 hover:text-white transition-colors"
-                  >
-                    {storeTheme.email}
-                  </a>
-                </li>
-              )}
-              <li className="flex items-center gap-2.5">
+            <div className="mt-5 space-y-2">
+              <div className="flex items-center gap-2.5 text-xs text-white/55">
+                <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
+                <a
+                  href={`tel:${storeTheme?.phone ?? "+51916409675"}`}
+                  className="tabular-nums hover:text-white/80"
+                >
+                  {storeTheme?.phone ?? "916 409 675"}
+                </a>
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-white/55">
                 <Clock className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                <span className="text-sm text-white/65 tabular-nums">
-                  {hoursLabel}
-                </span>
-              </li>
-            </ul>
+                <span className="tabular-nums">{hoursLabel}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -413,7 +475,7 @@ export default function Footer() {
       {/* Trust badges + copyright */}
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
                 <ShieldCheck className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
@@ -428,6 +490,13 @@ export default function Footer() {
                 Efectivo OK
               </div>
             </div>
+
+            {/* Locale + Currency switchers */}
+            <div className="flex items-center gap-2">
+              <CurrencySwitcher />
+              <LocaleSwitcher />
+            </div>
+
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <p className="flex items-center gap-1.5 text-[11px] text-white/35 tabular-nums">
                 © {year} {storeTheme?.name || "Buleje"} · Hecho en Perú

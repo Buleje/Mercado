@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
-import { Loader2 } from "lucide-react";
+import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import type { Tab } from "./_lib/tabs.types";
@@ -195,11 +195,7 @@ function AdminPage() {
   }, [hasSubSidebar, subSidebarTabs, tab, navigateTab]);
 
   if (!authReady) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingState variant="fullscreen" message="" />;
   }
 
   return (
@@ -249,7 +245,7 @@ function AdminPage() {
       />
 
       <div className={cn(
-        "flex flex-col min-h-screen transition-[margin] duration-300",
+        "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
         presentationMode ? "sm:ml-0"
           : focusMode ? "sm:ml-16"
           : "sm:ml-[260px]",

@@ -176,12 +176,12 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       aria-label="Busqueda global"
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg mx-4 overflow-hidden border border-gray-200 dark:border-gray-700"
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg mx-4 overflow-hidden border border-[var(--rule-base)]"
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
-          <Search className="h-4 w-4 text-gray-400 shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--rule-base)]">
+          <Search className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -189,10 +189,10 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Buscar modulos, productos, clientes, acciones..."
-            className="flex-1 text-sm bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 outline-none"
+            className="flex-1 text-sm bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
           />
-          {searching && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400 shrink-0" />}
-          <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-mono text-gray-400 shrink-0">
+          {searching && <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-tertiary)] shrink-0" />}
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] shrink-0">
             Esc
           </kbd>
         </div>
@@ -200,22 +200,22 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
         {/* Results */}
         <div className="max-h-80 overflow-y-auto py-2">
           {filtered.length === 0 && !searching ? (
-            <div className="text-center py-8 text-sm text-gray-400">
+            <div className="text-center py-8 text-sm text-[var(--text-tertiary)]">
               <Search className="h-6 w-6 mx-auto mb-2 opacity-30" />
               <p>No se encontraron resultados</p>
-              {query.length > 0 && <p className="text-xs mt-1 text-gray-400">Intenta con otro termino</p>}
+              {query.length > 0 && <p className="text-xs mt-1 text-[var(--text-tertiary)]">Intenta con otro termino</p>}
             </div>
           ) : (
             grouped.map(([category, categoryItems]) => (
               <div key={category}>
                 {/* Category separator */}
                 <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
-                  <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                  <span className="h-px flex-1 bg-[var(--surface-sunken)]" />
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] flex items-center gap-1.5">
                     {DYN_ICONS[category]}
                     {category}
                   </span>
-                  <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+                  <span className="h-px flex-1 bg-[var(--surface-sunken)]" />
                 </div>
                 {categoryItems.map(item => {
                   const idx = globalIdx++;
@@ -228,21 +228,21 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
                         idx === selectedIdx
                           ? "bg-gray-100 dark:bg-white/10"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5",
+                          : "text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5",
                       )}
                     >
                       {/* Icon: Lucide component with tinted bg, or emoji fallback */}
                       {IconComp ? (
-                        <span className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                          <IconComp className={cn("h-4 w-4", item.iconColor ?? "text-gray-500")} />
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
+                          <IconComp className={cn("h-4 w-4", item.iconColor ?? "text-[var(--text-secondary)]")} />
                         </span>
                       ) : item.icon ? (
-                        <span className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-base">
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-base">
                           {item.icon}
                         </span>
                       ) : (
-                        <span className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                          <Zap className="h-4 w-4 text-gray-400" />
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
+                          <Zap className="h-4 w-4 text-[var(--text-tertiary)]" />
                         </span>
                       )}
 
@@ -250,12 +250,12 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                       <div className="flex-1 min-w-0">
                         <span className={cn(
                           "block truncate font-medium",
-                          idx === selectedIdx ? "text-gray-900 dark:text-white" : "",
+                          idx === selectedIdx ? "text-[var(--text-primary)]" : "",
                         )}>
                           {item.label}
                         </span>
                         {item.subtitle && (
-                          <span className="block truncate text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          <span className="block truncate text-xs text-[var(--text-tertiary)] mt-0.5">
                             {item.subtitle}
                           </span>
                         )}
@@ -263,7 +263,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
                       {/* Shortcut badge */}
                       {item.shortcut && (
-                        <kbd className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-mono text-gray-400">
+                        <kbd className="shrink-0 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">
                           {item.shortcut}
                         </kbd>
                       )}
@@ -281,21 +281,21 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-4 text-[10px] text-gray-400">
+        <div className="px-4 py-2.5 border-t border-[var(--rule-base)] flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">&#8593;&#8595;</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-sunken)] font-mono">&#8593;&#8595;</kbd>
             Navegar
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">Enter</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-sunken)] font-mono">Enter</kbd>
             Seleccionar
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">Esc</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-sunken)] font-mono">Esc</kbd>
             Cerrar
           </span>
           <span className="ml-auto flex items-center gap-1 opacity-60">
-            <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">Ctrl+K</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-sunken)] font-mono">Ctrl+K</kbd>
           </span>
         </div>
       </div>

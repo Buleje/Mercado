@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
   ComposedChart, Line,
 } from "recharts";
-import { BarChart3, CreditCard, Target, Clock, TrendingUp, CalendarDays } from "lucide-react";
+import { BarChart3, CreditCard, Target, Clock, TrendingUp, CalendarDays } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { VentasData } from "./VentasDashboard";
 
@@ -25,13 +26,13 @@ function ChartTooltip({ active, payload, label, prefix = "S/" }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
-      {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
+      {label && <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill || BLUE }} />
-          <span className="text-gray-500 dark:text-muted">{p.name}:</span>
-          <span className="font-bold text-gray-900 dark:text-foreground">
+          <span className="text-[var(--text-secondary)] dark:text-muted">{p.name}:</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
             {prefix === "S/" ? `S/ ${p.value.toFixed(2)}` : `${p.value}`}
           </span>
         </div>
@@ -45,11 +46,11 @@ function ChartCard({ title, Icon, children, className, badge }: {
   badge?: React.ReactNode;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
+    <div className={cn("bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ", className)}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-gray-400 dark:text-muted" />
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">{title}</h3>
+          <Icon className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{title}</CardTitle>
         </div>
         {badge}
       </div>
@@ -60,7 +61,7 @@ function ChartCard({ title, Icon, children, className, badge }: {
 
 function EmptyState({ text = "Sin datos" }: { text?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
+    <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
       <BarChart3 className="h-8 w-8 mb-2" />
       <p className="text-xs font-medium">{text}</p>
     </div>
@@ -80,7 +81,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
           className="lg:col-span-3"
           badge={data.wowGrowth != null ? (
             <span className={cn("text-xs font-bold px-2 py-0.5 rounded-md",
-              data.wowGrowth >= 0 ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+              data.wowGrowth >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
             )}>
               {data.wowGrowth >= 0 ? "↑" : "↓"} {Math.abs(data.wowGrowth).toFixed(1)}% sem/sem
             </span>
@@ -121,7 +122,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {data.metodosPago.map((p, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
                     {p.metodo} <span className="font-bold">{p.porcentaje.toFixed(0)}%</span>
                   </span>
@@ -181,21 +182,21 @@ export default function VentasCharts({ data }: { data: VentasData }) {
                 return (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{step.etapa}</span>
+                      <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)]">{step.etapa}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-400">{pct.toFixed(0)}%</span>
-                        <span className="text-[11px] font-bold text-gray-900 dark:text-foreground">{step.cantidad}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{pct.toFixed(0)}%</span>
+                        <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground">{step.cantidad}</span>
                       </div>
                     </div>
-                    <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: step.color }} />
+                    <div className="h-5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-[var(--dur-slower)]" style={{ width: `${pct}%`, backgroundColor: step.color }} />
                     </div>
                   </div>
                 );
               })}
               {data.funnelPedidos.length >= 4 && data.funnelPedidos[0].cantidad > 0 && (
-                <p className="text-[10px] text-gray-400 text-center mt-2">
-                  Conversión total: <span className="font-bold text-gray-600 dark:text-gray-300">{((data.funnelPedidos[3]?.cantidad ?? 0) / data.funnelPedidos[0].cantidad * 100).toFixed(0)}%</span> entregados
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center mt-2">
+                  Conversión total: <span className="font-bold text-[var(--text-secondary)]">{((data.funnelPedidos[3]?.cantidad ?? 0) / data.funnelPedidos[0].cantidad * 100).toFixed(0)}%</span> entregados
                 </p>
               )}
             </div>

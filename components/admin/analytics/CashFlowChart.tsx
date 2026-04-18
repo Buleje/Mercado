@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ComposedChart,
@@ -14,7 +15,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Wallet } from "@buleje/design-system/icons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -65,22 +66,22 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[180px]">
-      <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[180px]">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">
         {formatDate(d.fecha)}
-        {d.isProjected && <span className="ml-2 text-[10px] font-normal text-amber-500">(Proyectado)</span>}
+        {d.isProjected && <span className="ml-2 text-[length:var(--ts-2xs)] font-normal text-[var(--data-warning)]">(Proyectado)</span>}
       </p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ingresos</span>
         <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(d.ingresos)}</span>
       </p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Egresos</span>
         <span className="font-mono font-medium text-[#e63946]">{formatCurrency(d.egresos)}</span>
       </p>
-      <div className="border-t border-gray-200 dark:border-gray-600 mt-1.5 pt-1.5">
+      <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
-          <span className="font-semibold text-gray-700 dark:text-gray-300">Balance</span>
+          <span className="font-semibold text-[var(--text-secondary)]">Balance</span>
           <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(d.balance)}</span>
         </p>
       </div>
@@ -181,14 +182,14 @@ export default function CashFlowChart() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="grid grid-cols-3 gap-3 mb-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+            <div key={i} className="h-16 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
           ))}
         </div>
-        <div className="h-56 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-56 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -196,11 +197,11 @@ export default function CashFlowChart() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-red-600 dark:text-red-400 mb-3">No se pudieron cargar los datos de flujo de caja</p>
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudieron cargar los datos de flujo de caja</p>
         <button
           onClick={() => { const days = CF_PILLS.find(p => p.key === cfPeriod)?.days ?? 30; fetchData(days); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -212,27 +213,27 @@ export default function CashFlowChart() {
   // ── Empty ──
   if (!chartData.length) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos de flujo de caja</p>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
+        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de flujo de caja</p>
       </div>
     );
   }
 
   const summaryCards = summary
     ? [
-        { label: "Total ingresos", value: formatCurrency(summary.totalIngresos), icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400" },
-        { label: "Total egresos", value: formatCurrency(summary.totalEgresos), icon: TrendingDown, color: "text-red-500 dark:text-red-400" },
-        { label: "Balance proyectado", value: formatCurrency(summary.balanceFinal), icon: Wallet, color: summary.balanceFinal >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400" },
+        { label: "Total ingresos", value: formatCurrency(summary.totalIngresos), icon: TrendingUp, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+        { label: "Total egresos", value: formatCurrency(summary.totalEgresos), icon: TrendingDown, color: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+        { label: "Balance proyectado", value: formatCurrency(summary.balanceFinal), icon: Wallet, color: summary.balanceFinal >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]" },
       ]
     : [];
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {/* Header + period pills */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
           Flujo de Caja
-        </h3>
+        </CardTitle>
         <div className="flex items-center gap-1">
           {CF_PILLS.map((p) => (
             <button
@@ -241,8 +242,8 @@ export default function CashFlowChart() {
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                 cfPeriod === p.key
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               {p.label}
@@ -259,11 +260,11 @@ export default function CashFlowChart() {
             return (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 "
+                className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-3 "
               >
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Icon className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                  <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">
                     {card.label}
                   </span>
                 </div>

@@ -573,6 +573,135 @@ export const StorePageDB = {
     }
   },
 
+  /**
+   * Bulk: setea `visible` para los `productIds` del tenant. Crea overrides si
+   * no existen (resto de campos queda default). Idempotente. Invalida caché.
+   *
+   * Devuelve { updated, created, skipped } para telemetría.
+   */
+  async setBulkVisibility(
+    tenantId: string,
+    productIds: number[],
+    visible: boolean,
+  ): Promise<{ updated: number; created: number; skipped: number }> {
+    if (productIds.length === 0) return { updated: 0, created: 0, skipped: 0 };
+
+    try {
+      // Isolation guard: solo productos del tenant
+      const validProducts = await prisma.product.findMany({
+        where: {
+          id: { in: productIds },
+          tenantId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      const validIds = new Set(validProducts.map((p) => p.id));
+      const skipped = productIds.length - validIds.size;
+
+      if (validIds.size === 0) {
+        return { updated: 0, created: 0, skipped };
+      }
+
+      // Upsert por cada producto válido (prisma no soporta upsertMany nativo)
+      let updated = 0;
+      let created = 0;
+      for (const productId of validIds) {
+        const existing = await prisma.tenantPageProductOverride.findUnique({
+          where: { tenantId_productId: { tenantId, productId } },
+          select: { id: true },
+        });
+        if (existing) {
+          await prisma.tenantPageProductOverride.update({
+            where: { tenantId_productId: { tenantId, productId } },
+            data: { visible },
+          });
+          updated += 1;
+        } else {
+          await prisma.tenantPageProductOverride.create({
+            data: {
+              tenantId,
+              productId,
+              visible,
+              featured: false,
+              sortOrder: 0,
+            },
+          });
+          created += 1;
+        }
+      }
+
+      invalidateTenant(tenantId);
+      return { updated, created, skipped };
+    } catch (err) {
+      if (isMissingOverrideTableError(err)) {
+        return { updated: 0, created: 0, skipped: productIds.length };
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Lista todos los productos activos del tenant con su estado de visibilidad
+   * en la tienda individual. Si no hay override, se considera visible=true
+   * (default). Usado por el admin "Catalogo Tienda".
+   */
+  async listCatalogWithVisibility(
+    tenantId: string,
+  ): Promise<
+    Array<{
+      productId: number;
+      name: string;
+      image: string;
+      category: string;
+      unit: string;
+      price: number;
+      stock: number | null;
+      active: boolean;
+      visible: boolean; // true si override.visible OR no hay override
+    }>
+  > {
+    const products = await prisma.product.findMany({
+      where: { tenantId, deletedAt: null },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        category: true,
+        unit: true,
+        price: true,
+        stock: true,
+        active: true,
+      },
+    });
+
+    let overrides: Array<{ productId: number; visible: boolean }> = [];
+    try {
+      overrides = await prisma.tenantPageProductOverride.findMany({
+        where: { tenantId, productId: { in: products.map((p) => p.id) } },
+        select: { productId: true, visible: true },
+      });
+    } catch (err) {
+      if (!isMissingOverrideTableError(err)) throw err;
+      // Tabla no migrada todavía → todos visibles por default
+    }
+    const overrideMap = new Map(overrides.map((o) => [o.productId, o.visible]));
+
+    return products.map((p) => ({
+      productId: p.id,
+      name: p.name,
+      image: p.image,
+      category: p.category,
+      unit: p.unit,
+      price: toNumOrZero(p.price),
+      stock: p.stock,
+      active: p.active,
+      // Default: si no hay override, es visible (true)
+      visible: overrideMap.get(p.id) ?? true,
+    }));
+  },
+
   // ──────────────────────────────────────────────
   // Promotions
   // ──────────────────────────────────────────────

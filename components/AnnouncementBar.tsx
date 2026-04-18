@@ -43,22 +43,22 @@ function FirstPurchaseBanner() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 bg-gray-900 text-white text-center border-b border-gray-900"
+      className="fixed top-0 left-0 right-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-center border-b border-[var(--text-primary)]"
       style={{ zIndex: 61, padding: "8px 16px" }}
     >
       <div className="relative mx-auto max-w-7xl flex items-center justify-center gap-3 flex-wrap">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55 hidden sm:inline">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] hidden sm:inline">
           Nuevo cliente
         </span>
         <span className="h-3.5 w-px bg-white/20 shrink-0 hidden sm:inline-block" />
-        <span className="text-xs sm:text-sm font-semibold">
-          Primera compra con <strong className="font-extrabold">10% de descuento</strong>
+        <span className="text-[13px] font-medium text-[var(--surface-canvas)]">
+          Primera compra con <strong className="font-semibold">10% de descuento</strong>
           <span className="mx-2 text-white/40">·</span>
-          Código <code className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/10 text-white tracking-wider">BIENVENIDO</code>
+          Código <code className="font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] tracking-wider">BIENVENIDO</code>
         </span>
         <button
           onClick={handleCopy}
-          className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-[11px] font-bold transition-colors border border-white/15"
+          className="px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/10 text-[11px] font-semibold transition-colors"
         >
           {copied ? "Copiado" : "Copiar"}
         </button>

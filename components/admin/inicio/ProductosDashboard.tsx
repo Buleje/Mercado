@@ -1,11 +1,12 @@
 "use client";
 
+import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
   Package, ShoppingCart, TrendingUp, AlertTriangle, Timer,
   Target, ArrowUpRight, ArrowDownRight, RefreshCw,
   ShoppingBasket, Layers, BarChart3,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
@@ -141,7 +142,7 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
     const allProds = [...prodMap.values()].sort((a, b) => b.ingresos - a.ingresos);
     const totalRevenue = allProds.reduce((a, p) => a + p.ingresos, 0);
     let cumulative = 0;
-    const claseAColor = "#10b981", claseBColor = "#3b82f6", claseCColor = "#94a3b8";
+    const claseAColor = "#00B4A6", claseBColor = "#3b82f6", claseCColor = "#94a3b8";
     const paretoWithClass = allProds.map(p => {
       cumulative += p.ingresos;
       const pct = totalRevenue > 0 ? (cumulative / totalRevenue) * 100 : 0;
@@ -219,8 +220,8 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
   if (loading) return <DashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-amber-500" />
-      <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
@@ -228,28 +229,28 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Productos Activos" value={String(data.productosActivos)} Icon={Package} accent="blue" />
-        <KPICard label="Uds. Vendidas" value={String(data.unidadesVendidas)} Icon={ShoppingCart} delta={data.dUnidades} accent="emerald" />
-        <KPICard label="Sin Movimiento" value={String(data.sinMovimiento)} Icon={Timer} accent={data.sinMovimiento > 5 ? "amber" : "emerald"} />
-        <KPICard label="Stock Crítico" value={String(data.stockCritico)} Icon={AlertTriangle} accent={data.stockCritico > 0 ? "red" : "emerald"} />
-        <KPICard label="Agotados" value={String(data.agotados)} Icon={Package} accent={data.agotados > 0 ? "red" : "emerald"} />
-        <KPICard label="Valor Inventario" value={fmt(data.valorInventario)} Icon={Layers} accent="violet" />
+        <StatCard label="Productos Activos" value={String(data.productosActivos)} icon={Package} />
+        <StatCard label="Uds. Vendidas" value={String(data.unidadesVendidas)} icon={ShoppingCart} delta={data.dUnidades} />
+        <StatCard label="Sin Movimiento" value={String(data.sinMovimiento)} icon={Timer} emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"} />
+        <StatCard label="Stock Crítico" value={String(data.stockCritico)} icon={AlertTriangle} emphasis={data.stockCritico > 0 ? "error" : "success"} />
+        <StatCard label="Agotados" value={String(data.agotados)} icon={Package} emphasis={data.agotados > 0 ? "error" : "success"} />
+        <StatCard label="Valor Inventario" value={fmt(data.valorInventario)} icon={Layers} />
       </div>
 
       {/* ── Rotación indicator ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
-        <RefreshCw className={cn("h-4 w-4", refreshing ? "animate-spin text-gray-400" : "text-gray-400")} />
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+        <RefreshCw className={cn("h-4 w-4", refreshing ? "animate-spin text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)]")} />
         <div className="flex-1 flex items-center gap-4 text-sm">
-          <span className="text-gray-500 dark:text-muted">Rotación promedio:</span>
-          <span className="font-bold text-gray-900 dark:text-foreground">{data.rotacionPromedio.toFixed(1)}x</span>
-          <span className="text-[11px] text-gray-400">(uds vendidas / stock promedio)</span>
+          <span className="text-[var(--text-secondary)] dark:text-muted">Rotación promedio:</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{data.rotacionPromedio.toFixed(1)}x</span>
+          <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">(uds vendidas / stock promedio)</span>
         </div>
         {data.claseA > 0 && (
-          <div className="hidden sm:flex items-center gap-3 text-[11px]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />A: {data.claseA}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />B: {data.claseB}</span>
+          <div className="hidden sm:flex items-center gap-3 text-[length:var(--ts-xs)]">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />A: {data.claseA}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />B: {data.claseB}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />C: {data.claseC}</span>
           </div>
         )}
@@ -271,32 +272,32 @@ function KPICard({ label, value, Icon, delta, accent }: {
 }) {
   const isPositive = delta != null ? delta >= 0 : false;
   const colorMap = {
-    emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
-    cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
-    amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },
-    red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500" },
+    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
+    blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
+    cyan: { bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30", icon: "text-cyan-500" },
+    amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: "text-amber-500" },
+    red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: "text-red-500" },
   };
   const c = colorMap[accent];
 
   return (
-    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
+    <div className="relative bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
         </div>
         {delta != null && (
           <div className={cn("flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-bold",
-            isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+            isPositive ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
           )}>
             {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(delta).toFixed(1)}%
           </div>
         )}
       </div>
-      <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">{label}</p>
     </div>
   );
 }
@@ -308,13 +309,13 @@ function DashboardSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-28" />
+          <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />
         ))}
       </div>
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-12" />
+      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-72" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-72" />
       </div>
     </div>
   );

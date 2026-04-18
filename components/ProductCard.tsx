@@ -2,7 +2,8 @@ import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Minus, Package, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows, BellRing } from "lucide-react";
+import { Plus, Minus, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows, BellRing } from "lucide-react";
+import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { getProductSlug } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -12,8 +13,34 @@ import { cn } from "@/lib/utils";
 import { trackAddToCart } from "@/lib/analytics";
 import type { Product } from "@/data/products";
 import { trackView } from "@/components/RecentlyViewed";
+import { SocioPriceBadge } from "@/components/marketplace/SocioPriceBadge";
+import { BodegaAbriendo } from "@/components/ui-system/illustrations/contextual";
+import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
+import {
+  VerduraFresca,
+  CarniceriaFresca,
+  LacteosRefresh,
+  BebidasVarias,
+  LimpiezaDomicilio,
+} from "@/components/ui-system/illustrations/categories";
 
-type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; isTopSeller?: boolean; comparePrice?: number; promoEndDate?: string };
+/**
+ * Mapeo de categoria de producto -> ilustracion del DS.
+ * Usa if/else explicit para cumplir react-hooks/static-components.
+ */
+function ProductCategoryIllustration({ category, className }: { category?: string; className?: string }) {
+  const cat = (category ?? "").toLowerCase();
+  const common = { size: 120, strokeWidth: 1.5, className } as const;
+  if (cat.includes("abarrote")) return <BodegaAbriendo {...common} />;
+  if (cat.includes("fruta") || cat.includes("verdura")) return <VerduraFresca {...common} />;
+  if (cat.includes("carne")) return <CarniceriaFresca {...common} />;
+  if (cat.includes("lacte") || cat.includes("láct")) return <LacteosRefresh {...common} />;
+  if (cat.includes("bebida")) return <BebidasVarias {...common} />;
+  if (cat.includes("limpie")) return <LimpiezaDomicilio {...common} />;
+  return <CanastaVacia {...common} />;
+}
+
+type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; isTopSeller?: boolean; comparePrice?: number; promoEndDate?: string; socioPrice?: number };
 
 /* U4: Selling fast tracker — counts add-to-cart events per product in a rolling 24h window */
 const SELLING_FAST_KEY = "buleje-selling-fast";
@@ -49,11 +76,13 @@ interface ProductCardProps {
   onQuickView?: (product: LiveProduct) => void;
 }
 
-const badgeColors: Record<string, string> = {
-  Oferta: "bg-red-500",
-  Popular: "bg-secondary",
-  Fresco: "bg-emerald-500",
-  Premium: "bg-violet-600",
+// Map string badges del backend → intent canónico del DS.
+const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
+  Popular: "popular",
+  Oferta: "offer",
+  Fresco: "fresh",
+  Nuevo: "new",
+  Premium: "premium",
 };
 
 function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
@@ -217,45 +246,44 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     >
       {/* Mejora 11: Badge "Mas vendido" — priorizado sobre otros badges */}
       {product.isTopSeller ? (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-sm bg-orange-500 animate-pulse flex items-center gap-1">
-          <Flame className="h-3 w-3" /> Mas vendido
-        </span>
+        <div className="absolute top-3 left-3 z-10">
+          <ProductBadge intent="popular" className="gap-1">
+            <Flame className="h-3 w-3" /> Mas vendido
+          </ProductBadge>
+        </div>
       ) : product.badge ? (
-        <span
-          className={cn(
-            "absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm",
-            badgeColors[product.badge] ?? "bg-primary"
-          )}
-        >
-          {product.badge}
-        </span>
+        <div className="absolute top-3 left-3 z-10">
+          <ProductBadge intent={BADGE_INTENT[product.badge] ?? "popular"}>
+            {product.badge}
+          </ProductBadge>
+        </div>
       ) : null}
 
       {/* Y1+M11: Offer countdown with urgency */}
       {offerCountdown && !offerExpired && (
         <span className={cn(
-          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[9px] font-bold shadow-sm flex items-center gap-0.5",
+          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[9px] font-semibold shadow-sm flex items-center gap-0.5",
           offerUrgent
-            ? "bg-red-500 text-white animate-pulse"
-            : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+            ? "bg-[var(--accent)] text-white"
+            : "bg-[var(--accent-soft)] text-[var(--accent)]"
         )}>
-          <Clock className="h-3 w-3" /> {offerUrgent ? "Ultima hora!" : offerCountdown}
+          <Clock className="h-3 w-3" /> {offerUrgent ? "Última hora" : offerCountdown}
         </span>
       )}
 
       {/* U4: Selling fast badge with count */}
       {sellingFast && !isOutOfStock && (
-        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[9px] font-bold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
+        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[9px] font-semibold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
           {soldCount >= 20 ? (
-            <span className="flex items-center gap-0.5 bg-red-500 text-white rounded-full px-2 py-0.5">
+            <span className="flex items-center gap-0.5 bg-[var(--accent)] text-white rounded-full px-2 py-0.5">
               <Star className="h-3 w-3 fill-current" /> Popular
             </span>
           ) : soldCount >= 5 ? (
-            <span className="flex items-center gap-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded-full px-2 py-0.5 animate-pulse">
+            <span className="flex items-center gap-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full px-2 py-0.5">
               <Flame className="h-3 w-3" /> {soldCount} vendidos hoy
             </span>
           ) : (
-            <span className="flex items-center gap-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded-full px-2 py-0.5 animate-pulse">
+            <span className="flex items-center gap-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full px-2 py-0.5">
               <Flame className="h-3 w-3" /> Vendiendo rápido
             </span>
           )}
@@ -267,21 +295,29 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           Agotado
         </span>
       )}
-      {!isOutOfStock && product.stock === 1 && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-red-500 animate-pulse">
-          ¡Última unidad!
+      {!isOutOfStock && product.socioPrice != null && product.socioPrice < product.price && (
+        <span className="absolute top-3 right-3 z-10">
+          <SocioPriceBadge
+            regularPrice={product.price}
+            socioPrice={product.socioPrice}
+          />
         </span>
       )}
+      {!isOutOfStock && product.stock === 1 && (
+        <div className="absolute top-3 right-3 z-10">
+          <ProductBadge intent="scarcity">Última unidad</ProductBadge>
+        </div>
+      )}
       {isLowStock && product.stock !== 1 && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-amber-500 animate-pulse">
-          ¡Quedan {product.stock}!
-        </span>
+        <div className="absolute top-3 right-3 z-10">
+          <ProductBadge intent="scarcity">Quedan {product.stock}</ProductBadge>
+        </div>
       )}
       {/* #30: Scarcity real — stock <= 5 even when stockMin not configured */}
       {isScarcity && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-red-500 animate-pulse">
-          Solo quedan {product.stock}
-        </span>
+        <div className="absolute top-3 right-3 z-10">
+          <ProductBadge intent="scarcity">Pocas unidades · {product.stock}</ProductBadge>
+        </div>
       )}
 
       <button
@@ -333,9 +369,11 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-300 gap-2">
-            <Package className="h-10 w-10" />
-            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Sin imagen</span>
+          <div className="h-full w-full flex items-center justify-center bg-[var(--surface-sunken)]">
+            <ProductCategoryIllustration
+              category={product.category}
+              className="text-[var(--text-tertiary)] opacity-60 group-hover:opacity-80 transition-opacity"
+            />
           </div>
         )}
 
@@ -361,8 +399,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-h-[9.5rem] sm:min-h-[10.5rem]">
         {/* Z1: Recently viewed badge */}
         {recentlyViewed && !isOutOfStock && (
-          <span className="text-[9px] font-semibold text-emerald-500 dark:text-emerald-400 flex items-center gap-1 -mt-0.5 mb--0.5">
-            👁 Lo viste hoy
+          <span className="text-[9px] font-semibold text-[var(--text-tertiary)] flex items-center gap-1 -mt-0.5 mb--0.5">
+            <Eye className="h-3 w-3" strokeWidth={1.75} /> Lo viste hoy
           </span>
         )}
         <Link href={`/tienda/${getProductSlug(product)}`} className="flex-1" onClick={(e) => { e.stopPropagation(); trackView(product); }}>
@@ -380,15 +418,24 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           </p>
         )}
 
-        {/* Star rating */}
+        {/* Star rating — editorial solid (Holded-style, no amber) */}
         {product.rating != null && product.rating > 0 && (
           <div className="flex items-center gap-1 -mt-0.5">
             <div className="flex items-center gap-px">
               {[1, 2, 3, 4, 5].map(s => (
-                <Star key={s} className={cn("h-3 w-3", s <= Math.round(product.rating!) ? "text-amber-400 fill-amber-400" : "text-gray-200 dark:text-gray-600")} />
+                <Star
+                  key={s}
+                  className={cn(
+                    "h-3 w-3",
+                    s <= Math.round(product.rating!)
+                      ? "text-[var(--text-primary)] fill-[var(--text-primary)]"
+                      : "text-[var(--rule-base)]"
+                  )}
+                  strokeWidth={1.5}
+                />
               ))}
             </div>
-            <span className="text-[10px] font-semibold text-muted">
+            <span className="text-[10px] font-semibold text-[var(--text-secondary)]">
               {product.rating.toFixed(1)}
               {product.reviewCount != null && <span className="ml-0.5">({product.reviewCount})</span>}
             </span>
@@ -397,29 +444,28 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
         {/* AA2: Bulk discount hint */}
         {product.unit === "und" && product.price <= 15 && !isOutOfStock && (
-          <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ → 5% off</span>
+          <span className="text-[9px] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
         )}
 
         <div>
           <div className="flex items-center justify-between gap-2 mt-1">
             <div>
-              {/* Mejora 12: Precio anterior tachado cuando hay descuento */}
+              {/* Precio canonico via DS: text-primary bold + previousPrice tachado */}
               {product.comparePrice && product.comparePrice > product.price ? (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs text-gray-400 line-through">S/{product.comparePrice.toFixed(2)}</span>
-                  <span className="text-base sm:text-lg font-extrabold text-green-700 dark:text-green-400 leading-none">
-                    S/{product.price.toFixed(2)}
-                  </span>
-                  <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 rounded font-bold">
+                <div className="flex flex-col gap-0.5">
+                  <ProductPrice
+                    price={product.price}
+                    previousPrice={product.comparePrice}
+                    unit={product.unit}
+                    size="md"
+                  />
+                  <span className="text-[10px] bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
                     -{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}%
                   </span>
                 </div>
               ) : (
-                <span className="text-base sm:text-lg font-extrabold text-primary leading-none">
-                  S/{product.price.toFixed(2)}
-                </span>
+                <ProductPrice price={product.price} unit={product.unit} size="md" />
               )}
-              <span className="block text-[10px] text-muted mt-0.5">/{product.unit}</span>
               {/* Stock indicator */}
               {product.stock != null && product.stock > 0 && !isLowStock && (
                 <span className="block text-[9px] font-semibold text-gray-400 dark:text-muted mt-0.5">
@@ -427,21 +473,21 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 </span>
               )}
               {isLowStock && (
-                <span className="block text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 animate-pulse">
-                  ⚠ ¡Solo quedan {product.stock}!
+                <span className="block text-[9px] font-semibold text-[var(--accent)] mt-0.5">
+                  Solo quedan {product.stock}
                 </span>
               )}
               {/* #30: Scarcity text below price */}
               {isScarcity && (
-                <span className="block text-[9px] font-bold text-red-600 dark:text-red-400 mt-0.5 animate-pulse">
-                  ⚠ Solo quedan {product.stock}
+                <span className="block text-[9px] font-semibold text-[var(--accent)] mt-0.5">
+                  Solo quedan {product.stock}
                 </span>
               )}
               {isOutOfStock && (
                 <Link
                   href={`/tienda/${getProductSlug(product)}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 hover:text-amber-700 dark:hover:text-amber-300 transition-colors pointer-events-auto"
+                  className="flex items-center gap-1 text-[9px] font-semibold text-[var(--text-secondary)] mt-0.5 hover:text-[var(--accent)] transition-colors pointer-events-auto"
                 >
                   <BellRing className="h-3 w-3" />
                   Avisarme cuando vuelva
@@ -454,7 +500,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 onClick={handleAdd}
                 className={cn(
                   "flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
-                  justAdded ? "bg-green-600 scale-95" : "bg-primary hover:bg-primary-dark"
+                  justAdded ? "bg-[var(--accent)] scale-95" : "bg-primary hover:bg-primary-dark"
                 )}
                 aria-label={`Agregar ${product.name}`}
               >

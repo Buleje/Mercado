@@ -17,22 +17,22 @@ export const metadata = {
  */
 function SuperAdminSkeleton() {
   return (
-    <div className="flex h-screen bg-gray-950 text-white">
+    <div className="flex h-screen bg-[var(--surface-canvas)] text-[var(--text-primary)]">
       {/* Sidebar skeleton */}
-      <aside className="hidden lg:flex w-56 flex-col border-r border-gray-800 bg-gray-900 p-4 gap-3">
-        <div className="h-8 w-28 rounded-lg bg-gray-800 animate-pulse mb-4" />
+      <aside className="hidden lg:flex w-56 flex-col border-r border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 gap-3">
+        <div className="h-8 w-28 rounded-lg bg-[var(--surface-sunken)] animate-pulse mb-4" />
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-8 w-full rounded-lg bg-gray-800/60 animate-pulse" />
+          <div key={i} className="h-8 w-full rounded-lg bg-[var(--surface-sunken)] animate-pulse" />
         ))}
       </aside>
       {/* Content skeleton */}
       <div className="flex-1 flex flex-col">
-        <div className="h-14 border-b border-gray-800 bg-gray-900/50" />
+        <div className="h-14 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]" />
         <div className="flex-1 p-6 space-y-4">
-          <div className="h-8 w-48 bg-gray-800 rounded-lg animate-pulse" />
+          <div className="h-8 w-48 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
           <div className="grid grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-28 bg-gray-800/40 rounded-xl animate-pulse" />
+              <div key={i} className="h-28 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
             ))}
           </div>
         </div>

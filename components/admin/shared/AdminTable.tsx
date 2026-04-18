@@ -60,10 +60,10 @@ function AdminTable({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-xs text-gray-500 dark:text-zinc-400 font-medium select-none",
+                    "px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium select-none",
                     alignCls,
                     col.width,
-                    col.sortable && onSort && "cursor-pointer hover:text-gray-700 dark:hover:text-zinc-200 transition-colors",
+                    col.sortable && onSort && "cursor-pointer hover:text-[var(--text-primary)] dark:hover:text-zinc-200 transition-colors",
                   )}
                   onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
                 >
@@ -79,16 +79,16 @@ function AdminTable({
                           className={cn(
                             "h-3.5 w-3.5",
                             isSorted && sortDir === "asc"
-                              ? "text-gray-900 dark:text-white"
-                              : "text-gray-300 dark:text-zinc-600",
+                              ? "text-[var(--text-primary)]"
+                              : "text-[var(--text-tertiary)] dark:text-zinc-600",
                           )}
                         />
                         <ChevronDown
                           className={cn(
                             "h-3.5 w-3.5",
                             isSorted && sortDir === "desc"
-                              ? "text-gray-900 dark:text-white"
-                              : "text-gray-300 dark:text-zinc-600",
+                              ? "text-[var(--text-primary)]"
+                              : "text-[var(--text-tertiary)] dark:text-zinc-600",
                           )}
                         />
                       </span>
@@ -104,7 +104,7 @@ function AdminTable({
             <tr>
               <td colSpan={columns.length} className="py-12">
                 {emptyState ?? (
-                  <p className="text-center text-sm text-gray-400 dark:text-zinc-500">
+                  <p className="text-center text-sm text-[var(--text-tertiary)] dark:text-zinc-500">
                     Sin datos disponibles
                   </p>
                 )}

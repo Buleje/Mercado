@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   MessageCircle,
@@ -15,7 +16,7 @@ import {
   Users,
   TrendingUp,
   Send,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -59,10 +60,10 @@ const NIVEL_META: Record<
     label: "Recordatorio amable",
     descripcion: "WhatsApp amable",
     colorBadge:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    colorRow: "hover:bg-emerald-50/50 dark:hover:bg-emerald-950/10",
+      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)]",
+    colorRow: "hover:bg-[var(--accent-soft)]/50",
     colorBtn:
-      "bg-emerald-600 hover:bg-emerald-700 text-white",
+      "bg-[var(--data-success)] hover:opacity-90 text-white",
     icon: MessageCircle,
     rango: "1-3 días",
   },
@@ -70,10 +71,10 @@ const NIVEL_META: Record<
     label: "Segundo aviso",
     descripcion: "WhatsApp + descuento 5%",
     colorBadge:
-      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-    colorRow: "hover:bg-yellow-50/50 dark:hover:bg-yellow-950/10",
+      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning)]",
+    colorRow: "hover:bg-[color-mix(in_oklch,var(--data-warning)_6%,transparent)]",
     colorBtn:
-      "bg-yellow-500 hover:bg-yellow-600 text-white",
+      "bg-[var(--data-warning)] hover:opacity-90 text-white",
     icon: Gift,
     rango: "4-7 días",
   },
@@ -81,10 +82,10 @@ const NIVEL_META: Record<
     label: "Aviso urgente",
     descripcion: "WhatsApp urgente + llamar",
     colorBadge:
-      "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    colorRow: "hover:bg-orange-50/50 dark:hover:bg-orange-950/10",
+      "bg-[color-mix(in_oklch,var(--data-warning)_18%,transparent)] text-[var(--data-warning)]",
+    colorRow: "hover:bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)]",
     colorBtn:
-      "bg-orange-500 hover:bg-orange-600 text-white",
+      "bg-[var(--data-warning)] hover:opacity-80 text-white",
     icon: AlertTriangle,
     rango: "8-15 días",
   },
@@ -92,10 +93,10 @@ const NIVEL_META: Record<
     label: "Bloqueo de crédito",
     descripcion: "Bloquear fiado + contacto personal",
     colorBadge:
-      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    colorRow: "hover:bg-red-50/50 dark:hover:bg-red-950/10",
+      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error)]",
+    colorRow: "hover:bg-[color-mix(in_oklch,var(--data-error)_6%,transparent)]",
     colorBtn:
-      "bg-red-600 hover:bg-red-700 text-white",
+      "bg-[var(--data-error)] hover:opacity-90 text-white",
     icon: Ban,
     rango: "16+ días",
   },
@@ -175,7 +176,7 @@ function KpiCard({
   colorClass: string;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex items-center gap-3">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  flex items-center gap-3">
       <div
         className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
@@ -185,14 +186,14 @@ function KpiCard({
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
+        <p className="text-xs text-[var(--text-tertiary)] font-medium truncate">
           {label}
         </p>
-        <p className="text-lg font-extrabold text-gray-900 dark:text-white leading-tight">
+        <p className="text-lg font-extrabold text-[var(--text-primary)] leading-tight">
           {value}
         </p>
         {sub && (
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">{sub}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{sub}</p>
         )}
       </div>
     </div>
@@ -217,18 +218,18 @@ function ModalDescuento({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-[#00B4A6]" />
-            <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+            <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">
               Ofrecer descuento
-            </h2>
+            </SectionTitle>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -236,13 +237,13 @@ function ModalDescuento({
 
         {/* Body */}
         <div className="p-5 space-y-3">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Cliente:{" "}
-            <span className="font-bold text-gray-900 dark:text-white">
+            <span className="font-bold text-[var(--text-primary)]">
               {nombre}
             </span>{" "}
             · Deuda:{" "}
-            <span className="font-bold text-red-600 dark:text-red-400">
+            <span className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
               S/{fiado.saldo.toFixed(2)}
             </span>
           </p>
@@ -253,14 +254,14 @@ function ModalDescuento({
             return (
               <div
                 key={op.desc}
-                className="border border-gray-200 dark:border-card-border rounded-xl p-3 space-y-2"
+                className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-bold text-[var(--text-primary)]">
                       {op.label}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       {op.sub} → solo paga{" "}
                       <span className="font-bold text-[#00B4A6]">
                         S/{montoFinal}
@@ -271,7 +272,7 @@ function ModalDescuento({
                     -{op.desc}%
                   </span>
                 </div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 italic bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-1.5">
                   {msg}
                 </p>
                 <button
@@ -372,20 +373,15 @@ export default function CobranzaInteligente() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-          Cargando cobranza...
-        </span>
-      </div>
+      <LoadingState message="Cargando cobranza..." />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-red-400" />
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         <button
           onClick={fetchFiados}
           className="text-xs text-[#00B4A6] hover:underline font-semibold"
@@ -401,10 +397,10 @@ export default function CobranzaInteligente() {
       {/* Titulo + refresh */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)]">
             Cobranza Inteligente
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          </SectionTitle>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             Escalado automático por días vencidos · Descuentos por pronto pago
           </p>
         </div>
@@ -431,7 +427,7 @@ export default function CobranzaInteligente() {
           value={String(enNivel1)}
           sub="Recordatorio amable"
           icon={CheckCircle2}
-          colorClass="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+          colorClass="bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
         />
         <KpiCard
           label="Nivel 2 o más"
@@ -445,13 +441,13 @@ export default function CobranzaInteligente() {
           value={String(fiados.filter((f) => f.diasVencido === 0).length)}
           sub="Al día o por vencer"
           icon={Users}
-          colorClass="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+          colorClass="bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
         />
       </div>
 
       {/* Acciones masivas por nivel */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+        <p className="text-xs font-bold text-[var(--text-tertiary)] mb-3">
           Envío masivo por nivel
         </p>
         <div className="flex flex-wrap gap-2">
@@ -474,7 +470,7 @@ export default function CobranzaInteligente() {
             );
           })}
           {fiados.length === 0 && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+            <p className="text-xs text-[var(--text-tertiary)] italic">
               No hay fiados pendientes
             </p>
           )}
@@ -483,16 +479,16 @@ export default function CobranzaInteligente() {
 
       {/* Filtro por nivel */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-bold text-gray-400">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
           Filtrar:
         </span>
         <button
           onClick={() => setFiltroNivel(0)}
           className={cn(
-            "px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors",
+            "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
             filtroNivel === 0
               ? "bg-[#00B4A6] text-white"
-              : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200"
+              : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] hover:bg-gray-200"
           )}
         >
           Todos ({fiados.length})
@@ -505,10 +501,10 @@ export default function CobranzaInteligente() {
               key={nivel}
               onClick={() => setFiltroNivel(nivel)}
               className={cn(
-                "px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors",
+                "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
                 filtroNivel === nivel
                   ? "ring-2 ring-offset-1 " + meta.colorBadge
-                  : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] hover:bg-gray-200"
               )}
             >
               Nivel {nivel} ({count})
@@ -519,36 +515,36 @@ export default function CobranzaInteligente() {
 
       {/* Tabla de cobranza */}
       {fiadosFiltrados.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-10 text-center">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center">
           <TrendingUp className="h-10 w-10 text-[#00B4A6]/40 mx-auto mb-2" />
-          <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-bold text-[var(--text-tertiary)]">
             {fiados.length === 0
               ? "No hay fiados vencidos pendientes"
               : "No hay fiados en este nivel"}
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
-              <thead className="sticky top-0 bg-white dark:bg-card z-10 border-b border-gray-100 dark:border-white/5">
+              <thead className="sticky top-0 bg-white dark:bg-card z-10 border-b border-[var(--rule-soft)] dark:border-white/5">
                 <tr className="text-left">
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs">
                     Cliente
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs text-right">
                     Monto
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-center">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs text-center">
                     Días vencido
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs">
                     Nivel
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs hidden md:table-cell">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs hidden md:table-cell">
                     Acción sugerida
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs text-right">
                     Acciones
                   </th>
                 </tr>
@@ -591,7 +587,7 @@ export default function CobranzaInteligente() {
                               .toUpperCase();
                             return (
                               <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold shrink-0"
                                 style={{ backgroundColor: color }}
                               >
                                 {initials}
@@ -599,10 +595,10 @@ export default function CobranzaInteligente() {
                             );
                           })()}
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate max-w-[140px]">
+                            <p className="font-medium text-[var(--text-primary)] truncate max-w-[140px]">
                               {nombre}
                             </p>
-                            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">
                               {f.customerId}
                             </p>
                           </div>
@@ -611,11 +607,11 @@ export default function CobranzaInteligente() {
 
                       {/* Monto */}
                       <td className="px-4 py-3 text-right">
-                        <span className="font-extrabold font-mono text-red-600 dark:text-red-400">
+                        <span className="font-extrabold font-mono text-[var(--data-error)] dark:text-[var(--data-error)]">
                           S/{f.saldo.toFixed(2)}
                         </span>
                         {f.total !== f.saldo && (
-                          <p className="text-[9px] text-gray-400 dark:text-gray-500">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                             de S/{f.total.toFixed(2)}
                           </p>
                         )}
@@ -627,7 +623,7 @@ export default function CobranzaInteligente() {
                           className={cn(
                             "inline-block px-2 py-0.5 rounded-full text-xs font-bold",
                             f.diasVencido === 0
-                              ? "bg-gray-100 text-gray-500 dark:bg-white/10"
+                              ? "bg-gray-100 text-[var(--text-secondary)] dark:bg-white/10"
                               : meta.colorBadge
                           )}
                         >
@@ -641,7 +637,7 @@ export default function CobranzaInteligente() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold",
+                            "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold",
                             meta.colorBadge
                           )}
                         >
@@ -652,20 +648,20 @@ export default function CobranzaInteligente() {
 
                       {/* Acción sugerida */}
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-[var(--text-tertiary)]">
                           {meta.descripcion}
                         </p>
                         {f.nivel === 3 && (
                           <a
                             href={`tel:${f.customerId.replace(/\D/g, "")}`}
-                            className="inline-flex items-center gap-1 text-[10px] text-orange-600 hover:underline font-bold mt-0.5"
+                            className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-warning)] hover:underline font-bold mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
                             Llamar
                           </a>
                         )}
                         {f.nivel === 4 && (
-                          <p className="text-[10px] text-red-600 dark:text-red-400 font-bold mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-bold mt-0.5">
                             Bloquear credito
                           </p>
                         )}
@@ -681,7 +677,7 @@ export default function CobranzaInteligente() {
                               abrirWhatsApp(f, msg);
                             }}
                             className={cn(
-                              "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors",
+                              "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                               meta.colorBtn
                             )}
                             title={`Enviar recordatorio nivel ${f.nivel}`}
@@ -694,7 +690,7 @@ export default function CobranzaInteligente() {
                           {f.nivel >= 2 && (
                             <button
                               onClick={() => setModalDescuento(f)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
                               title="Ofrecer descuento por pronto pago"
                             >
                               <Gift className="h-3 w-3" />
@@ -711,15 +707,15 @@ export default function CobranzaInteligente() {
           </div>
 
           {/* Footer con total */}
-          <div className="px-4 py-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/2">
+            <p className="text-xs text-[var(--text-tertiary)]">
               {fiadosFiltrados.length} fiado
               {fiadosFiltrados.length !== 1 ? "s" : ""} mostrado
               {fiadosFiltrados.length !== 1 ? "s" : ""}
             </p>
-            <p className="text-xs font-extrabold text-gray-900 dark:text-white font-mono">
+            <p className="text-xs font-extrabold text-[var(--text-primary)] font-mono">
               Total:{" "}
-              <span className="text-red-600 dark:text-red-400">
+              <span className="text-[var(--data-error)] dark:text-[var(--data-error)]">
                 S/
                 {fiadosFiltrados
                   .reduce((s, f) => s + f.saldo, 0)
@@ -738,7 +734,7 @@ export default function CobranzaInteligente() {
           return (
             <div
               key={nivel}
-              className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 flex items-start gap-2"
+              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 flex items-start gap-2"
             >
               <span
                 className={cn(
@@ -749,10 +745,10 @@ export default function CobranzaInteligente() {
                 <NivelIcon className="h-3.5 w-3.5" />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-extrabold text-gray-800 dark:text-white leading-tight">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] leading-tight">
                   Nivel {nivel}: {meta.label}
                 </p>
-                <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
                   {meta.rango} · {meta.descripcion}
                 </p>
               </div>

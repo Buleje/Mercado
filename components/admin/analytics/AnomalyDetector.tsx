@@ -57,9 +57,9 @@ function fmt(n: number) {
 }
 
 const SEVERITY_STYLE: Record<Severity, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  info:     { bg: "bg-emerald-50 dark:bg-emerald-900/20",   text: "text-emerald-700 dark:text-emerald-300",   border: "border-emerald-200 dark:border-emerald-800",   dot: "bg-emerald-500",  label: "Info" },
-  warning:  { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200 dark:border-amber-800", dot: "bg-amber-500", label: "Aviso" },
-  critical: { bg: "bg-red-50 dark:bg-red-900/20",     text: "text-red-700 dark:text-red-300",     border: "border-red-200 dark:border-red-800",     dot: "bg-red-500",   label: "Critico" },
+  info:     { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   text: "text-[var(--data-success)] dark:text-[var(--data-success)]",   border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",   dot: "bg-[var(--accent-soft)]",  label: "Info" },
+  warning:  { bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]", dot: "bg-[var(--data-warning)]", label: "Aviso" },
+  critical: { bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",     text: "text-[var(--data-error)] dark:text-[var(--data-error)]",     border: "border-[var(--data-error)] dark:border-[var(--data-error)]",     dot: "bg-[var(--data-error)]",   label: "Critico" },
 };
 
 // ── Anomaly Detection Logic ────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
               )}
             >
               <p className={cn("text-lg font-bold", style.text)}>{counts[sev]}</p>
-              <p className={cn("text-[10px] font-medium", style.text)}>{style.label}</p>
+              <p className={cn("text-[length:var(--ts-2xs)] font-medium", style.text)}>{style.label}</p>
             </div>
           );
         })}
@@ -213,13 +213,13 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
       <div className="flex flex-col gap-2 overflow-auto max-h-80">
         {anomalies.length === 0 && (
           <div className="text-center py-8">
-            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-2">
-              <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="w-8 h-8 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto mb-2">
+              <svg className="w-4 h-4 text-[var(--data-success)] dark:text-[var(--data-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Sin anomalias detectadas en este periodo</p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-xs text-[var(--text-tertiary)]">Sin anomalias detectadas en este periodo</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
               Necesitas al menos 10 dias de ventas para deteccion estadistica
             </p>
           </div>
@@ -240,23 +240,23 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
                 <div className={cn("w-2 h-2 rounded-full mt-1 shrink-0", style.dot)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={cn("text-[10px] font-bold", style.text)}>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold", style.text)}>
                       {style.label}
                     </span>
-                    <span className={cn("text-[10px]", style.text)}>
+                    <span className={cn("text-[length:var(--ts-2xs)]", style.text)}>
                       {anomaly.type}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto shrink-0">
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-auto shrink-0">
                       {anomaly.when}
                     </span>
                   </div>
                   <p className={cn("text-xs font-medium leading-snug", style.text)}>
                     {anomaly.what}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 leading-snug">
                     Desviacion: {anomaly.deviation}
                   </p>
-                  <p className="text-[10px] text-gray-600 dark:text-gray-300 mt-1 leading-snug italic">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-1 leading-snug italic">
                     Posible causa: {anomaly.cause}
                   </p>
                 </div>
@@ -267,7 +267,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
       </div>
 
       {anomalies.length > 0 && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center">
           Umbral estadistico: media ± 2 desviaciones estandar
         </p>
       )}

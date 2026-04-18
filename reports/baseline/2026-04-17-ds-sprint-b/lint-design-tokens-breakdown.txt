@@ -1,0 +1,7 @@
+   2765 ds-no-decorative-color-admin
+    253 ds-no-inline-alert-pattern
+    190 ds-no-raw-table-in-admin
+    111 ds-no-raw-loader-block-in-admin
+     34 ds-no-style-inline-any-color
+     26 ds-no-style-color-inline
+     16 ds-no-heading-with-design-class

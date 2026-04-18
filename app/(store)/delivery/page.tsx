@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Package } from "lucide-react";
+import { Package, Truck } from "lucide-react";
 
 // ── Mejora 13: Vista simplificada para el repartidor ────────────────────────
 
@@ -126,8 +126,8 @@ export default function DeliveryPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg w-full max-w-sm p-6 space-y-5">
           <div className="text-center">
-            <div className="h-16 w-16 rounded-2xl bg-[#00B4A6] flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">🚚</span>
+            <div className="h-16 w-16 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center mx-auto mb-3">
+              <Truck className="h-7 w-7" strokeWidth={1.75} aria-hidden />
             </div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">Repartidor</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Buleje · Entregas</p>
@@ -161,9 +161,9 @@ export default function DeliveryPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-[#00B4A6] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-[var(--accent)] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <span className="text-xl">🚚</span>
+          <Truck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           <div>
             <p className="font-bold text-sm">{driverName}</p>
             <p className="text-[10px] text-white/70">{orders.length} entrega{orders.length !== 1 ? "s" : ""} pendiente{orders.length !== 1 ? "s" : ""}</p>

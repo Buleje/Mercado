@@ -1,7 +1,9 @@
 'use client';
 
+import { CardTitle } from "@buleje/design-system";
+
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2 } from "@buleje/design-system/icons";
 import { cn } from '@/lib/utils';
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
@@ -117,11 +119,11 @@ type Props = {
 function Section({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return (
-    <div className="border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+    <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
       >
         {title}
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -255,20 +257,20 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
 
   if (!isOpen) return null;
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground bg-white dark:bg-surface focus:border-primary outline-none text-sm placeholder:text-gray-400";
-  const labelCls = "block text-xs font-semibold text-gray-500 dark:text-muted mb-1";
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-surface focus:border-primary outline-none text-sm placeholder:text-[var(--text-tertiary)]";
+  const labelCls = "block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1";
   const selectCls = cn(inputCls, "appearance-none");
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[92dvh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
             {isEdit ? 'Editar proveedor' : 'Nuevo proveedor'}
-          </h3>
+          </CardTitle>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-            <X className="h-5 w-5 text-gray-500 dark:text-muted" />
+            <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
           </button>
         </div>
 
@@ -281,7 +283,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
               format === 'simple'
                 ? "bg-[#00B4A6] text-white"
-                : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+                : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
             )}
           >
             <Zap className="h-3.5 w-3.5" /> Simple
@@ -293,7 +295,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
               format === 'completo'
                 ? "bg-[#00B4A6] text-white"
-                : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+                : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
             )}
           >
             <ClipboardList className="h-3.5 w-3.5" /> Completo
@@ -317,7 +319,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                         "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                         form.tipoPersona === t
                           ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                          : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
                       {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -393,7 +395,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                           "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                           form.tipoPersona === t
                             ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                            : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                            : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
                         {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -588,7 +590,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
 
           {/* Error */}
           {error && (
-            <p className="text-xs text-red-600 dark:text-red-400 font-semibold bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
           )}
 
           {/* Actions */}
@@ -596,7 +598,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
             >
               Cancelar
             </button>

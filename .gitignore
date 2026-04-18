@@ -50,6 +50,12 @@ skills-lock.json
 /.claude/.last-session-id
 /.claude/**/.tmp/
 /.claude/skills/*/\.tmp/
+# Runtime metrics y handoffs — local per-session only
+/.claude/metrics/
+/.claude/session_handoff.md
+/.husky/.last-test-run.log
+/.husky/.last-test-run.FAILED
+/.husky/.showcase-auto-pending
 # Symlinks heredados del layout viejo (.agents/) quedan ignorados por la línea .agents/ arriba
 /.claude/skills/supabase
 /.claude/skills/supabase-postgres-best-practices
@@ -126,3 +132,5 @@ lint-compact.txt
 lint-output.txt
 tsc-errors.log
 check-tenants.sql
+reports/smoke-test/
+reports/baseline/2026-04-17-ds-sprint-c/lint-design-tokens-pre.txt

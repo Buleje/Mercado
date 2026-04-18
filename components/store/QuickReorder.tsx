@@ -107,7 +107,7 @@ export default function QuickReorder() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="bg-gradient-to-r from-[#00B4A6]/5 to-[#f97316]/5 dark:from-[#00B4A6]/10 dark:to-[#f97316]/10 rounded-2xl border border-[#00B4A6]/15 dark:border-[#00B4A6]/25 p-4 sm:p-5"
+        className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-4 sm:p-5"
       >
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 flex items-center justify-center flex-shrink-0">
@@ -116,7 +116,7 @@ export default function QuickReorder() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
                 Tu ultimo pedido
               </h3>
               <button
@@ -127,7 +127,7 @@ export default function QuickReorder() {
                 <X className="h-3.5 w-3.5 text-gray-400" />
               </button>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5 truncate">
               {itemNames}{moreCount > 0 ? ` y ${moreCount} mas` : ""}
             </p>
             <div className="flex items-center gap-3 mt-3">

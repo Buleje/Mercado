@@ -1,4 +1,5 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -6,13 +7,13 @@ import type { LucideIcon } from "lucide-react";
  * AdminModuleHeader — Encabezado estándar para TODOS los módulos admin.
  *
  * Tipografía fija (NO cambiar sin actualizar todos los módulos):
- *   - Título (h1): text-xl / font-bold / text-gray-900
- *   - Subtítulo: text-sm / text-gray-500
+ *   - Título (h1): text-xl / font-bold / text-[var(--text-primary)]
+ *   - Subtítulo: text-sm / text-[var(--text-secondary)]
  *   - Icono: 44×44 rounded-xl, fondo tint por categoría
  *
  * Props de color (tint por categoría):
- *   - bgTint: clase Tailwind del fondo del icono (e.g. "bg-emerald-50 dark:bg-emerald-900/20")
- *   - iconColorClass: clase Tailwind del color del icono (e.g. "text-emerald-600 dark:text-emerald-400")
+ *   - bgTint: clase Tailwind del fondo del icono (e.g. "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")
+ *   - iconColorClass: clase Tailwind del color del icono (e.g. "text-[var(--data-success)] dark:text-[var(--data-success)]")
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 interface AdminModuleHeaderProps {
@@ -42,13 +43,13 @@ export default function AdminModuleHeader({
 }: AdminModuleHeaderProps) {
   return (
     <div className={cn("flex items-center gap-4 mb-6", className)}>
-      <Icon className="w-6 h-6 text-gray-400 dark:text-zinc-500 shrink-0" />
+      <Icon className="w-6 h-6 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0" />
       <div className="flex-1 min-w-0">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+        <SectionTitle as="h1" className="text-xl truncate">
           {title}
-        </h1>
+        </SectionTitle>
         {description && (
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5 truncate">
+          <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5 truncate">
             {description}
           </p>
         )}

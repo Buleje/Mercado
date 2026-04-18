@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Search, Gift, Loader2, CheckCircle, XCircle, Award, Star } from "lucide-react";
+import { Search, Gift, Loader2, CheckCircle, XCircle, Award, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -34,10 +35,10 @@ type RedeemHistory = {
 };
 
 const TIER_STYLES: Record<string, string> = {
-  bronce: "bg-amber-100 text-amber-800",
-  plata: "bg-gray-100 text-gray-700",
-  oro: "bg-yellow-100 text-yellow-800",
-  diamante: "bg-cyan-100 text-cyan-800",
+  bronce: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  plata: "bg-gray-100 text-[var(--text-primary)]",
+  oro: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  diamante: "bg-[var(--data-info-100)] text-[var(--data-info)]",
 };
 
 // ── Componente principal ───────────────────────────────────────────────────────
@@ -168,7 +169,7 @@ export default function LoyaltyRedeemTab() {
             "fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition",
             toast.type === "ok"
               ? "bg-primary text-white"
-              : "bg-red-600 text-white",
+              : "bg-[var(--data-error)] text-white",
           )}
         >
           {toast.type === "ok" ? (
@@ -181,11 +182,11 @@ export default function LoyaltyRedeemTab() {
       )}
 
       {/* Buscador de cliente */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-800">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <CardTitle className="mb-4 flex items-center gap-2 font-semibold text-[var(--text-primary)]">
           <Search className="h-5 w-5 text-primary" />
           Buscar cliente
-        </h3>
+        </CardTitle>
         <div className="flex gap-2">
           <input
             type="tel"
@@ -194,7 +195,7 @@ export default function LoyaltyRedeemTab() {
             onChange={(e) => setPhone(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={12}
-            className="min-h-[44px] flex-1 rounded-lg border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
+            className="min-h-[44px] flex-1 rounded-lg border border-[var(--rule-base)] px-4 text-sm text-[var(--text-primary)] outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
           />
           <button
             onClick={searchCustomer}
@@ -207,7 +208,7 @@ export default function LoyaltyRedeemTab() {
 
         {/* Info del cliente */}
         {notFound && (
-          <p className="mt-3 text-sm text-red-500">Cliente no encontrado</p>
+          <p className="mt-3 text-sm text-[var(--data-error)]">Cliente no encontrado</p>
         )}
         {customer && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-50 p-4">
@@ -219,14 +220,14 @@ export default function LoyaltyRedeemTab() {
                 .join("")}
             </div>
             <div>
-              <p className="font-semibold text-gray-800">
+              <p className="font-semibold text-[var(--text-primary)]">
                 {customer.name}
               </p>
-              <p className="text-sm text-gray-500">{customer.phone}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{customer.phone}</p>
             </div>
             <div className="ml-auto flex flex-col items-end gap-1">
               <div className="flex items-center gap-1.5">
-                <Star className="h-4 w-4 text-yellow-500" />
+                <Star className="h-4 w-4 text-[var(--data-warning)]" />
                 <span className="text-lg font-bold text-primary">
                   {customer.loyaltyPoints.toLocaleString()} pts
                 </span>
@@ -246,16 +247,14 @@ export default function LoyaltyRedeemTab() {
 
       {/* Grid de recompensas */}
       <div>
-        <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+        <CardTitle className="mb-3 flex items-center gap-2 font-semibold text-[var(--text-primary)]">
           {/* TODO(#1): non-standard — #f4a261 is brand warm orange but not mapped to secondary token (#f97316) */}
           <Gift className="h-5 w-5 text-[#f4a261]" />
           Recompensas disponibles
-        </h3>
+        </CardTitle>
 
         {loadingRewards ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-7 w-7 animate-spin text-primary" />
-          </div>
+          <LoadingState />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {rewards.map((reward) => {
@@ -269,16 +268,16 @@ export default function LoyaltyRedeemTab() {
                   className={cn(
                     "flex flex-col gap-3 rounded-xl border p-5 transition",
                     hasEnough
-                      ? "border-primary/30 bg-green-50"
-                      : "border-gray-200 bg-white",
+                      ? "border-primary/30 bg-[var(--accent-soft)]"
+                      : "border-[var(--rule-base)] bg-white",
                   )}
                 >
                   <div className="text-3xl">{reward.icon}</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-semibold text-[var(--text-primary)]">
                       {reward.name}
                     </p>
-                    <p className="mt-0.5 text-sm text-gray-500">
+                    <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
                       {reward.description}
                     </p>
                   </div>
@@ -293,7 +292,7 @@ export default function LoyaltyRedeemTab() {
                         "flex min-h-[44px] items-center gap-1.5 rounded-xl px-4 text-sm font-medium transition",
                         hasEnough && customer
                           ? "bg-primary text-white hover:bg-primary-dark"
-                          : "cursor-not-allowed bg-gray-100 text-gray-400",
+                          : "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)]",
                       )}
                     >
                       {isRedeeming ? (
@@ -304,7 +303,7 @@ export default function LoyaltyRedeemTab() {
                     </button>
                   </div>
                   {customer && !hasEnough && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       Faltan{" "}
                       {(reward.pointsCost - customer.loyaltyPoints).toLocaleString()} pts
                     </p>
@@ -319,11 +318,11 @@ export default function LoyaltyRedeemTab() {
       {/* Historial de canjes recientes */}
       {history.length > 0 && (
         <div>
-          <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+          <CardTitle className="mb-3 flex items-center gap-2 font-semibold text-[var(--text-primary)]">
             <Award className="h-5 w-5 text-primary" />
             Canjes recientes (esta sesión)
-          </h3>
-          <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200">
+          </CardTitle>
+          <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-[var(--rule-base)]">
             {history.map((h, i) => (
               <div
                 key={i}
@@ -331,16 +330,16 @@ export default function LoyaltyRedeemTab() {
               >
                 <span className="text-2xl">{h.rewardIcon}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-gray-800">
+                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">
                     {h.name}
                   </p>
-                  <p className="text-xs text-gray-500">{h.rewardName}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{h.rewardName}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-primary">
                     -{h.pointsCost.toLocaleString()} pts
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-[var(--text-tertiary)]">
                     {new Date(h.redeemedAt).toLocaleTimeString("es-PE", {
                       hour: "2-digit",
                       minute: "2-digit",

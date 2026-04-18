@@ -6,7 +6,7 @@ import {
   Target, Trophy, Flame, TrendingUp, Pencil, Check, X, Calendar,
   Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -148,7 +148,7 @@ function SemaMesTab() {
   }, [monthlyGoal]);
 
   const pct = Math.min(100, monthlyGoal > 0 ? (monthTotal / monthlyGoal) * 100 : 0);
-  const barColor = pct >= 70 ? "bg-emerald-500" : pct >= 30 ? "bg-amber-500" : "bg-red-500";
+  const barColor = pct >= 70 ? "bg-[var(--accent-soft)]" : pct >= 30 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
 
   const handleSave = () => {
     const val = Number(tempGoal);
@@ -177,38 +177,38 @@ function SemaMesTab() {
       <WeeklyGoalCard sales={[]} />
 
       {/* Card mensual */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
               <Calendar className="w-4 h-4 text-primary" />
             </span>
-            <span className="text-xs font-semibold text-gray-500">
+            <span className="text-xs font-semibold text-[var(--text-secondary)]">
               Meta del mes
             </span>
           </div>
           {!editing ? (
             <button
               onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); }}
-              className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
             >
               <Pencil className="w-3 h-3" /> Editar
             </button>
           ) : (
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-500 mr-1">S/</span>
+              <span className="text-xs text-[var(--text-secondary)] mr-1">S/</span>
               <input
                 type="number"
                 value={tempGoal}
                 onChange={(e) => setTempGoal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
                 autoFocus
-                className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-primary"
+                className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)] outline-none focus:border-primary"
               />
-              <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-50 text-emerald-600">
+              <button onClick={handleSave} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success)]">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-red-50 text-red-500">
+              <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error)]">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -218,19 +218,19 @@ function SemaMesTab() {
         {/* Barra de progreso */}
         <div className="h-4 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className={cn("h-full rounded-full transition-all duration-700 ease-out", barColor)}
+            className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", barColor)}
             style={{ width: `${pct}%` }}
           />
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className={cn("font-bold", monthTotal === 0 ? "text-gray-300" : "text-gray-900")}>
+          <span className={cn("font-bold", monthTotal === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>
             {formatCurrency(monthTotal)}
-            <span className="text-xs font-normal text-gray-400 ml-1">
+            <span className="text-xs font-normal text-[var(--text-tertiary)] ml-1">
               de {formatCurrency(monthlyGoal, { decimals: 0 })} ({pct.toFixed(0)}%)
             </span>
           </span>
           {pct >= 100 && (
-            <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] px-2 py-1 rounded-full">
               <Trophy className="w-3.5 h-3.5" /> Meta alcanzada!
             </span>
           )}
@@ -238,12 +238,12 @@ function SemaMesTab() {
 
         {/* Mini-calendario */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
             Días con meta alcanzada
           </p>
           <div className="grid grid-cols-7 gap-1">
             {["L","M","M","J","V","S","D"].map((d, i) => (
-              <div key={i} className="text-[9px] text-center text-gray-400 font-bold pb-0.5">{d}</div>
+              <div key={i} className="text-[length:var(--ts-2xs)] text-center text-[var(--text-tertiary)] font-bold pb-0.5">{d}</div>
             ))}
             {/* Celdas vacías de offset */}
             {Array.from({ length: calendarDays.offset }).map((_, i) => (
@@ -261,12 +261,12 @@ function SemaMesTab() {
                   key={day}
                   title={key}
                   className={cn(
-                    "aspect-square rounded flex items-center justify-center text-[10px] font-semibold",
+                    "aspect-square rounded flex items-center justify-center text-[length:var(--ts-2xs)] font-semibold",
                     hit
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-[var(--accent-soft)] text-white"
                       : isPast
-                      ? "bg-red-100 text-red-400"
-                      : "bg-gray-100 text-gray-400"
+                      ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                      : "bg-gray-100 text-[var(--text-tertiary)]"
                   )}
                 >
                   {day}
@@ -342,15 +342,15 @@ function LogrosTab() {
     <div className="space-y-6">
       {/* Resumen */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          <span className="font-bold text-gray-900">{totalUnlocked}</span>
+        <p className="text-sm text-[var(--text-secondary)]">
+          <span className="font-bold text-[var(--text-primary)]">{totalUnlocked}</span>
           {" "}de{" "}
-          <span className="font-bold text-gray-900">{ACHIEVEMENTS_DEF.length}</span>
+          <span className="font-bold text-[var(--text-primary)]">{ACHIEVEMENTS_DEF.length}</span>
           {" "}logros desbloqueados
         </p>
         <div className="h-2 w-32 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-primary transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
             style={{ width: `${(totalUnlocked / ACHIEVEMENTS_DEF.length) * 100}%` }}
           />
         </div>
@@ -366,10 +366,10 @@ function LogrosTab() {
               <div
                 key={a.id}
                 className={cn(
-                  "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
+                  "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                   isUnlocked
-                    ? "border-primary/40 bg-gradient-to-b from-primary/5 to-primary/10 "
-                    : "border-gray-200 bg-gray-50 opacity-40"
+                    ? "border-[var(--text-primary)] bg-[var(--surface-raised)] elev-1"
+                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-40"
                 )}
               >
                 {/* Efecto brillo si desbloqueado */}
@@ -382,27 +382,27 @@ function LogrosTab() {
                   "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border",
                   isUnlocked
                     ? "bg-white border-primary/30 text-primary"
-                    : "bg-gray-100 border-gray-200 text-gray-400",
+                    : "bg-gray-100 border-[var(--rule-base)] text-[var(--text-tertiary)]",
                 )}>
                   <a.Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <div>
                   <p className={cn(
                     "text-xs font-bold leading-tight",
-                    isUnlocked ? "text-gray-900" : "text-gray-600"
+                    isUnlocked ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
                   )}>
                     {a.name}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 leading-tight">
                     {a.desc}
                   </p>
                 </div>
                 {isUnlocked ? (
-                  <span className="text-[9px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                     {unlocked[a.id]}
                   </span>
                 ) : (
-                  <span className="text-[9px] font-semibold text-gray-400">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
                     Bloqueado
                   </span>
                 )}
@@ -460,9 +460,9 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
 
   const _kpiCards = [
     { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-primary", bg: "bg-primary/10" },
-    { label: "Logradas",        value: String(kpis.achieved), icon: Trophy,       color: "text-amber-600",   bg: "bg-amber-50"        },
-    { label: "Racha (días)",    value: String(kpis.streak),   icon: Flame,        color: "text-orange-600", bg: "bg-orange-50"      },
-    { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-emerald-600",     bg: "bg-emerald-50"          },
+    { label: "Logradas",        value: String(kpis.achieved), icon: Trophy,       color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)]"        },
+    { label: "Racha (días)",    value: String(kpis.streak),   icon: Flame,        color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]"      },
+    { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-[var(--data-success)]",     bg: "bg-[var(--accent-soft)]"          },
   ] as const;
 
   return (

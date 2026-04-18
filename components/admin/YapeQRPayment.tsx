@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Check, Clock, Smartphone } from "lucide-react";
+import { X, Check, Clock, Smartphone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
   const timerPercent = (secondsLeft / TIMER_SECONDS) * 100;
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
       {/* Tabs */}
       <div className="flex">
         {(["yape", "plin"] as const).map(p => {
@@ -163,7 +163,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
                 "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all",
                 active
                   ? "text-white"
-                  : "text-gray-400 dark:text-muted hover:text-gray-600 dark:hover:text-foreground bg-gray-50 dark:bg-surface"
+                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] dark:hover:text-foreground bg-gray-50 dark:bg-surface"
               )}
               style={active ? { backgroundColor: cfg.color } : undefined}
             >
@@ -178,7 +178,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
       <div className="p-4 sm:p-6 space-y-4">
         {/* Amount */}
         <div className="text-center">
-          <p className="text-xs font-bold text-gray-400 dark:text-muted mb-1">Monto a cobrar</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Monto a cobrar</p>
           <p className="text-3xl sm:text-4xl font-extrabold" style={{ color: config.color }}>
             {fmt(amount)}
           </p>
@@ -189,15 +189,15 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
           <div
             className={cn(
               "relative rounded-xl p-3 border-2 transition-colors",
-              expired ? "border-gray-200 dark:border-card-border opacity-50" : ""
+              expired ? "border-[var(--rule-base)] dark:border-card-border opacity-50" : ""
             )}
             style={!expired ? { borderColor: config.color } : undefined}
           >
             <canvas ref={canvasRef} width={240} height={240} className="rounded-lg" />
             {expired && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-card/80 rounded-xl">
-                <Clock className="h-8 w-8 text-gray-400 dark:text-muted mb-2" />
-                <p className="text-sm font-bold text-gray-600 dark:text-foreground">QR expirado</p>
+                <Clock className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted mb-2" />
+                <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-foreground">QR expirado</p>
                 <button
                   onClick={handleRegenerate}
                   className="mt-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-colors"
@@ -213,12 +213,12 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
         {/* Instructions */}
         <div className={cn(
           "rounded-xl p-3 text-center",
-          provider === "yape" ? "bg-purple-50 dark:bg-purple-950/20" : "bg-teal-50 dark:bg-teal-950/20"
+          provider === "yape" ? "bg-[var(--surface-sunken)]" : "bg-teal-50 dark:bg-teal-950/20"
         )}>
           <p className="text-xs font-semibold" style={{ color: config.color }}>
             Pide al cliente que escanee el QR con {config.label}
           </p>
-          <p className="text-[11px] text-gray-500 dark:text-muted mt-1">
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted mt-1">
             Abre {config.label} &gt; Escanear QR &gt; Confirmar pago de {fmt(amount)}
           </p>
         </div>
@@ -227,19 +227,19 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
         {!expired && (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-gray-500 dark:text-muted flex items-center gap-1">
+              <span className="font-semibold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
                 <Clock className="h-3 w-3" /> Tiempo restante
               </span>
               <span className={cn(
                 "font-bold tabular-nums",
-                secondsLeft <= 60 ? "text-red-500" : "text-gray-700 dark:text-foreground"
+                secondsLeft <= 60 ? "text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground"
               )}>
                 {minutes}:{seconds.toString().padStart(2, "0")}
               </span>
             </div>
             <div className="w-full h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-1000 ease-linear"
+                className="h-full rounded-full transition-all duration-[var(--dur-slower)] ease-linear"
                 style={{
                   width: `${timerPercent}%`,
                   backgroundColor: secondsLeft <= 60 ? "#ef4444" : config.color,
@@ -253,7 +253,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
           >
             <X className="h-4 w-4" />
             Cancelar
@@ -261,7 +261,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
           <button
             onClick={onConfirm}
             disabled={expired}
-            className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400"
+            className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:bg-gray-400"
           >
             <Check className="h-4 w-4" />
             Pago recibido

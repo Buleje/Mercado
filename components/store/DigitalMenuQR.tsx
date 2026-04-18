@@ -1,5 +1,6 @@
- 
 "use client";
+
+ 
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
@@ -109,7 +110,7 @@ export default function DigitalMenuQR() {
   const totalPrice = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-32">
+    <div className="min-h-screen bg-[var(--surface-canvas)] pb-32">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-primary text-white px-4 py-4 shadow-lg">
         <h1 className="text-2xl font-bold tracking-tight">Menu Digital</h1>
@@ -132,7 +133,7 @@ export default function DigitalMenuQR() {
       </header>
 
       {/* Categories */}
-      <div className="sticky top-[108px] z-10 bg-gray-50 dark:bg-gray-950 px-4 py-3 flex gap-2 overflow-x-auto scrollbar-none">
+      <div className="sticky top-[108px] z-10 bg-[var(--surface-canvas)] px-4 py-3 flex gap-2 overflow-x-auto scrollbar-none">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -141,7 +142,7 @@ export default function DigitalMenuQR() {
               "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors border",
               activeCategory === cat
                 ? "bg-primary text-white border-primary"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)]"
             )}
           >
             {cat}
@@ -167,7 +168,7 @@ export default function DigitalMenuQR() {
               return (
                 <div
                   key={product.id}
-                  className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow border border-gray-100 dark:border-gray-800"
+                  className="bg-[var(--surface-raised)] rounded-2xl overflow-hidden shadow border border-[var(--rule-base)]"
                 >
                   {product.image ? (
                     <div className="relative w-full h-32">
@@ -181,13 +182,13 @@ export default function DigitalMenuQR() {
                     </div>
                   ) : (
                     <div className="w-full h-32 bg-primary/10 flex items-center justify-center">
-                      <span className="text-4xl text-primary/30 font-black">
+                      <span className="text-4xl text-primary/30 font-extrabold">
                         {product.name[0]}
                       </span>
                     </div>
                   )}
                   <div className="p-3">
-                    <p className="font-semibold text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
+                    <p className="font-semibold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">
                       {product.name}
                     </p>
                     <p className="text-primary dark:text-[#2dd4bf] font-bold mt-1">
@@ -202,7 +203,7 @@ export default function DigitalMenuQR() {
                       <div className="flex items-center gap-2 mt-2">
                         <button
                           onClick={() => changeQty(product.id, -1)}
-                          className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
+                          className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center"
                           aria-label="Quitar"
                         >
                           <Minus className="w-3 h-3" />
@@ -237,7 +238,7 @@ export default function DigitalMenuQR() {
       {totalItems > 0 && (
         <button
           onClick={() => setShowCart(true)}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-primary text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-base"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-primary text-white px-8 py-4 rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 font-bold text-base"
         >
           <ShoppingCart className="w-5 h-5" />
           Ver pedido ({totalItems}) — {fmt(totalPrice)}
@@ -251,14 +252,14 @@ export default function DigitalMenuQR() {
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowCart(false)}
           />
-          <div className="relative bg-white dark:bg-gray-900 rounded-t-3xl max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
+          <div className="relative bg-[var(--surface-raised)] rounded-t-3xl max-h-[80vh] overflow-y-auto p-6 shadow-[var(--shadow-xl)]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-bold text-[var(--text-primary)]">
                 Mi pedido
               </h2>
               <button
                 onClick={() => setShowCart(false)}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-full hover:bg-[var(--surface-sunken)]"
                 aria-label="Cerrar"
               >
                 <X className="w-5 h-5" />
@@ -268,7 +269,7 @@ export default function DigitalMenuQR() {
               {cart.map((item) => (
                 <div key={item.id} className="py-3 flex items-center gap-3">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white text-sm">
+                    <p className="font-medium text-[var(--text-primary)] text-sm">
                       {item.name}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -278,7 +279,7 @@ export default function DigitalMenuQR() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => changeQty(item.id, -1)}
-                      className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
+                      className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center"
                       aria-label="Quitar"
                     >
                       <Minus className="w-3 h-3" />
@@ -300,8 +301,8 @@ export default function DigitalMenuQR() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white">
+            <div className="mt-4 pt-4 border-t border-[var(--rule-base)]">
+              <div className="flex justify-between text-lg font-bold text-[var(--text-primary)]">
                 <span>Total</span>
                 <span>{fmt(totalPrice)}</span>
               </div>

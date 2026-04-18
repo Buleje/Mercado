@@ -57,7 +57,7 @@ export function StatusDot({
           />
         )}
       </span>
-      {label && <span className="text-gray-700 dark:text-gray-300">{label}</span>}
+      {label && <span className="text-[var(--text-secondary)]">{label}</span>}
     </span>
   );
 }

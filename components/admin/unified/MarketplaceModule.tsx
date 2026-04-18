@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import {
   Store,
@@ -24,7 +25,7 @@ import {
   Gift,
   ExternalLink,
   Zap,
-  ArrowRight } from "lucide-react";
+  ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -107,17 +108,17 @@ interface CommissionSummary {
 
 // ── Status badge helpers ──
 const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:   { label: "Pendiente",  className: "bg-amber-100 text-amber-700" },
-  confirmado:  { label: "Confirmado", className: "bg-emerald-100 text-emerald-700" },
-  en_camino:   { label: "En camino",  className: "bg-purple-100 text-purple-700" },
-  entregado:   { label: "Entregado",  className: "bg-emerald-100 text-emerald-700" },
-  cancelado:   { label: "Cancelado",  className: "bg-red-100 text-red-600" },
+  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
+  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  en_camino:   { label: "En camino",  className: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
+  entregado:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
 };
 
 const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-amber-100 text-amber-700",     icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-emerald-100 text-emerald-700",         icon: CheckCircle },
-  pagado:     { label: "Pagado",     className: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",     icon: Clock },
+  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]",         icon: CheckCircle },
+  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: CheckCircle },
 };
 
 const MODULE_ID = "marketplace";
@@ -180,33 +181,33 @@ export function AdminMarketplaceOverview() {
     <div className="space-y-4 mb-6">
       <div className="flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-primary" />
-        <h3 className="text-sm font-bold text-gray-900">Resumen del Marketplace</h3>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Resumen del Marketplace</CardTitle>
+        <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
       </div>
 
       {/* KPIs globales */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-primary" },
-          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-emerald-600" },
-          { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-purple-600" },
-          { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-amber-600" },
-          { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-red-600" : "text-emerald-600" },
+          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-[var(--data-success)]" },
+          { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-[var(--text-secondary)]" },
+          { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-[var(--data-warning)]" },
+          { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-3 ">
+          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 ">
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">{label}</p>
-            <p className="text-[9px] text-gray-400 mt-0.5">{sub}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Top tiendas + Últimos pedidos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
-          <h4 className="text-xs font-bold text-gray-700 mb-3">Top tiendas este mes</h4>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+          <h4 className="text-xs font-bold text-[var(--text-primary)] mb-3">Top tiendas este mes</h4>
           {data.topStores.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-3">Sin datos</p>
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-3">Sin datos</p>
           ) : (
             <div className="space-y-2.5">
               {data.topStores.map((s, i) => (
@@ -215,20 +216,20 @@ export function AdminMarketplaceOverview() {
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 truncate">{s.name}</p>
-                    <p className="text-[10px] text-gray-400">{s.orders} pedido(s)</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.name}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{s.orders} pedido(s)</p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-600 shrink-0">{fmtS(s.revenue)}</span>
+                  <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(s.revenue)}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
-          <h4 className="text-xs font-bold text-gray-700 mb-3">Últimos pedidos marketplace</h4>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+          <h4 className="text-xs font-bold text-[var(--text-primary)] mb-3">Últimos pedidos marketplace</h4>
           {data.recentOrders.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-3">Sin pedidos</p>
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-3">Sin pedidos</p>
           ) : (
             <div className="space-y-2.5">
               {data.recentOrders.slice(0, 5).map((o) => {
@@ -236,13 +237,13 @@ export function AdminMarketplaceOverview() {
                 return (
                   <div key={o.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 truncate">{o.customerName}</p>
-                      <p className="text-[10px] text-gray-400">{o.storeName}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{o.customerName}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{o.storeName}</p>
                     </div>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.className)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
                       {cfg.label}
                     </span>
-                    <span className="text-xs font-bold text-gray-700 shrink-0">{fmtS(o.total)}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] shrink-0">{fmtS(o.total)}</span>
                   </div>
                 );
               })}
@@ -251,7 +252,7 @@ export function AdminMarketplaceOverview() {
         </div>
       </div>
 
-      <div className="border-b border-gray-200" />
+      <div className="border-b border-[var(--rule-base)]" />
     </div>
   );
 }
@@ -312,7 +313,7 @@ void DashboardTab;
 
   if (loading) return <TableSkeleton />;
   if (!data) return (
-    <div className="text-center py-12 text-gray-400">
+    <div className="text-center py-12 text-[var(--text-tertiary)]">
       <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
       <p className="text-sm">No hay datos del marketplace todavía.</p>
       <p className="text-xs mt-1">Configura tu tienda primero en la pestaña &ldquo;Mi Tienda Personal&rdquo;.</p>
@@ -331,44 +332,44 @@ void DashboardTab;
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
-          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-emerald-600" },
-          { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-purple-600" },
-          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-amber-500" },
+          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success)]" },
+          { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
+          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning)]" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 ">
+          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 ">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
-            <p className="text-[9px] text-gray-400 mt-0.5">{sub}</p>
+            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
 
       {/* ── Resumen todos los canales (Marketplace + Directa + POS) ── */}
       {data.allChannels && (data.allChannels.today.orders > data.today.orders || data.allChannels.month.orders > data.month.orders) && (
-        <div className="bg-linear-to-r from-primary/5 to-emerald-50 border border-primary/20 rounded-xl p-4 ">
-          <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 ">
+          <CardTitle className="text-xs font-bold text-[var(--text-primary)] mb-2 flex items-center gap-1.5">
             <Store className="h-3.5 w-3.5 text-primary" />
             Resumen total (todos los canales)
-          </h3>
+          </CardTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <p className="text-lg font-extrabold text-primary">{fmtS(data.allChannels.today.revenue)}</p>
-              <p className="text-[10px] text-gray-500">Hoy (total)</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Hoy (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-emerald-600">{data.allChannels.today.orders}</p>
-              <p className="text-[10px] text-gray-500">Pedidos hoy (total)</p>
+              <p className="text-lg font-extrabold text-[var(--data-success)]">{data.allChannels.today.orders}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pedidos hoy (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-purple-600">{fmtS(data.allChannels.month.revenue)}</p>
-              <p className="text-[10px] text-gray-500">Este mes (total)</p>
+              <p className="text-lg font-extrabold text-[var(--text-secondary)]">{fmtS(data.allChannels.month.revenue)}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Este mes (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-amber-600">{data.allChannels.month.orders}</p>
-              <p className="text-[10px] text-gray-500">Pedidos mes (total)</p>
+              <p className="text-lg font-extrabold text-[var(--data-warning)]">{data.allChannels.month.orders}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pedidos mes (total)</p>
             </div>
           </div>
-          <p className="text-[9px] text-gray-400 mt-2">Incluye ventas directas, POS y marketplace.</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">Incluye ventas directas, POS y marketplace.</p>
         </div>
       )}
 
@@ -376,13 +377,13 @@ void DashboardTab;
       {(data.products.lowStock > 0 || data.pendingReviews > 0) && (
         <div className="flex flex-wrap gap-2">
           {data.products.lowStock > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] text-xs font-semibold">
               <AlertCircle className="h-3.5 w-3.5" />
               {data.products.lowStock} producto(s) con stock bajo
             </div>
           )}
           {data.pendingReviews > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-semibold">
               <MessageSquare className="h-3.5 w-3.5" />
               {data.pendingReviews} reseña(s) por moderar
             </div>
@@ -391,10 +392,10 @@ void DashboardTab;
       )}
 
       {/* ── Acciones rápidas del vendedor ── */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
         <div className="flex items-center gap-2 mb-3">
           <Zap className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-gray-800">Qué hacer ahora</h3>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Qué hacer ahora</CardTitle>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Pedidos pendientes */}
@@ -409,23 +410,23 @@ void DashboardTab;
             className={cn(
               "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
               (data.pendingOrders ?? 0) > 0
-                ? "border-amber-200 bg-amber-50 hover:bg-amber-100"
-                : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] hover:bg-[var(--data-warning-100)]"
+                : "border-[var(--rule-base)] bg-gray-50 hover:bg-gray-100"
             )}
           >
             <div className={cn(
               "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-              (data.pendingOrders ?? 0) > 0 ? "bg-amber-200 text-amber-700" : "bg-gray-200 text-gray-500"
+              (data.pendingOrders ?? 0) > 0 ? "bg-[var(--data-warning)] text-[var(--data-warning)]" : "bg-gray-200 text-[var(--text-secondary)]"
             )}>
               <ShoppingCart className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
                 {(data.pendingOrders ?? 0) > 0
                   ? `${data.pendingOrders} pedido(s) por confirmar`
                   : "Sin pedidos pendientes"}
               </p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
                 Ir a órdenes <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -443,23 +444,23 @@ void DashboardTab;
             className={cn(
               "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
               data.products.lowStock > 0
-                ? "border-red-200 bg-red-50 hover:bg-red-100"
-                : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                ? "border-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)]"
+                : "border-[var(--rule-base)] bg-gray-50 hover:bg-gray-100"
             )}
           >
             <div className={cn(
               "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-              data.products.lowStock > 0 ? "bg-red-200 text-red-700" : "bg-gray-200 text-gray-500"
+              data.products.lowStock > 0 ? "bg-[var(--data-error)] text-[var(--data-error)]" : "bg-gray-200 text-[var(--text-secondary)]"
             )}>
               <Package className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
                 {data.products.lowStock > 0
                   ? `${data.products.lowStock} producto(s) stock bajo`
                   : "Stock OK"}
               </p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
                 Ver productos <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -476,8 +477,8 @@ void DashboardTab;
               <ExternalLink className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">Ver mi tienda</p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-sm font-bold text-[var(--text-primary)]">Ver mi tienda</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
                 Abrir en marketplace <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -488,14 +489,14 @@ void DashboardTab;
             href="/marketplace"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-lg border border-purple-200 bg-purple-50 text-left transition-all hover:shadow-sm hover:bg-purple-100"
+            className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-left transition-all hover:shadow-sm hover:bg-[var(--surface-sunken)]"
           >
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-purple-200 text-purple-600">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[var(--surface-sunken)] text-[var(--text-primary)]">
               <Store className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">Ir al Marketplace</p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-sm font-bold text-[var(--text-primary)]">Ir al Marketplace</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
                 Ver todas las tiendas <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -504,8 +505,8 @@ void DashboardTab;
       </div>
 
       {/* ── Gráfico de ventas 7 días (barras simples CSS) ── */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 ">
-        <h3 className="text-sm font-bold text-gray-800 mb-3">Ventas últimos 7 días</h3>
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Ventas últimos 7 días</CardTitle>
         <div className="flex items-end gap-1.5 h-32">
           {data.dailySales.map((day) => {
             const pct = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
@@ -514,12 +515,12 @@ void DashboardTab;
               <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full relative" style={{ height: "96px" }}>
                   <div
-                    className="absolute bottom-0 w-full rounded-t-lg bg-primary transition-all duration-500"
+                    className="absolute bottom-0 w-full rounded-t-lg bg-primary transition-all duration-[var(--dur-slow)]"
                     style={{ height: `${Math.max(pct, 4)}%` }}
                     title={`${fmtS(day.revenue)} — ${day.orders} pedido(s)`}
                   />
                 </div>
-                <span className="text-[9px] text-gray-400 capitalize">{dayLabel}</span>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{dayLabel}</span>
               </div>
             );
           })}
@@ -528,10 +529,10 @@ void DashboardTab;
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* ── Top productos ── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
-          <h3 className="text-sm font-bold text-gray-800 mb-3">Top 5 productos del mes</h3>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Top 5 productos del mes</CardTitle>
           {data.topProducts.length === 0 ? (
-            <p className="text-xs text-gray-400 py-4 text-center">Sin ventas este mes</p>
+            <p className="text-xs text-[var(--text-tertiary)] py-4 text-center">Sin ventas este mes</p>
           ) : (
             <div className="space-y-2.5">
               {data.topProducts.map((p, i) => (
@@ -540,10 +541,10 @@ void DashboardTab;
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 truncate">{p.name}</p>
-                    <p className="text-[10px] text-gray-400">{p.qty} vendido(s)</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.qty} vendido(s)</p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-600 shrink-0">{fmtS(p.revenue)}</span>
+                  <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(p.revenue)}</span>
                 </div>
               ))}
             </div>
@@ -551,10 +552,10 @@ void DashboardTab;
         </div>
 
         {/* ── Últimos pedidos ── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
-          <h3 className="text-sm font-bold text-gray-800 mb-3">Últimos pedidos</h3>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Últimos pedidos</CardTitle>
           {data.recentOrders.length === 0 ? (
-            <p className="text-xs text-gray-400 py-4 text-center">Sin pedidos aún</p>
+            <p className="text-xs text-[var(--text-tertiary)] py-4 text-center">Sin pedidos aún</p>
           ) : (
             <div className="space-y-2.5">
               {data.recentOrders.map((o) => {
@@ -562,8 +563,8 @@ void DashboardTab;
                 return (
                   <div key={o.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 truncate">{o.customerName}</p>
-                      <p className="text-[10px] text-gray-400">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{o.customerName}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         {o.itemsCount} producto(s) · {new Date(o.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
                       </p>
                     </div>
@@ -571,17 +572,17 @@ void DashboardTab;
                       <button
                         onClick={() => handleQuickConfirm(o.id)}
                         disabled={confirmingId === o.id}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-[10px] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
                       >
                         <CheckCircle className="h-3 w-3" />
                         {confirmingId === o.id ? "..." : "Confirmar"}
                       </button>
                     ) : (
-                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.className)}>
+                      <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
                         {cfg.label}
                       </span>
                     )}
-                    <span className="text-xs font-bold text-gray-700 shrink-0">{fmtS(o.total)}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] shrink-0">{fmtS(o.total)}</span>
                   </div>
                 );
               })}
@@ -592,19 +593,19 @@ void DashboardTab;
 
       {/* ── Inventario rápido ── */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className="text-xl font-extrabold text-primary">{data.products.published}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Publicados</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Publicados</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center ">
-          <p className="text-xl font-extrabold text-gray-600">{data.products.total}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Total productos</p>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
+          <p className="text-xl font-extrabold text-[var(--text-secondary)]">{data.products.total}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Total productos</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center ">
-          <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-amber-600" : "text-emerald-600")}>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
+          <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>
             {data.products.lowStock}
           </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Stock bajo</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Stock bajo</p>
         </div>
       </div>
     </div>
@@ -668,19 +669,19 @@ function TiendaTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl p-5  space-y-5">
-        <h3 className="font-bold text-gray-900 text-sm">Configuración de la tienda</h3>
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5  space-y-5">
+        <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Configuración de la tienda</CardTitle>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Slug */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-600">
+            <label className="text-xs font-bold text-[var(--text-secondary)]">
               URL de la tienda (slug)
             </label>
             <input
@@ -688,58 +689,58 @@ function TiendaTab() {
               value={store.slug}
               onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
               placeholder="mi-bodega"
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
             {store.slug && (
-              <p className="text-[10px] text-gray-400">marketplace.com/{store.slug}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">marketplace.com/{store.slug}</p>
             )}
           </div>
 
           {/* Nombre */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-600">Nombre de la tienda</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre de la tienda</label>
             <input
               type="text"
               value={store.name}
               onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
               placeholder="Mi Bodega"
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
           {/* Categoría */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-600">Categoría principal</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Categoría principal</label>
             <div className="relative">
               <select
                 value={store.category}
                 onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
               >
                 {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
             </div>
           </div>
 
           {/* Zona */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-600">Zona de cobertura</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Zona de cobertura</label>
             <div className="relative">
               <select
                 value={store.zone}
                 onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
               >
                 {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
             </div>
           </div>
 
           {/* Comisión */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-600">Comisión acordada (%)</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Comisión acordada (%)</label>
             <input
               type="number"
               min={0}
@@ -747,13 +748,13 @@ function TiendaTab() {
               step={0.5}
               value={store.commissionRate}
               onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
           {/* Logo URL */}
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-bold text-gray-600">Logo de la tienda</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Logo de la tienda</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ImageUpload
                 value={store.logoUrl}
@@ -765,7 +766,7 @@ function TiendaTab() {
                 aspectRatio="square"
               />
               <div className="flex flex-col gap-2">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[var(--text-secondary)]">
                   Sube tu logo o pega una URL. Se mostrará en la tarjeta de tu tienda en el marketplace.
                 </p>
                 <input
@@ -773,10 +774,10 @@ function TiendaTab() {
                   value={store.logoUrl}
                   onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
                   placeholder="https://... o sube una imagen"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
                 {store.logoUrl && (
-                  <div className="flex items-center gap-2 text-xs text-green-600">
+                  <div className="flex items-center gap-2 text-xs text-[var(--data-success)]">
                     <CheckCircle className="h-3.5 w-3.5" />
                     Logo configurado
                   </div>
@@ -788,21 +789,21 @@ function TiendaTab() {
 
         {/* Descripción */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-gray-600">Descripción de la tienda</label>
+          <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción de la tienda</label>
           <textarea
             rows={3}
             value={store.description}
             onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
             placeholder="Describe tu bodega, horarios, especialidades..."
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
+            className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
           />
         </div>
 
         {/* Estado activo */}
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-[var(--rule-base)]">
           <div>
-            <p className="text-sm font-bold text-gray-900">Tienda activa en marketplace</p>
-            <p className="text-xs text-gray-500">Los clientes podrán encontrar y comprar en tu tienda</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Tienda activa en marketplace</p>
+            <p className="text-xs text-[var(--text-secondary)]">Los clientes podrán encontrar y comprar en tu tienda</p>
           </div>
           <button
             onClick={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
@@ -819,17 +820,17 @@ function TiendaTab() {
         </div>
 
         {/* Modo vacaciones */}
-        <div className="space-y-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="space-y-3 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-900">🏖️ Modo vacaciones</p>
-              <p className="text-xs text-gray-500">Pausa pedidos temporalmente sin despublicar tu tienda</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Modo vacaciones</p>
+              <p className="text-xs text-[var(--text-secondary)]">Pausa pedidos temporalmente sin despublicar tu tienda</p>
             </div>
             <button
               onClick={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
               className={cn(
                 "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
-                store.vacationMode ? "bg-amber-500" : "bg-gray-300"
+                store.vacationMode ? "bg-[var(--data-warning)]" : "bg-gray-300"
               )}
             >
               <span className={cn(
@@ -840,13 +841,13 @@ function TiendaTab() {
           </div>
           {store.vacationMode && (
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Mensaje para tus clientes (opcional)</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Mensaje para tus clientes (opcional)</label>
               <input
                 type="text"
                 value={store.vacationMessage ?? ""}
                 onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
                 placeholder="Ej: Volvemos el lunes 15. ¡Gracias por tu paciencia!"
-                className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 transition-all"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--data-warning)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)] focus:border-[var(--data-warning)] transition-all"
               />
             </div>
           )}
@@ -854,7 +855,7 @@ function TiendaTab() {
 
         <div className="flex items-center justify-end gap-3 pt-2">
           {saved && (
-            <span className="text-sm text-emerald-600 font-semibold flex items-center gap-1">
+            <span className="text-sm text-[var(--data-success)] font-semibold flex items-center gap-1">
               <CheckCircle className="h-4 w-4" /> Guardado
             </span>
           )}
@@ -943,7 +944,7 @@ function ProductosTab() {
     <div className="space-y-6">
       {/* Barra de acciones: Sincronizar inventario */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-[var(--text-secondary)]">
           {products.length} producto{products.length !== 1 ? "s" : ""} en marketplace
         </p>
         <button
@@ -957,14 +958,14 @@ function ProductosTab() {
       </div>
 
       {syncResult && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl text-sm text-[var(--data-success)]">
           <CheckCircle className="h-4 w-4 shrink-0" />
           {syncResult}
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
@@ -972,43 +973,43 @@ function ProductosTab() {
       )}
 
       {products.length === 0 && !error ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-[var(--text-tertiary)]">
           <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin productos publicados</p>
           <p className="text-xs mt-1">Activa productos desde tu catálogo para mostrarlos en el marketplace.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Producto</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Precio retail</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Mayorista</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Stock</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Publicado</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Producto</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Precio retail</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Mayorista</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Stock</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Publicado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {products.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-gray-900">{p.name}</p>
-                      <p className="text-xs text-gray-400 font-mono">{p.sku}</p>
+                      <p className="font-semibold text-[var(--text-primary)]">{p.name}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] font-mono">{p.sku}</p>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
                       S/{p.retailPrice.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-600">
+                    <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
                       S/{p.wholesalePrice.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className={cn(
                         "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold",
-                        p.stock > 10 ? "bg-emerald-100 text-emerald-700"
-                          : p.stock > 0 ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700"
+                        p.stock > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          : p.stock > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                          : "bg-[var(--data-error-100)] text-[var(--data-error)]"
                       )}>
                         {p.stock}
                       </span>
@@ -1021,8 +1022,8 @@ function ProductosTab() {
                         className={cn(
                           "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors min-w-25 justify-center",
                           p.isActive
-                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]"
+                            : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
                         )}
                       >
                         {toggling === p.id ? (
@@ -1070,7 +1071,7 @@ function OrdenesTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
@@ -1078,46 +1079,46 @@ function OrdenesTab() {
       )}
 
       {orders.length === 0 && !error ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-[var(--text-tertiary)]">
           <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin órdenes del marketplace aún</p>
           <p className="text-xs mt-1">Las órdenes recibidas desde el marketplace aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Cliente</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Total</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Fecha</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Cliente</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Total</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Fecha</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {orders.map((o) => {
                   const statusConfig = ORDER_STATUS_CONFIG[o.status] ?? {
                     label: o.status,
-                    className: "bg-gray-100 text-gray-600",
+                    className: "bg-gray-100 text-[var(--text-secondary)]",
                   };
                   return (
                     <tr key={o.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
-                        <p className="font-mono text-xs font-bold text-gray-900">
+                        <p className="font-mono text-xs font-bold text-[var(--text-primary)]">
                           #{o.id.slice(-8).toUpperCase()}
                         </p>
-                        <p className="text-xs text-gray-400">{o.itemsCount} producto{o.itemsCount !== 1 ? "s" : ""}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{o.itemsCount} producto{o.itemsCount !== 1 ? "s" : ""}</p>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-900">{o.customerName}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-900">S/{o.total.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">{o.customerName}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">S/{o.total.toFixed(2)}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", statusConfig.className)}>
                           {statusConfig.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-500">
+                      <td className="px-4 py-3 text-right text-xs text-[var(--text-secondary)]">
                         {new Date(o.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
                       </td>
                     </tr>
@@ -1213,7 +1214,7 @@ function ComisionesTab() {
   return (
     <div className="space-y-5">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
@@ -1223,12 +1224,12 @@ function ComisionesTab() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { key: "pendiente", label: "Por pagar", color: "text-amber-600", bg: "bg-amber-50" },
-          { key: "liquidado", label: "Liquidado",  color: "text-emerald-600",  bg: "bg-emerald-50" },
-          { key: "pagado",    label: "Pagado",     color: "text-emerald-600", bg: "bg-emerald-50" },
+          { key: "pendiente", label: "Por pagar", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]" },
+          { key: "liquidado", label: "Liquidado",  color: "text-[var(--data-success)]",  bg: "bg-[var(--accent-soft)]" },
+          { key: "pagado",    label: "Pagado",     color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
         ].map(({ key, label, color, bg }) => (
-          <div key={key} className={cn("rounded-xl p-4 border border-gray-200 ", bg)}>
-            <p className="text-xs font-bold text-gray-500">{label}</p>
+          <div key={key} className={cn("rounded-xl p-4 border border-[var(--rule-base)] ", bg)}>
+            <p className="text-xs font-bold text-[var(--text-secondary)]">{label}</p>
             <p className={cn("text-2xl font-extrabold mt-1", color)}>
               S/{(summary[key as keyof CommissionSummary] || 0).toFixed(2)}
             </p>
@@ -1239,7 +1240,7 @@ function ComisionesTab() {
       {/* Filters + Bulk actions */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Filtrar:</span>
+          <span className="text-xs text-[var(--text-secondary)]">Filtrar:</span>
           {[
             { value: "all", label: "Todos" },
             { value: "pendiente", label: "Pendiente" },
@@ -1253,7 +1254,7 @@ function ComisionesTab() {
                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 filterStatus === f.value
                   ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
               )}
             >
               {f.label}
@@ -1264,7 +1265,7 @@ function ComisionesTab() {
           <button
             onClick={handleBulkPay}
             disabled={markingPaid === "bulk"}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
           >
             <DollarSign className="h-3.5 w-3.5" />
             {markingPaid === "bulk" ? "Procesando..." : `Pagar todo liquidado (S/${summary.liquidado.toFixed(2)})`}
@@ -1273,22 +1274,22 @@ function ComisionesTab() {
       </div>
 
       {filtered.length === 0 && !error ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-[var(--text-tertiary)]">
           <DollarSign className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin comisiones {filterStatus !== "all" ? `en estado "${filterStatus}"` : "registradas aún"}</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Total orden</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Comisión</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Fecha</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Acción</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Total orden</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Comisión</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Fecha</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1298,19 +1299,19 @@ function ComisionesTab() {
                   return (
                     <tr key={e.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
-                        <p className="font-mono text-xs font-bold text-gray-900">
+                        <p className="font-mono text-xs font-bold text-[var(--text-primary)]">
                           #{e.orderId.slice(-8).toUpperCase()}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-600">S/{e.orderTotal.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-900">S/{e.amount.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">S/{e.orderTotal.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">S/{e.amount.toFixed(2)}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold", sc.className)}>
                           <StatusIcon className="h-3 w-3" />
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-500">
+                      <td className="px-4 py-3 text-right text-xs text-[var(--text-secondary)]">
                         {new Date(e.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -1318,7 +1319,7 @@ function ComisionesTab() {
                           <button
                             onClick={() => handleMarkPaid(e.id)}
                             disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold hover:bg-emerald-200 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
                             title="Marcar como pagado"
                           >
                             <CheckCircle className="h-3 w-3" />
@@ -1326,7 +1327,7 @@ function ComisionesTab() {
                           </button>
                         )}
                         {e.status === "pagado" && (
-                          <span className="text-[10px] text-gray-400">✓ Pagado</span>
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pagado</span>
                         )}
                       </td>
                     </tr>
@@ -1447,7 +1448,7 @@ function CuponesTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{coupons.length} cupón(es)</p>
+        <p className="text-sm text-[var(--text-secondary)]">{coupons.length} cupón(es)</p>
         <button
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition"
@@ -1457,24 +1458,24 @@ function CuponesTab() {
       </div>
 
       {showForm && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+        <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Código</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Código</label>
               <input
                 type="text"
                 placeholder="BIENVENIDO10"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Tipo</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Tipo</label>
               <select
                 value={form.discountType}
                 onChange={(e) => setForm({ ...form, discountType: e.target.value as "percent" | "fixed" })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
@@ -1483,7 +1484,7 @@ function CuponesTab() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
                 Valor {form.discountType === "percent" ? "(%)" : "(S/)"}
               </label>
               <input
@@ -1491,55 +1492,55 @@ function CuponesTab() {
                 placeholder="10"
                 value={form.discountValue}
                 onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Compra mínima (S/)</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Compra mínima (S/)</label>
               <input
                 type="number"
                 placeholder="Opcional"
                 value={form.minPurchase}
                 onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Usos máximos</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Usos máximos</label>
               <input
                 type="number"
                 placeholder="Ilimitado"
                 value={form.maxUses}
                 onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Descripción</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Descripción</label>
               <input
                 type="text"
                 placeholder="Descuento de bienvenida"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Vence el</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Vence el</label>
               <input
                 type="datetime-local"
                 value={form.expiresAt}
                 onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg text-sm text-gray-600 border border-gray-300 hover:bg-gray-100 transition"
+              className="px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-gray-100 transition"
             >
               Cancelar
             </button>
@@ -1555,7 +1556,7 @@ function CuponesTab() {
       )}
 
       {coupons.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-[var(--text-tertiary)]">
           <Ticket className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No hay cupones todavía</p>
           <p className="text-xs mt-1">Crea un cupón para atraer más clientes al marketplace.</p>
@@ -1574,19 +1575,19 @@ function CuponesTab() {
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-sm text-primary">{c.code}</span>
                   <span className={cn(
-                    "text-[10px] font-semibold px-2 py-0.5 rounded-full",
-                    c.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-500"
+                    "text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full",
+                    c.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-200 text-[var(--text-secondary)]"
                   )}>
                     {c.active ? "Activo" : "Inactivo"}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   {c.discountType === "percent" ? `${c.discountValue}%` : `S/${c.discountValue.toFixed(2)}`} de descuento
                   {c.minPurchase ? ` · Mín S/${c.minPurchase.toFixed(2)}` : ""}
                   {c.maxUses ? ` · ${c.usedCount}/${c.maxUses} usos` : ` · ${c.usedCount} usos`}
                   {c.expiresAt ? ` · Vence ${new Date(c.expiresAt).toLocaleDateString("es-PE")}` : ""}
                 </p>
-                {c.description && <p className="text-xs text-gray-400 mt-0.5">{c.description}</p>}
+                {c.description && <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{c.description}</p>}
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-2">
                 <button
@@ -1594,14 +1595,14 @@ function CuponesTab() {
                   title={c.active ? "Desactivar" : "Activar"}
                   className="p-1.5 rounded-lg hover:bg-gray-100 transition"
                 >
-                  {c.active ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-emerald-500" />}
+                  {c.active ? <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" /> : <Eye className="h-4 w-4 text-[var(--data-success)]" />}
                 </button>
                 <button
                   onClick={() => deleteCoupon(c.id)}
                   title="Eliminar"
-                  className="p-1.5 rounded-lg hover:bg-red-50 transition"
+                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition"
                 >
-                  <X className="h-4 w-4 text-red-400" />
+                  <X className="h-4 w-4 text-[var(--data-error)]" />
                 </button>
               </div>
             </div>
@@ -1625,9 +1626,9 @@ interface LoyaltyData {
 }
 
 const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
-  bronce: { label: "Bronce", className: "bg-amber-100 text-amber-700", minPoints: "0 - 499" },
-  plata:  { label: "Plata",  className: "bg-gray-100 text-gray-600",   minPoints: "500 - 999" },
-  oro:    { label: "Oro",    className: "bg-yellow-100 text-yellow-700", minPoints: "1000+" },
+  bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "0 - 499" },
+  plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",   minPoints: "500 - 999" },
+  oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
 };
 
 function FidelidadTab() {
@@ -1681,7 +1682,7 @@ function FidelidadTab() {
         {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
           <div key={key} className={cn("rounded-xl p-2 text-xs font-semibold", cfg.className)}>
             <p className="text-sm">{cfg.label}</p>
-            <p className="text-[10px] font-normal mt-0.5">{cfg.minPoints} pts</p>
+            <p className="text-[length:var(--ts-2xs)] font-normal mt-0.5">{cfg.minPoints} pts</p>
           </div>
         ))}
       </div>
@@ -1694,7 +1695,7 @@ function FidelidadTab() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-          className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
         />
         <button
           onClick={searchCustomer}
@@ -1706,39 +1707,39 @@ function FidelidadTab() {
       </div>
 
       {data && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           {/* Customer info */}
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-sm">{data.name}</p>
-              <p className="text-xs text-gray-500">{data.phone}</p>
+              <p className="text-xs text-[var(--text-secondary)]">{data.phone}</p>
             </div>
             <div className="text-right">
               <p className="text-2xl font-extrabold text-primary">{data.points}</p>
-              <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-gray-600")}>
+              <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-[var(--text-secondary)]")}>
                 {TIER_CONFIG[data.tier]?.label ?? data.tier}
               </span>
             </div>
           </div>
 
-          <p className="text-xs text-gray-400">Gasto total: S/{data.totalSpent.toFixed(2)}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Gasto total: S/{data.totalSpent.toFixed(2)}</p>
 
           {/* Manual earn */}
           <div className="flex gap-2 items-end">
             <div className="flex-1">
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Asignar puntos</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Asignar puntos</label>
               <input
                 type="number"
                 placeholder="100"
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <button
               onClick={handleEarn}
               disabled={saving || !earnPoints}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-500 text-white hover:opacity-90 transition disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--accent-soft)] text-white hover:opacity-90 transition disabled:opacity-50"
             >
               {saving ? "…" : "+ Dar puntos"}
             </button>
@@ -1747,17 +1748,17 @@ function FidelidadTab() {
           {/* Transaction history */}
           {data.transactions.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-600 mb-2">Historial reciente</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Historial reciente</p>
               <div className="space-y-1 max-h-48 overflow-y-auto">
                 {data.transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0">
+                  <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-[var(--rule-soft)] last:border-0">
                     <div>
-                      <span className={tx.type === "earn" ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
+                      <span className={tx.type === "earn" ? "text-[var(--data-success)] font-semibold" : "text-[var(--data-error)] font-semibold"}>
                         {tx.points > 0 ? "+" : ""}{tx.points} pts
                       </span>
-                      <span className="text-gray-400 ml-2">{tx.description}</span>
+                      <span className="text-[var(--text-tertiary)] ml-2">{tx.description}</span>
                     </div>
-                    <span className="text-gray-400 text-[10px]">
+                    <span className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">
                       {new Date(tx.createdAt).toLocaleDateString("es-PE")}
                     </span>
                   </div>
@@ -1769,16 +1770,16 @@ function FidelidadTab() {
       )}
 
       {!data && !loading && (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-[var(--text-tertiary)]">
           <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">Programa de Fidelidad</p>
           <p className="text-xs mt-1">Busca un cliente por teléfono para ver y gestionar sus puntos.</p>
           <div className="mt-4 bg-gray-50 rounded-xl p-3 text-left max-w-xs mx-auto">
-            <p className="text-xs font-semibold text-gray-600 mb-1">Reglas de puntos:</p>
-            <p className="text-[10px] text-gray-500">• 1 punto por cada S/1 de compra</p>
-            <p className="text-[10px] text-gray-500">• 500 pts = Nivel Plata (5% descuento)</p>
-            <p className="text-[10px] text-gray-500">• 1000 pts = Nivel Oro (10% descuento)</p>
-            <p className="text-[10px] text-gray-500">• 100 pts = S/1 de descuento al canjear</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Reglas de puntos:</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 1 punto por cada S/1 de compra</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 500 pts = Nivel Plata (5% descuento)</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 1000 pts = Nivel Oro (10% descuento)</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 100 pts = S/1 de descuento al canjear</p>
           </div>
         </div>
       )}
@@ -1787,9 +1788,9 @@ function FidelidadTab() {
 }
 
 const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pending:  { label: "Pendiente", className: "bg-amber-100 text-amber-700" },
-  approved: { label: "Aprobada",  className: "bg-emerald-100 text-emerald-700" },
-  rejected: { label: "Rechazada", className: "bg-red-100 text-red-600" },
+  pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
+  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
 };
 
 function ResenasTab() {
@@ -1861,21 +1862,21 @@ function ResenasTab() {
     <div className="space-y-6">
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Total reseñas</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-amber-600">{pendingCount}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Por moderar</p>
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+          <p className="text-2xl font-extrabold text-[var(--data-warning)]">{pendingCount}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Por moderar</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-emerald-600">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+          <p className="text-2xl font-extrabold text-[var(--data-success)]">
             {reviews.length > 0
               ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
               : "—"}
           </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Promedio ★</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Promedio ★</p>
         </div>
       </div>
 
@@ -1889,7 +1890,7 @@ function ResenasTab() {
               "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               filter === f
                 ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
             )}
           >
             {f === "all" ? `Todas (${reviews.length})` :
@@ -1902,7 +1903,7 @@ function ResenasTab() {
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
+        <div className="text-center py-8 text-[var(--text-tertiary)]">
           <Star className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No hay reseñas {filter !== "all" ? "con este filtro" : "todavía"}</p>
         </div>
@@ -1913,13 +1914,13 @@ function ResenasTab() {
         {filtered.map((review) => {
           const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
           return (
-            <div key={review.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+            <div key={review.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
               {/* Header: name, stars, status badge */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-sm text-gray-900 truncate">{review.name || "Anónimo"}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.className)}>
+                    <span className="font-bold text-sm text-[var(--text-primary)] truncate">{review.name || "Anónimo"}</span>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
                       {cfg.label}
                     </span>
                   </div>
@@ -1927,10 +1928,10 @@ function ResenasTab() {
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
                         key={s}
-                        className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-amber-400 text-amber-400" : "text-gray-200")}
+                        className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-gray-200")}
                       />
                     ))}
-                    <span className="text-[10px] text-gray-400 ml-1">
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-1">
                       {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
@@ -1941,7 +1942,7 @@ function ResenasTab() {
                     <button
                       onClick={() => handleStatusChange(review.id, "approved")}
                       disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                       title="Aprobar"
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -1951,7 +1952,7 @@ function ResenasTab() {
                     <button
                       onClick={() => handleStatusChange(review.id, "rejected")}
                       disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] transition-colors"
                       title="Rechazar"
                     >
                       <XCircle className="h-4 w-4" />
@@ -1961,7 +1962,7 @@ function ResenasTab() {
                     onClick={() => { setReplyingTo(replyingTo === review.id ? null : review.id); setReplyText(review.adminReply ?? ""); }}
                     className={cn(
                       "p-1.5 rounded-lg transition-colors",
-                      replyingTo === review.id ? "bg-primary/20 text-primary" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                      replyingTo === review.id ? "bg-primary/20 text-primary" : "bg-gray-50 text-[var(--text-tertiary)] hover:bg-gray-100"
                     )}
                     title="Responder"
                   >
@@ -1971,13 +1972,13 @@ function ResenasTab() {
               </div>
 
               {/* Review text */}
-              <p className="text-sm text-gray-700 leading-relaxed">{review.text}</p>
+              <p className="text-sm text-[var(--text-primary)] leading-relaxed">{review.text}</p>
 
               {/* Existing admin reply */}
               {review.adminReply && replyingTo !== review.id && (
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                  <p className="text-[10px] font-bold text-primary mb-1">Tu respuesta:</p>
-                  <p className="text-xs text-gray-700">{review.adminReply}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-1">Tu respuesta:</p>
+                  <p className="text-xs text-[var(--text-primary)]">{review.adminReply}</p>
                 </div>
               )}
 
@@ -1989,7 +1990,7 @@ function ResenasTab() {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Escribe tu respuesta al cliente..."
                     rows={2}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                    className="w-full rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                   />
                   <div className="flex gap-2">
                     <button
@@ -2001,7 +2002,7 @@ function ResenasTab() {
                     </button>
                     <button
                       onClick={() => { setReplyingTo(null); setReplyText(""); }}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200 transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--text-secondary)] text-xs font-bold hover:bg-gray-200 transition-colors"
                     >
                       Cancelar
                     </button>
@@ -2054,7 +2055,7 @@ export default function MarketplaceModule() {
       >
         <button
           onClick={refreshKpis}
-          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
+          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
@@ -2065,19 +2066,19 @@ export default function MarketplaceModule() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Productos publicados", value: kpis.publishedProducts, color: "text-primary" },
-          { label: "Órdenes del mes",      value: kpis.monthOrders,       color: "text-emerald-600" },
-          { label: "Comisiones pendientes",value: `S/${kpis.pendingCommissions.toFixed(2)}`, color: "text-amber-600" },
+          { label: "Órdenes del mes",      value: kpis.monthOrders,       color: "text-[var(--data-success)]" },
+          { label: "Comisiones pendientes",value: `S/${kpis.pendingCommissions.toFixed(2)}`, color: "text-[var(--data-warning)]" },
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  text-center"
+            className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  text-center"
           >
             {kpisLoading ? (
               <div className="h-7 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
             ) : (
               <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
             )}
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
           </div>
         ))}
       </div>

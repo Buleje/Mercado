@@ -20,7 +20,7 @@
  * la barra no se renderiza para evitar mostrar links rotos.
  */
 
-import { ExternalLink, Home, Store as StoreIcon } from "lucide-react";
+import { ExternalLink, Home, Store as StoreIcon } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 interface AdminTenantBarProps {

@@ -1,15 +1,21 @@
 #!/usr/bin/env sh
-# post-commit — dispara vitest en background tras cada commit.
+# post-commit — (opcional) dispara vitest en background tras cada commit.
 #
-# Objetivo: tener feedback rápido sin bloquear el flujo. Los tests corren
-# en segundo plano y el resultado se guarda en `.husky/.last-test-run.log`.
-# Si falla, escribe un marcador `.husky/.last-test-run.FAILED` que se
-# puede chequear con `cat .husky/.last-test-run.log | tail -20`.
+# Desde 2026-04-17: vitest post-commit es OPT-IN, no default.
+# Razón: los tests ya corren en CI al push/PR. Correrlos también local en
+# background gasta memoria/CPU y enlentece el commit (5-15s por commit,
+# peor con bulk commits). Activar solo para sesiones que lo necesiten.
 #
-# Bypass temporal: `HUSKY_SKIP_POSTCOMMIT=1 git commit ...`
+# Habilitar: `HUSKY_RUN_POSTCOMMIT_TESTS=1 git commit ...`
+# o export HUSKY_RUN_POSTCOMMIT_TESTS=1 en la shell.
 # Bypass global (emergencia): `HUSKY=0 git commit ...`
 
 if [ "${HUSKY_SKIP_POSTCOMMIT:-0}" = "1" ]; then
+  exit 0
+fi
+
+if [ "${HUSKY_RUN_POSTCOMMIT_TESTS:-0}" != "1" ]; then
+  # Default: skip vitest. CI se encarga.
   exit 0
 fi
 

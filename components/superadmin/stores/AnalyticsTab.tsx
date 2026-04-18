@@ -94,8 +94,8 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top stores by revenue */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
             Top tiendas por ingresos
           </h3>
@@ -109,20 +109,20 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
                 return (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-sm font-medium text-[var(--text-secondary)]">
                         {s.name}
                       </span>
                       <span className="text-sm font-bold text-primary tabular-nums">
                         {fmt(s.revenue)}
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60"
+                        className="h-full rounded-full bg-linear-to-r from-primary to-primary/60"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{s.orders} pedidos</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{s.orders} pedidos</p>
                   </div>
                 );
               })}
@@ -131,8 +131,8 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
         </div>
 
         {/* Category distribution */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-primary" />
             Distribución por categoría
           </h3>
@@ -146,16 +146,16 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
                 return (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                      <span className="text-sm font-medium text-[var(--text-secondary)] capitalize">
                         {c.category}
                       </span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+                      <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
                         {c.count}
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-secondary to-secondary/60"
+                        className="h-full rounded-full bg-linear-to-r from-secondary to-secondary/60"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

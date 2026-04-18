@@ -1,9 +1,10 @@
 "use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   CreditCard, Plus, X, RefreshCw, Download, AlertTriangle,
-  CheckCircle, Clock, Search } from "lucide-react";
+  CheckCircle, Clock, Search } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -37,10 +38,10 @@ type PaymentRecord = {
 
 const STATUS_LABEL: Record<ARStatus, string> = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado", vencido: "Vencido" };
 const STATUS_COLOR: Record<ARStatus, string> = {
-  pendiente: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  parcial:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  pagado:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  vencido:   "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  parcial:   "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  pagado:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  vencido:   "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };
 const STATUS_VARIANT: Record<ARStatus, BadgeVariant> = {
   pendiente: "warning",
@@ -74,9 +75,9 @@ function _getRiskLevel(balance: number): RiskLevel {
   return "bajo";
 }
 const _RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; dot: string }> = {
-  bajo:  { label: "Bajo",  color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20", dot: "bg-emerald-500" },
-  medio: { label: "Medio", color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/20",    dot: "bg-amber-500" },
-  alto:  { label: "Alto",  color: "text-red-600",     bg: "bg-red-50 dark:bg-red-950/20",        dot: "bg-red-500" },
+  bajo:  { label: "Bajo",  color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dot: "bg-[var(--accent-soft)]" },
+  medio: { label: "Medio", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    dot: "bg-[var(--data-warning)]" },
+  alto:  { label: "Alto",  color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        dot: "bg-[var(--data-error)]" },
 };
 
 // ── Seed mock data ─────────────────────────────────────────────────────────────
@@ -262,17 +263,17 @@ export default function AccountsReceivableTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <CreditCard className="h-6 w-6 text-primary" />
             Cuentas por Cobrar
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Créditos otorgados a clientes y gestión de cobranza</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Créditos otorgados a clientes y gestión de cobranza</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={load} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
+          <button onClick={load} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={() => exportToCSV(filtered.map(r => ({ cliente: r.customerName, telefono: r.customerPhone, descripcion: r.description, total: r.totalAmount, pagado: r.paidAmount, saldo: r.totalAmount - r.paidAmount, vencimiento: r.dueDate, estado: r.status })), "cuentas-por-cobrar")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(r => ({ cliente: r.customerName, telefono: r.customerPhone, descripcion: r.description, total: r.totalAmount, pagado: r.paidAmount, saldo: r.totalAmount - r.paidAmount, vencimiento: r.dueDate, estado: r.status })), "cuentas-por-cobrar")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -284,14 +285,14 @@ export default function AccountsReceivableTab() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
         ))}
@@ -299,10 +300,10 @@ export default function AccountsReceivableTab() {
 
       {/* New form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nueva cuenta por cobrar</h3>
-            <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Nueva cuenta por cobrar</CardTitle>
+            <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
@@ -314,13 +315,13 @@ export default function AccountsReceivableTab() {
               { key: "notes", label: "Notas", type: "text", placeholder: "Opcional..." },
             ].map(({ key, label, type, placeholder }) => (
               <div key={key}>
-                <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">{label}</label>
-                <input type={type} value={(form as Record<string, string>)[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">{label}</label>
+                <input type={type} value={(form as Record<string, string>)[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
             ))}
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
             <button onClick={handleCreate} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60">
               {saving ? "Guardando..." : "Crear"}
             </button>
@@ -331,12 +332,12 @@ export default function AccountsReceivableTab() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
         <div className="flex items-center gap-1">
           {(["all", "pendiente", "parcial", "vencido", "pagado"] as const).map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors capitalize", statusFilter === s ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+            <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors capitalize", statusFilter === s ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
               {s === "all" ? "Todos" : STATUS_LABEL[s]}
             </button>
           ))}
@@ -344,7 +345,7 @@ export default function AccountsReceivableTab() {
       </div>
 
       {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
           {/* List */}
@@ -363,25 +364,25 @@ export default function AccountsReceivableTab() {
                 <div
                   key={ar.id}
                   onClick={() => setSelected(ar)}
-                  className={cn("bg-white dark:bg-card border rounded-xl p-4 cursor-pointer hover:border-primary/40 transition-all", selected?.id === ar.id ? "border-primary " : "border-gray-200 dark:border-card-border")}
+                  className={cn("bg-white dark:bg-card border rounded-xl p-4 cursor-pointer hover:border-primary/40 transition-all", selected?.id === ar.id ? "border-primary " : "border-[var(--rule-base)] dark:border-card-border")}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                     <div>
-                      <p className="font-bold text-gray-900 dark:text-foreground text-sm">{ar.customerName}</p>
-                      <p className="text-xs text-gray-500 dark:text-muted">{ar.description}</p>
+                      <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{ar.customerName}</p>
+                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ar.description}</p>
                     </div>
                     <StatusBadge variant={STATUS_VARIANT[ar.status]} label={STATUS_LABEL[ar.status]} />
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 dark:text-muted text-xs">Vence: {fmtDate(ar.dueDate)}</span>
-                    <span className="font-extrabold text-gray-800 dark:text-foreground">{fmt(balance)} <span className="text-xs font-normal text-gray-400">pendiente</span></span>
+                    <span className="text-[var(--text-secondary)] dark:text-muted text-xs">Vence: {fmtDate(ar.dueDate)}</span>
+                    <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(balance)} <span className="text-xs font-normal text-[var(--text-tertiary)]">pendiente</span></span>
                   </div>
                   {ar.paidAmount > 0 && (
                     <div className="mt-2">
                       <div className="w-full h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${pctPaid}%` }} />
+                        <div className="h-full bg-[var(--accent-soft)] rounded-full transition-all" style={{ width: `${pctPaid}%` }} />
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{pctPaid.toFixed(0)}% pagado — {fmt(ar.paidAmount)} de {fmt(ar.totalAmount)}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{pctPaid.toFixed(0)}% pagado — {fmt(ar.paidAmount)} de {fmt(ar.totalAmount)}</p>
                     </div>
                   )}
                 </div>
@@ -392,10 +393,10 @@ export default function AccountsReceivableTab() {
           {/* Detail panel */}
           <div>
             {selected ? (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4 sticky top-20">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4 sticky top-20">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">{selected.customerName}</h3>
-                  <button onClick={() => setSelected(null)}><X className="h-4 w-4 text-gray-400" /></button>
+                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{selected.customerName}</CardTitle>
+                  <button onClick={() => setSelected(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
                 </div>
                 <div className="space-y-2 text-sm">
                   <Row label="Teléfono" val={selected.customerPhone || "—"} />
@@ -409,45 +410,45 @@ export default function AccountsReceivableTab() {
                 </div>
 
                 {selected.status !== "pagado" && (
-                  <div className="border-t border-gray-100 dark:border-card-border pt-4 space-y-3">
-                    <p className="text-xs font-bold text-gray-600 dark:text-muted">Registrar pago</p>
+                  <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-3">
+                    <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Registrar pago</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="text-xs text-gray-500 dark:text-muted block mb-1">Monto</label>
-                        <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                        <label className="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">Monto</label>
+                        <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500 dark:text-muted block mb-1">Fecha</label>
-                        <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                        <label className="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">Fecha</label>
+                        <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 dark:text-muted block mb-1">Método</label>
-                      <select value={payMethod} onChange={e => setPayMethod(e.target.value as PaymentRecord["method"])} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+                      <label className="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">Método</label>
+                      <select value={payMethod} onChange={e => setPayMethod(e.target.value as PaymentRecord["method"])} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
                         {["efectivo","transferencia","yape","plin","otro"].map(m => <option key={m} value={m} className="capitalize">{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
                       </select>
                     </div>
-                    <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">Registrar pago</button>
+                    <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors">Registrar pago</button>
                   </div>
                 )}
 
                 {/* Payment history */}
                 {payments.filter(p => p.arId === selected.id).length > 0 && (
-                  <div className="border-t border-gray-100 dark:border-card-border pt-3 space-y-2">
-                    <p className="text-xs font-bold text-gray-600 dark:text-muted">Pagos registrados</p>
+                  <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 space-y-2">
+                    <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Pagos registrados</p>
                     {payments.filter(p => p.arId === selected.id).map(p => (
                       <div key={p.id} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 dark:text-muted">{fmtDate(p.date)} · {p.method}</span>
-                        <span className="font-bold text-emerald-600">{fmt(p.amount)}</span>
+                        <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(p.date)} · {p.method}</span>
+                        <span className="font-bold text-[var(--data-success)]">{fmt(p.amount)}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-lg border border-red-200 dark:border-red-900/40 text-red-500 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
+                <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] text-xs font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
               </div>
             ) : (
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-8 text-center text-gray-400 dark:text-muted text-sm">
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-8 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
                 Selecciona una cuenta para ver detalles y registrar pagos
               </div>
             )}
@@ -461,8 +462,8 @@ export default function AccountsReceivableTab() {
 function Row({ label, val, bold, color }: { label: string; val: string; bold?: boolean; color?: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-gray-500 dark:text-muted text-xs">{label}</span>
-      <span className={cn("text-xs font-semibold text-gray-700 dark:text-foreground", bold && "font-bold", color)}>{val}</span>
+      <span className="text-[var(--text-secondary)] dark:text-muted text-xs">{label}</span>
+      <span className={cn("text-xs font-semibold text-[var(--text-primary)] dark:text-foreground", bold && "font-bold", color)}>{val}</span>
     </div>
   );
 }

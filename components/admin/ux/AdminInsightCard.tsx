@@ -1,9 +1,10 @@
 "use client";
 
 import { memo } from "react";
-import { Sparkles, ArrowUpRight, Lightbulb } from "lucide-react";
+import { Sparkles, ArrowUpRight, Lightbulb } from "@buleje/design-system/icons";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
+import { PrimaryButton } from "@buleje/design-system";
 import { BulejeSparkline } from "@/components/ui-system/charts";
 
 /**
@@ -108,11 +109,11 @@ export const AdminInsightCard = memo(function AdminInsightCard({
         {/* Hero metric — top-left más grande (F-pattern) */}
         <div className="lg:col-span-5">
           {greeting && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
               {greeting}
             </p>
           )}
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
             {heroLabel}
           </p>
           {loading ? (
@@ -127,7 +128,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
               <NumberFlow
                 value={heroValue}
                 format={{ maximumFractionDigits: heroDecimals }}
-                className="text-5xl sm:text-6xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none"
+                className="text-5xl sm:text-6xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none"
               />
               {heroSuffix && (
                 <span className="text-2xl sm:text-3xl font-bold text-[var(--text-tertiary)]">
@@ -151,7 +152,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
           <div className="lg:col-span-7 flex items-end justify-end">
             <div className="w-full max-w-sm">
               <BulejeSparkline data={trend} trend={sparklineTrend} width="100%" height={64} strokeWidth={2} />
-              <div className="flex justify-between mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] tabular-nums">
+              <div className="flex justify-between mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] tabular-nums">
                 <span>Hace 7 días</span>
                 <span>Hoy</span>
               </div>
@@ -176,7 +177,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
                     : "text-[var(--text-primary)]";
             return (
               <div key={m.label} className="px-4 py-4 sm:px-6 sm:py-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
                   {m.label}
                 </p>
                 <div className="flex items-baseline gap-1">
@@ -184,12 +185,12 @@ export const AdminInsightCard = memo(function AdminInsightCard({
                   <NumberFlow
                     value={m.value}
                     format={{ maximumFractionDigits: m.decimals ?? 0 }}
-                    className={cn("text-2xl font-extrabold tabular-nums tracking-[-0.02em]", statusColor)}
+                    className={cn("text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)]", statusColor)}
                   />
                   {m.suffix && <span className="text-sm font-semibold text-[var(--text-tertiary)]">{m.suffix}</span>}
                 </div>
                 {m.delta != null && (
-                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] tabular-nums">
+                  <p className="mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] tabular-nums">
                     <span className={dUp ? "text-[var(--data-success)]" : dDown ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}>
                       {dUp && "↑"} {dDown && "↓"} {Math.abs(m.delta).toFixed(1)}%
                     </span>
@@ -207,17 +208,17 @@ export const AdminInsightCard = memo(function AdminInsightCard({
           className={cn(
             "flex items-start gap-3 p-5 sm:p-6",
             insight.type === "opportunity" && "bg-[var(--surface-sunken)]",
-            insight.type === "warning" && "bg-amber-50 dark:bg-amber-950/30",
+            insight.type === "warning" && "bg-[var(--data-warning-50)] dark:bg-amber-950/30",
             insight.type === "info" && "bg-[var(--surface-sunken)]",
           )}
         >
           <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]">
             {insight.type === "opportunity" && <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
-            {insight.type === "warning" && <Lightbulb className="h-4 w-4 text-amber-600" strokeWidth={1.75} aria-hidden />}
+            {insight.type === "warning" && <Lightbulb className="h-4 w-4 text-[var(--data-warning)]" strokeWidth={1.75} aria-hidden />}
             {insight.type === "info" && <Lightbulb className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {insight.type === "opportunity" && "Oportunidad detectada"}
               {insight.type === "warning" && "Necesita atención"}
               {insight.type === "info" && "Insight"}
@@ -225,14 +226,16 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             <p className="text-sm text-[var(--text-primary)] leading-relaxed">{insight.text}</p>
           </div>
           {insight.cta && (
-            <a
-              href={insight.cta.href}
-              onClick={insight.cta.onClick}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-4 py-2 text-xs font-bold hover:opacity-90 transition-opacity"
+            <PrimaryButton
+              asChild
+              size="md"
+              className="shrink-0 rounded-full"
+              rightIcon={<ArrowUpRight className="h-3 w-3" strokeWidth={2} />}
             >
-              {insight.cta.label}
-              <ArrowUpRight className="h-3 w-3" strokeWidth={2} />
-            </a>
+              <a href={insight.cta.href} onClick={insight.cta.onClick}>
+                {insight.cta.label}
+              </a>
+            </PrimaryButton>
           )}
         </div>
       )}

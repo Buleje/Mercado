@@ -1,7 +1,8 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from "react";
-import { Target, Clock, TrendingUp, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Target, Clock, TrendingUp, Loader2, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -117,14 +118,14 @@ export default function BreakEvenDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="w-5 h-5 text-[#00B4A6]" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Punto de Equilibrio Diario
-          </h2>
+          </SectionTitle>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           {lastRefresh.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
@@ -133,7 +134,7 @@ export default function BreakEvenDashboard() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -141,7 +142,7 @@ export default function BreakEvenDashboard() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-center py-12 text-[var(--text-tertiary)]">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           Calculando punto de equilibrio...
         </div>
@@ -151,26 +152,26 @@ export default function BreakEvenDashboard() {
         <>
           {/* Tarjetas principales */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <p className="text-xs text-[var(--text-tertiary)] mb-1">
                 Ventas de hoy
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-2xl font-bold text-[var(--text-primary)]">
                 {fmt(stats.totalSalesToday)}
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {stats.transactionCount} transacciones
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <p className="text-xs text-[var(--text-tertiary)] mb-1">
                 Costo fijo diario
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-2xl font-bold text-[var(--text-primary)]">
                 {fmt(stats.dailyFixed)}
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {fmt(stats.monthlyFixed)}/mes entre 30 dias
               </p>
             </div>
@@ -179,16 +180,16 @@ export default function BreakEvenDashboard() {
               className={cn(
                 "rounded-xl border p-4",
                 stats.reached
-                  ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20"
-                  : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10"
+                  ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                  : "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10"
               )}
             >
               <p
                 className={cn(
                   "text-xs mb-1 font-medium",
                   stats.reached
-                    ? "text-emerald-700 dark:text-emerald-400"
-                    : "text-red-700 dark:text-red-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}
               >
                 {stats.reached ? "Punto alcanzado" : "Falta cubrir"}
@@ -197,8 +198,8 @@ export default function BreakEvenDashboard() {
                 className={cn(
                   "text-2xl font-bold",
                   stats.reached
-                    ? "text-emerald-800 dark:text-emerald-300"
-                    : "text-red-700 dark:text-red-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}
               >
                 {stats.reached ? "Ganando" : fmt(stats.remaining)}
@@ -207,8 +208,8 @@ export default function BreakEvenDashboard() {
                 className={cn(
                   "text-xs mt-1",
                   stats.reached
-                    ? "text-emerald-600 dark:text-emerald-500"
-                    : "text-red-500 dark:text-red-500"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}
               >
                 {stats.reached
@@ -219,32 +220,32 @@ export default function BreakEvenDashboard() {
           </div>
 
           {/* Barra de progreso */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700 dark:text-gray-300">
+              <span className="font-medium text-[var(--text-secondary)]">
                 Progreso hacia el punto de equilibrio
               </span>
               <span
                 className={cn(
                   "font-bold",
                   stats.reached
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-red-600 dark:text-red-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}
               >
                 {stats.progress.toFixed(1)}%
               </span>
             </div>
 
-            <div className="relative h-6 w-full rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+            <div className="relative h-6 w-full rounded-full bg-[var(--surface-sunken)] overflow-hidden">
               <div
                 className={cn(
-                  "h-full rounded-full transition-all duration-700",
+                  "h-full rounded-full transition-all duration-[var(--dur-slower)]",
                   stats.reached
-                    ? "bg-emerald-500 dark:bg-emerald-600"
+                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
                     : stats.progress > 60
-                    ? "bg-yellow-500 dark:bg-yellow-600"
-                    : "bg-red-500 dark:bg-red-600"
+                    ? "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]"
+                    : "bg-[var(--data-error)] dark:bg-[var(--data-error)]"
                 )}
                 style={{ width: `${stats.progress}%` }}
               />
@@ -252,9 +253,9 @@ export default function BreakEvenDashboard() {
               <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-gray-400 dark:bg-gray-500" />
             </div>
 
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
               <span>S/ 0</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">
+              <span className="font-medium text-[var(--text-secondary)]">
                 Meta: {fmt(stats.dailyFixed)}
               </span>
             </div>
@@ -265,25 +266,25 @@ export default function BreakEvenDashboard() {
             className={cn(
               "rounded-xl border p-4 flex items-center gap-3",
               stats.reached
-                ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10"
-                : "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10"
+                ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                : "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
             )}
           >
             <Clock
               className={cn(
                 "w-5 h-5 shrink-0",
                 stats.reached
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-emerald-600 dark:text-emerald-400"
+                  ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                  : "text-[var(--data-success)] dark:text-[var(--data-success)]"
               )}
             />
             <div>
               {stats.reached ? (
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                <p className="text-sm font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
                   Ya cubriste los costos fijos del dia. Cada sol adicional es ganancia.
                 </p>
               ) : stats.estimatedHour ? (
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                <p className="text-sm font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
                   Si sigues vendiendo a este ritmo ({fmt(stats.salesPerHour)}/hora), cubres costos
                   a las{" "}
                   <span className="font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
@@ -292,7 +293,7 @@ export default function BreakEvenDashboard() {
                   .
                 </p>
               ) : (
-                <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                <p className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
                   Registra ventas para estimar la hora de equilibrio.
                 </p>
               )}
@@ -300,17 +301,17 @@ export default function BreakEvenDashboard() {
           </div>
 
           {/* Ritmo de ventas */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-[#00B4A6]" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-sm font-medium text-[var(--text-secondary)]">
                 Ritmo actual de ventas
               </span>
             </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <p className="text-xl font-bold text-[var(--text-primary)]">
               {fmt(stats.salesPerHour)}/hora
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
               Necesitas {fmt(stats.dailyFixed / 12)}/hora para cerrar en break-even a las 6pm
             </p>
           </div>

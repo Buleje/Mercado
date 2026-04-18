@@ -4,8 +4,6 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 const BodySchema = z.object({
   phone: z.string().min(6).max(20),
 });

@@ -1,5 +1,7 @@
- 
 "use client";
+
+import { SectionTitle } from "@buleje/design-system";
+ 
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -13,7 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
   Star,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,9 +74,9 @@ function getUrgencyLabel(u: AdvisedItem["urgency"]): string {
 }
 
 const URGENCY_COLORS: Record<AdvisedItem["urgency"], string> = {
-  critical: "text-red-600 bg-red-50",
+  critical: "text-[var(--data-error)] bg-[var(--data-error-50)]",
   high: "text-secondary bg-secondary/10",
-  medium: "text-emerald-600 bg-emerald-50",
+  medium: "text-[var(--data-success)] bg-[var(--accent-soft)]",
 };
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -235,19 +237,19 @@ export default function SmartPurchaseAdvisor() {
   }, [advised]);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
               <Brain className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900">
+              <SectionTitle className="font-bold text-[var(--text-primary)]">
                 Advisor de compras
-              </h2>
-              <p className="text-xs text-gray-500">
+              </SectionTitle>
+              <p className="text-xs text-[var(--text-secondary)]">
                 Combina stock, velocidad de venta y historial de precios
                 {usingMock && (
                   <span className="ml-2 text-secondary">(datos demo)</span>
@@ -262,7 +264,7 @@ export default function SmartPurchaseAdvisor() {
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 title="Exportar CSV"
               >
-                <Download className="w-5 h-5 text-gray-500" />
+                <Download className="w-5 h-5 text-[var(--text-secondary)]" />
               </button>
             )}
             <button
@@ -272,7 +274,7 @@ export default function SmartPurchaseAdvisor() {
               aria-label="Actualizar"
             >
               <RefreshCw
-                className={cn("w-5 h-5 text-gray-500", loading && "animate-spin")}
+                className={cn("w-5 h-5 text-[var(--text-secondary)]", loading && "animate-spin")}
               />
             </button>
           </div>
@@ -281,20 +283,20 @@ export default function SmartPurchaseAdvisor() {
         {/* Summary */}
         {!loading && (
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100">
-              <p className="text-xl font-black text-red-600">
+            <div className="text-center p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
+              <p className="text-xl font-extrabold text-[var(--data-error)]">
                 {advised.filter((i) => i.urgency === "critical").length}
               </p>
-              <p className="text-xs text-red-500 font-semibold">Criticos</p>
+              <p className="text-xs text-[var(--data-error)] font-semibold">Criticos</p>
             </div>
             <div className="text-center p-3 rounded-xl bg-secondary/5 border border-secondary/20">
-              <p className="text-xl font-black text-secondary">
+              <p className="text-xl font-extrabold text-secondary">
                 {advised.filter((i) => i.urgency === "high").length}
               </p>
               <p className="text-xs text-secondary font-semibold">Urgentes</p>
             </div>
             <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/20">
-              <p className="text-xl font-black text-primary">
+              <p className="text-xl font-extrabold text-primary">
                 {fmt(totalEstimated)}
               </p>
               <p className="text-xs text-primary font-semibold">
@@ -320,10 +322,10 @@ export default function SmartPurchaseAdvisor() {
         ) : advised.length === 0 ? (
           <div className="p-8 text-center">
             <Package className="w-10 h-10 text-primary mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-[var(--text-primary)]">
               Stock en buen estado
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               No se requieren compras urgentes en este momento.
             </p>
           </div>
@@ -347,7 +349,7 @@ export default function SmartPurchaseAdvisor() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900 text-sm">
+                      <p className="font-semibold text-[var(--text-primary)] text-sm">
                         {item.product.name}
                       </p>
                       <span
@@ -359,7 +361,7 @@ export default function SmartPurchaseAdvisor() {
                         {getUrgencyLabel(item.urgency)}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                       Stock: {item.product.stock} {item.product.unit ?? "u"} —
                       Ventas 7d: {item.weeklySales} —
                       {item.daysUntilOut >= 99
@@ -375,8 +377,8 @@ export default function SmartPurchaseAdvisor() {
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">Comprar</p>
-                      <p className="font-black text-gray-900">
+                      <p className="text-xs text-[var(--text-tertiary)]">Comprar</p>
+                      <p className="font-extrabold text-[var(--text-primary)]">
                         {item.suggestedQty} {item.product.unit ?? "u"}
                       </p>
                       <p className="text-xs text-primary font-semibold">
@@ -384,43 +386,43 @@ export default function SmartPurchaseAdvisor() {
                       </p>
                     </div>
                     {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                      <ChevronUp className="w-4 h-4 text-[var(--text-tertiary)]" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 text-[var(--text-tertiary)]" />
                     )}
                   </div>
                 </button>
 
                 {isExpanded && (
-                  <div className="px-5 pb-4 bg-gray-50 border-t border-gray-100">
+                  <div className="px-5 pb-4 bg-gray-50 border-t border-[var(--rule-soft)]">
                     <div className="grid grid-cols-2 gap-3 pt-3">
-                      <div className="p-3 rounded-xl bg-white border border-gray-100">
-                        <p className="text-xs text-gray-400 mb-1">Analisis de stock</p>
-                        <p className="text-sm font-medium text-gray-900">
+                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
+                        <p className="text-xs text-[var(--text-tertiary)] mb-1">Analisis de stock</p>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">
                           Stock minimo: {item.product.stockMin} {item.product.unit ?? "u"}
                         </p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-[var(--text-primary)]">
                           Venta diaria: {Math.round((item.weeklySales / 7) * 10) / 10} {item.product.unit ?? "u"}
                         </p>
                         {item.daysUntilOut < 99 && (
                           <div className="flex items-center gap-1 mt-1">
-                            <AlertTriangle className="w-3 h-3 text-red-500" />
-                            <p className="text-xs text-red-600 font-semibold">
+                            <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
+                            <p className="text-xs text-[var(--data-error)] font-semibold">
                               Se agota en {item.daysUntilOut} dias
                             </p>
                           </div>
                         )}
                       </div>
-                      <div className="p-3 rounded-xl bg-white border border-gray-100">
-                        <p className="text-xs text-gray-400 mb-1">Orden sugerida</p>
+                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
+                        <p className="text-xs text-[var(--text-tertiary)] mb-1">Orden sugerida</p>
                         <p className="text-sm font-bold text-primary">
                           {item.suggestedQty} {item.product.unit ?? "u"}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                           Cubre 14 dias de ventas + stock minimo
                         </p>
                         {item.bestCost && (
-                          <p className="text-xs font-semibold text-gray-700 mt-1">
+                          <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">
                             {fmt(item.bestCost)}/u x {item.suggestedQty} = {fmt(item.estimatedTotal)}
                           </p>
                         )}
@@ -432,7 +434,7 @@ export default function SmartPurchaseAdvisor() {
                           <TrendingDown className="w-3 h-3" />
                           Tip de temporada
                         </p>
-                        <p className="text-xs text-gray-700 mt-0.5">
+                        <p className="text-xs text-[var(--text-primary)] mt-0.5">
                           {item.season}
                         </p>
                       </div>

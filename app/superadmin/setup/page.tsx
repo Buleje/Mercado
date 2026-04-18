@@ -100,11 +100,11 @@ export default function SuperAdminSetupPage() {
       <div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-600/10 flex items-center justify-center">
-            <Wrench className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <Wrench className="w-5 h-5 text-[var(--accent)]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Setup Pendiente</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">Setup Pendiente</h1>
+            <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
               Acciones que solo tú puedes hacer (tokens, OAuth, dashboards externos)
             </p>
           </div>
@@ -120,7 +120,7 @@ export default function SuperAdminSetupPage() {
       {/* Filter */}
       <div className="flex items-center gap-2">
         <Filter className="w-4 h-4 text-gray-400" />
-        <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">Filtrar:</span>
+        <span className="text-xs text-[var(--text-tertiary)] mr-2">Filtrar:</span>
         {(["all", "pending", "done", "blocked"] as const).map((f) => (
           <button
             key={f}
@@ -129,7 +129,7 @@ export default function SuperAdminSetupPage() {
               "px-3 py-1 text-xs font-semibold rounded-full transition-colors",
               filter === f
                 ? "bg-teal-600 text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
             ].join(" ")}
           >
             {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : f === "done" ? "Hechos" : "Bloqueados"}
@@ -151,7 +151,7 @@ export default function SuperAdminSetupPage() {
       </div>
 
       {/* Footer info */}
-      <div className="text-xs text-gray-400 dark:text-gray-600 text-center pt-4 border-t border-gray-100 dark:border-gray-900">
+      <div className="text-xs text-gray-400 dark:text-gray-600 text-center pt-4 border-t border-[var(--rule-base)]">
         El estado de cada item se guarda en tu navegador (localStorage) — no se sincroniza entre dispositivos.
       </div>
     </div>

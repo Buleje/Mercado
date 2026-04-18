@@ -23,11 +23,14 @@ beforeEach(() => {
 });
 
 const makeItem = (id: number, name = `Producto ${id}`): CompareItem => ({
+  id,
   productId: id,
   storeSlug: `tienda-${id}`,
   name,
+  category: "abarrotes",
+  unit: "und",
   price: 10 * id,
-  image: null,
+  image: "",
 });
 
 describe("useCompare", () => {
@@ -53,12 +56,11 @@ describe("useCompare", () => {
 
     expect(result.current.items).toHaveLength(3);
 
-    let added: boolean = true;
     act(() => {
-      added = result.current.add(makeItem(4));
+      result.current.add(makeItem(4));
     });
 
-    expect(added).toBe(false);
+    // add es void — si ya hay MAX items, no agrega (silent no-op)
     expect(result.current.items).toHaveLength(3);
     expect(result.current.items.map((i) => i.productId)).not.toContain(4);
   });

@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   Package,
   ShoppingCart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { AdminCard } from "@/components/admin/shared";
@@ -111,15 +111,15 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {/* Proximos pagos */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
+                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning)]" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Pagos esta semana</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Pagos esta semana</span>
             </div>
             {upcomingPayables.overdue > 0 && (
-              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                <AlertTriangle className="w-3 h-3 text-red-500" />
-                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
+                <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
               </div>
             )}
             {upcomingPayables.upcoming.length > 0 ? (
@@ -128,36 +128,36 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                   const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - now) / 86400000)) : 0;
                   return (
                     <li key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
-                      <span className="font-bold text-gray-900 dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
-                      <span className="text-[10px] text-gray-400 ml-1.5">{daysLeft}d</span>
+                      <span className="truncate text-[var(--text-secondary)] dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-1.5">{daysLeft}d</span>
                     </li>
                   );
                 })}
               </ul>
             ) : upcomingPayables.overdue === 0 ? (
-              <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
+              <p className="text-xs text-[var(--data-success)] font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
-            <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
+            <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
 
           {/* Clientes del dia */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                <Users className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+                <Users className="w-3.5 h-3.5 text-[var(--data-success)]" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Clientes hoy</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
+            <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)] dark:text-zinc-100">{clientesHoy}</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
-                <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
             </div>
           </AdminCard>
@@ -165,22 +165,22 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {/* Productos que se agotan */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
-                <Package className="w-3.5 h-3.5 text-red-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
+                <Package className="w-3.5 h-3.5 text-[var(--data-error)]" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Se agotan esta semana</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Se agotan esta semana</span>
             </div>
             {productsRunningOut.length > 0 ? (
               <ul className="space-y-1.5">
                 {productsRunningOut.map(p => (
                   <li key={p.id} className="flex items-center justify-between text-xs">
-                    <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.name}</span>
-                    <span className="text-gray-400 ml-1">quedan {p.stock}</span>
+                    <span className="truncate text-[var(--text-secondary)] dark:text-zinc-300 flex-1">{p.name}</span>
+                    <span className="text-[var(--text-tertiary)] ml-1">quedan {p.stock}</span>
                     <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                      p.daysLeft < 3 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
-                      p.daysLeft <= 5 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                      "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
+                      "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
+                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" :
+                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" :
+                      "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
                     )}>
                       {p.daysLeft}d
                     </span>
@@ -188,10 +188,10 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
+              <p className="text-xs text-[var(--data-success)] font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
+              <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
             )}
           </AdminCard>
         </div>
@@ -203,18 +203,18 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {sectionId === "clientes-alertas" && (
             <div className="space-y-6">
               {abandonedCartCount > 0 && (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
+                <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                      <ShoppingCart className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center shrink-0">
+                      <ShoppingCart className="w-5 h-5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                      <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                         {abandonedCartCount} carrito{abandonedCartCount !== 1 ? "s" : ""} abandonado{abandonedCartCount !== 1 ? "s" : ""} hoy
                       </p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400">{fmtR(abandonedCartValue)} en ventas potenciales</p>
+                      <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">{fmtR(abandonedCartValue)} en ventas potenciales</p>
                     </div>
-                    <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-200/60 dark:bg-amber-800/40 hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors">
+                    <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning)]/60 dark:bg-[var(--data-warning)]/40 hover:bg-[var(--data-warning)] dark:hover:bg-[var(--data-warning)]/60 transition-colors">
                       Ver y contactar
                     </a>
                   </div>
@@ -225,7 +225,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 <AdminCard padding="sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                    <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 5 clientes del mes</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">Top 5 clientes del mes</span>
                   </div>
                   {loading ? (
                     <div className="space-y-3 animate-pulse">
@@ -238,17 +238,17 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                       ))}
                     </div>
                   ) : topCustomers.length === 0 ? (
-                    <p className="text-sm text-gray-400 dark:text-zinc-500">Sin pedidos este mes.</p>
+                    <p className="text-sm text-[var(--text-tertiary)] dark:text-zinc-500">Sin pedidos este mes.</p>
                   ) : (
                     <ol className="space-y-2">
                       {topCustomers.map((c, idx) => (
                         <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
                             {idx + 1}
                           </span>
-                          <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
-                          <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
-                          <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
+                          <span className="flex-1 truncate text-[var(--text-primary)] dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
+                          <span className="text-xs font-semibold tabular-nums shrink-0 text-[var(--color-primary)]" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
                         </li>
                       ))}
                     </ol>
@@ -258,8 +258,8 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 {/* Alertas activas */}
                 <AdminCard padding="sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Alertas activas</span>
+                    <AlertTriangle className="w-4 h-4 text-[var(--data-warning)]" />
+                    <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">Alertas activas</span>
                   </div>
                   {loading ? (
                     <div className="space-y-2 animate-pulse">
@@ -269,9 +269,9 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                     </div>
                   ) : !hasAnyAlert ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
-                      <TrendingUp className="w-8 h-8 text-emerald-400 mx-auto" />
-                      <p className="text-sm font-medium text-gray-600 dark:text-zinc-400">Todo bajo control</p>
-                      <p className="text-xs text-gray-400 dark:text-zinc-500">No hay alertas pendientes</p>
+                      <TrendingUp className="w-8 h-8 text-[var(--data-success)] mx-auto" />
+                      <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">Todo bajo control</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">No hay alertas pendientes</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -296,28 +296,28 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {bestDay && (
             <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Mejor dia de la semana</span>
+                <TrendingUp className="w-4 h-4 text-[var(--data-warning)]" />
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Mejor dia de la semana</span>
               </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
+                Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}
               </p>
               {bestDay.worst && (
-                <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>
               )}
             </AdminCard>
           )}
           {growingCategory?.top && (
             <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
-                <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Categoria en crecimiento</span>
+                <TrendingUp className="w-4 h-4 text-[var(--data-success)]" />
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Categoria en crecimiento</span>
               </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
               {growingCategory.bottom && (
-                <p className="text-[10px] text-orange-500 dark:text-orange-400 mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
               )}
             </AdminCard>
           )}
@@ -325,18 +325,18 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Cliente del mes</span>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Cliente del mes</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "var(--color-primary)" }}>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
                   {topClientMonth.name.charAt(0).toUpperCase()}
                 </span>
-                <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{topClientMonth.name}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{topClientMonth.name}</p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-1">
                 {topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}
               </p>
-              <span className="inline-block text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
                 Cliente mas fiel de {topClientMonth.monthName}
               </span>
             </AdminCard>

@@ -1,7 +1,8 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -120,16 +121,16 @@ export default function MonthProjectionCard() {
     <Minus className="h-4 w-4" />;
 
   const trendColor =
-    delta > 0 ? "text-emerald-600 dark:text-emerald-400" :
-    delta < 0 ? "text-red-500 dark:text-red-400" :
-    "text-gray-400";
+    delta > 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+    delta < 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
+    "text-[var(--text-tertiary)]";
 
   const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900  overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -149,50 +150,48 @@ export default function MonthProjectionCard() {
       {/* Body */}
       <div className="p-5">
         {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-          </div>
+          <LoadingState />
         ) : error ? (
-          <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] text-center py-6">{error}</p>
         ) : (
           <div className="space-y-5">
             {/* Mes actual */}
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <p className="text-xs text-[var(--text-tertiary)] mb-1">
                 {MONTHS[curMonth]} {curYear} — dia {daysElapsed} de {daysTotal}
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-[var(--text-primary)]">
                 {fmt(projection)}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">proyeccion de cierre</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">proyeccion de cierre</p>
             </div>
 
             {/* Comparacion vs mes anterior */}
-            <div className="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--surface-sunken)] px-3 py-2.5">
               <span className={cn("flex items-center gap-1 font-semibold text-sm", trendColor)}>
                 {trendIcon}
                 {delta >= 0 ? "+" : ""}{delta.toFixed(1)}%
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-[var(--text-tertiary)]">
                 vs {MONTHS[prevMonth]} ({fmt(prevStats.total)} real en {daysInPrevMonth} dias)
               </span>
             </div>
 
             {/* Datos del mes */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-                <p className="text-[10px] text-gray-400 mb-0.5">Acumulado</p>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(currentStats.total)}</p>
+              <div className="rounded-lg bg-[var(--surface-sunken)] p-3">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-0.5">Acumulado</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{fmt(currentStats.total)}</p>
               </div>
-              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-                <p className="text-[10px] text-gray-400 mb-0.5">Prom. diario</p>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(dailyAvg)}</p>
+              <div className="rounded-lg bg-[var(--surface-sunken)] p-3">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-0.5">Prom. diario</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{fmt(dailyAvg)}</p>
               </div>
             </div>
 
             {/* Mini grafico — ultimos 7 dias */}
             <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] mb-2">
                 Ultimos 7 dias (ventas reales)
               </p>
               <div className="flex items-end gap-1 h-14">
@@ -205,15 +204,15 @@ export default function MonthProjectionCard() {
                         className={cn(
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
-                            ? "bg-[#f97316] dark:bg-orange-400"
-                            : "bg-[#00B4A6] dark:bg-emerald-600"
+                            ? "bg-[#f97316] dark:bg-[var(--data-warning)]"
+                            : "bg-[#00B4A6] dark:bg-[var(--accent-soft)]"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
                         title={`Dia ${d.label}: ${fmt(d.total)}`}
                       />
                       <span className={cn(
-                        "text-[9px]",
-                        isToday ? "text-[#f97316] font-semibold" : "text-gray-400"
+                        "text-[length:var(--ts-2xs)]",
+                        isToday ? "text-[#f97316] font-semibold" : "text-[var(--text-tertiary)]"
                       )}>
                         {d.label}
                       </span>
@@ -221,14 +220,14 @@ export default function MonthProjectionCard() {
                   );
                 })}
               </div>
-              <p className="text-[9px] text-gray-400 mt-1 text-right">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1 text-right">
                 naranja = hoy
               </p>
             </div>
 
             {/* Dias restantes */}
-            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              Faltan <span className="font-semibold text-gray-700 dark:text-gray-300">{daysTotal - daysElapsed}</span> dias para cerrar {MONTHS[curMonth]}
+            <div className="text-xs text-[var(--text-tertiary)] text-center">
+              Faltan <span className="font-semibold text-[var(--text-secondary)]">{daysTotal - daysElapsed}</span> dias para cerrar {MONTHS[curMonth]}
             </div>
           </div>
         )}

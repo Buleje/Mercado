@@ -1,10 +1,12 @@
+"use client";
+
+import { SectionTitle } from "@buleje/design-system";
 
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Link, Copy, MessageCircle, Eye, RefreshCw, Package, CheckCircle2 } from "lucide-react";
+import { Link, Copy, MessageCircle, Eye, RefreshCw, Package, CheckCircle2 } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -125,18 +127,18 @@ export default function SupplierPortalLink() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-primary/10">
             <Link className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-bold text-gray-900">
+            <SectionTitle className="font-bold text-[var(--text-primary)]">
               Portal de proveedor
-            </h2>
-            <p className="text-xs text-gray-500">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)]">
               Genera links temporales para que tus proveedores vean el stock bajo
             </p>
           </div>
@@ -146,7 +148,7 @@ export default function SupplierPortalLink() {
       <div className="p-5 space-y-5">
         {/* Generator */}
         <div className="space-y-3">
-          <label className="block text-sm font-semibold text-gray-700">
+          <label className="block text-sm font-semibold text-[var(--text-primary)]">
             Nombre del proveedor
           </label>
           <div className="flex gap-2">
@@ -154,7 +156,7 @@ export default function SupplierPortalLink() {
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="Ej: Distribuidora Hernandez SAC"
-              className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-primary"
+              className="flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === "Enter") generateLink();
               }}
@@ -189,25 +191,25 @@ export default function SupplierPortalLink() {
             <p className="text-xs font-bold text-primary mb-3">
               Vista del proveedor
             </p>
-            <p className="text-sm font-bold text-gray-900 mb-2">
+            <p className="text-sm font-bold text-[var(--text-primary)] mb-2">
               Productos con stock bajo — Buleje
             </p>
             <div className="space-y-2">
               {lowStock.map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-gray-200"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[var(--rule-base)]"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
                       {item.productName}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       Stock actual: {item.currentStock} {item.unit}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500">Pedido sugerido</p>
+                    <p className="text-xs text-[var(--text-secondary)]">Pedido sugerido</p>
                     <p className="font-bold text-primary text-sm">
                       {item.suggestedOrder} {item.unit}
                     </p>
@@ -215,8 +217,8 @@ export default function SupplierPortalLink() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 p-2 rounded-xl bg-white border border-gray-200">
-              <p className="text-xs text-gray-500 mb-1">Formulario de cotizacion</p>
+            <div className="mt-3 p-2 rounded-xl bg-white border border-[var(--rule-base)]">
+              <p className="text-xs text-[var(--text-secondary)] mb-1">Formulario de cotizacion</p>
               <div className="h-8 rounded-lg bg-gray-100 animate-pulse" />
             </div>
           </div>
@@ -225,7 +227,7 @@ export default function SupplierPortalLink() {
         {/* Active links */}
         {activeConfigs.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
               Links activos ({activeConfigs.length})
             </p>
             <div className="space-y-2">
@@ -237,14 +239,14 @@ export default function SupplierPortalLink() {
                 return (
                   <div
                     key={config.token}
-                    className="p-4 rounded-xl bg-gray-50 border border-gray-200"
+                    className="p-4 rounded-xl bg-gray-50 border border-[var(--rule-base)]"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm">
+                        <p className="font-semibold text-[var(--text-primary)] text-sm">
                           {config.supplierName}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
                           {url}
                         </p>
                         <p className="text-xs text-secondary mt-0.5">
@@ -253,7 +255,7 @@ export default function SupplierPortalLink() {
                       </div>
                       <button
                         onClick={() => deleteConfig(config.token)}
-                        className="text-xs text-red-500 hover:underline flex-shrink-0"
+                        className="text-xs text-[var(--data-error)] hover:underline flex-shrink-0"
                       >
                         Revocar
                       </button>
@@ -265,7 +267,7 @@ export default function SupplierPortalLink() {
                           "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border transition-colors",
                           copiedToken === config.token
                             ? "bg-primary text-white border-primary"
-                            : "border-gray-200 text-gray-700 hover:border-primary hover:text-primary"
+                            : "border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary hover:text-primary"
                         )}
                       >
                         {copiedToken === config.token ? (
@@ -282,7 +284,7 @@ export default function SupplierPortalLink() {
                       </button>
                       <button
                         onClick={() => sendWhatsApp(config)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-green-500 text-white border border-green-500"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-[var(--accent-soft)] text-white border border-[var(--data-success)]/30"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         WhatsApp
@@ -303,7 +305,7 @@ export default function SupplierPortalLink() {
               {lowStock.length} producto{lowStock.length !== 1 ? "s" : ""} bajo stock incluido{lowStock.length !== 1 ? "s" : ""} en el portal
             </p>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[var(--text-secondary)]">
             El proveedor podra ver estos productos y enviar una cotizacion directamente.
           </p>
         </div>

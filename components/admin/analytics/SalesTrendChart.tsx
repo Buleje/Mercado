@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ComposedChart,
@@ -15,7 +16,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@buleje/design-system/icons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,18 +75,18 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{formatDate(d.fecha, "full")}</p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{formatDate(d.fecha, "full")}</p>
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ventas</span>
         <span className="font-mono font-medium text-[#00B4A6]">S/ {d.total.toFixed(2)}</span>
       </p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Media 7d</span>
-        <span className="font-mono font-medium text-gray-400">S/ {d.movingAvg7d.toFixed(2)}</span>
+        <span className="font-mono font-medium text-[var(--text-tertiary)]">S/ {d.movingAvg7d.toFixed(2)}</span>
       </p>
-      {d.isQuincena && <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5">Quincena</p>}
-      {d.isFeriado && <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
+      {d.isQuincena && <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5">Quincena</p>}
+      {d.isFeriado && <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
     </div>
   );
 }
@@ -222,9 +223,9 @@ export default function SalesTrendChart() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
-        <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-64 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -232,13 +233,13 @@ export default function SalesTrendChart() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">
           No se pudieron cargar los datos de ventas
         </p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -250,19 +251,19 @@ export default function SalesTrendChart() {
   // ── Empty ──
   if (!chartData.length) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos de ventas para este periodo</p>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
+        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de ventas para este periodo</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {/* Header + pills */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
           Tendencia de Ventas
-        </h3>
+        </CardTitle>
         <div className="flex items-center gap-1">
           {pills.map((p) => (
             <button
@@ -271,8 +272,8 @@ export default function SalesTrendChart() {
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                 period === p.key
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               {p.label}

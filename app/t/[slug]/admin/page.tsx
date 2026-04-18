@@ -48,10 +48,10 @@ export default function TenantAdminGateway() {
   }, [slug, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[var(--surface-canvas)]">
       <Loader2 className="w-8 h-8 animate-spin text-[#00B4A6]" />
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        Cargando panel de <strong className="text-gray-700 dark:text-gray-300">{slug}</strong>…
+      <p className="text-sm text-[var(--text-tertiary)]">
+        Cargando panel de <strong className="text-[var(--text-secondary)]">{slug}</strong>…
       </p>
     </div>
   );

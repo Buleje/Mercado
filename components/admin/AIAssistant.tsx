@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Bot, X, Send, Mic, MicOff, Sparkles,
@@ -7,7 +8,7 @@ import {
   Loader2, Maximize2, Minimize2, Trash2,
   Volume2, VolumeX, Play, Clock, BarChart3, WifiOff, Bell, Check, XCircle,
   History, Star, Command, ChevronRight, ArrowRight, Zap,
-  Table, BarChart, Activity, Search } from "lucide-react";
+  Table, BarChart, Activity, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 
@@ -56,14 +57,14 @@ type WidgetSize = "mini" | "medium" | "large";
 
 // Mejora 30: Grouped Quick Actions by category
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40", category: "Prioridades" },
-  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40", category: "Analisis" },
-  { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-red-600 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/40", category: "Prioridades" },
-  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40", category: "Estrategia" },
-  { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800/40", category: "Estrategia" },
-  { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40", category: "Analisis" },
-  { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800/40", category: "Analisis" },
-  { label: "Hazlo por mí", icon: Zap, prompt: "Quiero que ejecutes acciones automáticamente. Revisa qué se necesita hacer urgente y propón acciones ejecutables que yo solo tenga que confirmar.", color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/40", category: "Prioridades" },
+  { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-[var(--data-warning)] dark:border-[var(--data-warning)]/40", category: "Prioridades" },
+  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", category: "Analisis" },
+  { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30 border-[var(--data-error)] dark:border-[var(--data-error)]/40", category: "Prioridades" },
+  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", category: "Estrategia" },
+  { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Estrategia" },
+  { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Analisis" },
+  { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30 border-[var(--data-info)] dark:border-[var(--data-info)]/40", category: "Analisis" },
+  { label: "Hazlo por mí", icon: Zap, prompt: "Quiero que ejecutes acciones automáticamente. Revisa qué se necesita hacer urgente y propón acciones ejecutables que yo solo tenga que confirmar.", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30 border-[var(--data-warning)] dark:border-[var(--data-warning)]/40", category: "Prioridades" },
 ];
 
 const GREETING: Message = {
@@ -609,8 +610,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
     return content.split("\n").map((line, i) => {
       // Headers
-      if (line.startsWith("### ")) return <h4 key={i} className="font-bold text-sm text-gray-800 dark:text-foreground mt-3 mb-1">{line.slice(4)}</h4>;
-      if (line.startsWith("## ")) return <h3 key={i} className="font-extrabold text-sm text-gray-900 dark:text-foreground mt-3 mb-1">{line.slice(3)}</h3>;
+      if (line.startsWith("### ")) return <h4 key={i} className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mt-3 mb-1">{line.slice(4)}</h4>;
+      if (line.startsWith("## ")) return <CardTitle key={i} className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground mt-3 mb-1">{line.slice(3)}</CardTitle>;
 
       // Mejora 40: Progress bar detection — e.g. [PROGRESS:75|Stock]
       const progressMatch = line.match(/\[PROGRESS:(\d+)\|(.+?)\]/);
@@ -619,12 +620,12 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         const label = progressMatch[2];
         return (
           <div key={i} className="my-1.5">
-            <div className="flex items-center justify-between text-[10px] mb-0.5">
-              <span className="text-gray-600 dark:text-gray-400">{label}</span>
+            <div className="flex items-center justify-between text-[length:var(--ts-2xs)] mb-0.5">
+              <span className="text-[var(--text-secondary)]">{label}</span>
               <span className="font-bold">{pct}%</span>
             </div>
-            <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-emerald-500" : pct > 40 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${pct}%` }} />
+            <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-[var(--accent-soft)]" : pct > 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]")} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -659,9 +660,9 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   const formatInline = (text: string, moduleRegex: RegExp) => {
     const safe = escapeHtml(text);
     return safe
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-gray-900 dark:text-foreground">$1</strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[var(--text-primary)] dark:text-foreground">$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`(.+?)`/g, '<code class="text-[10px] bg-gray-100 dark:bg-accent px-1 py-0.5 rounded font-mono">$1</code>')
+      .replace(/`(.+?)`/g, '<code class="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-accent px-1 py-0.5 rounded font-mono">$1</code>')
       .replace(moduleRegex, (_match, mod) => {
         const safeMod = mod.replace(/[^a-z0-9-]/g, "");
         return `<button onclick="window.__bulejeNavTo&&window.__bulejeNavTo('${safeMod}')" class="text-primary font-bold hover:underline cursor-pointer">&quot;${safeMod}&quot;</button>`;
@@ -681,11 +682,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       <div className="mt-2 space-y-1.5">
         {msg.actions.map((action, i) => (
           <div key={i} className={cn(
-            "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] border transition-all",
-            action.status === "done" ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400" :
-            action.status === "error" ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400" :
-            action.status === "executing" ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40 text-amber-700" :
-            "bg-white dark:bg-accent/30 border-gray-200 dark:border-card-border text-gray-700 dark:text-gray-300"
+            "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] border transition-all",
+            action.status === "done" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" :
+            action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]" :
+            action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)]" :
+            "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)]"
           )}>
             {action.status === "pending" && (
               <button onClick={() => handleExecuteAction(msg.id, i)} className="flex items-center gap-1.5 font-semibold text-primary hover:underline">
@@ -693,8 +694,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               </button>
             )}
             {action.status === "executing" && <Loader2 className="h-3 w-3 animate-spin" />}
-            {action.status === "done" && <Check className="h-3 w-3 text-emerald-600" />}
-            {action.status === "error" && <XCircle className="h-3 w-3 text-red-500" />}
+            {action.status === "done" && <Check className="h-3 w-3 text-[var(--data-success)]" />}
+            {action.status === "error" && <XCircle className="h-3 w-3 text-[var(--data-error)]" />}
             <span className="flex-1">{action.result ?? action.label}</span>
             {/* Mejora 31: Direct navigate if action has a module target */}
             {action.status === "done" && !!action.payload.module && (
@@ -751,10 +752,10 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     ].filter((c, i, arr) => c && arr.indexOf(c) === i).slice(0, 5);
     if (chips.length === 0) return null;
     return (
-      <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-gray-100 dark:border-card-border shrink-0">
+      <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0">
         {chips.map((chip, idx) => (
           <button key={`${chip}-${idx}`} onClick={() => sendMessage(chip)}
-            className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800/40 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors">
+            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/50 transition-colors">
             {chip}
           </button>
         ))}
@@ -766,7 +767,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   const renderMessages = () => (
     <>
       {isOffline && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 text-[10px] text-amber-700 dark:text-amber-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)]">
           <WifiOff className="h-3.5 w-3.5 shrink-0" />
           <span>Sin conexión — respuestas pre-calculadas</span>
         </div>
@@ -774,13 +775,13 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
       {/* Mejora 38: Tour banner */}
       {tourStep >= 0 && tourStep < TOUR_STEPS.length && (
-        <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40 rounded-xl p-3 space-y-2">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider">Tour {tourStep + 1}/{TOUR_STEPS.length}</span>
-            <button onClick={() => { setTourStep(-1); localStorage.setItem(TOUR_KEY, "1"); }} className="text-[9px] text-indigo-400 hover:underline">Saltar</button>
+            <span className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-secondary)] tracking-wider">Tour {tourStep + 1}/{TOUR_STEPS.length}</span>
+            <button onClick={() => { setTourStep(-1); localStorage.setItem(TOUR_KEY, "1"); }} className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:underline">Saltar</button>
           </div>
-          <p className="text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">{TOUR_STEPS[tourStep].msg.replace(/\*\*/g, "")}</p>
-          <button onClick={advanceTour} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-primary)] leading-relaxed">{TOUR_STEPS[tourStep].msg.replace(/\*\*/g, "")}</p>
+          <button onClick={advanceTour} className="text-xs font-bold text-[var(--text-secondary)] hover:underline flex items-center gap-1">
             {tourStep < TOUR_STEPS.length - 1 ? "Siguiente" : "Entendido"}
           </button>
         </div>
@@ -789,14 +790,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {messages.map(msg => (
         <div key={msg.id} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
           {msg.role === "assistant" && (
-            <div className="w-6 h-6 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-6 h-6 rounded-lg bg-[var(--text-primary)] flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="h-3 w-3 text-white" />
             </div>
           )}
           <div className="max-w-[85%]">
             <div className={cn(
               "rounded-xl px-3 py-2 text-xs leading-relaxed",
-              msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-gray-300 rounded-bl-md border border-gray-100 dark:border-card-border"
+              msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-gray-50 dark:bg-accent/50 text-[var(--text-secondary)] rounded-bl-md border border-[var(--rule-soft)] dark:border-card-border"
             )}>
               {msg.role === "assistant" ? renderContent(msg.content) : msg.content}
             </div>
@@ -804,8 +805,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             {/* Mejora 34: Favorite star + TTS */}
             {msg.role === "user" && msg.content.length > 5 && (
               <button onClick={() => setFavorites(toggleFavorite(msg.content))}
-                className={cn("mt-0.5 text-[9px] flex items-center gap-0.5 transition-colors",
-                  favorites.includes(msg.content) ? "text-amber-500" : "text-gray-300 hover:text-amber-400"
+                className={cn("mt-0.5 text-[length:var(--ts-2xs)] flex items-center gap-0.5 transition-colors",
+                  favorites.includes(msg.content) ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)] hover:text-[var(--data-warning)]"
                 )}>
                 <Star className="h-2.5 w-2.5" fill={favorites.includes(msg.content) ? "currentColor" : "none"} />
                 {favorites.includes(msg.content) ? "Favorita" : "Guardar"}
@@ -813,7 +814,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             )}
             {msg.role === "assistant" && msg.id !== "greeting" && msg.content.length > 20 && (
               <button onClick={() => speak(msg.content)}
-                className="mt-1 text-[9px] text-gray-400 dark:text-muted hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 transition-colors">
+                className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors">
                 <Volume2 className="h-2.5 w-2.5" /> Escuchar
               </button>
             )}
@@ -823,11 +824,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
       {loading && (
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-[var(--text-primary)] flex items-center justify-center shrink-0">
             <Bot className="h-3 w-3 text-white" />
           </div>
-          <div className="bg-gray-50 dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-gray-100 dark:border-card-border">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="bg-gray-50 dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Analizando…
             </div>
@@ -840,7 +841,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
   // Mejora 37: Input area (shared)
   const renderInputArea = (compact?: boolean) => (
-    <div className={cn("px-3 py-2 border-t border-gray-100 dark:border-card-border shrink-0", compact && "py-1.5")}>
+    <div className={cn("px-3 py-2 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0", compact && "py-1.5")}>
       <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           <textarea ref={inputRef} value={input}
@@ -856,8 +857,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-gray-800 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
-              isListening ? "border-red-300 dark:border-red-800 bg-red-50/30 dark:bg-red-950/10" : "border-gray-200 dark:border-card-border"
+              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+              isListening ? "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-card-border"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
             disabled={loading}
@@ -865,7 +866,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         </div>
         <button onClick={toggleVoice}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
-            isListening ? "bg-red-500 text-white hover:bg-red-600 animate-pulse" : "bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+            isListening ? "bg-[var(--data-error)] text-white hover:bg-[var(--data-error)] animate-pulse" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
           )}
           title={isListening ? "Detener" : "Hablar"}>
           {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -873,17 +874,17 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
             input.trim() && !loading
-              ? "bg-linear-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 "
-              : "bg-gray-100 dark:bg-surface text-gray-300 dark:text-muted cursor-not-allowed"
+              ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 "
+              : "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
           )}>
           <Send className="h-3.5 w-3.5" />
         </button>
       </div>
       <div className="flex items-center justify-between mt-1 px-1">
-        <span className="text-[9px] text-gray-300 dark:text-muted">Ctrl+K comandos · Shift+Enter nueva línea</span>
+        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Ctrl+K comandos · Shift+Enter nueva línea</span>
         {messages.length > 2 && (
           <button onClick={() => setMessages(prev => [...prev, { ...GREETING, id: `greeting-${Date.now()}` }])}
-            className="text-[9px] text-primary font-semibold hover:underline flex items-center gap-0.5">
+            className="text-[length:var(--ts-2xs)] text-primary font-semibold hover:underline flex items-center gap-0.5">
             <Sparkles className="h-2.5 w-2.5" /> Acciones rápidas
           </button>
         )}
@@ -896,11 +897,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     if (!showCmdPalette) return null;
     return (
       <div className="absolute bottom-full left-0 right-0 mb-1 z-10">
-        <div className="mx-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-card-border">
-            <Command className="h-3.5 w-3.5 text-gray-400" />
+        <div className="mx-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <Command className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
             <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="Buscar comando…"
-              className="flex-1 bg-transparent text-xs text-gray-900 dark:text-white placeholder:text-gray-400 outline-none"
+              className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
               onKeyDown={e => { if (e.key === "Escape") { setShowCmdPalette(false); setCmdSearch(""); } }} />
           </div>
           <div className="max-h-48 overflow-y-auto">
@@ -913,11 +914,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                   if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                   else if (cmd.prompt) sendMessage(cmd.prompt);
                 }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                  <Icon className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="font-mono text-[10px] text-violet-600">{cmd.cmd}</span>
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{cmd.cmd}</span>
                   <span className="flex-1">{cmd.label}</span>
-                  <ChevronRight className="h-3 w-3 text-gray-300" />
+                  <ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" />
                 </button>
               );
             })}
@@ -932,13 +933,13 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     return (
       <div className="flex flex-col h-full w-full bg-white dark:bg-card">
         {/* Compact header */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--text-primary)] text-[var(--surface-canvas)] shrink-0">
           <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
             <Bot className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm leading-tight">Asistente IA</h3>
-            <p className="text-[10px] text-white/70">
+            <CardTitle className="font-bold text-sm leading-tight">Asistente IA</CardTitle>
+            <p className="text-[length:var(--ts-2xs)] text-white/70">
               {isOffline ? "Modo offline" : moduleContext ? `Modulo: ${moduleContext}` : "IA en tiempo real"}
             </p>
           </div>
@@ -954,14 +955,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
         {/* Mejora 30: Grouped quick actions */}
         {messages.length <= 2 && !loading && (
-          <div className="px-4 py-2.5 border-b border-gray-100 dark:border-card-border shrink-0 space-y-2">
+          <div className="px-4 py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0 space-y-2">
             {Object.entries(groupedActions).map(([category, actions]) => (
               <div key={category}>
-                <p className="text-[9px] font-bold text-gray-400 mb-1">{category}</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-1">{category}</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {actions.slice(0, 2).map(action => (
                     <button key={action.label} onClick={() => sendMessage(action.prompt)}
-                      className={cn("flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left", action.color)}>
+                      className={cn("flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[length:var(--ts-2xs)] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left", action.color)}>
                       <action.icon className="h-3 w-3 shrink-0" />
                       <span className="leading-tight truncate">{action.label}</span>
                     </button>
@@ -993,16 +994,16 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {!open && (
         <button onClick={() => setOpen(true)}
           className={cn(
-            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-300",
-            "bg-linear-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 hover:shadow-violet-500/30 hover:scale-105",
-            "text-white",
-            pulse && "animate-bounce shadow-violet-500/40"
+            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-[var(--dur-base)]",
+            "bg-[var(--text-primary)] hover:opacity-90 hover:scale-105",
+            "text-[var(--surface-canvas)]",
+            pulse && "animate-bounce"
           )}
           title="Asistente Ejecutivo IA">
           <Bot className="h-7 w-7" />
           {/* Mejora 29: Badge with notification count */}
           {notifications.length > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full border-2 border-white dark:border-card text-[9px] font-bold flex items-center justify-center text-white px-1">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[var(--data-error)] rounded-full border-2 border-white dark:border-card text-[length:var(--ts-2xs)] font-bold flex items-center justify-center text-white px-1">
               {notifications.length}
             </span>
           )}
@@ -1010,13 +1011,13 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {notifications.length === 0 && (
             <span className={cn("absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-card",
               healthScore !== null
-                ? healthScore > 70 ? "bg-emerald-500" : healthScore > 40 ? "bg-amber-500 animate-pulse" : "bg-red-500 animate-pulse"
-                : "bg-emerald-500 animate-pulse"
+                ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning)] animate-pulse" : "bg-[var(--data-error)] animate-pulse"
+                : "bg-[var(--accent-soft)] animate-pulse"
             )} />
           )}
           {/* Mejora 33: Mini health score label */}
           {healthScore !== null && notifications.length === 0 && (
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-white dark:bg-card text-gray-700 dark:text-gray-300 px-1.5 rounded-full border border-gray-200 dark:border-card-border ">
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-bold bg-white dark:bg-card text-[var(--text-secondary)] px-1.5 rounded-full border border-[var(--rule-base)] dark:border-card-border ">
               {healthScore}%
             </span>
           )}
@@ -1028,13 +1029,13 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         <>
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
           <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4">
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-card-border">
-                <Search className="h-4 w-4 text-gray-400" />
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+                <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="¿Qué quieres hacer?"
-                  className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none"
+                  className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
                   onKeyDown={e => { if (e.key === "Escape") { setShowCmdPalette(false); setCmdSearch(""); } }} />
-                <kbd className="text-[9px] text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono">Esc</kbd>
+                <kbd className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded font-mono">Esc</kbd>
               </div>
               <div className="max-h-60 overflow-y-auto">
                 {filteredCmds.map(cmd => {
@@ -1046,11 +1047,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                       if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                       else if (cmd.prompt) { setOpen(true); setTimeout(() => sendMessage(cmd.prompt), 200); }
                     }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                      <Icon className="h-4 w-4 text-gray-400" />
-                      <span className="font-mono text-xs text-violet-600">{cmd.cmd}</span>
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
+                      <span className="font-mono text-xs text-[var(--text-secondary)]">{cmd.cmd}</span>
                       <span className="flex-1 text-left">{cmd.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-gray-300" />
+                      <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     </button>
                   );
                 })}
@@ -1063,25 +1064,25 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 28: Chat panel with 3 sizes */}
       {open && (
         <div className={cn(
-          "fixed z-50 flex flex-col bg-white dark:bg-card border border-gray-200 dark:border-card-border transition-all duration-300",
+          "fixed z-50 flex flex-col bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border transition-all duration-[var(--dur-base)]",
           expanded ? "inset-4 rounded-xl" :
           widgetSize === "mini" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-80 h-96 max-h-[70vh] rounded-xl" :
           widgetSize === "large" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[480px] h-[700px] max-h-[90vh] rounded-xl" :
           "bottom-20 right-4 sm:bottom-6 sm:right-6 w-95 sm:w-105 h-150 max-h-[85vh] rounded-xl"
         )}>
           {/* Header */}
-          <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl shrink-0">
+          <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--text-primary)] text-[var(--surface-canvas)] rounded-t-2xl shrink-0">
             <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
               <Bot className="h-5 w-5" />
             </div>
             {/* Mejora 33: Mini dashboard in header */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-sm leading-tight">Asistente Ejecutivo</h3>
-              <p className="text-[10px] text-white/70 flex items-center gap-2">
+              <CardTitle className="font-bold text-sm leading-tight">Asistente Ejecutivo</CardTitle>
+              <p className="text-[length:var(--ts-2xs)] text-white/70 flex items-center gap-2">
                 {isOffline ? "Modo offline" : "IA en tiempo real"}
                 {healthScore !== null && !isOffline && (
-                  <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                    healthScore > 70 ? "bg-emerald-400/30 text-emerald-200" : healthScore > 40 ? "bg-amber-400/30 text-amber-200" : "bg-red-400/30 text-red-200"
+                  <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
+                    healthScore > 70 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : healthScore > 40 ? "bg-[var(--data-warning)]/30 text-[var(--data-warning)]" : "bg-[var(--data-error)]/30 text-[var(--data-error)]"
                   )}>
                     Salud: {healthScore}%
                   </span>
@@ -1115,14 +1116,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
           {/* Mejora 29: Enhanced notifications */}
           {notifications.length > 0 && showPanel === "chat" && (
-            <div className="px-3 py-2 bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-800/40 shrink-0">
+            <div className="px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border-b border-[var(--data-error)] dark:border-[var(--data-error)]/40 shrink-0">
               <div className="flex items-center gap-2 mb-1">
-                <Bell className="h-3.5 w-3.5 text-red-500" />
-                <span className="text-[10px] font-bold text-red-700 dark:text-red-400">Alertas ({notifications.length})</span>
-                <button onClick={() => setNotifications([])} className="ml-auto text-[9px] text-red-400 hover:underline">Cerrar</button>
+                <Bell className="h-3.5 w-3.5 text-[var(--data-error)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Alertas ({notifications.length})</span>
+                <button onClick={() => setNotifications([])} className="ml-auto text-[length:var(--ts-2xs)] text-[var(--data-error)] hover:underline">Cerrar</button>
               </div>
               {notifications.map((n, i) => (
-                <p key={i} className="text-[10px] text-red-600 dark:text-red-400 leading-relaxed">{n}</p>
+                <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] leading-relaxed">{n}</p>
               ))}
             </div>
           )}
@@ -1130,8 +1131,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {/* Stats panel */}
           {showPanel === "stats" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              <h4 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-violet-500" /> Estadísticas de Uso
+              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-[var(--text-secondary)]" /> Estadísticas de Uso
               </h4>
               {(() => {
                 const stats = getUsageStats();
@@ -1139,23 +1140,23 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center">
-                        <div className="text-xl font-extrabold text-violet-600">{stats.total}</div>
-                        <div className="text-[10px] text-gray-500 dark:text-muted">Consultas totales</div>
+                        <div className="text-xl font-extrabold text-[var(--text-secondary)]">{stats.total}</div>
+                        <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Consultas totales</div>
                       </div>
                       <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center">
-                        <div className="text-xl font-extrabold text-indigo-600">{stats.todayCount}</div>
-                        <div className="text-[10px] text-gray-500 dark:text-muted">Hoy</div>
+                        <div className="text-xl font-extrabold text-[var(--text-secondary)]">{stats.todayCount}</div>
+                        <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Hoy</div>
                       </div>
                       <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center col-span-2">
-                        <div className="text-xl font-extrabold text-emerald-600">{stats.avgMs > 0 ? `${(stats.avgMs / 1000).toFixed(1)}s` : "—"}</div>
-                        <div className="text-[10px] text-gray-500 dark:text-muted">Tiempo promedio</div>
+                        <div className="text-xl font-extrabold text-[var(--data-success)]">{stats.avgMs > 0 ? `${(stats.avgMs / 1000).toFixed(1)}s` : "—"}</div>
+                        <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Tiempo promedio</div>
                       </div>
                     </div>
                     {stats.topQueries.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase mb-1.5">Consultas frecuentes</p>
+                        <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase mb-1.5">Consultas frecuentes</p>
                         {stats.topQueries.map((q, i) => (
-                          <button key={i} onClick={() => { setShowPanel("chat"); sendMessage(q); }} className="block w-full text-left text-[10px] text-gray-600 dark:text-gray-400 hover:text-primary py-1 truncate">
+                          <button key={i} onClick={() => { setShowPanel("chat"); sendMessage(q); }} className="block w-full text-left text-[length:var(--ts-2xs)] text-[var(--text-secondary)] hover:text-primary py-1 truncate">
                             {i + 1}. {q}
                           </button>
                         ))}
@@ -1164,10 +1165,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                     {/* Mejora 34: Favorites section */}
                     {favorites.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase mb-1.5 flex items-center gap-1"><Star className="h-3 w-3 text-amber-500" /> Favoritas</p>
+                        <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase mb-1.5 flex items-center gap-1"><Star className="h-3 w-3 text-[var(--data-warning)]" /> Favoritas</p>
                         {favorites.map((f, i) => (
-                          <button key={i} onClick={() => { setShowPanel("chat"); sendMessage(f); }} className="block w-full text-left text-[10px] text-gray-600 dark:text-gray-400 hover:text-primary py-1 truncate">
-                            ⭐ {f}
+                          <button key={i} onClick={() => { setShowPanel("chat"); sendMessage(f); }} className="block w-full text-left text-[length:var(--ts-2xs)] text-[var(--text-secondary)] hover:text-primary py-1 truncate flex items-center gap-1.5">
+                            <Star className="h-3 w-3 shrink-0 text-[var(--data-warning)]" aria-hidden />
+                            {f}
                           </button>
                         ))}
                       </div>
@@ -1181,19 +1183,19 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {/* History panel */}
           {showPanel === "history" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-              <h4 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4 text-violet-500" /> Sesiones Anteriores
+              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[var(--text-secondary)]" /> Sesiones Anteriores
               </h4>
               {(() => {
                 const sessions = getSessions();
-                if (sessions.length === 0) return <p className="text-[10px] text-gray-400 dark:text-muted">No hay sesiones guardadas.</p>;
+                if (sessions.length === 0) return <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">No hay sesiones guardadas.</p>;
                 return sessions.map(s => (
-                  <div key={s.id} className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 border border-gray-100 dark:border-card-border">
+                  <div key={s.id} className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{s.date}</span>
-                      <span className="text-[9px] text-gray-400 dark:text-muted">{s.messageCount} msgs</span>
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{s.date}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{s.messageCount} msgs</span>
                     </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">{s.summary}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-relaxed">{s.summary}</p>
                   </div>
                 ));
               })()}
@@ -1212,11 +1214,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 <div className="px-4 pb-2 shrink-0">
                   {Object.entries(groupedActions).map(([category, actions]) => (
                     <div key={category} className="mb-2">
-                      <p className="text-[9px] font-bold text-gray-400 dark:text-muted mb-1">{category}</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">{category}</p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {actions.map(action => (
                           <button key={action.label} onClick={() => sendMessage(action.prompt)}
-                            className={cn("flex items-center gap-2 px-2.5 py-2 rounded-xl text-[10px] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left", action.color)}>
+                            className={cn("flex items-center gap-2 px-2.5 py-2 rounded-xl text-[length:var(--ts-2xs)] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left", action.color)}>
                             <action.icon className="h-3.5 w-3.5 shrink-0" />
                             <span className="leading-tight">{action.label}</span>
                           </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -22,7 +22,7 @@ export default function ChatIAModule() {
         description="Pregúntale cualquier cosa a tu asistente inteligente"
         icon={MessageSquare}
       />
-      <div className="bg-white rounded-xl border border-gray-200 min-h-[600px] h-[calc(100vh-220px)]">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100vh-220px)]">
         <AIAssistant embedded />
       </div>
     </div>

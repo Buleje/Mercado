@@ -14,7 +14,7 @@ export function Kicker({ as: Comp = "p", children, className, ...rest }: Props) 
   return (
     <Comp
       className={cn(
-        "text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500",
+        "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]",
         className,
       )}
       {...rest}

@@ -1,6 +1,7 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect } from "react";
-import { Bell, Plus, Check, Trash2, Clock, AlertTriangle, Package, DollarSign, Calendar, X, CheckCircle } from "lucide-react";
+import { Bell, Plus, Check, Trash2, Clock, AlertTriangle, Package, DollarSign, Calendar, X, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
@@ -23,18 +24,18 @@ type Reminder = {
 
 /* ── config ─────────────────────────────────────────────────── */
 const TYPE_CONFIG: Record<ReminderType, { label: string; icon: typeof Bell; color: string }> = {
-  pago:        { label: "Pago", icon: DollarSign, color: "text-emerald-600" },
-  inventario:  { label: "Inventario", icon: Package, color: "text-emerald-600" },
-  tarea:       { label: "Tarea", icon: CheckCircle, color: "text-purple-600" },
-  vencimiento: { label: "Vencimiento", icon: AlertTriangle, color: "text-red-600" },
-  cliente:     { label: "Cliente", icon: Bell, color: "text-amber-600" },
-  general:     { label: "General", icon: Clock, color: "text-gray-600" },
+  pago:        { label: "Pago", icon: DollarSign, color: "text-[var(--data-success)]" },
+  inventario:  { label: "Inventario", icon: Package, color: "text-[var(--data-success)]" },
+  tarea:       { label: "Tarea", icon: CheckCircle, color: "text-[var(--text-secondary)]" },
+  vencimiento: { label: "Vencimiento", icon: AlertTriangle, color: "text-[var(--data-error)]" },
+  cliente:     { label: "Cliente", icon: Bell, color: "text-[var(--data-warning)]" },
+  general:     { label: "General", icon: Clock, color: "text-[var(--text-secondary)]" },
 };
 
 const PRIORITY_CONFIG: Record<ReminderPriority, { label: string; color: string; dot: string }> = {
-  alta:  { label: "Alta",  color: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",    dot: "bg-red-500" },
-  media: { label: "Media", color: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400", dot: "bg-amber-500" },
-  baja:  { label: "Baja",  color: "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted",        dot: "bg-gray-400" },
+  alta:  { label: "Alta",  color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",    dot: "bg-[var(--data-error)]" },
+  media: { label: "Media", color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]", dot: "bg-[var(--data-warning)]" },
+  baja:  { label: "Baja",  color: "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted",        dot: "bg-gray-400" },
 };
 
 /* ── seed data ──────────────────────────────────────────────── */
@@ -139,8 +140,8 @@ export default function SmartRemindersTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">Recordatorios Inteligentes</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">Alertas automáticas y manuales para pagos, inventario, tareas y más</p>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Recordatorios Inteligentes</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Alertas automáticas y manuales para pagos, inventario, tareas y más</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button onClick={() => setShowNew(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
@@ -151,33 +152,33 @@ export default function SmartRemindersTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Pendientes</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1">{stats.pending}</p>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Pendientes</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] mt-1">{stats.pending}</p>
         </div>
-        <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800 p-4 ">
-          <p className="text-xs text-red-600 dark:text-red-400 font-semibold">Prioridad alta</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-red-700 dark:text-red-400 mt-1">{stats.highPriority}</p>
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 ">
+          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">Prioridad alta</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">{stats.highPriority}</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 ">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Completados</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{stats.completed}</p>
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4 ">
+          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Completados</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{stats.completed}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Auto-generados</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">{stats.autoGenerated}</p>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Auto-generados</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] mt-1">{stats.autoGenerated}</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as typeof typeFilter)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as typeof typeFilter)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todos los tipos</option>
           {Object.entries(TYPE_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
         </select>
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           {([["all", "Todos"], ["pendiente", "Pendiente"], ["completado", "Hecho"], ["vencido", "Vencido"]] as const).map(([val, lbl]) => (
-            <button key={val} onClick={() => setStatusFilter(val)} className={cn("px-3 py-2 text-sm font-semibold transition-colors", statusFilter === val ? "bg-primary text-white" : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>{lbl}</button>
+            <button key={val} onClick={() => setStatusFilter(val)} className={cn("px-3 py-2 text-sm font-semibold transition-colors", statusFilter === val ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>{lbl}</button>
           ))}
         </div>
       </div>
@@ -186,7 +187,7 @@ export default function SmartRemindersTab() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 animate-pulse">
+            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-surface shrink-0" />
                 <div className="flex-1 space-y-2">
@@ -206,26 +207,26 @@ export default function SmartRemindersTab() {
           const TypeIcon = typeCfg.icon;
           const isCompleted = r.status === "completado";
           return (
-            <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4  flex items-start gap-2 sm:gap-4 transition-all", isCompleted && "opacity-60")}>
-              <button onClick={() => handleComplete(r.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors", isCompleted ? "bg-emerald-500 border-emerald-500" : "border-gray-300 dark:border-card-border hover:border-primary")}>
+            <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4  flex items-start gap-2 sm:gap-4 transition-all", isCompleted && "opacity-60")}>
+              <button onClick={() => handleComplete(r.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors", isCompleted ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30" : "border-[var(--rule-base)] dark:border-card-border hover:border-primary")}>
                 {isCompleted && <Check className="h-3.5 w-3.5 text-white" />}
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h3 className={cn("font-bold text-sm", isCompleted ? "line-through text-gray-400 dark:text-muted" : "text-gray-900 dark:text-foreground")}>{r.title}</h3>
-                  {r.autoGenerated && <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">AUTO</span>}
+                  <h3 className={cn("font-bold text-sm", isCompleted ? "line-through text-[var(--text-tertiary)] dark:text-muted" : "text-[var(--text-primary)] dark:text-foreground")}>{r.title}</h3>
+                  {r.autoGenerated && <span className="px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-[length:var(--ts-2xs)] font-bold">AUTO</span>}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-muted mb-2 line-clamp-2">{r.description}</p>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-2 line-clamp-2">{r.description}</p>
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", typeCfg.color)}>
                     <TypeIcon className="h-3 w-3" /> {typeCfg.label}
                   </span>
                   <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", priCfg.color)}><span className={cn("w-1.5 h-1.5 rounded-full", priCfg.dot)} /> {priCfg.label}</span>
-                  <span className="text-xs text-gray-400 dark:text-muted flex items-center gap-1"><Calendar className="h-3 w-3" /> {r.dueDate}</span>
-                  <span className={cn("text-xs font-semibold", r.dueDate < new Date().toISOString().slice(0, 10) && r.status !== "completado" ? "text-red-500" : "text-gray-400 dark:text-muted")}>{getDaysText(r.dueDate)}</span>
+                  <span className="text-xs text-[var(--text-tertiary)] dark:text-muted flex items-center gap-1"><Calendar className="h-3 w-3" /> {r.dueDate}</span>
+                  <span className={cn("text-xs font-semibold", r.dueDate < new Date().toISOString().slice(0, 10) && r.status !== "completado" ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)] dark:text-muted")}>{getDaysText(r.dueDate)}</span>
                 </div>
               </div>
-              <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0">
+              <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors shrink-0">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
@@ -235,46 +236,46 @@ export default function SmartRemindersTab() {
       )}
 
       {!loading && filtered.length === 0 && (
-        <div className="text-center py-12"><Bell className="h-12 w-12 text-gray-300 dark:text-muted mx-auto mb-3" /><p className="text-gray-400 dark:text-muted font-semibold">No hay recordatorios{statusFilter !== "all" ? " en este estado" : ""}</p></div>
+        <div className="text-center py-12"><Bell className="h-12 w-12 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" /><p className="text-[var(--text-tertiary)] dark:text-muted font-semibold">No hay recordatorios{statusFilter !== "all" ? " en este estado" : ""}</p></div>
       )}
 
       {/* New modal */}
       {showNew && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowNew(false)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Nuevo recordatorio</h3>
-              <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nuevo recordatorio</CardTitle>
+              <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Título</label>
-                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="¿Qué necesitas recordar?" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary" autoFocus />
+                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Título</label>
+                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="¿Qué necesitas recordar?" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary" autoFocus />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Descripción</label>
-                <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Detalles opcionales..." rows={2} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary resize-none" />
+                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Descripción</label>
+                <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Detalles opcionales..." rows={2} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary resize-none" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Tipo</label>
-                  <select value={newType} onChange={e => setNewType(e.target.value as ReminderType)} className="w-full px-2 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary">
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Tipo</label>
+                  <select value={newType} onChange={e => setNewType(e.target.value as ReminderType)} className="w-full px-2 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary">
                     {Object.entries(TYPE_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Prioridad</label>
-                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as ReminderPriority)} className="w-full px-2 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary">
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Prioridad</label>
+                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as ReminderPriority)} className="w-full px-2 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary">
                     <option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Fecha límite</label>
-                  <input type="date" value={newDue} onChange={e => setNewDue(e.target.value)} className="w-full px-2 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary" />
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Fecha límite</label>
+                  <input type="date" value={newDue} onChange={e => setNewDue(e.target.value)} className="w-full px-2 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs outline-none focus:border-primary" />
                 </div>
               </div>
               <div className="flex flex-wrap justify-end gap-3 pt-2">
-                <button onClick={() => setShowNew(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+                <button onClick={() => setShowNew(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
                 <button onClick={handleAdd} disabled={!newTitle.trim() || !newDue} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50">Crear</button>
               </div>
             </div>

@@ -1,8 +1,9 @@
 "use client";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
-import { MapPin, Loader2, AlertCircle, TrendingUp } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ const ZONE_TEXT_COLORS = [
   "text-[#2dd4bf]",
   "text-[#74c69d]",
   "text-[#95d5b2]",
-  "text-gray-400",
+  "text-[var(--text-tertiary)]",
 ];
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -103,10 +104,10 @@ export default function CustomerHeatmap() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900">
+        <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
           Mapa de Calor de Clientes
-        </h2>
-        <p className="text-sm text-gray-500">
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-secondary)]">
           Distribucion de clientes por zona de Pucallpa
         </p>
       </div>
@@ -124,45 +125,43 @@ export default function CustomerHeatmap() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <p className="text-2xl font-bold text-primary">{total}</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[var(--text-secondary)]">
             Total clientes
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <p className="text-2xl font-bold text-primary">
             {zones.filter((z) => z.zone !== "Sin ubicacion").length}
           </p>
-          <p className="text-xs text-gray-500">Zonas</p>
+          <p className="text-xs text-[var(--text-secondary)]">Zonas</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <p className="text-2xl font-bold text-primary">
             {zones.find((z) => z.zone === "Sin ubicacion")?.count ?? 0}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[var(--text-secondary)]">
             Sin ubicacion
           </p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)]">{error}</p>
         </div>
       ) : (
         /* Horizontal bar chart */
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h3 className="mb-4 text-sm font-semibold text-gray-800">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+          <CardTitle className="mb-4 text-sm font-semibold text-[var(--text-primary)]">
             Clientes por zona
-          </h3>
+          </CardTitle>
           {zones.length === 0 ? (
-            <p className="text-center text-sm text-gray-400">
+            <p className="text-center text-sm text-[var(--text-tertiary)]">
               No hay datos suficientes para mostrar zonas.
             </p>
           ) : (
@@ -178,12 +177,12 @@ export default function CustomerHeatmap() {
                     <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <MapPin className={cn("h-3.5 w-3.5", colorText)} />
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm font-medium text-[var(--text-primary)]">
                           {z.zone}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-[var(--text-secondary)]">
                           {z.count} clientes ({pct}%)
                         </span>
                         <button
@@ -199,7 +198,7 @@ export default function CustomerHeatmap() {
                     <div className="relative h-6 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
                         className={cn(
-                          "flex h-full items-center justify-end pr-2 transition-all duration-500",
+                          "flex h-full items-center justify-end pr-2 transition-all duration-[var(--dur-slow)]",
                           colorBar
                         )}
                         style={{ width: `${Math.max(pct, 4)}%` }}
@@ -216,7 +215,7 @@ export default function CustomerHeatmap() {
                         {z.customers.map((name, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-gray-700 "
+                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-[var(--text-primary)] "
                           >
                             {name}
                           </span>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { RotateCw, TrendingUp, Package } from "lucide-react";
+import { RotateCw, TrendingUp, Package } from "@buleje/design-system/icons";
 
 interface FrequentItem {
   productId: number;
@@ -50,7 +50,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
+            className="h-12 rounded-xl bg-[var(--surface-sunken)] animate-pulse"
           />
         ))}
       </div>
@@ -60,7 +60,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
   // Error state
   if (error) {
     return (
-      <div className="text-center py-6 text-gray-400 text-xs">
+      <div className="text-center py-6 text-[var(--text-tertiary)] text-xs">
         <RotateCw className="h-5 w-5 mx-auto mb-2 opacity-40" />
         <p>Error al cargar frecuentes</p>
       </div>
@@ -70,10 +70,10 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
   // Empty state
   if (items.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-[var(--text-tertiary)]">
         <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
         <p className="text-xs">No hay historial de compras aun</p>
-        <p className="text-[10px] mt-1 text-gray-300 dark:text-gray-600">
+        <p className="text-[length:var(--ts-2xs)] mt-1 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           Los productos frecuentes apareceran despues de crear ordenes de compra
         </p>
       </div>
@@ -84,7 +84,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
     <div className="space-y-1.5 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
         <TrendingUp className="h-3 w-3 text-[#00B4A6]" />
-        <span className="text-[10px] font-semibold text-gray-400">
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
           Top {items.length} productos (90 dias)
         </span>
       </div>
@@ -101,22 +101,22 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           )}
         >
           {/* Frequency badge */}
-          <span className="shrink-0 h-7 w-7 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-[10px] font-bold">
+          <span className="shrink-0 h-7 w-7 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold">
             {item.frequency}x
           </span>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+            <p className="text-xs font-medium text-[var(--text-primary)] truncate">
               {item.name}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               ~{item.avgQuantity} uds · S/{item.avgCost.toFixed(2)} c/u
             </p>
           </div>
 
           {/* Add hint */}
-          <span className="shrink-0 text-[10px] text-[#00B4A6] font-medium opacity-0 group-hover:opacity-100">
+          <span className="shrink-0 text-[length:var(--ts-2xs)] text-[#00B4A6] font-medium opacity-0 group-hover:opacity-100">
             + {item.avgQuantity}
           </span>
         </button>

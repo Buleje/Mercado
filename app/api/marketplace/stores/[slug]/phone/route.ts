@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/marketplace/stores/[slug]/phone
  * Endpoint público liviano: devuelve el whatsappPhone de la customización de la

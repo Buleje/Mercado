@@ -55,7 +55,7 @@ export function TenantTable({
   onPlanChange,
 }: TenantTableProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
       {loading ? (
         <div className="flex items-center justify-center gap-3 py-20 text-gray-400">
           <Loader2 className="w-5 h-5 animate-spin" /> Cargando tenants…
@@ -69,7 +69,7 @@ export function TenantTable({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 text-xs uppercase tracking-wider bg-gray-50 dark:bg-gray-900/60">
+              <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider bg-[var(--surface-canvas)]/60">
                 <th className="text-left px-5 py-3 cursor-pointer hover:text-gray-600 dark:hover:text-gray-200 select-none" onClick={() => onSort("name")}>
                   Tienda <SortIcon field="name" sortField={sortField} sortDir={sortDir} />
                 </th>
@@ -97,7 +97,7 @@ export function TenantTable({
                       onClick={() => onDetail(tenant)}
                       className="text-left hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                     >
-                      <div className="font-semibold text-gray-900 dark:text-white">{tenant.name}</div>
+                      <div className="font-semibold text-[var(--text-primary)]">{tenant.name}</div>
                       <div className="text-xs font-mono text-gray-400 mt-0.5">{tenant.slug}</div>
                       {tenant.ownerEmail && (
                         <div className="text-xs text-gray-400 mt-0.5 truncate max-w-48">{tenant.ownerEmail}</div>
@@ -121,10 +121,10 @@ export function TenantTable({
                   <td className="px-4 py-3">
                     <StatusBadge active={tenant.active} />
                     {tenant.cancelAtPeriodEnd && (
-                      <div className="text-[10px] text-orange-500 mt-1">Cancela pronto</div>
+                      <div className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-1">Cancela pronto</div>
                     )}
                     {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
-                      <div className="text-[10px] text-emerald-500 mt-1">
+                      <div className="text-[length:var(--ts-2xs)] text-[var(--data-success)] mt-1">
                         Trial hasta {fmtDate(tenant.trialEndsAt)}
                       </div>
                     )}
@@ -144,7 +144,7 @@ export function TenantTable({
 
                   {/* Orders this month */}
                   <td className="px-4 py-3 text-right hidden lg:table-cell">
-                    <span className="font-semibold text-gray-900 dark:text-white">
+                    <span className="font-semibold text-[var(--text-primary)]">
                       {tenant.usage?.ordersThisMonth ?? 0}
                     </span>
                     {tenant.limits && tenant.limits.maxOrdersPerMonth !== -1 && (
@@ -168,8 +168,8 @@ export function TenantTable({
                         title={tenant.active ? "Suspender tienda" : "Activar tienda"}
                         className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
                           tenant.active
-                            ? "text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            : "text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30"
+                            ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
+                            : "text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-green-950/30"
                         }`}
                       >
                         {actionLoading === `${tenant.slug}-active` ? (
@@ -196,7 +196,7 @@ export function TenantTable({
                         type="button"
                         onClick={() => onInvite(tenant.slug, tenant.name)}
                         title="Invitar usuario"
-                        className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-emerald-950/30 transition-colors"
                       >
                         <Users className="w-4 h-4" />
                       </button>
@@ -207,7 +207,7 @@ export function TenantTable({
                         disabled={actionLoading === `${tenant.slug}-purge`}
                         onClick={() => onPurge(tenant.slug, tenant.name)}
                         title="Limpiar datos de esta tienda"
-                        className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-purge` ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -222,7 +222,7 @@ export function TenantTable({
                         disabled={actionLoading === `${tenant.slug}-delete` || tenant.slug === "main"}
                         onClick={() => onDelete(tenant.slug, tenant.name)}
                         title={tenant.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
-                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-gray-300 hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-delete` ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

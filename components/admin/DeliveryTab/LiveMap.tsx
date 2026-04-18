@@ -179,7 +179,7 @@ export function LiveMap({ stops, trackingEvents, className }: LiveMapProps) {
           background: #f59e0b;
         }
         .delivery-stop-marker .stop-pin-delivered {
-          background: #16a34a;
+          background: #00B4A6;
         }
         .delivery-stop-marker .stop-pin-failed {
           background: #dc2626;

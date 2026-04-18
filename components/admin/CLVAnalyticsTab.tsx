@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Loader2, Users, TrendingUp, ShoppingCart, Calendar, Search, AlertTriangle, Medal } from "lucide-react";
+import { Loader2, Users, TrendingUp, ShoppingCart, Calendar, Search, AlertTriangle, Medal } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { CLVResponse, CLVCustomer } from "@/app/api/analytics/clv/route";
 
@@ -22,13 +23,13 @@ function predictFutureCLV(c: CLVCustomer): number {
 
 function KPI({ label, value, sub, icon: Icon, color }: { label: string; value: string; sub?: string; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", color)}>
         <Icon className="h-4 w-4 text-white" />
       </div>
-      <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{value}</p>
-      <p className="text-xs font-semibold text-gray-500 dark:text-muted mt-0.5">{label}</p>
-      {sub && <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{sub}</p>}
+      <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{value}</p>
+      <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">{label}</p>
+      {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -48,15 +49,12 @@ export default function CLVAnalyticsTab() {
   }, []);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20 gap-3">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <p className="text-sm text-gray-400 dark:text-muted">Calculando valor de vida del cliente...</p>
-    </div>
+    <LoadingState message="Calculando valor de vida del cliente..." />
   );
   if (error || !data) return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <AlertTriangle className="h-10 w-10 text-amber-400" />
-      <p className="text-sm font-semibold text-gray-500 dark:text-muted">Error cargando datos CLV</p>
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Error cargando datos CLV</p>
     </div>
   );
 
@@ -79,18 +77,18 @@ export default function CLVAnalyticsTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
           <TrendingUp className="h-6 w-6 text-primary" /> Valor de Vida del Cliente (CLV)
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-muted">Análisis de cohortes y retención de clientes</p>
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Análisis de cohortes y retención de clientes</p>
       </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <KPI label="Clientes activos"       value={String(data.summary.totalCustomers)} icon={Users}        color="bg-emerald-500" />
-        <KPI label="CLV promedio"           value={fmt(data.summary.avgLTV)}            icon={TrendingUp}   color="bg-emerald-500" sub={momChange ? `${Number(momChange) >= 0 ? "+" : ""}${momChange}% vs mes ant.` : undefined} />
+        <KPI label="Clientes activos"       value={String(data.summary.totalCustomers)} icon={Users}        color="bg-[var(--accent-soft)]" />
+        <KPI label="CLV promedio"           value={fmt(data.summary.avgLTV)}            icon={TrendingUp}   color="bg-[var(--accent-soft)]" sub={momChange ? `${Number(momChange) >= 0 ? "+" : ""}${momChange}% vs mes ant.` : undefined} />
         <KPI label="Pedidos por cliente"    value={String(data.summary.avgOrderCount)}  icon={ShoppingCart} color="bg-amber-500" />
-        <KPI label="Cohortes identificadas" value={String(data.cohorts.length)}         icon={Calendar}     color="bg-violet-500" />
+        <KPI label="Cohortes identificadas" value={String(data.cohorts.length)}         icon={Calendar}     color="bg-[var(--text-primary)]" />
       </div>
 
       {/* View toggle */}
@@ -98,27 +96,27 @@ export default function CLVAnalyticsTab() {
         {([["customers", "Clientes"], ["top10", "Top 10"], ["cohorts", "Cohortes"]] as const).map(([v, label]) => (
           <button key={v} onClick={() => setView(v)}
             className={cn("px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors",
-              view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-card"
+              view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-card"
             )}>
             {v === "top10" && <Medal className="h-3.5 w-3.5 inline mr-1" />}{label}
           </button>
         ))}
         {view === "customers" && (
           <div className="relative ml-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-1.5 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-48" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-48" />
           </div>
         )}
       </div>
 
       {/* Top 10 vista */}
       {view === "top10" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
-            <Medal className="h-4 w-4 text-yellow-500" /> Top 10 Clientes más valiosos
-          </h3>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+            <Medal className="h-4 w-4 text-[var(--data-warning)]" /> Top 10 Clientes más valiosos
+          </CardTitle>
           {top10.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Sin datos</p>
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-6">Sin datos</p>
           ) : (
             <div className="space-y-3">
               {top10.map((c, idx) => {
@@ -131,17 +129,17 @@ export default function CLVAnalyticsTab() {
                       <div className="flex items-center gap-2">
                         <span className="text-base w-6 shrink-0">{medals[idx] ?? `${idx + 1}.`}</span>
                         <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-foreground">{c.name}</p>
-                          <p className="text-[10px] text-gray-400">{c.phone} · {c.orderCount} pedidos · cohorte {fmtMonth(c.cohortMonth)}</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.phone} · {c.orderCount} pedidos · cohorte {fmtMonth(c.cohortMonth)}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-extrabold text-gray-900 dark:text-foreground">{fmt(c.totalSpent)}</p>
-                        <p className="text-[10px] text-emerald-600 font-semibold">Proy. 6m: {fmt(predicted)}</p>
+                        <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(c.totalSpent)}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-semibold">Proy. 6m: {fmt(predicted)}</p>
                       </div>
                     </div>
                     <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${barPct}%` }} />
+                      <div className="h-full bg-[var(--text-primary)] rounded-full transition-all" style={{ width: `${barPct}%` }} />
                     </div>
                   </div>
                 );
@@ -156,10 +154,10 @@ export default function CLVAnalyticsTab() {
         <div className="space-y-6">
           {/* Gráfico visual de CLV por cohorte */}
           {data.cohorts.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" /> CLV promedio por cohorte
-              </h3>
+              </CardTitle>
               <div className="flex items-end gap-2 h-32">
                 {data.cohorts.map(cohort => {
                   const heightPct = Math.max(5, (cohort.avgLTV / maxCohortLTV) * 100);
@@ -167,18 +165,18 @@ export default function CLVAnalyticsTab() {
                   const isPrev = cohort === data.cohorts[data.cohorts.length - 2];
                   return (
                     <div key={cohort.month} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${fmtMonth(cohort.month)}: ${fmt(cohort.avgLTV)}`}>
-                      <span className="text-[9px] text-gray-500 dark:text-muted font-semibold">{fmt(cohort.avgLTV)}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted font-semibold">{fmt(cohort.avgLTV)}</span>
                       <div
                         className={cn("w-full rounded-t-lg transition-all", isLast ? "bg-primary" : isPrev ? "bg-primary/60" : "bg-primary/30")}
                         style={{ height: `${heightPct}%` }}
                       />
-                      <span className="text-[9px] text-gray-400 truncate w-full text-center">{fmtMonth(cohort.month)}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate w-full text-center">{fmtMonth(cohort.month)}</span>
                     </div>
                   );
                 })}
               </div>
               {momChange !== null && (
-                <p className={cn("text-xs font-semibold mt-3 text-center", Number(momChange) >= 0 ? "text-emerald-600" : "text-red-500")}>
+                <p className={cn("text-xs font-semibold mt-3 text-center", Number(momChange) >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                   CLV promedio {Number(momChange) >= 0 ? "subió" : "bajó"} {Math.abs(Number(momChange))}% vs mes anterior
                 </p>
               )}
@@ -186,16 +184,16 @@ export default function CLVAnalyticsTab() {
           )}
 
           {/* Tabla de cohortes */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">Cohorte</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Clientes</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Ingresos totales</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">CLV promedio</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Pedidos prom.</th>
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                    <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Cohorte</th>
+                    <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Clientes</th>
+                    <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingresos totales</th>
+                    <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">CLV promedio</th>
+                    <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Pedidos prom.</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-card-border">
@@ -204,67 +202,67 @@ export default function CLVAnalyticsTab() {
                     const delta = prev ? cohort.avgLTV - prev.avgLTV : 0;
                     return (
                       <tr key={cohort.month} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                        <td className="px-4 py-2.5 font-semibold text-gray-900 dark:text-foreground">{fmtMonth(cohort.month)}</td>
-                        <td className="px-4 py-2.5 text-right text-gray-700 dark:text-foreground">{cohort.customers}</td>
-                        <td className="px-4 py-2.5 text-right font-bold text-gray-900 dark:text-foreground">{fmt(cohort.totalRevenue)}</td>
+                        <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtMonth(cohort.month)}</td>
+                        <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground">{cohort.customers}</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(cohort.totalRevenue)}</td>
                         <td className="px-4 py-2.5 text-right">
-                          <span className="text-emerald-600 font-semibold">{fmt(cohort.avgLTV)}</span>
+                          <span className="text-[var(--data-success)] font-semibold">{fmt(cohort.avgLTV)}</span>
                           {prev && (
-                            <span className={cn("ml-1.5 text-[10px] font-bold", delta >= 0 ? "text-emerald-500" : "text-red-500")}>
+                            <span className={cn("ml-1.5 text-[length:var(--ts-2xs)] font-bold", delta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                               {delta >= 0 ? "+" : "-"}{Math.abs(delta).toFixed(0)}
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-gray-600 dark:text-muted">{cohort.avgOrders}</td>
+                        <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted">{cohort.avgOrders}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            {data.cohorts.length === 0 && <div className="h-20 flex items-center justify-center text-gray-400 dark:text-muted text-sm">Sin datos de cohortes</div>}
+            {data.cohorts.length === 0 && <div className="h-20 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted text-sm">Sin datos de cohortes</div>}
           </div>
         </div>
       )}
 
       {/* Vista clientes */}
       {view === "customers" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">#</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">Cliente</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">CLV Total</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden sm:table-cell">Pedidos</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Ticket prom.</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Proy. 6m</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden lg:table-cell">Cohorte</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Últ. pedido</th>
+                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">CLV Total</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden sm:table-cell">Pedidos</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Ticket prom.</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Proy. 6m</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden lg:table-cell">Cohorte</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Últ. pedido</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-card-border">
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-10 text-gray-400 dark:text-muted">No se encontraron clientes</td></tr>
+                  <tr><td colSpan={8} className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted">No se encontraron clientes</td></tr>
                 )}
                 {filtered.map((c, idx) => {
-                  const urgency = c.daysSinceLast > 60 ? "text-red-500 font-semibold" : c.daysSinceLast > 30 ? "text-amber-500 font-semibold" : "text-gray-500 dark:text-muted";
+                  const urgency = c.daysSinceLast > 60 ? "text-red-500 font-semibold" : c.daysSinceLast > 30 ? "text-amber-500 font-semibold" : "text-[var(--text-secondary)] dark:text-muted";
                   const predicted = predictFutureCLV(c);
                   return (
                     <tr key={c.phone} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                      <td className="px-4 py-2.5 text-gray-400 dark:text-muted text-xs">{idx + 1}</td>
+                      <td className="px-4 py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{idx + 1}</td>
                       <td className="px-4 py-2.5">
-                        <p className="font-semibold text-gray-900 dark:text-foreground">{c.name}</p>
-                        <p className="text-xs text-gray-400 dark:text-muted">{c.phone}</p>
+                        <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{c.phone}</p>
                       </td>
-                      <td className="px-4 py-2.5 text-right font-bold text-gray-900 dark:text-foreground">{fmt(c.totalSpent)}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 dark:text-muted hidden sm:table-cell">{c.orderCount}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 dark:text-muted hidden md:table-cell">{fmt(c.avgOrderValue)}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.totalSpent)}</td>
+                      <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{c.orderCount}</td>
+                      <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{fmt(c.avgOrderValue)}</td>
                       <td className="px-4 py-2.5 text-right hidden md:table-cell">
-                        <span className="text-emerald-600 font-semibold text-xs">{fmt(predicted)}</span>
+                        <span className="text-[var(--data-success)] font-semibold text-xs">{fmt(predicted)}</span>
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-muted hidden lg:table-cell">{fmtMonth(c.cohortMonth)}</td>
+                      <td className="px-4 py-2.5 text-xs text-[var(--text-secondary)] dark:text-muted hidden lg:table-cell">{fmtMonth(c.cohortMonth)}</td>
                       <td className={cn("px-4 py-2.5 text-right text-xs hidden md:table-cell", urgency)}>hace {c.daysSinceLast}d</td>
                     </tr>
                   );

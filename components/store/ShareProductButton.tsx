@@ -29,7 +29,7 @@ export function ShareProductButton({
       onClick={handleShare}
       className={cn(
         "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium",
-        "transition-colors duration-150",
+        "transition-colors duration-[var(--dur-fast)]",
         // Light mode
         "border-[#00B4A6] bg-transparent text-[#00B4A6]",
         "hover:bg-[#00B4A6]/10",

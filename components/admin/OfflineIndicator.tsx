@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useOnlineStatus } from "@/hooks/use-online-status";
-import { WifiOff, Wifi, Loader2, Check } from "lucide-react";
+import { WifiOff, Wifi, Loader2, Check } from "@buleje/design-system/icons";
 
 type BannerState = "offline" | "syncing" | "synced" | "hidden";
 
@@ -54,10 +54,10 @@ export default function OfflineIndicator() {
           className={`
             w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold
             ${bannerState === "offline"
-              ? "bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950"
+              ? "bg-[var(--data-warning)] dark:bg-[var(--data-warning)] text-[var(--data-warning)] dark:text-amber-950"
               : bannerState === "syncing"
-              ? "bg-emerald-500 dark:bg-emerald-600 text-white"
-              : "bg-emerald-500 dark:bg-emerald-600 text-white"
+              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white"
+              : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white"
             }
           `}
           role="status"
@@ -70,7 +70,7 @@ export default function OfflineIndicator() {
                 Sin conexion — Las ventas se guardan localmente
               </span>
               {pendingCount > 0 && (
-                <span className="ml-auto bg-amber-700/20 dark:bg-amber-950/30 text-amber-900 dark:text-amber-950 text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-[var(--data-warning)]/20 dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-amber-950 text-xs font-bold px-2 py-0.5 rounded-full">
                   {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
                 </span>
               )}

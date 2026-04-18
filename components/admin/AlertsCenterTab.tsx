@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle,
@@ -15,7 +16,7 @@ import {
   Bell,
   Wallet,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -115,26 +116,26 @@ const URGENCY_CONFIG: Record<
 > = {
   critical: {
     border: "border-l-red-500",
-    bg: "bg-red-50 dark:bg-red-950/20",
+    bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",
     icon: "text-red-600 dark:text-red-400",
-    badge: "bg-red-100 dark:bg-red-900/40",
+    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40",
     badgeText: "text-red-700 dark:text-red-300",
     order: 0,
   },
   warning: {
     border: "border-l-orange-500",
-    bg: "bg-orange-50 dark:bg-orange-950/20",
-    icon: "text-orange-600 dark:text-orange-400",
-    badge: "bg-orange-100 dark:bg-orange-900/40",
-    badgeText: "text-orange-700 dark:text-orange-300",
+    bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/20",
+    icon: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40",
+    badgeText: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
     order: 1,
   },
   info: {
     border: "border-l-emerald-500",
-    bg: "bg-emerald-50 dark:bg-emerald-950/20",
-    icon: "text-emerald-600 dark:text-emerald-400",
-    badge: "bg-emerald-100 dark:bg-emerald-900/40",
-    badgeText: "text-emerald-700 dark:text-emerald-300",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    icon: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    badgeText: "text-[var(--data-success)] dark:text-[var(--data-success)]",
     order: 2,
   },
 };
@@ -153,13 +154,13 @@ function AlertSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 animate-pulse"
+          className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"
         >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
             <div className="flex-1">
               <div className="h-4 w-44 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-              <div className="h-3 w-64 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-3 w-64 bg-[var(--surface-sunken)] rounded" />
             </div>
             <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0" />
           </div>
@@ -388,14 +389,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800/30 p-6 text-center">
-        <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-        <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">
+      <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/30 p-6 text-center">
+        <AlertTriangle className="w-8 h-8 text-[var(--data-error)] mx-auto mb-2" />
+        <p className="text-sm font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">
           {error}
         </p>
         <button
           onClick={fetchAlerts}
-          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
+          className="px-4 py-2 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white text-sm font-bold transition-colors"
         >
           Reintentar
         </button>
@@ -419,18 +420,18 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
     return (
       <div className="text-center py-16">
         <span className="text-6xl block mb-4">&#x2705;</span>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-foreground">
+        <CardTitle className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground">
           Todo en orden
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-muted mt-2">
+        </CardTitle>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-2">
           Tu negocio marcha bien — sin alertas activas
         </p>
-        <p className="text-xs text-gray-400 dark:text-muted mt-1">
+        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
           Se revisa automaticamente cada 2 minutos
         </p>
         <button
           onClick={fetchAlerts}
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-bold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar ahora
@@ -438,7 +439,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         {dismissed.length > 0 && (
           <button
             onClick={() => { setDismissed([]); localStorage.removeItem(getDismissedKey()); }}
-            className="mt-3 block mx-auto text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="mt-3 block mx-auto text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
           >
             Mostrar {dismissed.length} alerta{dismissed.length > 1 ? "s" : ""} resuelta{dismissed.length > 1 ? "s" : ""}
           </button>
@@ -469,27 +470,27 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
       {/* KPI badges */}
       <div className="flex flex-wrap gap-3 mb-1">
         {criticalCount > 0 && (
-          <span className="px-3 py-1.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="px-3 py-1.5 bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--data-error)] animate-pulse" />
             {criticalCount} Critica{criticalCount > 1 ? "s" : ""}
           </span>
         )}
         {warningCount > 0 && (
-          <span className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
+          <span className="px-3 py-1.5 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--data-warning)]" />
             {warningCount} Advertencia{warningCount > 1 ? "s" : ""}
           </span>
         )}
         {infoCount > 0 && (
-          <span className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="px-3 py-1.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
             {infoCount} Info
           </span>
         )}
         <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+          className="ml-auto p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
           title="Actualizar alertas"
         >
           <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
@@ -504,8 +505,8 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
           <div key={cat} className="space-y-2">
             {/* Category separator */}
             <div className="flex items-center gap-2 pt-2">
-              <catConfig.Icon className="h-3.5 w-3.5 text-gray-500 dark:text-muted" strokeWidth={1.75} />
-              <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted">
+              <catConfig.Icon className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-muted" strokeWidth={1.75} />
+              <h4 className="text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted">
                 {catConfig.label}
               </h4>
               <div className="flex-1 h-px bg-gray-200 dark:bg-card-border" />
@@ -523,7 +524,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                       "flex items-center gap-3 sm:gap-4 rounded-xl border border-l-4 p-4",
                       config.border,
                       config.bg,
-                      "border-gray-200 dark:border-card-border",
+                      "border-[var(--rule-base)] dark:border-card-border",
                     )}
                   >
                     {/* Icon */}
@@ -539,12 +540,12 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">
                           {alert.title}
                         </p>
                         <span
                           className={cn(
-                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold",
+                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
                             config.badge,
                             config.badgeText,
                           )}
@@ -552,11 +553,11 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                           {URGENCY_LABEL[alert.urgency]}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-muted line-clamp-2">
+                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted line-clamp-2">
                         {alert.description}
                       </p>
                       {alert.createdAt > 0 && (
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
                           {timeAgo(alert.createdAt)}
                         </p>
                       )}
@@ -576,14 +577,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                             );
                           }
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                       >
                         {alert.action}
                         <ArrowRight className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleDismiss(alert.id)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-medium text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
                         title="Marcar como resuelta"
                       >
                         <Check className="w-3 h-3" />
@@ -603,7 +604,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         <div className="text-center pt-2">
           <button
             onClick={() => { setDismissed([]); localStorage.removeItem(getDismissedKey()); }}
-            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
           >
             {dismissed.length} alerta{dismissed.length > 1 ? "s" : ""} resuelta{dismissed.length > 1 ? "s" : ""} hoy — mostrar
           </button>

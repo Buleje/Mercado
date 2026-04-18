@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   Users,
   Package,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { AdminCard } from "@/components/admin/shared";
 import type {
@@ -71,15 +71,15 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           {/* Proximos pagos */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
+                <DollarSign className="w-3.5 h-3.5 text-[var(--data-warning)]" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Pagos esta semana</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Pagos esta semana</span>
             </div>
             {upcomingPayables.overdue > 0 && (
-              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                <AlertTriangle className="w-3 h-3 text-red-500" />
-                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
+                <AlertTriangle className="w-3 h-3 text-[var(--data-error)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
               </div>
             )}
             {upcomingPayables.upcoming.length > 0 ? (
@@ -88,36 +88,36 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
                   const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - now) / 86400000)) : 0;
                   return (
                     <li key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
-                      <span className="font-bold text-gray-900 dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
-                      <span className="text-[10px] text-gray-400 ml-1.5">{daysLeft}d</span>
+                      <span className="truncate text-[var(--text-secondary)] dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-1.5">{daysLeft}d</span>
                     </li>
                   );
                 })}
               </ul>
             ) : upcomingPayables.overdue === 0 ? (
-              <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
+              <p className="text-xs text-[var(--data-success)] font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
-            <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
+            <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
 
           {/* Clientes del dia */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                <Users className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+                <Users className="w-3.5 h-3.5 text-[var(--data-success)]" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Clientes hoy</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
+            <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)] dark:text-zinc-100">{clientesHoy}</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
-                <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
             </div>
           </AdminCard>
@@ -125,22 +125,22 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           {/* Productos que se agotan */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
-                <Package className="w-3.5 h-3.5 text-red-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
+                <Package className="w-3.5 h-3.5 text-[var(--data-error)]" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Se agotan esta semana</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Se agotan esta semana</span>
             </div>
             {productsRunningOut.length > 0 ? (
               <ul className="space-y-1.5">
                 {productsRunningOut.map(p => (
                   <li key={p.id} className="flex items-center justify-between text-xs">
-                    <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.name}</span>
-                    <span className="text-gray-400 ml-1">quedan {p.stock}</span>
+                    <span className="truncate text-[var(--text-secondary)] dark:text-zinc-300 flex-1">{p.name}</span>
+                    <span className="text-[var(--text-tertiary)] ml-1">quedan {p.stock}</span>
                     <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                      p.daysLeft < 3 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
-                      p.daysLeft <= 5 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                      "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
+                      "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
+                      p.daysLeft < 3 ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" :
+                      p.daysLeft <= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" :
+                      "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
                     )}>
                       {p.daysLeft}d
                     </span>
@@ -148,10 +148,10 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
+              <p className="text-xs text-[var(--data-success)] font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
+              <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
             )}
           </AdminCard>
         </div>
@@ -161,16 +161,16 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
       {!loading && deadStockData && (
         <AdminCard padding="sm">
           <div className="flex items-center gap-2 mb-2">
-            <Package className="w-4 h-4 text-gray-400" />
-            <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Stock muerto</span>
+            <Package className="w-4 h-4 text-[var(--text-tertiary)]" />
+            <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Stock muerto</span>
             {deadStockData.value > 500 ? (
-              <span className="text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded-full">Capital atrapado</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)] px-1.5 py-0.5 rounded-full">Capital atrapado</span>
             ) : (
-              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded-full">Poco stock muerto</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] px-1.5 py-0.5 rounded-full">Poco stock muerto</span>
             )}
           </div>
-          <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100">{fmtR(deadStockData.value)} <span className="text-xs font-normal text-gray-400">en {deadStockData.count} productos sin vender 30+ dias</span></p>
-          <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[10px] font-bold text-primary hover:underline mt-1.5 block">Ver productos &rarr;</a>
+          <p className="text-lg font-bold font-mono text-[var(--text-primary)] dark:text-zinc-100">{fmtR(deadStockData.value)} <span className="text-xs font-normal text-[var(--text-tertiary)]">en {deadStockData.count} productos sin vender 30+ dias</span></p>
+          <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-1.5 block">Ver productos &rarr;</a>
         </AdminCard>
       )}
     </>

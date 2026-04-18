@@ -1,7 +1,8 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from "react";
-import { ShoppingCart, TrendingDown, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, TrendingDown, Loader2, AlertTriangle, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -140,12 +141,12 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-[#00B4A6]" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Comparador de Precios por Proveedor
-          </h2>
+          </SectionTitle>
         </div>
         {totalSavings > 0 && (
-          <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-sm font-medium">
+          <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-3 py-1.5 rounded-lg text-sm font-medium">
             <TrendingDown className="w-4 h-4" />
             Ahorro potencial mensual: {fmt(totalSavings)}
           </div>
@@ -158,24 +159,24 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Filtrar por nombre de producto..."
-        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+        className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
       />
 
       {/* Estados */}
       {loading && (
-        <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-center py-12 text-[var(--text-tertiary)]">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           Cargando historial de compras...
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
       )}
       {!loading && !error && groups.length === 0 && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">
+        <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
           No hay datos de compras registrados.
         </div>
       )}
@@ -186,14 +187,14 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         groups.map((group) => (
           <div
             key={group.productName}
-            className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
           >
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-750">
-              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+              <span className="font-medium text-[var(--text-primary)] text-sm">
                 {group.productName}
               </span>
               {group.potentialSavings > 0 && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
                   Ahorro posible: {fmt(group.potentialSavings)}/mes
                 </span>
               )}
@@ -202,23 +203,23 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-700">
-                    <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
+                  <tr className="border-b border-[var(--rule-base)]">
+                    <th className="px-4 py-2.5 text-left font-medium text-[var(--text-tertiary)]">
                       Proveedor
                     </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
+                    <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
                       Ultimo precio
                     </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
+                    <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
                       Precio promedio
                     </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
+                    <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
                       Compras
                     </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
+                    <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
                       Ultima fecha
                     </th>
-                    <th className="px-4 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400">
+                    <th className="px-4 py-2.5 text-center font-medium text-[var(--text-tertiary)]">
                       Estado
                     </th>
                   </tr>
@@ -233,48 +234,48 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                         className={cn(
                           "transition-colors",
                           isCheapest
-                            ? "bg-emerald-50/50 dark:bg-emerald-900/10"
+                            ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]"
                             : isExpensive
-                            ? "bg-red-50/30 dark:bg-red-900/5"
+                            ? "bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error)]/5"
                             : "hover:bg-gray-50 dark:hover:bg-gray-750"
                         )}
                       >
-                        <td className="px-4 py-2.5 text-gray-900 dark:text-gray-100 font-medium">
+                        <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium">
                           {s.supplierName}
                         </td>
                         <td
                           className={cn(
                             "px-4 py-2.5 text-right font-semibold",
                             isCheapest
-                              ? "text-emerald-700 dark:text-emerald-400"
+                              ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                               : isExpensive
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-gray-900 dark:text-gray-100"
+                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              : "text-[var(--text-primary)]"
                           )}
                         >
                           {fmt(s.latestPrice)}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-gray-600 dark:text-gray-400">
+                        <td className="px-4 py-2.5 text-right text-[var(--text-secondary)]">
                           {fmt(s.avgPrice)}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-gray-600 dark:text-gray-400">
+                        <td className="px-4 py-2.5 text-right text-[var(--text-secondary)]">
                           {s.purchaseCount}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-gray-500 dark:text-gray-500 text-xs">
+                        <td className="px-4 py-2.5 text-right text-[var(--text-tertiary)] text-xs">
                           {s.lastPurchaseDate}
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           {isCheapest ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full">
                               <CheckCircle2 className="w-3 h-3" />
                               Mas barato
                             </span>
                           ) : isExpensive ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 px-2 py-0.5 rounded-full">
                               Mas caro
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400">—</span>
+                            <span className="text-xs text-[var(--text-tertiary)]">—</span>
                           )}
                         </td>
                       </tr>
@@ -286,7 +287,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
 
             {/* Recomendacion */}
             {group.suppliers.length > 1 && (
-              <div className="px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/10 border-t border-emerald-100 dark:border-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-400">
+              <div className="px-4 py-2.5 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-t border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
                 Si compras todo a{" "}
                 <span className="font-semibold">
                   {group.suppliers.find((s) => s.supplierId === group.cheapest)?.supplierName}

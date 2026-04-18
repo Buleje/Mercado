@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles, Package } from "lucide-react";
+import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles, Package } from "@buleje/design-system/icons";
 import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/components/admin/ux";
 import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
@@ -108,7 +108,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
           className,
         )}
       >
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
           Sin datos
         </p>
         <p className="text-base font-extrabold text-[var(--text-primary)] mb-2">
@@ -177,7 +177,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
           <header className="px-5 py-3 border-b border-[var(--rule-soft)]">
             <p
               id="alerts-title"
-              className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]"
+              className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
             >
               Alertas accionables · {data.alerts.length}
             </p>
@@ -246,7 +246,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
           <header className="px-5 py-3 border-b border-[var(--rule-soft)]">
             <p
               id="top-products-title"
-              className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]"
+              className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
             >
               Top productos · últimos 7 días
             </p>
@@ -254,7 +254,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
           <ul className="divide-y divide-[var(--rule-soft)]">
             {data.topProducts.map((p, i) => (
               <li key={p.productId ?? i} className="flex items-center gap-3 px-5 py-3">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[10px] font-bold tabular-nums text-[var(--text-tertiary)]">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                   {i + 1}
                 </span>
                 <Package className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
@@ -264,7 +264,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
                 <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
                   {p.quantity.toLocaleString("es-PE")}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   unid
                 </span>
               </li>
@@ -274,7 +274,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
       )}
 
       {/* Refresh timestamp */}
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] text-right">
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] text-right">
         <Sparkles className="inline h-2.5 w-2.5 -mt-0.5 mr-1" strokeWidth={2} aria-hidden />
         Actualizado: {new Date(data.generatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
       </p>

@@ -105,7 +105,7 @@ function StepBadge({ step, current }: { step: number; current: number }) {
           ? "bg-primary text-white"
           : current > step
           ? "bg-primary/30 text-primary"
-          : "bg-gray-100 text-gray-400"
+          : "bg-gray-100 text-[var(--text-tertiary)]"
       )}
     >
       {step}
@@ -349,7 +349,7 @@ export default function CustomReportBuilder({
               <StepBadge step={s} current={step} />
               <span className={cn(
                 "text-xs font-medium",
-                step === s ? "text-primary" : "text-gray-500"
+                step === s ? "text-primary" : "text-[var(--text-secondary)]"
               )}>
                 {s === 1 ? "Metricas" : s === 2 ? "Periodo" : "Filtros"}
               </span>
@@ -362,7 +362,7 @@ export default function CustomReportBuilder({
       {/* Step 1 — Metrics */}
       {step === 1 && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-gray-700">
+          <p className="text-xs font-semibold text-[var(--text-primary)]">
             Selecciona las metricas a incluir:
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -373,7 +373,7 @@ export default function CustomReportBuilder({
                   "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                   selectedMetrics.includes(key)
                     ? "bg-primary/10 border-primary/40 text-primary"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-primary/40"
+                    : "bg-white border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40"
                 )}
               >
                 <input
@@ -399,29 +399,29 @@ export default function CustomReportBuilder({
       {/* Step 2 — Period & grouping */}
       {step === 2 && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-gray-700">Periodo:</p>
+          <p className="text-xs font-semibold text-[var(--text-primary)]">Periodo:</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-gray-500">Desde</label>
+              <label className="text-xs text-[var(--text-secondary)]">Desde</label>
               <input
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-800"
+                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)]"
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Hasta</label>
+              <label className="text-xs text-[var(--text-secondary)]">Hasta</label>
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-800"
+                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)]"
               />
             </div>
           </div>
 
-          <p className="text-xs font-semibold text-gray-700 mt-1">Agrupar por:</p>
+          <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">Agrupar por:</p>
           <div className="flex gap-2">
             {(Object.entries(GROUPING_LABELS) as [Grouping, string][]).map(([key, label]) => (
               <button
@@ -431,7 +431,7 @@ export default function CustomReportBuilder({
                   "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
                   grouping === key
                     ? "bg-primary text-white border-primary"
-                    : "text-gray-600 border-gray-200 hover:border-primary"
+                    : "text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary"
                 )}
               >
                 {label}
@@ -442,7 +442,7 @@ export default function CustomReportBuilder({
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => setStep(1)}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-gray-50 transition-colors"
             >
               Atras
             </button>
@@ -460,11 +460,11 @@ export default function CustomReportBuilder({
       {step === 3 && (
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-xs font-semibold text-gray-700 mb-1">Categoria de producto:</p>
+            <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">Categoria de producto:</p>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-800"
+              className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)]"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c === "todas" ? "Todas las categorias" : c}</option>
@@ -473,7 +473,7 @@ export default function CustomReportBuilder({
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-gray-700 mb-1">Metodo de pago:</p>
+            <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">Metodo de pago:</p>
             <div className="flex flex-wrap gap-1.5">
               {(Object.entries(PAYMENT_LABELS) as [PaymentFilter, string][]).map(([key, label]) => (
                 <button
@@ -483,7 +483,7 @@ export default function CustomReportBuilder({
                     "px-2 py-1 rounded-lg text-xs border transition-colors",
                     payment === key
                       ? "bg-primary text-white border-primary"
-                      : "text-gray-600 border-gray-200 hover:border-primary"
+                      : "text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary"
                   )}
                 >
                   {label}
@@ -495,7 +495,7 @@ export default function CustomReportBuilder({
           <div className="flex gap-2 mt-1">
             <button
               onClick={() => setStep(2)}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-gray-50 transition-colors"
             >
               Atras
             </button>
@@ -516,7 +516,7 @@ export default function CustomReportBuilder({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setStep(1)}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs hover:bg-gray-50 transition-colors"
             >
               Editar reporte
             </button>
@@ -537,15 +537,15 @@ export default function CustomReportBuilder({
           </div>
 
           {/* Data table */}
-          <div className="overflow-auto max-h-64 rounded-lg border border-gray-200">
+          <div className="overflow-auto max-h-64 rounded-lg border border-[var(--rule-base)]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 sticky top-0">
-                  <th className="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">
+                <tr className="bg-gray-50 border-b border-[var(--rule-base)] sticky top-0">
+                  <th className="text-left px-2 py-1.5 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                     Periodo
                   </th>
                   {selectedMetrics.map((m) => (
-                    <th key={m} className="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">
+                    <th key={m} className="text-right px-2 py-1.5 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                       {METRIC_LABELS[m]}
                     </th>
                   ))}
@@ -554,7 +554,7 @@ export default function CustomReportBuilder({
               <tbody>
                 {reportRows.length === 0 && (
                   <tr>
-                    <td colSpan={selectedMetrics.length + 1} className="text-center py-6 text-gray-400">
+                    <td colSpan={selectedMetrics.length + 1} className="text-center py-6 text-[var(--text-tertiary)]">
                       Sin datos para los filtros seleccionados
                     </td>
                   </tr>
@@ -562,13 +562,13 @@ export default function CustomReportBuilder({
                 {reportRows.map((row, i) => (
                   <tr
                     key={i}
-                    className="border-b border-gray-100 hover:bg-gray-50"
+                    className="border-b border-[var(--rule-soft)] hover:bg-gray-50"
                   >
-                    <td className="px-2 py-1.5 text-gray-700 font-medium whitespace-nowrap">
+                    <td className="px-2 py-1.5 text-[var(--text-primary)] font-medium whitespace-nowrap">
                       {row.period}
                     </td>
                     {selectedMetrics.map((m) => (
-                      <td key={m} className="px-2 py-1.5 text-right text-gray-600">
+                      <td key={m} className="px-2 py-1.5 text-right text-[var(--text-secondary)]">
                         {row[m] !== undefined ? fmtNum(row[m]!, m) : "—"}
                       </td>
                     ))}
@@ -577,20 +577,20 @@ export default function CustomReportBuilder({
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-gray-400 text-right">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-right">
             {reportRows.length} filas — {from} al {to} — agrupado por {GROUPING_LABELS[grouping]}
           </p>
 
           {/* Save template */}
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs font-semibold text-gray-700 mb-2">Guardar como plantilla</p>
+          <div className="rounded-lg border border-[var(--rule-base)] bg-gray-50 p-3">
+            <p className="text-xs font-semibold text-[var(--text-primary)] mb-2">Guardar como plantilla</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 placeholder="Nombre de la plantilla..."
-                className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-gray-200 bg-white text-gray-800 placeholder-gray-400"
+                className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)] placeholder-gray-400"
               />
               <button
                 onClick={saveTemplate}
@@ -607,28 +607,28 @@ export default function CustomReportBuilder({
       {/* Saved templates */}
       {templates.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-700 mb-2">Plantillas guardadas</p>
+          <p className="text-xs font-semibold text-[var(--text-primary)] mb-2">Plantillas guardadas</p>
           <div className="flex flex-col gap-1.5">
             {templates.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 truncate">{t.name}</p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-xs font-medium text-[var(--text-primary)] truncate">{t.name}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     {t.metrics.map((m) => METRIC_LABELS[m]).join(", ")} — {t.period.from} al {t.period.to}
                   </p>
                 </div>
                 <button
                   onClick={() => loadTemplate(t)}
-                  className="px-2 py-1 rounded text-[10px] font-medium text-primary border border-primary/30 hover:bg-primary/10 transition-colors"
+                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-primary border border-primary/30 hover:bg-primary/10 transition-colors"
                 >
                   Cargar
                 </button>
                 <button
                   onClick={() => deleteTemplate(t.id)}
-                  className="px-2 py-1 rounded text-[10px] font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
+                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-[var(--data-error)] border border-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
                 >
                   Borrar
                 </button>

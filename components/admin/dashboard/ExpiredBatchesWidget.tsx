@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   AlertOctagon,
@@ -12,7 +13,7 @@ import {
   CheckSquare,
   Square,
   Loader2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
@@ -218,18 +219,18 @@ export default function ExpiredBatchesWidget() {
       <div className="space-y-3">
         {/* Encabezado */}
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-            <AlertOctagon className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+          <div className="w-6 h-6 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 flex items-center justify-center">
+            <AlertOctagon className="h-3.5 w-3.5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             Lotes Vencidos con Stock
-          </h3>
+          </CardTitle>
         </div>
 
         {/* Sin vencidos */}
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 px-4 py-3">
-          <Package className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+          <Package className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)] shrink-0" />
+          <span className="text-xs font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">
             No hay lotes vencidos con stock
           </span>
         </div>
@@ -242,18 +243,18 @@ export default function ExpiredBatchesWidget() {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-            <AlertOctagon className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+          <div className="w-6 h-6 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 flex items-center justify-center">
+            <AlertOctagon className="h-3.5 w-3.5 text-[var(--data-error)] dark:text-[var(--data-error)]" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             Lotes Vencidos con Stock
-          </h3>
+          </CardTitle>
         </div>
         <button
           onClick={fetchExpired}
           disabled={loading}
           title="Actualizar"
-          className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>
@@ -267,20 +268,20 @@ export default function ExpiredBatchesWidget() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="flex items-center gap-3 rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 px-4 py-3"
+            className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3"
           >
             <m.div
               animate={{ scale: [1, 1.15, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
             >
-              <AlertOctagon className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+              <AlertOctagon className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0" />
             </m.div>
-            <span className="text-xs font-semibold text-red-700 dark:text-red-400 flex-1">
+            <span className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] flex-1">
               {batches.length} lote{batches.length > 1 ? "s" : ""} vencido
               {batches.length > 1 ? "s" : ""} con stock disponible
             </span>
             {hasCostData && (
-              <span className="text-xs font-bold text-red-700 dark:text-red-400 shrink-0">
+              <span className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0">
                 Pérdida potencial: {fmtCurrency(totalLoss)}
               </span>
             )}
@@ -290,7 +291,7 @@ export default function ExpiredBatchesWidget() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-xs text-red-600 dark:text-red-400">
+        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
           {error} —{" "}
           <button onClick={fetchExpired} className="underline font-medium">
             Reintentar
@@ -300,20 +301,20 @@ export default function ExpiredBatchesWidget() {
 
       {/* Tabla compacta */}
       {(loading || batches.length > 0) && (
-        <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card overflow-hidden">
+        <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
           {/* Cabecera de tabla */}
           {!loading && batches.length > 0 && (
-            <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 bg-gray-50 dark:bg-surface/40 border-b border-gray-100 dark:border-card-border">
-              <span className="text-[10px] font-semibold text-gray-400 dark:text-muted">
+            <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 bg-gray-50 dark:bg-surface/40 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted">
                 Producto
               </span>
-              <span className="text-[10px] font-semibold text-gray-400 dark:text-muted text-right">
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted text-right">
                 Vencimiento
               </span>
-              <span className="text-[10px] font-semibold text-gray-400 dark:text-muted text-right">
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted text-right">
                 Cantidad
               </span>
-              <span className="text-[10px] font-semibold text-gray-400 dark:text-muted text-right">
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted text-right">
                 Estado
               </span>
             </div>
@@ -339,49 +340,49 @@ export default function ExpiredBatchesWidget() {
                       initial={{ opacity: 0, x: -4 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50/40 dark:hover:bg-red-950/10 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--data-error-50)]/40 dark:hover:bg-red-950/10 transition-colors"
                     >
                       {/* Icono */}
                       <div
                         className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
                           isVeryOld
-                            ? "bg-red-100 dark:bg-red-900/40"
+                            ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40"
                             : isOld
-                            ? "bg-red-50 dark:bg-red-900/30"
-                            : "bg-orange-50 dark:bg-orange-900/20"
+                            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30"
+                            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20"
                         )}
                       >
                         <TrendingDown
                           className={cn(
                             "h-4 w-4",
                             isVeryOld
-                              ? "text-red-600 dark:text-red-400"
+                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
                               : isOld
-                              ? "text-red-500 dark:text-red-400"
-                              : "text-orange-500 dark:text-orange-400"
+                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                           )}
                         />
                       </div>
 
                       {/* Producto y lote */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">
+                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                           {batch.product?.name ?? batch.productName}
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-[11px] text-gray-400 dark:text-muted">
+                          <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
                             Lote {batch.lote}
                           </span>
                           <span className="text-gray-200 dark:text-card-border">·</span>
-                          <span className="flex items-center gap-0.5 text-[11px] text-gray-400 dark:text-muted">
+                          <span className="flex items-center gap-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
                             <Calendar className="h-3 w-3" />
                             {fmtDate(batch.expiryDate)}
                           </span>
                           {lossAmount !== null && (
                             <>
                               <span className="text-gray-200 dark:text-card-border">·</span>
-                              <span className="text-[11px] text-red-500 dark:text-red-400 font-medium">
+                              <span className="text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
                                 Pérdida: {fmtCurrency(lossAmount)}
                               </span>
                             </>
@@ -391,20 +392,20 @@ export default function ExpiredBatchesWidget() {
 
                       {/* Cantidad + badge días vencido */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-xs font-semibold text-gray-700 dark:text-foreground">
+                        <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">
                           {batch.quantity.toLocaleString("es-PE")}{" "}
-                          <span className="font-normal text-gray-400 dark:text-muted">
+                          <span className="font-normal text-[var(--text-tertiary)] dark:text-muted">
                             {batch.unit}
                           </span>
                         </span>
                         <span
                           className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap",
+                            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full whitespace-nowrap",
                             isVeryOld
-                              ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
+                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]"
                               : isOld
-                              ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                              : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                              ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              : "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                           )}
                         >
                           {expired}d vencido
@@ -420,7 +421,7 @@ export default function ExpiredBatchesWidget() {
             <div className="px-4 py-2.5 border-t border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex items-center justify-between gap-2">
               <a
                 href="/admin?tab=inventario-almacenes"
-                className="text-xs font-semibold text-[#00B4A6] dark:text-emerald-400 hover:underline"
+                className="text-xs font-semibold text-[#00B4A6] dark:text-[var(--data-success)] hover:underline"
               >
                 Ver todos los lotes
               </a>
@@ -428,9 +429,9 @@ export default function ExpiredBatchesWidget() {
                 type="button"
                 onClick={openModal}
                 className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold
-                  bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400
-                  border border-red-200 dark:border-red-800/50
-                  hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                  bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]
+                  border border-[var(--data-error)] dark:border-[var(--data-error)]/50
+                  hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/40 transition-colors"
               >
                 <ClipboardList className="h-3.5 w-3.5" />
                 Registrar merma
@@ -455,8 +456,8 @@ export default function ExpiredBatchesWidget() {
             className={cn(
               "mt-2 rounded-xl border px-4 py-2.5 text-xs font-medium",
               modal.toast.type === "success"
-                ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400"
-                : "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400"
+                ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                : "border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}
           >
             {modal.toast.message}
@@ -482,21 +483,21 @@ export default function ExpiredBatchesWidget() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="w-full max-w-md rounded-xl bg-white dark:bg-card border border-gray-100 dark:border-card-border overflow-hidden"
+              className="w-full max-w-md rounded-xl bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border overflow-hidden"
             >
               {/* Cabecera */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-red-500 dark:text-red-400" />
-                  <h2 className="text-sm font-bold text-gray-800 dark:text-foreground">
+                  <ClipboardList className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
+                  <SectionTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
                     Registrar merma
-                  </h2>
+                  </SectionTitle>
                 </div>
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={modal.submitting}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -504,7 +505,7 @@ export default function ExpiredBatchesWidget() {
 
               {/* Lista de lotes */}
               <div className="px-5 pt-4 pb-2 space-y-1.5 max-h-56 overflow-y-auto">
-                <p className="text-[11px] font-semibold text-gray-400 dark:text-muted mb-2">
+                <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted mb-2">
                   Selecciona los lotes a registrar
                 </p>
                 {batches.map((b) => {
@@ -518,19 +519,19 @@ export default function ExpiredBatchesWidget() {
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-xl border text-left transition-colors",
                         checked
-                          ? "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20"
-                          : "border-gray-100 dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface/40"
+                          ? "border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
+                          : "border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface/40"
                       )}
                     >
                       {checked
-                        ? <CheckSquare className="h-4 w-4 text-red-500 dark:text-red-400 shrink-0" />
-                        : <Square className="h-4 w-4 text-gray-300 dark:text-muted shrink-0" />
+                        ? <CheckSquare className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0" />
+                        : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">
+                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                           {b.product?.name ?? b.productName}
                         </p>
-                        <p className="text-[11px] text-gray-400 dark:text-muted">
+                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
                           Lote {b.lote} · {b.quantity} {b.unit}
                         </p>
                       </div>
@@ -541,14 +542,14 @@ export default function ExpiredBatchesWidget() {
 
               {/* Motivo */}
               <div className="px-5 py-3">
-                <label className="text-[11px] font-semibold text-gray-400 dark:text-muted block mb-1.5">
+                <label className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5">
                   Motivo
                 </label>
                 <select
                   value={modal.reason}
                   onChange={(e) => setModal((prev) => ({ ...prev, reason: e.target.value as MermaReason }))}
                   disabled={modal.submitting}
-                  className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-gray-800 dark:text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 disabled:opacity-50"
+                  className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs text-[var(--text-primary)] dark:text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 disabled:opacity-50"
                 >
                   <option value="vencimiento">Vencimiento</option>
                   <option value="deterioro">Deterioro / Daño</option>
@@ -565,7 +566,7 @@ export default function ExpiredBatchesWidget() {
                     exit={{ opacity: 0, height: 0 }}
                     className="px-5 pb-2"
                   >
-                    <div className="rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+                    <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
                       {modal.toast.message}
                     </div>
                   </m.div>
@@ -573,12 +574,12 @@ export default function ExpiredBatchesWidget() {
               </AnimatePresence>
 
               {/* Acciones */}
-              <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex justify-end gap-2">
+              <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={modal.submitting}
-                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-gray-600 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/40 transition-colors disabled:opacity-40"
+                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/40 transition-colors disabled:opacity-40"
                 >
                   Cancelar
                 </button>
@@ -586,7 +587,7 @@ export default function ExpiredBatchesWidget() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={modal.submitting || modal.selected.size === 0}
-                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-white bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-white bg-[var(--data-error)] dark:bg-[var(--data-error)] hover:bg-[var(--data-error)] dark:hover:bg-[var(--data-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   {modal.submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Confirmar registro ({modal.selected.size})

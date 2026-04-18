@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Package, Loader2, Plus, Trash2, ToggleLeft, ToggleRight, X, Search } from "lucide-react";
+import { Package, Loader2, Plus, Trash2, ToggleLeft, ToggleRight, X, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/erp";
 
@@ -97,28 +98,28 @@ export default function BundlesTab() {
     ? products.filter(p => p.name.toLowerCase().includes(prodSearch.toLowerCase()) && !items.find(i => i.productId === p.id))
     : [];
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <LoadingState />;
 
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Package className="h-6 w-6 text-primary" />Combos y Paquetes</h2>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Package className="h-6 w-6 text-primary" />Combos y Paquetes</SectionTitle>
         <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Combo</button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{bundles.length}</p>
-          <p className="text-xs text-gray-400">Total Combos</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{bundles.length}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Total Combos</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">{bundles.filter(b => b.active).length}</p>
-          <p className="text-xs text-gray-400">Activos</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)]">{bundles.filter(b => b.active).length}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Activos</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-gray-400">{bundles.filter(b => !b.active).length}</p>
-          <p className="text-xs text-gray-400">Inactivos</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-tertiary)]">{bundles.filter(b => !b.active).length}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Inactivos</p>
         </div>
       </div>
 
@@ -127,31 +128,31 @@ export default function BundlesTab() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setShowForm(false); resetForm(); }}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg">Crear Combo</h3>
-              <button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5 text-gray-400" /></button>
+              <CardTitle className="font-extrabold text-lg">Crear Combo</CardTitle>
+              <button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
             </div>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del combo" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
-            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del combo" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             <div className="flex flex-wrap gap-3">
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">S/</span>
-                <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="Precio combo" className="w-full pl-8 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
+                <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="Precio combo" className="w-full pl-8 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
               </div>
-              <input value={image} onChange={e => setImage(e.target.value)} placeholder="URL imagen (opcional)" className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input value={image} onChange={e => setImage(e.target.value)} placeholder="URL imagen (opcional)" className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
 
             {/* Product picker */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-foreground">Productos del combo</label>
+              <label className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Productos del combo</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input value={prodSearch} onChange={e => setProdSearch(e.target.value)} placeholder="Buscar producto para agregar..." className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                <input value={prodSearch} onChange={e => setProdSearch(e.target.value)} placeholder="Buscar producto para agregar..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
               </div>
               {filteredProducts.length > 0 && (
-                <div className="border border-gray-200 dark:border-card-border rounded-xl max-h-32 overflow-y-auto divide-y divide-gray-100 dark:divide-card-border">
+                <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-32 overflow-y-auto divide-y divide-gray-100 dark:divide-card-border">
                   {filteredProducts.slice(0, 8).map(p => (
                     <button key={String(p.id)} onClick={() => addItem(String(p.id))} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-surface flex justify-between">
-                      <span>{p.name}</span><span className="text-gray-400">S/{p.price.toFixed(2)}</span>
+                      <span>{p.name}</span><span className="text-[var(--text-tertiary)]">S/{p.price.toFixed(2)}</span>
                     </button>
                   ))}
                 </div>
@@ -164,20 +165,20 @@ export default function BundlesTab() {
                     return (
                       <div key={i.productId} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
                         <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
-                        <span className="text-xs text-gray-400">S/{p.price.toFixed(2)}</span>
-                        <input type="number" min={1} value={i.quantity} onChange={e => updateQty(i.productId, Number(e.target.value))} className="w-14 text-center text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-card py-1" />
-                        <button onClick={() => removeItem(i.productId)} className="text-gray-300 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <span className="text-xs text-[var(--text-tertiary)]">S/{p.price.toFixed(2)}</span>
+                        <input type="number" min={1} value={i.quantity} onChange={e => updateQty(i.productId, Number(e.target.value))} className="w-14 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card py-1" />
+                        <button onClick={() => removeItem(i.productId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     );
                   })}
-                  <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-card-border">
-                    <span className="text-gray-400">Precio individual:</span>
-                    <span className="font-bold line-through text-gray-400">S/{itemsTotal.toFixed(2)}</span>
+                  <div className="flex justify-between text-sm pt-2 border-t border-[var(--rule-base)] dark:border-card-border">
+                    <span className="text-[var(--text-tertiary)]">Precio individual:</span>
+                    <span className="font-bold line-through text-[var(--text-tertiary)]">S/{itemsTotal.toFixed(2)}</span>
                   </div>
                   {Number(price) > 0 && itemsTotal > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-emerald-600 font-bold">Ahorro:</span>
-                      <span className="font-extrabold text-emerald-600">S/{(itemsTotal - Number(price)).toFixed(2)} ({((1 - Number(price) / itemsTotal) * 100).toFixed(0)}%)</span>
+                      <span className="text-[var(--data-success)] font-bold">Ahorro:</span>
+                      <span className="font-extrabold text-[var(--data-success)]">S/{(itemsTotal - Number(price)).toFixed(2)} ({((1 - Number(price) / itemsTotal) * 100).toFixed(0)}%)</span>
                     </div>
                   )}
                 </div>
@@ -193,10 +194,10 @@ export default function BundlesTab() {
 
       {/* Bundle cards */}
       {bundles.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
-          <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="font-bold text-gray-900 dark:text-foreground">Sin combos creados</p>
-          <p className="text-sm text-gray-400">Crea tu primer combo para ofrecer descuentos a tus clientes</p>
+        <div className="text-center py-12 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
+          <Package className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
+          <p className="font-bold text-[var(--text-primary)] dark:text-foreground">Sin combos creados</p>
+          <p className="text-sm text-[var(--text-tertiary)]">Crea tu primer combo para ofrecer descuentos a tus clientes</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
@@ -206,32 +207,32 @@ export default function BundlesTab() {
               return s + (p ? p.price * i.quantity : (i.productPrice ?? 0) * i.quantity);
             }, 0);
             return (
-              <div key={b.id} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden", b.active ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border opacity-60")}>
+              <div key={b.id} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden", b.active ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--rule-soft)] dark:border-card-border opacity-60")}>
                 {b.image && <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url(${b.image})` }} />}
                 <div className="p-4 space-y-3">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="font-extrabold text-gray-900 dark:text-foreground">{b.name}</p>
-                      {b.description && <p className="text-xs text-gray-400">{b.description}</p>}
+                      <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{b.name}</p>
+                      {b.description && <p className="text-xs text-[var(--text-tertiary)]">{b.description}</p>}
                     </div>
                     <button onClick={() => toggleActive(b.id, b.active)} title={b.active ? "Desactivar" : "Activar"}>
-                      {b.active ? <ToggleRight className="h-6 w-6 text-emerald-500" /> : <ToggleLeft className="h-6 w-6 text-gray-300" />}
+                      {b.active ? <ToggleRight className="h-6 w-6 text-[var(--data-success)]" /> : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
                     </button>
                   </div>
                   <div className="space-y-1">
                     {b.items.map((i, idx) => {
                       const p = getProduct(i.productId);
                       return (
-                        <p key={idx} className="text-xs text-gray-500">{i.quantity}x {p?.name ?? i.productName ?? i.productId}</p>
+                        <p key={idx} className="text-xs text-[var(--text-secondary)]">{i.quantity}x {p?.name ?? i.productName ?? i.productId}</p>
                       );
                     })}
                   </div>
-                  <div className="flex items-end justify-between pt-2 border-t border-gray-100 dark:border-card-border">
+                  <div className="flex items-end justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
                     <div>
                       <p className="text-xl sm:text-2xl font-extrabold text-primary">S/{b.price.toFixed(2)}</p>
-                      {individual > 0 && <p className="text-xs text-gray-400 line-through">S/{individual.toFixed(2)}</p>}
+                      {individual > 0 && <p className="text-xs text-[var(--text-tertiary)] line-through">S/{individual.toFixed(2)}</p>}
                     </div>
-                    <button onClick={() => remove(b.id)} className="p-2 text-gray-300 hover:text-red-500 transition"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => remove(b.id)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
               </div>

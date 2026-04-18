@@ -15,8 +15,9 @@ import {
   BarChart3, Crown, ChevronRight, ChevronDown, Save,
   Plus, Trash2, Copy, Send, Activity,
   HardDrive, ClipboardList, Monitor, SlidersHorizontal,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, IconBadge } from "@buleje/design-system";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
@@ -42,29 +43,29 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
 ];
 
 const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc: string; color: string }[] = [
-  { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-orange-500 bg-orange-50 dark:bg-orange-950/30" },
-  { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-red-500 bg-red-50 dark:bg-red-950/30" },
+  { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+  { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
   { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
-  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" },
-  { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" },
-  { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-green-500 bg-green-50 dark:bg-green-950/30" },
-  { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30" },
-  { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-violet-500 bg-violet-50 dark:bg-violet-950/30" },
-  { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/30" },
-  { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-pink-500 bg-pink-50 dark:bg-pink-950/30" },
+  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+  { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
+  { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+  { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
-  { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" },
+  { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
-  { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30" },
-  { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30" },
-  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Suscripción", desc: "Plan, límites, módulos", color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30" },
+  { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-[var(--data-info)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+  { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
+  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Suscripción", desc: "Plan, límites, módulos", color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-yellow-950/30" },
 ];
 
 // ── Reusable sub-components ───────────────────────────────────────────────────
 
 function FieldLabel({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 dark:text-muted mb-1.5">
+    <label className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-1.5">
       {icon}{children}
     </label>
   );
@@ -81,8 +82,8 @@ function TextInput({ value, onChange, placeholder, mono, type = "text", disabled
       placeholder={placeholder}
       disabled={disabled}
       className={cn(
-        "w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border",
-        "bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm",
+        "w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-card-border",
+        "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm",
         "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         mono && "font-mono"
@@ -101,9 +102,9 @@ function NumberInput({ value, onChange, min, max, step, suffix }: {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
+        className="flex-1 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
       />
-      {suffix && <span className="text-xs text-gray-500 dark:text-muted font-medium shrink-0">{suffix}</span>}
+      {suffix && <span className="text-xs text-[var(--text-secondary)] dark:text-muted font-medium shrink-0">{suffix}</span>}
     </div>
   );
 }
@@ -115,7 +116,7 @@ function SelectInput({ value, onChange, options }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
+      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -126,17 +127,17 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
   enabled: boolean; onChange: (v: boolean) => void; label: string; desc?: string; danger?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{label}</p>
-        {desc && <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{desc}</p>}
+        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{label}</p>
+        {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
       </div>
       <button
         type="button"
         onClick={() => onChange(!enabled)}
         className={cn(
           "relative w-11 h-6 rounded-full transition-colors shrink-0",
-          enabled ? (danger ? "bg-red-500" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
+          enabled ? (danger ? "bg-[var(--data-error)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
         )}
       >
         <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform", enabled && "translate-x-5")} />
@@ -147,10 +148,10 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
 
 function SectionCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
-        <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{title}</h4>
-        {desc && <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{desc}</p>}
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+        <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{title}</h4>
+        {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
       </div>
       <div className="px-5 py-4 space-y-4">{children}</div>
     </div>
@@ -167,7 +168,7 @@ function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
       disabled={saving}
       className={cn(
         "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all w-full justify-center",
-        saved ? "bg-emerald-500 text-white" : "bg-gray-900 dark:bg-white dark:text-gray-900 text-white hover:bg-gray-800 dark:hover:bg-gray-100"
+        saved ? "bg-[var(--accent-soft)] text-white" : "bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] text-white hover:bg-gray-800 dark:hover:bg-gray-100"
       )}
     >
       {saving && !saved ? <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</> :
@@ -180,9 +181,9 @@ function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
 function StatusDot({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-emerald-500" : "bg-red-400")} />
-      <span className="text-xs text-gray-700 dark:text-foreground font-medium">{label}</span>
-      <span className={cn("text-[10px] font-bold uppercase", ok ? "text-emerald-600" : "text-red-500")}>{ok ? "Conectado" : "No configurado"}</span>
+      <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")} />
+      <span className="text-xs text-[var(--text-primary)] dark:text-foreground font-medium">{label}</span>
+      <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", ok ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{ok ? "Conectado" : "No configurado"}</span>
     </div>
   );
 }
@@ -193,11 +194,11 @@ function ProgressBar({ value, max, label, unit }: { value: number; max: number; 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-700 dark:text-foreground font-medium">{label}</span>
-        <span className={cn("font-bold", isHigh ? "text-amber-600" : "text-gray-500 dark:text-muted")}>{value}/{max} {unit}</span>
+        <span className="text-[var(--text-primary)] dark:text-foreground font-medium">{label}</span>
+        <span className={cn("font-bold", isHigh ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)] dark:text-muted")}>{value}/{max} {unit}</span>
       </div>
       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-        <div className={cn("h-full rounded-full transition-all", isHigh ? "bg-amber-500" : "bg-primary")} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full rounded-full transition-all", isHigh ? "bg-[var(--data-warning)]" : "bg-primary")} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -211,24 +212,24 @@ function OverviewCard({ section, completionPct, onClick }: {
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-gray-100 dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
+      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
     >
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", section.color)}>
         {section.icon}
       </div>
       <div>
-        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{section.title}</p>
-        <p className="text-[11px] text-gray-400 dark:text-muted mt-0.5 line-clamp-1">{section.desc}</p>
+        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{section.title}</p>
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5 line-clamp-1">{section.desc}</p>
       </div>
       <div className="w-full flex items-center gap-2 mt-auto">
         <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-          <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-emerald-500" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
+          <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-[var(--accent-soft)]" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
         </div>
-        <span className={cn("text-[9px] font-bold shrink-0", completionPct === 100 ? "text-emerald-500" : "text-gray-400")}>{completionPct}%</span>
+        <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", completionPct === 100 ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{completionPct}%</span>
       </div>
       {completionPct === 100 && (
         <div className="absolute top-2.5 right-2.5">
-          <CheckCircle className="h-4 w-4 text-emerald-500" />
+          <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />
         </div>
       )}
     </m.button>
@@ -594,7 +595,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   if (loading) return (
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6">
+        <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6">
           <div className="flex items-center gap-4"><div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl" /><div className="flex-1 space-y-2"><div className="h-5 bg-gray-200 dark:bg-surface rounded w-1/3" /><div className="h-3 bg-gray-200 dark:bg-surface rounded w-2/3" /></div></div>
         </div>
       ))}
@@ -608,7 +609,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   const renderModules = () => (
     <div className="space-y-6">
       <SectionCard title="Módulos activos" desc="Controla qué módulos ves en tu panel">
-        <p className="text-sm text-gray-600 dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
           className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
@@ -659,39 +660,39 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <div className="space-y-6">
         <SectionCard title="Mis accesos directos" desc="Aparecen como favoritos en tu barra lateral (máx. 6)">
           {customShortcuts.length === 0 && (
-            <p className="text-sm text-gray-400 dark:text-muted text-center py-4">No tienes accesos directos aún. Agrega uno para navegar más rápido.</p>
+            <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-4">No tienes accesos directos aún. Agrega uno para navegar más rápido.</p>
           )}
           <div className="space-y-3">
             {customShortcuts.map(sc => (
-              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-                <Zap className="h-4 w-4 text-yellow-500 shrink-0" />
+              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+                <Zap className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
                 <input
                   value={sc.label}
                   onChange={e => updateShortcut(sc.id, "label", e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
                   placeholder="Nombre del acceso"
                 />
                 <select
                   value={sc.tabId}
                   onChange={e => updateShortcut(sc.id, "tabId", e.target.value)}
-                  className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
                 >
                   {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ))}
           </div>
           {customShortcuts.length < 6 && (
-            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-gray-500 hover:text-primary hover:border-primary transition-colors mt-2">
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
         </SectionCard>
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3">
-          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 rounded-xl p-3">
+          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
         </div>
       </div>
     );
@@ -705,10 +706,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           {(["whatsapp", "checkout"] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={cn(
               "flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-              mode === m ? (m === "whatsapp" ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20" : "border-primary bg-primary/5") : "border-gray-200 dark:border-card-border hover:border-gray-300"
+              mode === m ? (m === "whatsapp" ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}>
-              {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-emerald-600" : "text-gray-300")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-gray-300")} />}
-              <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-emerald-700" : "text-primary") : "text-gray-400")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
+              {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
+              <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-[var(--data-success)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
             </button>
           ))}
         </div>
@@ -739,7 +740,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -756,35 +757,35 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     { enableHighAccuracy: true }
                   );
                 }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30 transition-colors shrink-0 flex items-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
             </div>
-            {businessLat && businessLon && <p className="text-[10px] text-gray-400 font-mono mt-1">GPS: {businessLat.toFixed(5)}, {businessLon.toFixed(5)}</p>}
+            {businessLat && businessLon && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono mt-1">GPS: {businessLat.toFixed(5)}, {businessLon.toFixed(5)}</p>}
           </div>
           <div><FieldLabel icon={<Truck className="h-3.5 w-3.5" />}>Zona de delivery</FieldLabel><TextInput value={deliveryZone} onChange={setDeliveryZone} /></div>
           <div><FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Horario</FieldLabel><TextInput value={hours} onChange={setHours} placeholder="Lun - Sáb: 7am - 9pm" /></div>
         </div>
         <div><FieldLabel icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </SectionCard>
 
       {/* Logo */}
       <SectionCard title="Logo del negocio">
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary text-sm font-semibold text-gray-500 hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
+          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
             <Upload className="h-4 w-4" /> Subir imagen
           </button>
           <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl)} />
           <TextInput value={logoUrl.startsWith("data:") ? "" : logoUrl} onChange={setLogoUrl} placeholder="https://… o /logo.png" />
         </div>
         {logoUrl && (
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-            <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-gray-100" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            <span className="text-xs text-gray-500 flex-1">Vista previa</span>
-            <button onClick={() => setLogoUrl("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+            <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-[var(--rule-soft)]" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            <span className="text-xs text-[var(--text-secondary)] flex-1">Vista previa</span>
+            <button onClick={() => setLogoUrl("")} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Quitar</button>
           </div>
         )}
       </SectionCard>
@@ -831,31 +832,31 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex items-center gap-2 mb-1.5">
-                <User className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] font-bold text-gray-400">Usuario</span>
+                <User className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Usuario</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">admin</span>
+                <span className="text-sm font-bold text-[var(--text-primary)] font-mono">admin</span>
                 <button type="button" onClick={() => { navigator.clipboard.writeText("admin"); }} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar usuario">
-                  <Copy className="h-3.5 w-3.5 text-gray-400" />
+                  <Copy className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex items-center gap-2 mb-1.5">
-                <Key className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] font-bold text-gray-400">Contraseña</span>
+                <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Contraseña</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">{showCredPw ? storedAdminPw : "••••••••"}</span>
+                <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{showCredPw ? storedAdminPw : "••••••••"}</span>
                 <div className="flex items-center gap-1">
                   <button type="button" onClick={() => setShowCredPw(v => !v)} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title={showCredPw ? "Ocultar" : "Mostrar"}>
-                    {showCredPw ? <EyeOff className="h-3.5 w-3.5 text-gray-400" /> : <Eye className="h-3.5 w-3.5 text-gray-400" />}
+                    {showCredPw ? <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <Eye className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                   </button>
                   <button type="button" onClick={() => { navigator.clipboard.writeText(storedAdminPw); }} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar contraseña">
-                    <Copy className="h-3.5 w-3.5 text-gray-400" />
+                    <Copy className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   </button>
                 </div>
               </div>
@@ -878,9 +879,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <Send className="h-4 w-4" /> Compartir credenciales
           </button>
           {storedAdminPw === "admin2024" && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Estás usando la contraseña por defecto. Te recomendamos cambiarla abajo.</p>
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+              <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0 mt-0.5" />
+              <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Estás usando la contraseña por defecto. Te recomendamos cambiarla abajo.</p>
             </div>
           )}
         </div>
@@ -908,13 +909,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => {
                   const strength = (newPw.length >= 4 ? 1 : 0) + (newPw.length >= 8 ? 1 : 0) + (/[A-Z]/.test(newPw) ? 1 : 0) + (/[0-9]/.test(newPw) ? 1 : 0);
-                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-red-400" : strength <= 2 ? "bg-amber-400" : strength <= 3 ? "bg-emerald-400" : "bg-emerald-400") : "bg-gray-200 dark:bg-surface")} />;
+                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error)]" : strength <= 2 ? "bg-[var(--data-warning)]" : strength <= 3 ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]") : "bg-gray-200 dark:bg-surface")} />;
                 })}
               </div>
-              <p className="text-[10px] text-gray-400">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
             </div>
           )}
-          {pwChangeError && <p className="text-xs text-red-500 font-semibold">{pwChangeError}</p>}
+          {pwChangeError && <p className="text-xs text-[var(--data-error)] font-semibold">{pwChangeError}</p>}
           <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Cambiar contraseña
           </button>
@@ -933,9 +934,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <div className="space-y-2">
             <FieldLabel>Mensaje para clientes</FieldLabel>
             <TextInput value={maintenanceMsg} onChange={setMaintenanceMsg} placeholder="Ej: Estamos de vacaciones. Volvemos el lunes." />
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
               <span className="text-lg">🏖</span>
-              <p className="text-xs text-amber-800 dark:text-amber-300 font-medium flex-1">{maintenanceMsg || "Vista previa..."}</p>
+              <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium flex-1">{maintenanceMsg || "Vista previa..."}</p>
             </div>
           </div>
         )}
@@ -948,9 +949,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ adminBypassLogin: v }) });
         }} label="Acceso sin login" desc="Permite entrar al panel sin credenciales" danger />
         {bypassLogin && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-red-700 dark:text-red-400 font-medium">⚠️ RIESGO DE SEGURIDAD: Cualquier persona podrá acceder al panel de administración.</p>
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
+            <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">⚠️ RIESGO DE SEGURIDAD: Cualquier persona podrá acceder al panel de administración.</p>
           </div>
         )}
       </SectionCard>
@@ -959,13 +960,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Navegación del sitio" desc="Orden y visibilidad del menú">
         <div className="space-y-2">
           {navLinks.map((link, idx) => (
-            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex flex-col gap-0.5">
-                <button disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-gray-400 hover:text-gray-800 disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
-                <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-gray-400 hover:text-gray-800 disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
+                <button disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
+                <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
               </div>
-              <span className="flex-1 font-semibold text-sm text-gray-800 dark:text-foreground">{NAV_LABEL[link.id] || link.id}</span>
-              <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-lg", link.visible ? "text-primary bg-primary/10" : "text-gray-300")}>
+              <span className="flex-1 font-semibold text-sm text-[var(--text-primary)] dark:text-foreground">{NAV_LABEL[link.id] || link.id}</span>
+              <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-lg", link.visible ? "text-primary bg-primary/10" : "text-[var(--text-tertiary)]")}>
                 {link.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
@@ -1004,7 +1005,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <div>
             <FieldLabel icon={<Percent className="h-3.5 w-3.5" />}>Tasa de IGV</FieldLabel>
             <NumberInput value={taxRate} onChange={setTaxRate} min={0} max={100} step={0.1} suffix="%" />
-            <p className="text-[10px] text-gray-400 mt-1">Hoy es 18% en Perú. Se usa para calcular totales en comprobantes.</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Hoy es 18% en Perú. Se usa para calcular totales en comprobantes.</p>
           </div>
         </div>
       </SectionCard>
@@ -1030,8 +1031,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <FieldLabel>{key === "factura" ? "Factura" : key === "boleta" ? "Boleta" : key === "ncFactura" ? "NC Factura" : "NC Boleta"}</FieldLabel>
               <TextInput value={val} onChange={v => setInvoiceSeries(p => ({ ...p, [key]: v }))} mono />
               <div className="mt-1">
-                <span className="text-[10px] text-gray-400">Inicio: </span>
-                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface outline-none" />
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Inicio: </span>
+                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface outline-none" />
               </div>
             </div>
           ))}
@@ -1046,7 +1047,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button key={t} onClick={() => {
                 const types = enabledDocTypes.split(",").filter(Boolean);
                 setEnabledDocTypes(active ? types.filter(x => x !== t).join(",") : [...types, t].join(","));
-              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-400 hover:border-gray-300")}>
+              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] hover:border-gray-300")}>
                 {active ? <Check className="h-3.5 w-3.5 inline mr-1.5" /> : null}
                 {t === "nota_venta" ? "Nota de venta" : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -1073,7 +1074,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       <SectionCard title="Pie de comprobante">
         <FieldLabel>Texto legal / agradecimiento</FieldLabel>
-        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "sales"} onClick={() => patch({
@@ -1111,7 +1112,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button key={ch.id} onClick={() => {
                 const chs = stockAlertChannels.split(",").filter(Boolean);
                 setStockAlertChannels(active ? chs.filter(x => x !== ch.id).join(",") : [...chs, ch.id].join(","));
-              }} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-gray-200 text-gray-400 hover:border-gray-300")}>
+              }} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300")}>
                 {ch.icon} {ch.label}
               </button>
             );
@@ -1131,7 +1132,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           {adjustReasons.map((reason, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <TextInput value={reason} onChange={v => setAdjustReasons(p => p.map((r, i) => i === idx ? v : r))} />
-              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-[var(--data-error)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setAdjustReasons(p => [...p, ""])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar motivo</button>
@@ -1167,36 +1168,36 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <Toggle enabled={cashEnabled} onChange={setCashEnabled} label="Efectivo" desc="Pago contra entrega" />
           <Toggle enabled={yapeEnabled} onChange={setYapeEnabled} label="Yape" desc="Pago con QR de Yape" />
           {yapeEnabled && (
-            <div className="pl-4 border-l-2 border-purple-200 space-y-3">
+            <div className="pl-4 border-l-2 border-[var(--rule-base)] space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={yapeName} onChange={setYapeName} placeholder="Juan Pérez" /></div>
                 <div><FieldLabel>Número</FieldLabel><TextInput value={yapePhone} onChange={setYapePhone} placeholder="987654321" mono /></div>
               </div>
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
-                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 bg-purple-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
+                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage)} />
-                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-purple-50 rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
+                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Quitar</button></div>}
               </div>
             </div>
           )}
           <Toggle enabled={plinEnabled} onChange={setPlinEnabled} label="Plin" desc="Pago con Plin" />
           {plinEnabled && (
-            <div className="pl-4 border-l-2 border-emerald-200 space-y-3">
+            <div className="pl-4 border-l-2 border-[var(--data-success)]/30 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={plinName} onChange={setPlinName} /></div>
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-emerald-300 hover:border-emerald-500 text-sm font-semibold text-emerald-600 bg-emerald-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success)]/30 hover:border-[var(--data-success)]/30 text-sm font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage)} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-emerald-50 rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--accent-soft)] rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error)]">Quitar</button></div>}
               </div>
             </div>
           )}
           <Toggle enabled={transferEnabled} onChange={setTransferEnabled} label="Transferencia bancaria" desc="Deposito o transferencia" />
           {transferEnabled && (
-            <div className="pl-4 border-l-2 border-green-200 space-y-3">
+            <div className="pl-4 border-l-2 border-[var(--data-success)]/30 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div><FieldLabel icon={<Landmark className="h-3.5 w-3.5" />}>Banco</FieldLabel><TextInput value={transferBankName} onChange={setTransferBankName} placeholder="BCP" /></div>
                 <div><FieldLabel>N° de cuenta</FieldLabel><TextInput value={transferAccountNum} onChange={setTransferAccountNum} mono /></div>
@@ -1228,19 +1229,19 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm bg-white dark:bg-card outline-none" />
+                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm bg-white dark:bg-card outline-none" />
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-mono bg-white outline-none" />
-                  <span className="text-[10px] text-gray-400 shrink-0">S/</span>
+                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">S/</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-mono bg-white outline-none" />
-                  <span className="text-[10px] text-gray-400 shrink-0">min</span>
+                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">min</span>
                 </div>
               </div>
-              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-lg text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-lg text-[var(--data-error)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setDeliveryZones(p => [...p, { name: "", fee: 0, estimatedMin: 30 }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar zona</button>
@@ -1265,13 +1266,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Repartidores" desc="Equipo de delivery">
         <div className="space-y-2">
           {riders.map((rider, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm bg-white outline-none" />
-                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-mono bg-white outline-none" />
-                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm bg-white outline-none" />
+                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
+                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
               </div>
-              <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setRiders(p => [...p, { name: "", phone: "", zone: "" }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary"><Plus className="h-3.5 w-3.5" /> Agregar repartidor</button>
@@ -1341,9 +1342,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             { label: "SUNAT", ok: sunatProvider !== "none" && !!sunatApiKey },
             { label: "Google Analytics", ok: !!googleAnalyticsId },
           ].map(s => (
-            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800" : "bg-gray-50 dark:bg-surface border-gray-200 dark:border-card-border")}>
-              {s.ok ? <Wifi className="h-4 w-4 text-emerald-500" /> : <WifiOff className="h-4 w-4 text-gray-300" />}
-              <span className={cn("text-xs font-semibold", s.ok ? "text-emerald-700 dark:text-emerald-400" : "text-gray-400")}>{s.label}</span>
+            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border")}>
+              {s.ok ? <Wifi className="h-4 w-4 text-[var(--data-success)]" /> : <WifiOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
+              <span className={cn("text-xs font-semibold", s.ok ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -1382,7 +1383,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           ))}
         </div>
         {Object.keys(featureFlags).length === 0 && (
-          <p className="text-xs text-gray-400 text-center py-4">No hay feature flags cargados</p>
+          <p className="text-xs text-[var(--text-tertiary)] text-center py-4">No hay feature flags cargados</p>
         )}
       </SectionCard>
 
@@ -1399,22 +1400,22 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <div>
             <FieldLabel>Color primario</FieldLabel>
             <div className="flex items-center gap-2">
-              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer" />
+              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
               <TextInput value={primaryColor} onChange={setPrimaryColor} mono />
             </div>
           </div>
           <div>
             <FieldLabel>Color secundario</FieldLabel>
             <div className="flex items-center gap-2">
-              <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer" />
+              <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
               <TextInput value={secondaryColor} onChange={setSecondaryColor} mono />
             </div>
           </div>
           <div className="sm:col-span-2"><FieldLabel>Slogan</FieldLabel><TextInput value={slogan} onChange={setSlogan} placeholder="Productos frescos, precios justos" /></div>
         </div>
         {/* Live preview */}
-        <div className="mt-4 p-4 rounded-xl border border-gray-200 dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
-          <p className="text-[10px] font-bold text-gray-400 mb-2">Vista previa</p>
+        <div className="mt-4 p-4 rounded-xl border border-[var(--rule-base)] dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-2">Vista previa</p>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
             <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{businessName}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan}</p></div>
@@ -1438,12 +1439,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               "p-4 rounded-xl border-2 text-left transition-all",
               (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") !== "technical")
                 ? "border-primary bg-primary/5"
-                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+                : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}
           >
             <p className="font-bold text-sm">Sencillo</p>
-            <p className="text-xs text-gray-500 mt-1">Palabras simples y claras. Ideal para dueños de bodega.</p>
-            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Ganancia&rdquo; en vez de &ldquo;Margen bruto&rdquo;</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Palabras simples y claras. Ideal para dueños de bodega.</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2 italic">Ejemplo: &ldquo;Ganancia&rdquo; en vez de &ldquo;Margen bruto&rdquo;</p>
           </button>
           <button
             type="button"
@@ -1455,12 +1456,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               "p-4 rounded-xl border-2 text-left transition-all",
               (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") === "technical")
                 ? "border-primary bg-primary/5"
-                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+                : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}
           >
             <p className="font-bold text-sm">Profesional</p>
-            <p className="text-xs text-gray-500 mt-1">Terminología técnica. Ideal para contadores y profesionales.</p>
-            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Margen bruto&rdquo;, &ldquo;FEFO&rdquo;, &ldquo;SKU&rdquo;, &ldquo;ROI&rdquo;</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Terminología técnica. Ideal para contadores y profesionales.</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2 italic">Ejemplo: &ldquo;Margen bruto&rdquo;, &ldquo;FEFO&rdquo;, &ldquo;SKU&rdquo;, &ldquo;ROI&rdquo;</p>
           </button>
         </div>
       </SectionCard>
@@ -1489,7 +1490,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                   <button key={a.id} onClick={() => {
                     const acts = logActions.split(",").filter(Boolean);
                     setLogActions(active ? acts.filter(x => x !== a.id).join(",") : [...acts, a.id].join(","));
-                  }} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-gray-200 text-gray-400")}>
+                  }} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-tertiary)]")}>
                     {a.label}
                   </button>
                 );
@@ -1512,9 +1513,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           const daysSince = lastDate ? Math.floor((Date.now() - lastDate.getTime()) / 86400000) : null;
           const needsBackup = !lastDate || (daysSince !== null && daysSince > 7);
           return (
-            <div className={cn("p-3 rounded-xl border", needsBackup ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200" : "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200")}>
+            <div className={cn("p-3 rounded-xl border", needsBackup ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30")}>
               <div className="flex items-center gap-2.5">
-                {needsBackup ? <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" /> : <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />}
+                {needsBackup ? <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0" /> : <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />}
                 <p className="text-xs font-medium">{lastDate ? `Último respaldo: hace ${daysSince} día${daysSince !== 1 ? "s" : ""}` : "No hay respaldos recientes"}</p>
               </div>
             </div>
@@ -1531,7 +1532,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
-          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-sm font-semibold text-cyan-700">
+          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info)] bg-white hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info)]">
             <Upload className="h-4 w-4" /> Restaurar desde respaldo
           </button>
         </div>
@@ -1547,17 +1548,17 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       {showRestoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Restaurar Base de Datos</h3>
-              {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Restaurar Base de Datos</CardTitle>
+              {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>}
             </div>
             <div className="px-6 py-5 space-y-4">
               {!restoreSuccess && !restoreFile && (
                 <>
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-4">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-                      <div><p className="text-sm font-bold text-red-800">ADVERTENCIA</p><p className="text-xs text-red-700 mt-1">Esta acción <strong>sobrescribirá todos los datos actuales</strong>.</p></div>
+                      <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0" />
+                      <div><p className="text-sm font-bold text-[var(--data-error)]">ADVERTENCIA</p><p className="text-xs text-[var(--data-error)] mt-1">Esta acción <strong>sobrescribirá todos los datos actuales</strong>.</p></div>
                     </div>
                   </div>
                   <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={async e => {
@@ -1567,36 +1568,36 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                       setRestoreFile(file); setRestorePreview({ date: data.exportDate || "?", products: data.products?.length || 0, orders: data.orders?.length || 0, customers: data.customers?.length || 0, size: (file.size / 1024).toFixed(2) + " KB" });
                     } catch { setRestoreError("JSON inválido"); }
                   }} />
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-cyan-300 bg-cyan-50 text-cyan-600 hover:border-cyan-500 hover:bg-cyan-100 transition-colors">
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-[var(--data-info)] bg-[var(--data-info-50)] text-[var(--data-info)] hover:border-[var(--data-info)] hover:bg-[var(--data-info-100)] transition-colors">
                     <Upload className="h-8 w-8 mx-auto mb-2" /><p className="text-sm font-semibold">Seleccionar archivo .json</p>
                   </button>
-                  {restoreError && <p className="text-xs text-red-600 font-semibold bg-red-50 p-3 rounded-xl">{restoreError}</p>}
+                  {restoreError && <p className="text-xs text-[var(--data-error)] font-semibold bg-[var(--data-error-50)] p-3 rounded-xl">{restoreError}</p>}
                 </>
               )}
               {restoreFile && !restoreSuccess && restorePreview && (
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="bg-gray-50 rounded-xl p-4 border border-[var(--rule-base)]">
                   <p className="text-xs font-bold mb-2">Vista previa</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-gray-500 block">Productos:</span><span className="font-semibold">{restorePreview.products}</span></div>
-                    <div><span className="text-gray-500 block">Pedidos:</span><span className="font-semibold">{restorePreview.orders}</span></div>
-                    <div><span className="text-gray-500 block">Clientes:</span><span className="font-semibold">{restorePreview.customers}</span></div>
-                    <div><span className="text-gray-500 block">Tamaño:</span><span className="font-semibold">{restorePreview.size}</span></div>
+                    <div><span className="text-[var(--text-secondary)] block">Productos:</span><span className="font-semibold">{restorePreview.products}</span></div>
+                    <div><span className="text-[var(--text-secondary)] block">Pedidos:</span><span className="font-semibold">{restorePreview.orders}</span></div>
+                    <div><span className="text-[var(--text-secondary)] block">Clientes:</span><span className="font-semibold">{restorePreview.customers}</span></div>
+                    <div><span className="text-[var(--text-secondary)] block">Tamaño:</span><span className="font-semibold">{restorePreview.size}</span></div>
                   </div>
                 </div>
               )}
               {restoreSuccess && (
-                <div className="text-center py-6"><CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-2" /><p className="text-lg font-bold">¡Restauración exitosa!</p><p className="text-sm text-gray-500">Recargando...</p></div>
+                <div className="text-center py-6"><CheckCircle className="h-12 w-12 text-[var(--data-success)] mx-auto mb-2" /><p className="text-lg font-bold">¡Restauración exitosa!</p><p className="text-sm text-[var(--text-secondary)]">Recargando...</p></div>
               )}
             </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-[var(--rule-soft)]">
               {!restoreSuccess && (<>
-                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100">Cancelar</button>
                 {restoreFile && <button onClick={async () => {
                   if (!restoreFile) return; setRestoring(true); setRestoreError(null);
                   try { const text = await restoreFile.text(); const res = await fetch("/api/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
                     if (!res.ok) throw new Error(await res.text()); setRestoreSuccess(true); setTimeout(() => window.location.reload(), 2000);
                   } catch (err: unknown) { setRestoreError(err instanceof Error ? err.message : "Error"); setRestoring(false); }
-                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
+                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}
               </>)}
@@ -1610,11 +1611,11 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   const renderSubscription = () => (
     <div className="space-y-6">
       <SectionCard title="Plan actual">
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-primary/10 to-secondary/10 border border-primary/20">
-          <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center"><Crown className="h-7 w-7 text-white" /></div>
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+          <IconBadge size="xl" shape="square" asDiv><Crown className="h-7 w-7" /></IconBadge>
           <div className="flex-1">
-            <p className="text-lg font-extrabold text-gray-900 dark:text-foreground capitalize">{planName === "free" ? "Plan Gratuito" : `Plan ${planName}`}</p>
-            {planExpiresAt && <p className="text-xs text-gray-500">Vence: {new Date(planExpiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>}
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground capitalize">{planName === "free" ? "Plan Gratuito" : `Plan ${planName}`}</p>
+            {planExpiresAt && <p className="text-xs text-[var(--text-secondary)]">Vence: {new Date(planExpiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>}
           </div>
         </div>
       </SectionCard>
@@ -1632,9 +1633,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           {["inventario", "ventas", "caja", "facturacion", "delivery", "ia", "reportes", "crm"].map(m => {
             const active = enabledModules.includes(m);
             return (
-              <div key={m} className={cn("flex items-center gap-2 p-3 rounded-xl border", active ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-gray-200 opacity-50")}>
-                {active ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <Lock className="h-4 w-4 text-gray-300" />}
-                <span className={cn("text-xs font-semibold capitalize", active ? "text-emerald-700" : "text-gray-400")}>{m}</span>
+              <div key={m} className={cn("flex items-center gap-2 p-3 rounded-xl border", active ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30" : "bg-gray-50 border-[var(--rule-base)] opacity-50")}>
+                {active ? <CheckCircle className="h-4 w-4 text-[var(--data-success)]" /> : <Lock className="h-4 w-4 text-[var(--text-tertiary)]" />}
+                <span className={cn("text-xs font-semibold capitalize", active ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]")}>{m}</span>
               </div>
             );
           })}
@@ -1683,23 +1684,23 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         <span className={cn(
           "text-xs font-bold px-2 py-0.5 rounded-full",
           overallCompletion === 100
-            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
             : "bg-primary/10 text-primary"
         )}>
           {overallCompletion}% completo
         </span>
         {/* Search bar */}
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
             placeholder="Buscar configuración..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600">
+            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -1712,8 +1713,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <button onClick={() => setShowOverview(true)} className="text-primary hover:text-primary/80 font-semibold transition-colors">
             Configuración
           </button>
-          <ChevronRight className="h-3.5 w-3.5 text-gray-300" />
-          <span className="text-gray-700 dark:text-foreground font-medium">
+          <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+          <span className="text-[var(--text-primary)] dark:text-foreground font-medium">
             {SECTION_META.find(s => s.id === activeSection)?.title}
           </span>
         </m.div>
@@ -1731,17 +1732,17 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           >
             {/* Quick stats bar */}
             <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-gray-400">Secciones</p>
-                <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{SECTION_META.length}</p>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Secciones</p>
+                <p className="text-2xl font-extrabold text-[var(--text-primary)]">{SECTION_META.length}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-gray-400">Completas</p>
-                <p className="text-2xl font-extrabold text-emerald-600">{Object.values(sectionCompletion).filter(v => v === 100).length}</p>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Completas</p>
+                <p className="text-2xl font-extrabold text-[var(--data-success)]">{Object.values(sectionCompletion).filter(v => v === 100).length}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-gray-400">Pendientes</p>
-                <p className="text-2xl font-extrabold text-amber-600">{Object.values(sectionCompletion).filter(v => v < 100).length}</p>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Pendientes</p>
+                <p className="text-2xl font-extrabold text-[var(--data-warning)]">{Object.values(sectionCompletion).filter(v => v < 100).length}</p>
               </div>
             </div>
 
@@ -1758,8 +1759,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             </div>
             {filteredSections.length === 0 && (
               <div className="text-center py-12">
-                <Search className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No se encontraron secciones para &quot;{searchQuery}&quot;</p>
+                <Search className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-3" />
+                <p className="text-sm text-[var(--text-secondary)]">No se encontraron secciones para &quot;{searchQuery}&quot;</p>
               </div>
             )}
           </m.div>
@@ -1781,8 +1782,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               )}>
                 {showMobileNav && (
                   <div className="flex items-center justify-between mb-4 sm:hidden">
-                    <h3 className="font-bold text-gray-900 dark:text-foreground">Secciones</h3>
-                    <button onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Secciones</CardTitle>
+                    <button onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -1805,7 +1806,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group",
                         activeSection === s.id
                           ? "bg-primary/10 text-primary font-bold "
-                          : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
+                          : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
                       )}
                     >
                       <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", s.color)}>
@@ -1816,11 +1817,11 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                         <div className="flex items-center gap-2 mt-0.5">
                           <div className="flex-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                             <div
-                              className={cn("h-full rounded-full transition-all", pct === 100 ? "bg-emerald-500" : "bg-primary/60")}
+                              className={cn("h-full rounded-full transition-all", pct === 100 ? "bg-[var(--accent-soft)]" : "bg-primary/60")}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <span className="text-[9px] font-bold text-gray-400 shrink-0">{pct}%</span>
+                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] shrink-0">{pct}%</span>
                         </div>
                       </div>
                       {activeSection === s.id && <ChevronRight className="h-4 w-4 text-primary shrink-0" />}
@@ -1837,12 +1838,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     {SECTION_META.find(s => s.id === activeSection)?.icon}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground">{SECTION_META.find(s => s.id === activeSection)?.title}</h3>
-                    <p className="text-xs text-gray-500 dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
+                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">{SECTION_META.find(s => s.id === activeSection)?.title}</CardTitle>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
                   </div>
                   {/* Mobile nav toggle */}
                   <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-lg bg-gray-100 dark:bg-accent">
-                    <Settings className="h-5 w-5 text-gray-600" />
+                    <Settings className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
@@ -1873,18 +1874,18 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Ubicación del negocio</h3>
-              <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Ubicación del negocio</CardTitle>
+              <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />
             </div>
-            <div className="flex justify-end gap-3 px-5 py-4 border-t border-gray-100">
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+            <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--rule-soft)]">
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100">Cancelar</button>
               <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
           </m.div>

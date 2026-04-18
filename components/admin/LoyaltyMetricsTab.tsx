@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { BarChart3, TrendingUp, Users, Award } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Award } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface LoyaltyMetrics {
@@ -25,10 +26,10 @@ interface LoyaltyMetrics {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  bronce: "bg-amber-500",
+  bronce: "bg-[var(--data-warning)]",
   plata: "bg-slate-400",
-  oro: "bg-yellow-500",
-  diamante: "bg-sky-500",
+  oro: "bg-[var(--data-warning)]",
+  diamante: "bg-[var(--data-info)]",
 };
 
 export default function LoyaltyMetricsTab() {
@@ -61,7 +62,7 @@ export default function LoyaltyMetricsTab() {
 
   if (!data) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-[var(--text-tertiary)]">
         <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No se pudieron cargar las métricas</p>
       </div>
@@ -92,21 +93,21 @@ export default function LoyaltyMetricsTab() {
       value: summary.totalPointsCirculating.toLocaleString("es-PE"),
       sub: `≈ S/${Math.floor(summary.totalPointsCirculating / 50)} en valor`,
       icon: Award,
-      color: "text-amber-600",
+      color: "text-[var(--data-warning)]",
     },
     {
       label: "Emitidos (30 días)",
       value: `+${summary.pointsIssuedLast30d.toLocaleString("es-PE")}`,
       sub: `${summary.earnTransactions} transacciones`,
       icon: TrendingUp,
-      color: "text-emerald-600",
+      color: "text-[var(--data-success)]",
     },
     {
       label: "Canjeados (30 días)",
       value: summary.pointsRedeemedLast30d.toLocaleString("es-PE"),
       sub: `Tasa canje: ${redemptionRate}%`,
       icon: BarChart3,
-      color: "text-sky-600",
+      color: "text-[var(--data-info)]",
     },
   ];
 
@@ -120,25 +121,25 @@ export default function LoyaltyMetricsTab() {
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-4 space-y-1"
+            className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-4 space-y-1"
           >
             <div className="flex items-center gap-2">
               <k.icon className={cn("h-4 w-4", k.color)} />
-              <span className="text-[10px] sm:text-xs text-gray-500 font-medium">
+              <span className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] font-medium">
                 {k.label}
               </span>
             </div>
             <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
-            <p className="text-[10px] text-gray-400">{k.sub}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{k.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Tier distribution */}
-      <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-foreground mb-4">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">
           Distribución por nivel
-        </h3>
+        </CardTitle>
         <div className="space-y-3">
           {["bronce", "plata", "oro", "diamante"].map((tier) => {
             const entry = tierDistribution.find(
@@ -151,16 +152,16 @@ export default function LoyaltyMetricsTab() {
             return (
               <div key={tier} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-gray-700 dark:text-foreground capitalize">
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground capitalize">
                     {tier}
                   </span>
-                  <span className="text-gray-500">
+                  <span className="text-[var(--text-secondary)]">
                     {count} clientes · {points.toLocaleString("es-PE")} pts
                   </span>
                 </div>
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full rounded-full transition-all duration-500", TIER_COLORS[tier])}
+                    className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", TIER_COLORS[tier])}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -171,19 +172,19 @@ export default function LoyaltyMetricsTab() {
       </div>
 
       {/* Top customers table */}
-      <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-foreground mb-4">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">
           Top 10 clientes con más puntos
-        </h3>
+        </CardTitle>
         {topCustomers.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-[var(--text-tertiary)] text-center py-6">
             Aún no hay clientes con puntos
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-[var(--rule-soft)] text-left text-xs text-[var(--text-secondary)]">
                   <th className="pb-2 pr-3">#</th>
                   <th className="pb-2 pr-3">Cliente</th>
                   <th className="pb-2 pr-3 text-center">Nivel</th>
@@ -194,12 +195,12 @@ export default function LoyaltyMetricsTab() {
               <tbody>
                 {topCustomers.map((c, i) => (
                   <tr key={c.phone} className="border-b border-gray-50 hover:bg-gray-50/50">
-                    <td className="py-2 pr-3 font-bold text-gray-400">{i + 1}</td>
+                    <td className="py-2 pr-3 font-bold text-[var(--text-tertiary)]">{i + 1}</td>
                     <td className="py-2 pr-3">
-                      <p className="font-semibold text-gray-900 dark:text-foreground text-xs">
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">
                         {c.name ?? "Sin nombre"}
                       </p>
-                      <p className="text-[10px] text-gray-400">{c.phone}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.phone}</p>
                     </td>
                     <td className="py-2 pr-3 text-center">
                       <span className="text-xs">
@@ -209,7 +210,7 @@ export default function LoyaltyMetricsTab() {
                     <td className="py-2 pr-3 text-right font-bold text-primary">
                       {c.points.toLocaleString("es-PE")}
                     </td>
-                    <td className="py-2 text-right text-xs text-gray-600">
+                    <td className="py-2 text-right text-xs text-[var(--text-secondary)]">
                       S/{c.totalSpent.toFixed(2)}
                     </td>
                   </tr>

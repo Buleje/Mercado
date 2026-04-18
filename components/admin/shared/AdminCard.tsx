@@ -14,14 +14,28 @@ const paddingMap = {
   lg: "p-6",
 } as const;
 
+/**
+ * AdminCard — wrapper canónico para cards admin/superadmin.
+ *
+ * ADR-074 Phase 2: eliminamos los pares `bg-white dark:bg-zinc-900` y
+ * `border-[var(--rule-soft)] dark:border-zinc-800` — todo son tokens que
+ * ya resuelven dark mode en `app/globals.css`. Si se cambia `--surface-raised`,
+ * el card sigue sin editar.
+ *
+ * Defaults:
+ * - `rounded-xl` (nunca `rounded-2xl` — ver ADR-074 §structural)
+ * - `padding = "md"` → `p-5`
+ * - `hover = false` (opt-in)
+ */
 function AdminCard({ children, className, padding = "md", hover = false }: AdminCardProps) {
   return (
     <div
       data-card=""
       className={cn(
-        "rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900",
+        "rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
         paddingMap[padding],
-        hover && "hover:shadow-sm hover:border-gray-200 dark:hover:border-zinc-700 transition-all duration-200",
+        hover &&
+          "hover:shadow-[var(--shadow-sm)] hover:border-[var(--rule-base)] transition-all duration-[var(--dur-base)]",
         className,
       )}
     >

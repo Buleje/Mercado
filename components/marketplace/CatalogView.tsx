@@ -136,7 +136,7 @@ function CatalogProductCard({
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.6) }}
       className={cn(
         "group relative flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800",
-        "hover:shadow-xl hover:shadow-primary/8 hover:border-primary/20 hover:-translate-y-0.5",
+        "hover:shadow-[var(--shadow-md)] hover:border-primary/20 hover:-translate-y-0.5",
         "transition-all duration-300",
         isOutOfStock && "opacity-60"
       )}
@@ -186,12 +186,12 @@ function CatalogProductCard({
           </span>
         )}
         {product.stock === 1 && !isOutOfStock && (
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-red-500 shadow-sm animate-pulse">
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-[var(--data-error)] shadow-sm">
             ¡Última!
           </span>
         )}
         {isLowStock && product.stock !== 1 && (
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-amber-500 shadow-sm">
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-[var(--data-warning)] shadow-sm">
             ¡Solo {product.stock}!
           </span>
         )}

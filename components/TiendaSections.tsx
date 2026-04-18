@@ -46,6 +46,16 @@ interface TiendaSectionsProps {
   sectionOrder: string[];
   /** If true, show placeholder for empty sections (admin preview). If false, hide them (public). */
   showEmptyPlaceholders?: boolean;
+  /**
+   * Si true, las secciones que suelen tener fallback aleatorio (FlashDeals,
+   * PopularProducts, DailySpecial, FeaturedCarousel) DEJAN de picar del
+   * catalogo global cuando admin no asigno contenido. En su lugar renderizan
+   * placeholder si `showEmptyPlaceholders=true`, o `null` si no.
+   *
+   * Regla estricta pedida por el dueno de la tienda: "si en admin no agregue
+   * nada, el shopper no ve productos magicos".
+   */
+  strictAdminOnly?: boolean;
 }
 
 export default function TiendaSections({
@@ -53,6 +63,7 @@ export default function TiendaSections({
   visibleSections,
   sectionOrder,
   showEmptyPlaceholders = false,
+  strictAdminOnly = false,
 }: TiendaSectionsProps) {
   // Use server products if available, fallback to client hook
   const hook = useStoreProducts();
@@ -61,6 +72,10 @@ export default function TiendaSections({
 
   // Don't render anything while loading and no server data
   if (isLoading && products.length === 0) return null;
+
+  // When rendered publicly we show "Producto no asignado"-style placeholders.
+  // In admin preview the existing admin-oriented hints are kept (default variant).
+  const emptyVariant: "admin" | "public" = showEmptyPlaceholders ? "public" : "admin";
 
   return (
     <>
@@ -71,49 +86,49 @@ export default function TiendaSections({
           case "daily_special":
             return (
               <Suspense key={key} fallback={null}>
-                <DailySpecial serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <DailySpecial serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} strictAdminOnly={strictAdminOnly} />
               </Suspense>
             );
           case "seasonal_promo":
             return (
               <Suspense key={key} fallback={null}>
-                <SeasonalPromo serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <SeasonalPromo serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} />
               </Suspense>
             );
           case "countdown":
             return (
               <Suspense key={key} fallback={null}>
-                <CountdownBanner />
+                <CountdownBanner showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} />
               </Suspense>
             );
           case "flash_deals":
             return (
               <Suspense key={key} fallback={null}>
-                <FlashDeals serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <FlashDeals serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} strictAdminOnly={strictAdminOnly} />
               </Suspense>
             );
           case "popular_products":
             return (
               <Suspense key={key} fallback={null}>
-                <PopularProducts serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <PopularProducts serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} strictAdminOnly={strictAdminOnly} />
               </Suspense>
             );
           case "featured_carousel":
             return (
               <Suspense key={key} fallback={null}>
-                <FeaturedCarousel serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <FeaturedCarousel serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} strictAdminOnly={strictAdminOnly} />
               </Suspense>
             );
           case "combos":
             return (
               <Suspense key={key} fallback={null}>
-                <CombosSection serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <CombosSection serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} />
               </Suspense>
             );
           case "last_units":
             return (
               <Suspense key={key} fallback={null}>
-                <LastUnitsSection serverProducts={products} showEmpty={showEmptyPlaceholders} />
+                <LastUnitsSection serverProducts={products} showEmpty={showEmptyPlaceholders} emptyVariant={emptyVariant} />
               </Suspense>
             );
           default:

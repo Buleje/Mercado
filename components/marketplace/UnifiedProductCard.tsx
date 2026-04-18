@@ -179,19 +179,17 @@ export default function UnifiedProductCard({
       removeFromCompare(product.id);
       return;
     }
-    const added = addToCompare({
-      productId: product.id,
+    addToCompare({
+      id: product.id,
       storeSlug: product.storeSlug ?? "",
       name: product.name,
+      category: "",
+      unit: "",
       price: product.price,
-      image: product.image,
+      image: product.image ?? "",
       rating: product.storeRating,
-      stock: product.stock,
+      stock: product.stock ?? undefined,
     });
-    if (!added) {
-      setCompareLimitMsg(true);
-      setTimeout(() => setCompareLimitMsg(false), 2500);
-    }
   }, [inCompare, addToCompare, removeFromCompare, product]);
 
   const handleAdd = useCallback(() => {

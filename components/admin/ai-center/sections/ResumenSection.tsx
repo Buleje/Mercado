@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -17,7 +18,7 @@ import {
   Package,
   Activity,
   Clock,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
 
@@ -67,28 +68,28 @@ function healthScoreColor(score: number): {
 } {
   if (score >= 80)
     return {
-      text: "text-emerald-500 dark:text-emerald-400",
+      text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
       badge:
-        "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300",
+        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
       label: "Saludable",
     };
   if (score >= 60)
     return {
-      text: "text-emerald-400 dark:text-emerald-300",
+      text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
       badge:
-        "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400",
+        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
       label: "Bueno",
     };
   if (score >= 40)
     return {
-      text: "text-amber-500 dark:text-amber-400",
+      text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
       badge:
-        "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300",
+        "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
       label: "Regular",
     };
   return {
-    text: "text-red-500 dark:text-red-400",
-    badge: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300",
+    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+    badge: "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
     label: "Critico",
   };
 }
@@ -109,8 +110,6 @@ function formatDateHeader(): string {
 
 function computeHealthScore(data: BusinessData): number {
   const { products, orders, sales, customers } = data;
-  const today = todayStr();
-  const yesterday = yesterdayStr();
 
   const activeProducts = products.filter((p) => p.active !== false);
 
@@ -205,8 +204,8 @@ function TrendBadge({ pct, size = "sm" }: TrendBadgeProps) {
     return (
       <span
         className={cn(
-          "text-gray-400 dark:text-gray-500",
-          size === "xs" ? "text-[10px]" : "text-xs"
+          "text-[var(--text-tertiary)]",
+          size === "xs" ? "text-[length:var(--ts-2xs)]" : "text-xs"
         )}
       >
         Sin datos previos
@@ -217,10 +216,10 @@ function TrendBadge({ pct, size = "sm" }: TrendBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center gap-0.5 font-medium",
-        size === "xs" ? "text-[10px]" : "text-xs",
+        size === "xs" ? "text-[length:var(--ts-2xs)]" : "text-xs",
         positive
-          ? "text-emerald-500 dark:text-emerald-400"
-          : "text-red-500 dark:text-red-400"
+          ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+          : "text-[var(--data-error)] dark:text-[var(--data-error)]"
       )}
     >
       {positive ? (
@@ -243,12 +242,12 @@ interface KPICardProps {
 
 function KPICard({ label, value, sub, icon }: KPICardProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400 dark:text-gray-500">{label}</span>
-        <span className="text-gray-400 dark:text-gray-500">{icon}</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
+        <span className="text-[var(--text-tertiary)]">{icon}</span>
       </div>
-      <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 leading-none">
+      <p className="text-lg font-semibold text-[var(--text-primary)] leading-none">
         {value}
       </p>
       {sub && <div className="mt-1.5">{sub}</div>}
@@ -264,6 +263,11 @@ interface Props {
 
 export default function ResumenSection({ data }: Props) {
   const { products, orders, sales, customers } = data;
+
+  // "Now" cachado al primer render — evita llamar Date.now() impuramente
+  // dentro del cuerpo render (react-hooks/purity). useState con lazy init
+  // se ejecuta una sola vez y React la considera pura.
+  const [now] = useState<number>(() => Date.now());
 
   // ── KPI computations ──────────────────────────────────────────────────────
 
@@ -323,7 +327,7 @@ export default function ResumenSection({ data }: Props) {
     }
 
     // Expiring products
-    const in7Days = new Date(Date.now() + 7 * 86_400_000)
+    const in7Days = new Date(now + 7 * 86_400_000)
       .toISOString()
       .slice(0, 10);
     const today = todayStr();
@@ -341,7 +345,7 @@ export default function ResumenSection({ data }: Props) {
     }
 
     return list;
-  }, [products, orders]);
+  }, [products, orders, now]);
 
   // ── 7-day sales chart ─────────────────────────────────────────────────────
 
@@ -367,10 +371,10 @@ export default function ResumenSection({ data }: Props) {
 
   const weekOverWeek = useMemo(() => {
     const thisWeek = chartData.reduce((a, d) => a + d.total, 0);
-    const lastWeekStart = new Date(Date.now() - 14 * 86_400_000)
+    const lastWeekStart = new Date(now - 14 * 86_400_000)
       .toISOString()
       .slice(0, 10);
-    const lastWeekEnd = new Date(Date.now() - 7 * 86_400_000)
+    const lastWeekEnd = new Date(now - 7 * 86_400_000)
       .toISOString()
       .slice(0, 10);
     const lastWeek = sales
@@ -380,7 +384,7 @@ export default function ResumenSection({ data }: Props) {
       })
       .reduce((a, s) => a + s.total, 0);
     return trendPct(thisWeek, lastWeek);
-  }, [chartData, sales]);
+  }, [chartData, sales, now]);
 
   // ── Opportunities ─────────────────────────────────────────────────────────
 
@@ -439,7 +443,7 @@ export default function ResumenSection({ data }: Props) {
     }
 
     // 3. Inactive customers (no purchase in 30+ days)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000)
+    const thirtyDaysAgo = new Date(now - 30 * 86_400_000)
       .toISOString()
       .slice(0, 10);
     const inactiveCustomers = customers.filter(
@@ -456,7 +460,7 @@ export default function ResumenSection({ data }: Props) {
     }
 
     return list.slice(0, 3);
-  }, [products, sales, customers]);
+  }, [products, sales, customers, now]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -465,10 +469,10 @@ export default function ResumenSection({ data }: Props) {
       {/* ── Greeting bar ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
             {getGreeting()}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 capitalize">
+          <p className="text-xs text-[var(--text-tertiary)] capitalize">
             {formatDateHeader()}
           </p>
         </div>
@@ -498,12 +502,12 @@ export default function ResumenSection({ data }: Props) {
           }
           icon={<Activity className="w-4 h-4" />}
         />
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-xs text-[var(--text-tertiary)]">
               Salud negocio
             </span>
-            <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
           </div>
           <p
             className={cn(
@@ -512,14 +516,14 @@ export default function ResumenSection({ data }: Props) {
             )}
           >
             {healthScore}
-            <span className="text-xs font-normal text-gray-400 ml-0.5">
+            <span className="text-xs font-normal text-[var(--text-tertiary)] ml-0.5">
               /100
             </span>
           </p>
           <div className="mt-1.5">
             <span
               className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                 healthColor.badge
               )}
             >
@@ -532,20 +536,20 @@ export default function ResumenSection({ data }: Props) {
       {/* ── Two-column grid ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Alertas activas */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <AlertTriangle className="w-4 h-4 text-[var(--text-tertiary)]" />
+            <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
               Alertas activas
-            </h3>
+            </CardTitle>
             {alerts.length > 0 && (
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-medium">
+              <span className="ml-auto text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
                 {alerts.length}
               </span>
             )}
           </div>
           {alerts.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Sin alertas activas
             </p>
           ) : (
@@ -556,19 +560,19 @@ export default function ResumenSection({ data }: Props) {
                     className={cn(
                       "w-2 h-2 rounded-full shrink-0",
                       alert.level === "urgente"
-                        ? "bg-red-500"
-                        : "bg-amber-400"
+                        ? "bg-[var(--data-error)]"
+                        : "bg-[var(--data-warning)]"
                     )}
                   />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                  <span className="text-xs text-[var(--text-secondary)]">
                     {alert.text}
                   </span>
                   <span
                     className={cn(
-                      "ml-auto text-[10px] font-medium shrink-0",
+                      "ml-auto text-[length:var(--ts-2xs)] font-medium shrink-0",
                       alert.level === "urgente"
-                        ? "text-red-500 dark:text-red-400"
-                        : "text-amber-500 dark:text-amber-400"
+                        ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                        : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                     )}
                   >
                     {alert.level}
@@ -580,19 +584,19 @@ export default function ResumenSection({ data }: Props) {
         </div>
 
         {/* Ventas ultimos 7 dias */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <Clock className="w-4 h-4 text-[var(--text-tertiary)]" />
+              <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
                 Ultimos 7 dias
-              </h3>
+              </CardTitle>
             </div>
             <TrendBadge pct={weekOverWeek} size="xs" />
           </div>
           {chartData.every((d) => d.total === 0) ? (
             <div className="flex items-center justify-center h-20">
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs text-[var(--text-tertiary)]">
                 Sin datos de ventas
               </p>
             </div>
@@ -608,7 +612,7 @@ export default function ResumenSection({ data }: Props) {
                   tick={{
                     fontSize: 10,
                     fill: "currentColor",
-                    className: "text-gray-400",
+                    className: "text-[var(--text-tertiary)]",
                   }}
                   axisLine={false}
                   tickLine={false}
@@ -617,7 +621,7 @@ export default function ResumenSection({ data }: Props) {
                   {chartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.isToday ? "#059669" : "#6ee7b7"}
+                      fill={entry.isToday ? "#00B4A6" : "#6ee7b7"}
                     />
                   ))}
                 </Bar>
@@ -631,24 +635,24 @@ export default function ResumenSection({ data }: Props) {
       {opportunities.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-2 px-1">
-            <Package className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <Package className="w-4 h-4 text-[var(--text-tertiary)]" />
+            <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
               Oportunidades
-            </h3>
+            </CardTitle>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {opportunities.map((opp, i) => (
               <div
                 key={i}
-                className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 rounded-lg p-4"
+                className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg p-4"
               >
-                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1">
+                <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">
                   {opp.title}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5">
+                <p className="text-xs text-[var(--text-secondary)] mb-1.5">
                   {opp.detail}
                 </p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)]">
                   {opp.impact}
                 </p>
               </div>

@@ -1,8 +1,9 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Copy, Check, Trash2, Clock, Hash, Eye } from "lucide-react";
+import { Search, Copy, Check, Trash2, Clock, Hash, Eye } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -39,13 +40,13 @@ const HASHTAGS =
 
 const TYPE_COLORS: Record<PostType, string> = {
   oferta:
-    "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
   nuevo:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   receta:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   motivacional:
-    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const LS_KEY = "buleje_post_history";
@@ -167,16 +168,16 @@ export default function SocialPostGenerator() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Generador de Posts
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Crea contenido para redes sociales en segundos
           </p>
         </div>
         <button
           onClick={() => setShowHistory(!showHistory)}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
         >
           <Clock className="h-4 w-4" />
           Historial ({history.length})
@@ -185,10 +186,10 @@ export default function SocialPostGenerator() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Form */}
-        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Post type */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Tipo de post
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -200,7 +201,7 @@ export default function SocialPostGenerator() {
                     "rounded-lg border px-3 py-2 text-sm font-medium transition",
                     postType === t.value
                       ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] hover:border-[#00B4A6]/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                   )}
                 >
                   {t.label}
@@ -212,24 +213,24 @@ export default function SocialPostGenerator() {
           {/* Product search */}
           {postType !== "motivacional" && (
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                 Producto
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
                 />
               </div>
               {search && (
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
                   {loadingProducts ? (
-                    <p className="p-3 text-sm text-gray-500">Cargando...</p>
+                    <p className="p-3 text-sm text-[var(--text-secondary)]">Cargando...</p>
                   ) : filteredProducts.length === 0 ? (
-                    <p className="p-3 text-sm text-gray-500">Sin resultados</p>
+                    <p className="p-3 text-sm text-[var(--text-secondary)]">Sin resultados</p>
                   ) : (
                     filteredProducts.slice(0, 8).map((p) => (
                       <button
@@ -238,9 +239,9 @@ export default function SocialPostGenerator() {
                           setSelectedProduct(p);
                           setSearch(p.name);
                         }}
-                        className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                        className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
                       >
-                        <span className="text-gray-800 dark:text-gray-200">
+                        <span className="text-[var(--text-primary)]">
                           {p.name}
                         </span>
                         <span className="font-medium text-[#00B4A6]">
@@ -263,7 +264,7 @@ export default function SocialPostGenerator() {
           {/* Prev price (oferta only) */}
           {postType === "oferta" && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
                 Precio anterior (opcional)
               </label>
               <input
@@ -271,7 +272,7 @@ export default function SocialPostGenerator() {
                 value={prevPrice}
                 onChange={(e) => setPrevPrice(e.target.value)}
                 placeholder="Ej: 5.50"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -279,7 +280,7 @@ export default function SocialPostGenerator() {
           {/* Custom note */}
           {(postType === "receta" || postType === "motivacional") && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
                 Nota adicional
               </label>
               <textarea
@@ -287,7 +288,7 @@ export default function SocialPostGenerator() {
                 onChange={(e) => setCustomNote(e.target.value)}
                 rows={2}
                 placeholder="Agrega un detalle personal..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -303,26 +304,26 @@ export default function SocialPostGenerator() {
 
         {/* Right: Preview */}
         <div className="space-y-6">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
             <div className="mb-3 flex items-center gap-2">
-              <Eye className="h-4 w-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Eye className="h-4 w-4 text-[var(--text-tertiary)]" />
+              <span className="text-sm font-medium text-[var(--text-secondary)]">
                 Preview — estilo Instagram
               </span>
             </div>
             {generatedText ? (
-              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#00B4A6] to-[#1a3d2e] p-5 dark:border-gray-800">
+              <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--brand-ink)] p-5 dark:border-[var(--rule-base)]">
                 <div className="mb-1 text-xs font-bold text-[#f97316]">
                   Buleje
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
                   {generatedText}
                 </p>
-                <p className="mt-3 text-xs text-emerald-300">{HASHTAGS}</p>
+                <p className="mt-3 text-xs text-[var(--data-success)]">{HASHTAGS}</p>
               </div>
             ) : (
-              <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-400">
+              <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)]">
+                <p className="text-sm text-[var(--text-tertiary)]">
                   Genera un post para verlo aqui
                 </p>
               </div>
@@ -335,7 +336,7 @@ export default function SocialPostGenerator() {
               className={cn(
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
                 copied
-                  ? "bg-emerald-600 text-white"
+                  ? "bg-[var(--accent-soft)] text-white"
                   : "bg-[#f97316] text-white hover:bg-[#e08c4a]"
               )}
             >
@@ -358,7 +359,7 @@ export default function SocialPostGenerator() {
             {HASHTAGS.split(" ").map((tag) => (
               <span
                 key={tag}
-                className="flex items-center gap-1 rounded-full bg-[#00B4A6]/10 px-2.5 py-1 text-xs text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-400"
+                className="flex items-center gap-1 rounded-full bg-[#00B4A6]/10 px-2.5 py-1 text-xs text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-[var(--data-success)]"
               >
                 <Hash className="h-3 w-3" />
                 {tag.replace("#", "")}
@@ -370,12 +371,12 @@ export default function SocialPostGenerator() {
 
       {/* History */}
       {showHistory && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-          <h3 className="mb-4 text-sm font-semibold text-gray-800 dark:text-white">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <CardTitle className="mb-4 text-sm font-semibold text-[var(--text-primary)]">
             Historial de posts generados
-          </h3>
+          </CardTitle>
           {history.length === 0 ? (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[var(--text-secondary)]">
               No hay posts en el historial.
             </p>
           ) : (
@@ -383,7 +384,7 @@ export default function SocialPostGenerator() {
               {history.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-start gap-3 rounded-lg border border-gray-100 p-3 dark:border-gray-800"
+                  className="flex items-start gap-3 rounded-lg border border-[var(--rule-soft)] p-3 dark:border-[var(--rule-base)]"
                 >
                   <span
                     className={cn(
@@ -394,17 +395,17 @@ export default function SocialPostGenerator() {
                     {POST_TYPES.find((t) => t.value === h.type)?.label}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-gray-700 dark:text-gray-300">
+                    <p className="truncate text-sm text-[var(--text-secondary)]">
                       {h.text}
                     </p>
-                    <p className="mt-0.5 text-xs text-gray-400">
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                       {h.productName} —{" "}
                       {new Date(h.createdAt).toLocaleDateString("es-PE")}
                     </p>
                   </div>
                   <button
                     onClick={() => removeFromHistory(h.id)}
-                    className="shrink-0 text-gray-400 hover:text-red-500"
+                    className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

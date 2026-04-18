@@ -127,10 +127,10 @@ export default function SeasonalProducts() {
               {temporada.emoji}
             </motion.span>
             <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white">
+              <h2 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)]">
                 {temporada.nombre}
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-[var(--text-tertiary)]">
                 Productos de temporada en Pucallpa
               </p>
             </div>
@@ -138,17 +138,17 @@ export default function SeasonalProducts() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => scroll("left")}
-              className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="h-8 w-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               aria-label="Anterior"
             >
-              <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="h-8 w-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               aria-label="Siguiente"
             >
-              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function SeasonalProducts() {
               transition={{ delay: idx * 0.05 }}
               className="flex-shrink-0 w-44 sm:w-48 snap-start"
             >
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-lg transition-all group">
+              <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-sm hover:shadow-lg transition-all group">
                 {/* Image placeholder */}
                 <div
                   className="h-28 flex items-center justify-center relative"
@@ -177,15 +177,15 @@ export default function SeasonalProducts() {
                   ) : (
                     <span className="text-4xl opacity-50">{temporada.emoji}</span>
                   )}
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                     style={{ background: `linear-gradient(135deg, ${temporada.color.from}, ${temporada.color.to})` }}
                   >
                     De temporada
                   </span>
                 </div>
                 <div className="p-3">
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">{p.name}</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{p.unit}</p>
+                  <h4 className="text-sm font-bold text-[var(--text-primary)] truncate">{p.name}</h4>
+                  <p className="text-xs text-[var(--text-tertiary)]">{p.unit}</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-sm font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
                       S/ {p.price.toFixed(2)}

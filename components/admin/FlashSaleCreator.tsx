@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Zap, Search, Clock, Tag, X, Loader2, Eye, EyeOff } from "lucide-react";
+import { Zap, Search, Clock, Tag, X, Loader2, Eye, EyeOff } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -70,9 +71,9 @@ function CountdownDisplay({ endIso }: { endIso: string | null }) {
   return (
     <div className="flex items-center gap-1 font-mono" aria-live="polite" aria-atomic="true">
       <span className="rounded bg-gray-900 px-1.5 py-0.5 text-sm font-bold text-white dark:bg-gray-700">{pad(h)}</span>
-      <span className="text-gray-500">:</span>
+      <span className="text-[var(--text-secondary)]">:</span>
       <span className="rounded bg-gray-900 px-1.5 py-0.5 text-sm font-bold text-white dark:bg-gray-700">{pad(m)}</span>
-      <span className="text-gray-500">:</span>
+      <span className="text-[var(--text-secondary)]">:</span>
       <span className="rounded bg-gray-900 px-1.5 py-0.5 text-sm font-bold text-white dark:bg-gray-700">{pad(s)}</span>
     </div>
   );
@@ -91,7 +92,7 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
   const pct = discountPct(product.price, salePrice);
 
   return (
-    <div className="rounded-xl border-2 border-[#f97316] bg-white dark:bg-gray-900 overflow-hidden">
+    <div className="rounded-xl border-2 border-[#f97316] bg-[var(--surface-raised)] overflow-hidden">
       {/* Cabecera oferta */}
       <div className="flex items-center justify-between bg-[#f97316] px-3 py-2">
         <div className="flex items-center gap-1.5">
@@ -103,17 +104,17 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
 
       {/* Cuerpo */}
       <div className="p-3">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{product.name}</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1">{product.name}</p>
         <div className="mt-1.5 flex items-baseline gap-2">
           <span className="text-xl font-bold text-[#00B4A6] dark:text-[#3a8a65]">{fmtPrice(salePrice)}</span>
-          <span className="text-sm text-gray-400 line-through">{fmtPrice(product.price)}</span>
+          <span className="text-sm text-[var(--text-tertiary)] line-through">{fmtPrice(product.price)}</span>
           {pct > 0 && (
-            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]">
               -{pct}%
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-xs text-[var(--text-tertiary)]">
           Dura {duration.label} — solo en Buleje
         </p>
       </div>
@@ -230,8 +231,8 @@ export function FlashSaleCreator({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-white dark:bg-gray-900",
-        "border-gray-200 dark:border-gray-700",
+        "rounded-xl border bg-[var(--surface-raised)]",
+        "border-[var(--rule-base)]",
         "p-5 ",
         className
       )}
@@ -243,17 +244,17 @@ export function FlashSaleCreator({ className }: { className?: string }) {
         <div className="rounded-lg bg-[#f97316]/10 p-1.5">
           <Zap className="h-5 w-5 text-[#f97316]" aria-hidden="true" />
         </div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Oferta Relampago</h2>
+        <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">Oferta Relampago</SectionTitle>
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
         {/* Buscar producto */}
         <div className="mb-4">
-          <label htmlFor="flash-product-search" className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+          <label htmlFor="flash-product-search" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
             Producto
           </label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true" />
             <input
               id="flash-product-search"
               type="search"
@@ -266,21 +267,21 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               autoComplete="off"
               className={cn(
                 "w-full rounded-lg border py-2 pl-9 pr-9 text-sm",
-                "bg-white dark:bg-gray-800",
-                "border-gray-300 dark:border-gray-600",
-                "text-gray-900 dark:text-white placeholder-gray-400",
+                "bg-[var(--surface-raised)]",
+                "border-[var(--rule-base)] dark:border-gray-600",
+                "text-[var(--text-primary)] placeholder-gray-400",
                 "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent",
                 selected && "border-[#00B4A6] dark:border-[#3a8a65]"
               )}
             />
             {(searching) && (
-              <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400" aria-hidden="true" />
+              <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[var(--text-tertiary)]" aria-hidden="true" />
             )}
             {selected && !searching && (
               <button
                 type="button"
                 onClick={clearSelection}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] focus:outline-none"
                 aria-label="Limpiar seleccion"
               >
                 <X className="h-4 w-4" />
@@ -291,7 +292,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
           {/* Resultados de busqueda */}
           {products.length > 0 && !selected && (
             <ul
-              className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+              className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-800"
               role="listbox"
               aria-label="Resultados de busqueda"
             >
@@ -302,8 +303,8 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                     onClick={() => selectProduct(p)}
                     className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700"
                   >
-                    <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
-                    <span className="text-gray-500 dark:text-gray-400">{fmtPrice(p.price)}</span>
+                    <span className="font-medium text-[var(--text-primary)]">{p.name}</span>
+                    <span className="text-[var(--text-tertiary)]">{fmtPrice(p.price)}</span>
                   </button>
                 </li>
               ))}
@@ -315,23 +316,23 @@ export function FlashSaleCreator({ className }: { className?: string }) {
         {selected && (
           <div className="mb-4 grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Precio original
               </label>
-              <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 py-2">
-                <Tag className="h-4 w-4 text-gray-400" aria-hidden="true" />
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 line-through">
+              <div className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800 px-3 py-2">
+                <Tag className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
+                <span className="text-sm font-medium text-[var(--text-tertiary)] line-through">
                   {fmtPrice(selected.price)}
                 </span>
               </div>
             </div>
 
             <div>
-              <label htmlFor="flash-sale-price" className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label htmlFor="flash-sale-price" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Precio de oferta
               </label>
-              <div className="flex items-center gap-1.5 rounded-lg border border-[#f97316] bg-white dark:bg-gray-800 px-3 py-2 focus-within:ring-2 focus-within:ring-[#f97316]">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">S/</span>
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#f97316] bg-[var(--surface-raised)] px-3 py-2 focus-within:ring-2 focus-within:ring-[#f97316]">
+                <span className="text-sm font-medium text-[var(--text-tertiary)]">S/</span>
                 <input
                   id="flash-sale-price"
                   type="number"
@@ -349,7 +350,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Descuento calculado */}
         {selected && salePriceNum > 0 && salePriceNum < selected.price && (
-          <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-900/20 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+          <div className="mb-4 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
             Descuento del{" "}
             <span className="font-bold">{discountPct(selected.price, salePriceNum)}%</span>
             {" "}— ahorro de{" "}
@@ -359,7 +360,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Duracion */}
         <div className="mb-4">
-          <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">Duracion</p>
+          <p className="mb-2 text-xs font-medium text-[var(--text-secondary)]">Duracion</p>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Duracion de la oferta">
             {DURATIONS.map((d) => (
               <button
@@ -373,7 +374,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]",
                   duration.hours === d.hours
                     ? "border-[#00B4A6] bg-[#00B4A6] text-white dark:bg-[#00B4A6]"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[#00B4A6]/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                 )}
               >
                 <Clock className="h-3 w-3" aria-hidden="true" />
@@ -385,7 +386,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Countdown preview */}
         {selected && (
-          <div className="mb-4 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mb-4 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
             <span>Terminara en:</span>
             <CountdownDisplay endIso={endIso} />
           </div>
@@ -393,12 +394,12 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Error / Exito */}
         {error && (
-          <div role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+          <div role="alert" className="mb-3 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20 px-3 py-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
             {error}
           </div>
         )}
         {success && (
-          <div role="status" className="mb-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+          <div role="status" className="mb-3 rounded-lg border border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">
             Oferta creada correctamente
           </div>
         )}
@@ -410,10 +411,10 @@ export function FlashSaleCreator({ className }: { className?: string }) {
             disabled={saving || !selected || salePriceNum <= 0}
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold",
-              "transition-colors duration-150",
+              "transition-colors duration-[var(--dur-fast)]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]",
               saving || !selected || salePriceNum <= 0
-                ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
+                ? "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
                 : "bg-[#f97316] text-white hover:bg-[#e08c4a]"
             )}
           >
@@ -431,9 +432,9 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               onClick={() => setShowPreview((v) => !v)}
               className={cn(
                 "flex items-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-medium",
-                "border-gray-300 dark:border-gray-600",
-                "text-gray-600 dark:text-gray-400",
-                "hover:bg-gray-50 dark:hover:bg-gray-800",
+                "border-[var(--rule-base)] dark:border-gray-600",
+                "text-[var(--text-secondary)]",
+                "hover:bg-[var(--surface-sunken)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
               )}
               aria-pressed={showPreview}
@@ -449,7 +450,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
       {/* Preview */}
       {showPreview && canPreview && selected && (
         <div className="mt-4">
-          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+          <p className="mb-2 text-xs font-medium text-[var(--text-tertiary)]">
             Asi se vera la oferta
           </p>
           <FlashSalePreview

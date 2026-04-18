@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   Truck,
@@ -23,7 +24,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Trophy,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -94,10 +95,10 @@ const ZONAS = [
   "Pueblo Libre", "Ica Yanayacu", "Todos",
 ];
 const ASSIGNMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-amber-100 text-amber-700" },
-  en_camino:  { label: "En camino",  className: "bg-emerald-100 text-emerald-700" },
-  entregado:  { label: "Entregado",  className: "bg-emerald-100 text-emerald-700" },
-  cancelado:  { label: "Cancelado",  className: "bg-red-100 text-red-600" },
+  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
+  en_camino:  { label: "En camino",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  entregado:  { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  cancelado:  { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
 };
 const PERMISSION_TYPES = ["view", "edit", "admin", "delivery"];
 
@@ -170,13 +171,13 @@ function PartnerModal({
         className="bg-white rounded-xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="font-extrabold text-gray-900">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
+          <CardTitle className="font-extrabold text-[var(--text-primary)]">
             {partner?.id ? "Editar repartidor" : "Nuevo repartidor"}
-          </h3>
+          </CardTitle>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -184,79 +185,79 @@ function PartnerModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
               <AlertCircle className="h-4 w-4 shrink-0" /> {error}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Nombre completo *</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre completo *</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 autoFocus
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Teléfono</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Teléfono</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Tarifa base (S/)</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Tarifa base (S/)</label>
               <input
                 type="number"
                 min={0}
                 step={0.5}
                 value={form.fee}
                 onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Zona</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Zona</label>
               <div className="relative">
                 <select
                   value={form.zone}
                   onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Vehículo</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Vehículo</label>
               <div className="relative">
                 <select
                   value={form.vehicleType}
                   onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
               </div>
             </div>
           </div>
 
           {/* Activo toggle */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
-            <p className="text-sm font-bold text-gray-900">Activo</p>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-[var(--rule-base)]">
+            <p className="text-sm font-bold text-[var(--text-primary)]">Activo</p>
             <button
               type="button"
               onClick={() => setForm((p) => ({ ...p, isActive: !p.isActive }))}
@@ -276,7 +277,7 @@ function PartnerModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
@@ -357,7 +358,7 @@ function RepartidoresTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
@@ -365,7 +366,7 @@ function RepartidoresTab() {
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-600">{partners.length} repartidor{partners.length !== 1 ? "es" : ""}</p>
+        <p className="text-sm font-semibold text-[var(--text-secondary)]">{partners.length} repartidor{partners.length !== 1 ? "es" : ""}</p>
         <button
           onClick={() => setModal({ open: true, partner: null })}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
@@ -378,42 +379,42 @@ function RepartidoresTab() {
       {partners.length === 0 && !error ? (
         <EmptyState icon={Truck} title="Sin repartidores registrados" description="Agrega tu primer repartidor para empezar a gestionar entregas." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Repartidor</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Zona / Vehículo</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Tarifa</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Rating</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Acciones</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Repartidor</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] hidden sm:table-cell">Zona / Vehículo</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Tarifa</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Rating</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {partners.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-bold text-gray-900">{p.name}</p>
+                      <p className="font-bold text-[var(--text-primary)]">{p.name}</p>
                       {p.phone && (
-                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                        <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1 mt-0.5">
                           <Phone className="h-3 w-3" /> {p.phone}
                         </p>
                       )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <p className="text-xs text-gray-600 flex items-center gap-1">
+                      <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                         <MapPin className="h-3 w-3 shrink-0" /> {p.zone}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{p.vehicleType}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{p.vehicleType}</p>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
                       S/{p.fee.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600">
-                        <Star className="h-3.5 w-3.5 fill-amber-400" />
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning)]">
+                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning)]" />
                         {p.rating.toFixed(1)}
                       </span>
                     </td>
@@ -421,8 +422,8 @@ function RepartidoresTab() {
                       <span className={cn(
                         "inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
                         p.isActive
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-gray-100 text-gray-500"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          : "bg-gray-100 text-[var(--text-secondary)]"
                       )}>
                         {p.isActive ? "Activo" : "Inactivo"}
                       </span>
@@ -431,14 +432,14 @@ function RepartidoresTab() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setModal({ open: true, partner: p })}
-                          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setConfirmDelete(p.id)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -473,25 +474,25 @@ function RepartidoresTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertCircle className="h-5 w-5 text-red-500" />
+              <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
+                <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
               </div>
               <div>
-                <h3 className="font-extrabold text-gray-900">¿Eliminar repartidor?</h3>
-                <p className="text-sm text-gray-500">Esta acción no se puede deshacer.</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)]">¿Eliminar repartidor?</CardTitle>
+                <p className="text-sm text-[var(--text-secondary)]">Esta acción no se puede deshacer.</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleDelete(confirmDelete)}
                 disabled={!!deleting}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors disabled:opacity-50"
               >
                 {deleting ? "Eliminando..." : "Sí, eliminar"}
               </button>
@@ -558,7 +559,7 @@ function AsignacionesTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
@@ -566,7 +567,7 @@ function AsignacionesTab() {
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-600">{assignments.length} asignación{assignments.length !== 1 ? "es" : ""}</p>
+        <p className="text-sm font-semibold text-[var(--text-secondary)]">{assignments.length} asignación{assignments.length !== 1 ? "es" : ""}</p>
         <button
           onClick={() => setAssignModal({ open: true })}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
@@ -579,32 +580,32 @@ function AsignacionesTab() {
       {assignments.length === 0 && !error ? (
         <EmptyState icon={ClipboardList} title="Sin asignaciones registradas" description="Asigna repartidores a ordenes pendientes." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Repartidor</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Tarifa</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Asignado</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Repartidor</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Tarifa</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] hidden sm:table-cell">Asignado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {assignments.map((a) => {
                   const sc = ASSIGNMENT_STATUS_CONFIG[a.status] ?? {
-                    label: a.status, className: "bg-gray-100 text-gray-600",
+                    label: a.status, className: "bg-gray-100 text-[var(--text-secondary)]",
                   };
                   return (
                     <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">
+                      <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)]">
                         #{a.orderId.slice(-8).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-900">
+                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">
                         {a.partnerName}
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
                         S/{a.fee.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -612,7 +613,7 @@ function AsignacionesTab() {
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-500 hidden sm:table-cell">
+                      <td className="px-4 py-3 text-right text-xs text-[var(--text-secondary)] hidden sm:table-cell">
                         <span className="flex items-center justify-end gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(a.assignedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
@@ -638,30 +639,30 @@ function AsignacionesTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900">Asignar repartidor</h3>
-              <button onClick={() => setAssignModal({ open: false })} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+              <CardTitle className="font-extrabold text-[var(--text-primary)]">Asignar repartidor</CardTitle>
+              <button onClick={() => setAssignModal({ open: false })} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">ID de orden (opcional)</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">ID de orden (opcional)</label>
               <input
                 type="text"
                 value={assignModal.orderId ?? ""}
                 onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
                 placeholder="Ej: ORD-12345"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600">Repartidor *</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Repartidor *</label>
               <div className="relative">
                 <select
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   <option value="">Seleccionar repartidor...</option>
                   {partners.map((p) => (
@@ -670,14 +671,14 @@ function AsignacionesTab() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setAssignModal({ open: false })}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
@@ -753,7 +754,7 @@ function PermisosTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
@@ -763,15 +764,15 @@ function PermisosTab() {
       {permissions.length === 0 && !error ? (
         <EmptyState icon={Shield} title="Sin permisos configurados" description="Los permisos de acceso a la tienda apareceran aqui." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Usuario</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Tipo</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Usuario</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] hidden sm:table-cell">Tipo</th>
                   {PERMISSION_TYPES.map((p) => (
-                    <th key={p} className="text-center px-3 py-3 text-xs font-bold text-gray-500">
+                    <th key={p} className="text-center px-3 py-3 text-xs font-bold text-[var(--text-secondary)]">
                       {p}
                     </th>
                   ))}
@@ -781,11 +782,11 @@ function PermisosTab() {
                 {permissions.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-bold text-gray-900">{p.userName}</p>
-                      <p className="text-xs text-gray-400">{p.userEmail}</p>
+                      <p className="font-bold text-[var(--text-primary)]">{p.userName}</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">{p.userEmail}</p>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
                         {p.permissionType}
                       </span>
                     </td>
@@ -798,7 +799,7 @@ function PermisosTab() {
                             "w-5 h-5 rounded border-2 flex items-center justify-center mx-auto transition-colors",
                             p.permissions.includes(perm)
                               ? "bg-primary border-primary"
-                              : "bg-white border-gray-300 hover:border-primary",
+                              : "bg-white border-[var(--rule-base)] hover:border-primary",
                             savingId === p.id && "opacity-50 cursor-not-allowed"
                           )}
                           title={p.permissions.includes(perm) ? `Quitar permiso ${perm}` : `Otorgar permiso ${perm}`}
@@ -916,7 +917,7 @@ function RankingTab() {
               "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
               period === p.id
                 ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
             )}
           >
             {p.label}
@@ -927,7 +928,7 @@ function RankingTab() {
       {loading ? (
         <TableSkeleton />
       ) : data.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-[var(--text-tertiary)]">
           <Trophy className="h-10 w-10 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No hay datos de ranking para este periodo</p>
         </div>
@@ -935,7 +936,7 @@ function RankingTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+              <tr className="border-b border-[var(--rule-soft)] text-left text-xs text-[var(--text-secondary)]">
                 <th className="pb-2 pr-2">#</th>
                 <th className="pb-2 pr-3">Repartidor</th>
                 <th className="pb-2 pr-3">Zona</th>
@@ -952,10 +953,10 @@ function RankingTab() {
                   key={entry.id}
                   className={cn(
                     "border-b border-gray-50 hover:bg-gray-50/50 transition-colors",
-                    idx < 3 && "bg-amber-50/30"
+                    idx < 3 && "bg-[var(--data-warning-50)]/30"
                   )}
                 >
-                  <td className="py-2.5 pr-2 font-bold text-gray-400">
+                  <td className="py-2.5 pr-2 font-bold text-[var(--text-tertiary)]">
                     {idx < 3 ? RANK_MEDALS[idx] : idx + 1}
                   </td>
                   <td className="py-2.5 pr-3">
@@ -969,37 +970,37 @@ function RankingTab() {
                         {entry.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 text-xs">{entry.name}</p>
-                        <p className="text-[10px] text-gray-400">{entry.vehicleType}</p>
+                        <p className="font-semibold text-[var(--text-primary)] text-xs">{entry.name}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{entry.vehicleType}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-2.5 pr-3">
-                    <span className="text-xs text-gray-600 flex items-center gap-1">
+                    <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       {entry.zone}
                     </span>
                   </td>
                   <td className="py-2.5 pr-3 text-center">
-                    <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-amber-600">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-[var(--data-warning)]">
+                      <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
                       {entry.rating.toFixed(1)}
                     </span>
                   </td>
                   <td className="py-2.5 pr-3 text-center">
-                    <span className="text-xs font-semibold text-gray-800">{entry.deliveries}</span>
+                    <span className="text-xs font-semibold text-[var(--text-primary)]">{entry.deliveries}</span>
                     {entry.pending > 0 && (
-                      <span className="ml-1 text-[10px] text-amber-500">+{entry.pending} pen.</span>
+                      <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--data-warning)]">+{entry.pending} pen.</span>
                     )}
                   </td>
                   <td className="py-2.5 pr-3 text-center">
-                    <span className="flex items-center justify-center gap-0.5 text-xs text-gray-600">
+                    <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
                       <Clock className="h-3 w-3" />
                       {entry.avgTimeMin > 0 ? `${entry.avgTimeMin} min` : "—"}
                     </span>
                   </td>
                   <td className="py-2.5 pr-3 text-center">
-                    <span className="text-xs font-medium text-gray-700">
+                    <span className="text-xs font-medium text-[var(--text-primary)]">
                       S/ {entry.avgFee.toFixed(2)}
                     </span>
                   </td>
@@ -1008,10 +1009,10 @@ function RankingTab() {
                       className={cn(
                         "inline-flex items-center justify-center h-7 w-12 rounded-full text-xs font-extrabold",
                         entry.score >= 70
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
                           : entry.score >= 40
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-red-100 text-red-600"
+                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
                       )}
                     >
                       {entry.score}
@@ -1078,7 +1079,7 @@ function SolicitudesTab() {
             "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
             filter === "pending"
               ? "bg-primary text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
           )}
         >
           Pendientes {pendingCount > 0 && `(${pendingCount})`}
@@ -1089,14 +1090,14 @@ function SolicitudesTab() {
             "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
             filter === "all"
               ? "bg-primary text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
           )}
         >
           Todas
         </button>
         <button
           onClick={fetchApps}
-          className="ml-auto p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
+          className="ml-auto p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
         </button>
@@ -1106,8 +1107,8 @@ function SolicitudesTab() {
         <TableSkeleton />
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 font-medium">
+          <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
+          <p className="text-sm text-[var(--text-secondary)] font-medium">
             {filter === "pending" ? "No hay solicitudes pendientes" : "No hay solicitudes"}
           </p>
         </div>
@@ -1123,24 +1124,24 @@ function SolicitudesTab() {
                 key={app.id}
                 className={cn(
                   "bg-white border rounded-xl p-4  transition-all",
-                  isPending ? "border-amber-200 bg-amber-50/30" : "border-gray-200 opacity-70"
+                  isPending ? "border-[var(--data-warning)] bg-[var(--data-warning-50)]/30" : "border-[var(--rule-base)] opacity-70"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-gray-900 text-sm truncate">{data.name}</h4>
+                      <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{data.name}</h4>
                       {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]">
                           Pendiente
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500">
+                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-[var(--text-secondary)]">
                           Revisado
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
                       <span className="flex items-center gap-1">
                         <Phone className="h-3 w-3" /> {data.phone}
                       </span>
@@ -1154,7 +1155,7 @@ function SolicitudesTab() {
                         <Clock className="h-3 w-3" /> {AVAILABILITY_LABELS[data.availability] ?? data.availability}
                       </span>
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
                       {new Date(app.createdAt).toLocaleDateString("es-PE", {
                         year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
                       })}
@@ -1166,14 +1167,14 @@ function SolicitudesTab() {
                       <button
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsUp className="h-3.5 w-3.5" /> Aprobar
                       </button>
                       <button
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsDown className="h-3.5 w-3.5" /> Rechazar
                       </button>
@@ -1227,7 +1228,7 @@ export default function DeliveryPartnersModule() {
       >
         <button
           onClick={refreshKpis}
-          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
+          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
@@ -1238,19 +1239,19 @@ export default function DeliveryPartnersModule() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Repartidores activos", value: kpis.activePartners,     color: "text-primary" },
-          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-emerald-600" },
-          { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-amber-600" },
+          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-[var(--data-success)]" },
+          { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-[var(--data-warning)]" },
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  text-center"
+            className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  text-center"
           >
             {kpisLoading ? (
               <div className="h-7 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
             ) : (
               <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
             )}
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
           </div>
         ))}
       </div>

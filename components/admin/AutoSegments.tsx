@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useMemo } from "react";
@@ -13,7 +14,7 @@ import {
   ChevronDown,
   ChevronRight,
   RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -102,45 +103,45 @@ export default function AutoSegments() {
         label: "VIP",
         description: "Mas de S/500/mes o mas de 20 pedidos",
         icon: Crown,
-        color: "text-amber-600 dark:text-amber-400",
-        bg: "bg-amber-50 dark:bg-amber-900/20",
-        border: "border-amber-200 dark:border-amber-800",
+        color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+        bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+        border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
       },
       {
         key: "regular",
         label: "Regular",
         description: "Entre S/100 y S/500 al mes",
         icon: ShoppingCart,
-        color: "text-[#00B4A6] dark:text-emerald-400",
-        bg: "bg-emerald-50 dark:bg-emerald-900/20",
-        border: "border-emerald-200 dark:border-emerald-800",
+        color: "text-[#00B4A6] dark:text-[var(--data-success)]",
+        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+        border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
       },
       {
         key: "ocasional",
         label: "Ocasional",
         description: "Menos de S/100 al mes",
         icon: User,
-        color: "text-emerald-600 dark:text-emerald-400",
-        bg: "bg-emerald-50 dark:bg-emerald-900/20",
-        border: "border-emerald-200 dark:border-emerald-800",
+        color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+        border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
       },
       {
         key: "nuevo",
         label: "Nuevo",
         description: "Primera compra en los ultimos 30 dias",
         icon: UserPlus,
-        color: "text-purple-600 dark:text-purple-400",
-        bg: "bg-purple-50 dark:bg-purple-900/20",
-        border: "border-purple-200 dark:border-purple-800",
+        color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+        bg: "bg-[var(--surface-sunken)]",
+        border: "border-[var(--rule-base)]",
       },
       {
         key: "inactivo",
         label: "Inactivo",
         description: "Sin compras en mas de 60 dias",
         icon: Moon,
-        color: "text-gray-500 dark:text-gray-400",
-        bg: "bg-gray-50 dark:bg-gray-800",
-        border: "border-gray-200 dark:border-gray-700",
+        color: "text-[var(--text-tertiary)]",
+        bg: "bg-[var(--surface-sunken)]",
+        border: "border-[var(--rule-base)]",
       },
     ];
 
@@ -177,10 +178,10 @@ export default function AutoSegments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Segmentacion Automatica
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Clasifica tus clientes automaticamente segun su comportamiento de
             compra
           </p>
@@ -188,7 +189,7 @@ export default function AutoSegments() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -196,13 +197,11 @@ export default function AutoSegments() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -235,7 +234,7 @@ export default function AutoSegments() {
                 >
                   <div
                     className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white dark:bg-gray-900",
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--surface-raised)]",
                       seg.color
                     )}
                   >
@@ -246,20 +245,20 @@ export default function AutoSegments() {
                       <span className={cn("font-semibold", seg.color)}>
                         {seg.label}
                       </span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600  dark:bg-gray-900 dark:text-gray-300">
+                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]  dark:bg-gray-900 dark:text-[var(--text-tertiary)]">
                         {seg.customers.length} clientes
                       </span>
-                      <span className="text-xs text-gray-400">{pct}%</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">{pct}%</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       {seg.description}
                     </p>
-                    <div className="mt-1.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="mt-1.5 flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
                       <span>Revenue: {fmt(seg.revenue)}</span>
                       <span>({revPct}% del total)</span>
                     </div>
                   </div>
-                  <div className="shrink-0 text-gray-400">
+                  <div className="shrink-0 text-[var(--text-tertiary)]">
                     {isExpanded ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
@@ -270,9 +269,9 @@ export default function AutoSegments() {
 
                 {/* Expanded customer list */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200/50 p-4 dark:border-gray-700/50">
+                  <div className="border-t border-[var(--rule-base)]/50 p-4 dark:border-[var(--rule-base)]">
                     {seg.customers.length === 0 ? (
-                      <p className="text-center text-sm text-gray-400">
+                      <p className="text-center text-sm text-[var(--text-tertiary)]">
                         No hay clientes en este segmento.
                       </p>
                     ) : (
@@ -283,10 +282,10 @@ export default function AutoSegments() {
                             className="flex items-center justify-between rounded-lg bg-white px-3 py-2  dark:bg-gray-900"
                           >
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                              <p className="truncate text-sm font-medium text-[var(--text-primary)]">
                                 {c.name}
                               </p>
-                              <p className="text-xs text-gray-400">{c.phone}</p>
+                              <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
                             </div>
                             <span className="ml-2 shrink-0 text-sm font-semibold text-[#00B4A6]">
                               {fmt(c.totalSpent ?? 0)}

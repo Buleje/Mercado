@@ -1,12 +1,13 @@
 "use client";
 
+import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
   User, ChevronLeft, ChevronRight, X, ShoppingCart, Download,
   Printer, Trophy, CreditCard, TrendingUp, CalendarDays, BarChart3, Timer,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -353,17 +354,15 @@ export default function TurnosModule() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <LoadingState />
     );
   }
 
   if (error && !turnoActivo) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-sm text-red-600">{error}</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-sm text-[var(--data-error)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
       </div>
     );
@@ -378,24 +377,24 @@ export default function TurnosModule() {
             <Clock className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <PageTitle className="text-xl font-bold text-[var(--text-primary)]">
               Turnos
               {/* Mejora 20 (R3): Badge de estado */}
               {turnoActivo ? (
-                <span className="ml-2 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full align-middle">Turno abierto</span>
+                <span className="ml-2 text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-0.5 rounded-full align-middle">Turno abierto</span>
               ) : !loading && (
-                <span className="ml-2 text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full align-middle">Sin turno</span>
+                <span className="ml-2 text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2 py-0.5 rounded-full align-middle">Sin turno</span>
               )}
-            </h1>
-            <p className="text-sm text-gray-500">Gestión de turnos y rendimiento del equipo</p>
+            </PageTitle>
+            <p className="text-sm text-[var(--text-secondary)]">Gestión de turnos y rendimiento del equipo</p>
           </div>
         </div>
         {/* Mejora M3: Boton configurar meta */}
         <button
           onClick={() => { setShowMetaConfig(!showMetaConfig); setMetaInput(String(metaVentas)); }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
         >
-          <Trophy className="h-3.5 w-3.5 text-amber-500" />
+          <Trophy className="h-3.5 w-3.5 text-[var(--data-warning)]" />
           Meta: {formatCurrency(metaVentas)}
         </button>
       </div>
@@ -403,15 +402,15 @@ export default function TurnosModule() {
       <AnimatePresence>
         {showMetaConfig && (
           <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-center gap-3">
-              <label className="text-xs font-bold text-amber-700 dark:text-amber-400 shrink-0">Meta por turno (S/):</label>
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 flex items-center gap-3">
+              <label className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0">Meta por turno (S/):</label>
               <input
                 type="number"
                 step="50"
                 min="0"
                 value={metaInput}
                 onChange={e => setMetaInput(e.target.value)}
-                className="flex-1 px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-400 max-w-[120px]"
+                className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning)] max-w-[120px]"
               />
               <button
                 onClick={() => {
@@ -420,7 +419,7 @@ export default function TurnosModule() {
                   try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
                   setShowMetaConfig(false);
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-warning)] hover:bg-[var(--data-warning)] transition-colors"
               >
                 Guardar
               </button>
@@ -433,13 +432,13 @@ export default function TurnosModule() {
       <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1 w-fit">
         <button
           onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
-          className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted hover:text-gray-700")}
+          className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
         >
           <Clock className="h-3.5 w-3.5" /> Turnos
         </button>
         <button
           onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
-          className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted hover:text-gray-700")}
+          className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
         >
           <User className="h-3.5 w-3.5" /> Cajeros
         </button>
@@ -497,13 +496,13 @@ export default function TurnosModule() {
           <div className="space-y-6">
             {/* 1. Grid de cajeros */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <User className="h-4 w-4 text-[#00B4A6]" />
                 Equipo de Cajeros
-              </h3>
+              </CardTitle>
               {cajeroStats.length === 0 ? (
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-8 text-center">
-                  <p className="text-gray-400 text-sm">Sin datos de cajeros. Abre turnos para ver estadisticas.</p>
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-8 text-center">
+                  <p className="text-[var(--text-tertiary)] text-sm">Sin datos de cajeros. Abre turnos para ver estadisticas.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -513,7 +512,7 @@ export default function TurnosModule() {
                     return (
                       <div key={c.id} className={cn(
                         "bg-white dark:bg-card border rounded-xl  p-4 transition-shadow hover:shadow-sm",
-                        isTop ? "border-amber-400 dark:border-amber-600 ring-1 ring-amber-200 dark:ring-amber-800" : "border-gray-200 dark:border-card-border"
+                        isTop ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border"
                       )}>
                         <div className="flex items-center gap-3 mb-3">
                           <div
@@ -523,29 +522,29 @@ export default function TurnosModule() {
                             {c.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
+                            <p className="text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5">
                               {c.name}
-                              {isTop && <span className="text-amber-500 text-xs">TOP</span>}
+                              {isTop && <span className="text-[var(--data-warning)] text-xs">TOP</span>}
                             </p>
-                            <p className="text-[10px] text-gray-400 truncate">{c.id}</p>
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{c.id}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Turnos</p>
-                            <p className="font-extrabold text-gray-900 dark:text-white">{c.turnos}</p>
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Turnos</p>
+                            <p className="font-extrabold text-[var(--text-primary)]">{c.turnos}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Ventas total</p>
-                            <p className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(c.ventasTotal)}</p>
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Ventas total</p>
+                            <p className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(c.ventasTotal)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Ventas/hora</p>
-                            <p className="font-extrabold text-gray-900 dark:text-white">{formatCurrency(c.ventasPorHora)}/h</p>
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Ventas/hora</p>
+                            <p className="font-extrabold text-[var(--text-primary)]">{formatCurrency(c.ventasPorHora)}/h</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Dif. caja</p>
-                            <p className={cn("font-extrabold", c.difCaja >= 0 ? "text-emerald-600" : Math.abs(c.difCaja) > 20 ? "text-red-600" : "text-amber-600")}>
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Dif. caja</p>
+                            <p className={cn("font-extrabold", c.difCaja >= 0 ? "text-[var(--data-success)]" : Math.abs(c.difCaja) > 20 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
                               {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
                             </p>
                           </div>
@@ -553,7 +552,7 @@ export default function TurnosModule() {
                         {/* Mini performance bar */}
                         <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                           <div
-                            className={cn("h-full rounded-full transition-all", isTop ? "bg-amber-500" : "bg-[#00B4A6]")}
+                            className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning)]" : "bg-[#00B4A6]")}
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
@@ -567,21 +566,21 @@ export default function TurnosModule() {
             {/* 2. Ranking table */}
             {cajeroStats.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-amber-500" />
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-[var(--data-warning)]" />
                   Ranking de Cajeros
-                </h3>
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+                </CardTitle>
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 dark:border-white/5 text-left">
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 w-8">#</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Cajero</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Turnos</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Ventas</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right hidden md:table-cell">Dif. caja</th>
+                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] w-8">#</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cajero</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Turnos</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ventas/hora</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden md:table-cell">Dif. caja</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -590,19 +589,19 @@ export default function TurnosModule() {
                           return (
                             <tr key={c.id} className={cn(
                               "border-b border-gray-50 dark:border-white/5 transition-colors",
-                              isTop ? "bg-amber-50/50 dark:bg-amber-900/10" : ""
+                              isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10" : ""
                             )}>
                               <td className="px-4 py-3 text-center">
                                 {isTop ? (
-                                  <span className="text-amber-500 text-sm">&#127942;</span>
+                                  <span className="text-[var(--data-warning)] text-sm">&#127942;</span>
                                 ) : (
-                                  <span className="text-xs text-gray-400 font-bold">{i + 1}</span>
+                                  <span className="text-xs text-[var(--text-tertiary)] font-bold">{i + 1}</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                              <td className="px-4 py-3 font-medium text-[var(--text-primary)]">
                                 <div className="flex items-center gap-2">
                                   <div
-                                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                                    className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0"
                                     style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
                                   >
                                     {c.name.charAt(0).toUpperCase()}
@@ -610,10 +609,10 @@ export default function TurnosModule() {
                                   <span className="truncate max-w-[120px]">{c.name}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{c.turnos}</td>
-                              <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(c.ventasTotal)}</td>
-                              <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300 hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
-                              <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-emerald-600" : Math.abs(c.difCaja) > 20 ? "text-red-600" : "text-amber-600")}>
+                              <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{c.turnos}</td>
+                              <td className="px-4 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(c.ventasTotal)}</td>
+                              <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
+                              <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success)]" : Math.abs(c.difCaja) > 20 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
                                 {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
                               </td>
                             </tr>
@@ -629,11 +628,11 @@ export default function TurnosModule() {
             {/* 3. Chart: ventas por cajero este mes */}
             {chartData.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
                   Ventas por Cajero (este mes)
-                </h3>
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-4">
+                </CardTitle>
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-4">
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -685,34 +684,34 @@ export default function TurnosModule() {
         }
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-[#00B4A6]" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Turnos del mes</p>
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Turnos del mes</p>
               </div>
-              <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{turnosMesCount}</p>
+              <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{turnosMesCount}</p>
             </div>
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Timer className="h-4 w-4 text-emerald-500" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Horas trabajadas</p>
+                <Timer className="h-4 w-4 text-[var(--data-success)]" />
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Horas trabajadas</p>
               </div>
-              <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{horasTrabajadas.toFixed(1)}h</p>
+              <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{horasTrabajadas.toFixed(1)}h</p>
             </div>
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-emerald-500" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Ventas/hora</p>
+                <DollarSign className="h-4 w-4 text-[var(--data-success)]" />
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ventas/hora</p>
               </div>
-              <p className="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(ventasPorHora)}</p>
+              <p className="text-2xl font-extrabold font-mono text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(ventasPorHora)}</p>
             </div>
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Trophy className="h-4 w-4 text-amber-500" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Mejor cajero</p>
+                <Trophy className="h-4 w-4 text-[var(--data-warning)]" />
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Mejor cajero</p>
               </div>
-              <p className="text-lg font-extrabold text-gray-900 dark:text-white truncate">{mejorCajero}</p>
-              {mejorVph > 0 && <p className="text-[10px] text-gray-400 font-mono">{formatCurrency(mejorVph)}/h</p>}
+              <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{mejorCajero}</p>
+              {mejorVph > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">{formatCurrency(mejorVph)}/h</p>}
             </div>
           </div>
         );
@@ -720,24 +719,24 @@ export default function TurnosModule() {
 
       {/* ── Active turno or open form ─────────────────────────────────────────── */}
       {turnoActivo ? (
-        <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl overflow-hidden">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-green-100/50 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800 px-4 sm:px-6 py-5">
+          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 px-4 sm:px-6 py-5">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-emerald-500 flex items-center justify-center animate-pulse">
+              <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center animate-pulse">
                 <Play className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-300">{turnoActivo.adminUserId}</p>
+                <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{turnoActivo.adminUserId}</p>
                 <div className="flex items-center gap-3 mt-0.5">
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{elapsedTime(turnoActivo.abrioEn)}</span>
-                  <span className="text-sm text-emerald-600 dark:text-emerald-400">desde {formatTime(turnoActivo.abrioEn)}</span>
-                  <span className="text-sm font-extrabold text-emerald-800 dark:text-emerald-300">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                  <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{elapsedTime(turnoActivo.abrioEn)}</span>
+                  <span className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">desde {formatTime(turnoActivo.abrioEn)}</span>
+                  <span className="text-sm font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(turnoActivo.ventasTotal)}</span>
                 </div>
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600  transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]  transition-colors"
               >
                 <Square className="h-4 w-4" />
                 <span className="hidden sm:inline">Cerrar Turno</span>
@@ -750,66 +749,66 @@ export default function TurnosModule() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <User className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Operador</p>
+                  <User className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Operador</p>
                 </div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{turnoActivo.adminUserId}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate">{turnoActivo.adminUserId}</p>
               </div>
 
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Clock className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Inicio</p>
+                  <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Inicio</p>
                 </div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">{formatTime(turnoActivo.abrioEn)}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{formatTime(turnoActivo.abrioEn)}</p>
               </div>
 
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Ef. Inicial</p>
+                  <DollarSign className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ef. Inicial</p>
                 </div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(turnoActivo.inicioEfectivo)}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(turnoActivo.inicioEfectivo)}</p>
               </div>
 
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <ShoppingCart className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Ventas</p>
+                  <ShoppingCart className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ventas</p>
                 </div>
-                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(turnoActivo.ventasTotal)}</p>
+                <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(turnoActivo.ventasTotal)}</p>
               </div>
             </div>
           </div>
         </div>
       ) : (
         /* Open turno card */
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-6 sm:p-8">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-6 sm:p-8">
           <div className="max-w-sm mx-auto text-center space-y-5">
             <div className="h-16 w-16 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center mx-auto">
               <Clock className="h-8 w-8 text-[#00B4A6]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No hay turno abierto</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ingresa el efectivo inicial para comenzar</p>
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-1">No hay turno abierto</CardTitle>
+              <p className="text-sm text-[var(--text-tertiary)]">Ingresa el efectivo inicial para comenzar</p>
             </div>
             {/* Cajero selector */}
             <div>
-              <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 text-left">Cajero asignado</label>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1 text-left">Cajero asignado</label>
               <select
                 value={selectedCajero}
                 onChange={e => setSelectedCajero(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
               >
                 <option value="">Yo mismo (usuario actual)</option>
                 {cajeros.map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
                 ))}
               </select>
-              {cajerosLoading && <p className="text-[10px] text-gray-400 mt-1">Cargando cajeros...</p>}
+              {cajerosLoading && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Cargando cajeros...</p>}
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 text-left">Efectivo inicial (S/)</label>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1 text-left">Efectivo inicial (S/)</label>
               <input
                 type="number"
                 step="0.01"
@@ -817,7 +816,7 @@ export default function TurnosModule() {
                 value={efectivoInicial}
                 onChange={e => setEfectivoInicial(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
+                className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
               />
             </div>
             <button
@@ -882,27 +881,27 @@ export default function TurnosModule() {
           <>
             {/* Calendario Semanal */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-[#00B4A6]" />
                 Calendario Semanal
-              </h3>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
+              </CardTitle>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
                 <div className="overflow-x-auto">
                   <div className="grid grid-cols-7 min-w-[700px]">
                     {DIAS_SEMANA.map((dia, idx) => {
                       const turnos = weekMap.get(idx) || [];
                       return (
-                        <div key={dia} className={cn("border-r border-gray-100 dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
-                          <div className="px-2 py-2 border-b border-gray-100 dark:border-white/5 text-center">
-                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{dia}</p>
+                        <div key={dia} className={cn("border-r border-[var(--rule-soft)] dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
+                          <div className="px-2 py-2 border-b border-[var(--rule-soft)] dark:border-white/5 text-center">
+                            <p className="text-xs font-bold text-[var(--text-tertiary)]">{dia}</p>
                           </div>
                           <div className="p-1.5 min-h-[100px] space-y-1">
                             {turnos.length === 0 ? (
-                              <p className="text-[10px] text-gray-300 dark:text-gray-600 text-center py-3">Sin turno</p>
+                              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] text-center py-3">Sin turno</p>
                             ) : turnos.map(t => (
                               <div
                                 key={t.id}
-                                className="rounded-lg p-1.5 text-[10px] leading-tight"
+                                className="rounded-lg p-1.5 text-[length:var(--ts-2xs)] leading-tight"
                                 style={{ backgroundColor: cajeroColor(t.adminUserId), color: cajeroColorText(t.adminUserId) }}
                               >
                                 <p className="font-bold truncate">{t.adminUserId}</p>
@@ -921,46 +920,46 @@ export default function TurnosModule() {
 
             {/* Productividad por cajero */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-[#f97316]" />
                 Productividad por Cajero
-              </h3>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+              </CardTitle>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                 {cajeros.length <= 1 && cajeros.length === 1 ? (
-                  <div className="p-4 text-center text-sm text-gray-400">Solo hay 1 cajero registrado</div>
+                  <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
                 ) : cajeros.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-gray-400">Sin datos de productividad</div>
+                  <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Sin datos de productividad</div>
                 ) : (
                   <div className="overflow-x-auto -mx-4 sm:mx-0">
                     <table className="w-full min-w-[550px] sm:min-w-0 text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 dark:border-white/5 text-left">
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Cajero</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Turnos</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Ventas total</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right hidden sm:table-cell">Ticket prom</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right hidden md:table-cell">Dif. caja</th>
+                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cajero</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Turnos</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas total</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ventas/hora</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ticket prom</th>
+                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden md:table-cell">Dif. caja</th>
                         </tr>
                       </thead>
                       <tbody>
                         {cajeros.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
                           <tr key={c.name} className={cn(
                             "border-b border-gray-50 dark:border-white/5 transition-colors",
-                            c.name === bestCajero ? "bg-emerald-50/50 dark:bg-emerald-900/10" : ""
+                            c.name === bestCajero ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]" : ""
                           )}>
-                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
+                            <td className="px-4 py-3 font-medium text-[var(--text-primary)] flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
                                 {c.name.charAt(0).toUpperCase()}
                               </div>
                               <span className="truncate max-w-[100px]">{c.name}</span>
-                              {c.name === bestCajero && <span className="text-emerald-600 text-[10px] font-bold">TOP</span>}
+                              {c.name === bestCajero && <span className="text-[var(--data-success)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
                             </td>
-                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{c.turnos}</td>
-                            <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(c.ventasTotal)}</td>
-                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300 hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
-                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300 hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                            <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-emerald-600" : "text-red-600")}>
+                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{c.turnos}</td>
+                            <td className="px-4 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(c.ventasTotal)}</td>
+                            <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
+                            <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+                            <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                               {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
                             </td>
                           </tr>
@@ -979,11 +978,11 @@ export default function TurnosModule() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Historial de turnos</h3>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial de turnos</CardTitle>
             {historial.length > 0 && (
               <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
-                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}>Tabla</button>
-                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}>Timeline</button>
+                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
+                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
               </div>
             )}
           </div>
@@ -1008,19 +1007,19 @@ export default function TurnosModule() {
                 const anio = now.getFullYear();
                 exportToExcel(rows, `turnos-${mes}-${anio}`, "Turnos");
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Excel
             </button>
           )}
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           {historial.length === 0 ? (
             <div className="text-center py-16 px-4">
               <div className="text-6xl mb-4">&#9200;</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin turnos registrados</h3>
-              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Abre tu primer turno para empezar a registrar ventas</p>
+              <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin turnos registrados</CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Abre tu primer turno para empezar a registrar ventas</p>
             </div>
           ) : historialView === "timeline" ? (
             /* Vista Timeline */
@@ -1033,14 +1032,14 @@ export default function TurnosModule() {
                 return (
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-gray-300" : cuadro ? "bg-emerald-500" : "bg-amber-500")} />
+                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-gray-300" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]")} />
                       {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {t.adminUserId} <span className="font-normal text-gray-400">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(t.ventasTotal)}</span>
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                        {t.adminUserId} <span className="font-normal text-[var(--text-tertiary)]">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(t.ventasTotal)}</span>
                       </p>
-                      <p className="text-[10px] text-gray-400">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         {cuadro === null ? "" : cuadro ? "Cuadro" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
                         {" · "}{new Date(t.abrioEn).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                       </p>
@@ -1054,26 +1053,26 @@ export default function TurnosModule() {
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="w-full min-w-[650px] sm:min-w-0 text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 dark:border-white/5 text-left">
-                      <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Operador</th>
-                      <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Apertura</th>
-                      <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden sm:table-cell">Cierre</th>
-                      <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Ef. Inicial</th>
-                      <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Ventas</th>
-                      <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right hidden sm:table-cell">Ef. Final</th>
+                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
+                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Operador</th>
+                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Apertura</th>
+                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] hidden sm:table-cell">Cierre</th>
+                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ef. Inicial</th>
+                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas</th>
+                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ef. Final</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.map(t => (
                       <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white truncate max-w-[120px]">{t.adminUserId}</td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{formatDateTime(t.abrioEn)}</td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs hidden sm:table-cell">
+                        <td className="px-4 py-3 font-medium text-[var(--text-primary)] truncate max-w-[120px]">{t.adminUserId}</td>
+                        <td className="px-4 py-3 text-[var(--text-tertiary)] text-xs">{formatDateTime(t.abrioEn)}</td>
+                        <td className="px-4 py-3 text-[var(--text-tertiary)] text-xs hidden sm:table-cell">
                           {t.cerroEn ? formatDateTime(t.cerroEn) : "—"}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(t.inicioEfectivo)}</td>
-                        <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(t.ventasTotal)}</td>
-                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300 hidden sm:table-cell">
+                        <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{formatCurrency(t.inicioEfectivo)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(t.ventasTotal)}</td>
+                        <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">
                           {t.cierreEfectivo != null ? formatCurrency(t.cierreEfectivo) : "—"}
                         </td>
                       </tr>
@@ -1082,8 +1081,8 @@ export default function TurnosModule() {
                 </table>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5">
+                  <p className="text-xs text-[var(--text-tertiary)]">
                     {historial.length} turno{historial.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}
                   </p>
                   <div className="flex gap-1">
@@ -1131,12 +1130,12 @@ export default function TurnosModule() {
               transition={{ duration: 0.2, ease: "easeOut" }}
               onClick={e => e.target === e.currentTarget && setShowCierre(false)}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-[90vh] flex flex-col">
+              <div className="w-full max-w-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-[90vh] flex flex-col">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cerrar Turno</h3>
+                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Cerrar Turno</CardTitle>
                   <button onClick={() => setShowCierre(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <X className="h-5 w-5 text-gray-500" />
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -1144,16 +1143,16 @@ export default function TurnosModule() {
                 {/* Resumen */}
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Efectivo inicial</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
+                    <span className="text-[var(--text-tertiary)]">Efectivo inicial</span>
+                    <span className="font-bold text-[var(--text-primary)]">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Ventas del turno</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                    <span className="text-[var(--text-tertiary)]">Ventas del turno</span>
+                    <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(turnoActivo.ventasTotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm border-t border-gray-200 dark:border-white/10 pt-2">
-                    <span className="text-gray-500 dark:text-gray-400">Total esperado</span>
-                    <span className="font-bold text-gray-900 dark:text-white">
+                  <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-2">
+                    <span className="text-[var(--text-tertiary)]">Total esperado</span>
+                    <span className="font-bold text-[var(--text-primary)]">
                       {formatCurrency(turnoActivo.inicioEfectivo + turnoActivo.ventasTotal)}
                     </span>
                   </div>
@@ -1161,7 +1160,7 @@ export default function TurnosModule() {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Conteo de efectivo final (S/)</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Conteo de efectivo final (S/)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1169,7 +1168,7 @@ export default function TurnosModule() {
                       value={cierreEfectivo}
                       onChange={e => setCierreEfectivo(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
                     />
                   </div>
 
@@ -1177,42 +1176,42 @@ export default function TurnosModule() {
                     <div className={cn(
                       "rounded-xl p-3 text-center text-sm font-bold",
                       parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal) >= 0
-                        ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
-                        : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                        : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
                     )}>
                       Diferencia: {formatCurrency(parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Notas (opcional)</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
                     <textarea
                       value={cierreNotas}
                       onChange={e => setCierreNotas(e.target.value)}
                       placeholder="Observaciones del turno..."
                       rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                     />
                   </div>
                 </div>
 
                 {closeError && (
-                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{closeError}</p>
+                  <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{closeError}</p>
                 )}
 
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button
                     onClick={() => setShowCierre(false)}
-                    className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleCerrar}
                     disabled={closing}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 rounded-lg  transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 rounded-lg  transition-colors"
                   >
                     {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
                     Confirmar Cierre
@@ -1244,49 +1243,49 @@ export default function TurnosModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowResumen(false)}
             >
-              <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" id="turno-resumen">
+              <div className="w-full max-w-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" id="turno-resumen">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-amber-500" />
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-[var(--data-warning)]" />
                     Resumen del Turno
-                  </h3>
+                  </CardTitle>
                   <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
-                    <X className="h-4 w-4 text-gray-500" />
+                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 {/* Card 1: Ventas del turno */}
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-1.5">
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                  <h4 className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Total vendido</p>
-                      <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{formatCurrency(resumen.totalVentas)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Total vendido</p>
+                      <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(resumen.totalVentas)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Cant. ventas</p>
-                      <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{resumen.cantidadVentas}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Cant. ventas</p>
+                      <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{resumen.cantidadVentas}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Ticket prom.</p>
-                      <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{formatCurrency(resumen.ticketPromedio)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Ticket prom.</p>
+                      <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(resumen.ticketPromedio)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Card 2: Métodos de pago */}
                 {resumen.metodosPago.length > 0 && (
-                  <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-1.5">
+                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                    <h4 className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-3 flex items-center gap-1.5">
                       <CreditCard className="h-3.5 w-3.5" /> Metodos de pago
                     </h4>
                     <div className="space-y-1.5">
                       {resumen.metodosPago.map(m => (
                         <div key={m.metodo} className="flex justify-between text-sm">
-                          <span className="text-emerald-700 dark:text-emerald-300">{m.metodo}</span>
-                          <span className="font-bold text-emerald-800 dark:text-emerald-200">{formatCurrency(m.total)}</span>
+                          <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">{m.metodo}</span>
+                          <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(m.total)}</span>
                         </div>
                       ))}
                     </div>
@@ -1295,21 +1294,21 @@ export default function TurnosModule() {
 
                 {/* Card 3: Caja */}
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5" /> Caja
                   </h4>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Efectivo inicial</span>
-                      <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(resumen.inicioEfectivo)}</span>
+                      <span className="text-[var(--text-tertiary)]">Efectivo inicial</span>
+                      <span className="font-bold text-[var(--text-primary)]">{formatCurrency(resumen.inicioEfectivo)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Efectivo al cierre</span>
-                      <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(resumen.cierreEfectivo)}</span>
+                      <span className="text-[var(--text-tertiary)]">Efectivo al cierre</span>
+                      <span className="font-bold text-[var(--text-primary)]">{formatCurrency(resumen.cierreEfectivo)}</span>
                     </div>
-                    <div className="flex justify-between text-sm border-t border-gray-200 dark:border-white/10 pt-1.5">
-                      <span className="text-gray-500 dark:text-gray-400">Diferencia</span>
-                      <span className={cn("font-bold", resumen.diferencia >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                    <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-1.5">
+                      <span className="text-[var(--text-tertiary)]">Diferencia</span>
+                      <span className={cn("font-bold", resumen.diferencia >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
                         {resumen.diferencia >= 0 ? "+" : ""}{formatCurrency(resumen.diferencia)}
                       </span>
                     </div>
@@ -1326,10 +1325,10 @@ export default function TurnosModule() {
                     ? (descuentoTotal / resumen.totalVentas) * 100
                     : 0;
                   const colorClass = pctDescuento > 5
-                    ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                    ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
                     : pctDescuento >= 2
-                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
-                    : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300";
+                    ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]";
 
                   return descuentoTotal > 0 ? (
                     <div className={cn("rounded-xl p-4", colorClass)}>
@@ -1344,7 +1343,7 @@ export default function TurnosModule() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center text-xs text-gray-400 dark:text-muted">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
                       Sin descuentos aplicados en este turno
                     </div>
                   );
@@ -1352,16 +1351,16 @@ export default function TurnosModule() {
 
                 {/* Card 4: Top 3 productos */}
                 {resumen.topProductos.length > 0 && (
-                  <div className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-violet-800 dark:text-violet-300 mb-3 flex items-center gap-1.5">
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                    <h4 className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
                       <TrendingUp className="h-3.5 w-3.5" /> Top productos
                     </h4>
                     <div className="space-y-1.5">
                       {resumen.topProductos.map((p, i) => (
                         <div key={p.nombre} className="flex items-center gap-2 text-sm">
-                          <span className="text-[10px] font-extrabold text-violet-400 w-4 text-right">{i + 1}</span>
-                          <span className="flex-1 text-violet-700 dark:text-violet-300 truncate">{p.nombre}</span>
-                          <span className="font-bold text-violet-800 dark:text-violet-200">x{p.cantidad}</span>
+                          <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
+                          <span className="flex-1 text-[var(--text-secondary)] dark:text-[var(--text-primary)] truncate">{p.nombre}</span>
+                          <span className="font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">x{p.cantidad}</span>
                         </div>
                       ))}
                     </div>
@@ -1381,16 +1380,16 @@ export default function TurnosModule() {
                       initial={{ scale: 0.8 }}
                       animate={{ scale: [0.8, 1.1, 1] }}
                       transition={{ duration: 0.5, times: [0, 0.6, 1] }}
-                      className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border-2 border-amber-400 rounded-xl p-4 text-center"
+                      className="bg-[var(--surface-sunken)] border border-[var(--data-success)]/40 rounded-xl p-4 text-center"
                     >
-                      <p className="text-2xl font-extrabold text-amber-600 mb-1">META SUPERADA!</p>
-                      <p className="text-sm text-amber-700 dark:text-amber-300">
-                        Vendiste {formatCurrency(ventas)} — Meta: {formatCurrency(meta)} — Excedente: <span className="font-bold text-emerald-600">{formatCurrency(diferenciaMeta)}</span>
+                      <p className="text-2xl font-extrabold text-[var(--data-warning)] mb-1">META SUPERADA!</p>
+                      <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+                        Vendiste {formatCurrency(ventas)} — Meta: {formatCurrency(meta)} — Excedente: <span className="font-bold text-[var(--data-success)]">{formatCurrency(diferenciaMeta)}</span>
                       </p>
                     </m.div>
                   ) : (
                     <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                      <p className="text-sm text-[var(--text-secondary)]">
                         Ventas: {formatCurrency(ventas)} de {formatCurrency(meta)} ({porcentaje}%)
                       </p>
                       <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-3">
@@ -1399,7 +1398,7 @@ export default function TurnosModule() {
                           style={{ width: `${Math.min(100, porcentaje)}%` }}
                         />
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-[var(--text-tertiary)]">
                         Faltaron {formatCurrency(Math.abs(diferenciaMeta))} para la meta
                       </p>
                     </div>
@@ -1434,23 +1433,23 @@ export default function TurnosModule() {
 
                   if (gaps.length === 0) {
                     return (
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
                         Ventas constantes durante todo el turno
                       </div>
                     );
                   }
 
                   return (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 space-y-2">
-                      <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4 space-y-2">
+                      <h4 className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" /> Tiempo muerto detectado
                       </h4>
                       {gaps.map((g, i) => (
-                        <p key={i} className="text-sm text-amber-700 dark:text-amber-300">
+                        <p key={i} className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                           Sin ventas entre {g.desde} — {g.hasta} ({g.duracion}h)
                         </p>
                       ))}
-                      <p className="text-xs text-amber-600 dark:text-amber-400 italic">
+                      <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] italic">
                         Considera ajustar horarios o crear promociones para horas bajas
                       </p>
                     </div>
@@ -1489,29 +1488,29 @@ export default function TurnosModule() {
                   const isGoodDay = ventasAyer > 0 ? ventasHoy >= ventasAyer : ventasHoy > 0;
 
                   return (ventasAyer > 0 || ventasPromedio7d > 0) ? (
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl p-4">
-                      <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-3 flex items-center gap-1.5">
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                      <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                         <TrendingUp className="h-3.5 w-3.5" /> Comparativo
                       </h4>
                       <div className="space-y-2">
                         {ventasAyer > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-indigo-600 dark:text-indigo-400">vs Ayer</span>
-                            <span className={cn("font-bold", pctVsAyer >= 0 ? "text-emerald-600" : "text-red-600")}>
+                            <span className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">vs Ayer</span>
+                            <span className={cn("font-bold", pctVsAyer >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                               {pctVsAyer >= 0 ? "+" : ""}{pctVsAyer.toFixed(0)}% {pctVsAyer >= 0 ? "\u2191" : "\u2193"}
                             </span>
                           </div>
                         )}
                         {ventasPromedio7d > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-indigo-600 dark:text-indigo-400">vs Promedio semanal</span>
-                            <span className={cn("font-bold", pctVsPromedio >= 0 ? "text-emerald-600" : "text-red-600")}>
+                            <span className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">vs Promedio semanal</span>
+                            <span className={cn("font-bold", pctVsPromedio >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                               {pctVsPromedio >= 0 ? "+" : ""}{pctVsPromedio.toFixed(0)}% {pctVsPromedio >= 0 ? "\u2191" : "\u2193"}
                             </span>
                           </div>
                         )}
                       </div>
-                      <p className="text-sm mt-3 pt-2 border-t border-indigo-200/50 dark:border-indigo-800/50 text-center font-bold">
+                      <p className="text-sm mt-3 pt-2 border-t border-[var(--data-info)]/50 dark:border-[var(--data-info)]/50 text-center font-bold">
                         {isGoodDay ? "\uD83D\uDD25 Excelente dia!" : "\uD83D\uDCC8 Manana sera mejor"}
                       </p>
                     </div>
@@ -1522,7 +1521,7 @@ export default function TurnosModule() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir resumen

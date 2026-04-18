@@ -1,7 +1,9 @@
 ﻿﻿"use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
+
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award } from "lucide-react";
+import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
@@ -169,12 +171,12 @@ export default function SuppliersTab() {
   // ── Mejora 14: Alerta proveedor sin compra ─────────────────────────────────
   const getLastPurchaseInfo = (supplierId: string): { daysSince: number; label: string; color: string } | null => {
     const supplierPayables = payables.filter(p => p.supplierId === supplierId);
-    if (supplierPayables.length === 0) return { daysSince: -1, label: "Sin historial", color: "bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400" };
+    if (supplierPayables.length === 0) return { daysSince: -1, label: "Sin historial", color: "bg-[var(--surface-sunken)]/50 text-[var(--text-tertiary)]" };
     const dates = supplierPayables.map(p => new Date(p.createdAt).getTime());
     const lastDate = Math.max(...dates);
     const daysSince = Math.floor((today.getTime() - lastDate) / (1000 * 60 * 60 * 24));
-    if (daysSince > 60) return { daysSince, label: `Sin compra hace ${daysSince}d`, color: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" };
-    if (daysSince > 30) return { daysSince, label: `Ultima compra hace ${daysSince}d`, color: "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" };
+    if (daysSince > 60) return { daysSince, label: `Sin compra hace ${daysSince}d`, color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]" };
+    if (daysSince > 30) return { daysSince, label: `Ultima compra hace ${daysSince}d`, color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]" };
     return null; // Normal, no badge
   };
 
@@ -211,8 +213,8 @@ export default function SuppliersTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Proveedores</h2>
-          <p className="text-sm text-gray-500 dark:text-muted">{suppliers.length} registrados</p>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Proveedores</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{suppliers.length} registrados</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -226,32 +228,32 @@ export default function SuppliersTab() {
 
       {/* Payment Alerts Banner */}
       {(overduePayables.length > 0 || approachingPayables.length > 0) && (
-        <div className="bg-linear-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-amber-950/20 border-l-4 border-red-500 dark:border-red-600 rounded-xl p-4 ">
+        <div className="bg-[var(--surface-sunken)] border-l-4 border-[var(--data-error)] rounded-xl p-4 ">
           <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500" />
-                <h3 className="font-bold text-gray-900 dark:text-foreground">Alertas de Pagos</h3>
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+                <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Alertas de Pagos</CardTitle>
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                 {overduePayables.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">
+                    <span className="flex items-center gap-1 text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">
                       <AlertTriangle className="h-4 w-4" />
                       {overduePayables.length} vencido{overduePayables.length > 1 ? 's' : ''}
                     </span>
-                    <span className="text-gray-600 dark:text-muted">
+                    <span className="text-[var(--text-secondary)] dark:text-muted">
                       S/ {totalOverdueAmount.toFixed(2)}
                     </span>
                   </div>
                 )}
                 {approachingPayables.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
+                    <span className="flex items-center gap-1 text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
                       <Clock className="h-4 w-4" />
                       {approachingPayables.length} próximo{approachingPayables.length > 1 ? 's' : ''}
                     </span>
-                    <span className="text-gray-600 dark:text-muted">
+                    <span className="text-[var(--text-secondary)] dark:text-muted">
                       S/ {totalApproachingAmount.toFixed(2)}
                     </span>
                   </div>
@@ -260,7 +262,7 @@ export default function SuppliersTab() {
             </div>
             <button
               onClick={() => setShowAlerts(!showAlerts)}
-              className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-card/50"
+              className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-card/50"
             >
               Ver alertas
               {showAlerts ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -269,7 +271,7 @@ export default function SuppliersTab() {
           
           {/* Expandable Alerts Detail */}
           {showAlerts && (
-            <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-900/30 space-y-2">
+            <div className="mt-4 pt-4 border-t border-[var(--data-error)] dark:border-[var(--data-error)]/30 space-y-2">
               {[...overduePayables, ...approachingPayables].map(p => {
                 const daysInfo = p.dueDate ? getDaysInfo(p.dueDate) : null;
                 return (
@@ -277,33 +279,33 @@ export default function SuppliersTab() {
                     key={p.id}
                     className={`flex items-center justify-between gap-3 p-3 rounded-lg ${
                       daysInfo?.overdue
-                        ? 'bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-900'
-                        : 'bg-amber-100 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900'
+                        ? "bg-[var(--data-error-100)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)]"
+                        : "bg-[var(--data-warning-100)] dark:bg-amber-950/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900 dark:text-foreground">
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
                           {p.supplierName}
                         </span>
-                        <span className="text-sm text-gray-600 dark:text-muted truncate">
+                        <span className="text-sm text-[var(--text-secondary)] dark:text-muted truncate">
                           {p.description}
                         </span>
                       </div>
                       {daysInfo && (
                         <p className={`text-xs font-medium mt-0.5 ${
-                          daysInfo.overdue ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+                          daysInfo.overdue ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                         }`}>
                           {daysInfo.text}
                         </p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-bold text-gray-900 dark:text-foreground">
+                      <div className="font-bold text-[var(--text-primary)] dark:text-foreground">
                         S/ {(p.amount - p.paidAmount).toFixed(2)}
                       </div>
                       {p.dueDate && (
-                        <div className="text-xs text-gray-500 dark:text-muted">
+                        <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
                           {new Date(p.dueDate).toLocaleDateString('es-PE')}
                         </div>
                       )}
@@ -318,33 +320,33 @@ export default function SuppliersTab() {
 
       {/* Suppliers list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : suppliers.length === 0 ? (
         <EmptyState
           icon={Plus}
           title="Sin proveedores registrados"
           description="No hay proveedores registrados. Agrega tu primer proveedor."
           action={{ label: "Nuevo proveedor", onClick: () => { setEditingSupplier(null); setShowProveedorModal(true); } }}
-          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl"
+          className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl"
         />
       ) : (
         <div className="space-y-3">
           {suppliers.map((s) => (
-            <div key={s.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+            <div key={s.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
               {editingId === s.id ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
-                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
+                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-sm font-bold transition-colors">
+                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] text-sm font-bold transition-colors">
                       <Check className="h-4 w-4 inline mr-1" /> Guardar
                     </button>
-                    <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
+                    <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
                       <X className="h-4 w-4 inline mr-1" /> Cancelar
                     </button>
                   </div>
@@ -353,12 +355,12 @@ export default function SuppliersTab() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-gray-900 dark:text-foreground">{s.name}</span>
-                      {s.ruc && <span className="text-xs font-mono text-gray-400 dark:text-muted bg-gray-100 dark:bg-accent px-2 py-0.5 rounded">RUC: {s.ruc}</span>}
+                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{s.name}</span>
+                      {s.ruc && <span className="text-xs font-mono text-[var(--text-tertiary)] dark:text-muted bg-gray-100 dark:bg-accent px-2 py-0.5 rounded">RUC: {s.ruc}</span>}
 
                       {/* Mejora 15: Proveedor mas confiable badge */}
                       {topSupplierId === s.id && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700">
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
                           Mas confiable
                         </span>
                       )}
@@ -382,13 +384,13 @@ export default function SuppliersTab() {
                         return (
                           <>
                             {debt.overdue && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/30 px-2 py-0.5 rounded border border-red-300 dark:border-red-900">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-red-950/30 px-2 py-0.5 rounded border border-[var(--data-error)] dark:border-[var(--data-error)]">
                                 <AlertTriangle className="h-3 w-3" />
                                 Deuda vencida
                               </span>
                             )}
                             {debt.approaching && !debt.overdue && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/30 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-900">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-100)] dark:bg-amber-950/30 px-2 py-0.5 rounded border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
                                 <Clock className="h-3 w-3" />
                                 Próximo a vencer
                               </span>
@@ -397,7 +399,7 @@ export default function SuppliersTab() {
                         );
                       })()}
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-muted mt-1 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-4 text-sm text-[var(--text-secondary)] dark:text-muted mt-1 flex-wrap">
                       {s.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {s.phone}</span>}
                       {s.email && <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> {s.email}</span>}
                       {s.address && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {s.address}</span>}
@@ -407,22 +409,22 @@ export default function SuppliersTab() {
                         const debt = getSupplierDebt(s.id);
                         if (debt.count === 0) return null;
                         return (
-                          <span className="flex items-center gap-1 font-semibold text-red-600 dark:text-red-400">
+                          <span className="flex items-center gap-1 font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]">
                             <DollarSign className="h-3.5 w-3.5" />
                             Deuda: S/ {debt.totalDebt.toFixed(2)} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
                           </span>
                         );
                       })()}
                     </div>
-                    {s.notes && <p className="text-xs text-gray-400 dark:text-muted mt-1 italic">{s.notes}</p>}
+                    {s.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{s.notes}</p>}
                     {/* Purchase history mini chart */}
                     {(() => {
                       const history = getMonthlyHistory(s.id);
                       if (!history.some((h) => h.total > 0)) return null;
                       const maxVal = Math.max(...history.map((h) => h.total), 1);
                       return (
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
-                          <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-1.5">Compras últimos 6 meses</p>
+                        <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
+                          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-1.5">Compras últimos 6 meses</p>
                           <div className="flex flex-wrap items-end gap-1 h-10">
                             {history.map((h, i) => (
                               <div key={i} className="flex flex-col items-center gap-0.5 flex-1">
@@ -431,7 +433,7 @@ export default function SuppliersTab() {
                                   style={{ height: h.total > 0 ? `${Math.max((h.total / maxVal) * 28, 3)}px` : "3px", opacity: h.total > 0 ? 1 : 0.2 }}
                                   title={`S/ ${h.total.toFixed(0)}`}
                                 />
-                                <p className="text-[8px] text-gray-400 dark:text-muted leading-none">{h.label}</p>
+                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted leading-none">{h.label}</p>
                               </div>
                             ))}
                           </div>
@@ -440,7 +442,7 @@ export default function SuppliersTab() {
                     })()}
 
                     {/* Scorecard toggle */}
-                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                       <button
                         onClick={() => setExpandedScorecard(expandedScorecard === s.id ? null : s.id)}
                         className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
@@ -478,10 +480,10 @@ export default function SuppliersTab() {
                         />
                       );
                     })()}
-                    <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
+                    <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
+                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -507,38 +509,38 @@ export default function SuppliersTab() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Nuevo proveedor</h3>
-              <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-gray-500 dark:text-muted" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nuevo proveedor</CardTitle>
+              <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre / Razon social *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre / Razon social *</label>
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">RUC</label>
-                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">RUC</label>
+                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Telefono</label>
-                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Telefono</label>
+                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Email</label>
-                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Email</label>
+                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Direccion</label>
-                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Direccion</label>
+                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Notas</label>
-                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</label>
+                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>

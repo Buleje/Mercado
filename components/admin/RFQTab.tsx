@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle, DataTable, PageTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import {
   FileText, Download, Search, Eye, X, Trophy,
   Clock,
   ArrowUpDown, Send,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -39,11 +40,11 @@ type RFQ = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<RFQStatus, { label: string; color: string; bg: string }> = {
-  abierta:     { label: "Abierta",     color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  evaluando:   { label: "Evaluando",   color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  adjudicada:  { label: "Adjudicada",  color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  cerrada:     { label: "Cerrada",     color: "text-gray-600",    bg: "bg-gray-100 dark:bg-gray-800/30" },
-  cancelada:   { label: "Cancelada",   color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
+  abierta:     { label: "Abierta",     color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  evaluando:   { label: "Evaluando",   color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  adjudicada:  { label: "Adjudicada",  color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  cerrada:     { label: "Cerrada",     color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
+  cancelada:   { label: "Cancelada",   color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
 };
 
 const stars = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -91,12 +92,12 @@ export default function RFQTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <FileText className="h-6 w-6 text-primary" /> Cotizaciones Comparativas (RFQ)
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Solicita y compara cotizaciones de múltiples proveedores</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Solicita y compara cotizaciones de múltiples proveedores</p>
         </div>
-        <button onClick={() => exportToCSV(RFQS.map(r => ({ ref: r.ref, producto: r.product, cantidad: r.quantity, unidad: r.unit, creado: r.createdAt, limite: r.deadline, estado: STATUS_MAP[r.status].label, cotizaciones: r.quotes.length, ganador: r.winner || "-" })), "cotizaciones-rfq")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(RFQS.map(r => ({ ref: r.ref, producto: r.product, cantidad: r.quantity, unidad: r.unit, creado: r.createdAt, limite: r.deadline, estado: STATUS_MAP[r.status].label, cotizaciones: r.quotes.length, ganador: r.winner || "-" })), "cotizaciones-rfq")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -104,15 +105,15 @@ export default function RFQTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Abiertas", value: String(stats.open), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Send },
-          { label: "Evaluando", value: String(stats.evaluating), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: Clock },
-          { label: "Adjudicadas/Cerradas", value: String(stats.awarded), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Trophy },
-          { label: "Promedio cotizaciones", value: stats.avgQuotes, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30", icon: ArrowUpDown },
+          { label: "Abiertas", value: String(stats.open), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Send },
+          { label: "Evaluando", value: String(stats.evaluating), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
+          { label: "Adjudicadas/Cerradas", value: String(stats.awarded), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Trophy },
+          { label: "Promedio cotizaciones", value: stats.avgQuotes, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: ArrowUpDown },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
               <p className={cn("text-xl font-extrabold", color)}>{value}</p>
             </div>
           </div>
@@ -122,80 +123,74 @@ export default function RFQTab() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as RFQStatus | "todos")} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as RFQStatus | "todos")} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ref</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cant.</th><th className="px-2 sm:px-4 py-2 sm:py-3">Creado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Límite</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cotizaciones</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Ganador</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
-            <tbody>
-              {filtered.map(r => (
-                <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{r.ref}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.product}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{r.quantity} {r.unit}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.createdAt}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.deadline}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-gray-700 dark:text-foreground">{r.quotes.length}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>{STATUS_MAP[r.status].label}</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{r.winner || "-"}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable className="min-w-[600px]">
+        <thead><tr><th>Ref</th><th>Producto</th><th>Cant.</th><th>Creado</th><th>Límite</th><th>Cotizaciones</th><th>Estado</th><th>Ganador</th><th></th></tr></thead>
+        <tbody>
+          {filtered.map(r => (
+            <tr key={r.id}>
+              <td className="font-mono text-xs font-bold text-[var(--text-primary)]">{r.ref}</td>
+              <td className="font-bold text-[var(--text-primary)]">{r.product}</td>
+              <td className="text-[var(--text-secondary)]">{r.quantity} {r.unit}</td>
+              <td className="text-[var(--text-secondary)]">{r.createdAt}</td>
+              <td className="text-[var(--text-secondary)]">{r.deadline}</td>
+              <td className="text-center font-bold text-[var(--text-primary)]">{r.quotes.length}</td>
+              <td><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>{STATUS_MAP[r.status].label}</span></td>
+              <td className="text-xs text-[var(--text-secondary)]">{r.winner || "-"}</td>
+              <td><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+            </tr>
+          ))}
+        </tbody>
+      </DataTable>
 
       {/* Detail Modal — Comparison Matrix */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref} — {detail.product}</h3>
-                <p className="text-xs text-gray-400">{detail.quantity} {detail.unit} · Límite: {detail.deadline}</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.ref} — {detail.product}</CardTitle>
+                <p className="text-xs text-[var(--text-tertiary)]">{detail.quantity} {detail.unit} · Límite: {detail.deadline}</p>
               </div>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             {detail.quotes.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">Sin cotizaciones recibidas</p>
+              <p className="text-sm text-[var(--text-tertiary)] italic">Sin cotizaciones recibidas</p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-xs font-bold text-gray-500 dark:text-muted mt-1">Ordenar por:</span>
+                  <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mt-1">Ordenar por:</span>
                   {(["price", "lead", "quality"] as const).map(s => (
-                    <button key={s} onClick={() => setSortBy(s)} className={cn("text-xs px-2 py-1 rounded-lg font-bold", sortBy === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
+                    <button key={s} onClick={() => setSortBy(s)} className={cn("text-xs px-2 py-1 rounded-lg font-bold", sortBy === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
                       {s === "price" ? "Precio" : s === "lead" ? "Plazo" : "Calidad"}
                     </button>
                   ))}
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[600px] text-sm">
-                    <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-3 py-2">Proveedor</th><th className="px-3 py-2">Precio unit.</th><th className="px-3 py-2">Total</th><th className="px-3 py-2">Plazo</th><th className="px-3 py-2">Calidad</th><th className="px-3 py-2">Pago</th></tr></thead>
-                    <tbody>
-                      {sortedQuotes.map((q, i) => (
-                        <tr key={q.supplier} className={cn("border-t border-gray-100 dark:border-card-border", i === 0 && sortBy === "price" && "bg-emerald-50 dark:bg-emerald-950/20", detail.winner === q.supplier && "ring-2 ring-primary ring-inset")}>
-                          <td className="px-3 py-2 font-bold text-gray-800 dark:text-foreground flex items-center gap-1">{detail.winner === q.supplier && <Trophy className="h-3.5 w-3.5 text-amber-500" />}{q.supplier}</td>
-                          <td className="px-3 py-2 font-bold text-gray-700 dark:text-foreground">{fmt(q.unitPrice)}</td>
-                          <td className="px-3 py-2 font-bold text-gray-700 dark:text-foreground">{fmt(q.unitPrice * detail.quantity)}</td>
-                          <td className="px-3 py-2 text-gray-600 dark:text-muted">{q.leadDays} días</td>
-                          <td className="px-3 py-2 text-amber-500 text-xs">{stars(q.qualityScore)}</td>
-                          <td className="px-3 py-2 text-xs text-gray-500">{q.paymentTerms}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable className="min-w-[600px]">
+                  <thead><tr><th>Proveedor</th><th>Precio unit.</th><th>Total</th><th>Plazo</th><th>Calidad</th><th>Pago</th></tr></thead>
+                  <tbody>
+                    {sortedQuotes.map((q, i) => (
+                      <tr key={q.supplier} className={cn(i === 0 && sortBy === "price" && "bg-[var(--accent-soft)]", detail.winner === q.supplier && "ring-2 ring-primary ring-inset")}>
+                        <td className="font-bold text-[var(--text-primary)] flex items-center gap-1">{detail.winner === q.supplier && <Trophy className="h-3.5 w-3.5 text-[var(--data-warning)]" />}{q.supplier}</td>
+                        <td className="font-bold text-[var(--text-primary)]">{fmt(q.unitPrice)}</td>
+                        <td className="font-bold text-[var(--text-primary)]">{fmt(q.unitPrice * detail.quantity)}</td>
+                        <td className="text-[var(--text-secondary)]">{q.leadDays} días</td>
+                        <td className="text-[var(--data-warning)] text-xs">{stars(q.qualityScore)}</td>
+                        <td className="text-xs text-[var(--text-secondary)]">{q.paymentTerms}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DataTable>
               </>
             )}
           </div>

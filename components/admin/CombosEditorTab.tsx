@@ -1,9 +1,10 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Loader2, Save, Check, Plus, Trash2, Package, Percent, ChevronDown, ChevronUp,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type ComboTemplate = {
@@ -103,7 +104,7 @@ export default function CombosEditorTab() {
 
   if (loading) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">
+      <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">
         <Loader2 className="h-5 w-5 animate-spin mr-2" /> Cargando combos…
       </div>
     );
@@ -114,16 +115,16 @@ export default function CombosEditorTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
             Editor de Combos
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             {combos.length} combos · {enabledCount} activos
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={addCombo} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">
+          <button onClick={addCombo} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Nuevo combo
           </button>
           <button
@@ -131,7 +132,7 @@ export default function CombosEditorTab() {
             disabled={!hasChanges || saving}
             className={cn(
               "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
-              saved ? "bg-emerald-500" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
+              saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
@@ -143,47 +144,47 @@ export default function CombosEditorTab() {
       {/* Combo list */}
       <div className="space-y-2">
         {combos.map((combo) => (
-          <div key={combo.id} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all", combo.enabled ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border/50 opacity-60")}>
+          <div key={combo.id} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all", combo.enabled ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-60")}>
             <button onClick={() => setExpanded(expanded === combo.id ? null : combo.id)} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left">
               <span className="text-xl sm:text-2xl">{combo.emoji}</span>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-gray-900 dark:text-foreground">{combo.name}</p>
-                <p className="text-xs text-gray-500 dark:text-muted">{combo.categories.length} categorías · {combo.discount}% dto · {combo.size} productos</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{combo.name}</p>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{combo.categories.length} categorías · {combo.discount}% dto · {combo.size} productos</p>
               </div>
-              <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", combo.enabled ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-500")}>
+              <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", combo.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]")}>
                 {combo.enabled ? "Activo" : "Inactivo"}
               </span>
               {expanded === combo.id ? <ChevronUp className="h-4 w-4 text-muted" /> : <ChevronDown className="h-4 w-4 text-muted" />}
             </button>
 
             {expanded === combo.id && (
-              <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-4 pt-4">
+              <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-4 pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Nombre</label>
-                    <input value={combo.name} onChange={(e) => updateCombo(combo.id, { name: e.target.value })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre</label>
+                    <input value={combo.name} onChange={(e) => updateCombo(combo.id, { name: e.target.value })} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Emoji</label>
-                    <input value={combo.emoji} onChange={(e) => updateCombo(combo.id, { emoji: e.target.value })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" maxLength={4} />
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Emoji</label>
+                    <input value={combo.emoji} onChange={(e) => updateCombo(combo.id, { emoji: e.target.value })} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" maxLength={4} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Descripción</label>
-                  <textarea value={combo.description} onChange={(e) => updateCombo(combo.id, { description: e.target.value })} rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm resize-none" />
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descripción</label>
+                  <textarea value={combo.description} onChange={(e) => updateCombo(combo.id, { description: e.target.value })} rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm resize-none" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Productos por combo</label>
-                    <input type="number" min={2} max={6} value={combo.size} onChange={(e) => updateCombo(combo.id, { size: parseInt(e.target.value) || 3 })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Productos por combo</label>
+                    <input type="number" min={2} max={6} value={combo.size} onChange={(e) => updateCombo(combo.id, { size: parseInt(e.target.value) || 3 })} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1 flex items-center gap-1"><Percent className="h-3 w-3" /> Descuento (%)</label>
-                    <input type="number" min={1} max={50} value={combo.discount} onChange={(e) => updateCombo(combo.id, { discount: parseInt(e.target.value) || 10 })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 flex items-center gap-1"><Percent className="h-3 w-3" /> Descuento (%)</label>
+                    <input type="number" min={1} max={50} value={combo.discount} onChange={(e) => updateCombo(combo.id, { discount: parseInt(e.target.value) || 10 })} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1.5">Categorías de productos</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">Categorías de productos</label>
                   <div className="flex flex-wrap gap-2">
                     {ALL_CATEGORIES.map((cat) => (
                       <button
@@ -193,7 +194,7 @@ export default function CombosEditorTab() {
                           "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
                           combo.categories.includes(cat.id)
                             ? "bg-primary/10 border-primary/30 text-primary"
-                            : "bg-gray-50 dark:bg-background border-gray-200 dark:border-card-border text-gray-500"
+                            : "bg-gray-50 dark:bg-background border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)]"
                         )}
                       >
                         {cat.label}
@@ -202,7 +203,7 @@ export default function CombosEditorTab() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-2">
-                  <label className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-700 dark:text-foreground">
+                  <label className="flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--text-primary)] dark:text-foreground">
                     <button
                       type="button"
                       onClick={() => updateCombo(combo.id, { enabled: !combo.enabled })}
@@ -212,7 +213,7 @@ export default function CombosEditorTab() {
                     </button>
                     Activo
                   </label>
-                  <button onClick={() => removeCombo(combo.id)} className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium">
+                  <button onClick={() => removeCombo(combo.id)} className="inline-flex items-center gap-1.5 text-xs text-[var(--data-error)] hover:text-[var(--data-error)] font-medium">
                     <Trash2 className="h-3.5 w-3.5" /> Eliminar
                   </button>
                 </div>

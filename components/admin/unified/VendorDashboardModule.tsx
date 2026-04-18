@@ -17,7 +17,7 @@ import {
   Users,
   Tag,
   Wallet,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
 import dynamic from "next/dynamic";
@@ -45,6 +45,12 @@ const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/Client
 // ADR-064 Ola B — TodayHub hero unificado (drop-in al tab "general")
 const TodayHub = dynamic(
   () => import("@/components/admin/hoy/TodayHub").then((m) => ({ default: m.TodayHub })),
+  { ssr: false, loading: DashboardLoading },
+);
+
+// ADR-066 Ola M — InicioDashboardV2 con compound charts + multi-signal KPIs
+const InicioDashboardV2 = dynamic(
+  () => import("@/components/admin/inicio/InicioDashboardV2"),
   { ssr: false, loading: DashboardLoading },
 );
 
@@ -87,7 +93,7 @@ function KPISkeleton() {
 
 function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6  space-y-3">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6  space-y-3">
       <div className="h-4 bg-gray-100 rounded w-1/3 animate-pulse" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
@@ -162,8 +168,8 @@ export default function VendorDashboardModule() {
         title="Inicio"
         description={TAB_DESCRIPTIONS[tab]}
         icon={LayoutDashboard}
-        bgTint="bg-emerald-50"
-        iconColorClass="text-emerald-600"
+        bgTint="bg-[var(--accent-soft)]"
+        iconColorClass="text-[var(--data-success)]"
       >
         {tab !== "marketplace" && (
           <DashboardDateRange value={dateRange} onChange={setDateRange} />
@@ -172,7 +178,7 @@ export default function VendorDashboardModule() {
           <button
             onClick={() => void fetchDashboard(false)}
             disabled={loading}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
             title="Actualizar marketplace"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -183,10 +189,10 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
-            {/* ADR-064 · Hub unificado "Hoy" con saludo dinámico por hora (Ola H) */}
+            {/* ADR-064 · Hub unificado "Hoy" con saludo dinámico por hora */}
             <TodayHub />
-            {/* Dashboard legacy debajo (transición gradual) */}
-            <InicioDashboard dateRange={dateRange} />
+            {/* ADR-066 Ola M · Dashboard denso con compound charts + multi-signal KPIs */}
+            <InicioDashboardV2 dateRange={dateRange} />
           </div>
         )}
         {tab === "ventas" && <VentasDashboard dateRange={dateRange} />}
@@ -200,11 +206,11 @@ export default function VendorDashboardModule() {
           <div className="space-y-6">
             {error && !data && (
               <div className="flex flex-col items-center justify-center gap-4 py-16">
-                <AlertTriangle className="h-10 w-10 text-amber-500" />
-                <p className="text-sm font-medium text-gray-700 text-center">{error}</p>
+                <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+                <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-emerald-600 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>

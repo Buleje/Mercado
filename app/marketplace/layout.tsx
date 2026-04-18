@@ -4,6 +4,7 @@ import StoreProviders from "@/components/StoreProviders";
 import MotionProvider from "@/components/MotionProvider";
 import CompareFloatingBadge from "@/components/marketplace/CompareFloatingBadge";
 import ProductCompareDrawer from "@/components/marketplace/ProductCompareDrawer";
+import ContextualHintBar from "@/components/marketplace/home/ContextualHintBar";
 
 export const metadata: Metadata = {
   title: {
@@ -37,6 +38,7 @@ export default function MarketplaceLayout({
       <MotionProvider>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
           <MarketplaceNavbar />
+          <ContextualHintBar />
           <main id="main-content">{children}</main>
           <CompareFloatingBadge />
           <ProductCompareDrawer />

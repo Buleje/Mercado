@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -129,8 +130,8 @@ export default function EmptyState({
           <Icon className="h-7 w-7 text-primary" />
         </div>
       ) : null}
-      <h3 className="text-lg font-semibold text-gray-500 mt-4">{title}</h3>
-      <p className="text-sm text-gray-400 mt-1 max-w-xs">{description}</p>
+      <CardTitle className="text-lg font-semibold text-[var(--text-secondary)] mt-4">{title}</CardTitle>
+      <p className="text-sm text-[var(--text-tertiary)] mt-1 max-w-xs">{description}</p>
       {action && (
         <button
           onClick={action.onClick}

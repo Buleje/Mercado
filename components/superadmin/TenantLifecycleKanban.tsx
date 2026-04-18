@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 /**
  * TenantLifecycleKanban.tsx — Roadmap item #40
  *
@@ -46,51 +47,51 @@ interface KanbanColumn {
 // -- Columnas --
 
 const COLUMNS: KanbanColumn[] = [
-  { stage: "trial", label: "Trial", icon: Clock, color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
-  { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
-  { stage: "active", label: "Activo", icon: Users, color: "text-green-600 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-700" },
-  { stage: "at_risk", label: "En Riesgo", icon: AlertTriangle, color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-50 dark:bg-amber-900/20", borderColor: "border-amber-200 dark:border-amber-700" },
-  { stage: "churned", label: "Churned", icon: XCircle, color: "text-red-600 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-red-700" },
+  { stage: "trial", label: "Trial", icon: Clock, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
+  { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
+  { stage: "active", label: "Activo", icon: Users, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bgColor: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-700" },
+  { stage: "at_risk", label: "En Riesgo", icon: AlertTriangle, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bgColor: "bg-amber-50 dark:bg-amber-900/20", borderColor: "border-amber-200 dark:border-amber-700" },
+  { stage: "churned", label: "Churned", icon: XCircle, color: "text-[var(--data-error)] dark:text-[var(--data-error)]", bgColor: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-red-700" },
 ];
 
 // -- Componente tarjeta --
 
 function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (action: string, tenant: TenantCard) => void }) {
   return (
-    <div className="bg-white dark:bg-card rounded-lg border border-gray-100 dark:border-card-border p-3 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-card rounded-lg border border-[var(--rule-soft)] dark:border-card-border p-3 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-bold text-foreground truncate">{tenant.name}</h4>
-        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-muted">{tenant.plan}</span>
+        <span className="text-[length:var(--ts-2xs)] font-medium px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-muted">{tenant.plan}</span>
       </div>
 
       {tenant.mrr > 0 && (
-        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">S/{tenant.mrr}/mes</p>
+        <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">S/{tenant.mrr}/mes</p>
       )}
 
       {tenant.lastOrderDate && (
-        <p className="text-[10px] text-muted mt-1">
+        <p className="text-[length:var(--ts-2xs)] text-muted mt-1">
           Ultimo pedido: {tenant.daysSinceLastOrder === 0 ? "hoy" : `hace ${tenant.daysSinceLastOrder}d`}
         </p>
       )}
 
       {tenant.signal && (
-        <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1 flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
           {tenant.signal}
         </p>
       )}
 
       {tenant.trialEndsAt && tenant.stage === "trial" && (
-        <p className="text-[10px] text-emerald-500 mt-1">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] mt-1">
           Trial hasta: {new Date(tenant.trialEndsAt).toLocaleDateString("es-PE")}
         </p>
       )}
 
-      <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-50 dark:border-gray-800">
+      <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-50 dark:border-[var(--rule-base)]">
         {tenant.ownerPhone && (
           <button
             onClick={() => onAction("whatsapp", tenant)}
-            className="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success)]/20 text-[var(--data-success)] transition-colors"
             title="WhatsApp"
           >
             <MessageCircle className="h-3.5 w-3.5" />
@@ -99,7 +100,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         {tenant.ownerEmail && (
           <button
             onClick={() => onAction("email", tenant)}
-            className="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success)]/20 text-[var(--data-success)] transition-colors"
             title="Email"
           >
             <Mail className="h-3.5 w-3.5" />
@@ -107,7 +108,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         )}
         <button
           onClick={() => onAction("impersonate", tenant)}
-          className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-muted transition-colors ml-auto"
+          className="p-1.5 rounded-md hover:bg-[var(--surface-sunken)] text-muted transition-colors ml-auto"
           title="Impersonar"
         >
           <ExternalLink className="h-3.5 w-3.5" />
@@ -180,16 +181,14 @@ export default function TenantLifecycleKanban() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <LoadingState />
     );
   }
 
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-red-500">{error}</p>
+        <p className="text-sm text-[var(--data-error)]">{error}</p>
         <button onClick={loadData} className="mt-3 text-sm font-bold text-primary hover:underline">Reintentar</button>
       </div>
     );

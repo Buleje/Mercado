@@ -1,10 +1,12 @@
+"use client";
+
+import { SectionTitle } from "@buleje/design-system";
  
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Bell, BellOff, Eye, Clock, Save } from "lucide-react";
+import { MessageCircle, Bell, BellOff, Eye, Clock, Save } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -107,16 +109,16 @@ interface ToggleRowProps {
 function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) {
   const meta = ALERT_META[alertType];
   return (
-    <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+    <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]">
       <div className="flex items-center gap-3 min-w-0">
         {enabled ? (
           <Bell className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />
         ) : (
-          <BellOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <BellOff className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
         )}
         <div className="min-w-0">
-          <p className="font-semibold text-gray-900 dark:text-white text-sm">{meta.label}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{meta.description}</p>
+          <p className="font-semibold text-[var(--text-primary)] text-sm">{meta.label}</p>
+          <p className="text-xs text-[var(--text-tertiary)] truncate">{meta.description}</p>
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -125,7 +127,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
           className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           title="Ver preview"
         >
-          <Eye className="w-4 h-4 text-gray-500" />
+          <Eye className="w-4 h-4 text-[var(--text-secondary)]" />
         </button>
         <button
           role="switch"
@@ -186,15 +188,15 @@ export default function WhatsAppAlertManager() {
   const alertTypes: AlertType[] = ["bigSale", "stockOut", "goalMet", "newCredit"];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-green-100 dark:bg-green-900/30">
-          <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+      <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
+        <div className="p-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+          <MessageCircle className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
         </div>
         <div>
-          <h2 className="font-bold text-gray-900 dark:text-white">Alertas por WhatsApp</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <SectionTitle className="font-bold text-[var(--text-primary)]">Alertas por WhatsApp</SectionTitle>
+          <p className="text-xs text-[var(--text-tertiary)]">
             Notificaciones automaticas al dueno
           </p>
         </div>
@@ -203,7 +205,7 @@ export default function WhatsAppAlertManager() {
       <div className="p-4 space-y-4">
         {/* Phone */}
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
             Numero WhatsApp del dueno
           </label>
           <input
@@ -211,13 +213,13 @@ export default function WhatsAppAlertManager() {
             value={config.phone}
             onChange={(e) => setConfig((p) => ({ ...p, phone: e.target.value }))}
             placeholder="51999999999"
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[#00B4A6]"
           />
         </div>
 
         {/* Big sale threshold */}
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
             Monto minimo para alerta de venta grande (S/)
           </label>
           <input
@@ -227,13 +229,13 @@ export default function WhatsAppAlertManager() {
             onChange={(e) =>
               setConfig((p) => ({ ...p, bigSaleThreshold: Number(e.target.value) }))
             }
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[#00B4A6]"
           />
         </div>
 
         {/* Toggles */}
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+          <p className="text-xs font-semibold text-[var(--text-secondary)]">
             Tipos de alerta
           </p>
           {alertTypes.map((type) => {
@@ -254,11 +256,11 @@ export default function WhatsAppAlertManager() {
 
         {/* Preview */}
         {previewType && (
-          <div className="rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-4">
-            <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2">
+          <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4">
+            <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-2">
               Preview del mensaje
             </p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 font-mono leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] font-mono leading-relaxed">
               {buildPreview(previewType, config)}
             </p>
             <button
@@ -266,7 +268,7 @@ export default function WhatsAppAlertManager() {
                 addToHistory(previewType);
                 setPreviewType(null);
               }}
-              className="mt-3 text-xs text-green-700 dark:text-green-400 font-semibold hover:underline flex items-center gap-1"
+              className="mt-3 text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold hover:underline flex items-center gap-1"
             >
               <MessageCircle className="w-3 h-3" />
               Simular envio
@@ -291,21 +293,21 @@ export default function WhatsAppAlertManager() {
         {/* History */}
         {history.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
               Historial de alertas
             </p>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {history.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-start gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
+                  className="flex items-start gap-2 p-3 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]"
                 >
-                  <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <Clock className="w-3.5 h-3.5 text-[var(--text-tertiary)] flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-900 dark:text-white font-medium">
+                    <p className="text-xs text-[var(--text-primary)] font-medium">
                       {ALERT_META[h.type].label}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-xs text-[var(--text-tertiary)] truncate">
                       {new Date(h.sentAt).toLocaleString("es-PE")}
                     </p>
                   </div>

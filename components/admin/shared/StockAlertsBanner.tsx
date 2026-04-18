@@ -103,8 +103,8 @@ export function StockAlertsBanner() {
       className={cn(
         "w-full rounded-xl border  overflow-hidden",
         hasCriticos
-          ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
-          : "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",
+          ? "bg-[var(--data-error-50)] border-[var(--data-error)] dark:bg-red-950/30 dark:border-[var(--data-error)]"
+          : "bg-[var(--data-warning-50)] border-[var(--data-warning)] dark:bg-amber-950/30 dark:border-[var(--data-warning)]",
       )}
       role="alert"
       aria-live="polite"
@@ -116,8 +116,8 @@ export function StockAlertsBanner() {
             className={cn(
               "h-5 w-5 shrink-0",
               hasCriticos
-                ? "text-red-600 dark:text-red-400"
-                : "text-amber-600 dark:text-amber-400",
+                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                : "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
             )}
             aria-hidden="true"
           />
@@ -125,15 +125,15 @@ export function StockAlertsBanner() {
             className={cn(
               "text-sm font-semibold",
               hasCriticos
-                ? "text-red-800 dark:text-red-200"
-                : "text-amber-800 dark:text-amber-200",
+                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                : "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
             )}
           >
             {data.total === 1
               ? "1 producto necesita reposición"
               : `${data.total} productos necesitan reposición`}
             {data.criticos > 0 && (
-              <span className="ml-2 inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+              <span className="ml-2 inline-flex items-center rounded-full bg-[var(--data-error)] px-2 py-0.5 text-xs font-bold text-white">
                 {data.criticos} {data.criticos === 1 ? "crítico" : "críticos"}
               </span>
             )}
@@ -146,8 +146,8 @@ export function StockAlertsBanner() {
             className={cn(
               "rounded-lg p-1.5 transition-colors",
               hasCriticos
-                ? "hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300"
-                : "hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+                ? "hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                : "hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
             )}
             aria-expanded={expanded}
             aria-label={expanded ? "Colapsar lista" : "Ver lista completa"}
@@ -163,8 +163,8 @@ export function StockAlertsBanner() {
             className={cn(
               "rounded-lg p-1.5 transition-colors",
               hasCriticos
-                ? "hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300"
-                : "hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+                ? "hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                : "hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
             )}
             aria-label="Cerrar alerta de stock"
           >
@@ -186,8 +186,8 @@ export function StockAlertsBanner() {
                     className={cn(
                       "w-full rounded-lg px-3 py-2 text-left transition-colors",
                       isCritico
-                        ? "hover:bg-red-100 dark:hover:bg-red-900/40"
-                        : "hover:bg-amber-100 dark:hover:bg-amber-900/40",
+                        ? "hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/40"
+                        : "hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/40",
                     )}
                     aria-label={`Ver producto ${alert.productName} en inventario`}
                   >
@@ -198,8 +198,8 @@ export function StockAlertsBanner() {
                           className={cn(
                             "h-4 w-4 shrink-0",
                             isCritico
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-amber-600 dark:text-amber-400",
+                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
                           )}
                           aria-hidden="true"
                         />
@@ -207,8 +207,8 @@ export function StockAlertsBanner() {
                           className={cn(
                             "truncate text-sm font-medium",
                             isCritico
-                              ? "text-red-900 dark:text-red-100"
-                              : "text-amber-900 dark:text-amber-100",
+                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
                           )}
                         >
                           {alert.productName}
@@ -220,8 +220,8 @@ export function StockAlertsBanner() {
                         className={cn(
                           "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
                           isCritico
-                            ? "bg-red-600 text-white"
-                            : "bg-amber-500 text-white",
+                            ? "bg-[var(--data-error)] text-white"
+                            : "bg-[var(--data-warning)] text-white",
                         )}
                       >
                         {isCritico ? "Crítico" : "Urgente"}
@@ -231,10 +231,10 @@ export function StockAlertsBanner() {
                     {/* Métricas en fila */}
                     <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                       {/* Stock actual */}
-                      <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
                         <Package className="h-3 w-3" aria-hidden="true" />
                         Stock:{" "}
-                        <strong className="text-gray-800 dark:text-gray-200">
+                        <strong className="text-[var(--text-primary)]">
                           {alert.currentStock}
                         </strong>
                       </span>
@@ -244,8 +244,8 @@ export function StockAlertsBanner() {
                         className={cn(
                           "flex items-center gap-1 text-xs font-medium",
                           isCritico
-                            ? "text-red-700 dark:text-red-300"
-                            : "text-amber-700 dark:text-amber-300",
+                            ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                            : "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
                         )}
                       >
                         <Clock className="h-3 w-3" aria-hidden="true" />
@@ -255,10 +255,10 @@ export function StockAlertsBanner() {
                       </span>
 
                       {/* Cantidad sugerida */}
-                      <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
                         <ShoppingCart className="h-3 w-3" aria-hidden="true" />
                         Reponer:{" "}
-                        <strong className="text-gray-800 dark:text-gray-200">
+                        <strong className="text-[var(--text-primary)]">
                           {alert.reorderQuantity} uds.
                         </strong>
                       </span>

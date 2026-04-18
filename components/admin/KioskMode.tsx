@@ -1,11 +1,12 @@
 "use client";
  
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search, Plus, Minus, X, ShoppingCart, Maximize, Minimize,
   Phone, Banknote, Smartphone, CheckCircle, Loader2, Package,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -175,15 +176,15 @@ export default function KioskMode() {
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden select-none"
+      className="relative flex flex-col h-screen bg-[var(--surface-canvas)] overflow-hidden select-none"
     >
       {/* ── Top bar ── */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-card border-b border-gray-200 dark:border-card-border ">
+      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-card border-b border-[var(--rule-base)] dark:border-card-border ">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
             <Package className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-900 dark:text-foreground">Buleje</span>
+          <span className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground">Buleje</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -194,8 +195,8 @@ export default function KioskMode() {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all",
               callingStaff
-                ? "bg-amber-400 text-white animate-pulse"
-                : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100"
+                ? "bg-[var(--data-warning)] text-white animate-pulse"
+                : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] hover:bg-[var(--data-warning-100)]"
             )}
           >
             <Phone className="h-4 w-4" />
@@ -204,7 +205,7 @@ export default function KioskMode() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 dark:text-muted dark:hover:text-foreground border border-gray-200 dark:border-card-border bg-white dark:bg-card"
+            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-foreground border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
             aria-label="Pantalla completa"
           >
             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -217,19 +218,19 @@ export default function KioskMode() {
         {/* Product catalog */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Search */}
-          <div className="px-6 py-4 bg-white dark:bg-card border-b border-gray-100 dark:border-card-border">
+          <div className="px-6 py-4 bg-white dark:bg-card border-b border-[var(--rule-soft)] dark:border-card-border">
             <div className="relative max-w-2xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Busca un producto..."
-                className="w-full pl-12 pr-4 py-4 text-lg rounded-xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full pl-12 pr-4 py-4 text-lg rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary transition-colors"
               />
               {search && (
                 <button type="button" onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  <X className="h-5 w-5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]" />
                 </button>
               )}
             </div>
@@ -238,11 +239,9 @@ export default function KioskMode() {
           {/* Grid */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {loadingProducts ? (
-              <div className="flex items-center justify-center h-48">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <LoadingState message="" />
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+              <div className="flex flex-col items-center justify-center h-48 text-[var(--text-tertiary)]">
                 <Package className="h-10 w-10 mb-2 opacity-30" />
                 <p>No se encontraron productos</p>
               </div>
@@ -257,15 +256,15 @@ export default function KioskMode() {
                       onClick={() => addToCart(product)}
                       className={cn(
                         "flex flex-col items-center rounded-xl border-2 p-3 bg-white dark:bg-card text-left transition-all hover:shadow-sm hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
-                        inCart ? "border-primary" : "border-gray-100 dark:border-card-border"
+                        inCart ? "border-primary" : "border-[var(--rule-soft)] dark:border-card-border"
                       )}
                     >
-                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900 mb-2">
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[var(--surface-canvas)] mb-2">
                         {product.imageUrl ? (
                           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" />
                         ) : (
                           <div className="flex items-center justify-center w-full h-full">
-                            <Package className="h-8 w-8 text-gray-200 dark:text-gray-700" />
+                            <Package className="h-8 w-8 text-gray-200 dark:text-[var(--text-primary)]" />
                           </div>
                         )}
                         {inCart && (
@@ -274,7 +273,7 @@ export default function KioskMode() {
                           </div>
                         )}
                       </div>
-                      <p className="text-xs font-semibold text-gray-800 dark:text-foreground text-center leading-tight line-clamp-2 w-full">{product.name}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground text-center leading-tight line-clamp-2 w-full">{product.name}</p>
                       <p className="text-sm font-bold text-primary mt-1">{fmt(product.price)}</p>
                     </button>
                   );
@@ -285,10 +284,10 @@ export default function KioskMode() {
         </main>
 
         {/* ── Cart sidebar ── */}
-        <aside className="w-80 flex flex-col border-l border-gray-200 dark:border-card-border bg-white dark:bg-card">
-          <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-100 dark:border-card-border">
+        <aside className="w-80 flex flex-col border-l border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card">
+          <div className="flex items-center gap-2 px-4 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
             <ShoppingCart className="h-5 w-5 text-primary" />
-            <span className="font-bold text-gray-900 dark:text-foreground">Tu pedido</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">Tu pedido</span>
             {cartCount > 0 && (
               <span className="ml-auto bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">{cartCount}</span>
             )}
@@ -297,7 +296,7 @@ export default function KioskMode() {
           {/* Items */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-gray-300 dark:text-gray-600">
+              <div className="flex flex-col items-center justify-center h-32 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
                 <ShoppingCart className="h-8 w-8 mb-2" />
                 <p className="text-sm">Sin productos</p>
               </div>
@@ -305,20 +304,20 @@ export default function KioskMode() {
               cart.map((item) => (
                 <div key={item.product.id} className="flex items-center gap-2 py-2 border-b border-gray-50 dark:border-card-border last:border-0">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 dark:text-foreground truncate">{item.product.name}</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">{item.product.name}</p>
                     <p className="text-xs text-primary font-semibold">{fmt(item.product.price * item.quantity)}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => updateQty(item.product.id, -1)}
-                      className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-foreground hover:bg-gray-200">
+                      className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-foreground hover:bg-gray-200">
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="w-6 text-center text-sm font-bold text-gray-800 dark:text-foreground">{item.quantity}</span>
+                    <span className="w-6 text-center text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{item.quantity}</span>
                     <button type="button" onClick={() => updateQty(item.product.id, 1)}
                       className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20">
                       <Plus className="h-3 w-3" />
                     </button>
-                    <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-400">
+                    <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error)]">
                       <X className="h-3 w-3" />
                     </button>
                   </div>
@@ -329,9 +328,9 @@ export default function KioskMode() {
 
           {/* Footer */}
           {cart.length > 0 && (
-            <div className="px-4 py-4 border-t border-gray-100 dark:border-card-border space-y-3">
+            <div className="px-4 py-4 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-gray-700 dark:text-foreground">Total</span>
+                <span className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground">Total</span>
                 <span className="text-xl font-bold text-primary">{fmt(cartTotal)}</span>
               </div>
 
@@ -344,7 +343,7 @@ export default function KioskMode() {
                     "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                     paymentMethod === "yape"
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-gray-100 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
+                      : "border-[var(--rule-soft)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                   )}
                 >
                   <Smartphone className="h-5 w-5" />
@@ -357,7 +356,7 @@ export default function KioskMode() {
                     "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                     paymentMethod === "efectivo"
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-gray-100 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
+                      : "border-[var(--rule-soft)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                   )}
                 >
                   <Banknote className="h-5 w-5" />
@@ -383,12 +382,12 @@ export default function KioskMode() {
       {step === "success" && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/95 dark:bg-gray-950/95 z-50">
           <div className="text-center space-y-4">
-            <div className="w-24 h-24 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
-              <CheckCircle className="h-12 w-12 text-emerald-500" />
+            <div className="w-24 h-24 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto">
+              <CheckCircle className="h-12 w-12 text-[var(--data-success)]" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-foreground">Pago registrado</h2>
-            <p className="text-gray-500 dark:text-muted text-lg">Gracias por tu compra</p>
-            <p className="text-sm text-gray-400">Volviendo en unos segundos...</p>
+            <SectionTitle className="text-3xl font-bold text-[var(--text-primary)] dark:text-foreground">Pago registrado</SectionTitle>
+            <p className="text-[var(--text-secondary)] dark:text-muted text-lg">Gracias por tu compra</p>
+            <p className="text-sm text-[var(--text-tertiary)]">Volviendo en unos segundos...</p>
           </div>
         </div>
       )}

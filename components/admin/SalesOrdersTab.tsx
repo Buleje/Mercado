@@ -1,12 +1,13 @@
 "use client";
 
+import { CardTitle, PageTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   ShoppingBag, RefreshCw, Clock, CheckCircle, XCircle, Truck,
   Search, ChevronDown, ChevronUp, ChevronRight, Download, FileSpreadsheet, Receipt,
   ArrowRight, Package, Bell, BellOff, Lock, LayoutList, Columns3, MapPin,
   CheckSquare, DollarSign, Target, AlertTriangle, Maximize2, X as XIcon2, ShoppingCart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { AdminCard, AdminKPI, StatusBadge } from "@/components/admin/shared";
 import type { BadgeVariant } from "@/components/admin/shared";
@@ -51,17 +52,17 @@ interface Order {
 // ── Status config (Spanish API + English fallback) ───────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badgeIcon: React.ComponentType<{ className?: string }>; color: string; icon: React.ReactNode; next?: string }> = {
-  pendiente:   { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
-  en_camino:   { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
-  entregado:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
-  cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
-  pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
-  preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
-  delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
-  delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
-  cancelled:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
+  pendiente:   { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
+  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  en_camino:   { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
+  entregado:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: <CheckCircle className="h-3 w-3" /> },
+  cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 icon: <XCircle className="h-3 w-3" /> },
+  pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
+  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
+  delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
+  delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: <CheckCircle className="h-3 w-3" /> },
+  cancelled:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 icon: <XCircle className="h-3 w-3" /> },
 };
 
 const TERMINAL = new Set(["delivered", "cancelled", "entregado", "cancelado"]);
@@ -484,8 +485,8 @@ export default function SalesOrdersTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        <button onClick={load} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-medium transition-colors">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+        <button onClick={load} className="flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white px-4 py-2.5 text-sm font-medium transition-colors">
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
       </div>
@@ -496,19 +497,19 @@ export default function SalesOrdersTab() {
     <div className="space-y-6">
       {/* ── Header estandar ──────────────────────────────────────── */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 shrink-0">
-          <Receipt className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] shrink-0">
+          <Receipt className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Ventas y Caja</h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Pedidos, caja y punto de venta</p>
+          <PageTitle className="text-xl font-bold text-[var(--text-primary)] truncate">Ventas y Caja</PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">Pedidos, caja y punto de venta</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={exportCSV} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Exportar CSV">
-            <Download className="h-4 w-4 text-gray-500" />
+            <Download className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
-          <button onClick={exportExcel} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar Excel">
-            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+          <button onClick={exportExcel} className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Exportar Excel">
+            <FileSpreadsheet className="h-4 w-4 text-[var(--data-success)]" />
           </button>
           <button
             onClick={() => {
@@ -520,12 +521,12 @@ export default function SalesOrdersTab() {
             className={cn(
               "p-2 rounded-xl transition-colors",
               soundEnabled
-                ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100"
+                ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 hover:bg-[var(--data-warning-100)]"
                 : "bg-gray-100 dark:bg-surface hover:bg-gray-200"
             )}
             title={soundEnabled ? "Sonido: ON" : "Sonido: OFF"}
           >
-            {soundEnabled ? <Bell className="h-4 w-4 text-amber-600" /> : <BellOff className="h-4 w-4 text-gray-400" />}
+            {soundEnabled ? <Bell className="h-4 w-4 text-[var(--data-warning)]" /> : <BellOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
           </button>
         </div>
       </div>
@@ -534,19 +535,19 @@ export default function SalesOrdersTab() {
       <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-xl w-fit">
         <button
           onClick={() => { setViewMode("list"); try { localStorage.setItem("orders-view-mode", "list"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-zinc-700 text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)]")}
         >
           Lista
         </button>
         <button
           onClick={() => { setViewMode("kanban"); try { localStorage.setItem("orders-view-mode", "kanban"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "kanban" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "kanban" ? "bg-white dark:bg-zinc-700 text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)]")}
         >
           Kanban
         </button>
         <button
           onClick={() => { setViewMode("historial"); try { localStorage.setItem("orders-view-mode", "historial"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "historial" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "historial" ? "bg-white dark:bg-zinc-700 text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)]")}
         >
           Historial
         </button>
@@ -556,14 +557,14 @@ export default function SalesOrdersTab() {
       <div className="flex flex-wrap items-center gap-3">
         {/* Busqueda */}
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Buscar cliente o ID..."
             aria-label="Buscar pedidos"
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--data-success)]/30 focus:ring-1 focus:ring-[var(--data-success)]/40 outline-none transition-all"
           />
         </div>
 
@@ -575,8 +576,8 @@ export default function SalesOrdersTab() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filter === opt.id
-                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             {opt.label}
@@ -591,8 +592,8 @@ export default function SalesOrdersTab() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               dateFilter === opt.id
-                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             {opt.label}
@@ -603,14 +604,14 @@ export default function SalesOrdersTab() {
         <div className="flex-1" />
 
         {/* Resultado count */}
-        <span className="text-xs text-gray-400 dark:text-muted">
+        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
           {filtered.length} pedido{filtered.length !== 1 ? "s" : ""}
           {search && ` para "${search}"`}
         </span>
 
         {/* Acciones */}
         <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
-          <RefreshCw className="h-4 w-4 text-gray-500" />
+          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
 
         {/* Group by zone */}
@@ -620,8 +621,8 @@ export default function SalesOrdersTab() {
             className={cn(
               "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all",
               groupByZone
-                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 text-emerald-700"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 bg-white dark:bg-zinc-900 hover:bg-gray-50"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 text-[var(--data-success)]"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] bg-white dark:bg-zinc-900 hover:bg-gray-50"
             )}
           >
             <MapPin className="h-3 w-3" /> Zona
@@ -644,14 +645,14 @@ export default function SalesOrdersTab() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               urgencyFilter === opt.id
-                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             {opt.label}
             <span className={cn(
-              "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              urgencyFilter === opt.id ? "bg-emerald-600 text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
+              "text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+              urgencyFilter === opt.id ? "bg-[var(--accent-soft)] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
             )}>
               {opt.count > 99 ? "99+" : opt.count}
             </span>
@@ -666,7 +667,7 @@ export default function SalesOrdersTab() {
           setShowDashboard(v);
           localStorage.setItem('orders-show-dashboard', String(v));
         }}
-        className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted dark:hover:text-foreground"
+        className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-foreground"
       >
         {showDashboard ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         Dashboard detallado
@@ -683,13 +684,13 @@ export default function SalesOrdersTab() {
             <div className="h-6 w-6 flex items-center justify-center">
               <Target className="h-6 w-6" style={{ color: "#f59e0b" }} />
             </div>
-            <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Activos</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayStats.active}</p>
+            <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Activos</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{todayStats.active}</p>
           </div>
           {newCount > 0 && (
             <button
               onClick={() => setNewCount(0)}
-              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center"
               title="Nuevos pedidos"
             >
               +{newCount}
@@ -704,10 +705,10 @@ export default function SalesOrdersTab() {
       {/* ── Mejora 13: Kanban view ─────────────────────────────────────── */}
       {viewMode === "kanban" && (() => {
         const KANBAN_COLS = [
-          { key: "pendiente", label: "Pendiente", match: ["pendiente", "pending"], bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-300 dark:border-yellow-800", headerBg: "bg-yellow-100 dark:bg-yellow-900/30" },
-          { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-300 dark:border-emerald-800", headerBg: "bg-emerald-100 dark:bg-emerald-900/30" },
-          { key: "en_camino", label: "En camino", match: ["en_camino", "delivering"], bg: "bg-purple-50 dark:bg-purple-950/20", border: "border-purple-300 dark:border-purple-800", headerBg: "bg-purple-100 dark:bg-purple-900/30" },
-          { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-300 dark:border-green-800", headerBg: "bg-green-100 dark:bg-green-900/30" },
+          { key: "pendiente", label: "Pendiente", match: ["pendiente", "pending"], bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/20", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]", headerBg: "bg-yellow-100 dark:bg-yellow-900/30" },
+          { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", headerBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { key: "en_camino", label: "En camino", match: ["en_camino", "delivering"], bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", headerBg: "bg-[var(--surface-sunken)]" },
+          { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", headerBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
         ];
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto">
@@ -716,37 +717,37 @@ export default function SalesOrdersTab() {
               return (
                 <div key={col.key} className={cn("rounded-xl border-2 min-w-[200px]", col.bg, col.border)}>
                   <div className={cn("px-3 py-2 rounded-t-lg flex items-center justify-between", col.headerBg)}>
-                    <span className="text-xs font-extrabold text-gray-800 dark:text-foreground">{col.label}</span>
-                    <span className="px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[10px] font-bold text-gray-700 dark:text-foreground">{colOrders.length}</span>
+                    <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{col.label}</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground">{colOrders.length}</span>
                   </div>
                   <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
                     {colOrders.length === 0 ? (
-                      <p className="text-[10px] text-gray-400 dark:text-muted text-center py-4">Sin pedidos</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center py-4">Sin pedidos</p>
                     ) : colOrders.map(order => {
                       const minutos = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
                       const cfg = STATUS_CONFIG[order.status];
                       const nextStatus = cfg?.next;
                       return (
-                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-card-border p-2.5  hover:shadow-sm transition-shadow">
+                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-[var(--rule-base)] dark:border-card-border p-2.5  hover:shadow-sm transition-shadow">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{order.customerName ?? "Sin nombre"}</p>
+                            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{order.customerName ?? "Sin nombre"}</p>
                             {/* Mejora 14: Time badge */}
                             {!TERMINAL.has(order.status) && (
-                              <span className={cn("text-[10px] font-bold shrink-0", minutos < 15 ? "text-green-600" : minutos < 30 ? "text-yellow-600" : minutos > 60 ? "text-red-700 animate-pulse" : "text-red-600")}>
+                              <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", minutos < 15 ? "text-[var(--data-success)]" : minutos < 30 ? "text-[var(--data-warning)]" : minutos > 60 ? "text-[var(--data-error)] animate-pulse" : "text-[var(--data-error)]")}>
                                 {minutos > 60 ? `${Math.floor(minutos / 60)}h ${minutos % 60}m` : `${minutos}m`}
                               </span>
                             )}
                           </div>
                           <p className="text-sm font-extrabold font-mono text-primary">{fmt(order.total)}</p>
                           <div className="flex items-center justify-between mt-1.5">
-                            <span className="text-[10px] text-gray-400 dark:text-muted">{order.items?.length ?? 0} productos</span>
-                            <span className="text-[10px] font-bold text-gray-500 capitalize">{order.paymentMethod ?? "efectivo"}</span>
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{order.items?.length ?? 0} productos</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] capitalize">{order.paymentMethod ?? "efectivo"}</span>
                           </div>
                           {nextStatus && (
                             <button
                               disabled={updatingId === order.id}
                               onClick={() => changeStatus(order.id, nextStatus)}
-                              className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors disabled:opacity-50"
+                              className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold hover:bg-primary/20 transition-colors disabled:opacity-50"
                             >
                               {updatingId === order.id ? "..." : <><ArrowRight className="h-3 w-3" /> Mover</>}
                             </button>
@@ -776,26 +777,26 @@ export default function SalesOrdersTab() {
         const hasMoreHist = histPaged.length < histFiltered.length;
         return (
           <div className="space-y-2">
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">#</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Fecha</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Cliente</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Total</th>
-                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Estado</th>
-                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Acciones</th>
+                  <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
+                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
+                    <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Total</th>
+                    <th className="text-center px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
+                    <th className="text-center px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {histPaged.map((order, idx) => {
-                    const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-gray-600", icon: null };
+                    const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-[var(--text-secondary)]", icon: null };
                     return (
-                      <tr key={order.id} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs text-gray-400">{idx + 1}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-foreground">{fmtDate(order.createdAt)}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-gray-900 dark:text-foreground">{order.customerName ?? "Cliente"}</td>
+                      <tr key={order.id} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--text-tertiary)]">{idx + 1}</td>
+                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-foreground">{fmtDate(order.createdAt)}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{order.customerName ?? "Cliente"}</td>
                         <td className="px-4 py-3 text-xs font-extrabold text-primary text-right">{fmt(order.total)}</td>
                         <td className="px-4 py-3 text-center">
                           <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.badgeIcon} size="sm" />
@@ -803,7 +804,7 @@ export default function SalesOrdersTab() {
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => { setViewMode("list"); setExpandedId(order.id); }}
-                            className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors"
+                            className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold hover:bg-primary/20 transition-colors"
                           >
                             Ver detalle
                           </button>
@@ -814,9 +815,9 @@ export default function SalesOrdersTab() {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-gray-400 dark:text-muted text-center">{histFiltered.length} pedido{histFiltered.length !== 1 ? "s" : ""} en total</p>
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center">{histFiltered.length} pedido{histFiltered.length !== 1 ? "s" : ""} en total</p>
             {hasMoreHist && (
-              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 Cargar más ({histFiltered.length - histPaged.length} restantes)
               </button>
             )}
@@ -840,7 +841,7 @@ export default function SalesOrdersTab() {
       ) : viewMode === "list" && (() => {
         // Mejora 15: Group by zone
         const renderOrder = (order: Order) => {
-          const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-gray-600", icon: null };
+          const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-[var(--text-secondary)]", icon: null };
           const isExpanded = expandedId === order.id;
           const isTerminal = TERMINAL.has(order.status);
           // Mejora 14: Time since creation
@@ -853,8 +854,8 @@ export default function SalesOrdersTab() {
               className={cn(
                 "bg-white dark:bg-card border rounded-xl overflow-hidden transition-all",
                 isTerminal
-                  ? "border-gray-100 dark:border-card-border opacity-70"
-                  : "border-gray-200 dark:border-card-border "
+                  ? "border-[var(--rule-soft)] dark:border-card-border opacity-70"
+                  : "border-[var(--rule-base)] dark:border-card-border "
               )}
             >
               {/* Main row — clickable to expand */}
@@ -863,24 +864,24 @@ export default function SalesOrdersTab() {
                 className="w-full p-3.5 flex items-center justify-between gap-3 text-left"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">
+                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">
                     {order.customerName ?? "Cliente"}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{fmtDate(order.createdAt)}</p>
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{fmtDate(order.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.badgeIcon} />
                   {/* Mejora 14: Time badge */}
                   {!isTerminal && (
                     <span className={cn(
-                      "text-[10px] font-bold",
-                      minutos < 15 ? "text-green-600" : minutos < 30 ? "text-yellow-600" : minutos > 60 ? "text-red-700 font-extrabold animate-pulse" : "text-red-600 font-bold"
+                      "text-[length:var(--ts-2xs)] font-bold",
+                      minutos < 15 ? "text-[var(--data-success)]" : minutos < 30 ? "text-[var(--data-warning)]" : minutos > 60 ? "text-[var(--data-error)] font-extrabold animate-pulse" : "text-[var(--data-error)] font-bold"
                     )}>
                       {minutos > 60 ? `${Math.floor(minutos / 60)}h ${minutos % 60}m` : `${minutos}m`}
                     </span>
                   )}
                   <span className="text-sm font-extrabold text-primary">{fmt(order.total)}</span>
-                  {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  {isExpanded ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 </div>
               </button>
 
@@ -888,14 +889,14 @@ export default function SalesOrdersTab() {
                 {isExpanded && (
                   <div className="border-t-2 border-primary/30 dark:border-primary/20">
                     {/* Enhanced header with order ID, date and status */}
-                    <div className="bg-linear-to-r from-primary/5 via-white to-transparent dark:from-primary/10 dark:via-card px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="bg-[var(--surface-sunken)] px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                           <ShoppingBag className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <p className="text-sm font-extrabold text-gray-900 dark:text-foreground">Pedido #{order.id.slice(0, 8)}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-muted">{fmtDate(order.createdAt)}</p>
+                          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Pedido #{order.id.slice(0, 8)}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{fmtDate(order.createdAt)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -906,8 +907,8 @@ export default function SalesOrdersTab() {
 
                     <div className="px-4 pb-4 pt-3 space-y-3">
                     {/* Timeline visual (Mejora 2) */}
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                      <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
+                    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Clock className="h-3 w-3" /> Progreso del pedido
                       </p>
                       <OrderTimeline
@@ -919,23 +920,23 @@ export default function SalesOrdersTab() {
                     </div>
 
                     {/* Meta info — card style */}
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                      <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
+                    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Receipt className="h-3 w-3" /> Información del pedido
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                         <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
-                          <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">ID Pedido</span>
-                          <span className="font-mono font-bold text-gray-700 dark:text-foreground">{order.id.slice(0, 8)}</span>
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted block mb-0.5">ID Pedido</span>
+                          <span className="font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{order.id.slice(0, 8)}</span>
                         </div>
                         <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
-                          <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">Método de pago</span>
-                          <span className="font-bold text-gray-700 dark:text-foreground capitalize">{order.paymentMethod ?? "efectivo"}</span>
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted block mb-0.5">Método de pago</span>
+                          <span className="font-bold text-[var(--text-primary)] dark:text-foreground capitalize">{order.paymentMethod ?? "efectivo"}</span>
                         </div>
                         {order.customerPhone && (
                           <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
-                            <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">Teléfono</span>
-                            <span className="font-bold text-gray-700 dark:text-foreground">{order.customerPhone}</span>
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted block mb-0.5">Teléfono</span>
+                            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{order.customerPhone}</span>
                           </div>
                         )}
                       </div>
@@ -943,22 +944,22 @@ export default function SalesOrdersTab() {
 
                     {/* Items list — card style */}
                     {order.items && order.items.length > 0 && (
-                      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                        <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
+                      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                           <Package className="h-3 w-3" /> Productos ({order.items.length})
                         </p>
                         <div className="space-y-1.5">
                         {order.items.map((item, i) => (
                           <div key={i} className="flex justify-between text-xs px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                            <span className="text-gray-700 dark:text-foreground">{item.qty}x {item.name}</span>
+                            <span className="text-[var(--text-primary)] dark:text-foreground">{item.qty}x {item.name}</span>
                             {item.price != null && (
-                              <span className="font-bold text-gray-600 dark:text-muted">{fmt(item.price * item.qty)}</span>
+                              <span className="font-bold text-[var(--text-secondary)] dark:text-muted">{fmt(item.price * item.qty)}</span>
                             )}
                           </div>
                         ))}
                         </div>
                         <div className="flex justify-between text-sm pt-2.5 mt-2 border-t-2 border-primary/20 dark:border-primary/10 px-2.5">
-                          <span className="font-bold text-gray-900 dark:text-foreground">Total</span>
+                          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">Total</span>
                           <span className="font-extrabold text-primary text-base">{fmt(order.total)}</span>
                         </div>
                       </div>
@@ -970,23 +971,23 @@ export default function SalesOrdersTab() {
                       const checkedCount = checkedItems.filter(id => order.items!.some((_, idx) => id === `${order.id}-${idx}`)).length;
                       const allChecked = checkedCount >= totalItems;
                       return (
-                        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2.5">
+                        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg p-2.5">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase flex items-center gap-1">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase flex items-center gap-1">
                               <CheckSquare className="h-3 w-3" /> Checklist de preparacion
                             </span>
-                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{checkedCount} de {totalItems} listos</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{checkedCount} de {totalItems} listos</span>
                           </div>
                           {/* Progress bar */}
-                          <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-1.5 mb-2">
-                            <div className="h-1.5 rounded-full bg-emerald-600 transition-all" style={{ width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%` }} />
+                          <div className="w-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-full h-1.5 mb-2">
+                            <div className="h-1.5 rounded-full bg-[var(--accent-soft)] transition-all" style={{ width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%` }} />
                           </div>
                           <div className="space-y-1">
                             {order.items!.map((item, idx) => {
                               const itemId = `${order.id}-${idx}`;
                               const isChecked = checkedItems.includes(itemId);
                               return (
-                                <label key={idx} className={cn("flex items-center gap-2 text-xs cursor-pointer p-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors", isChecked && "line-through text-gray-400")}>
+                                <label key={idx} className={cn("flex items-center gap-2 text-xs cursor-pointer p-1 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors", isChecked && "line-through text-[var(--text-tertiary)]")}>
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
@@ -998,9 +999,9 @@ export default function SalesOrdersTab() {
                                         return { ...prev, [order.id]: next };
                                       });
                                     }}
-                                    className="h-3.5 w-3.5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                                    className="h-3.5 w-3.5 rounded border-[var(--data-success)]/30 text-[var(--data-success)] focus:ring-[var(--data-success)]/40"
                                   />
-                                  <span className={cn("text-gray-700 dark:text-foreground", isChecked && "text-gray-400 dark:text-muted")}>{item.name} x {item.qty}</span>
+                                  <span className={cn("text-[var(--text-primary)] dark:text-foreground", isChecked && "text-[var(--text-tertiary)] dark:text-muted")}>{item.name} x {item.qty}</span>
                                 </label>
                               );
                             })}
@@ -1015,20 +1016,20 @@ export default function SalesOrdersTab() {
                     })()}
 
                     {order.notes && !order.notes.startsWith("[ADMIN]") && (
-                      <p className="text-xs text-gray-500 dark:text-muted italic">Nota: {order.notes}</p>
+                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted italic">Nota: {order.notes}</p>
                     )}
 
                     {/* Mejora 18: Nota interna por pedido */}
-                    <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2.5">
+                    <div className="bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-lg p-2.5">
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Lock className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-                        <span className="text-[10px] font-bold text-yellow-700 dark:text-yellow-400 uppercase">Nota interna — solo visible para el equipo</span>
+                        <Lock className="h-3 w-3 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Nota interna — solo visible para el equipo</span>
                       </div>
                       <textarea
                         defaultValue={order.notes?.startsWith("[ADMIN]") ? order.notes.replace("[ADMIN] ", "") : (order.notes ?? "")}
                         placeholder="Ej: Confirmar direccion, entregar despues de las 3pm..."
                         rows={2}
-                        className="w-full text-xs bg-white/80 dark:bg-white/5 border border-yellow-200 dark:border-yellow-800/50 rounded-lg px-2 py-1.5 text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-yellow-400 resize-none"
+                        className="w-full text-xs bg-white/80 dark:bg-white/5 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/50 rounded-lg px-2 py-1.5 text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning)] resize-none"
                         onChange={(e) => {
                           const value = e.target.value;
                           const orderId = order.id;
@@ -1061,14 +1062,14 @@ export default function SalesOrdersTab() {
                         <>
                           {deliveryAssignments[order.id] ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+                              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
                                 <Truck className="h-3 w-3 inline mr-1" />{deliveryAssignments[order.id]}
                               </span>
                               <a
                                 href={buildDeliveryWhatsApp(deliveryAssignments[order.id], order)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2 py-1.5 rounded-lg bg-[#25D366] text-white text-[10px] font-bold hover:bg-[#1da851] transition-colors"
+                                className="px-2 py-1.5 rounded-lg bg-[#25D366] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#1da851] transition-colors"
                               >
                                 Notificar
                               </a>
@@ -1076,7 +1077,7 @@ export default function SalesOrdersTab() {
                           ) : (
                             <button
                               onClick={() => setAssigningDelivery(order.id)}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-bold hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 transition-colors"
                             >
                               <Truck className="h-3 w-3" /> Asignar repartidor
                             </button>
@@ -1115,7 +1116,7 @@ export default function SalesOrdersTab() {
                             } catch { /* ignore */ }
                             setCreatingGrr(null);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 text-xs font-bold hover:bg-cyan-100 dark:hover:bg-cyan-900/30 disabled:opacity-50 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-info-50)] dark:bg-cyan-950/30 text-[var(--data-info)] dark:text-[var(--data-info)] text-xs font-bold hover:bg-[var(--data-info-100)] dark:hover:bg-[var(--data-info)]/30 disabled:opacity-50 transition-colors"
                         >
                           <Truck className="h-3 w-3" />
                           {creatingGrr === order.id ? "Creando..." : "Crear Guía Remisión"}
@@ -1153,8 +1154,8 @@ export default function SalesOrdersTab() {
                   <div key={zone}>
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-gray-700 dark:text-foreground">{zone}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-muted">({zoneOrders.length} pedido{zoneOrders.length !== 1 ? "s" : ""})</span>
+                      <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{zone}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">({zoneOrders.length} pedido{zoneOrders.length !== 1 ? "s" : ""})</span>
                     </div>
                     <div className="space-y-2">
                       {zoneOrders.map(renderOrder)}
@@ -1162,7 +1163,7 @@ export default function SalesOrdersTab() {
                   </div>
                 ))}
                 {hasMore && (
-                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     Cargar mas ({filtered.length - paginated.length} restantes)
                   </button>
                 )}
@@ -1174,7 +1175,7 @@ export default function SalesOrdersTab() {
             <div className="space-y-2">
               {paginated.map(renderOrder)}
               {hasMore && (
-                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                   Cargar mas ({filtered.length - paginated.length} restantes)
                 </button>
               )}
@@ -1183,15 +1184,15 @@ export default function SalesOrdersTab() {
         })()}
 
       {/* ── Idea 11: Panel de Repartidores ─────────────────────────── */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
         <button
           onClick={() => setShowDeliveryPanel(!showDeliveryPanel)}
-          className="w-full flex items-center justify-between text-sm font-bold text-gray-900 dark:text-foreground"
+          className="w-full flex items-center justify-between text-sm font-bold text-[var(--text-primary)] dark:text-foreground"
         >
           <span className="flex items-center gap-2">
             <Truck className="h-4 w-4 text-primary" /> Repartidores ({deliveryPeople.filter(p => p.activo).length} activos)
           </span>
-          <span className="text-xs text-gray-400">{showDeliveryPanel ? "\u25B2" : "\u25BC"}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{showDeliveryPanel ? "\u25B2" : "\u25BC"}</span>
         </button>
 
         {showDeliveryPanel && (
@@ -1201,9 +1202,9 @@ export default function SalesOrdersTab() {
               <div className="flex flex-wrap gap-2">
                 {deliveryPeople.filter(p => p.activo).map(p => (
                   <div key={p.nombre} className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2 text-xs">
-                    <p className="font-bold text-gray-700 dark:text-foreground">{p.nombre}</p>
-                    <p className="text-gray-400 dark:text-muted">{p.zona} &middot; {p.entregas} entregas (S/{(p.entregas * p.comision).toFixed(0)} comisiones)</p>
-                    <p className="text-[10px] text-gray-400">Comision: S/{p.comision}/delivery</p>
+                    <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{p.nombre}</p>
+                    <p className="text-[var(--text-tertiary)] dark:text-muted">{p.zona} &middot; {p.entregas} entregas (S/{(p.entregas * p.comision).toFixed(0)} comisiones)</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Comision: S/{p.comision}/delivery</p>
                   </div>
                 ))}
               </div>
@@ -1211,25 +1212,25 @@ export default function SalesOrdersTab() {
 
             {/* Add new */}
             {showAddDelivery ? (
-              <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 space-y-2">
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Nuevo repartidor</p>
+              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
+                <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo repartidor</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-                  <input type="tel" placeholder="Telefono" value={newDelivery.telefono} onChange={e => setNewDelivery({...newDelivery, telefono: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-                  <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+                  <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+                  <input type="tel" placeholder="Telefono" value={newDelivery.telefono} onChange={e => setNewDelivery({...newDelivery, telefono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+                  <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">S/</span>
-                    <input type="number" min={1} max={20} value={newDelivery.comision} onChange={e => setNewDelivery({...newDelivery, comision: Number(e.target.value) || 3})} className="w-16 text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-                    <span className="text-[10px] text-gray-400">/delivery</span>
+                    <span className="text-xs text-[var(--text-secondary)]">S/</span>
+                    <input type="number" min={1} max={20} value={newDelivery.comision} onChange={e => setNewDelivery({...newDelivery, comision: Number(e.target.value) || 3})} className="w-16 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">/delivery</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={addDeliveryPerson} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90">Guardar</button>
-                  <button onClick={() => setShowAddDelivery(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-gray-600">Cancelar</button>
+                  <button onClick={() => setShowAddDelivery(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Cancelar</button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setShowAddDelivery(true)} className="w-full py-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-card-border text-xs font-bold text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
+              <button onClick={() => setShowAddDelivery(true)} className="w-full py-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
                 + Agregar repartidor
               </button>
             )}
@@ -1244,7 +1245,7 @@ export default function SalesOrdersTab() {
         return (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setAssigningDelivery(null)}>
             <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-4" onClick={e => e.stopPropagation()}>
-              <p className="text-sm font-bold text-gray-900 dark:text-foreground mb-3">Asignar repartidor a #{order.id.slice(-6).toUpperCase()}</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Asignar repartidor a #{order.id.slice(-6).toUpperCase()}</p>
               <div className="space-y-2">
                 {deliveryPeople.filter(p => p.activo).map(p => (
                   <button
@@ -1253,17 +1254,17 @@ export default function SalesOrdersTab() {
                     className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-surface hover:bg-primary/10 transition-colors text-left"
                   >
                     <div>
-                      <p className="text-sm font-bold text-gray-800 dark:text-foreground">{p.nombre}</p>
-                      <p className="text-[10px] text-gray-400">{p.zona} &middot; S/{p.comision}/delivery</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{p.nombre}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.zona} &middot; S/{p.comision}/delivery</p>
                     </div>
                     <Truck className="h-4 w-4 text-primary" />
                   </button>
                 ))}
               </div>
               {deliveryPeople.filter(p => p.activo).length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-4">No hay repartidores. Agrega uno primero.</p>
+                <p className="text-xs text-[var(--text-tertiary)] text-center py-4">No hay repartidores. Agrega uno primero.</p>
               )}
-              <button onClick={() => setAssigningDelivery(null)} className="mt-3 w-full py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-gray-600">Cerrar</button>
+              <button onClick={() => setAssigningDelivery(null)} className="mt-3 w-full py-2 rounded-lg text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Cerrar</button>
             </div>
           </div>
         );
@@ -1271,11 +1272,11 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 9: WhatsApp toast notification */}
       {whatsappToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
-          <p className="text-xs font-bold text-gray-900 dark:text-foreground mb-2">
+        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
+          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-2">
             Notificar a {whatsappToast.name}
           </p>
-          <p className="text-[10px] text-gray-500 dark:text-muted mb-3">{whatsappToast.message}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mb-3">{whatsappToast.message}</p>
           <div className="flex gap-2">
             <a
               href={`https://wa.me/${whatsappToast.phone.replace(/\D/g, "").startsWith("51") ? whatsappToast.phone.replace(/\D/g, "") : "51" + whatsappToast.phone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappToast.message + "\n\nBuleje - Pucallpa")}`}
@@ -1287,7 +1288,7 @@ export default function SalesOrdersTab() {
             </a>
             <button
               onClick={() => setWhatsappToast(null)}
-              className="px-3 py-2 rounded-lg text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cerrar
             </button>
@@ -1297,15 +1298,15 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 7: GRR created toast */}
       {grrToast && (
-        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-cyan-200 dark:border-cyan-800 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-[var(--data-info)] dark:border-[var(--data-info)] rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
-              <Truck className="h-5 w-5 text-cyan-600" />
+            <div className="h-10 w-10 rounded-full bg-[var(--data-info-100)] dark:bg-[var(--data-info)]/30 flex items-center justify-center shrink-0">
+              <Truck className="h-5 w-5 text-[var(--data-info)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900 dark:text-foreground">{grrToast}</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{grrToast}</p>
             </div>
-            <button onClick={() => setGrrToast(null)} className="text-gray-400 hover:text-gray-600 shrink-0">
+            <button onClick={() => setGrrToast(null)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] shrink-0">
               <XCircle className="h-4 w-4" />
             </button>
           </div>
@@ -1314,18 +1315,18 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 20: New order toast */}
       {newOrderToast && (
-        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
+        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-              <Bell className="h-5 w-5 text-emerald-600" />
+            <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
+              <Bell className="h-5 w-5 text-[var(--data-success)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900 dark:text-foreground">Nuevo pedido!</p>
-              <p className="text-xs text-gray-500 dark:text-muted">
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Nuevo pedido!</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                 {newOrderToast.name} — {fmt(newOrderToast.total)}
               </p>
             </div>
-            <button onClick={() => setNewOrderToast(null)} className="text-gray-400 hover:text-gray-600 shrink-0">
+            <button onClick={() => setNewOrderToast(null)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] shrink-0">
               <XCircle className="h-4 w-4" />
             </button>
           </div>
@@ -1367,8 +1368,8 @@ export default function SalesOrdersTab() {
 function DashTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
-      <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">{label}</p>
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg px-3 py-2">
+      <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">{label}</p>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {payload.map((p: any, i: number) => (
         <p key={i} className="text-xs" style={{ color: p.color }}>
@@ -1403,8 +1404,8 @@ function OrdersEmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ShoppingCart className="h-6 w-6 text-primary" /></div>
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
+      <p className="text-sm font-medium text-[var(--text-tertiary)]">{message}</p>
+      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
   );
 }
@@ -1536,15 +1537,15 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
             <span>Actualizado hace {ordMinAgo} min</span>
             <button className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"><RefreshCw className="h-3 w-3" /></button>
           </div>
-          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"><Download className="h-3 w-3" /> Exportar</button>
+          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"><Download className="h-3 w-3" /> Exportar</button>
         </div>
       </div>
 
@@ -1558,21 +1559,21 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* === SECCION 1: 8 KPIs con iconos === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
-        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
-        <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
+        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
+        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
+        <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
         <DashKpi icon={<Truck className="h-4 w-4" />} iconBg="bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400" label="En camino" value={kpis.enCamino} border="border-l-cyan-500" />
-        <DashKpi icon={<CheckCircle className="h-4 w-4" />} iconBg="bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400" label="Entregados hoy" value={kpis.entregadosHoy} border="border-l-green-500" />
+        <DashKpi icon={<CheckCircle className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" label="Entregados hoy" value={kpis.entregadosHoy} border="border-l-green-500" />
         <DashKpi icon={<XCircle className="h-4 w-4" />} iconBg="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400" label="Cancelados" value={kpis.cancelados} border="border-l-red-500" />
-        <DashKpi icon={<Target className="h-4 w-4" />} iconBg={kpis.tasaCumplimiento >= 70 ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400" : "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"} label="Cumplimiento" value={`${kpis.tasaCumplimiento}%`} border={kpis.tasaCumplimiento >= 70 ? "border-l-green-500" : "border-l-red-500"} />
+        <DashKpi icon={<Target className="h-4 w-4" />} iconBg={kpis.tasaCumplimiento >= 70 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"} label="Cumplimiento" value={`${kpis.tasaCumplimiento}%`} border={kpis.tasaCumplimiento >= 70 ? "border-l-green-500" : "border-l-red-500"} />
       </div>
 
       {/* === SECCION 2: Pedidos por Estado (PieChart donut grande) === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400">Pedidos por Estado</h3>
-          <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+          <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">Pedidos por Estado</CardTitle>
+          <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
         </div>
         <div className="relative">
           <ResponsiveContainer width="100%" height={280}>
@@ -1596,8 +1597,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           {/* Centro del donut: total */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ marginBottom: 30 }}>
             <div className="text-center">
-              <p className="text-3xl font-mono font-bold text-gray-900 dark:text-white">{totalPedidos}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">Total</p>
+              <p className="text-3xl font-mono font-bold text-[var(--text-primary)]">{totalPedidos}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Total</p>
             </div>
           </div>
         </div>
@@ -1606,8 +1607,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 3: Pedidos por Hora + Metodo de Pago === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por hora */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Pedidos por Hora - Hoy</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+          <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Pedidos por Hora - Hoy</CardTitle>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={hourlyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -1624,8 +1625,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Metodo de pago */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Metodo de Pago</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+          <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Metodo de Pago</CardTitle>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -1648,8 +1649,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 4: Tendencia 7 Dias (ComposedChart) === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Tendencia de Pedidos - Ultimos 7 dias</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+        <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Tendencia de Pedidos - Ultimos 7 dias</CardTitle>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={weeklyData}>
             <defs>
@@ -1673,8 +1674,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 5: Pedidos por Zona + SECCION 6: Top 5 Clientes === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por zona */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Top 5 Zonas</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+          <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Top 5 Zonas</CardTitle>
           {zonaData.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de zona" />
           ) : (
@@ -1691,8 +1692,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Top 5 clientes */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Top 5 Clientes</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+          <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Top 5 Clientes</CardTitle>
           {topClientes.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de clientes" />
           ) : (
@@ -1704,19 +1705,19 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                     <span className="text-lg w-7 text-center shrink-0">{medal || `${i + 1}.`}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{c.name}</p>
-                        <span className="text-xs font-mono text-gray-500 dark:text-gray-400 ml-2 shrink-0">S/{c.total.toFixed(2)}</span>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{c.name}</p>
+                        <span className="text-xs font-mono text-[var(--text-tertiary)] ml-2 shrink-0">S/{c.total.toFixed(2)}</span>
                       </div>
-                      <div className="mt-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="mt-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-500"
+                          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                           style={{
                             width: `${topClientes[0].count > 0 ? (c.count / topClientes[0].count) * 100 : 0}%`,
                             backgroundColor: '#f97316',
                           }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{c.count} pedido{c.count !== 1 ? 's' : ''}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{c.count} pedido{c.count !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                 );
@@ -1727,8 +1728,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 7: Tiempo Promedio de Procesamiento === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Tiempo Promedio de Procesamiento</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+        <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Tiempo Promedio de Procesamiento</CardTitle>
         <div className="flex flex-col items-center justify-center py-4">
           {/* Gauge semicircular */}
           <div className="relative w-48 h-24 overflow-hidden">
@@ -1740,7 +1741,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 <path
                   d="M 20 95 A 80 80 0 0 1 180 95"
                   fill="none"
-                  stroke={tiempoProcesamiento.promedio < 30 ? '#10b981' : tiempoProcesamiento.promedio < 60 ? '#f59e0b' : '#ef4444'}
+                  stroke={tiempoProcesamiento.promedio < 30 ? '#00B4A6' : tiempoProcesamiento.promedio < 60 ? '#f59e0b' : '#ef4444'}
                   strokeWidth="14"
                   strokeLinecap="round"
                   strokeDasharray={`${Math.min(tiempoProcesamiento.promedio / 120, 1) * 251.2} 251.2`}
@@ -1754,13 +1755,13 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           </div>
           <p className={cn(
             "text-4xl font-mono font-bold mt-2",
-            tiempoProcesamiento.promedio < 30 ? "text-green-600 dark:text-green-400" :
-            tiempoProcesamiento.promedio < 60 ? "text-amber-600 dark:text-amber-400" :
-            "text-red-600 dark:text-red-400"
+            tiempoProcesamiento.promedio < 30 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+            tiempoProcesamiento.promedio < 60 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+            "text-[var(--data-error)] dark:text-[var(--data-error)]"
           )}>
             {tiempoProcesamiento.count > 0 ? `${tiempoProcesamiento.promedio} min` : '--'}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
             {tiempoProcesamiento.count > 0 ? `Basado en ${tiempoProcesamiento.count} pedido${tiempoProcesamiento.count !== 1 ? 's' : ''} entregado${tiempoProcesamiento.count !== 1 ? 's' : ''}` : 'Sin pedidos entregados aun'}
           </p>
         </div>
@@ -1772,17 +1773,17 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinAtender > 0
-            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
+            : "bg-[var(--surface-sunken)]/50 border-[var(--rule-base)]"
         )}>
-          <div className={cn("rounded-full p-2 shrink-0", alertas.sinAtender > 0 ? "bg-red-100 dark:bg-red-900/40" : "bg-gray-100 dark:bg-gray-700")}>
-            <AlertTriangle className={cn("h-4 w-4", alertas.sinAtender > 0 ? "text-red-600 dark:text-red-400" : "text-gray-400 dark:text-gray-500")} />
+          <div className={cn("rounded-full p-2 shrink-0", alertas.sinAtender > 0 ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40" : "bg-[var(--surface-sunken)]")}>
+            <AlertTriangle className={cn("h-4 w-4", alertas.sinAtender > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-tertiary)]")} />
           </div>
           <div>
-            <p className={cn("text-sm font-bold", alertas.sinAtender > 0 ? "text-red-700 dark:text-red-300" : "text-gray-500 dark:text-gray-400")}>
+            <p className={cn("text-sm font-bold", alertas.sinAtender > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
               {alertas.sinAtender > 0 ? `${alertas.sinAtender} pedido${alertas.sinAtender !== 1 ? 's' : ''} sin atender` : 'Sin alertas'}
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Mas de 1 hora sin cambio de estado</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Mas de 1 hora sin cambio de estado</p>
           </div>
         </div>
 
@@ -1790,17 +1791,17 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinDireccion > 0
-            ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+            ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]"
+            : "bg-[var(--surface-sunken)]/50 border-[var(--rule-base)]"
         )}>
-          <div className={cn("rounded-full p-2 shrink-0", alertas.sinDireccion > 0 ? "bg-amber-100 dark:bg-amber-900/40" : "bg-gray-100 dark:bg-gray-700")}>
-            <MapPin className={cn("h-4 w-4", alertas.sinDireccion > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500")} />
+          <div className={cn("rounded-full p-2 shrink-0", alertas.sinDireccion > 0 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40" : "bg-[var(--surface-sunken)]")}>
+            <MapPin className={cn("h-4 w-4", alertas.sinDireccion > 0 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")} />
           </div>
           <div>
-            <p className={cn("text-sm font-bold", alertas.sinDireccion > 0 ? "text-amber-700 dark:text-amber-300" : "text-gray-500 dark:text-gray-400")}>
+            <p className={cn("text-sm font-bold", alertas.sinDireccion > 0 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")}>
               {alertas.sinDireccion > 0 ? `${alertas.sinDireccion} sin datos de cliente` : 'Todos con datos'}
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Pedidos activos sin nombre de cliente</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Pedidos activos sin nombre de cliente</p>
           </div>
         </div>
 
@@ -1808,31 +1809,31 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.tasaCumplimiento >= 90
-            ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
             : alertas.tasaCumplimiento >= 70
-              ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-              : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]"
+              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
         )}>
           <div className={cn("rounded-full p-2 shrink-0",
-            alertas.tasaCumplimiento >= 90 ? "bg-green-100 dark:bg-green-900/40" :
-            alertas.tasaCumplimiento >= 70 ? "bg-amber-100 dark:bg-amber-900/40" :
-            "bg-red-100 dark:bg-red-900/40"
+            alertas.tasaCumplimiento >= 90 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
+            alertas.tasaCumplimiento >= 70 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40" :
+            "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40"
           )}>
             <Target className={cn("h-4 w-4",
-              alertas.tasaCumplimiento >= 90 ? "text-green-600 dark:text-green-400" :
-              alertas.tasaCumplimiento >= 70 ? "text-amber-600 dark:text-amber-400" :
-              "text-red-600 dark:text-red-400"
+              alertas.tasaCumplimiento >= 90 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+              alertas.tasaCumplimiento >= 70 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+              "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )} />
           </div>
           <div>
             <p className={cn("text-sm font-bold",
-              alertas.tasaCumplimiento >= 90 ? "text-green-700 dark:text-green-300" :
-              alertas.tasaCumplimiento >= 70 ? "text-amber-700 dark:text-amber-300" :
-              "text-red-700 dark:text-red-300"
+              alertas.tasaCumplimiento >= 90 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+              alertas.tasaCumplimiento >= 70 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+              "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}>
               Cumplimiento: {alertas.tasaCumplimiento}%
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
               {alertas.tasaCumplimiento >= 90 ? 'Excelente rendimiento' : alertas.tasaCumplimiento >= 70 ? 'Puede mejorar' : 'Requiere atencion inmediata'}
             </p>
           </div>
@@ -1841,10 +1842,10 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 p-8 overflow-auto">
+        <div className="fixed inset-0 z-50 bg-[var(--surface-raised)] p-8 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Pedidos por Estado</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"><XIcon2 className="h-5 w-5 text-gray-500" /></button>
+            <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Pedidos por Estado</SectionTitle>
+            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors"><XIcon2 className="h-5 w-5 text-[var(--text-secondary)]" /></button>
           </div>
           <div style={{ height: 500 }}>
             <ResponsiveContainer width="100%" height={500}>
@@ -1867,16 +1868,16 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
   // Lazy init so mock delta is computed once per mount, not each render (React Compiler purity rule)
   const [change] = useState(() => Math.round((Math.random() - 0.3) * 30));
   return (
-    <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5  border-l-4", border)}>
+    <div className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5  border-l-4", border)}>
       <div className="flex items-start gap-3">
         <div className={cn("rounded-full p-2 shrink-0", iconBg, pulse && "animate-pulse")}>
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">{label}</p>
+          <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">{label}</p>
           <div className="flex items-center gap-1.5">
-            <p className="text-2xl font-mono font-bold mt-0.5 text-gray-900 dark:text-white truncate">{value}</p>
-            <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
+            <p className="text-2xl font-mono font-bold mt-0.5 text-[var(--text-primary)] truncate">{value}</p>
+            <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
           </div>
           {sparkColor && sparkVal != null && sparkVal > 0 && (
             <div className="h-8 w-20 mt-1">

@@ -1,10 +1,11 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import {
   Star, Download, Eye,
   Coins, HelpCircle, TrendingDown,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product as BaseProduct } from "@/types/erp";
 
@@ -14,10 +15,10 @@ type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; reven
 
 /* ── Config ── */
 const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: string; bg: string; desc: string }> = {
-  estrella: { label: "Estrellas", Icon: Star, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
-  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
-  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
-  perro: { label: "Perros", Icon: TrendingDown, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
+  estrella: { label: "Estrellas", Icon: Star, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
+  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
+  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  perro: { label: "Perros", Icon: TrendingDown, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-canvas)]/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
 /* ── Seed Data ── */
@@ -51,10 +52,10 @@ export default function BCGMatrixTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Star className="h-6 w-6 text-amber-500" /> Matriz BCG
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+            <Star className="h-6 w-6 text-[var(--data-warning)]" /> Matriz BCG
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
         </div>
         <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
@@ -72,35 +73,35 @@ export default function BCGMatrixTab() {
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>
-              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
-              <p className="text-xs text-gray-500 dark:text-muted mt-1">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0}%)</p>
+              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-[var(--text-primary)] dark:text-foreground">{items.length}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0}%)</p>
             </button>
           );
         })}
       </div>
 
       {/* Visual Matrix */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
-        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Mapa Visual BCG</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">Mapa Visual BCG</CardTitle>
         <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-            <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-green-600/40 dark:text-green-400/40">Estrellas</span>
+            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-[var(--data-success)]/40 dark:text-[var(--data-success)]/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-gray-200 dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-emerald-600/40 dark:text-emerald-400/40">Interrogantes</span>
+            <div className="border-b-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-[var(--data-success)]/40 dark:text-[var(--data-success)]/40">Interrogantes</span>
             </div>
-            <div className="border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-amber-600/40 dark:text-amber-400/40">Vacas Lecheras</span>
+            <div className="border-r-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-[var(--data-warning)]/40 dark:text-[var(--data-warning)]/40">Vacas Lecheras</span>
             </div>
-            <div className="bg-red-50/50 dark:bg-red-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-gray-500/40 dark:text-gray-400/40">Perros</span>
+            <div className="bg-[var(--data-error-50)]/50 dark:bg-red-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-[var(--text-secondary)]/40 dark:text-[var(--text-tertiary)]/40">Perros</span>
             </div>
           </div>
           {/* Axis labels */}
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-400">Participacion (%)</div>
-          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-semibold text-gray-400 whitespace-nowrap">Crecimiento (%)</div>
+          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold text-[var(--text-tertiary)]">Participacion (%)</div>
+          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-semibold text-[var(--text-tertiary)] whitespace-nowrap">Crecimiento (%)</div>
           {/* Product dots */}
           {PRODUCTS.map(p => {
             const pos = DOT_POSITIONS.get(p.id) ?? { x: 50, y: 50 };
@@ -108,7 +109,7 @@ export default function BCGMatrixTab() {
             const y = pos.y;
             const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[9px] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-emerald-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-[var(--accent-soft)] text-white" : p.quadrant === "vaca" ? "bg-[var(--data-warning)] text-white" : p.quadrant === "interrogante" ? "bg-[var(--accent-soft)] text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );
@@ -117,34 +118,34 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Product Table */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
-          <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de Productos ({filtered.length})</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Detalle de Productos ({filtered.length})</CardTitle>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="bg-gray-50 dark:bg-surface text-left">
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Producto</th>
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Categoría</th>
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-right">Ingreso</th>
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-right">Crecimiento</th>
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-right">Participación</th>
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Cuadrante</th>
-              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-center">Acción</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingreso</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Crecimiento</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Participación</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Cuadrante</th>
+              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-center">Acción</th>
             </tr></thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
               {filtered.map(p => {
                 const c = Q_CONFIG[p.quadrant];
                 return (
                   <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-surface">
-                    <td className="px-5 py-3 font-bold text-gray-900 dark:text-foreground">{p.name}</td>
-                    <td className="px-5 py-3 text-gray-500 dark:text-muted">{p.category}</td>
+                    <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{p.name}</td>
+                    <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
-                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{p.growth > 0 && "+"}{p.growth}%</td>
+                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
                     <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
                     <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
                     <td className="px-5 py-3 text-center">
-                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 );
@@ -165,8 +166,8 @@ export default function BCGMatrixTab() {
                 <QIcon className="h-4 w-4" strokeWidth={1.75} />
                 {c.label}
               </h4>
-              <p className="text-sm text-gray-600 dark:text-muted mt-1">{c.desc}</p>
-              <p className="text-xs text-gray-400 dark:text-muted mt-2 tabular-nums">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
+              <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">{c.desc}</p>
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2 tabular-nums">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
             </div>
           );
         })}
@@ -176,17 +177,17 @@ export default function BCGMatrixTab() {
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
-              <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-gray-400 hover:text-gray-600">×</button>
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
+              <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
               <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3">
-                <span className="text-xs text-gray-400">Cuadrante</span>
+                <span className="text-xs text-[var(--text-tertiary)]">Cuadrante</span>
                 {(() => {
                   const DIcon = Q_CONFIG[detail.quadrant].Icon;
                   return (
@@ -197,7 +198,7 @@ export default function BCGMatrixTab() {
                   );
                 })()}
               </div>
-              <div className="col-span-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3"><span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Recomendación</span><p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+              <div className="col-span-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3"><span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Recomendación</span><p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   PieChart,
@@ -14,7 +15,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "lucide-react";
+import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "@buleje/design-system/icons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,9 +75,9 @@ function daysBetween(from: string, to: Date): number {
 function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) {
   if (!active || !payload?.[0]) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{payload[0].name}</p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{payload[0].name}</p>
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
         <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(payload[0].value)}</span>
       </p>
@@ -91,19 +92,19 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   const d = payload[0].payload;
   const neto = d.cobrados - d.nuevos;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[180px]">
-      <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.mes}</p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[180px]">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.mes}</p>
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Cobrados</span>
         <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(d.cobrados)}</span>
       </p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Nuevos</span>
         <span className="font-mono font-medium text-[#e63946]">{formatCurrency(d.nuevos)}</span>
       </p>
-      <div className="border-t border-gray-200 dark:border-gray-600 mt-1.5 pt-1.5">
+      <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
-          <span className="font-semibold text-gray-700 dark:text-gray-300">Neto</span>
+          <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
           <span className={cn("font-mono font-bold", neto >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(neto)}</span>
         </p>
       </div>
@@ -218,16 +219,16 @@ export default function FiadoAnalyticsPanel() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
         <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
           ))}
         </div>
         <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 h-48 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
-          <div className="flex-1 h-48 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+          <div className="flex-1 h-48 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
+          <div className="flex-1 h-48 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
         </div>
       </div>
     );
@@ -236,11 +237,11 @@ export default function FiadoAnalyticsPanel() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-red-600 dark:text-red-400 mb-3">No se pudieron cargar los datos de fiados</p>
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudieron cargar los datos de fiados</p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -252,26 +253,26 @@ export default function FiadoAnalyticsPanel() {
   // ── Empty ──
   if (!totales) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos de fiados registrados</p>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
+        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de fiados registrados</p>
       </div>
     );
   }
 
   const kpiCards = [
-    { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-red-600 dark:text-red-400" },
-    { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400" },
-    { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-emerald-600 dark:text-emerald-400" },
-    { label: "Tasa recuperacion", value: `${totales.tasaRecuperacion.toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400" },
+    { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+    { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+    { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+    { label: "Tasa recuperacion", value: `${totales.tasaRecuperacion.toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
   ];
 
   const donutData = (distribucion ?? []).filter((d) => d.monto > 0);
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
+      <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
         Analisis de Fiados
-      </h3>
+      </CardTitle>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -280,11 +281,11 @@ export default function FiadoAnalyticsPanel() {
           return (
             <div
               key={kpi.label}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 "
+              className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-3 "
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <Icon className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">
                   {kpi.label}
                 </span>
               </div>
@@ -300,7 +301,7 @@ export default function FiadoAnalyticsPanel() {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Donut */}
         <div className="flex-1">
-          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Distribucion por antiguedad
           </h4>
           {donutData.length > 0 ? (
@@ -329,15 +330,15 @@ export default function FiadoAnalyticsPanel() {
               {/* Center label */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center">
-                  <p className="text-xl font-mono font-bold text-gray-900 dark:text-white" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <p className="text-xl font-mono font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrency(totales.pendiente)}
                   </p>
-                  <p className="text-[10px] text-gray-400">Pendiente</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pendiente</p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-gray-400">
+            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
               Sin datos
             </div>
           )}
@@ -346,7 +347,7 @@ export default function FiadoAnalyticsPanel() {
             {donutData.map((seg) => (
               <div key={seg.rango} className="flex items-center gap-1">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                <span className="text-[10px] text-gray-500 dark:text-gray-400">{seg.rango}</span>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{seg.rango}</span>
               </div>
             ))}
           </div>
@@ -354,7 +355,7 @@ export default function FiadoAnalyticsPanel() {
 
         {/* Recovery trend */}
         <div className="flex-1">
-          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Tendencia de recuperacion
           </h4>
           {tendencia && tendencia.length > 0 ? (
@@ -407,7 +408,7 @@ export default function FiadoAnalyticsPanel() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-gray-400">
+            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
               Sin datos de tendencia
             </div>
           )}
@@ -416,40 +417,40 @@ export default function FiadoAnalyticsPanel() {
 
       {/* Top deudores */}
       <div>
-        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+        <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
           Top deudores
         </h4>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-2 text-gray-500 dark:text-gray-400 font-medium">Cliente</th>
-                <th className="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Saldo</th>
-                <th className="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Dias</th>
-                <th className="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Estado</th>
+              <tr className="border-b border-[var(--rule-base)]">
+                <th className="text-left py-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
+                <th className="text-right py-2 text-[var(--text-tertiary)] font-medium">Saldo</th>
+                <th className="text-right py-2 text-[var(--text-tertiary)] font-medium">Dias</th>
+                <th className="text-right py-2 text-[var(--text-tertiary)] font-medium">Estado</th>
               </tr>
             </thead>
             <tbody>
               {(topDeudores ?? []).map((d, idx) => (
-                <tr key={d.nombre} className={cn("border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
-                  <td className="py-1.5 text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
+                <tr key={d.nombre} className={cn("border-b border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]/50 transition-colors", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
+                  <td className="py-1.5 text-[var(--text-secondary)] truncate max-w-[150px]">
                     {d.nombre}
                   </td>
-                  <td className="py-1.5 text-right font-mono font-medium text-gray-900 dark:text-white" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <td className="py-1.5 text-right font-mono font-medium text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrency(d.monto)}
                   </td>
                   <td className={cn(
                     "py-1.5 text-right font-mono",
-                    d.dias > 30 ? "text-red-600 dark:text-red-400" : d.dias > 15 ? "text-amber-600 dark:text-amber-400" : "text-gray-500"
+                    d.dias > 30 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : d.dias > 15 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-secondary)]"
                   )} style={{ fontVariantNumeric: "tabular-nums" }}>
                     {d.dias}d
                   </td>
                   <td className="py-1.5 text-right">
                     <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                      d.status === "vencido" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        : d.status === "riesgo" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                      "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
+                      d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                        : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+                        : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                     )}>
                       {d.status === "vencido" ? "Vencido" : d.status === "riesgo" ? "Riesgo" : "Al dia"}
                     </span>
@@ -458,7 +459,7 @@ export default function FiadoAnalyticsPanel() {
               ))}
               {(!topDeudores || topDeudores.length === 0) && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-gray-400">Sin deudores activos</td>
+                  <td colSpan={4} className="py-4 text-center text-[var(--text-tertiary)]">Sin deudores activos</td>
                 </tr>
               )}
             </tbody>

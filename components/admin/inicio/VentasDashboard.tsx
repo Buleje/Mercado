@@ -1,17 +1,17 @@
 "use client";
 
+import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
   DollarSign, TrendingUp, TrendingDown, Minus, Receipt,
   AlertTriangle, CreditCard, RefreshCw, ShoppingCart,
   Percent, ArrowUpRight, ArrowDownRight, Download, Target,
   Clock,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
-
 const VentasCharts = dynamic(() => import("./VentasCharts"), { ssr: false });
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -232,7 +232,7 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
       { etapa: "Recibidos", cantidad: allPeriodOrders.length, color: "#3b82f6" },
       { etapa: "Confirmados", cantidad: allPeriodOrders.filter(o => ["confirmado", "en_camino", "entregado"].includes(o.status)).length, color: "#06b6d4" },
       { etapa: "En camino", cantidad: allPeriodOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#f59e0b" },
-      { etapa: "Entregados", cantidad: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#10b981" },
+      { etapa: "Entregados", cantidad: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#00B4A6" },
     ];
 
     return {
@@ -250,8 +250,8 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
   if (loading) return <DashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-amber-500" />
-      <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
@@ -259,32 +259,32 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Ventas Netas" value={fmt(data.ventasNetas)} Icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas} accent="emerald" />
-        <KPICard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} Icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad} accent="blue" />
-        <KPICard label="Margen" value={`${data.margen.toFixed(1)}%`} Icon={Percent} delta={data.dMargen} accent={data.margen >= 25 ? "emerald" : data.margen >= 15 ? "amber" : "red"} />
-        <KPICard label="Tickets" value={String(data.tickets)} Icon={Receipt} delta={data.dTickets} sparkline={data.sparkTickets} accent="violet" />
-        <KPICard label="Ticket Prom." value={fmt(data.ticketPromedio)} Icon={ShoppingCart} delta={data.dTicketProm} accent="cyan" />
-        <KPICard label="Cancelados" value={String(data.cancelados)} Icon={AlertTriangle} delta={data.dCancelados} invertTrend accent="red" />
+        <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} />
+        <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} />
+        <StatCard label="Margen" value={`${data.margen.toFixed(1)}%`} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
+        <StatCard label="Tickets" value={String(data.tickets)} icon={Receipt} delta={data.dTickets} />
+        <StatCard label="Ticket Prom." value={fmt(data.ticketPromedio)} icon={ShoppingCart} delta={data.dTicketProm} />
+        <StatCard label="Cancelados" value={String(data.cancelados)} icon={AlertTriangle} delta={data.dCancelados} emphasis={data.cancelados > 0 ? "error" : "neutral"} />
       </div>
 
       {/* ── Today vs Yesterday mini bar ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
-        <Clock className="h-4 w-4 text-gray-400" />
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+        <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
         <div className="flex-1 flex items-center gap-4 text-sm">
-          <span className="text-gray-500 dark:text-muted">Hoy:</span>
-          <span className="font-bold text-gray-900 dark:text-foreground">{fmt(data.ventasHoy)}</span>
-          <span className="text-gray-300 dark:text-gray-600">|</span>
-          <span className="text-gray-500 dark:text-muted">Ayer:</span>
-          <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(data.ventasAyer)}</span>
+          <span className="text-[var(--text-secondary)] dark:text-muted">Hoy:</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(data.ventasHoy)}</span>
+          <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>
+          <span className="text-[var(--text-secondary)] dark:text-muted">Ayer:</span>
+          <span className="font-semibold text-[var(--text-secondary)]">{fmt(data.ventasAyer)}</span>
           {data.ventasAyer > 0 && (
-            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400")}>
+            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]")}>
               {data.ventasHoy >= data.ventasAyer ? "↑" : "↓"} {Math.abs(((data.ventasHoy - data.ventasAyer) / data.ventasAyer) * 100).toFixed(0)}%
             </span>
           )}
         </div>
-        {refreshing && <RefreshCw className="h-3.5 w-3.5 text-gray-400 animate-spin" />}
+        {refreshing && <RefreshCw className="h-3.5 w-3.5 text-[var(--text-tertiary)] animate-spin" />}
       </div>
 
       {/* ── Charts ── */}
@@ -304,19 +304,19 @@ function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: 
 }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const colorMap = {
-    emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500", spark: "#10b981" },
-    blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500", spark: "#3b82f6" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500", spark: "#8b5cf6" },
-    cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500", spark: "#06b6d4" },
-    amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500", spark: "#f59e0b" },
-    red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500", spark: "#ef4444" },
+    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", spark: "#00B4A6" },
+    blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", spark: "#3b82f6" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", spark: "#8b5cf6" },
+    cyan: { bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30", icon: "text-cyan-500", spark: "#06b6d4" },
+    amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: "text-amber-500", spark: "#f59e0b" },
+    red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: "text-red-500", spark: "#ef4444" },
   };
   const c = colorMap[accent];
 
   return (
-    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
+    <div className="relative bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
       {delta != null && Math.abs(delta) >= 10 && (
-        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-emerald-500" : "bg-red-500")} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")} />
       )}
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
@@ -324,15 +324,15 @@ function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: 
         </div>
         {delta != null && (
           <div className={cn("flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-bold",
-            isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+            isPositive ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
           )}>
             {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(delta).toFixed(1)}%
           </div>
         )}
       </div>
-      <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">{label}</p>
       {sparkline && sparkline.length > 0 && (
         <div className="mt-2">
           <MiniSparkline data={sparkline} color={c.spark} />
@@ -363,13 +363,13 @@ function DashboardSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-32" />
+          <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-32" />
         ))}
       </div>
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-12" />
+      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3 bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
-        <div className="lg:col-span-2 bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
+        <div className="lg:col-span-3 bg-[var(--surface-sunken)] rounded-xl h-72" />
+        <div className="lg:col-span-2 bg-[var(--surface-sunken)] rounded-xl h-72" />
       </div>
     </div>
   );

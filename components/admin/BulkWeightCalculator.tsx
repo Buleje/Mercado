@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Scale, Clock } from "lucide-react";
+import { Plus, Trash2, Scale, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -105,17 +106,17 @@ export default function BulkWeightCalculator() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
           Calculadora por Peso
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-tertiary)]">
           Calcula el precio de productos vendidos al granel
         </p>
       </div>
 
       {/* Presets */}
       <div>
-        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <p className="mb-2 text-sm font-medium text-[var(--text-secondary)]">
           Productos frecuentes
         </p>
         <div className="flex flex-wrap gap-2">
@@ -127,7 +128,7 @@ export default function BulkWeightCalculator() {
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                 product === p.name
                   ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                  : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] hover:border-[#00B4A6]/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
               )}
             >
               {p.name}
@@ -138,25 +139,25 @@ export default function BulkWeightCalculator() {
       </div>
 
       {/* Calculator */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
               Producto
             </label>
             <input
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               placeholder="Nombre del producto"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
               Peso (kg)
             </label>
             <div className="relative">
-              <Scale className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Scale className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input
                 type="number"
                 value={weight}
@@ -164,12 +165,12 @@ export default function BulkWeightCalculator() {
                 placeholder="0.000"
                 step="0.001"
                 min="0"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
               Precio por kg (S/)
             </label>
             <input
@@ -179,7 +180,7 @@ export default function BulkWeightCalculator() {
               placeholder="0.00"
               step="0.10"
               min="0"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
@@ -187,7 +188,7 @@ export default function BulkWeightCalculator() {
         {/* Result */}
         <div className="mt-5 flex items-center justify-between rounded-xl bg-[#00B4A6]/10 px-5 py-4 dark:bg-[#00B4A6]/20">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-[var(--text-secondary)]">
               {w > 0 && ppkg > 0
                 ? `${w.toFixed(3)} kg × ${fmt(ppkg)}/kg`
                 : "Ingresa peso y precio"}
@@ -206,13 +207,13 @@ export default function BulkWeightCalculator() {
       </div>
 
       {/* History */}
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-        <div className="flex items-center justify-between border-b border-gray-100 p-4 dark:border-gray-800">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-[var(--rule-soft)] p-4 dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+            <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Pesajes del dia
-            </h3>
+            </CardTitle>
           </div>
           <span className="rounded-full bg-[#00B4A6]/10 px-3 py-1 text-sm font-bold text-[#00B4A6]">
             Total: {fmt(todayTotal)}
@@ -220,7 +221,7 @@ export default function BulkWeightCalculator() {
         </div>
 
         {history.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">
+          <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">
             No hay pesajes registrados hoy.
           </div>
         ) : (
@@ -231,10 +232,10 @@ export default function BulkWeightCalculator() {
                 className="flex items-center gap-3 px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-800 dark:text-gray-200">
+                  <p className="font-medium text-[var(--text-primary)]">
                     {e.product}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-[var(--text-tertiary)]">
                     {e.weight.toFixed(3)} kg x {fmt(e.pricePerKg)}/kg —{" "}
                     {new Date(e.time).toLocaleTimeString("es-PE", {
                       hour: "2-digit",
@@ -245,7 +246,7 @@ export default function BulkWeightCalculator() {
                 <span className="font-bold text-[#00B4A6]">{fmt(e.total)}</span>
                 <button
                   onClick={() => removeEntry(e.id)}
-                  className="ml-2 text-gray-300 hover:text-red-400 dark:text-gray-600"
+                  className="ml-2 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:text-[var(--text-secondary)]"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

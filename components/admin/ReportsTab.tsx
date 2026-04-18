@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useCallback } from "react";
-import { FileText, Loader2, Download, BarChart3, Package, Users, DollarSign, Clock, TrendingUp, Printer, Database, CalendarDays } from "lucide-react";
+import { FileText, Loader2, Download, BarChart3, Package, Users, DollarSign, Clock, TrendingUp, Printer, Database, CalendarDays } from "@buleje/design-system/icons";
 
 type ReportType = "ventas" | "inventario" | "clientes" | "financiero" | "horas-pico" | "margen" | "metricas-completas" | "informe-mensual";
 
@@ -600,7 +601,7 @@ export default function ReportsTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><FileText className="h-6 w-6 text-primary" />Reportes</h2>
+      <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><FileText className="h-6 w-6 text-primary" />Reportes</SectionTitle>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
         {REPORTS.map(r => {
@@ -609,14 +610,14 @@ export default function ReportsTab() {
           const isFullMetrics = r.type === "metricas-completas";
           const isPdfOnly = r.pdfOnly;
           return (
-            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-gradient-to-br from-emerald-50 to-indigo-50 dark:from-emerald-950/30 dark:to-indigo-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
+            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-emerald-600/10" : "p-2 rounded-xl bg-primary/10"}>
-                  <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-emerald-600" : "h-6 w-6 text-primary"} />
+                <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-[var(--accent-soft)]" : "p-2 rounded-xl bg-primary/10"}>
+                  <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-[var(--data-success)]" : "h-6 w-6 text-primary"} />
                 </div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">{r.label}</h3>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{r.label}</CardTitle>
               </div>
-              <p className="text-sm text-gray-500 dark:text-muted flex-1">{r.desc}</p>
+              <p className="text-sm text-[var(--text-secondary)] dark:text-muted flex-1">{r.desc}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {!isPdfOnly && (
                   <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
@@ -625,14 +626,14 @@ export default function ReportsTab() {
                   </button>
                 )}
                 {!isFullMetrics && (
-                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50"}>
+                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--accent-soft)] transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--accent-soft)] transition disabled:opacity-50"}>
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : isPdfOnly ? "Generar Informe PDF" : "PDF"}
                   </button>
                 )}
               </div>
               {isFullMetrics && (
-                <p className="text-[10px] text-gray-400 dark:text-muted text-center mt-2">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center mt-2">
                   💼 Export completo en formato CSV. Ideal para análisis en Excel o importar a otros sistemas.
                 </p>
               )}

@@ -109,7 +109,7 @@ export default function DashboardCharts({
           </PieChart>
         </ResponsiveContainer>
       ) : (
-        <p className="text-xs text-gray-400 text-center py-8">Sin datos de categorias</p>
+        <p className="text-xs text-[var(--text-tertiary)] text-center py-8">Sin datos de categorias</p>
       );
 
     case "metodo-pago":
@@ -127,7 +127,7 @@ export default function DashboardCharts({
           </PieChart>
         </ResponsiveContainer>
       ) : (
-        <p className="text-xs text-gray-400 text-center py-8">Sin datos de pago</p>
+        <p className="text-xs text-[var(--text-tertiary)] text-center py-8">Sin datos de pago</p>
       );
 
     case "top-10":
@@ -143,7 +143,7 @@ export default function DashboardCharts({
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <p className="text-xs text-gray-400 text-center py-8">Sin datos de productos</p>
+        <p className="text-xs text-[var(--text-tertiary)] text-center py-8">Sin datos de productos</p>
       );
 
     case "ventas-hora":

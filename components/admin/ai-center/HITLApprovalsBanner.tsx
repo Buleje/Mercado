@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 /**
  * components/admin/ai-center/HITLApprovalsBanner.tsx
  *
@@ -23,7 +24,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { AlertTriangle, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, Loader2, Clock } from "@buleje/design-system/icons";
 
 interface PendingApproval {
   id: string;
@@ -136,20 +137,20 @@ export default function HITLApprovalsBanner() {
     <>
       {/* Banner cuando hay pendientes */}
       {approvals.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-400/40 dark:border-amber-500/40 rounded-xl p-4 mb-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="bg-[var(--surface-sunken)] border border-[var(--data-warning)]/40 rounded-xl p-4 mb-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+              <CardTitle className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                 {approvals.length === 1
                   ? "1 acción del agente esperando aprobación"
                   : `${approvals.length} acciones del agente esperando aprobación`}
-              </h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-semibold">
+              </CardTitle>
+              <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-[var(--data-warning)]/60 dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
                 HITL
               </span>
             </div>
-            <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-3">
               El agente IA solicitó ejecutar una acción marcada como crítica. Revísala antes de aprobar.
             </p>
             <div className="space-y-2">
@@ -157,19 +158,19 @@ export default function HITLApprovalsBanner() {
                 <button
                   key={a.id}
                   onClick={() => setSelected(a)}
-                  className="w-full text-left bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-900/40 rounded-lg px-3 py-2 hover:border-amber-400 transition-colors flex items-center gap-2"
+                  className="w-full text-left bg-[var(--surface-raised)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 rounded-lg px-3 py-2 hover:border-[var(--data-warning)] transition-colors flex items-center gap-2"
                 >
-                  <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                  <span className="text-xs font-mono text-gray-700 dark:text-gray-300 truncate flex-1">
+                  <Clock className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
+                  <span className="text-xs font-mono text-[var(--text-secondary)] truncate flex-1">
                     {a.toolName}
                   </span>
-                  <span className="text-[10px] text-gray-400">
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     hace {formatAge(a.ageSeconds)}
                   </span>
                 </button>
               ))}
               {approvals.length > 3 && (
-                <p className="text-[10px] text-amber-700 dark:text-amber-400 pl-2">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] pl-2">
                   +{approvals.length - 3} más pendientes
                 </p>
               )}
@@ -186,16 +187,16 @@ export default function HITLApprovalsBanner() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl max-w-lg w-full p-6">
+          <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6">
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
                   Aprobar acción del agente
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                </SectionTitle>
+                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                   Solicitada por <strong>{selected.requestedBy}</strong> · hace {formatAge(selected.ageSeconds)}
                 </p>
               </div>
@@ -208,14 +209,14 @@ export default function HITLApprovalsBanner() {
               {selected.conversationId && (
                 <DetailRow
                   label="Conversación"
-                  value={<code className="text-[10px] font-mono opacity-60">{selected.conversationId.slice(0, 8)}…</code>}
+                  value={<code className="text-[length:var(--ts-2xs)] font-mono opacity-60">{selected.conversationId.slice(0, 8)}…</code>}
                 />
               )}
               <div>
-                <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide mb-1">
+                <div className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] tracking-wide mb-1">
                   Parámetros
                 </div>
-                <pre className="text-[11px] bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                <pre className="text-[length:var(--ts-xs)] bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-lg p-3 overflow-x-auto text-[var(--text-secondary)] whitespace-pre-wrap">
                   {JSON.stringify(selected.payload, null, 2)}
                 </pre>
               </div>
@@ -225,7 +226,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "reject")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
                 Rechazar
@@ -233,7 +234,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "approve")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 py-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {resolving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -245,7 +246,7 @@ export default function HITLApprovalsBanner() {
             </div>
 
             {error && (
-              <p className="text-xs text-red-500 mt-3 text-center">{error}</p>
+              <p className="text-xs text-[var(--data-error)] mt-3 text-center">{error}</p>
             )}
           </div>
         </div>
@@ -258,7 +259,7 @@ export default function HITLApprovalsBanner() {
           className={[
             "fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-semibold",
             toast.type === "success"
-              ? "bg-emerald-600 text-white"
+              ? "bg-[var(--accent-soft)] text-white"
               : "bg-red-600 text-white",
           ].join(" ")}
         >
@@ -277,10 +278,10 @@ export default function HITLApprovalsBanner() {
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide w-20 shrink-0">
+      <span className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] tracking-wide w-20 shrink-0">
         {label}
       </span>
-      <span className="text-xs text-gray-800 dark:text-gray-200 truncate">{value}</span>
+      <span className="text-xs text-[var(--text-primary)] truncate">{value}</span>
     </div>
   );
 }

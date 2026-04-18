@@ -24,9 +24,14 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   promociones: "productos", cupones: "productos", "ab-tests": "productos",
   // → Compras
   compras: "compras", "plan-compras": "compras", "aprobacion-compras": "compras",
-  contratos: "compras", cotizaciones: "compras", recepcion: "compras",
+  recepcion: "compras",
   proveedores: "compras", "portal-proveedor": "compras", evaluaciones: "compras",
   "calidad-proveedor": "compras", "pagos-proveedor": "compras",
+  // Documentos (tabs propios bajo hub "Cobrar" — NO redirigir a compras)
+  cotizaciones: "cotizaciones",
+  contratos: "contratos",
+  "notas-credito": "notas-credito",
+  "guias-remision": "guias-remision",
   // → Mi Plata (finanzas, analytics, reportes)
   pl: "plata", "balance-general": "plata", "flujo-caja": "plata",
   presupuestos: "plata", "presupuesto-real": "plata", "break-even": "plata",

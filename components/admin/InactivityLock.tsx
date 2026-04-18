@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import PinLoginModal from "./PinLoginModal";
 
@@ -109,9 +110,9 @@ export default function InactivityLock({
           className={cn(
             "fixed bottom-4 left-1/2 -translate-x-1/2 z-40",
             "flex items-center gap-3 px-5 py-3 rounded-xl",
-            "bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700",
-            "text-amber-800 dark:text-amber-300 text-sm font-medium",
-            "animate-in slide-in-from-bottom-4 duration-300"
+            "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+            "text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm font-medium",
+            "animate-in slide-in-from-bottom-4 duration-[var(--dur-base)]"
           )}
           role="alert"
         >
@@ -123,7 +124,7 @@ export default function InactivityLock({
           </span>
           <button
             onClick={resetTimers}
-            className="ml-2 text-xs underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
+            className="ml-2 text-xs underline underline-offset-2 hover:text-[var(--data-warning)] dark:hover:text-[var(--data-warning)] transition-colors"
           >
             Seguir activo
           </button>
@@ -135,8 +136,8 @@ export default function InactivityLock({
         <div className="fixed inset-0 z-50 bg-gray-950/80 backdrop-blur-md flex flex-col items-center justify-center gap-4">
           <div className="flex flex-col items-center gap-2 text-white mb-2">
             <Clock size={40} className="text-[#00B4A6]" />
-            <h2 className="text-2xl font-bold">Sesion bloqueada</h2>
-            <p className="text-gray-400 text-sm">Ingresa tu PIN para continuar</p>
+            <SectionTitle className="text-2xl font-bold">Sesion bloqueada</SectionTitle>
+            <p className="text-[var(--text-tertiary)] text-sm">Ingresa tu PIN para continuar</p>
           </div>
           <PinLoginModal
             onSuccess={handleUnlock}

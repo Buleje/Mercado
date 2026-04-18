@@ -1,11 +1,12 @@
 "use client";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   Tag, Package, PackageCheck, PackageX,
   DollarSign, TrendingUp, Layers, ImageOff, Calculator, AlertTriangle,
   Camera, Eye, Maximize2, X as XIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -53,11 +54,11 @@ type LocalChartTooltipProps = Partial<TooltipContentProps<ValueType, NameType>>;
 function ChartTooltip({ active, payload, label }: LocalChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="min-w-40 bg-white rounded-xl border border-gray-100 px-4 py-3">
-      <p className="text-xs font-semibold text-gray-900 mb-1">{String(label ?? "")}</p>
+    <div className="min-w-40 bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">{String(label ?? "")}</p>
       {payload.map((p, i) => (
         <p key={i} className="text-xs flex justify-between gap-4">
-          <span className="text-gray-500">{String(p.name ?? (typeof p.dataKey === "string" || typeof p.dataKey === "number" ? p.dataKey : ""))}</span>
+          <span className="text-[var(--text-secondary)]">{String(p.name ?? (typeof p.dataKey === "string" || typeof p.dataKey === "number" ? p.dataKey : ""))}</span>
           <span className="font-mono font-medium" style={{ color: p.color }}>
             {typeof p.value === 'number' ? (p.value > 100 ? `S/ ${p.value.toLocaleString()}` : p.value.toFixed(1)) : String(p.value ?? "")}
           </span>
@@ -270,20 +271,20 @@ function ProductsDashboard() {
 
       {/* === SECCION 2: Distribucion (RadialBarChart + PieChart inventario) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-          <div className="flex items-center gap-2 mb-4"><FavStar id="distribucion-cat" favs={catFavs} /><h3 className="text-sm font-bold text-gray-900">Distribucion por categoria</h3></div>
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+          <div className="flex items-center gap-2 mb-4"><FavStar id="distribucion-cat" favs={catFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Distribucion por categoria</CardTitle></div>
           <ResponsiveContainer width="100%" height={280}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={radialData} startAngle={180} endAngle={-180}>
               <RadialBar dataKey="value" background={{ fill: "rgba(0,0,0,0.05)" }} cornerRadius={6} />
-              <Legend iconSize={10} formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
+              <Legend iconSize={10} formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
               <Tooltip content={<ChartTooltip />} />
             </RadialBarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900">Valor del inventario por categoria</h3>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Valor del inventario por categoria</CardTitle>
             <div className="flex items-center gap-2">
               {pieFilter && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
@@ -291,7 +292,7 @@ function ProductsDashboard() {
                   <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -310,7 +311,7 @@ function ProductsDashboard() {
               <text x="50%" y="48%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-lg font-bold font-mono">
                 S/ {totalInventoryValue.toLocaleString()}
               </text>
-              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[10px]">
+              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
                 Total inv.
               </text>
             </PieChart>
@@ -319,8 +320,8 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 3: Histograma de precios === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Rango de precios</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Rango de precios</CardTitle>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={priceHistogram}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
@@ -332,9 +333,9 @@ function ProductsDashboard() {
               const rawVal = payload[0]?.value;
               const val = typeof rawVal === "number" ? rawVal : 0;
               return (
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-                  <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
-                  <p className="text-xs text-gray-500 mt-1">{val} productos ({((val / total) * 100).toFixed(0)}%)</p>
+                <div className="bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+                  <p className="text-xs font-semibold text-[var(--text-primary)]">{String(label ?? "")}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{val} productos ({((val / total) * 100).toFixed(0)}%)</p>
                 </div>
               );
             }} />
@@ -348,8 +349,8 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 4: Top 10 por valor en stock (ComposedChart) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Top 10 productos por valor en stock</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 10 productos por valor en stock</CardTitle>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={top10Stock} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
@@ -364,9 +365,9 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 5: Scatter de margenes === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <h3 className="text-sm font-bold text-gray-900 mb-1">Analisis de margenes</h3>
-        <p className="text-[10px] text-gray-400 mb-4">Precio venta vs margen % — tamano = stock</p>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Analisis de margenes</CardTitle>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Precio venta vs margen % — tamano = stock</p>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
@@ -382,12 +383,12 @@ function ProductsDashboard() {
               if (!d) return null;
               const margen = d.margen ?? 0;
               return (
-                <div className="min-w-45 bg-white rounded-xl border border-gray-100 px-4 py-3">
-                  <p className="text-xs font-bold text-gray-900 mb-1">{d.name}</p>
-                  <p className="text-xs text-gray-500">Precio: <span className="font-mono font-medium text-gray-800">S/ {d.precio?.toFixed(2)}</span></p>
-                  <p className="text-xs text-gray-500">Costo: <span className="font-mono font-medium text-gray-800">S/ {d.costo?.toFixed(2)}</span></p>
-                  <p className="text-xs text-gray-500">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-green-600" : margen >= 10 ? "text-amber-600" : "text-red-600")}>{margen}%</span></p>
-                  <p className="text-xs text-gray-500">Stock: <span className="font-mono font-medium text-gray-800">{d.stock}</span></p>
+                <div className="min-w-45 bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+                  <p className="text-xs font-bold text-[var(--text-primary)] mb-1">{d.name}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Precio: <span className="font-mono font-medium text-[var(--text-primary)]">S/ {d.precio?.toFixed(2)}</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Costo: <span className="font-mono font-medium text-[var(--text-primary)]">S/ {d.costo?.toFixed(2)}</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-[var(--data-success)]" : margen >= 10 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>{margen}%</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Stock: <span className="font-mono font-medium text-[var(--text-primary)]">{d.stock}</span></p>
                 </div>
               );
             }} />
@@ -402,15 +403,15 @@ function ProductsDashboard() {
           </ScatterChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-3 justify-center">
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
         </div>
       </div>
 
       {/* === SECCION 6: Estado de stock (Gauge donut) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Productos por estado de stock</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Productos por estado de stock</CardTitle>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie data={stockGauge} innerRadius={55} outerRadius={80} startAngle={180} endAngle={0} dataKey="value" paddingAngle={2}>
@@ -419,11 +420,11 @@ function ProductsDashboard() {
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
             <text x="50%" y="70%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-2xl font-bold font-mono">
               {kpis.total}
             </text>
-            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[10px]">
+            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
               total
             </text>
           </PieChart>
@@ -433,42 +434,42 @@ function ProductsDashboard() {
       {/* === SECCION 7: Alertas del catalogo === */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {kpis.sinImagen > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <Camera className="h-5 w-5 text-amber-600" />
+          <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-4 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--data-warning-100)] flex items-center justify-center shrink-0">
+              <Camera className="h-5 w-5 text-[var(--data-warning)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-800">{kpis.sinImagen} sin imagen</p>
-              <p className="text-xs text-amber-600 mt-0.5">Productos sin foto se venden menos</p>
-              <button className="mt-2 text-[10px] font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors">
+              <p className="text-sm font-bold text-[var(--data-warning)]">{kpis.sinImagen} sin imagen</p>
+              <p className="text-xs text-[var(--data-warning)] mt-0.5">Productos sin foto se venden menos</p>
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] bg-[var(--data-warning-100)] px-3 py-1 rounded-full hover:bg-[var(--data-warning)] transition-colors">
                 Completar
               </button>
             </div>
           </div>
         )}
         {kpis.sinCosto > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+          <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-4 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-red-800">{kpis.sinCosto} sin costo</p>
-              <p className="text-xs text-red-600 mt-0.5">Sin costo no se calcula el margen</p>
-              <button className="mt-2 text-[10px] font-semibold text-red-700 bg-red-100 px-3 py-1 rounded-full hover:bg-red-200 transition-colors">
+              <p className="text-sm font-bold text-[var(--data-error)]">{kpis.sinCosto} sin costo</p>
+              <p className="text-xs text-[var(--data-error)] mt-0.5">Sin costo no se calcula el margen</p>
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error)] bg-[var(--data-error-100)] px-3 py-1 rounded-full hover:bg-[var(--data-error)] transition-colors">
                 Agregar costos
               </button>
             </div>
           </div>
         )}
         {kpis.sinStock > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-              <Eye className="h-5 w-5 text-gray-600" />
+              <Eye className="h-5 w-5 text-[var(--text-secondary)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-800">{kpis.sinStock} sin stock</p>
-              <p className="text-xs text-gray-500 mt-0.5">Estos productos no se muestran en la tienda</p>
-              <button className="mt-2 text-[10px] font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+              <p className="text-sm font-bold text-[var(--text-primary)]">{kpis.sinStock} sin stock</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Estos productos no se muestran en la tienda</p>
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
                 Ver productos
               </button>
             </div>

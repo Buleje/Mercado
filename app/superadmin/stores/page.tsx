@@ -54,26 +54,26 @@ export default function StoresPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <ShoppingBag className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <ShoppingBag className="w-6 h-6 text-[var(--text-secondary)]" />
             Administrar Marketplace
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-[var(--text-tertiary)] text-sm mt-1">
             Gestión completa de tiendas, pedidos, cupones y métricas del marketplace
           </p>
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1.5 overflow-x-auto">
+      {/* Tab bar — Ola 3: tab activo usa accent-soft (bg tenue) en vez de primary saturado */}
+      <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors whitespace-nowrap ${
               tab === t.key
-                ? "bg-primary text-white shadow-md shadow-primary/25"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-800"
+                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             }`}
           >
             {t.icon}

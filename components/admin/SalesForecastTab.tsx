@@ -1,6 +1,7 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
-import { TrendingUp, ArrowUp, ArrowDown, Download, AlertTriangle, BarChart3 } from "lucide-react";
+import { TrendingUp, ArrowUp, ArrowDown, Download, AlertTriangle, BarChart3 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Types ── */
@@ -46,15 +47,15 @@ export default function SalesForecastTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" /> Forecasting de Ventas
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">Proyección basada en tendencias históricas y patrones estacionales</p>
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Proyección basada en tendencias históricas y patrones estacionales</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex bg-gray-100 dark:bg-surface rounded-xl p-1">
             {(["general", "productos"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold rounded-lg transition-colors capitalize", view === v ? "bg-white dark:bg-card shadow text-primary" : "text-gray-500 dark:text-muted")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold rounded-lg transition-colors capitalize", view === v ? "bg-white dark:bg-card shadow text-primary" : "text-[var(--text-secondary)] dark:text-muted")}>
                 {v === "general" ? "Vista General" : "Por Producto"}
               </button>
             ))}
@@ -68,7 +69,7 @@ export default function SalesForecastTab() {
       {/* Period selector */}
       <div className="flex bg-gray-100 dark:bg-surface rounded-xl p-1 w-fit">
         {([["7d", "7 Días"], ["30d", "30 Días"], ["90d", "90 Días"]] as const).map(([p, label]) => (
-          <button key={p} onClick={() => setPeriod(p)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold rounded-lg transition-colors", period === p ? "bg-white dark:bg-card shadow text-primary" : "text-gray-500 dark:text-muted")}>
+          <button key={p} onClick={() => setPeriod(p)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold rounded-lg transition-colors", period === p ? "bg-white dark:bg-card shadow text-primary" : "text-[var(--text-secondary)] dark:text-muted")}>
             {label}
           </button>
         ))}
@@ -77,15 +78,15 @@ export default function SalesForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Promedio Diario", value: fmt(avgDaily), sub: "por día estimado", color: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Crecimiento", value: `${Number(growthPct) > 0 ? "+" : ""}${growthPct}%`, sub: "vs periodo anterior", color: Number(growthPct) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400" },
-          { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-purple-600 dark:text-purple-400" },
+          { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+          { label: "Promedio Diario", value: fmt(avgDaily), sub: "por día estimado", color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+          { label: "Crecimiento", value: `${Number(growthPct) > 0 ? "+" : ""}${growthPct}%`, sub: "vs periodo anterior", color: Number(growthPct) >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+          { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted">{kpi.label}</p>
+          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{kpi.label}</p>
             <p className={cn("text-lg font-extrabold mt-1", kpi.color)}>{kpi.value}</p>
-            <p className="text-xs text-gray-400 dark:text-muted mt-1">{kpi.sub}</p>
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">{kpi.sub}</p>
           </div>
         ))}
       </div>
@@ -93,10 +94,10 @@ export default function SalesForecastTab() {
       {view === "general" ? (
         <>
           {/* Chart visualization */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
-            <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" /> Gráfico de Proyección
-            </h3>
+            </CardTitle>
             <div className="flex items-end gap-px h-48 overflow-x-auto">
               {FORECAST.map((point, i) => {
                 const h = maxVal ? (point.predicted / maxVal) * 100 : 0;
@@ -107,7 +108,7 @@ export default function SalesForecastTab() {
                     <div
                       className={cn(
                         "w-full rounded-t transition-all",
-                        isToday ? "bg-yellow-400" : isActual ? "bg-emerald-400 dark:bg-emerald-500" : "bg-emerald-400 dark:bg-emerald-500 opacity-70"
+                        isToday ? "bg-[var(--data-warning)]" : isActual ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] opacity-70"
                       )}
                       style={{ height: `${h}%` }}
                     />
@@ -115,44 +116,44 @@ export default function SalesForecastTab() {
                 );
               })}
             </div>
-            <div className="flex justify-between text-xs text-gray-400 dark:text-muted mt-2">
+            <div className="flex justify-between text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
               <span>← Histórico (30 días)</span>
-              <span className="font-bold text-yellow-500">Hoy</span>
+              <span className="font-bold text-[var(--data-warning)]">Hoy</span>
               <span>Proyección →</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-xs">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400" /> Ventas reales</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400 opacity-70" /> Proyección</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400" /> Hoy</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Ventas reales</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[var(--accent-soft)] opacity-70" /> Proyección</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[var(--data-warning)]" /> Hoy</span>
             </div>
           </div>
 
           {/* Daily forecast table */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-bold text-gray-900 dark:text-foreground">Detalle Diario</h3>
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Detalle Diario</CardTitle>
             </div>
             <div className="overflow-x-auto max-h-96">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface sticky top-0">
                   <tr>
-                    <th className="text-left px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Fecha</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Predicción</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Mín</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Máx</th>
-                    <th className="text-center px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Confianza</th>
+                    <th className="text-left px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Predicción</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Mín</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Máx</th>
+                    <th className="text-center px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Confianza</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredForecast.map((p, i) => (
                     <tr key={i} className="border-t border-gray-50 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50">
-                      <td className="px-3 sm:px-6 py-3 font-semibold text-gray-900 dark:text-foreground">{fmtDate(p.date)}</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{fmt(p.predicted)}</td>
-                      <td className="px-3 sm:px-6 py-3 text-right text-gray-500 dark:text-muted">{fmt(p.lower)}</td>
-                      <td className="px-3 sm:px-6 py-3 text-right text-gray-500 dark:text-muted">{fmt(p.upper)}</td>
+                      <td className="px-3 sm:px-6 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtDate(p.date)}</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{fmt(p.predicted)}</td>
+                      <td className="px-3 sm:px-6 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(p.lower)}</td>
+                      <td className="px-3 sm:px-6 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(p.upper)}</td>
                       <td className="px-3 sm:px-6 py-3 text-center">
                         <div className="w-full bg-gray-200 dark:bg-surface rounded-full h-2">
-                          <div className="bg-emerald-400 h-2 rounded-full" style={{ width: `${Math.max(30, 95 - i * 2)}%` }} />
+                          <div className="bg-[var(--accent-soft)] h-2 rounded-full" style={{ width: `${Math.max(30, 95 - i * 2)}%` }} />
                         </div>
                       </td>
                     </tr>
@@ -166,49 +167,49 @@ export default function SalesForecastTab() {
         <>
           {/* Alerts */}
           {alertProducts.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                <h3 className="font-bold text-amber-800 dark:text-amber-300">{alertProducts.length} productos con riesgo de quiebre</h3>
+                <AlertTriangle className="h-5 w-5 text-[var(--data-warning)]" />
+                <CardTitle className="font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{alertProducts.length} productos con riesgo de quiebre</CardTitle>
               </div>
-              <p className="text-sm text-amber-700 dark:text-amber-400">Basado en la proyección, estos productos necesitan reposición pronto.</p>
+              <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">Basado en la proyección, estos productos necesitan reposición pronto.</p>
             </div>
           )}
 
           {/* Product forecast table */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-bold text-gray-900 dark:text-foreground">Pronóstico por Producto</h3>
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Pronóstico por Producto</CardTitle>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface">
                   <tr>
-                    <th className="text-left px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Producto</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Venta/Día</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Proy. 7d</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Proy. 30d</th>
-                    <th className="text-center px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Tendencia</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Stock</th>
-                    <th className="text-center px-3 sm:px-6 py-3 font-semibold text-gray-500 dark:text-muted">Días Cobertura</th>
+                    <th className="text-left px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Producto</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Venta/Día</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Proy. 7d</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Proy. 30d</th>
+                    <th className="text-center px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Tendencia</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Stock</th>
+                    <th className="text-center px-3 sm:px-6 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Días Cobertura</th>
                   </tr>
                 </thead>
                 <tbody>
                   {PRODUCT_FORECASTS.map((p, i) => (
-                    <tr key={i} className={cn("border-t border-gray-50 dark:border-card-border", p.daysLeft < 14 && "bg-amber-50/50 dark:bg-amber-950/10")}>
-                      <td className="px-3 sm:px-6 py-3 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>
-                      <td className="px-3 sm:px-6 py-3 text-right text-gray-700 dark:text-foreground">{p.current} ud</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{p.predicted7d} ud</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-purple-600 dark:text-purple-400">{p.predicted30d} ud</td>
+                    <tr key={i} className={cn("border-t border-gray-50 dark:border-card-border", p.daysLeft < 14 && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
+                      <td className="px-3 sm:px-6 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{p.name}</td>
+                      <td className="px-3 sm:px-6 py-3 text-right text-[var(--text-primary)] dark:text-foreground">{p.current} ud</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{p.predicted7d} ud</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{p.predicted30d} ud</td>
                       <td className="px-3 sm:px-6 py-3 text-center">
-                        <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", p.trend >= 0 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                        <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", p.trend >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
                           {p.trend >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                           {Math.abs(p.trend)}%
                         </span>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 text-right text-gray-700 dark:text-foreground">{p.stock}</td>
+                      <td className="px-3 sm:px-6 py-3 text-right text-[var(--text-primary)] dark:text-foreground">{p.stock}</td>
                       <td className="px-3 sm:px-6 py-3 text-center">
-                        <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", p.daysLeft >= 20 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : p.daysLeft >= 14 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                        <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", p.daysLeft >= 20 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : p.daysLeft >= 14 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
                           {p.daysLeft}d
                         </span>
                       </td>

@@ -1,8 +1,9 @@
 "use client";
 
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
-import { Calculator, TrendingDown, Download } from "lucide-react";
+import { Calculator, TrendingDown, Download } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -98,21 +99,22 @@ export default function LoanCalculator() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header — ADR-074 Phase 3 */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900">
-          Calculadora de Prestamo
-        </h2>
-        <p className="text-sm text-gray-500">
-          Calcula cuotas, interes y tabla de amortizacion
+        <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas / Herramienta</p>
+        <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)]">
+          Calculadora de Préstamo
+        </PageTitle>
+        <p className="text-sm text-[var(--text-secondary)] mt-1">
+          Calcula cuotas, interés y tabla de amortización
         </p>
       </div>
 
       {/* Inputs */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
               Monto (S/)
             </label>
             <input
@@ -121,11 +123,11 @@ export default function LoanCalculator() {
               onChange={(e) => setPrincipal(e.target.value)}
               min="0"
               step="100"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
               Tasa anual (%)
             </label>
             <input
@@ -135,11 +137,11 @@ export default function LoanCalculator() {
               min="0"
               max="200"
               step="0.5"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
               Plazo (meses)
             </label>
             <input
@@ -148,11 +150,11 @@ export default function LoanCalculator() {
               onChange={(e) => setMonths(e.target.value)}
               min="1"
               max="360"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
               Ventas promedio/mes (S/)
             </label>
             <input
@@ -161,7 +163,7 @@ export default function LoanCalculator() {
               onChange={(e) => setAvgMonthlySales(e.target.value)}
               placeholder="Opcional"
               min="0"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
         </div>
@@ -171,27 +173,27 @@ export default function LoanCalculator() {
       {p > 0 && m > 0 ? (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <p className="text-xs text-gray-500">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+              <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">
                 Cuota mensual
               </p>
-              <p className="mt-1 text-2xl font-bold text-primary">
+              <p className="mt-1 text-2xl font-semibold text-[var(--text-primary)] tabular-nums">
                 {fmt(monthlyPayment)}
               </p>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <p className="text-xs text-gray-500">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+              <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">
                 Total a pagar
               </p>
-              <p className="mt-1 text-2xl font-bold text-primary">
+              <p className="mt-1 text-2xl font-semibold text-[var(--text-primary)] tabular-nums">
                 {fmt(totalPayment)}
               </p>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <p className="text-xs text-gray-500">
-                Interes total
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+              <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">
+                Interés total
               </p>
-              <p className="mt-1 text-2xl font-bold text-amber-600">
+              <p className="mt-1 text-2xl font-semibold text-[var(--data-warning)] tabular-nums">
                 {fmt(totalInterest)}
               </p>
             </div>
@@ -203,30 +205,30 @@ export default function LoanCalculator() {
               className={cn(
                 "flex items-start gap-3 rounded-xl px-4 py-3",
                 salesRatio > 30
-                  ? "bg-red-50"
+                  ? "bg-[var(--data-error-50)]"
                   : salesRatio > 15
-                  ? "bg-amber-50"
-                  : "bg-emerald-50"
+                  ? "bg-[var(--data-warning-50)]"
+                  : "bg-[var(--accent-soft)]"
               )}
             >
               <TrendingDown
                 className={cn(
                   "mt-0.5 h-5 w-5 shrink-0",
                   salesRatio > 30
-                    ? "text-red-500"
+                    ? "text-[var(--data-error)]"
                     : salesRatio > 15
-                    ? "text-amber-500"
-                    : "text-emerald-500"
+                    ? "text-[var(--data-warning)]"
+                    : "text-[var(--data-success)]"
                 )}
               />
               <p
                 className={cn(
                   "text-sm font-medium",
                   salesRatio > 30
-                    ? "text-red-700"
+                    ? "text-[var(--data-error)]"
                     : salesRatio > 15
-                    ? "text-amber-700"
-                    : "text-emerald-700"
+                    ? "text-[var(--data-warning)]"
+                    : "text-[var(--data-success)]"
                 )}
               >
                 La cuota mensual representa el {salesRatio.toFixed(1)}% de tus
@@ -241,10 +243,10 @@ export default function LoanCalculator() {
           )}
 
           {/* Capital vs interest chart */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h3 className="mb-3 text-sm font-semibold text-gray-800">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+            <CardTitle className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
               Proporcion capital vs interes
-            </h3>
+            </CardTitle>
             <div className="h-6 overflow-hidden rounded-full">
               <div className="flex h-full">
                 <div
@@ -264,13 +266,13 @@ export default function LoanCalculator() {
             <div className="mt-2 flex gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="h-3 w-3 rounded-full bg-primary" />
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-[var(--text-secondary)]">
                   Capital ({fmt(p)})
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-3 w-3 rounded-full bg-secondary" />
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-[var(--text-secondary)]">
                   Interes ({fmt(totalInterest)})
                 </span>
               </div>
@@ -289,7 +291,7 @@ export default function LoanCalculator() {
             {showTable && (
               <button
                 onClick={handleExport}
-                className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
+                className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition hover:bg-gray-200"
               >
                 <Download className="h-4 w-4" />
                 Exportar CSV
@@ -298,23 +300,23 @@ export default function LoanCalculator() {
           </div>
 
           {showTable && (
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-primary/10">
-                    <th className="px-4 py-2.5 text-left font-semibold text-gray-700">
+                    <th className="px-4 py-2.5 text-left font-semibold text-[var(--text-primary)]">
                       Mes
                     </th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-gray-700">
+                    <th className="px-4 py-2.5 text-right font-semibold text-[var(--text-primary)]">
                       Cuota
                     </th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-gray-700">
+                    <th className="px-4 py-2.5 text-right font-semibold text-[var(--text-primary)]">
                       Capital
                     </th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-gray-700">
+                    <th className="px-4 py-2.5 text-right font-semibold text-[var(--text-primary)]">
                       Interes
                     </th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-gray-700">
+                    <th className="px-4 py-2.5 text-right font-semibold text-[var(--text-primary)]">
                       Saldo
                     </th>
                   </tr>
@@ -329,19 +331,19 @@ export default function LoanCalculator() {
                           : "bg-gray-50"
                       )}
                     >
-                      <td className="px-4 py-2 text-gray-600">
+                      <td className="px-4 py-2 text-[var(--text-secondary)]">
                         {row.month}
                       </td>
-                      <td className="px-4 py-2 text-right font-medium text-gray-800">
+                      <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">
                         {fmt(row.payment)}
                       </td>
                       <td className="px-4 py-2 text-right text-primary">
                         {fmt(row.principal)}
                       </td>
-                      <td className="px-4 py-2 text-right text-amber-600">
+                      <td className="px-4 py-2 text-right text-[var(--data-warning)]">
                         {fmt(row.interest)}
                       </td>
-                      <td className="px-4 py-2 text-right text-gray-700">
+                      <td className="px-4 py-2 text-right text-[var(--text-primary)]">
                         {fmt(row.balance)}
                       </td>
                     </tr>
@@ -352,8 +354,8 @@ export default function LoanCalculator() {
           )}
         </>
       ) : (
-        <div className="flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-12">
-          <p className="text-sm text-gray-400">
+        <div className="flex items-center justify-center rounded-xl border border-dashed border-[var(--rule-base)] bg-gray-50 py-12">
+          <p className="text-sm text-[var(--text-tertiary)]">
             Ingresa los datos del prestamo para ver los calculos.
           </p>
         </div>

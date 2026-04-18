@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface FrequentProduct {
@@ -46,10 +46,10 @@ export default function POSFrequentProducts({
   if (loading || products.length === 0) return null;
 
   return (
-    <div className="px-3 py-2 border-b border-gray-100 dark:border-card-border bg-amber-50/30 dark:bg-amber-950/10">
+    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--data-warning-50)]/30 dark:bg-amber-950/10">
       <div className="flex items-center gap-1.5 mb-1.5">
-        <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
-        <span className="text-xs font-bold text-gray-600 dark:text-muted">
+        <TrendingUp className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
           Mas vendidos hoy
         </span>
       </div>
@@ -64,13 +64,13 @@ export default function POSFrequentProducts({
               className={cn(
                 "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                 outOfStock
-                  ? "bg-gray-100 dark:bg-surface text-gray-400 dark:text-muted cursor-not-allowed"
-                  : "bg-white dark:bg-card border border-amber-200 dark:border-amber-800/30 text-gray-700 dark:text-foreground hover:border-primary hover:bg-primary/5"
+                  ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
+                  : "bg-white dark:bg-card border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 text-[var(--text-primary)] dark:text-foreground hover:border-primary hover:bg-primary/5"
               )}
             >
               <span className="truncate max-w-24">{p.name}</span>
               <span className="text-primary font-bold">{fmt(p.price)}</span>
-              <span className="text-[10px] text-amber-500 font-bold">
+              <span className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] font-bold">
                 x{p.soldToday}
               </span>
             </button>

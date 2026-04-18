@@ -16,24 +16,24 @@ type ChipColor = "emerald" | "violet" | "blue" | "amber" | "red";
 
 const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
   emerald: {
-    chip: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400",
-    badge: "bg-emerald-600 text-white",
+    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
+    badge: "bg-[var(--accent-soft)] text-white",
   },
   violet: {
-    chip: "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400",
-    badge: "bg-violet-600 text-white",
+    chip: "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    badge: "bg-[var(--accent)] text-white",
   },
   blue: {
-    chip: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400",
-    badge: "bg-emerald-600 text-white",
+    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]",
+    badge: "bg-[var(--accent-soft)] text-white",
   },
   amber: {
-    chip: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400",
-    badge: "bg-amber-600 text-white",
+    chip: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    badge: "bg-[var(--data-warning)] text-white",
   },
   red: {
-    chip: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400",
-    badge: "bg-red-600 text-white",
+    chip: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)]",
+    badge: "bg-[var(--data-error)] text-white",
   },
 };
 
@@ -66,17 +66,17 @@ export default function FilterChip({
         "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
         active
           ? palette.chip
-          : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800",
+          : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800",
       )}
     >
       {label}
       {count !== undefined && count > 0 && (
         <span
           className={cn(
-            "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+            "text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
             active
               ? palette.badge
-              : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300",
+              : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300",
           )}
         >
           {count > 99 ? "99+" : count}

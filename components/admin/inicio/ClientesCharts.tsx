@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
   ComposedChart, Area, Line, AreaChart,
 } from "recharts";
-import { BarChart3, Users, Star, Heart, UserPlus, ShoppingCart, Crown } from "lucide-react";
+import { BarChart3, Users, Star, Heart, UserPlus, ShoppingCart, Crown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { ClientesData } from "./ClientesDashboard";
 
@@ -19,13 +20,13 @@ function ChartTooltip({ active, payload, label, prefix = "" }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
-      {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
+      {label && <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill || BRAND }} />
-          <span className="text-gray-500 dark:text-muted">{p.name}:</span>
-          <span className="font-bold text-gray-900 dark:text-foreground">{prefix}{p.value}</span>
+          <span className="text-[var(--text-secondary)] dark:text-muted">{p.name}:</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{prefix}{p.value}</span>
         </div>
       ))}
     </div>
@@ -36,10 +37,10 @@ function ChartCard({ title, Icon, children, className }: {
   title: string; Icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
+    <div className={cn("bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ", className)}>
       <div className="flex items-center gap-2 mb-4">
-        <Icon className="h-4 w-4 text-gray-400 dark:text-muted" />
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">{title}</h3>
+        <Icon className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{title}</CardTitle>
       </div>
       {children}
     </div>
@@ -48,7 +49,7 @@ function ChartCard({ title, Icon, children, className }: {
 
 function EmptyState({ text = "Sin datos" }: { text?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
+    <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
       <BarChart3 className="h-8 w-8 mb-2" />
       <p className="text-xs font-medium">{text}</p>
     </div>
@@ -79,16 +80,16 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           {data.topClientes.length > 0 ? (
             <div className="space-y-2 max-h-[250px] overflow-y-auto">
               {data.topClientes.map((c, i) => (
-                <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
                   <span className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                    i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                    "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
+                    i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                   )}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{c.nombre}</p>
-                    <p className="text-[10px] text-gray-400">{c.pedidos} compras</p>
+                    <p className="text-xs font-medium text-[var(--text-secondary)] truncate">{c.nombre}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.pedidos} compras</p>
                   </div>
-                  <span className="text-xs font-bold text-gray-900 dark:text-foreground shrink-0">S/ {c.gasto.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground shrink-0">S/ {c.gasto.toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -127,7 +128,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {data.frecuenciaCompra.map((f, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
                     {f.frecuencia} ({f.cantidad})
                   </span>
@@ -145,7 +146,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-gray-400 dark:text-muted">
+                  <tr className="text-[var(--text-tertiary)] dark:text-muted">
                     <th className="text-left py-2 font-medium">Cohorte</th>
                     <th className="text-center py-2 font-medium">M0</th>
                     <th className="text-center py-2 font-medium">M1</th>
@@ -155,16 +156,16 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
                 </thead>
                 <tbody>
                   {data.cohortData.map((row, i) => (
-                    <tr key={i} className="border-t border-gray-50 dark:border-gray-800">
-                      <td className="py-2 font-medium text-gray-700 dark:text-gray-300">{row.cohorte}</td>
+                    <tr key={i} className="border-t border-gray-50 dark:border-[var(--rule-base)]">
+                      <td className="py-2 font-medium text-[var(--text-secondary)]">{row.cohorte}</td>
                       {[row.m0, row.m1, row.m2, row.m3].map((val, j) => (
                         <td key={j} className="text-center py-2">
                           <span className={cn(
                             "inline-block px-2 py-0.5 rounded-md font-bold",
-                            val >= 50 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                              : val >= 20 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                              : val > 0 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
-                              : "text-gray-300 dark:text-gray-600"
+                            val >= 50 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                              : val >= 20 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                              : val > 0 ? "bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]"
+                              : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                           )}>
                             {val}%
                           </span>

@@ -1,7 +1,8 @@
 "use client";
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { RotateCcw, Check, Loader2 } from "lucide-react";
+import { RotateCcw, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ function ColorField({
     <div className="flex items-center gap-3">
       <div className="relative shrink-0">
         <div
-          className="w-10 h-10 rounded-lg border-2 border-gray-200 dark:border-card-border  cursor-pointer"
+          className="w-10 h-10 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border  cursor-pointer"
           style={{ backgroundColor: value }}
         />
         <input
@@ -127,8 +128,8 @@ function ColorField({
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">{description}</p>
+        <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
+        <p className="text-xs text-[var(--text-tertiary)]">{description}</p>
       </div>
       <input
         type="text"
@@ -138,7 +139,7 @@ function ColorField({
           if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
         }}
         maxLength={7}
-        className="w-24 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
       />
     </div>
   );
@@ -149,7 +150,7 @@ function ColorField({
 function LivePreview({ colors }: { colors: ThemeColors }) {
   return (
     <div
-      className="rounded-xl overflow-hidden border border-gray-200 dark:border-card-border "
+      className="rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border "
       style={{ backgroundColor: colors.background }}
     >
       {/* Fake navbar */}
@@ -268,9 +269,7 @@ export default function ThemeCustomizer() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
+      <LoadingState />
     );
   }
 
@@ -278,8 +277,8 @@ export default function ThemeCustomizer() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personalización de Colores</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Personalización de Colores</SectionTitle>
+        <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
           Los cambios se guardan en la base de datos y se aplican a todos los visitantes de tu tienda
         </p>
       </div>
@@ -288,8 +287,8 @@ export default function ThemeCustomizer() {
         {/* Left: controls */}
         <div className="space-y-5">
           {/* Presets */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-3">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Presets</p>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-3">
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">Presets</p>
             <div className="flex flex-wrap gap-2">
               {PRESETS.map(preset => (
                 <button
@@ -299,7 +298,7 @@ export default function ThemeCustomizer() {
                     "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
                     activePreset === preset.id
                       ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
-                      : "border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                   )}
                 >
                   <div
@@ -314,8 +313,8 @@ export default function ThemeCustomizer() {
           </div>
 
           {/* Color pickers */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Colores personalizados</p>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">Colores personalizados</p>
             {COLOR_FIELDS.map(f => (
               <ColorField
                 key={f.key}
@@ -328,16 +327,16 @@ export default function ThemeCustomizer() {
           </div>
 
           {/* CSS variables info */}
-          <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-card-border/50 rounded-xl p-4 space-y-1.5">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-500">
+          <div className="bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-card-border/50 rounded-xl p-4 space-y-1.5">
+            <p className="text-xs font-semibold text-[var(--text-tertiary)]">
               Variables CSS aplicadas
             </p>
             {(Object.entries(CSS_VAR_MAP) as [keyof ThemeColors, string][]).map(([key, varName]) => (
               <div key={key} className="flex items-center gap-2">
-                <code className="text-xs text-gray-500 dark:text-gray-500 font-mono flex-1">{varName}</code>
+                <code className="text-xs text-[var(--text-tertiary)] font-mono flex-1">{varName}</code>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full border border-gray-200" style={{ backgroundColor: colors[key] }} />
-                  <code className="text-xs text-gray-600 dark:text-gray-400 font-mono">{colors[key]}</code>
+                  <div className="w-3 h-3 rounded-full border border-[var(--rule-base)]" style={{ backgroundColor: colors[key] }} />
+                  <code className="text-xs text-[var(--text-secondary)] font-mono">{colors[key]}</code>
                 </div>
               </div>
             ))}
@@ -348,7 +347,7 @@ export default function ThemeCustomizer() {
             <button
               onClick={handleReset}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
             >
               <RotateCcw className="w-4 h-4" />
               Restablecer
@@ -358,7 +357,7 @@ export default function ThemeCustomizer() {
               disabled={saving}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-70",
-                saved ? "bg-emerald-600" : "bg-[#00B4A6] hover:bg-[#245a41]"
+                saved ? "bg-[var(--accent-soft)]" : "bg-[#00B4A6] hover:bg-[#245a41]"
               )}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}
@@ -367,17 +366,17 @@ export default function ThemeCustomizer() {
           </div>
 
           {/* Aviso de persistencia */}
-          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+          <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
             Los colores guardados se aplican automáticamente a todos los visitantes de tu tienda
           </p>
         </div>
 
         {/* Right: preview */}
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Vista previa</p>
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">Vista previa</p>
           <LivePreview colors={colors} />
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+          <p className="text-xs text-[var(--text-tertiary)] text-center">
             Vista aproximada de como se verá la tienda
           </p>
         </div>

@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useRef } from "react";
-import { Upload, FileText, Loader2, AlertCircle, CheckCircle, X, Table } from "lucide-react";
+import { Upload, FileText, AlertCircle, CheckCircle, X, Table } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -140,9 +141,9 @@ export default function ImportCSVTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <Upload className="h-4 w-4 text-primary" /> Importar CSV
-        </h3>
+        </CardTitle>
         {phase !== "idle" && (
           <button onClick={reset} className="text-xs text-primary font-bold hover:underline">
             Nueva importación
@@ -152,12 +153,12 @@ export default function ImportCSVTab() {
 
       {/* Idle: File input */}
       {phase === "idle" && (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-300 dark:border-card-border rounded-xl p-8 text-center">
-          <Upload className="h-10 w-10 text-gray-300 dark:text-muted mx-auto mb-3" />
-          <p className="text-sm font-bold text-gray-700 dark:text-foreground mb-1">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
+          <Upload className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-1">
             Selecciona un archivo CSV
           </p>
-          <p className="text-xs text-gray-400 dark:text-muted mb-4">
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-4">
             Columnas esperadas: <code className="bg-gray-100 dark:bg-surface px-1 rounded">sku, nombre, precio, stock, costo</code>
           </p>
           <input
@@ -182,32 +183,29 @@ export default function ImportCSVTab() {
 
       {/* Uploading */}
       {phase === "uploading" && (
-        <div className="flex items-center justify-center py-12 gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="text-sm text-gray-500 dark:text-muted">Leyendo {fileName}...</span>
-        </div>
+        <LoadingState message="Leyendo {fileName}..." />
       )}
 
       {/* Preview */}
       {phase === "preview" && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-gray-700 dark:text-foreground flex items-center gap-1">
+              <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">
                 <Table className="h-3.5 w-3.5 text-primary" />
                 Vista previa — {allRows.length} filas encontradas
               </p>
-              <span className="text-[10px] text-gray-400 dark:text-muted">{fileName}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{fileName}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[400px] text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-card-border">
-                    <th className="pb-2 text-[10px] font-bold text-gray-400 text-left">#</th>
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border">
+                    <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-left">#</th>
                     {headers.map(h => (
                       <th key={h} className={cn(
-                        "pb-2 text-[10px] font-bold text-left",
-                        EXPECTED_FIELDS.includes(h) ? "text-primary" : "text-gray-400"
+                        "pb-2 text-[length:var(--ts-2xs)] font-bold text-left",
+                        EXPECTED_FIELDS.includes(h) ? "text-primary" : "text-[var(--text-tertiary)]"
                       )}>
                         {h}
                       </th>
@@ -217,9 +215,9 @@ export default function ImportCSVTab() {
                 <tbody>
                   {previewRows.map((row, i) => (
                     <tr key={i} className="border-t border-gray-50 dark:border-card-border">
-                      <td className="py-1.5 text-gray-400">{i + 1}</td>
+                      <td className="py-1.5 text-[var(--text-tertiary)]">{i + 1}</td>
                       {row.map((cell, j) => (
-                        <td key={j} className="py-1.5 text-gray-700 dark:text-foreground">{cell || "—"}</td>
+                        <td key={j} className="py-1.5 text-[var(--text-primary)] dark:text-foreground">{cell || "—"}</td>
                       ))}
                     </tr>
                   ))}
@@ -227,14 +225,14 @@ export default function ImportCSVTab() {
               </table>
             </div>
             {allRows.length > 5 && (
-              <p className="text-[10px] text-gray-400 dark:text-muted mt-2 text-center">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-2 text-center">
                 ... y {allRows.length - 5} filas más
               </p>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
               Cancelar
             </button>
             <button
@@ -250,32 +248,28 @@ export default function ImportCSVTab() {
 
       {/* Confirming */}
       {phase === "confirming" && (
-        <div className="flex flex-col items-center justify-center py-12 gap-3">
-          <Loader2 className="h-7 w-7 animate-spin text-primary" />
-          <p className="text-sm font-bold text-gray-700 dark:text-foreground">Importando {allRows.length} productos...</p>
-          <p className="text-xs text-gray-400 dark:text-muted">No cierres esta ventana</p>
-        </div>
+        <LoadingState message={`Importando ${allRows.length} productos...`} />
       )}
 
       {/* Success */}
       {phase === "success" && (
-        <div className="bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 text-center">
-          <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-3" />
-          <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-1">
+        <div className="bg-white dark:bg-card border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-6 text-center">
+          <CheckCircle className="h-10 w-10 text-[var(--data-success)] mx-auto mb-3" />
+          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">
             Importación exitosa
           </p>
-          <p className="text-xs text-gray-500 dark:text-muted mb-3">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">
             {importedCount} producto{importedCount !== 1 ? "s" : ""} importado{importedCount !== 1 ? "s" : ""} correctamente
           </p>
           {errors.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 text-left mb-3 border border-amber-200 dark:border-amber-900/30">
-              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
+              <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mb-1">
                 <AlertCircle className="h-3 w-3 inline mr-1" />
                 {errors.length} fila{errors.length !== 1 ? "s" : ""} con advertencias:
               </p>
               <div className="max-h-32 overflow-y-auto space-y-1">
                 {errors.map((err, i) => (
-                  <p key={i} className="text-[10px] text-amber-600 dark:text-amber-500">
+                  <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                     Fila {err.row}: {err.message}
                   </p>
                 ))}
@@ -290,15 +284,15 @@ export default function ImportCSVTab() {
 
       {/* Error */}
       {phase === "error" && (
-        <div className="bg-white dark:bg-card border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
-          <X className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-1">
+        <div className="bg-white dark:bg-card border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-6 text-center">
+          <X className="h-10 w-10 text-[var(--data-error)] mx-auto mb-3" />
+          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">
             Error en la importación
           </p>
-          <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-3 text-left mb-3 border border-red-200 dark:border-red-900/30">
+          <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-error)] dark:border-[var(--data-error)]/30">
             <div className="max-h-32 overflow-y-auto space-y-1">
               {errors.map((err, i) => (
-                <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                <p key={i} className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)]">
                   {err.row > 0 ? `Fila ${err.row}: ` : ""}{err.message}
                 </p>
               ))}
@@ -312,9 +306,9 @@ export default function ImportCSVTab() {
 
       {/* Help box */}
       {phase === "idle" && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-900/30">
-          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Formato esperado del CSV</p>
-          <code className="text-[10px] text-emerald-600 dark:text-emerald-500 block bg-emerald-100/50 dark:bg-emerald-900/20 rounded-lg p-2">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+          <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Formato esperado del CSV</p>
+          <code className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] block bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] rounded-lg p-2">
             sku,nombre,precio,stock,costo<br />
             PRD001,Arroz Extra 5kg,25.50,100,18.00<br />
             PRD002,Aceite Vegetal 1L,12.90,50,9.50

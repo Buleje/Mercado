@@ -103,7 +103,7 @@ export const BulejeSparklineKPICard = memo(function BulejeSparklineKPICard({
       <div className={cardClasses} onClick={onClick}>
         <div className="flex items-center justify-between gap-6">
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {label}
             </p>
             <div className="mt-2 flex items-baseline gap-1">
@@ -111,7 +111,7 @@ export const BulejeSparklineKPICard = memo(function BulejeSparklineKPICard({
               <NumberFlow
                 value={value}
                 format={{ maximumFractionDigits: decimals }}
-                className="text-3xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]"
+                className="text-3xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]"
               />
               {suffix && <span className="text-base font-semibold text-[var(--text-tertiary)]">{suffix}</span>}
             </div>
@@ -122,7 +122,7 @@ export const BulejeSparklineKPICard = memo(function BulejeSparklineKPICard({
                   {Math.abs(delta).toFixed(1)}%
                 </span>
                 {deltaLabel && (
-                  <span className="text-[10px] text-[var(--text-tertiary)]">{deltaLabel}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{deltaLabel}</span>
                 )}
               </div>
             )}
@@ -144,7 +144,7 @@ export const BulejeSparklineKPICard = memo(function BulejeSparklineKPICard({
 
   return (
     <div className={cardClasses} onClick={onClick}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         {label}
       </p>
       <div className="mt-3 flex items-baseline gap-1">
@@ -152,7 +152,7 @@ export const BulejeSparklineKPICard = memo(function BulejeSparklineKPICard({
         <NumberFlow
           value={value}
           format={{ maximumFractionDigits: decimals }}
-          className="text-4xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none"
+          className="text-4xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none"
         />
         {suffix && <span className="text-lg font-semibold text-[var(--text-tertiary)]">{suffix}</span>}
       </div>
@@ -165,7 +165,7 @@ export const BulejeSparklineKPICard = memo(function BulejeSparklineKPICard({
                 {Math.abs(delta).toFixed(1)}%
               </span>
               {deltaLabel && (
-                <span className="text-[10px] text-[var(--text-tertiary)]">{deltaLabel}</span>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{deltaLabel}</span>
               )}
             </div>
           ) : (

@@ -20,7 +20,6 @@ import {
   Search,
   LayoutDashboard,
   Gauge,
-  Package,
   Building2,
   ShoppingBag,
   BarChart3,
@@ -51,7 +50,6 @@ interface Command {
 const NAV_COMMANDS: Command[] = [
   { id: "nav-dashboard",       label: "Dashboard",          icon: LayoutDashboard, category: "navegación", href: "/superadmin/dashboard",      keywords: ["home", "inicio"] },
   { id: "nav-control",         label: "Centro de Control",  icon: Gauge,           category: "navegación", href: "/superadmin/control-center", keywords: ["panel", "control"] },
-  { id: "nav-project",         label: "Proyecto",           icon: Package,         category: "navegación", href: "/superadmin/project-intel",  keywords: ["panorama", "stack", "ia", "precio", "vender", "roadmap"] },
   { id: "nav-tenants",         label: "Tiendas",            icon: Building2,       category: "navegación", href: "/superadmin/tenants",        keywords: ["clientes", "empresas", "tenants"] },
   { id: "nav-stores",          label: "Marketplace",        icon: ShoppingBag,     category: "navegación", href: "/superadmin/stores",         keywords: ["tiendas", "mercado"] },
   { id: "nav-analytics",       label: "Analytics",          icon: BarChart3,       category: "navegación", href: "/superadmin/analytics",      keywords: ["reportes", "metricas", "kpi"] },
@@ -208,9 +206,9 @@ export default function CommandPalette({
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
+      <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl w-full max-w-2xl shadow-[var(--shadow-xl)] overflow-hidden">
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-base)]">
           <Search className="w-5 h-5 text-gray-400 shrink-0" />
           <input
             ref={inputRef}
@@ -219,9 +217,9 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder="Buscar página o acción... (Ctrl+K)"
-            className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400"
+            className="flex-1 bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-gray-400"
           />
-          <kbd className="text-[10px] font-mono bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+          <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-sunken)] text-gray-500 px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
             Esc
           </kbd>
         </div>
@@ -229,7 +227,7 @@ export default function CommandPalette({
         {/* Results */}
         <div className="max-h-[400px] overflow-y-auto">
           {filtered.length === 0 && (
-            <div className="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="py-12 text-center text-sm text-[var(--text-tertiary)]">
               Sin resultados para &quot;{query}&quot;
             </div>
           )}
@@ -238,7 +236,7 @@ export default function CommandPalette({
             if (cmds.length === 0) return null;
             return (
               <div key={category} className="py-1">
-                <div className="px-4 py-1 text-[10px] uppercase tracking-wide font-bold text-gray-400 dark:text-gray-500">
+                <div className="px-4 py-1 text-[length:var(--ts-2xs)] uppercase tracking-wide font-bold text-[var(--text-tertiary)]">
                   {category}
                 </div>
                 {cmds.map((cmd) => {
@@ -253,14 +251,14 @@ export default function CommandPalette({
                       className={[
                         "w-full px-4 py-2.5 flex items-center gap-3 text-left transition-colors",
                         isSelected
-                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900",
+                          ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
+                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                       ].join(" ")}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       <span className="text-sm font-medium flex-1">{cmd.label}</span>
                       {isSelected && (
-                        <kbd className="text-[10px] font-mono bg-white dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                        <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-raised)] text-gray-500 px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
                           ↵
                         </kbd>
                       )}
@@ -273,17 +271,17 @@ export default function CommandPalette({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 px-4 py-2 border-t border-gray-200 dark:border-gray-800 text-[10px] text-gray-400 dark:text-gray-500">
+        <div className="flex items-center gap-3 px-4 py-2 border-t border-[var(--rule-base)] text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           <span className="flex items-center gap-1">
-            <kbd className="font-mono bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded border border-gray-200 dark:border-gray-700">↑↓</kbd>
+            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">↑↓</kbd>
             navegar
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="font-mono bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded border border-gray-200 dark:border-gray-700">↵</kbd>
+            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">↵</kbd>
             seleccionar
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="font-mono bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded border border-gray-200 dark:border-gray-700">Esc</kbd>
+            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">Esc</kbd>
             cerrar
           </span>
           <span className="ml-auto">

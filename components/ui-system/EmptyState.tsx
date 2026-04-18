@@ -46,15 +46,15 @@ export function EmptyState({
         <div className="mb-6 text-gray-300 dark:text-gray-700">{illustration}</div>
       )}
       {eyebrow && (
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
           {eyebrow}
         </p>
       )}
-      <h3 className="mt-2 text-lg font-extrabold tracking-tight text-gray-900 dark:text-white max-w-sm">
+      <h3 className="mt-2 text-lg font-extrabold tracking-tight text-[var(--text-primary)] max-w-sm">
         {title}
       </h3>
       {description && (
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
+        <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
           {description}
         </p>
       )}

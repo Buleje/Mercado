@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Check, AlertTriangle, Download, Search, Package, Info, Loader2 } from "lucide-react";
+import { ClipboardList, Check, AlertTriangle, Download, Search, Package, Info, Loader2 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type CountStatus = "pendiente" | "contando" | "finalizado";
@@ -37,16 +38,16 @@ function ModuleTooltip() {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
+        className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none"
         aria-label="Ayuda sobre Inventario Fisico"
       >
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-gray-200 bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Inventario Fisico</p>
-          <p className="mb-3 text-gray-600 dark:text-muted">Compara el stock real contado en bodega contra el stock del sistema y registra ajustes reales.</p>
-          <p className="text-gray-500 dark:text-muted">Ejemplo: si el sistema dice 20 unidades y cuentas 18, al registrar el conteo se crea un ajuste y el stock queda corregido.</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Inventario Fisico</p>
+          <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Compara el stock real contado en bodega contra el stock del sistema y registra ajustes reales.</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: si el sistema dice 20 unidades y cuentas 18, al registrar el conteo se crea un ajuste y el stock queda corregido.</p>
         </div>
       )}
     </div>
@@ -194,21 +195,21 @@ export default function PhysicalInventoryTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
-            <ClipboardList className="h-6 w-6 text-violet-500" /> Inventario Fisico <ModuleTooltip />
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-muted">Conteo fisico y conciliacion de stock</p>
+          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <ClipboardList className="h-6 w-6 text-[var(--text-secondary)]" /> Inventario Fisico <ModuleTooltip />
+          </SectionTitle>
+          <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Conteo fisico y conciliacion de stock</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {bulkResult && (
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
               {bulkResult.ok} registrado{bulkResult.ok !== 1 ? "s" : ""}{bulkResult.fail > 0 ? `, ${bulkResult.fail} con error` : ""}
             </span>
           )}
           <button
             onClick={() => bulkSubmit()}
             disabled={bulkSubmitting || Object.keys(countInput).length === 0}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-300 bg-violet-50 px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[var(--rule-base)] dark:bg-[var(--accent)]/30 dark:text-[var(--text-primary)] dark:hover:bg-[var(--accent)]/50"
           >
             {bulkSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Registrar todos ({Object.keys(countInput).length})
@@ -219,92 +220,92 @@ export default function PhysicalInventoryTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-bold text-gray-900 dark:text-foreground">Progreso del Conteo</span>
-          <span className="text-sm font-extrabold text-violet-600 dark:text-violet-400">{stats.pct}%</span>
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Progreso del Conteo</span>
+          <span className="text-sm font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{stats.pct}%</span>
         </div>
         <div className="h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-surface">
-          <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${stats.pct}%` }} />
+          <div className="h-full rounded-full bg-[var(--text-primary)] transition-all" style={{ width: `${stats.pct}%` }} />
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-          <div><p className="text-xs font-semibold text-gray-500 dark:text-muted">Total Productos</p><p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{stats.total}</p></div>
-          <div><p className="text-xs font-semibold text-gray-500 dark:text-muted">Contados</p><p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{stats.counted}</p></div>
-          <div><p className="text-xs font-semibold text-gray-500 dark:text-muted">Con Diferencias</p><p className="text-xl font-extrabold text-amber-600 dark:text-amber-400">{stats.withDiff}</p></div>
-          <div><p className="text-xs font-semibold text-gray-500 dark:text-muted">Unidades con ajuste</p><p className="text-xl font-extrabold text-red-600 dark:text-red-400">{stats.totalDiff}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Total Productos</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.total}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Contados</p><p className="text-xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{stats.counted}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Con Diferencias</p><p className="text-xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{stats.withDiff}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Unidades con ajuste</p><p className="text-xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)]">{stats.totalDiff}</p></div>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
         </div>
         {(["todas", "pendiente", "contando", "finalizado", "diferencias"] as const).map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-violet-500 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-[var(--text-primary)] text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
             {status === "todas" ? "Todos" : status === "diferencias" ? "Diferencias" : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr className="bg-gray-50 text-left dark:bg-surface">
-                <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Producto</th>
-                <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">SKU</th>
-                <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Ubicacion</th>
-                <th className="px-5 py-3 text-right font-bold text-gray-500 dark:text-muted">Sistema</th>
-                <th className="px-5 py-3 text-right font-bold text-gray-500 dark:text-muted">Conteo</th>
-                <th className="px-5 py-3 text-right font-bold text-gray-500 dark:text-muted">Diferencia</th>
-                <th className="px-5 py-3 text-center font-bold text-gray-500 dark:text-muted">Accion</th>
+                <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
+                <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">SKU</th>
+                <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Ubicacion</th>
+                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Sistema</th>
+                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Conteo</th>
+                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Diferencia</th>
+                <th className="px-5 py-3 text-center font-bold text-[var(--text-secondary)] dark:text-muted">Accion</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
               {loading && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando productos...</td>
+                  <td colSpan={7} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando productos...</td>
                 </tr>
               )}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted">No hay productos con los filtros actuales.</td>
+                  <td colSpan={7} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">No hay productos con los filtros actuales.</td>
                 </tr>
               )}
               {filtered.map((item) => (
-                <tr key={item.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface", item.difference !== null && item.difference !== 0 && "bg-amber-50/50 dark:bg-amber-950/5")}>
+                <tr key={item.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface", item.difference !== null && item.difference !== 0 && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/5")}>
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Package className="h-4 w-4 shrink-0 text-gray-400" />
-                      <span className="font-bold text-gray-900 dark:text-foreground">{item.product}</span>
+                      <Package className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{item.product}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 font-mono text-xs text-gray-500 dark:text-muted">{item.sku}</td>
-                  <td className="px-5 py-3 font-mono text-gray-500 dark:text-muted">{item.location}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-[var(--text-secondary)] dark:text-muted">{item.sku}</td>
+                  <td className="px-5 py-3 font-mono text-[var(--text-secondary)] dark:text-muted">{item.location}</td>
                   <td className="px-5 py-3 text-right font-bold">{item.systemQty}</td>
                   <td className="px-5 py-3 text-right">
                     {item.status === "finalizado" ? (
                       <span className="font-bold">{item.countedQty}</span>
                     ) : (
-                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-gray-200 bg-white px-2 py-1 text-right text-sm font-bold outline-none focus:border-violet-500 dark:border-card-border dark:bg-card" />
+                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2 py-1 text-right text-sm font-bold outline-none focus:border-[var(--text-primary)] dark:border-card-border dark:bg-card" />
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
                     {item.difference !== null ? (
-                      <span className={cn("font-extrabold", item.difference === 0 ? "text-emerald-600" : item.difference > 0 ? "text-emerald-600" : "text-red-600")}>
+                      <span className={cn("font-extrabold", item.difference === 0 ? "text-[var(--data-success)]" : item.difference > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                         {item.difference === 0 ? <Check className="inline h-4 w-4" /> : item.difference > 0 ? `+${item.difference}` : item.difference}
                       </span>
                     ) : "-"}
                   </td>
                   <td className="px-5 py-3 text-center">
                     {item.status !== "finalizado" && (
-                      <button onClick={() => submitCount(item.id)} disabled={!countInput[item.id] || item.saving} className="rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-600 disabled:opacity-40">
+                      <button onClick={() => submitCount(item.id)} disabled={!countInput[item.id] || item.saving} className="rounded-lg bg-[var(--text-primary)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-40">
                         {item.saving ? "Guardando..." : "Registrar"}
                       </button>
                     )}
                     {item.status === "finalizado" && item.difference !== 0 && (
-                      <span className="inline-flex items-center justify-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      <span className="inline-flex items-center justify-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]">
                         <AlertTriangle className="h-3 w-3" /> Revisar
                       </span>
                     )}
@@ -317,11 +318,11 @@ export default function PhysicalInventoryTab() {
       </div>
 
       {stats.withDiff > 0 && (
-        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-5 dark:border-amber-800 dark:bg-amber-950/20">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--data-warning)] bg-[var(--data-warning-50)] p-3 sm:p-5 dark:border-[var(--data-warning)] dark:bg-amber-950/20">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning)]" />
           <div>
-            <h3 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Diferencias Detectadas</h3>
-            <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">Se encontraron <strong>{stats.withDiff} productos</strong> con diferencias entre el sistema y el conteo fisico. Revisa esas lineas para validar el ajuste.</p>
+            <CardTitle className="text-sm font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Diferencias Detectadas</CardTitle>
+            <p className="mt-1 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">Se encontraron <strong>{stats.withDiff} productos</strong> con diferencias entre el sistema y el conteo fisico. Revisa esas lineas para validar el ajuste.</p>
           </div>
         </div>
       )}

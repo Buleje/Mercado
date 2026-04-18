@@ -41,9 +41,20 @@ import MarketplaceMiniCart from "@/components/marketplace/MarketplaceMiniCart";
 import MarketplaceJungleProducts from "@/components/marketplace/MarketplaceJungleProducts";
 import MarketplaceRecipesWidget from "@/components/marketplace/MarketplaceRecipesWidget";
 import MarketplaceRecentViewed from "@/components/marketplace/MarketplaceRecentViewed";
+import SubscribeAndSaveSection from "@/components/marketplace/SubscribeAndSaveSection";
+import GiftCardsBanner from "@/components/marketplace/gift-cards/GiftCardsBanner";
+import { LiveNowWidget } from "@/components/marketplace/en-vivo/LiveNowWidget";
 import MarketplaceWelcomeCoupon from "@/components/marketplace/MarketplaceWelcomeCoupon";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
+// ── Home narrative modules (ENRICH-6) ────────────────────────────────────────
+import ParaVosSection from "@/components/marketplace/home/ParaVosSection";
+import OfertasFlashSection from "@/components/marketplace/home/OfertasFlashSection";
+import LiveActivityFeed from "@/components/marketplace/home/LiveActivityFeed";
+import AhorraMasMegaSection from "@/components/marketplace/home/AhorraMasMegaSection";
+import ComparedProductsSection from "@/components/marketplace/home/ComparedProductsSection";
+import AsistenteHomeBanner from "@/components/marketplace/home/AsistenteHomeBanner";
+import VenderMiniCTA from "@/components/marketplace/home/VenderMiniCTA";
 
 type ViewMode = "tiendas" | "catalogo";
 
@@ -413,6 +424,23 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
         </div>
       </section>
 
+      {/* ── Para vos: smart recommendations post-hero (ENRICH-6 Ola 3) ── */}
+      <ParaVosSection />
+
+      {/* ══════════════════════════════════════════════════════════════════
+          LO QUE ESTA PASANDO AHORA
+          Narrativa de urgencia + prueba social en tiempo real.
+          ══════════════════════════════════════════════════════════════════ */}
+
+      {/* ── Buleje en Vivo: widget si hay transmisión activa ── */}
+      <LiveNowWidget />
+
+      {/* ── Ofertas flash con countdown ── */}
+      <OfertasFlashSection />
+
+      {/* ── Feed de actividad real-time (mock) ── */}
+      <LiveActivityFeed />
+
       {/* ── Lo más pedido hoy (carrusel horizontal con ranking) ── */}
       <MarketplaceTopToday />
 
@@ -531,11 +559,32 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
         )}
       </section>
 
+      {/* ══════════════════════════════════════════════════════════════════
+          AHORRA MAS CON BULEJE
+          Mega-section triple: Socio + Bodega al Mes + Cupones.
+          ══════════════════════════════════════════════════════════════════ */}
+      <AhorraMasMegaSection />
+
       {/* ── Recetas de la selva (widget con ingredientes al carrito) ── */}
       <MarketplaceRecipesWidget />
 
+      {/* ── Productos populares en el comparador (cross-sell) ── */}
+      <ComparedProductsSection />
+
+      {/* ── Bodega al Mes: productos suscribibles con 5% descuento ── */}
+      <SubscribeAndSaveSection />
+
+      {/* ── Gift Cards: regalá la bodega del barrio ── */}
+      <GiftCardsBanner />
+
+      {/* ── Preguntale al asistente (cross-sell a /asistente) ── */}
+      <AsistenteHomeBanner />
+
       {/* ── Productos vistos recientemente (local storage) ── */}
       <MarketplaceRecentViewed />
+
+      {/* ── Vende en Buleje (B2B mini CTA) ── */}
+      <VenderMiniCTA />
 
       {/* ── CTA: Register Your Store ── */}
       <section className="bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)] py-12 sm:py-16">

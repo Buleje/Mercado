@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { ShieldCheck, Save, CheckCircle, RotateCcw, X } from "lucide-react";
+import { ShieldCheck, Save, CheckCircle, RotateCcw, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const ALL_TAB_IDS = [
@@ -132,19 +133,19 @@ export default function RolePermissionsTab() {
     setHasChanges(true);
   };
 
-  if (loading) return <div className="text-center py-20 text-gray-500">Cargando...</div>;
+  if (loading) return <div className="text-center py-20 text-[var(--text-secondary)]">Cargando...</div>;
 
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-purple-400" />
+        <SectionTitle className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-[var(--text-tertiary)]" />
           Permisos por Rol
-        </h2>
+        </SectionTitle>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <span className="text-xs text-amber-400 font-medium animate-pulse">Cambios sin guardar</span>
+            <span className="text-xs text-[var(--data-warning)] font-medium animate-pulse">Cambios sin guardar</span>
           )}
           <button
             onClick={handleSave}
@@ -152,8 +153,8 @@ export default function RolePermissionsTab() {
             className={cn(
               "flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition disabled:opacity-50",
               saved
-                ? "bg-green-600 text-white"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                ? "bg-[var(--accent-soft)] text-white"
+                : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white"
             )}
           >
             {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -162,13 +163,13 @@ export default function RolePermissionsTab() {
         </div>
       </div>
 
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-[var(--text-tertiary)]">
         El rol <span className="text-white font-medium">admin</span> siempre tiene acceso total.
         Haz click en las celdas para activar/desactivar permisos.
       </p>
 
       {saveError && (
-        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
+        <div className="flex items-center gap-2 bg-[var(--data-error)]/10 border border-[var(--data-error)]/20 rounded-xl p-3 text-sm text-[var(--data-error)]">
           <span>{saveError}</span>
           <button onClick={save} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
         </div>
@@ -180,14 +181,14 @@ export default function RolePermissionsTab() {
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="sticky left-0 z-10 bg-gray-900 px-3 py-2.5 text-left text-[10px] font-bold text-gray-400 w-36">
+                <th className="sticky left-0 z-10 bg-gray-900 px-3 py-2.5 text-left text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-36">
                   Modulo
                 </th>
                 {roles.map(role => (
                   <th key={role} className="px-2 py-2.5 text-center">
                     <div className="flex flex-col items-center gap-1">
-                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs font-bold capitalize">{role}</span>
-                      <span className="text-[9px] text-gray-500">{(perms[role] ?? []).length}/{ALL_TAB_IDS.length}</span>
+                      <span className="px-2 py-0.5 rounded bg-[var(--text-primary)]/20 text-[var(--text-tertiary)] text-xs font-bold capitalize">{role}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{(perms[role] ?? []).length}/{ALL_TAB_IDS.length}</span>
                     </div>
                   </th>
                 ))}
@@ -196,7 +197,7 @@ export default function RolePermissionsTab() {
             <tbody>
               {ALL_TAB_IDS.map((tab, i) => (
                 <tr key={tab.id} className={cn("border-b border-white/5 transition-colors", i % 2 === 0 ? "bg-white/[0.02]" : "")}>
-                  <td className="sticky left-0 z-10 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 whitespace-nowrap">
+                  <td className="sticky left-0 z-10 bg-gray-900 px-3 py-1.5 text-xs font-medium text-[var(--text-tertiary)] whitespace-nowrap">
                     {tab.label}
                   </td>
                   {roles.map(role => {
@@ -209,10 +210,10 @@ export default function RolePermissionsTab() {
                           onMouseEnter={() => setHoveredCell(cellKey)}
                           onMouseLeave={() => setHoveredCell(null)}
                           className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center mx-auto transition-all duration-150",
+                            "w-8 h-8 rounded-lg flex items-center justify-center mx-auto transition-all duration-[var(--dur-fast)]",
                             checked
-                              ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30"
-                              : "bg-red-500/10 text-red-400/50 hover:bg-red-500/20 border border-red-500/10"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] border border-[var(--data-success)]/30"
+                              : "bg-[var(--data-error)]/10 text-[var(--data-error)]/50 hover:bg-[var(--data-error)]/20 border border-[var(--data-error)]/10"
                           )}
                           title={`${role} ${checked ? "tiene acceso a" : "NO tiene acceso a"} ${tab.label}`}
                         >
@@ -223,7 +224,7 @@ export default function RolePermissionsTab() {
                           )}
                         </button>
                         {hoveredCell === cellKey && (
-                          <p className="text-[9px] text-gray-500 mt-0.5 capitalize">{role} {checked ? "puede ver" : "no ve"}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5 capitalize">{role} {checked ? "puede ver" : "no ve"}</p>
                         )}
                       </td>
                     );
@@ -240,20 +241,20 @@ export default function RolePermissionsTab() {
               <div key={role} className="flex items-center gap-1">
                 <button
                   onClick={() => { selectAll(role); setHasChanges(true); }}
-                  className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-300 rounded hover:bg-emerald-500/20 transition"
+                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--accent-soft)] text-[var(--data-success)] rounded hover:bg-[var(--accent-soft)] transition"
                 >
                   Todo ({role})
                 </button>
                 <button
                   onClick={() => handleReset(role)}
-                  className="text-[10px] px-2 py-1 bg-amber-500/10 text-amber-300 rounded hover:bg-amber-500/20 transition flex items-center gap-0.5"
+                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--data-warning)]/10 text-[var(--data-warning)] rounded hover:bg-[var(--data-warning)]/20 transition flex items-center gap-0.5"
                 >
                   <RotateCcw className="w-2.5 h-2.5" /> Reset
                 </button>
               </div>
             ))}
           </div>
-          <span className="text-[10px] text-gray-500">{ALL_TAB_IDS.length} modulos</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{ALL_TAB_IDS.length} modulos</span>
         </div>
       </div>
     </div>

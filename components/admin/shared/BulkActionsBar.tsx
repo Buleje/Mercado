@@ -60,8 +60,8 @@ export default function BulkActionsBar({
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               action.variant === "danger"
-                ? "bg-red-100 text-red-700 hover:bg-red-200"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200",
+                ? "bg-[var(--data-error-100)] text-[var(--data-error)] hover:bg-[var(--data-error)]"
+                : "bg-white text-[var(--text-primary)] hover:bg-gray-100 border border-[var(--rule-base)]",
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -74,10 +74,10 @@ export default function BulkActionsBar({
       {overflowActions.length > 0 && (
         <div className="relative">
           <button onClick={() => setShowMore(!showMore)} className="p-1.5 rounded-lg hover:bg-white/50 transition-colors">
-            <MoreHorizontal className="h-4 w-4 text-gray-600" />
+            <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
           {showMore && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl py-1 z-30">
+            <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-[var(--rule-base)] rounded-xl py-1 z-30">
               {overflowActions.map(action => {
                 const Icon = action.icon;
                 return (
@@ -86,7 +86,7 @@ export default function BulkActionsBar({
                     onClick={() => { action.onClick(selectedIds); setShowMore(false); }}
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors",
-                      action.variant === "danger" ? "text-red-600 hover:bg-red-50" : "text-gray-700 hover:bg-gray-50",
+                      action.variant === "danger" ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)]" : "text-[var(--text-primary)] hover:bg-gray-50",
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -100,7 +100,7 @@ export default function BulkActionsBar({
       )}
 
       {/* Clear */}
-      <button onClick={onClearSelection} className="ml-auto text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors">
+      <button onClick={onClearSelection} className="ml-auto text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition-colors">
         Limpiar selección
       </button>
     </div>

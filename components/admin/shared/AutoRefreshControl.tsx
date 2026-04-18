@@ -20,14 +20,14 @@ export default function AutoRefreshControl({
   className,
 }: AutoRefreshControlProps) {
   return (
-    <div className={cn("flex items-center gap-1.5 text-xs text-gray-400", className)}>
+    <div className={cn("flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]", className)}>
       {isActive && (
         <span className="tabular-nums">
           Actualiza en {secondsLeft}s
         </span>
       )}
       {paused && (
-        <span className="text-amber-500 font-medium">Pausado</span>
+        <span className="text-[var(--data-warning)] font-medium">Pausado</span>
       )}
       <button
         onClick={onTogglePause}

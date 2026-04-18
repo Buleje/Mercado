@@ -1,9 +1,11 @@
-
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
+
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Edit3, Save, X, Tag } from "lucide-react";
+import { Plus, Trash2, Edit3, Save, X, Tag } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -116,18 +118,18 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
     <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Nombre del producto
           </label>
           <input
             value={form.productName}
             onChange={(e) => set("productName", e.target.value)}
             placeholder="Ej: Arroz Costeño 5kg"
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Precio normal (S/)
           </label>
           <input
@@ -136,22 +138,22 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             step={0.5}
             value={form.basePrice}
             onChange={(e) => set("basePrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Unidad
           </label>
           <input
             value={form.unit}
             onChange={(e) => set("unit", e.target.value)}
             placeholder="bolsa, caja, unidad..."
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             A partir de (cantidad)
           </label>
           <input
@@ -159,11 +161,11 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             min={2}
             value={form.discountQty}
             onChange={(e) => set("discountQty", Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Precio con descuento (S/)
           </label>
           <input
@@ -172,7 +174,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             step={0.5}
             value={form.discountPrice}
             onChange={(e) => set("discountPrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -193,7 +195,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-50"
         >
           <X className="w-4 h-4" />
         </button>
@@ -242,16 +244,16 @@ export default function VolumeDiscountManager() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-secondary/10">
             <Tag className="w-5 h-5 text-secondary" />
           </div>
           <div>
-            <h2 className="font-bold text-gray-900">Descuento por volumen</h2>
-            <p className="text-xs text-gray-500">
+            <SectionTitle className="font-bold text-[var(--text-primary)]">Descuento por volumen</SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)]">
               {rules.length} regla{rules.length !== 1 ? "s" : ""} configurada{rules.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -273,7 +275,7 @@ export default function VolumeDiscountManager() {
         )}
 
         {rules.length === 0 && !showForm ? (
-          <p className="text-sm text-gray-500 text-center py-8">
+          <p className="text-sm text-[var(--text-secondary)] text-center py-8">
             No hay reglas de descuento por volumen.
             <br />
             Agrega una para comenzar.
@@ -290,13 +292,13 @@ export default function VolumeDiscountManager() {
             ) : (
               <div
                 key={rule.id}
-                className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100"
+                className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 border border-[var(--rule-soft)]"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">
+                  <p className="font-semibold text-[var(--text-primary)] text-sm truncate">
                     {rule.productName}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                     1 {rule.unit}: {fmt(rule.basePrice)} — {rule.discountQty}+ {rule.unit}s:{" "}
                     <span className="text-primary font-semibold">
                       {fmt(rule.discountPrice)} c/u
@@ -316,14 +318,14 @@ export default function VolumeDiscountManager() {
                     className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
                     aria-label="Editar"
                   >
-                    <Edit3 className="w-4 h-4 text-gray-500" />
+                    <Edit3 className="w-4 h-4 text-[var(--text-secondary)]" />
                   </button>
                   <button
                     onClick={() => deleteRule(rule.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                    className="p-2 rounded-lg hover:bg-[var(--data-error-50)] transition-colors"
                     aria-label="Eliminar"
                   >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-4 h-4 text-[var(--data-error)]" />
                   </button>
                 </div>
               </div>

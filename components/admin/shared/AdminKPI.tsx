@@ -25,7 +25,7 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
           </div>
         )}
 
-        <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+        <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">
           {label}
         </p>
 
@@ -36,7 +36,7 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
           </div>
         ) : (
           <>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <p className="text-2xl font-bold text-[var(--text-primary)]">
               {value}
             </p>
 
@@ -45,13 +45,13 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
                 <span
                   className={cn(
                     "text-xs font-medium inline-flex items-center gap-0.5",
-                    trend.value >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                    trend.value >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]",
                   )}
                 >
                   {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value).toFixed(1)}%
                 </span>
                 {trend.label && (
-                  <span className="text-xs text-gray-400 dark:text-zinc-500">
+                  <span className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
                     {trend.label}
                   </span>
                 )}

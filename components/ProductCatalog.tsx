@@ -12,6 +12,7 @@ import {
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List } from "lucide-react";
+import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import { ProductCard } from "./ProductCard";
 import { useCachedData } from "@/hooks/use-cached-data";
 import { levenshteinDistance } from "@/hooks/use-advanced-search";
 import { FixedSizeList, type ListChildComponentProps } from "react-window";
+import { CanastaVacia } from "@/components/ui-system/illustrations";
 
 // QuickViewModal loaded on-demand only when user clicks "Vista rápida"
 const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ssr: false });
@@ -28,6 +30,15 @@ const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ss
 type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
 
 // realCategories se deriva dinámicamente de productList en el componente
+
+// Map string badges del backend → intent canónico del DS (Ola 2 — ADR-075).
+const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
+  Popular: "popular",
+  Oferta: "offer",
+  Fresco: "fresh",
+  Nuevo: "new",
+  Premium: "premium",
+};
 
 type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "nombre";
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
@@ -202,7 +213,9 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
           <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-6 w-6" /></div>
         )}
         {product.badge && (
-          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white bg-primary shadow-sm leading-none">{product.badge}</span>
+          <div className="absolute top-0.5 left-0.5 scale-75 origin-top-left">
+            <ProductBadge intent={BADGE_INTENT[product.badge] ?? "popular"}>{product.badge}</ProductBadge>
+          </div>
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -210,14 +223,14 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted">{product.unit}</p>
           {isLowStock && (
-            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full animate-pulse">¡Quedan {product.stock}!</span>
+            <span className="text-[9px] font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded-full">¡Quedan {product.stock}!</span>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-base font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
+        <ProductPrice price={product.price} size="sm" />
         {isOutOfStock ? (
-          <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-full">Agotado</span>
+          <span className="text-[10px] font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-2 py-1 rounded-full">Agotado</span>
         ) : qty === 0 ? (
           <button
             onClick={(e) => { e.stopPropagation(); addItem(product); showToast(product.name, product.image); }}
@@ -859,11 +872,18 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   .sort((a, b) => a.d - b.d)[0];
                 const suggestion = bestMatch && bestMatch.d <= Math.max(3, Math.floor(search.trim().length / 2)) ? bestMatch.p.name : null;
                 return (
-                  <div className="text-center py-12">
-                    <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-semibold">No se encontraron productos</p>
+                  <div className="text-center py-16">
+                    <div
+                      className="flex justify-center text-[var(--text-secondary)] mb-4"
+                      aria-hidden="true"
+                    >
+                      <CanastaVacia size={160} />
+                    </div>
+                    <p className="text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+                      No se encontraron productos
+                    </p>
                     {suggestion ? (
-                      <p className="text-sm text-gray-400 mt-2">
+                      <p className="text-sm text-[var(--text-tertiary)] mt-2">
                         ¿Quisiste decir{" "}
                         <button
                           onClick={() => setSearch(suggestion)}
@@ -874,7 +894,9 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                         ?
                       </p>
                     ) : (
-                      <p className="text-sm text-gray-400 mt-1">Intenta con otro término de búsqueda</p>
+                      <p className="text-sm text-[var(--text-tertiary)] mt-2 max-w-sm mx-auto leading-relaxed">
+                        Intentá con otro término de búsqueda o explorá las categorías.
+                      </p>
                     )}
                   </div>
                 );

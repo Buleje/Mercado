@@ -60,7 +60,7 @@ export default function FlashSaleBanner({ items = [], endsAt, className }: Flash
   const endDate = endsAt ?? fallbackEnd;
 
   return (
-    <div className={cn("bg-gradient-to-r from-red-600 to-orange-500 rounded-xl p-4 text-white", className)}>
+    <div className={cn("bg-[var(--data-error)] rounded-xl p-4 text-white", className)}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-yellow-300 fill-yellow-300" />
@@ -75,14 +75,14 @@ export default function FlashSaleBanner({ items = [], endsAt, className }: Flash
           return (
             <div key={item.id} className="flex-shrink-0 w-36 bg-white/10 backdrop-blur-sm rounded-lg p-3">
               <p className="text-xs font-bold truncate">{item.name}</p>
-              <p className="text-[10px] text-white/60">{item.storeName}</p>
+              <p className="text-[length:var(--ts-2xs)] text-white/60">{item.storeName}</p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-sm font-black">S/{item.salePrice.toFixed(0)}</span>
-                <span className="text-[10px] line-through text-white/50">S/{item.originalPrice.toFixed(0)}</span>
-                <span className="text-[10px] font-bold text-yellow-300">-{discount}%</span>
+                <span className="text-sm font-extrabold">S/{item.salePrice.toFixed(0)}</span>
+                <span className="text-[length:var(--ts-2xs)] line-through text-white/50">S/{item.originalPrice.toFixed(0)}</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-yellow-300">-{discount}%</span>
               </div>
               {item.stock <= 5 && (
-                <p className="text-[10px] text-yellow-200 mt-0.5">Solo quedan {item.stock}</p>
+                <p className="text-[length:var(--ts-2xs)] text-yellow-200 mt-0.5">Solo quedan {item.stock}</p>
               )}
             </div>
           );

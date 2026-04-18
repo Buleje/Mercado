@@ -5,7 +5,7 @@ import { m } from "@/components/admin/providers";
 import {
   Package, Truck, CheckCircle, XCircle, ShoppingCart,
   RefreshCw, AlertCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ export default function OrderTrackingTimeline({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-xs text-gray-400 py-4">
+      <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] py-4">
         <RefreshCw className="h-4 w-4 animate-spin" /> Cargando historial…
       </div>
     );
@@ -115,7 +115,7 @@ export default function OrderTrackingTimeline({
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 text-xs text-red-500 py-3">
+      <div className="flex items-center gap-2 text-xs text-[var(--data-error)] py-3">
         <AlertCircle className="h-4 w-4" /> {error}
       </div>
     );
@@ -169,7 +169,7 @@ export default function OrderTrackingTimeline({
                 "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2",
                 step.done
                   ? "border-primary bg-primary text-white"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-400",
+                  : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-tertiary)]",
               )}
               animate={step.current ? { boxShadow: ["0 0 0 0px rgba(45,106,79,0.4)", "0 0 0 6px rgba(45,106,79,0)", "0 0 0 0px rgba(45,106,79,0)"] } : {}}
               transition={step.current ? { repeat: Infinity, duration: 2 } : {}}
@@ -182,30 +182,30 @@ export default function OrderTrackingTimeline({
               <div className="flex flex-wrap items-baseline gap-2">
                 <p className={cn(
                   "text-xs font-bold",
-                  step.done ? "text-gray-900 dark:text-foreground" : "text-gray-400",
+                  step.done ? "text-[var(--text-primary)] dark:text-foreground" : "text-[var(--text-tertiary)]",
                   step.current && "text-primary"
                 )}>
                   {step.label}
                   {step.current && (
-                    <span className="ml-1.5 text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                       Actual
                     </span>
                   )}
                 </p>
                 {step.timestamp && (
-                  <span className="text-[10px] text-gray-400">{fmtDateTime(step.timestamp)}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDateTime(step.timestamp)}</span>
                 )}
               </div>
               {!compact && (
                 <p className={cn(
-                  "text-[11px] mt-0.5",
-                  step.done ? "text-gray-500 dark:text-muted" : "text-gray-300 dark:text-gray-600"
+                  "text-[length:var(--ts-xs)] mt-0.5",
+                  step.done ? "text-[var(--text-secondary)] dark:text-muted" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                 )}>
                   {step.description}
                 </p>
               )}
               {step.note && (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 italic">
+                <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5 italic">
                   &ldquo;{step.note}&rdquo;
                 </p>
               )}
@@ -221,23 +221,23 @@ export default function OrderTrackingTimeline({
             transition={{ delay: 0.28 }}
             className={cn("relative flex gap-4", compact ? "pb-2" : "pb-0")}
           >
-            <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-red-400 bg-red-500 text-white">
+            <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[var(--data-error)] bg-[var(--data-error)] text-white">
               <XCircle className="h-3.5 w-3.5" />
             </div>
             <div className="flex-1 pt-0.5">
               <div className="flex flex-wrap items-baseline gap-2">
-                <p className="text-xs font-bold text-red-600 dark:text-red-400">Cancelado</p>
+                <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Cancelado</p>
                 {cancelEntry && (
-                  <span className="text-[10px] text-gray-400">{fmtDateTime(cancelEntry.createdAt)}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDateTime(cancelEntry.createdAt)}</span>
                 )}
               </div>
               {!compact && (
-                <p className="text-[11px] text-gray-500 dark:text-muted mt-0.5">
+                <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted mt-0.5">
                   El pedido fue cancelado
                 </p>
               )}
               {cancelEntry?.note && (
-                <p className="text-[11px] text-red-500 dark:text-red-400 mt-0.5 italic">
+                <p className="text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5 italic">
                   Motivo: &ldquo;{cancelEntry.note}&rdquo;
                 </p>
               )}

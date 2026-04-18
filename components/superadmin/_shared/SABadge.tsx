@@ -7,8 +7,8 @@ type PlanId = "free" | "pro" | "business" | "enterprise";
 const PLAN_STYLES: Record<PlanId, string> = {
   free:       "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
   pro:        "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
-  business:   "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-  enterprise: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  business:   "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
 };
 
 const PLAN_LABEL: Record<PlanId, string> = {
@@ -55,10 +55,10 @@ export function StatusBadge({ active }: { active: boolean }) {
 type StatusVariant = "active" | "inactive" | "trial" | "pending" | "settled" | "cancelled";
 
 const STATUS_STYLES: Record<StatusVariant, string> = {
-  active:    "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  inactive:  "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  trial:     "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  pending:   "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  active:    "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/40 dark:text-[var(--data-success)]",
+  inactive:  "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
+  trial:     "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/40 dark:text-[var(--data-success)]",
+  pending:   "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
   settled:   "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
   cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };

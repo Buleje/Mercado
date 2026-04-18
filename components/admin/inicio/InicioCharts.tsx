@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
   RadialBarChart, RadialBar, ComposedChart,
 } from "recharts";
-import { BarChart3, CheckCircle2 } from "lucide-react";
+import { BarChart3, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "./InicioDashboard";
 
@@ -33,13 +34,13 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
-      {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
+      {label && <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill || BRAND }} />
-          <span className="text-gray-500 dark:text-muted">{p.name}:</span>
-          <span className="font-bold text-gray-900 dark:text-foreground">
+          <span className="text-[var(--text-secondary)] dark:text-muted">{p.name}:</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
             {prefix === "S/" ? `S/ ${p.value.toFixed(2)}` : `${p.value}`}
           </span>
         </div>
@@ -52,8 +53,8 @@ function ChartTooltip({
 
 function ChartCard({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
-      <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">{title}</h3>
+    <div className={cn("bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ", className)}>
+      <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">{title}</CardTitle>
       {children}
     </div>
   );
@@ -117,7 +118,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {data.ventasPorCategoria.slice(0, 6).map((c, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                     {c.nombre}
                   </span>
@@ -168,7 +169,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {data.ventasPorMetodoPago.map((p, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
                     {p.metodo}
                   </span>
@@ -233,12 +234,12 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
                 return (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{step.etapa}</span>
-                      <span className="text-[11px] font-bold text-gray-900 dark:text-foreground">{step.cantidad}</span>
+                      <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)]">{step.etapa}</span>
+                      <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground">{step.cantidad}</span>
                     </div>
-                    <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-4 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-700"
+                        className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
                         style={{ width: `${pct}%`, backgroundColor: step.color }}
                       />
                     </div>
@@ -246,7 +247,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
                 );
               })}
               {data.funnelPedidos[0].cantidad > 0 && (
-                <p className="text-[10px] text-gray-400 dark:text-gray-600 text-center mt-2">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] text-center mt-2">
                   Conversión: {((data.funnelPedidos[3]?.cantidad ?? 0) / data.funnelPedidos[0].cantidad * 100).toFixed(0)}% entregados
                 </p>
               )}
@@ -266,26 +267,26 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
               {data.stockAlerta.map((p, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>
+                    <p className="text-xs font-medium text-[var(--text-secondary)] truncate">{p.nombre}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            p.diasRestantes < 7 ? "bg-red-500" : p.diasRestantes < 14 ? "bg-amber-500" : "bg-emerald-500"
+                            p.diasRestantes < 7 ? "bg-[var(--data-error)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]"
                           )}
                           style={{ width: `${Math.min((p.stock / Math.max(p.minimo * 3, 1)) * 100, 100)}%` }}
                         />
                       </div>
                       <span className={cn(
-                        "text-[10px] font-bold whitespace-nowrap",
-                        p.diasRestantes < 7 ? "text-red-600" : p.diasRestantes < 14 ? "text-amber-600" : "text-emerald-600"
+                        "text-[length:var(--ts-2xs)] font-bold whitespace-nowrap",
+                        p.diasRestantes < 7 ? "text-[var(--data-error)]" : p.diasRestantes < 14 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
                       )}>
                         {p.diasRestantes}d
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap">{p.stock} uds</span>
+                  <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] whitespace-nowrap">{p.stock} uds</span>
                 </div>
               ))}
             </div>
@@ -320,7 +321,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 justify-center">
                 {data.clientesPorTier.map((c, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                     {c.tier} ({c.cantidad})
                   </span>
@@ -357,7 +358,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
 
 function EmptyChart({ text = "Sin datos disponibles", Icon = BarChart3 }: { text?: string; Icon?: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
+    <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
       <Icon className="h-8 w-8 mb-2" aria-hidden="true" />
       <p className="text-xs font-medium">{text}</p>
     </div>

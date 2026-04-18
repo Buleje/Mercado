@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
@@ -28,7 +29,7 @@ import {
   ChevronDown,
   Columns2,
   Clock,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { StoreTheme } from "./StoreCustomizer";
 import type { SectionKey } from "./StorefrontEditor";
@@ -72,9 +73,9 @@ interface StoreCreativeModeProps {
 }
 
 const INPUT_CLASS =
-  "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-600";
+  "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-[var(--data-success)]/30 transition-colors placeholder:text-[var(--text-secondary)]";
 const LABEL_CLASS =
-  "block text-[11px] font-semibold text-gray-400 mb-1";
+  "block text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] mb-1";
 
 const VIEWPORTS: { id: Viewport; icon: typeof Monitor; width: string; label: string }[] = [
   { id: "desktop", icon: Monitor, width: "100%", label: "Escritorio" },
@@ -198,7 +199,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-emerald-600" : "bg-gray-700")}
+      className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-[var(--accent-soft)]" : "bg-gray-700")}
     >
       <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform", checked ? "left-5" : "left-0.5")} />
     </button>
@@ -214,21 +215,21 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
 }) {
   const cardClass =
     styleVariant === "minimal"
-      ? "border border-gray-200 shadow-none"
+      ? "border border-[var(--rule-base)] shadow-none"
       : styleVariant === "border"
-        ? "border-2 border-gray-300 "
+        ? "border-2 border-[var(--rule-base)] "
         : styleVariant === "glass"
           ? "border border-white/40 bg-white/70 backdrop-blur-md"
-          : "border border-gray-200";
+          : "border border-[var(--rule-base)]";
 
   return (
     <div className={cn("p-3 bg-white", cardClass)} style={{ borderRadius }}>
-      <div className="aspect-square rounded-xl bg-gradient-to-br from-slate-100 via-emerald-50 to-indigo-100 flex items-center justify-center">
+      <div className="aspect-square rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
         <div className="h-12 w-12 rounded-xl bg-white/80 flex items-center justify-center ring-1 ring-white">
-          <Store className="h-6 w-6 text-gray-400" />
+          <Store className="h-6 w-6 text-[var(--text-tertiary)]" />
         </div>
       </div>
-      <p className="mt-2 text-sm font-bold text-gray-900 line-clamp-2">{title}</p>
+      <p className="mt-2 text-sm font-bold text-[var(--text-primary)] line-clamp-2">{title}</p>
       <p className="text-sm font-extrabold mt-1" style={{ color: primaryColor }}>{price}</p>
       <button
         type="button"
@@ -447,12 +448,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     <div className="fixed inset-0 z-[100] flex flex-col bg-gray-950">
       <header className="flex items-center justify-between h-12 px-4 bg-gray-900 border-b border-gray-800 shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-xs font-medium">
+          <button onClick={onClose} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs font-medium">
             <X className="h-4 w-4" />
             Salir
           </button>
           <div className="h-4 w-px bg-gray-700" />
-          <span className="text-xs font-bold text-emerald-400">Modo Creativo · {draft.storeName || tenantSlug}</span>
+          <span className="text-xs font-bold text-[var(--data-success)]">Modo Creativo · {draft.storeName || tenantSlug}</span>
         </div>
 
         <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
@@ -461,7 +462,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               key={vp.id}
               onClick={() => setViewport(vp.id)}
               title={vp.label}
-              className={cn("p-1.5 rounded-md transition-colors", viewport === vp.id ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-700")}
+              className={cn("p-1.5 rounded-md transition-colors", viewport === vp.id ? "bg-[var(--accent-soft)] text-white" : "text-[var(--text-tertiary)] hover:text-white hover:bg-gray-700")}
             >
               <vp.icon className="h-4 w-4" />
             </button>
@@ -469,10 +470,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleUndo} disabled={history.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-xs disabled:opacity-40">
+          <button onClick={handleUndo} disabled={history.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs disabled:opacity-40">
             <Undo2 className="h-3.5 w-3.5" />
           </button>
-          <button onClick={handleRedo} disabled={future.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-xs disabled:opacity-40">
+          <button onClick={handleRedo} disabled={future.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs disabled:opacity-40">
             <Redo2 className="h-3.5 w-3.5" />
           </button>
           <div className="h-4 w-px bg-gray-700" />
@@ -480,7 +481,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             onClick={() => setLivePreview((v) => !v)}
             className={cn(
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
-              livePreview ? "bg-emerald-600/20 text-emerald-400" : "text-gray-400 hover:text-white hover:bg-gray-800",
+              livePreview ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800",
             )}
             title={livePreview ? "Volver al mockup" : "Vista previa en vivo"}
           >
@@ -490,7 +491,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           {livePreview && (
             <button
               onClick={() => setIframeKey((k) => k + 1)}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-xs"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs"
               title="Recargar vista previa"
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -500,7 +501,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             href={`/t/${tenantSlug}?preview=true`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-xs font-medium"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800 transition-colors text-xs font-medium"
             title="Abrir tienda en nueva pestaña"
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -511,7 +512,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               onClick={() => setSplitPreview((v) => !v)}
               className={cn(
                 "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                splitPreview ? "bg-purple-600/20 text-purple-400" : "text-gray-400 hover:text-white hover:bg-gray-800",
+                splitPreview ? "bg-[var(--accent)]/20 text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)] hover:text-white hover:bg-gray-800",
               )}
               title={splitPreview ? "Vista simple" : "Comparar antes/después"}
             >
@@ -522,7 +523,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             onClick={handleApply}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
           >
             {saving ? <Sparkles className="h-3.5 w-3.5 animate-pulse" /> : <Save className="h-3.5 w-3.5" />}
             {saving ? "Aplicando..." : "Aplicar y guardar"}
@@ -539,7 +540,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 onClick={() => setPanel(item.id)}
                 className={cn(
                   "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-left",
-                  panel === item.id ? "bg-emerald-600/20 text-emerald-400 font-semibold" : "text-gray-400 hover:text-gray-200 hover:bg-gray-800",
+                  panel === item.id ? "bg-[var(--accent-soft)] text-[var(--data-success)] font-semibold" : "text-[var(--text-tertiary)] hover:text-gray-200 hover:bg-gray-800",
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -551,13 +552,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <div className="p-3 border-t border-gray-800 mt-2 space-y-4">
             {panel === "plantillas" && (
               <>
-                <p className="text-[10px] font-bold text-gray-500">Plantillas rapidas</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Plantillas rapidas</p>
                 {QUICK_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.id}
                     type="button"
                     onClick={() => applyTemplate(tpl)}
-                    className="w-full text-left p-2.5 rounded-lg bg-gray-800/70 border border-gray-700 hover:border-emerald-500 transition-colors"
+                    className="w-full text-left p-2.5 rounded-lg bg-gray-800/70 border border-gray-700 hover:border-[var(--data-success)]/30 transition-colors"
                   >
                     <p className="text-xs font-bold text-white">{tpl.name}</p>
                     <div className="mt-2 flex gap-1">
@@ -626,7 +627,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <ColorField label="Color secundario" value={draft.secondaryColor} onChange={(v) => patch("secondaryColor", v)} />
                 <ColorField label="Color acento" value={draft.accentColor} onChange={(v) => patch("accentColor", v)} />
                 <div className="flex items-center justify-between rounded-lg bg-gray-800 border border-gray-700 p-2.5">
-                  <span className="text-xs font-semibold text-gray-300">Modo oscuro por defecto</span>
+                  <span className="text-xs font-semibold text-[var(--text-tertiary)]">Modo oscuro por defecto</span>
                   <Toggle checked={draft.darkModeDefault} onChange={(v) => patch("darkModeDefault", v)} />
                 </div>
               </>
@@ -635,7 +636,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             {panel === "secciones" && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500">Pagina principal</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Pagina principal</p>
                   {SECTION_ITEMS.map((section) => {
                     const enabled = draft.sections.includes(section.key);
                     return (
@@ -647,7 +648,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   })}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500">Tienda online</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Tienda online</p>
                   {tiendaSectionOrder.map((key, idx) => {
                     const enabled = tiendaSectionsEnabled.includes(key);
                     const count = sectionContentCounts[key] ?? 0;
@@ -658,7 +659,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                             type="button"
                             onClick={() => moveTiendaSection(key, "up")}
                             disabled={idx === 0}
-                            className="text-gray-500 hover:text-white disabled:opacity-20 transition-colors"
+                            className="text-[var(--text-secondary)] hover:text-white disabled:opacity-20 transition-colors"
                           >
                             <ChevronUp className="h-3 w-3" />
                           </button>
@@ -666,14 +667,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                             type="button"
                             onClick={() => moveTiendaSection(key, "down")}
                             disabled={idx === tiendaSectionOrder.length - 1}
-                            className="text-gray-500 hover:text-white disabled:opacity-20 transition-colors"
+                            className="text-[var(--text-secondary)] hover:text-white disabled:opacity-20 transition-colors"
                           >
                             <ChevronDown className="h-3 w-3" />
                           </button>
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-xs text-gray-200 block">{TIENDA_SECTION_LABELS[key]}</span>
-                          <span className={cn("text-[10px]", count > 0 ? "text-emerald-400" : "text-gray-500")}>
+                          <span className={cn("text-[length:var(--ts-2xs)]", count > 0 ? "text-[var(--data-success)]" : "text-[var(--text-secondary)]")}>
                             {count > 0 ? `${count} productos` : "Sin productos"}
                           </span>
                         </div>
@@ -698,9 +699,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className={LABEL_CLASS}>Redondez</label>
-                    <span className="text-[10px] text-emerald-400 font-bold">{draft.borderRadius}px</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold">{draft.borderRadius}px</span>
                   </div>
-                  <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-emerald-500" />
+                  <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success)]" />
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Espaciado general</label>
@@ -800,10 +801,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <input className={INPUT_CLASS} value={draft.address} onChange={(e) => patch("address", e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500">Horario</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Horario</p>
                   {DAYS.map((day) => (
                     <div key={day} className="grid grid-cols-[1fr,1fr,1fr] gap-2 items-center rounded-lg bg-gray-800 border border-gray-700 p-2">
-                      <span className="text-[11px] font-semibold text-gray-300 capitalize">{day}</span>
+                      <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] capitalize">{day}</span>
                       <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].open} onChange={(e) => patchSchedule(day, "open", e.target.value)} />
                       <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].close} onChange={(e) => patchSchedule(day, "close", e.target.value)} />
                     </div>
@@ -815,7 +816,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             {panel === "automatizacion" && (
               <>
                 <div className="flex items-center justify-between rounded-lg bg-gray-800 border border-gray-700 p-2.5">
-                  <span className="text-xs font-semibold text-gray-300">Popup bienvenida</span>
+                  <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup bienvenida</span>
                   <Toggle checked={draft.welcomePopupEnabled} onChange={(v) => patch("welcomePopupEnabled", v)} />
                 </div>
                 <div>
@@ -860,18 +861,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "historial" && (
               <div className="space-y-3">
-                <p className="text-[10px] font-bold text-gray-500">Versiones guardadas</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Versiones guardadas</p>
                 {savedSnapshots.length === 0 ? (
-                  <p className="text-xs text-gray-500">Aún no hay versiones. Guarda cambios para crear una.</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Aún no hay versiones. Guarda cambios para crear una.</p>
                 ) : (
                   savedSnapshots.map((snap, idx) => (
                     <div key={idx} className="rounded-lg bg-gray-800 border border-gray-700 p-2.5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-400">{snap.savedAt}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{snap.savedAt}</span>
                         <button
                           type="button"
                           onClick={() => pushChange(snap.theme)}
-                          className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                          className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] hover:text-[var(--data-success)] transition-colors"
                         >
                           Restaurar
                         </button>
@@ -882,12 +883,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: snap.theme.secondaryColor }} />
                           <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: snap.theme.accentColor }} />
                         </div>
-                        <span className="text-[10px] text-gray-400">{snap.theme.fontFamily}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{snap.theme.fontFamily}</span>
                         {snap.theme.darkModeDefault && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">Dark</span>
+                          <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-gray-700 text-[var(--text-tertiary)]">Dark</span>
                         )}
                       </div>
-                      <p className="text-[11px] text-gray-300 font-semibold truncate">{snap.theme.storeName}</p>
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] font-semibold truncate">{snap.theme.storeName}</p>
                     </div>
                   ))
                 )}
@@ -901,7 +902,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <div className={cn("flex gap-4 w-full justify-center", splitPreview && "items-start")}>
               {splitPreview && (
                 <div className="flex flex-col items-center gap-1 shrink-0">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Guardado</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase">Guardado</span>
                   <div
                     className="bg-white rounded-lg overflow-hidden"
                     style={{ width: viewport === "mobile" ? "320px" : "48%", maxWidth: "50%", height: "calc(100vh - 100px)" }}
@@ -915,9 +916,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </div>
               )}
               <div className={cn("flex flex-col items-center gap-1", splitPreview && "shrink-0")}>
-                {splitPreview && <span className="text-[10px] font-bold text-emerald-400 uppercase">Borrador</span>}
+                {splitPreview && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] uppercase">Borrador</span>}
                 <div
-                  className="bg-white rounded-lg overflow-hidden transition-all duration-300"
+                  className="bg-white rounded-lg overflow-hidden transition-all duration-[var(--dur-base)]"
                   style={{
                     width: splitPreview ? (viewport === "mobile" ? "320px" : "48%") : activeViewport.width,
                     maxWidth: splitPreview ? "50%" : "100%",
@@ -935,10 +936,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </div>
           ) : (
           <div
-            className="bg-white rounded-lg overflow-hidden transition-all duration-300"
+            className="bg-white rounded-lg overflow-hidden transition-all duration-[var(--dur-base)]"
             style={{ width: activeViewport.width, maxWidth: "100%", minHeight: "calc(100vh - 80px)", fontFamily }}
           >
-            <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
+            <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-gray-50 text-[var(--text-primary)]")}>
               <div className="px-4 py-3 border-b" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb", background: draft.navbarStyle === "transparent" ? "transparent" : draft.primaryColor }}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
@@ -946,15 +947,15 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       {draft.logo ? (
                         <Image src={draft.logo} alt="" fill sizes="36px" className="object-cover" unoptimized={draft.logo.startsWith("data:")} />
                       ) : (
-                        <span className="text-sm font-black text-white">{draft.storeName.slice(0, 2).toUpperCase()}</span>
+                        <span className="text-sm font-extrabold text-white">{draft.storeName.slice(0, 2).toUpperCase()}</span>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-black text-white">{draft.storeName || "Mi tienda"}</p>
-                      <p className="text-[10px] text-white/80 line-clamp-1">{draft.slogan || "Tu tienda de confianza"}</p>
+                      <p className="text-sm font-extrabold text-white">{draft.storeName || "Mi tienda"}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-white/80 line-clamp-1">{draft.slogan || "Tu tienda de confianza"}</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-white/80">Preview</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-white/80">Preview</span>
                 </div>
               </div>
 
@@ -968,11 +969,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   }}
                 >
                   <div className="max-w-xl">
-                    <p className="inline-flex items-center gap-1 text-[10px] font-bold bg-white/25 text-white px-2 py-1 rounded-full">
+                    <p className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold bg-white/25 text-white px-2 py-1 rounded-full">
                       <Sparkles className="h-3 w-3" />
                       {draft.heroBadge || "Oferta"}
                     </p>
-                    <h2 className="mt-3 text-2xl font-black text-white leading-tight">{draft.heroTitle || "Todo lo que necesitas"}</h2>
+                    <SectionTitle className="mt-3 text-2xl font-extrabold text-white leading-tight">{draft.heroTitle || "Todo lo que necesitas"}</SectionTitle>
                     <p className="mt-2 text-sm text-white/90 line-clamp-2">{draft.heroSubtitle || "Delivery rapido en tu zona"}</p>
                     <button
                       type="button"
@@ -990,8 +991,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black">Productos destacados</h3>
-                  <span className="text-[10px] text-gray-400">{draft.sections.length} secciones activas</span>
+                  <CardTitle className="text-sm font-extrabold">Productos destacados</CardTitle>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{draft.sections.length} secciones activas</span>
                 </div>
 
                 <div className={cn("grid grid-cols-2 gap-3", viewport === "desktop" && "sm:grid-cols-3 lg:grid-cols-4")}
@@ -1009,7 +1010,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Tienda sections preview */}
                 {tiendaSectionsEnabled.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-gray-500">Secciones de tienda</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Secciones de tienda</p>
                     {tiendaSectionsEnabled.map((key) => (
                       <div
                         key={key}
@@ -1034,19 +1035,19 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-xl p-3 border" style={{ borderColor: draft.darkModeDefault ? "#374151" : "#e5e7eb" }}>
                   <p className="text-xs font-bold mb-2">Herramientas activas</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.cartStyle}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.buttonStyle}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-purple-100 text-purple-700">{draft.animations}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700">{draft.backgroundPattern}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)]">{draft.cartStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)]">{draft.buttonStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">{draft.animations}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)]">{draft.backgroundPattern}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>
                   </div>
                 </div>
 
                 {draft.welcomePopupEnabled && (
                   <div className="rounded-xl border p-3 bg-white" style={{ borderColor: draft.secondaryColor }}>
-                    <p className="text-xs font-black" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "Bienvenido"}</p>
-                    <p className="text-xs text-gray-500 mt-1">{draft.welcomePopupMessage || "Usa este cupon en tu primera compra"}</p>
-                    <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold bg-gray-100 text-gray-700">
+                    <p className="text-xs font-extrabold" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "Bienvenido"}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">{draft.welcomePopupMessage || "Usa este cupon en tu primera compra"}</p>
+                    <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-[var(--text-primary)]">
                       <Check className="h-3 w-3" />
                       {draft.welcomePopupCoupon || "BIENVENIDO10"}
                     </div>
@@ -1054,7 +1055,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 )}
               </div>
 
-              <div className="px-4 py-3 border-t text-[10px] text-center" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb" }}>
+              <div className="px-4 py-3 border-t text-[length:var(--ts-2xs)] text-center" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb" }}>
                 {draft.footerText || draft.slogan || "Tu bodega de confianza"}
               </div>
             </div>

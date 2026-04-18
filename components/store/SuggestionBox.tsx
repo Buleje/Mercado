@@ -1,5 +1,6 @@
- 
 "use client";
+
+ 
 
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -79,16 +80,16 @@ export default function SuggestionBox() {
 
   if (submitted) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center shadow-sm">
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-8 text-center shadow-sm">
         <div className="flex justify-center mb-4">
           <div className="p-4 rounded-full bg-[#00B4A6]/10">
             <CheckCircle2 className="w-10 h-10 text-[#00B4A6]" />
           </div>
         </div>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
           Gracias por tu sugerencia
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        <p className="text-sm text-[var(--text-tertiary)] mb-6">
           Tu opinion es muy importante para nosotros.
           La usaremos para mejorar el servicio de Buleje.
         </p>
@@ -103,17 +104,17 @@ export default function SuggestionBox() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
+      <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
         <div className="p-2 rounded-xl bg-[#00B4A6]/10">
           <MessageSquare className="w-5 h-5 text-[#00B4A6]" />
         </div>
         <div>
-          <h2 className="font-bold text-gray-900 dark:text-white">
+          <h2 className="font-bold text-[var(--text-primary)]">
             Caja de sugerencias
           </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Anonimo — Tu opinion nos ayuda a mejorar
           </p>
         </div>
@@ -122,7 +123,7 @@ export default function SuggestionBox() {
       <div className="p-5 space-y-5">
         {/* Rating */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
             Calificacion general
           </label>
           <div className="flex gap-2">
@@ -146,7 +147,7 @@ export default function SuggestionBox() {
               </button>
             ))}
             {rating > 0 && (
-              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 self-center">
+              <span className="ml-2 text-sm text-[var(--text-tertiary)] self-center">
                 {["", "Muy malo", "Malo", "Regular", "Bueno", "Excelente"][rating]}
               </span>
             )}
@@ -155,7 +156,7 @@ export default function SuggestionBox() {
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
             Categoria
           </label>
           <div className="flex flex-wrap gap-2">
@@ -167,7 +168,7 @@ export default function SuggestionBox() {
                   "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   category === cat.value
                     ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#00B4A6] hover:text-[#00B4A6]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[#00B4A6] hover:text-[#00B4A6]"
                 )}
               >
                 {cat.label}
@@ -178,7 +179,7 @@ export default function SuggestionBox() {
 
         {/* Message */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
             Tu sugerencia o comentario
           </label>
           <textarea
@@ -187,7 +188,7 @@ export default function SuggestionBox() {
             placeholder="Que podemos mejorar? Que te gusto? Que necesitas?"
             rows={4}
             maxLength={500}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#00B4A6] resize-none"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#00B4A6] resize-none"
           />
           <p className="text-xs text-gray-400 text-right mt-1">
             {message.length}/500

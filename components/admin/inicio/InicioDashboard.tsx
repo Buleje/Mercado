@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import {
   DollarSign, ShoppingCart, Package, TrendingUp, TrendingDown,
   Minus, AlertTriangle, Truck, RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
@@ -289,7 +289,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       { etapa: "Recibidos", cantidad: allOrders.length, color: "#3b82f6" },
       { etapa: "Confirmados", cantidad: allOrders.filter(o => ["confirmado", "en_camino", "entregado"].includes(o.status)).length, color: "#06b6d4" },
       { etapa: "En camino", cantidad: allOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#8b5cf6" },
-      { etapa: "Entregados", cantidad: allOrders.filter(o => o.status === "entregado").length, color: "#10b981" },
+      { etapa: "Entregados", cantidad: allOrders.filter(o => o.status === "entregado").length, color: "#00B4A6" },
     ];
 
     // ── Purchases by supplier ──
@@ -340,8 +340,8 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
   if (error && !lastUpdated) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
-        <AlertTriangle className="h-10 w-10 text-amber-500" />
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{error}</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+        <p className="text-sm font-medium text-[var(--text-secondary)]">{error}</p>
         <button onClick={() => void load()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition">
           <RefreshCw className="h-4 w-4 inline mr-2" />Reintentar
         </button>
@@ -404,26 +404,26 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       </div>
 
       {/* ── Margen bar ── */}
-      <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 ">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-gray-500 dark:text-muted">Margen bruto {periodLabel}</span>
+          <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Margen bruto {periodLabel}</span>
           <span className={cn(
             "text-sm font-extrabold",
-            data.margenHoy >= 30 ? "text-emerald-600" : data.margenHoy >= 15 ? "text-amber-600" : "text-red-600"
+            data.margenHoy >= 30 ? "text-[var(--data-success)]" : data.margenHoy >= 15 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
           )}>
             {data.margenHoy.toFixed(1)}%
           </span>
         </div>
-        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700",
-              data.margenHoy >= 30 ? "bg-emerald-500" : data.margenHoy >= 15 ? "bg-amber-500" : "bg-red-500"
+              "h-full rounded-full transition-all duration-[var(--dur-slower)]",
+              data.margenHoy >= 30 ? "bg-[var(--accent-soft)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
             )}
             style={{ width: `${Math.min(data.margenHoy, 100)}%` }}
           />
         </div>
-        <div className="flex justify-between mt-1 text-[10px] text-gray-400">
+        <div className="flex justify-between mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           <span>0%</span>
           <span>Objetivo: 30%</span>
           <span>100%</span>
@@ -439,11 +439,11 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 
 const COLOR_MAP = {
-  blue: { bg: "bg-emerald-50 dark:bg-emerald-950/20", icon: "text-emerald-500", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-  emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/20", icon: "text-emerald-500", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-  violet: { bg: "bg-violet-50 dark:bg-violet-950/20", icon: "text-violet-500", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
-  amber: { bg: "bg-amber-50 dark:bg-amber-950/20", icon: "text-amber-500", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-  red: { bg: "bg-red-50 dark:bg-red-950/20", icon: "text-red-500", badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", badge: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
+  amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20", icon: "text-amber-500", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
+  red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/20", icon: "text-red-500", badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
 } as const;
 
 function KPICard({
@@ -460,7 +460,7 @@ function KPICard({
 }) {
   const c = COLOR_MAP[color];
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
       {/* Sparkline background (decorative) */}
       {spark && spark.length > 1 && (
         <svg className="absolute bottom-0 left-0 right-0 h-10 opacity-10 pointer-events-none" viewBox={`0 0 ${spark.length - 1} 1`} preserveAspectRatio="none" aria-hidden="true">
@@ -485,18 +485,18 @@ function KPICard({
           <DeltaBadge value={delta} />
         )}
         {badge && (
-          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", c.badge)}>{badge}</span>
+          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", c.badge)}>{badge}</span>
         )}
       </div>
 
-      <p className="text-xl font-extrabold text-gray-900 dark:text-foreground leading-none tracking-tight">
+      <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none tracking-tight">
         {value}
       </p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted leading-tight">
+      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted leading-tight">
         {label}
       </p>
       {subtitle && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-600">{subtitle}</p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">{subtitle}</p>
       )}
     </div>
   );
@@ -505,13 +505,13 @@ function KPICard({
 function DeltaBadge({ value }: { value: number }) {
   const Icon = value === 0 ? Minus : value > 0 ? TrendingUp : TrendingDown;
   const color = value === 0
-    ? "text-gray-500 bg-gray-100 dark:bg-gray-800"
+    ? "text-[var(--text-secondary)] bg-[var(--surface-sunken)]"
     : value > 0
-      ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400"
-      : "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400";
+      ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+      : "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]";
 
   return (
-    <span className={cn("inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full", color)}>
+    <span className={cn("inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", color)}>
       <Icon className="h-3 w-3" />
       {Math.abs(value).toFixed(0)}%
     </span>
@@ -525,18 +525,18 @@ function DashboardSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-32" />
+          <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-32" />
         ))}
       </div>
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-12" />
+      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-72" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-72" />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-64" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-64" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-64" />
       </div>
     </div>
   );

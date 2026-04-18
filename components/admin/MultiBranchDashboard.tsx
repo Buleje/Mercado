@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Building2, DollarSign, Package, Users, RefreshCw } from "lucide-react";
+import { Building2, DollarSign, Package, Users, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface BranchData {
@@ -96,29 +97,29 @@ export default function MultiBranchDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-extrabold text-gray-900 dark:text-foreground">
+          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">
             {branches.length > 1 ? "Multi-Sucursal" : "Resumen del Negocio"}
-          </h2>
+          </SectionTitle>
         </div>
         <button onClick={load} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-          <RefreshCw className="h-4 w-4 text-gray-400" />
+          <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
         </button>
       </div>
 
       {/* Global totals */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Ventas Total", value: fmt(totals.sales), icon: DollarSign, color: "text-emerald-600" },
-          { label: "Pedidos", value: String(totals.orders), icon: Package, color: "text-emerald-600" },
-          { label: "Productos", value: String(totals.products), icon: Package, color: "text-purple-600" },
-          { label: "Clientes", value: String(totals.customers), icon: Users, color: "text-amber-600" },
+          { label: "Ventas Total", value: fmt(totals.sales), icon: DollarSign, color: "text-[var(--data-success)]" },
+          { label: "Pedidos", value: String(totals.orders), icon: Package, color: "text-[var(--data-success)]" },
+          { label: "Productos", value: String(totals.products), icon: Package, color: "text-[var(--text-secondary)]" },
+          { label: "Clientes", value: String(totals.customers), icon: Users, color: "text-[var(--data-warning)]" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3">
+          <div key={kpi.label} className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <kpi.icon className={cn("h-4 w-4", kpi.color)} />
-              <span className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase">{kpi.label}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">{kpi.label}</span>
             </div>
-            <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{kpi.value}</p>
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{kpi.value}</p>
           </div>
         ))}
       </div>
@@ -126,26 +127,26 @@ export default function MultiBranchDashboard() {
       {/* Branch comparison */}
       {branches.length > 1 && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-gray-400 dark:text-muted">Comparador de sucursales</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Comparador de sucursales</p>
           {branches.map(branch => {
             const pct = totals.sales > 0 ? (branch.salesTotal / totals.sales) * 100 : 0;
             const isBest = bestBranch?.id === branch.id;
             return (
               <div key={branch.id} className={cn(
                 "bg-white dark:bg-card border rounded-xl p-3.5",
-                isBest ? "border-primary/30 " : "border-gray-100 dark:border-card-border"
+                isBest ? "border-primary/30 " : "border-[var(--rule-soft)] dark:border-card-border"
               )}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Building2 className={cn("h-4 w-4", isBest ? "text-primary" : "text-gray-400")} />
-                    <span className="text-sm font-bold text-gray-900 dark:text-foreground">{branch.name}</span>
+                    <Building2 className={cn("h-4 w-4", isBest ? "text-primary" : "text-[var(--text-tertiary)]")} />
+                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{branch.name}</span>
                     {isBest && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">Mejor</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">Mejor</span>
                     )}
                   </div>
                   <span className="text-sm font-extrabold text-primary">{fmt(branch.salesTotal)}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-muted">
+                <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)] dark:text-muted">
                   <span>{branch.ordersCount} pedidos</span>
                   <span>{branch.customersCount} clientes</span>
                   <span className="ml-auto font-bold">{pct.toFixed(0)}% del total</span>
@@ -162,7 +163,7 @@ export default function MultiBranchDashboard() {
       {/* Single branch message */}
       {branches.length === 1 && (
         <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 text-center">
-          <p className="text-xs text-gray-500 dark:text-muted">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
             Tienes una sola sucursal. Cuando agregues mas almacenes, aqui veras la comparacion entre todas.
           </p>
         </div>

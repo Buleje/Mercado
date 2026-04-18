@@ -1,8 +1,9 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Circle, ChevronDown, ChevronRight, Award } from "lucide-react";
+import { CheckCircle, Circle, ChevronDown, ChevronRight, Award } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -142,60 +143,60 @@ export default function TrainingCenter() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Centro de Capacitacion
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Tutoriales paso a paso para el personal de la bodega
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-500 dark:text-gray-400">
+          <label className="text-sm text-[var(--text-tertiary)]">
             Usuario:
           </label>
           <input
             value={user}
             onChange={(e) => setUser(e.target.value.trim() || "empleado")}
-            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-1.5 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             placeholder="Tu nombre"
           />
         </div>
       </div>
 
       {/* Progress */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Award
               className={cn(
                 "h-5 w-5",
-                allDone ? "text-amber-500" : "text-gray-300 dark:text-gray-600"
+                allDone ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
               )}
             />
-            <span className="font-semibold text-gray-800 dark:text-white">
+            <span className="font-semibold text-[var(--text-primary)]">
               Progreso de {user}
             </span>
           </div>
           <span
             className={cn(
               "text-sm font-semibold",
-              allDone ? "text-amber-500" : "text-[#00B4A6]"
+              allDone ? "text-[var(--data-warning)]" : "text-[#00B4A6]"
             )}
           >
             {progress} de {total} completados
           </span>
         </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+        <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
           <div
             className={cn(
-              "h-full transition-all duration-500",
-              allDone ? "bg-amber-400" : "bg-[#00B4A6]"
+              "h-full transition-all duration-[var(--dur-slow)]",
+              allDone ? "bg-[var(--data-warning)]" : "bg-[#00B4A6]"
             )}
             style={{ width: `${pct}%` }}
           />
         </div>
         {allDone && (
-          <p className="mt-2 text-center text-sm font-semibold text-amber-600">
+          <p className="mt-2 text-center text-sm font-semibold text-[var(--data-warning)]">
             Todos los tutoriales completados. Excelente trabajo!
           </p>
         )}
@@ -213,8 +214,8 @@ export default function TrainingCenter() {
               className={cn(
                 "rounded-xl border transition",
                 isDone
-                  ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-900/10"
-                  : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+                  ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]"
+                  : "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
               )}
             >
               {/* Header row */}
@@ -225,9 +226,9 @@ export default function TrainingCenter() {
                   title={isDone ? "Marcar como pendiente" : "Marcar como completado"}
                 >
                   {isDone ? (
-                    <CheckCircle className="h-6 w-6 text-emerald-500" />
+                    <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
                   ) : (
-                    <Circle className="h-6 w-6 text-gray-300 dark:text-gray-600" />
+                    <Circle className="h-6 w-6 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
                   )}
                 </button>
 
@@ -237,17 +238,17 @@ export default function TrainingCenter() {
                       className={cn(
                         "font-semibold",
                         isDone
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-gray-900 dark:text-white"
+                          ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                          : "text-[var(--text-primary)]"
                       )}
                     >
                       {tutorial.title}
                     </span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]">
                       ~{tutorial.estimatedMinutes} min
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-[var(--text-tertiary)]">
                     {tutorial.description}
                   </p>
                 </div>
@@ -256,7 +257,7 @@ export default function TrainingCenter() {
                   onClick={() =>
                     setExpanded(isExpanded ? null : tutorial.id)
                   }
-                  className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)]"
                 >
                   {isExpanded ? (
                     <ChevronDown className="h-5 w-5" />
@@ -268,14 +269,14 @@ export default function TrainingCenter() {
 
               {/* Steps */}
               {isExpanded && (
-                <div className="border-t border-gray-100 px-4 py-4 dark:border-gray-800">
+                <div className="border-t border-[var(--rule-soft)] px-4 py-4 dark:border-[var(--rule-base)]">
                   <ol className="space-y-3">
                     {tutorial.steps.map((step) => (
                       <li key={step.id} className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00B4A6]/10 text-xs font-bold text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-400">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00B4A6]/10 text-xs font-bold text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-[var(--data-success)]">
                           {step.id}
                         </span>
-                        <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                        <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
                           {step.text}
                         </p>
                       </li>
@@ -289,7 +290,7 @@ export default function TrainingCenter() {
                     className={cn(
                       "mt-4 w-full rounded-lg py-2 text-sm font-semibold transition",
                       isDone
-                        ? "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+                        ? "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                         : "bg-[#00B4A6] text-white hover:bg-[#009690]"
                     )}
                   >

@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { Star, ShoppingCart, Zap, Timer } from "lucide-react";
+import { ShoppingCart, Timer } from "lucide-react";
+import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -50,18 +51,29 @@ function useCountdown() {
   return remaining;
 }
 
-export default function DailySpecial({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
+export default function DailySpecial({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
   const { addItem, items } = useCart();
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const isLoading = serverProducts ? false : hook.isLoading;
   const [ref, inView] = useInView({ threshold: 0.15 });
   const [imgError, setImgError] = useState(false);
-  const product = useMemo(() => getDailyProduct(products), [products]);
+  const product = useMemo(() => {
+    // En modo estricto exigimos que el producto destacado sea uno
+    // explicitamente marcado por admin (badge "Oferta" o "Popular").
+    // Sin seleccion explicita: el componente se pinta como placeholder.
+    if (strictAdminOnly) {
+      const adminPicked = products.find(
+        (p) => (p.badge === "Oferta" || p.badge === "Popular") && p.image,
+      );
+      return adminPicked ?? null;
+    }
+    return getDailyProduct(products);
+  }, [products, strictAdminOnly]);
   const countdown = useCountdown();
 
   if (isLoading) return <SectionPlaceholder title="Oferta del Dia" hint="Cargando..." cols={4} />;
-  if (!product) return showEmpty ? <SectionPlaceholder title="Oferta del Dia" hint="Agrega productos para activar la oferta diaria" cols={4} /> : null;
+  if (!product) return showEmpty ? <SectionPlaceholder title="Oferta del Dia" hint="Agrega productos para activar la oferta diaria" cols={4} variant={emptyVariant} publicTitle="Producto del dia" /> : null;
 
   const inCart = items.find((i) => i.id === product.id);
   const qty = inCart?.quantity ?? 0;
@@ -69,7 +81,6 @@ export default function DailySpecial({ serverProducts, showEmpty = false }: { se
   // Simulated original price (20% higher)
   const originalPrice = +(product.price * 1.2).toFixed(2);
   const savings = +(originalPrice - product.price).toFixed(2);
-  const pct = Math.round((savings / originalPrice) * 100);
 
   return (
     <section ref={ref} className="py-6 sm:py-10 bg-surface overflow-hidden">
@@ -78,16 +89,18 @@ export default function DailySpecial({ serverProducts, showEmpty = false }: { se
           className={`relative rounded-3xl overflow-hidden shadow-lg transition-all duration-700 ${
             inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
-          style={{ background: "linear-gradient(135deg, rgba(45,106,79,0.05), rgba(45,106,79,0.1), rgba(244,162,97,0.12))" }}
+          style={{
+            background:
+              "linear-gradient(135deg, color-mix(in oklch, var(--accent) 8%, var(--surface-canvas)), color-mix(in oklch, var(--accent) 3%, var(--surface-canvas)))",
+          }}
         >
-          {/* Badge */}
-          <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-amber-500 text-white text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg">
-            <Star className="w-3.5 h-3.5 fill-white" />
-            Producto del día
+          {/* Badge — premium ink (negro elegante) */}
+          <div className="absolute top-4 left-4 z-10">
+            <ProductBadge intent="premium">Producto del día</ProductBadge>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8 lg:p-10">
-            {/* Image */}
+            {/* Image — sin discount badge rojo overlay; el ProductPrice comunica descuento */}
             <div className="relative w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-2xl overflow-hidden bg-white dark:bg-white/10 shadow-xl shrink-0">
               <Image
                 src={imgError ? FALLBACK_IMAGE : (product.image || FALLBACK_IMAGE)}
@@ -97,16 +110,12 @@ export default function DailySpecial({ serverProducts, showEmpty = false }: { se
                 className="object-cover"
                 onError={() => setImgError(true)}
               />
-              {/* Discount badge */}
-              <div className="absolute bottom-3 right-3 bg-red-500 text-white font-extrabold text-lg px-3 py-1.5 rounded-xl shadow-lg">
-                -{pct}%
-              </div>
             </div>
 
             {/* Info */}
             <div className="flex-1 text-center sm:text-left space-y-4">
               <div>
-                <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+                <p className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1">
                   Oferta especial de hoy
                 </p>
                 <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight">
@@ -117,24 +126,21 @@ export default function DailySpecial({ serverProducts, showEmpty = false }: { se
                 </p>
               </div>
 
-              {/* Price */}
-              <div className="flex items-end gap-3 justify-center sm:justify-start">
-                <span className="text-4xl sm:text-5xl font-extrabold text-primary">
-                  S/{product.price.toFixed(2)}
-                </span>
-                <span className="text-lg text-muted line-through mb-1">
-                  S/{originalPrice.toFixed(2)}
-                </span>
-              </div>
+              {/* Price — canonical via DS con previousPrice tachado */}
+              <ProductPrice
+                price={product.price}
+                previousPrice={originalPrice}
+                size="lg"
+                className="justify-center sm:justify-start"
+              />
 
-              {/* Savings chip */}
+              {/* Ahorro + countdown — neutral sin amber/emerald */}
               <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                <span className="inline-flex items-center gap-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full">
-                  <Zap className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1 bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-bold px-2.5 py-1 rounded-full">
                   Ahorras S/{savings.toFixed(2)}
                 </span>
                 <span
-                  className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full"
+                  className="inline-flex items-center gap-1 bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)] text-xs font-semibold px-2.5 py-1 rounded-full"
                   aria-live="polite"
                   aria-label={countdown ? `Oferta termina en ${countdown}` : "Solo por hoy"}
                 >

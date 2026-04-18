@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Brain, MessageSquare, Stethoscope, Lightbulb, Target } from "lucide-react";
+import { Brain, MessageSquare, Stethoscope, Lightbulb, Target } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
@@ -57,7 +57,7 @@ export default function AsistenteIAModule() {
       {tab === "sugerencias" && <SugerenciasIAModule />}
       {tab === "metas" && <MetasLogrosModule />}
       {tab === "chat-ia" && (
-        <div className="bg-white rounded-xl border border-gray-200 min-h-[600px] h-[calc(100vh-220px)]">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100vh-220px)]">
           <AIAssistant embedded />
         </div>
       )}

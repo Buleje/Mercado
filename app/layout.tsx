@@ -6,7 +6,7 @@ const GeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
-  preload: false,
+  preload: true,
 });
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
@@ -19,6 +19,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ToastContainer";
 import { Toaster as SonnerToaster } from "sonner";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { LocaleProvider } from "@/contexts/locale-context";
+import { CurrencyProvider } from "@/contexts/currency-context";
 import CommandPalette from "@/components/CommandPalette";
 import ClientEffects from "@/components/ui/ClientEffects";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
@@ -218,6 +220,8 @@ export default async function RootLayout({
       </head>
       <body className={`antialiased ${GeistSans.className}`}>
         <ThemeProvider>
+        <LocaleProvider>
+        <CurrencyProvider>
         <ErrorBoundary>
         {/* Smooth scroll global (desktop only, respeta reduced-motion) */}
         <SmoothScrollProvider />
@@ -251,6 +255,8 @@ export default async function RootLayout({
         <SpeedInsights />
         <Analytics />
         </ErrorBoundary>
+        </CurrencyProvider>
+        </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

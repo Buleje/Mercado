@@ -1,10 +1,11 @@
 "use client";
 
+import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
   Truck, DollarSign, Users, AlertTriangle, ArrowUpRight, ArrowDownRight,
   Clock, ShoppingCart, CreditCard, CalendarDays,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
@@ -116,7 +117,7 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
 
     // Account status (payables)
     const statusGroups = [
-      { key: "pagado", label: "Pagado", color: "#10b981" },
+      { key: "pagado", label: "Pagado", color: "#00B4A6" },
       { key: "parcial", label: "Parcial", color: "#f59e0b" },
       { key: "pendiente", label: "Pendiente", color: "#3b82f6" },
       { key: "vencido", label: "Vencido", color: "#ef4444" },
@@ -169,8 +170,8 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
   if (loading) return <DashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-amber-500" />
-      <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
@@ -178,21 +179,21 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Total Compras" value={fmt(data.totalCompras)} Icon={DollarSign} delta={data.dCompras} accent="blue" />
-        <KPICard label="Órdenes" value={String(data.cantidadOrdenes)} Icon={ShoppingCart} accent="violet" />
-        <KPICard label="Proveedores" value={String(data.totalProveedores)} Icon={Truck} accent="emerald" />
-        <KPICard label="Deuda Pendiente" value={fmt(data.deudaPendiente)} Icon={CreditCard} accent={data.deudaPendiente > 0 ? "amber" : "emerald"} />
-        <KPICard label="Cuentas Vencidas" value={String(data.cuentasVencidas)} Icon={AlertTriangle} accent={data.cuentasVencidas > 0 ? "red" : "emerald"} />
-        <KPICard label="Prom. Orden" value={fmt(data.promedioOrden)} Icon={CalendarDays} accent="cyan" />
+        <StatCard label="Total Compras" value={fmt(data.totalCompras)} icon={DollarSign} delta={data.dCompras} />
+        <StatCard label="Órdenes" value={String(data.cantidadOrdenes)} icon={ShoppingCart} />
+        <StatCard label="Proveedores" value={String(data.totalProveedores)} icon={Truck} />
+        <StatCard label="Deuda Pendiente" value={fmt(data.deudaPendiente)} icon={CreditCard} emphasis={data.deudaPendiente > 0 ? "warning" : "success"} />
+        <StatCard label="Cuentas Vencidas" value={String(data.cuentasVencidas)} icon={AlertTriangle} emphasis={data.cuentasVencidas > 0 ? "error" : "success"} />
+        <StatCard label="Prom. Orden" value={fmt(data.promedioOrden)} icon={CalendarDays} />
       </div>
 
       {/* ── Alert bar ── */}
       {data.cuentasVencidas > 0 && (
-        <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl px-5 py-3">
-          <Clock className="h-4 w-4 text-red-500 shrink-0" />
-          <p className="text-xs text-red-700 dark:text-red-400 font-medium">
+        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl px-5 py-3">
+          <Clock className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
             {data.cuentasVencidas} cuenta{data.cuentasVencidas > 1 ? "s" : ""} vencida{data.cuentasVencidas > 1 ? "s" : ""} por un total de {fmt(data.deudaPendiente)}
           </p>
         </div>
@@ -214,32 +215,32 @@ function KPICard({ label, value, Icon, delta, accent }: {
 }) {
   const isPositive = delta != null ? delta >= 0 : false;
   const colorMap = {
-    emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
-    cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
-    amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },
-    red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500" },
+    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
+    blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
+    cyan: { bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30", icon: "text-cyan-500" },
+    amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: "text-amber-500" },
+    red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: "text-red-500" },
   };
   const c = colorMap[accent];
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
         </div>
         {delta != null && (
           <div className={cn("flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-bold",
-            isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+            isPositive ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
           )}>
             {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(delta).toFixed(1)}%
           </div>
         )}
       </div>
-      <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">{label}</p>
     </div>
   );
 }
@@ -248,10 +249,10 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-28 animate-pulse" />)}
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28 animate-pulse" />)}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-64 animate-pulse" />)}
       </div>
     </div>
   );

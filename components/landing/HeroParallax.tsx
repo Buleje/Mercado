@@ -39,15 +39,13 @@ export default function HeroParallax({
       ref={ref}
       className="relative overflow-hidden py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-950"
     >
-      {/* Capa 1 (fondo) — blobs decorativos */}
+      {/* Capa 1 (fondo) — accent sutil, un solo blob tokenizado */}
       <m.div
         style={{ y: yBack }}
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
       >
-        <div className="absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute top-1/4 right-0 h-80 w-80 rounded-full bg-amber-400/10 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-secondary/10 blur-[90px]" />
+        <div className="absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-[var(--accent)]/5 blur-[120px]" />
       </m.div>
 
       {/* Capa 2 (medio) — grid pattern sutil */}

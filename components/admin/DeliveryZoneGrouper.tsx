@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MapPin, Truck, Package, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { MapPin, Truck, Package, ChevronDown, ChevronUp, RefreshCw } from "@buleje/design-system/icons";
 
 interface Order {
   id: string;
@@ -88,29 +89,29 @@ export default function DeliveryZoneGrouper() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
             <Truck className="h-5 w-5 text-primary" /> Pedidos por Zona
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
+          </SectionTitle>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
             {orders.length} pedido{orders.length !== 1 ? "s" : ""} por entregar
           </p>
         </div>
         <button onClick={load} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-          <RefreshCw className="h-4 w-4 text-gray-400" />
+          <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
         </button>
       </div>
 
       {zones.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
-          <Package className="h-10 w-10 text-gray-300 dark:text-muted" />
-          <p className="text-sm font-semibold text-gray-500 dark:text-muted">No hay pedidos por entregar</p>
+          <Package className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted" />
+          <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">No hay pedidos por entregar</p>
         </div>
       ) : (
         <div className="space-y-2">
           {zones.map(group => {
             const isExpanded = expandedZone === group.zone;
             return (
-              <div key={group.zone} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+              <div key={group.zone} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
                 <button
                   onClick={() => setExpandedZone(isExpanded ? null : group.zone)}
                   className="w-full p-3.5 flex items-center justify-between text-left"
@@ -120,25 +121,25 @@ export default function DeliveryZoneGrouper() {
                       <MapPin className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-foreground">{group.zone}</p>
-                      <p className="text-xs text-gray-500 dark:text-muted">
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{group.zone}</p>
+                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                         {group.orders.length} pedido{group.orders.length !== 1 ? "s" : ""} — {fmt(group.totalValue)}
                       </p>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  {isExpanded ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
+                  <div className="border-t border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
                     {group.orders.map((order, i) => (
                       <div key={order.id} className="px-3.5 py-2.5 flex items-center gap-3">
-                        <span className="h-6 w-6 rounded-full bg-gray-100 dark:bg-accent flex items-center justify-center text-[10px] font-bold text-gray-500 shrink-0">
+                        <span className="h-6 w-6 rounded-full bg-gray-100 dark:bg-accent flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shrink-0">
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{order.customerName}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-muted truncate">
+                          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{order.customerName}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate">
                             {order.customerLocation || order.customerReference || "Sin direccion"}
                           </p>
                         </div>

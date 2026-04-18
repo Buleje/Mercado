@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import confetti from "canvas-confetti";
 import { m, AnimatePresence } from "framer-motion";
 import {
   Store,
@@ -118,7 +117,8 @@ export default function MarketplaceApplyPage() {
     if (step > 1) setStep((s) => (s - 1) as Step);
   };
 
-  const fireConfetti = () => {
+  const fireConfetti = async () => {
+    const confetti = (await import("canvas-confetti")).default;
     const end = Date.now() + 1500;
     const colors = ["#00B4A6", "#F59E0B", "#EC4899", "#8B5CF6"];
     (function frame() {

@@ -54,7 +54,7 @@ export default function SatisfactionWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg text-sm font-semibold text-gray-700 dark:text-zinc-200 hover:shadow-xl transition-all hover:scale-105"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 shadow-lg text-sm font-semibold text-gray-700 dark:text-zinc-200 hover:shadow-xl transition-all hover:scale-105"
         >
           <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
           <span className="hidden sm:inline">Tu experiencia</span>
@@ -63,7 +63,7 @@ export default function SatisfactionWidget() {
       )}
 
       {open && (
-        <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-xl p-4 w-64 animate-in fade-in zoom-in-95">
+        <div className="bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-2xl shadow-xl p-4 w-64 animate-in fade-in zoom-in-95">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-bold text-gray-800 dark:text-zinc-100">
               {sent ? "Gracias" : "Tu experiencia"}
@@ -89,21 +89,21 @@ export default function SatisfactionWidget() {
                 className="flex-1 flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors group"
               >
                 <span className="text-2xl group-hover:scale-110 transition-transform">&#128522;</span>
-                <span className="text-[10px] font-semibold text-gray-500 dark:text-zinc-400">Bien</span>
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-zinc-400">Bien</span>
               </button>
               <button
                 onClick={() => handleRate("regular")}
                 className="flex-1 flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors group"
               >
                 <span className="text-2xl group-hover:scale-110 transition-transform">&#128528;</span>
-                <span className="text-[10px] font-semibold text-gray-500 dark:text-zinc-400">Regular</span>
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-zinc-400">Regular</span>
               </button>
               <button
                 onClick={() => handleRate("mal")}
                 className="flex-1 flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group"
               >
                 <span className="text-2xl group-hover:scale-110 transition-transform">&#128542;</span>
-                <span className="text-[10px] font-semibold text-gray-500 dark:text-zinc-400">Mal</span>
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-zinc-400">Mal</span>
               </button>
             </div>
           )}

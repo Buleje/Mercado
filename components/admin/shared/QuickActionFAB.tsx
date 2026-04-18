@@ -34,28 +34,28 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
       id: "nueva-venta",
       label: "Nueva venta",
       icon: Receipt,
-      iconColor: "text-emerald-600",
+      iconColor: "text-[var(--data-success)]",
       onClick: () => { onNavigate("ventas-caja"); setOpen(false); },
     },
     {
       id: "agregar-producto",
       label: "Agregar producto",
       icon: PackagePlus,
-      iconColor: "text-amber-600",
+      iconColor: "text-[var(--data-warning)]",
       onClick: () => { onNavigate("inventario"); setOpen(false); },
     },
     {
       id: "ver-pedidos",
       label: "Ver pedidos",
       icon: ClipboardCheck,
-      iconColor: "text-emerald-600",
+      iconColor: "text-[var(--data-success)]",
       onClick: () => { onNavigate("pedidos"); setOpen(false); },
     },
     {
       id: "chat-ia",
       label: "Chat IA",
       icon: BotMessageSquare,
-      iconColor: "text-rose-600",
+      iconColor: "text-[var(--text-secondary)]",
       onClick: () => { onNavigate("asistente-ia"); setOpen(false); },
     },
   ];
@@ -116,7 +116,7 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
                   {/* Boton de accion */}
                   <button
                     onClick={action.onClick}
-                    className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center hover:scale-110 transition-transform border border-gray-100 dark:border-zinc-700"
+                    className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center hover:scale-110 transition-transform border border-[var(--rule-soft)] dark:border-zinc-700"
                     title={action.label}
                   >
                     <Icon className={cn("h-5 w-5", action.iconColor)} />
@@ -132,9 +132,9 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white",
-          "flex items-center justify-center transition-all duration-200",
-          open && "bg-emerald-700"
+          "w-14 h-14 rounded-full bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white",
+          "flex items-center justify-center transition-all duration-[var(--dur-base)]",
+          open && "bg-[var(--accent-soft)]"
         )}
         aria-label={open ? "Cerrar acciones rapidas" : "Acciones rapidas"}
         title="Acciones rapidas"

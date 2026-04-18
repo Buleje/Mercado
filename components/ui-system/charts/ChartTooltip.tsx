@@ -22,9 +22,9 @@ export function ChartTooltip({ active, label, payload, format }: TooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 shadow-sm">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg px-3 py-2 shadow-sm">
       {label !== undefined && (
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 mb-1">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-1">
           {label}
         </p>
       )}
@@ -42,7 +42,7 @@ export function ChartTooltip({ active, label, payload, format }: TooltipProps) {
               {item.name && (
                 <span className="text-gray-500">{item.name}</span>
               )}
-              <span className="font-bold text-gray-900 dark:text-white tabular-nums ml-auto">
+              <span className="font-bold text-[var(--text-primary)] tabular-nums ml-auto">
                 {formatted}
               </span>
             </div>

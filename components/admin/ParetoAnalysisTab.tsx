@@ -1,6 +1,8 @@
 ﻿"use client";
+
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
-import { BarChart3, Download, TrendingUp, Package } from "lucide-react";
+import { BarChart3, Download, TrendingUp, Package } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Types ── */
@@ -41,10 +43,10 @@ export default function ParetoAnalysisTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-indigo-500" /> Análisis Pareto (80/20)
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">Identifica el 20% de productos que generan el 80% de resultados</p>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-[var(--text-secondary)]" /> Análisis Pareto (80/20)
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Identifica el 20% de productos que generan el 80% de resultados</p>
         </div>
         <button onClick={() => exportToCSV(sorted.map(p => ({ Producto: p.name, Categoría: p.category, Valor: p.value, Porcentaje: `${p.pct.toFixed(1)}%`, Acumulado: `${p.cumPct.toFixed(1)}%`, Top80: p.isTop ? "Sí" : "No" })), "pareto")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
@@ -53,24 +55,24 @@ export default function ParetoAnalysisTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Productos Top</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">{topCount} de {sorted.length}</p>
-          <p className="text-xs text-gray-400">{topPct}% del catálogo</p>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Productos Top</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mt-1">{topCount} de {sorted.length}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{topPct}% del catálogo</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Generan</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{topRevPct}%</p>
-          <p className="text-xs text-gray-400">del total</p>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Generan</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{topRevPct}%</p>
+          <p className="text-xs text-[var(--text-tertiary)]">del total</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Total {metric === "revenue" ? "Ingresos" : metric === "units" ? "Unidades" : "Margen"}</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{metric === "units" ? totalValue.toLocaleString("es-PE") : fmt(totalValue)}</p>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Total {metric === "revenue" ? "Ingresos" : metric === "units" ? "Unidades" : "Margen"}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">{metric === "units" ? totalValue.toLocaleString("es-PE") : fmt(totalValue)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Resto ({sorted.length - topCount})</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-gray-400 dark:text-muted mt-1">{(100 - parseFloat(topRevPct)).toFixed(1)}%</p>
-          <p className="text-xs text-gray-400">del total</p>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Resto ({sorted.length - topCount})</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-tertiary)] dark:text-muted mt-1">{(100 - parseFloat(topRevPct)).toFixed(1)}%</p>
+          <p className="text-xs text-[var(--text-tertiary)]">del total</p>
         </div>
       </div>
 
@@ -81,48 +83,48 @@ export default function ParetoAnalysisTab() {
           { key: "units" as const, label: "Unidades", icon: Package },
           { key: "margin" as const, label: "Margen Bruto", icon: BarChart3 },
         ].map(m => (
-          <button key={m.key} onClick={() => setMetric(m.key)} className={cn("flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", metric === m.key ? "bg-indigo-500 text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={m.key} onClick={() => setMetric(m.key)} className={cn("flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", metric === m.key ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             <m.icon className="h-4 w-4" /> {m.label}
           </button>
         ))}
       </div>
 
       {/* Pareto Chart */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
-        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Gráfico Pareto</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">Gráfico Pareto</CardTitle>
         <div className="space-y-2">
           {sorted.map((p, i) => (
             <div key={p.id} className="flex flex-wrap items-center gap-3">
-              <span className="w-5 text-xs font-bold text-gray-400 text-right">{i + 1}</span>
-              <span className="w-40 text-xs font-semibold text-gray-700 dark:text-foreground truncate">{p.name}</span>
+              <span className="w-5 text-xs font-bold text-[var(--text-tertiary)] text-right">{i + 1}</span>
+              <span className="w-40 text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
               <div className="flex-1 flex flex-wrap items-center gap-2">
                 <div className="flex-1 h-6 bg-gray-100 dark:bg-surface rounded-full overflow-hidden relative">
-                  <div className={cn("h-full rounded-full transition-all", p.isTop ? "bg-indigo-500" : "bg-gray-300 dark:bg-gray-600")} style={{ width: `${(p.value / maxValue) * 100}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", p.isTop ? "bg-[var(--text-primary)]" : "bg-gray-300 dark:bg-gray-600")} style={{ width: `${(p.value / maxValue) * 100}%` }} />
                 </div>
-                <span className="text-xs font-bold text-gray-500 dark:text-muted w-14 text-right">{p.pct.toFixed(1)}%</span>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-14 text-right">{p.pct.toFixed(1)}%</span>
               </div>
               {/* Cumulative line marker */}
               <div className="w-20 flex items-center gap-1">
                 <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-emerald-400" : "bg-amber-400")} style={{ width: `${p.cumPct}%` }} />
+                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning)]")} style={{ width: `${p.cumPct}%` }} />
                 </div>
-                <span className="text-[10px] font-bold text-gray-400 w-10 text-right">{p.cumPct.toFixed(0)}%</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-10 text-right">{p.cumPct.toFixed(0)}%</span>
               </div>
-              <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", p.isTop ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400")}>{p.isTop ? "TOP" : "—"}</span>
+              <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", p.isTop ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]")}>{p.isTop ? "TOP" : "—"}</span>
             </div>
           ))}
         </div>
         {/* 80% line reference */}
-        <div className="mt-4 pt-3 border-t border-dashed border-gray-200 dark:border-card-border flex flex-wrap items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-400" />
-          <span className="text-xs text-gray-500 dark:text-muted">Línea 80% — Los productos marcados TOP representan ~80% del valor total</span>
+        <div className="mt-4 pt-3 border-t border-dashed border-[var(--rule-base)] dark:border-card-border flex flex-wrap items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" />
+          <span className="text-xs text-[var(--text-secondary)] dark:text-muted">Línea 80% — Los productos marcados TOP representan ~80% del valor total</span>
         </div>
       </div>
 
       {/* Insight */}
-      <div className="bg-indigo-50 dark:bg-indigo-950/20 rounded-xl border border-indigo-200 dark:border-indigo-800 p-3 sm:p-5">
-        <h3 className="font-extrabold text-indigo-800 dark:text-indigo-300 text-sm">Insight Pareto</h3>
-        <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-2">
+      <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
+        <CardTitle className="font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)] text-sm">Insight Pareto</CardTitle>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--text-primary)] mt-2">
           <strong>{topCount} productos ({topPct}% del catálogo)</strong> generan <strong>{topRevPct}%</strong> del {metric === "revenue" ? "ingreso" : metric === "units" ? "volumen" : "margen"}.
           Enfoca promociones, stock y negociación con proveedores en estos productos para máximo impacto.
           Los {sorted.length - topCount} productos restantes podrían revisarse para optimizar espacio en tienda.

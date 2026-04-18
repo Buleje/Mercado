@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
 import {
   Package,
@@ -60,7 +61,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Agrega tu primer producto",
       description: "Sube tus productos con foto, precio y stock",
       icon: Package,
-      color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30",
+      color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
       tab: "productos",
       completed: completedIds.has("products"),
     },
@@ -69,7 +70,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Personaliza tu tienda",
       description: "Logo, colores y datos de contacto",
       icon: Palette,
-      color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
+      color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       tab: "store-customizer",
       completed: completedIds.has("store"),
     },
@@ -78,7 +79,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Haz tu primera venta",
       description: "Usa el punto de venta para registrar una venta",
       icon: ShoppingCart,
-      color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
+      color: "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       tab: "pedidos",
       completed: completedIds.has("sale"),
     },
@@ -87,7 +88,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Registra un cliente",
       description: "Agrega tu primer cliente para fidelizarlo",
       icon: Users,
-      color: "text-pink-600 bg-pink-50 dark:bg-pink-950/30",
+      color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
       tab: "clientes",
       completed: completedIds.has("customers"),
     },
@@ -115,28 +116,28 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
   };
 
   return (
-    <div className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/20 dark:to-emerald-950/20 p-5 relative overflow-hidden">
+    <div className="mb-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 relative overflow-hidden">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
-        className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-white/50 transition-colors"
+        className="absolute top-3 right-3 p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-white/50 transition-colors"
       >
         <X className="h-4 w-4" />
       </button>
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center">
+        <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center">
           <Rocket className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h3 className="font-bold text-foreground">Primeros pasos</h3>
+          <CardTitle className="font-bold">Primeros pasos</CardTitle>
           <p className="text-xs text-muted">{completedCount} de {steps.length} completados</p>
         </div>
         {/* Progress bar */}
         <div className="ml-auto w-24 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
           <div
-            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+            className="h-full bg-[var(--accent-soft)] rounded-full transition-all duration-[var(--dur-slow)]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -157,12 +158,12 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
                 "flex items-start gap-3 p-3 rounded-xl text-left transition-all",
                 step.completed
                   ? "bg-white/50 dark:bg-white/5 opacity-60"
-                  : "bg-white dark:bg-card hover:shadow-sm border border-gray-100 dark:border-card-border"
+                  : "bg-white dark:bg-card hover:shadow-sm border border-[var(--rule-soft)] dark:border-card-border"
               )}
             >
               <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", step.color)}>
                 {step.completed ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  <CheckCircle2 className="h-5 w-5 text-[var(--data-success)]" />
                 ) : (
                   <Icon className="h-5 w-5" />
                 )}
@@ -171,9 +172,9 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
                 <p className={cn("text-sm font-semibold", step.completed && "line-through text-muted")}>
                   {step.title}
                 </p>
-                <p className="text-[11px] text-muted mt-0.5">{step.description}</p>
+                <p className="text-[length:var(--ts-xs)] text-muted mt-0.5">{step.description}</p>
               </div>
-              {!step.completed && <ChevronRight className="h-4 w-4 text-gray-400 shrink-0 mt-1" />}
+              {!step.completed && <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-1" />}
             </button>
           );
         })}

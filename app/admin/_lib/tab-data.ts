@@ -45,7 +45,7 @@ import {
   BadgePercent,
   PackagePlus,
   MessageCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
 // ── 8 módulos consolidados + especiales ──────────────────────────────────────

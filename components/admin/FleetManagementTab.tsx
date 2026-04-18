@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   Truck, Wrench, Fuel, AlertTriangle, ChevronDown, ChevronUp,
   Plus, Pencil, X, Check, User, BarChart3, Route,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type VehicleStatus = "activo" | "en-ruta" | "mantenimiento" | "inactivo";
@@ -36,13 +37,13 @@ type MaintenanceLog = {
 };
 
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: string }> = {
-  activo:        { label: "Disponible",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", dot: "bg-emerald-500" },
-  "en-ruta":     { label: "En ruta",     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             dot: "bg-emerald-500" },
-  mantenimiento: { label: "En taller",   color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         dot: "bg-amber-500" },
-  inactivo:      { label: "Inactivo",    color: "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
+  activo:        { label: "Disponible",  color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
+  "en-ruta":     { label: "En ruta",     color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             dot: "bg-[var(--accent-soft)]" },
+  mantenimiento: { label: "En taller",   color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",         dot: "bg-[var(--data-warning)]" },
+  inactivo:      { label: "Inactivo",    color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
 };
 
-const TYPE_ICONS: Record<string, string> = { moto: "🏍️", mototaxi: "🛺", camioneta: "🚐" };
+const TYPE_LABEL: Record<string, string> = { moto: "Moto", mototaxi: "Mototaxi", camioneta: "Camioneta" };
 
 const MAINTENANCE_THRESHOLD = new Date(Date.now() + 7 * 86_400_000);
 
@@ -117,17 +118,17 @@ export default function FleetManagementTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Truck className="h-6 w-6 text-primary" />
             Gestión de Flota
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Vehículos, combustible y mantenimiento</p>
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Vehículos, combustible y mantenimiento</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["fleet", "maintenance"] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted"
+                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
               )}>
               {v === "fleet" ? "Flota" : "Mantenimiento"}
             </button>
@@ -144,17 +145,17 @@ export default function FleetManagementTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Disponibles",       value: `${kpis.active}/${vehicles.length}`, color: "text-emerald-600", icon: Truck },
-          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-emerald-500",    icon: Route },
+          { label: "Disponibles",       value: `${kpis.active}/${vehicles.length}`, color: "text-[var(--data-success)]", icon: Truck },
+          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-[var(--data-success)]",    icon: Route },
           { label: "Entregas hoy",      value: kpis.totalDel,                        color: "text-primary",     icon: BarChart3 },
-          { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-amber-500",   icon: Wrench },
+          { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-[var(--data-warning)]",   icon: Wrench },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-start gap-3">
+          <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted leading-tight">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</p>
               <p className={cn("text-xl font-extrabold mt-0.5", color)}>{value}</p>
             </div>
           </div>
@@ -168,7 +169,7 @@ export default function FleetManagementTab() {
             {(["all", "activo", "en-ruta", "mantenimiento", "inactivo"] as const).map(s => (
               <button key={s} onClick={() => setFilterStatus(s)}
                 className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                  filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted"
+                  filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
                 )}>
                 {s === "all" ? "Todos" : STATUS_CONFIG[s].label}
               </button>
@@ -176,67 +177,67 @@ export default function FleetManagementTab() {
           </div>
 
           {!loading && filtered.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-xl">
-              <Truck className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-muted">Sin vehículos en esta categoría</p>
+            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl">
+              <Truck className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin vehículos en esta categoría</p>
             </div>
           )}
 
           <div className="space-y-3">
             {filtered.map(v => (
-              <div key={v.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={v.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <button
                   onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
                   className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl shrink-0">{TYPE_ICONS[v.type]}</span>
+                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-secondary)] shrink-0">{TYPE_LABEL[v.type]?.slice(0, 2) ?? "V"}</span>
                     <div className="text-left">
-                      <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{v.name}</h4>
-                      <p className="text-xs text-gray-500 dark:text-muted">{v.plate} · <span className="flex-inline items-center gap-0.5"><User className="h-3 w-3 inline" /> {v.driver}</span></p>
+                      <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{v.name}</h4>
+                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{v.plate} · <span className="flex-inline items-center gap-0.5"><User className="h-3 w-3 inline" /> {v.driver}</span></p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     <div className="flex items-center gap-1.5">
                       <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[v.status].dot)} />
-                      <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>
                         {STATUS_CONFIG[v.status].label}
                       </span>
                     </div>
                     <span className="text-xs text-primary font-bold">{v.deliveriesToday} entregas hoy</span>
-                    {expandedId === v.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {expandedId === v.id ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
                   </div>
                 </button>
 
                 {expandedId === v.id && (
-                  <div className="px-4 pb-4 border-t border-gray-100 dark:border-card-border pt-4 space-y-4">
+                  <div className="px-4 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Km totales</p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmTotal.toLocaleString()} km</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Km totales</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{v.kmTotal.toLocaleString()} km</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Km este mes</p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmMonth.toLocaleString()} km</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Km este mes</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{v.kmMonth.toLocaleString()} km</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Entregas mes</p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.deliveriesMonth}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Entregas mes</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{v.deliveriesMonth}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Próx. mantenimiento</p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{fmtDate(v.nextMaintenance)}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Próx. mantenimiento</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{fmtDate(v.nextMaintenance)}</p>
                       </div>
                     </div>
 
                     {/* Fuel bar */}
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-gray-500 dark:text-muted flex items-center gap-1">
+                        <span className="text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
                           <Fuel className="h-3 w-3" /> Combustible
                         </span>
                         <span className={cn("font-bold",
-                          v.fuelLevel > 50 ? "text-emerald-600" : v.fuelLevel > 20 ? "text-amber-600" : "text-red-600"
+                          v.fuelLevel > 50 ? "text-[var(--data-success)]" : v.fuelLevel > 20 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
                         )}>
                           {v.fuelLevel}%
                         </span>
@@ -244,7 +245,7 @@ export default function FleetManagementTab() {
                       <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div
                           className={cn("h-full rounded-full transition-all",
-                            v.fuelLevel > 50 ? "bg-emerald-500" : v.fuelLevel > 20 ? "bg-amber-500" : "bg-red-500"
+                            v.fuelLevel > 50 ? "bg-[var(--accent-soft)]" : v.fuelLevel > 20 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
                           )}
                           style={{ width: `${v.fuelLevel}%` }}
                         />
@@ -253,7 +254,7 @@ export default function FleetManagementTab() {
 
                     {/* Maintenance warning */}
                     {new Date(v.nextMaintenance) <= MAINTENANCE_THRESHOLD && (
-                      <div className="flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-xl">
+                      <div className="flex items-center gap-2 text-xs bg-[var(--data-warning-50)] dark:bg-amber-950/10 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Mantenimiento próximo: {fmtDate(v.nextMaintenance)}
                       </div>
@@ -263,7 +264,7 @@ export default function FleetManagementTab() {
                     <div className="flex flex-wrap gap-2 pt-1">
                       <button
                         onClick={() => setShowStatusModal(v)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
                       >
                         <Pencil className="h-3 w-3" /> Cambiar estado
                       </button>
@@ -278,11 +279,11 @@ export default function FleetManagementTab() {
 
       {/* Maintenance view */}
       {view === "maintenance" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-surface text-left text-xs font-bold text-gray-400">
+                <tr className="bg-gray-50 dark:bg-surface text-left text-xs font-bold text-[var(--text-tertiary)]">
                   <th className="px-4 py-3">Vehículo</th>
                   <th className="px-4 py-3">Tipo de trabajo</th>
                   <th className="px-4 py-3">Fecha</th>
@@ -292,18 +293,18 @@ export default function FleetManagementTab() {
               </thead>
               <tbody>
                 {maintLog.map(m => (
-                  <tr key={m.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
-                    <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{m.vehicleName}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-muted flex items-center gap-1">
-                      <Wrench className="h-3.5 w-3.5 text-amber-500 shrink-0" /> {m.type}
+                  <tr key={m.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
+                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{m.vehicleName}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
+                      <Wrench className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" /> {m.type}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-muted">{fmtDate(m.date)}</td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-foreground">{fmt(m.cost)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted max-w-48 truncate">{m.notes || "—"}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.date)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(m.cost)}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted max-w-48 truncate">{m.notes || "—"}</td>
                   </tr>
                 ))}
                 {maintLog.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">Sin registros de mantenimiento</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">Sin registros de mantenimiento</td></tr>
                 )}
               </tbody>
             </table>
@@ -314,10 +315,10 @@ export default function FleetManagementTab() {
       {/* Change status modal */}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowStatusModal(null)}>
-          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Estado — {showStatusModal.name}</h3>
-              <button onClick={() => setShowStatusModal(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Estado — {showStatusModal.name}</CardTitle>
+              <button onClick={() => setShowStatusModal(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2">
               {(Object.keys(STATUS_CONFIG) as VehicleStatus[]).map(s => (
@@ -328,7 +329,7 @@ export default function FleetManagementTab() {
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold border transition",
                     showStatusModal.status === s
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-gray-200 dark:border-card-border hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-surface"
+                      : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
                   <span className={cn("w-2.5 h-2.5 rounded-full", STATUS_CONFIG[s].dot)} />
@@ -344,51 +345,51 @@ export default function FleetManagementTab() {
       {/* Register maintenance modal */}
       {showMaintModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowMaintModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md border border-gray-200 dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md border border-[var(--rule-base)] dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Registrar mantenimiento</h3>
-              <button onClick={() => setShowMaintModal(false)}><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Registrar mantenimiento</CardTitle>
+              <button onClick={() => setShowMaintModal(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted">Vehículo</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Vehículo</label>
                 <select
                   value={maintForm.vehicleId}
                   onChange={e => {
                     const v = vehicles.find(x => x.id === e.target.value);
                     setMaintForm(f => ({ ...f, vehicleId: e.target.value, vehicleName: v?.name ?? "" }));
                   }}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
                 >
                   <option value="">Seleccionar vehículo...</option>
                   {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted">Tipo de trabajo</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo de trabajo</label>
                 <input value={maintForm.type} onChange={e => setMaintForm(f => ({ ...f, type: e.target.value }))}
-                  placeholder="Ej: Cambio de aceite, frenos..." className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  placeholder="Ej: Cambio de aceite, frenos..." className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</label>
                   <input type="date" value={maintForm.date} onChange={e => setMaintForm(f => ({ ...f, date: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Costo (S/)</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo (S/)</label>
                   <input type="number" min="0" step="0.5" value={maintForm.cost} onChange={e => setMaintForm(f => ({ ...f, cost: +e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted">Notas</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Notas</label>
                 <textarea value={maintForm.notes} onChange={e => setMaintForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm resize-none" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm resize-none" />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
               <button onClick={saveMaintenance} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
                 <Check className="h-4 w-4" /> Guardar
               </button>

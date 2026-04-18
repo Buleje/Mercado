@@ -36,7 +36,7 @@ export function PlanSelect({ slug, current, onChanged }: PlanSelectProps) {
       <select
         value={current}
         onChange={(e) => void handleChange(e.target.value as PlanId)}
-        className="appearance-none bg-transparent border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 pr-6 text-xs text-gray-700 dark:text-gray-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+        className="appearance-none bg-transparent border border-[var(--rule-base)] rounded-lg px-2 py-1 pr-6 text-xs text-[var(--text-secondary)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500/40"
       >
         <option value="free">Free</option>
         <option value="pro">Pro</option>

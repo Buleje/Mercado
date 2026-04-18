@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import {
   CheckCircle, Download, Search, Eye, X,
   Clock, XCircle, Send,
   UserCheck, FileSignature,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -39,10 +40,10 @@ type PurchaseApproval = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<ApprovalStatus, { label: string; color: string; icon: typeof CheckCircle }> = {
-  pendiente:    { label: "Pendiente",   color: "text-amber-600",   icon: Clock },
-  "en-revision":{ label: "En revisión", color: "text-emerald-600",    icon: Eye },
-  aprobado:     { label: "Aprobado",    color: "text-emerald-600", icon: CheckCircle },
-  rechazado:    { label: "Rechazado",   color: "text-red-600",     icon: XCircle },
+  pendiente:    { label: "Pendiente",   color: "text-[var(--data-warning)]",   icon: Clock },
+  "en-revision":{ label: "En revisión", color: "text-[var(--data-success)]",    icon: Eye },
+  aprobado:     { label: "Aprobado",    color: "text-[var(--data-success)]", icon: CheckCircle },
+  rechazado:    { label: "Rechazado",   color: "text-[var(--data-error)]",     icon: XCircle },
 };
 
 const LEVEL_LABELS: Record<ApprovalLevel, string> = {
@@ -52,9 +53,9 @@ const LEVEL_LABELS: Record<ApprovalLevel, string> = {
 };
 
 const urgencyStyle: Record<string, string> = {
-  normal: "text-gray-600 bg-gray-100 dark:bg-gray-800/30",
-  urgente: "text-amber-600 bg-amber-100 dark:bg-amber-900/30",
-  "crítica": "text-red-600 bg-red-100 dark:bg-red-900/30",
+  normal: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]/30",
+  urgente: "text-[var(--data-warning)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
+  "crítica": "text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
 };
 
 function overallStatus(steps: ApprovalStep[]): ApprovalStatus {
@@ -97,27 +98,27 @@ export default function PurchaseApprovalTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <CheckCircle className="h-6 w-6 text-primary" /> Aprobación de Compras
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Flujo de aprobación multinivel para órdenes de compra</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Flujo de aprobación multinivel para órdenes de compra</p>
         </div>
-        <button onClick={() => exportToCSV(APPROVALS.map(a => ({ ref: a.ref, desc: a.description, proveedor: a.supplier, total: a.total, solicitante: a.requestedBy, fecha: a.requestDate, urgencia: a.urgency, estado: STATUS_MAP[overallStatus(a.steps)].label })), "aprobacion-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(APPROVALS.map(a => ({ ref: a.ref, desc: a.description, proveedor: a.supplier, total: a.total, solicitante: a.requestedBy, fecha: a.requestDate, urgencia: a.urgency, estado: STATUS_MAP[overallStatus(a.steps)].label })), "aprobacion-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "En espera", value: String(stats.pending), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: Clock },
-          { label: "Aprobadas", value: String(stats.approved), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
-          { label: "Rechazadas", value: String(stats.rejected), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: XCircle },
-          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Send },
+          { label: "En espera", value: String(stats.pending), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
+          { label: "Aprobadas", value: String(stats.approved), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+          { label: "Rechazadas", value: String(stats.rejected), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: XCircle },
+          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Send },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
               <p className={cn("text-xl font-extrabold", color)}>{value}</p>
             </div>
           </div>
@@ -126,31 +127,31 @@ export default function PurchaseApprovalTab() {
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar OC, proveedor, descripción..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar OC, proveedor, descripción..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">OC</th><th className="px-2 sm:px-4 py-2 sm:py-3">Descripción</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Urgencia</th><th className="px-2 sm:px-4 py-2 sm:py-3">Nivel actual</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
+            <thead><tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">OC</th><th className="px-2 sm:px-4 py-2 sm:py-3">Descripción</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Urgencia</th><th className="px-2 sm:px-4 py-2 sm:py-3">Nivel actual</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(a => {
                 const os = overallStatus(a.steps);
                 const StatusIcon = STATUS_MAP[os].icon;
                 return (
-                  <tr key={a.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{a.ref}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-foreground max-w-50 truncate">{a.description}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.supplier}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{fmt(a.total)}</td>
+                  <tr key={a.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{a.ref}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground max-w-50 truncate">{a.description}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{a.supplier}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(a.total)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urgencyStyle[a.urgency])}>{a.urgency}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{LEVEL_LABELS[a.currentLevel]}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{LEVEL_LABELS[a.currentLevel]}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[os].color)}><StatusIcon className="h-3.5 w-3.5" />{STATUS_MAP[os].label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
@@ -164,23 +165,23 @@ export default function PurchaseApprovalTab() {
       {/* Detail Modal — Approval Pipeline */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref}</h3>
-                <p className="text-xs text-gray-400">{detail.description}</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.ref}</CardTitle>
+                <p className="text-xs text-[var(--text-tertiary)]">{detail.description}</p>
               </div>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div><p className="text-xs text-gray-400">Proveedor</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.supplier}</p></div>
-              <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 dark:text-foreground">{fmt(detail.total)}</p></div>
-              <div><p className="text-xs text-gray-400">Solicitante</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.requestedBy}</p></div>
-              <div><p className="text-xs text-gray-400">Fecha solicitud</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.requestDate}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)]">Proveedor</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.supplier}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)]">Total</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(detail.total)}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)]">Solicitante</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.requestedBy}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)]">Fecha solicitud</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.requestDate}</p></div>
             </div>
 
-            <h4 className="font-bold text-sm text-gray-700 dark:text-foreground flex items-center gap-1"><FileSignature className="h-4 w-4" /> Pipeline de aprobación</h4>
+            <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-1"><FileSignature className="h-4 w-4" /> Pipeline de aprobación</h4>
             <div className="space-y-3">
               {detail.steps.map((step, i) => {
                 const StepIcon = STATUS_MAP[step.status].icon;
@@ -191,9 +192,9 @@ export default function PurchaseApprovalTab() {
                       {i < detail.steps.length - 1 && <div className="w-0.5 h-6 bg-gray-200 dark:bg-card-border mt-1" />}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-700 dark:text-foreground">{LEVEL_LABELS[step.level]}</p>
-                      <p className="text-xs text-gray-500 flex items-center gap-1"><UserCheck className="h-3 w-3" />{step.approver} {step.date && <span>· {step.date}</span>}</p>
-                      {step.comment && <p className="text-xs text-gray-400 italic mt-0.5">&quot;{step.comment}&quot;</p>}
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{LEVEL_LABELS[step.level]}</p>
+                      <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1"><UserCheck className="h-3 w-3" />{step.approver} {step.date && <span>· {step.date}</span>}</p>
+                      {step.comment && <p className="text-xs text-[var(--text-tertiary)] italic mt-0.5">&quot;{step.comment}&quot;</p>}
                     </div>
                     <span className={cn("text-xs font-bold", STATUS_MAP[step.status].color)}>{STATUS_MAP[step.status].label}</span>
                   </div>

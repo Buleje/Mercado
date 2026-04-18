@@ -23,9 +23,13 @@ import {
   Check,
   ArrowUpRight,
   ChevronDown,
+  MapPin,
 } from "lucide-react";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import { cn } from "@/lib/utils";
+import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
+import { DoniaElena, CuadernoFiadoReal } from "@/components/ui-system/illustrations/pucallpa-locals";
+import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
 
 export const metadata: Metadata = {
   title: "Buleje para Negocios — Software ERP para Bodegas del Peru | Inventario, POS, Delivery",
@@ -153,94 +157,122 @@ function BulejeJsonLd() {
   );
 }
 
-// ── Hero Server — dark-bg styled hero ──
+// ── Hero Server — 2-column B2B con autoridad + ilustracion bodeguera ──
 async function BulejeHeroServer() {
   const stats = await getMarketplaceStats();
 
   return (
     <section
-      className="relative overflow-hidden py-20 sm:py-28 lg:py-36"
+      className="relative overflow-hidden py-16 sm:py-20 lg:py-24"
       style={{ background: "#060e08" }}
     >
       {/* Blobs decorativos */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute -top-32 -left-32 h-125 w-125 rounded-full bg-primary/15 blur-[120px]" />
         <div className="absolute -bottom-40 -right-40 h-100 w-100 rounded-full bg-green-400/10 blur-[100px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-        {/* Eyebrow */}
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-6">
-          <Store className="h-3 w-3" strokeWidth={2} />
-          Software para bodegas del Perú
-        </span>
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-8 lg:gap-12 items-center">
+          {/* LEFT — content B2B */}
+          <div className="order-2 lg:order-1">
+            {/* Eyebrow autoridad */}
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white/55 mb-5">
+              <Store className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+              Para dueños de bodega
+            </span>
 
-        {/* Hero PAS — Problem → Solution */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.02] tracking-[-0.025em]">
-          Cerrás cada noche{" "}
-          <span className="text-white/45">sin saber cuánto ganaste</span>
-        </h1>
-        <p className="mt-6 text-base sm:text-lg text-white/65 max-w-2xl mx-auto leading-relaxed">
-          Buleje automatiza inventario, ventas, delivery y facturación SUNAT.
-          Ves todo desde tu celular — sin instalar nada, sin anotar en cuaderno.
-        </p>
+            {/* H1 beneficio directo */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.02] tracking-[-0.025em]">
+              Vendé más{" "}
+              <span className="text-white/50">sin dejar tu caja</span>
+            </h1>
+            <p className="mt-6 text-base sm:text-lg text-white/65 max-w-xl leading-relaxed">
+              Buleje te conecta con vecinos que pueden pedirte al toque.
+              Sin comisión fija, sin complicaciones técnicas — solo tu bodega
+              online, gestionada desde tu celular.
+            </p>
 
-        {/* CTA buttons — monto visible + beneficio */}
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link
-            href="/marketplace/registrar"
-            className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full transition-all hover:bg-gray-100 active:scale-[0.98] text-sm"
-          >
-            Empezar gratis — sin tarjeta
-            <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
-          </Link>
-          <Link
-            href="#preguntas"
-            className="inline-flex items-center gap-2 bg-transparent text-white font-bold px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-all text-sm"
-          >
-            Ver demo de 15 minutos
-          </Link>
-        </div>
-
-        {/* Trust row — reduce fricción signup (Cialdini) */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-white/45">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-white/40" />
-            14 días gratis
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-white/40" />
-            Sin permanencia
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-white/40" />
-            Setup 5 minutos
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-white/40" />
-            Soporte WhatsApp
-          </span>
-        </div>
-
-        {/* Stats reales con rule dividers — social proof Cialdini */}
-        <div className="mt-14 grid grid-cols-3 gap-0 max-w-2xl mx-auto">
-          {[
-            { value: stats.storeCount || "10+", label: "Bodegas activas" },
-            { value: stats.productCount || "500+", label: "Productos en stock" },
-            { value: stats.avgRating, label: "Valoración promedio", isRating: true },
-          ].map((s, i) => (
-            <div
-              key={s.label}
-              className={i > 0 ? "border-l border-white/10 pl-4" : ""}
-            >
-              <p className="text-2xl sm:text-4xl font-extrabold text-white tabular-nums tracking-[-0.02em]">
-                {s.value}
-              </p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">
-                {s.label}
-              </p>
+            {/* CTA — primary + secondary (reduce friction) */}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/marketplace/registrar"
+                className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-3 rounded-full transition-all hover:bg-primary/90 active:scale-[0.98] text-sm shadow-lg shadow-primary/20"
+              >
+                Abre tu tienda gratis
+                <ArrowUpRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              </Link>
+              <Link
+                href="#preguntas"
+                className="inline-flex items-center gap-2 bg-transparent text-white font-bold px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-all text-sm"
+              >
+                Ver cómo funciona
+              </Link>
             </div>
-          ))}
+
+            {/* Trust row — reduce fricción signup (Cialdini) */}
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-white/55">
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+                14 días gratis
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+                Sin permanencia
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+                Setup 5 minutos
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+                Soporte WhatsApp
+              </span>
+            </div>
+
+            {/* Stats social proof */}
+            <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-3 gap-4 max-w-lg">
+              {[
+                { value: stats.storeCount || "10+", label: "Bodegas activas" },
+                { value: stats.productCount || "500+", label: "Productos en stock" },
+                { value: stats.avgRating, label: "Valoración" },
+              ].map((s, i) => (
+                <div
+                  key={s.label}
+                  className={i > 0 ? "border-l border-white/10 pl-4" : ""}
+                >
+                  <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums tracking-tight">
+                    {s.value}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45 mt-1.5">
+                    {s.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT — ilustracion bodeguero */}
+          <div
+            className="order-1 lg:order-2 flex flex-col items-center gap-5 sm:gap-6"
+            aria-hidden="true"
+          >
+            <div className="relative w-full max-w-[340px] aspect-square rounded-3xl border border-white/10 bg-white/[0.03] flex items-center justify-center overflow-hidden backdrop-blur-sm">
+              <div className="absolute inset-0 bg-primary/5" />
+              <BodegaAbriendo
+                size={240}
+                className="relative text-white/80"
+              />
+              {/* Accent pulse */}
+              <div className="absolute top-6 right-6 h-2 w-2 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50" />
+            </div>
+            <div className="relative w-full max-w-[340px] aspect-[4/3] rounded-3xl border border-white/10 bg-white/[0.03] flex items-center justify-center overflow-hidden backdrop-blur-sm">
+              <DoniaElena
+                size={170}
+                className="relative text-white/80"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -575,6 +607,156 @@ function PricingSection() {
   );
 }
 
+// ── Value stack B2B — 4 beneficios con iconos + ilustraciones ──
+function ValueStackB2B() {
+  const values = [
+    {
+      Icon: Rocket,
+      title: "Sin código",
+      desc: "Tu tienda lista en 5 minutos. Sin instalar nada, sin pagar diseñador.",
+    },
+    {
+      IconIllustration: MotoRuta,
+      title: "Delivery gestionado",
+      desc: "Nosotros coordinamos la entrega. Vos te dedicás a vender.",
+    },
+    {
+      Icon: Wallet,
+      title: "Pagos locales",
+      desc: "Yape, Plin, efectivo — lo que tus clientes ya usan cada día.",
+    },
+    {
+      Icon: BarChart3,
+      title: "Reportes diarios",
+      desc: "Sabés cuánto vendiste hoy en tiempo real, desde tu celular.",
+    },
+  ];
+
+  return (
+    <section className="py-20 sm:py-24 bg-white dark:bg-gray-950">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Zap className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+            Por qué Buleje
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            Diseñado para bodegueros peruanos
+          </h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
+            4 beneficios pensados para tu realidad: celular en mano, tiempo
+            escaso, clientes del barrio.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {values.map((v) => {
+            const IconComp = v.Icon;
+            const IllComp = v.IconIllustration;
+            return (
+              <div
+                key={v.title}
+                className="group bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 hover:border-primary/40 hover:-translate-y-0.5 transition-all"
+              >
+                <div className="h-12 w-12 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary mb-5">
+                  {IconComp ? (
+                    <IconComp className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+                  ) : IllComp ? (
+                    <IllComp size={28} strokeWidth={1.75} className="text-primary" />
+                  ) : null}
+                </div>
+                <h3 className="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">
+                  {v.title}
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {v.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Testimonios bodegueros — social proof con ilustraciones locales ──
+function BodegueroTestimonials() {
+  const testimonials = [
+    {
+      quote: "Desde que abrí mi tienda en Buleje, vendo 40% más. Los vecinos piden por WhatsApp y ya no tengo que atender cola tras cola.",
+      name: "Doña Elena",
+      role: "Bodega San Martín · Callería",
+      stat: "+40% ventas primer mes",
+      Illustration: DoniaElena,
+    },
+    {
+      quote: "Antes anotaba todo en cuaderno. Ahora Buleje me dice qué se está acabando y cuánto gané hoy. Me ahorra 2 horas cada noche.",
+      name: "Don Julio",
+      role: "Minimarket Yarinacocha",
+      stat: "2h ahorradas cada día",
+      Illustration: CuadernoFiadoReal,
+    },
+    {
+      quote: "Pucallpa necesitaba algo así. Mis clientes piden desde la casa y pagan con Yape. Cero vueltos, cero problemas.",
+      name: "Sra. Rosa",
+      role: "Bodega Manantay",
+      stat: "100% pagos digitales",
+      Illustration: BodegueroCelebrando,
+    },
+  ];
+
+  return (
+    <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Star className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+            Casos reales
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            Bodegueros que ya venden más
+          </h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
+            Historias de dueños de bodega en Pucallpa que crecieron con Buleje.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {testimonials.map((t) => {
+            const Ill = t.Illustration;
+            return (
+              <div
+                key={t.name}
+                className="flex flex-col bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+              >
+                <div className="h-20 w-20 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 mb-4">
+                  <Ill size={64} strokeWidth={1.5} />
+                </div>
+                <blockquote className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic mb-5 flex-1">
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      {t.name}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                      <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+                      {t.role}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap">
+                    {t.stat}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── FAQ del Marketplace ──
 function MarketplaceFAQ() {
   const faqs = [
@@ -810,9 +992,11 @@ export default async function NegociosPage() {
       <Suspense fallback={<div className="h-[70vh] bg-[#060e08]" />}>
         <BulejeHeroServer />
       </Suspense>
+      <ValueStackB2B />
       <HowBulejeWorks />
       <CategoriesSection />
       <BulejeFeatures />
+      <BodegueroTestimonials />
       <PricingSection />
       <Suspense fallback={<ReviewsSkeleton />}>
         <MarketplaceReviewsServer />

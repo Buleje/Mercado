@@ -157,21 +157,21 @@ export function BulejeGaugeChart({
               format={{
                 maximumFractionDigits: format === "percentage" ? 0 : 2,
               }}
-              className="text-5xl font-extrabold tabular-nums tracking-[-0.03em] leading-none"
+              className="text-5xl font-extrabold tabular-nums tracking-[var(--ls-tight)] leading-none"
             />
             {format === "percentage" && (
               <span className="text-xl font-bold text-[var(--text-tertiary)]">%</span>
             )}
           </div>
           {sublabel && (
-            <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {sublabel}
             </p>
           )}
         </div>
       </div>
       {label && (
-        <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
+        <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {label}
         </p>
       )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle } from "@buleje/design-system";
 import {
   FlaskConical,
   Rocket,
@@ -10,7 +11,7 @@ import {
   CheckCircle2,
   Package,
   ExternalLink,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 type ChangeType = "feat" | "fix" | "perf" | "security" | "refactor";
 
@@ -28,11 +29,11 @@ type Release = {
 };
 
 const TYPE_META: Record<ChangeType, { label: string; color: string; bg: string }> = {
-  feat:     { label: "Feature",    color: "text-indigo-700 dark:text-indigo-300",  bg: "bg-indigo-100 dark:bg-indigo-900/30" },
-  fix:      { label: "Fix",        color: "text-red-700 dark:text-red-300",        bg: "bg-red-100 dark:bg-red-900/30" },
-  perf:     { label: "Perf",       color: "text-amber-700 dark:text-amber-300",    bg: "bg-amber-100 dark:bg-amber-900/30" },
-  security: { label: "Seguridad",  color: "text-green-700 dark:text-green-300",    bg: "bg-green-100 dark:bg-green-900/30" },
-  refactor: { label: "Refactor",   color: "text-violet-700 dark:text-violet-300",  bg: "bg-violet-100 dark:bg-violet-900/30" },
+  feat:     { label: "Feature",    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",  bg: "bg-[var(--surface-sunken)]" },
+  fix:      { label: "Fix",        color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
+  perf:     { label: "Perf",       color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  security: { label: "Seguridad",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  refactor: { label: "Refactor",   color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
 const RELEASES: Release[] = [
@@ -93,7 +94,7 @@ const RELEASES: Release[] = [
 function TypeBadge({ type }: { type: ChangeType }) {
   const meta = TYPE_META[type];
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold leading-none shrink-0 ${meta.bg} ${meta.color}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold leading-none shrink-0 ${meta.bg} ${meta.color}`}>
       {meta.label}
     </span>
   );
@@ -101,10 +102,10 @@ function TypeBadge({ type }: { type: ChangeType }) {
 
 export default function ChangelogModule() {
   const stats = [
-    { icon: Package, label: "Versión actual", value: "v1.0.0-beta", color: "text-indigo-500" },
-    { icon: Sparkles, label: "Features lanzadas", value: "30+", color: "text-violet-500" },
-    { icon: Zap, label: "Optimizaciones perf.", value: "4", color: "text-amber-500" },
-    { icon: ShieldCheck, label: "Mejoras de seguridad", value: "3", color: "text-emerald-500" },
+    { icon: Package, label: "Versión actual", value: "v1.0.0-beta", color: "text-[var(--text-secondary)]" },
+    { icon: Sparkles, label: "Features lanzadas", value: "30+", color: "text-[var(--text-secondary)]" },
+    { icon: Zap, label: "Optimizaciones perf.", value: "4", color: "text-[var(--data-warning)]" },
+    { icon: ShieldCheck, label: "Mejoras de seguridad", value: "3", color: "text-[var(--data-success)]" },
   ];
 
   return (
@@ -112,10 +113,10 @@ export default function ChangelogModule() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-foreground flex flex-wrap items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-amber-500" />
+          <PageTitle className="text-xl font-extrabold text-foreground flex flex-wrap items-center gap-2">
+            <FlaskConical className="h-5 w-5 text-[var(--data-warning)]" />
             Changelog del Proyecto
-          </h1>
+          </PageTitle>
           <p className="text-sm text-muted mt-0.5">Historial de releases y cambios de versión.</p>
         </div>
         <a
@@ -134,11 +135,11 @@ export default function ChangelogModule() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-3"
+            className="rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-3"
           >
             <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
             <div>
-              <p className="text-[11px] text-muted leading-none mb-0.5">{s.label}</p>
+              <p className="text-[length:var(--ts-xs)] text-muted leading-none mb-0.5">{s.label}</p>
               <p className="text-lg font-extrabold text-foreground leading-tight">{s.value}</p>
             </div>
           </div>
@@ -152,37 +153,37 @@ export default function ChangelogModule() {
             key={release.version}
             className={`rounded-xl border ${
               release.status === "current"
-                ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-950/20"
-                : "border-gray-200 dark:border-card-border bg-white dark:bg-card"
+                ? "border-[var(--data-info)] dark:border-[var(--data-info)] bg-[var(--data-info-50)]/60 dark:bg-indigo-950/20"
+                : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
             } overflow-hidden`}
           >
             {/* Release header */}
             <div className={`flex items-center justify-between px-5 py-4 ${
               release.status === "current"
-                ? "border-b border-indigo-200 dark:border-indigo-800"
-                : "border-b border-gray-100 dark:border-card-border"
+                ? "border-b border-[var(--rule-base)]"
+                : "border-b border-[var(--rule-soft)] dark:border-card-border"
             }`}>
               <div className="flex flex-wrap items-center gap-3">
                 {release.status === "current" ? (
-                  <Rocket className="h-5 w-5 text-indigo-500" />
+                  <Rocket className="h-5 w-5 text-[var(--text-secondary)]" />
                 ) : (
-                  <Wrench className="h-5 w-5 text-gray-400" />
+                  <Wrench className="h-5 w-5 text-[var(--text-tertiary)]" />
                 )}
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-base font-extrabold ${
-                      release.status === "current" ? "text-indigo-700 dark:text-indigo-300" : "text-foreground"
+                      release.status === "current" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-foreground"
                     }`}>
                       {release.version}
                     </span>
                     {release.status === "current" && (
-                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-bold">
+                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-[var(--data-info)] text-white text-[length:var(--ts-2xs)] font-bold">
                         <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
                         Actual
                       </span>
                     )}
                     {release.status === "planned" && (
-                      <span className="rounded-full px-2 py-0.5 bg-gray-200 dark:bg-surface text-gray-500 dark:text-muted text-[10px] font-bold">
+                      <span className="rounded-full px-2 py-0.5 bg-gray-200 dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-[length:var(--ts-2xs)] font-bold">
                         Planificado
                       </span>
                     )}
@@ -199,7 +200,7 @@ export default function ChangelogModule() {
                 {release.changes.map((change, i) => (
                   <li key={i} className="flex flex-wrap items-start gap-2.5">
                     <CheckCircle2 className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${
-                      release.status === "current" ? "text-indigo-400" : "text-gray-300 dark:text-gray-600"
+                      release.status === "current" ? "text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                     }`} />
                     <TypeBadge type={change.type} />
                     <span className="text-sm text-foreground/80 leading-relaxed">{change.text}</span>

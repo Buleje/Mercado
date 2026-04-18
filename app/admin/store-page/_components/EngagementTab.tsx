@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { Gamepad2, Gift, Star, Trophy, Target, Sparkles, ToggleLeft, ToggleRight } from "lucide-react";
+import { Gamepad2, Gift, Star, Trophy, Target, Sparkles, ToggleLeft, ToggleRight } from "@buleje/design-system/icons";
 
 type EngagementFeature = {
   id: string;
@@ -73,8 +74,8 @@ export default function EngagementTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Engagement y juegos</h2>
-        <p className="text-sm text-gray-500">
+        <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Engagement y juegos</SectionTitle>
+        <p className="text-sm text-[var(--text-secondary)]">
           Activa mecanicas de juego para que tus clientes vuelvan cada dia. {enabledCount > 0 ? `${enabledCount} activo${enabledCount > 1 ? "s" : ""}` : "Ninguno activo aun"}.
         </p>
       </div>
@@ -88,18 +89,18 @@ export default function EngagementTab() {
               className={`rounded-xl border p-5 transition-all ${
                 feature.enabled
                   ? "border-primary/30 bg-primary/5"
-                  : "border-gray-200 dark:border-gray-700"
+                  : "border-[var(--rule-base)]"
               }`}
             >
               <div className="flex items-start gap-4">
                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
-                  feature.enabled ? "bg-primary/20 text-primary" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                  feature.enabled ? "bg-primary/20 text-primary" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                 }`}>
                   <Icon className="h-6 w-6" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{feature.title}</h3>
+                    <CardTitle className="font-semibold text-[var(--text-primary)]">{feature.title}</CardTitle>
                     <button
                       onClick={() => toggle(feature.id)}
                       disabled={saving === feature.id}
@@ -108,11 +109,11 @@ export default function EngagementTab() {
                       {feature.enabled ? (
                         <ToggleRight className="h-8 w-8 text-primary" />
                       ) : (
-                        <ToggleLeft className="h-8 w-8 text-gray-300" />
+                        <ToggleLeft className="h-8 w-8 text-[var(--text-tertiary)]" />
                       )}
                     </button>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">{feature.description}</p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">{feature.description}</p>
                   {feature.enabled && (
                     <div className="mt-3 flex items-center gap-2">
                       <span className="text-xs bg-primary/10 text-primary font-medium px-2 py-1 rounded-lg">Activo en tu tienda</span>
@@ -127,12 +128,12 @@ export default function EngagementTab() {
       </div>
 
       {/* Coming soon callout */}
-      <div className="rounded-xl bg-gradient-to-br from-violet-50 to-emerald-50 dark:from-violet-950/30 dark:to-emerald-950/30 border border-violet-200 dark:border-violet-800 p-5">
+      <div className="rounded-xl bg-[var(--surface-sunken)] dark:from-violet-950/30 dark:to-[var(--data-success)]/20 border border-[var(--rule-base)] p-5">
         <div className="flex items-center gap-3 mb-2">
-          <Gamepad2 className="h-5 w-5 text-violet-600" />
-          <h3 className="font-semibold text-violet-900 dark:text-violet-300">Mas mecanicas proximamente</h3>
+          <Gamepad2 className="h-5 w-5 text-[var(--text-secondary)]" />
+          <CardTitle className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Mas mecanicas proximamente</CardTitle>
         </div>
-        <p className="text-sm text-violet-700 dark:text-violet-400">
+        <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--text-primary)]">
           Estamos trabajando en: sorteos automaticos, trivias de productos, cupones por geolocalización, y gamificacion avanzada con niveles.
         </p>
       </div>

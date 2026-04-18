@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -7,7 +8,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle, BarChart3,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
 
   if (isNeutral) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
         <Minus className="h-2.5 w-2.5" /> {change >= 0 ? "+" : ""}{change.toFixed(1)}%
       </span>
     );
@@ -115,10 +116,10 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold",
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       isGood
-        ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+        : "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
     )}>
       {change > 0
         ? <TrendingUp className="h-2.5 w-2.5" />
@@ -189,8 +190,8 @@ export default function ComparativeReportsTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-red-500" />
-        <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline">Reintentar</button>
       </div>
     );
@@ -205,8 +206,8 @@ export default function ComparativeReportsTab() {
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Reportes Comparativos</h2>
-            <p className="text-xs text-gray-500 dark:text-muted">Comparación de métricas entre períodos</p>
+            <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Reportes Comparativos</SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Comparación de métricas entre períodos</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -220,7 +221,7 @@ export default function ComparativeReportsTab() {
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   comparison === opt
                     ? "bg-white dark:bg-card text-[#00B4A6] "
-                    : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground",
+                    : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground",
                 )}
               >
                 {opt === "mes_pasado" ? "vs. Mes pasado" : "vs. Mismo mes año anterior"}
@@ -232,7 +233,7 @@ export default function ComparativeReportsTab() {
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
-            <RefreshCw className="h-4 w-4 text-gray-400" />
+            <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
           </button>
         </div>
       </div>
@@ -240,16 +241,16 @@ export default function ComparativeReportsTab() {
       {dataA && dataB && (
         <>
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-card-border">
-                    <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-gray-400">Métrica</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-primary">{periods.labelA}</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-gray-400">{periods.labelB}</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-gray-400">Cambio</th>
-                    <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-gray-400">Tendencia</th>
+                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Métrica</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">{periods.labelB}</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Cambio</th>
+                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Tendencia</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -260,18 +261,18 @@ export default function ComparativeReportsTab() {
                     return (
                       <tr key={m.key} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3">
-                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{m.label}</span>
+                          <span className="text-xs font-medium text-[var(--text-secondary)]">{m.label}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="text-xs font-bold font-mono text-gray-900 dark:text-white">{fmtValue(m.key, valA)}</span>
+                          <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{fmtValue(m.key, valA)}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="text-xs font-mono text-gray-500 dark:text-muted">{fmtValue(m.key, valB)}</span>
+                          <span className="text-xs font-mono text-[var(--text-secondary)] dark:text-muted">{fmtValue(m.key, valB)}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span className={cn(
                             "text-xs font-bold font-mono",
-                            change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                            change >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]",
                           )}>
                             {change >= 0 ? "+" : ""}{change.toFixed(1)}%
                           </span>
@@ -288,8 +289,8 @@ export default function ComparativeReportsTab() {
           </div>
 
           {/* Chart */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-            <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">Top 5 métricas — comparación</p>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+            <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} barCategoryGap="30%">

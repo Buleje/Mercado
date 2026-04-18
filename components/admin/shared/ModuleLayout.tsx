@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -19,9 +20,9 @@ import { cn } from "@/lib/utils";
 interface ModuleLayoutProps {
   /** Icono del módulo (componente React) */
   icon: React.ComponentType<{ className?: string }>;
-  /** Clase de color del icono, ej. "text-emerald-600 dark:text-emerald-400" */
+  /** Clase de color del icono, ej. "text-[var(--data-success)] dark:text-[var(--data-success)]" */
   iconColor?: string;
-  /** Clase de fondo del icono, ej. "bg-emerald-50 dark:bg-emerald-900/20" */
+  /** Clase de fondo del icono, ej. "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" */
   iconBg?: string;
   /** Título del módulo */
   title: string;
@@ -112,11 +113,11 @@ export default function ModuleLayout({
           <Icon className={cn("w-5 h-5", iconColor)} />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+          <SectionTitle as="h1" className="text-xl truncate">
             {title}
-          </h1>
+          </SectionTitle>
           {subtitle && (
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
               {subtitle}
             </p>
           )}
@@ -138,13 +139,13 @@ export default function ModuleLayout({
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg transition-all",
                 activeTab === tab.id
-                  ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white "
-                  : "text-gray-500 dark:text-zinc-400 hover:text-gray-700",
+                  ? "bg-white dark:bg-zinc-700 text-[var(--text-primary)] "
+                  : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)]",
               )}
             >
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
-                <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
+                <span className="ml-1.5 bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
                   {tab.count > 99 ? "99+" : tab.count}
                 </span>
               )}

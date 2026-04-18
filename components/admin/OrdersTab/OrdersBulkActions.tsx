@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer } from "lucide-react";
+import { Printer } from "@buleje/design-system/icons";
 import type { OrderStatus } from "@/lib/jsondb";
 import { STATUS_LABELS } from "./types";
 
@@ -40,7 +40,7 @@ export function OrdersBulkActions({
       <select
         value={bulkStatusTarget}
         onChange={e => onBulkStatusChange(e.target.value as OrderStatus)}
-        className="rounded-lg border-0 bg-white/20 text-white text-xs font-semibold px-2 py-1.5 [&>option]:text-gray-900"
+        className="rounded-lg border-0 bg-white/20 text-white text-xs font-semibold px-2 py-1.5 [&>option]:text-[var(--text-primary)]"
       >
         <option value="">Cambiar estado…</option>
         {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(s => (

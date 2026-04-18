@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Send, CheckCircle, XCircle, Loader2, Webhook } from "lucide-react";
+import { Plus, Trash2, Send, CheckCircle, XCircle, Loader2, Webhook } from "@buleje/design-system/icons";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -23,10 +24,10 @@ const EVENT_LABELS: Record<WebhookEvent, string> = {
 };
 
 const EVENT_COLORS: Record<WebhookEvent, string> = {
-  new_order:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  low_stock:    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-  new_customer: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  payment:      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  new_order:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  low_stock:    "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  new_customer: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  payment:      "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const ALL_EVENTS: WebhookEvent[] = ["new_order", "low_stock", "new_customer", "payment"];
@@ -154,14 +155,14 @@ export function WebhooksConfigTab() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-          <Webhook className="h-5 w-5 text-green-600 dark:text-green-400" />
+        <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+          <Webhook className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Webhooks configurables
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Recibe notificaciones en tu servidor cuando ocurran eventos en la tienda.
           </p>
         </div>
@@ -170,14 +171,14 @@ export function WebhooksConfigTab() {
       {/* Formulario de creacion */}
       <form
         onSubmit={handleCreate}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4"
+        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4"
       >
-        <h3 className="font-medium text-gray-800 dark:text-gray-200 text-sm">
+        <CardTitle className="font-medium text-[var(--text-primary)] text-sm">
           Agregar nuevo webhook
-        </h3>
+        </CardTitle>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             URL del endpoint
           </label>
           <input
@@ -185,12 +186,12 @@ export function WebhooksConfigTab() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://mi-servidor.com/webhook"
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-[var(--surface-sunken)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
             Eventos a escuchar
           </label>
           <div className="flex flex-wrap gap-2">
@@ -201,8 +202,8 @@ export function WebhooksConfigTab() {
                 onClick={() => toggleEvent(event)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   selectedEvents.includes(event)
-                    ? "border-green-600 bg-green-600 text-white"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-green-400"
+                    ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-white"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success)]/30"
                 }`}
               >
                 {EVENT_LABELS[event]}
@@ -212,13 +213,13 @@ export function WebhooksConfigTab() {
         </div>
 
         {formError && (
-          <p className="text-xs text-red-600 dark:text-red-400">{formError}</p>
+          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{formError}</p>
         )}
 
         <button
           type="submit"
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-60 text-white rounded-lg transition-colors"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Crear webhook
@@ -229,18 +230,18 @@ export function WebhooksConfigTab() {
       <div className="space-y-3">
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
           </div>
         )}
 
         {!loading && error && (
-          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-xl p-3">
             {error}
           </p>
         )}
 
         {!loading && !error && webhooks.length === 0 && (
-          <div className="text-center py-10 text-gray-400 dark:text-gray-600">
+          <div className="text-center py-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
             <Webhook className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No hay webhooks configurados.</p>
           </div>
@@ -251,14 +252,14 @@ export function WebhooksConfigTab() {
           return (
             <div
               key={webhook.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-mono text-gray-800 dark:text-gray-200 truncate">
+                  <p className="text-sm font-mono text-[var(--text-primary)] truncate">
                     {webhook.url}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                     Creado: {new Date(webhook.createdAt).toLocaleDateString("es-PE")}
                   </p>
                 </div>
@@ -268,18 +269,18 @@ export function WebhooksConfigTab() {
                     onClick={() => handleTest(webhook)}
                     disabled={testState === "loading"}
                     title="Enviar ping de prueba"
-                    className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
                   >
                     {testState === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {testState === "ok"      && <CheckCircle className="h-4 w-4 text-green-500" />}
-                    {testState === "error"   && <XCircle className="h-4 w-4 text-red-500" />}
+                    {testState === "ok"      && <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />}
+                    {testState === "error"   && <XCircle className="h-4 w-4 text-[var(--data-error)]" />}
                     {testState === "idle"    && <Send className="h-4 w-4" />}
                   </button>
                   {/* Boton eliminar */}
                   <button
                     onClick={() => handleDelete(webhook.id)}
                     title="Eliminar webhook"
-                    className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="p-2 rounded-lg text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -299,8 +300,8 @@ export function WebhooksConfigTab() {
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                     webhook.active
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500"
+                      ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                      : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
                   }`}
                 >
                   {webhook.active ? "Activo" : "Inactivo"}

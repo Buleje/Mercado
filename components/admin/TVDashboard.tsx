@@ -1,5 +1,7 @@
- 
 "use client";
+
+import { PageTitle } from "@buleje/design-system";
+ 
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -11,7 +13,7 @@ import {
   Maximize,
   Minimize,
   RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -77,10 +79,10 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
       >
         {icon}
       </div>
-      <p className="text-3xl font-bold text-gray-900 tracking-tight text-center">
+      <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight text-center">
         {value}
       </p>
-      <p className="text-xl font-semibold text-gray-500 text-center">
+      <p className="text-xl font-semibold text-[var(--text-secondary)] text-center">
         {label}
       </p>
     </div>
@@ -149,28 +151,28 @@ export default function TVDashboard() {
       ? "bg-primary"
       : progress >= 50
         ? "bg-secondary"
-        : "bg-red-500";
+        : "bg-[var(--data-error)]";
 
   return (
     <div
       ref={containerRef}
       className={cn(
-        "min-h-screen bg-gray-50 text-gray-900",
+        "min-h-screen bg-gray-50 text-[var(--text-primary)]",
         "flex flex-col p-10 gap-10 select-none"
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-black tracking-tight text-primary">
+          <PageTitle className="text-5xl font-extrabold tracking-tight text-primary">
             Buleje
-          </h1>
-          <p className="text-2xl text-gray-500 mt-1">
+          </PageTitle>
+          <p className="text-2xl text-[var(--text-secondary)] mt-1">
             Panel en tiempo real
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-lg text-gray-400">
+          <span className="text-lg text-[var(--text-tertiary)]">
             Actualizado:{" "}
             {lastUpdate.toLocaleTimeString("es-PE", {
               hour: "2-digit",
@@ -242,13 +244,13 @@ export default function TVDashboard() {
         <div className="w-full h-16 rounded-full bg-gray-200 overflow-hidden shadow-inner">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700 ease-out",
+              "h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out",
               barColor
             )}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-center text-2xl font-semibold text-gray-500">
+        <p className="text-center text-2xl font-semibold text-[var(--text-secondary)]">
           {progress >= 100
             ? "Meta cumplida"
             : `Faltan ${fmt(data.dailyGoal - data.salesToday)} para la meta`}

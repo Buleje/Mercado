@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Dictionary ────────────────────────────────────────────────────────────────
@@ -16,32 +16,32 @@ const CATEGORIES: Category[] = [
   {
     name:     "Abarrotes",
     keywords: ["arroz", "fideos", "azucar", "azúcar", "harina", "sal", "sopa", "pasta", "lenteja", "menestra", "frijol", "garbanzo", "maiz", "maíz", "avena", "quinua", "trigo"],
-    color:    "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    color:    "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
   },
   {
     name:     "Aceites y grasas",
     keywords: ["aceite", "mantequilla", "margarina", "manteca", "grasa", "vegetal"],
-    color:    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+    color:    "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
   },
   {
     name:     "Limpieza",
     keywords: ["jabon", "jabón", "detergente", "lejia", "lejía", "cloro", "suavizante", "desinfectante", "limpiador", "escoba", "trapeador", "esponja", "guante", "bolsa basura"],
-    color:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    color:    "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   },
   {
     name:     "Bebidas",
     keywords: ["gaseosa", "agua", "jugo", "cerveza", "refresco", "néctar", "nectar", "te", "té", "café", "cafe", "cocoa", "milo", "chicha", "bebida", "soda"],
-    color:    "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+    color:    "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",
   },
   {
     name:     "Lacteos",
     keywords: ["leche", "yogurt", "queso", "mantequilla", "lacteo", "lácteo", "yogur", "manjar", "crema"],
-    color:    "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+    color:    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
   {
     name:     "Golosinas",
     keywords: ["galleta", "chocolate", "caramelo", "chicle", "chupete", "caramelos", "dulce", "bombom", "chifle", "snack", "chips", "wafer"],
-    color:    "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+    color:    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
 ];
 
@@ -88,7 +88,7 @@ export default function AutoCategorizer({ productName, onSuggest }: AutoCategori
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-gray-500 dark:text-gray-400">Categoria sugerida:</span>
+      <span className="text-xs text-[var(--text-tertiary)]">Categoria sugerida:</span>
 
       <span
         className={cn(

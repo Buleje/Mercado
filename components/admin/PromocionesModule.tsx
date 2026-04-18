@@ -1,10 +1,10 @@
 "use client";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useCallback, useEffect } from "react";
 import {
   Tag, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2, RefreshCw,
   Gift, Package, ShoppingCart, DollarSign,
-  type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
@@ -37,10 +37,10 @@ const TIPO_LABELS: Record<PromoType, string> = {
 };
 
 const TIPO_BADGE: Record<PromoType, string> = {
-  porcentaje: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
-  "2x1": "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
-  "3x2": "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
-  combo: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400",
+  porcentaje: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+  "2x1": "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+  "3x2": "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+  combo: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
   monto_fijo: "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400",
 };
 
@@ -66,13 +66,15 @@ function promoBadgeText(promo: Promocion): string {
   }
 }
 
-function promoIcon(tipo: PromoType): LucideIcon {
+// Render literal de cada icon para evitar react-hooks/static-components
+// (no se permite resolver componente dinamico con `const Icon = fn(); <Icon ...>`).
+function PromoIcon({ tipo, className, strokeWidth }: { tipo: PromoType; className?: string; strokeWidth?: number }) {
   switch (tipo) {
-    case "porcentaje": return Tag;
-    case "2x1": return Gift;
-    case "3x2": return Package;
-    case "combo": return ShoppingCart;
-    case "monto_fijo": return DollarSign;
+    case "porcentaje": return <Tag className={className} strokeWidth={strokeWidth} />;
+    case "2x1": return <Gift className={className} strokeWidth={strokeWidth} />;
+    case "3x2": return <Package className={className} strokeWidth={strokeWidth} />;
+    case "combo": return <ShoppingCart className={className} strokeWidth={strokeWidth} />;
+    case "monto_fijo": return <DollarSign className={className} strokeWidth={strokeWidth} />;
   }
 }
 
@@ -112,7 +114,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 border-l-4 p-4 ",
+      "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] border-l-4 p-4 ",
       "transition-all hover:shadow-sm",
       statusColor,
       !promo.activa && "opacity-60",
@@ -123,23 +125,20 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", TIPO_BADGE[promo.tipo])}>
               {TIPO_LABELS[promo.tipo]}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-800 dark:text-white">
-              {(() => {
-                const PIcon = promoIcon(promo.tipo);
-                return <PIcon className="h-3.5 w-3.5" strokeWidth={1.75} />;
-              })()}
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+              <PromoIcon tipo={promo.tipo} className="h-3.5 w-3.5" strokeWidth={1.75} />
               {promoBadgeText(promo)}
             </span>
           </div>
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mt-1 truncate">{promo.nombre}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-sm font-semibold text-[var(--text-secondary)] mt-1 truncate">{promo.nombre}</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             {fmtDate(promo.fechaInicio)} → {fmtDate(promo.fechaFin)}
           </p>
           {promo.condicion && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Cond: {promo.condicion}</p>
+            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">Cond: {promo.condicion}</p>
           )}
           {promo.categorias.length > 0 && (
-            <p className="text-xs text-gray-400 mt-0.5 truncate">
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
               Cats: {promo.categorias.join(", ")}
             </p>
           )}
@@ -149,20 +148,20 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             onClick={() => onToggle(promo.id)}
             disabled={loading}
             aria-label={promo.activa ? "Desactivar promoción" : "Activar promoción"}
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
           >
             {promo.activa
               ? <ToggleRight className="h-5 w-5 text-[#00B4A6]" />
-              : <ToggleLeft className="h-5 w-5 text-gray-400" />
+              : <ToggleLeft className="h-5 w-5 text-[var(--text-tertiary)]" />
             }
           </button>
           <button
             onClick={() => onDelete(promo.id)}
             disabled={loading}
             aria-label="Eliminar promoción"
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
           >
-            <Trash2 className="h-4 w-4 text-red-500" />
+            <Trash2 className="h-4 w-4 text-[var(--data-error)]" />
           </button>
         </div>
       </div>
@@ -311,9 +310,9 @@ export default function PromocionesModule() {
             onClick={fetchPromos}
             disabled={loading}
             aria-label="Recargar promociones"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
+            <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", loading && "animate-spin")} />
           </button>
           <button
             onClick={() => { setShowForm(v => !v); setFormError(null); }}
@@ -322,7 +321,7 @@ export default function PromocionesModule() {
               "flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold transition-all",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
               showForm
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                 : "text-white",
             )}
             style={showForm ? {} : {
@@ -338,56 +337,56 @@ export default function PromocionesModule() {
 
       {/* Mensaje de éxito */}
       {successMsg && (
-        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-4 py-2.5 border border-emerald-200 dark:border-emerald-800">
+        <div className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl px-4 py-2.5 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
           ✓ {successMsg}
         </div>
       )}
 
       {/* Stats rápido */}
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
           {activeToday} activas hoy
         </span>
-        <span className="text-xs px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
           {promos.filter(p => promoStatus(p) === "futura").length} futuras
         </span>
-        <span className="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] font-medium">
           {promos.filter(p => promoStatus(p) === "pasada").length} pasadas
         </span>
       </div>
 
       {/* Formulario nueva promo */}
       {showForm && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5  space-y-4">
-          <h2 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5  space-y-4">
+          <SectionTitle className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Tag className="h-4 w-4 text-[#f97316]" />
             Nueva promoción
-          </h2>
+          </SectionTitle>
 
           {formError && (
-            <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
               {formError}
             </p>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Nombre *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Nombre *</label>
               <input
                 type="text"
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                 placeholder="Ej: Descuento fin de semana"
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Tipo *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Tipo *</label>
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               >
                 {(Object.keys(TIPO_LABELS) as PromoType[]).map(t => (
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
@@ -397,7 +396,7 @@ export default function PromocionesModule() {
 
             {(form.tipo === "porcentaje" || form.tipo === "monto_fijo" || form.tipo === "combo") && (
               <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">
                   {form.tipo === "porcentaje" ? "Porcentaje (%)" : "Monto (S/)"}
                 </label>
                 <input
@@ -407,44 +406,44 @@ export default function PromocionesModule() {
                   value={form.valor}
                   onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
-                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                  className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
                 />
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Categorías (separadas por coma)</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Categorías (separadas por coma)</label>
               <input
                 type="text"
                 value={form.categorias}
                 onChange={e => setForm(f => ({ ...f, categorias: e.target.value }))}
                 placeholder="Lácteos, Bebidas"
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Inicio *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Inicio *</label>
               <input
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Fin *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Fin *</label>
               <input
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Condición (opcional)
               </label>
               <input
@@ -452,26 +451,23 @@ export default function PromocionesModule() {
                 value={form.condicion}
                 onChange={e => setForm(f => ({ ...f, condicion: e.target.value }))}
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
           </div>
 
           {/* Preview badge */}
           {form.nombre && (
-            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Vista previa:</span>
+            <div className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl">
+              <span className="text-xs text-[var(--text-tertiary)]">Vista previa:</span>
               <span className="inline-flex items-center gap-1.5 text-sm font-bold">
-                {(() => {
-                  const PIcon = promoIcon(form.tipo);
-                  return <PIcon className="h-3.5 w-3.5" strokeWidth={1.75} />;
-                })()}{" "}
+                <PromoIcon tipo={form.tipo} className="h-3.5 w-3.5" strokeWidth={1.75} />{" "}
                 {form.tipo === "porcentaje" && form.valor ? `${form.valor}% OFF` :
                   form.tipo === "monto_fijo" && form.valor ? `S/ ${form.valor} OFF` :
                   form.tipo === "combo" && form.valor ? `Combo S/ ${form.valor}` :
                   TIPO_LABELS[form.tipo]}
               </span>
-              <span className="text-sm text-gray-600 dark:text-gray-300">— {form.nombre}</span>
+              <span className="text-sm text-[var(--text-secondary)]">— {form.nombre}</span>
             </div>
           )}
 
@@ -501,7 +497,7 @@ export default function PromocionesModule() {
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
               filter === f
                 ? "text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
             )}
             style={filter === f ? {
               background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
@@ -523,14 +519,12 @@ export default function PromocionesModule() {
 
       {/* Lista */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       ) : filteredPromos.length === 0 ? (
         <div className="text-center py-12">
-          <Tag className="h-10 w-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">No hay promociones</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Crea una nueva promoción con el botón de arriba</p>
+          <Tag className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">No hay promociones</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">Crea una nueva promoción con el botón de arriba</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

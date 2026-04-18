@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   XCircle,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { TrackingStatus } from "./types";
 
 export const TRACKING_STATUS_ICON: Record<TrackingStatus, LucideIcon> = {

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 import { useInView } from "@/hooks/use-in-view";
+import { getCategoryIcon } from "@/lib/category-icons";
 
 export default function CategoryBubbles() {
   const { categories, isLoading } = useStoreProducts();
@@ -72,29 +73,30 @@ export default function CategoryBubbles() {
             ref={scrollRef}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-10 pb-2 scrollbar-none"
           >
-            {realCategories.map((cat, i) => (
-              <Link
-                key={cat.id}
-                href={`/tienda/categoria/${cat.id}`}
-                className={cn(
-                  "group flex w-[4.9rem] shrink-0 snap-start flex-col items-center gap-2 transition-transform duration-300 hover:-translate-y-1 sm:w-22",
-                  inView
-                    ? "animate-[fadeUp_0.5s_ease-out_both]"
-                    : "opacity-0"
-                )}
-                style={inView ? { animationDelay: `${i * 80}ms` } : undefined}
-                aria-label={`Ver ${cat.label}`}
-              >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-100 bg-surface transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg dark:border-card-border dark:bg-card sm:h-20 sm:w-20">
-                  <span className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
-                    {cat.emoji}
+            {realCategories.map((cat, i) => {
+              const Icon = getCategoryIcon(cat.id);
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/tienda/categoria/${cat.id}`}
+                  className={cn(
+                    "group flex w-[4.9rem] shrink-0 snap-start flex-col items-center gap-2 transition-transform duration-300 hover:-translate-y-1 sm:w-22",
+                    inView
+                      ? "animate-[fadeUp_0.5s_ease-out_both]"
+                      : "opacity-0"
+                  )}
+                  style={inView ? { animationDelay: `${i * 80}ms` } : undefined}
+                  aria-label={`Ver ${cat.label}`}
+                >
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-100 bg-surface transition-all duration-300 text-[var(--text-secondary)] group-hover:border-primary/30 group-hover:shadow-lg group-hover:text-[var(--accent)] dark:border-card-border dark:bg-card sm:h-20 sm:w-20">
+                    <Icon size={44} className="transition-transform group-hover:scale-110 sm:h-14 sm:w-14" />
+                  </div>
+                  <span className="max-w-21 text-center text-xs font-medium leading-tight text-muted transition-colors group-hover:text-primary sm:max-w-20 sm:text-sm">
+                    {cat.label}
                   </span>
-                </div>
-                <span className="max-w-21 text-center text-xs font-medium leading-tight text-muted transition-colors group-hover:text-primary sm:max-w-20 sm:text-sm">
-                  {cat.label}
-                </span>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Right scroll button */}

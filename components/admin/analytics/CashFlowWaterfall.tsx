@@ -167,15 +167,15 @@ export default function CashFlowWaterfall({
     <div className="flex flex-col gap-4 text-sm">
       {/* Summary */}
       <div className="flex gap-2">
-        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">Entradas</p>
+        <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Entradas</p>
           <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
             {fmt(initialBalance + cashSales + digitalSales)}
           </p>
         </div>
-        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">Salidas</p>
-          <p className="text-sm font-bold text-red-600 dark:text-red-400">
+        <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Salidas</p>
+          <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
             {fmt(-(Math.abs(supplierPayments) + Math.abs(operationalCosts)))}
           </p>
         </div>
@@ -184,14 +184,14 @@ export default function CashFlowWaterfall({
             "flex-1 rounded-lg border p-2 text-center",
             isPositiveFinal
               ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border-[#00B4A6]/30"
-              : "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800"
+              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
           )}
         >
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">Saldo final</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Saldo final</p>
           <p
             className={cn(
               "text-sm font-bold",
-              isPositiveFinal ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400"
+              isPositiveFinal ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}
           >
             {fmt(finalBalance?.value ?? 0)}
@@ -200,7 +200,7 @@ export default function CashFlowWaterfall({
       </div>
 
       {/* Waterfall chart */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
+      <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-3">
         <div className="relative flex items-end gap-1.5" style={{ height: "140px" }}>
           {steps.map((bar, i) => (
             <div
@@ -213,14 +213,14 @@ export default function CashFlowWaterfall({
                 className="absolute w-full text-center"
                 style={{ top: `${Math.max(0, bar.offsetPct - 12)}%` }}
               >
-                <span className="text-[9px] font-medium" style={{ color: bar.color }}>
+                <span className="text-[length:var(--ts-2xs)] font-medium" style={{ color: bar.color }}>
                   {fmtShort(bar.value)}
                 </span>
               </div>
 
               {/* Bar */}
               <div
-                className="absolute w-full rounded-sm transition-all duration-500"
+                className="absolute w-full rounded-sm transition-all duration-[var(--dur-slow)]"
                 style={{
                   top: `${bar.offsetPct}%`,
                   height: `${Math.max(2, bar.heightPct)}%`,
@@ -244,10 +244,10 @@ export default function CashFlowWaterfall({
         <div className="flex gap-1.5 mt-1">
           {steps.map((bar) => (
             <div key={bar.id} className="flex-1 text-center">
-              <p className="text-[9px] leading-tight text-gray-600 dark:text-gray-300 font-medium">
+              <p className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)] font-medium">
                 {bar.label}
               </p>
-              <p className="text-[8px] leading-tight text-gray-400 dark:text-gray-500">
+              <p className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
                 {bar.sublabel}
               </p>
             </div>
@@ -256,17 +256,17 @@ export default function CashFlowWaterfall({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 justify-center text-[10px] text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-4 justify-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#00B4A6" }} />
+          <span className="w-3 h-3 rounded-sm bg-[#00B4A6]" style={{ backgroundColor: "#00B4A6" }} />
           Entradas
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#ef4444" }} />
+          <span className="w-3 h-3 rounded-sm bg-[#ef4444]" style={{ backgroundColor: "#ef4444" }} />
           Salidas
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#3b82f6" }} />
+          <span className="w-3 h-3 rounded-sm bg-[#3b82f6]" style={{ backgroundColor: "#3b82f6" }} />
           Saldo
         </div>
       </div>
@@ -276,13 +276,13 @@ export default function CashFlowWaterfall({
         {steps.filter((s) => !s.isFinal).map((bar) => (
           <div
             key={bar.id}
-            className="flex items-center justify-between px-2 py-1 rounded bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-xs"
+            className="flex items-center justify-between px-2 py-1 rounded bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs"
           >
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bar.color }} />
               <div>
-                <p className="font-medium text-gray-800 dark:text-foreground">{bar.label}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">{bar.sublabel}</p>
+                <p className="font-medium text-[var(--text-primary)] dark:text-foreground">{bar.label}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{bar.sublabel}</p>
               </div>
             </div>
             <span

@@ -63,23 +63,23 @@ function getWarningEvents(snapshot: MeteringSnapshot): MeteredEvent[] {
 // ─── Estilos por severidad ────────────────────────────────────────────────────
 
 const BANNER_STYLES: Record<Exclude<AlertSeverity, "none">, string> = {
-  warning:  "bg-amber-50  border-amber-300  dark:bg-amber-900/20  dark:border-amber-700",
-  critical: "bg-red-50    border-red-400    dark:bg-red-900/20    dark:border-red-700",
+  warning:  "bg-[var(--data-warning-50)]  border-[var(--data-warning)]  dark:bg-[var(--data-warning)]/20  dark:border-[var(--data-warning)]",
+  critical: "bg-[var(--data-error-50)]    border-[var(--data-error)]    dark:bg-[var(--data-error)]/20    dark:border-[var(--data-error)]",
 };
 
 const ICON_STYLES: Record<Exclude<AlertSeverity, "none">, string> = {
-  warning:  "text-amber-600 dark:text-amber-400",
-  critical: "text-red-600   dark:text-red-400",
+  warning:  "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+  critical: "text-[var(--data-error)]   dark:text-[var(--data-error)]",
 };
 
 const TEXT_STYLES: Record<Exclude<AlertSeverity, "none">, string> = {
-  warning:  "text-amber-900 dark:text-amber-100",
-  critical: "text-red-900   dark:text-red-100",
+  warning:  "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+  critical: "text-[var(--data-error)]   dark:text-[var(--data-error)]",
 };
 
 const DETAIL_BUTTON_STYLES: Record<Exclude<AlertSeverity, "none">, string> = {
-  warning:  "bg-amber-100  hover:bg-amber-200  text-amber-800  dark:bg-amber-800/40  dark:hover:bg-amber-800/60  dark:text-amber-200  border border-amber-300  dark:border-amber-600",
-  critical: "bg-red-100    hover:bg-red-200    text-red-800    dark:bg-red-800/40    dark:hover:bg-red-800/60    dark:text-red-200    border border-red-300    dark:border-red-600",
+  warning:  "bg-[var(--data-warning-100)]  hover:bg-[var(--data-warning)]  text-[var(--data-warning)]  dark:bg-[var(--data-warning)]/40  dark:hover:bg-[var(--data-warning)]/60  dark:text-[var(--data-warning)]  border border-[var(--data-warning)]  dark:border-[var(--data-warning)]",
+  critical: "bg-[var(--data-error-100)]    hover:bg-[var(--data-error)]    text-[var(--data-error)]    dark:bg-[var(--data-error)]/40    dark:hover:bg-[var(--data-error)]/60    dark:text-[var(--data-error)]    border border-[var(--data-error)]    dark:border-[var(--data-error)]",
 };
 
 // ─── Iconos inline (sin dependencia extra) ────────────────────────────────────

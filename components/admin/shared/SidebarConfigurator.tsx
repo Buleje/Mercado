@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { CardTitle } from "@buleje/design-system";
 import {
   DndContext,
   closestCenter,
@@ -103,13 +104,13 @@ function SortableCategoryItem({
             type="checkbox"
             checked={isVisible}
             onChange={onToggleVisible}
-            className="w-5 h-5 rounded-md border-2 border-zinc-500 bg-zinc-700 checked:bg-emerald-500 checked:border-emerald-500 cursor-pointer accent-emerald-500"
+            className="w-5 h-5 rounded-md border-2 border-zinc-500 bg-zinc-700 checked:bg-[var(--accent-soft)] checked:border-[var(--data-success)]/30 cursor-pointer accent-[var(--data-success)]"
           />
         </label>
 
         {/* Icon + label */}
         <CategoryIcon className="h-4.5 w-4.5 text-zinc-400 shrink-0" />
-        <span className="text-[13px] font-medium text-zinc-200 flex-1 truncate">
+        <span className="text-[length:var(--ts-sm)] font-medium text-zinc-200 flex-1 truncate">
           {category.label}
         </span>
 
@@ -121,7 +122,7 @@ function SortableCategoryItem({
           >
             <ChevronDown
               className={cn(
-                "h-4 w-4 text-zinc-400 transition-transform duration-200",
+                "h-4 w-4 text-zinc-400 transition-transform duration-[var(--dur-base)]",
                 isExpanded && "rotate-180"
               )}
             />
@@ -141,7 +142,7 @@ function SortableCategoryItem({
       {/* Expanded sub-tabs */}
       {hasMultipleTabs && (
         <div
-          className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+          className="grid transition-[grid-template-rows] duration-[var(--dur-base)] ease-in-out"
           style={{ gridTemplateRows: isExpanded ? "1fr" : "0fr" }}
         >
           <div className="overflow-hidden">
@@ -254,10 +255,10 @@ export default function SidebarConfigurator({
     <div className="flex flex-col h-full bg-zinc-800 text-zinc-200">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-zinc-700">
-        <h2 className="text-[15px] font-bold text-white leading-tight">
+        <CardTitle as="h2" className="text-[length:var(--ts-sm)] font-bold text-white leading-tight">
           Personaliza tu navegacion
-        </h2>
-        <p className="text-[12px] text-zinc-400 mt-1.5 leading-relaxed">
+        </CardTitle>
+        <p className="text-[length:var(--ts-xs)] text-zinc-400 mt-1.5 leading-relaxed">
           Marca las categorias que quieras ver y arrastralas para cambiar el orden.
         </p>
       </div>
@@ -305,10 +306,10 @@ export default function SidebarConfigurator({
                             type="checkbox"
                             checked={isSubVisible}
                             onChange={() => toggleSubTabVisible(tabId as Tab)}
-                            className="w-4 h-4 rounded border-2 border-zinc-500 bg-zinc-700 checked:bg-emerald-500 checked:border-emerald-500 cursor-pointer accent-emerald-500"
+                            className="w-4 h-4 rounded border-2 border-zinc-500 bg-zinc-700 checked:bg-[var(--accent-soft)] checked:border-[var(--data-success)]/30 cursor-pointer accent-[var(--data-success)]"
                           />
                           <SubIcon className="h-4 w-4 text-zinc-400 shrink-0" />
-                          <span className="text-[12px] text-zinc-300 truncate">
+                          <span className="text-[length:var(--ts-xs)] text-zinc-300 truncate">
                             {tabInfo.label}
                           </span>
                         </label>
@@ -323,13 +324,13 @@ export default function SidebarConfigurator({
 
       {/* Theme selector */}
       <div className="px-5 py-3 border-t border-zinc-700">
-        <label className="block text-[12px] font-semibold text-zinc-400 mb-2">
+        <label className="block text-[length:var(--ts-xs)] font-semibold text-zinc-400 mb-2">
           Tema
         </label>
         <select
           value={draftTheme}
           onChange={e => setDraftTheme(e.target.value as SidebarTheme)}
-          className="w-full bg-zinc-700 text-zinc-200 text-[13px] rounded-lg px-3 py-2 border border-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="w-full bg-zinc-700 text-zinc-200 text-[length:var(--ts-sm)] rounded-lg px-3 py-2 border border-zinc-600 focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40"
         >
           <option value="light">Claro</option>
           <option value="shaded">Sombreado</option>
@@ -341,13 +342,13 @@ export default function SidebarConfigurator({
       <div className="px-5 py-4 space-y-2 border-t border-zinc-700">
         <button
           onClick={handleSave}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg py-3 w-full font-semibold text-[14px] transition-colors"
+          className="bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white rounded-lg py-3 w-full font-semibold text-[length:var(--ts-sm)] transition-colors"
         >
           Guardar
         </button>
         <button
           onClick={onCancel}
-          className="border border-zinc-600 text-zinc-300 hover:bg-zinc-700 rounded-lg py-3 w-full text-[14px] font-medium transition-colors"
+          className="border border-zinc-600 text-zinc-300 hover:bg-zinc-700 rounded-lg py-3 w-full text-[length:var(--ts-sm)] font-medium transition-colors"
         >
           Cancelar
         </button>

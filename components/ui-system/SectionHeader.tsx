@@ -38,7 +38,7 @@ export function SectionHeader({
   return (
     <header
       className={cn(
-        ruled && "pb-4 border-b border-gray-200 dark:border-gray-800 mb-6",
+        ruled && "pb-4 border-b border-[var(--rule-base)] mb-6",
         "flex flex-col sm:flex-row sm:items-end gap-4",
         align === "center" && "items-center text-center",
         className,
@@ -48,14 +48,14 @@ export function SectionHeader({
         {eyebrow && <Eyebrow className="mb-2">{eyebrow}</Eyebrow>}
         <h2
           className={cn(
-            "font-extrabold tracking-[-0.02em] leading-[1.05] text-gray-900 dark:text-white",
+            "font-extrabold tracking-[var(--ls-tight)] leading-[1.05] text-[var(--text-primary)]",
             TITLE_SIZES[size],
           )}
         >
           {title}
         </h2>
         {description && (
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-xl leading-relaxed">
+          <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-xl leading-relaxed">
             {description}
           </p>
         )}

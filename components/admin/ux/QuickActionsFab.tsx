@@ -9,7 +9,7 @@ import {
   UserPlus,
   CreditCard,
   X,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tapPress, EASE, DURATION } from "@/components/ui-system";
 import Link from "next/link";
@@ -148,7 +148,7 @@ export function QuickActionsFab() {
                       {a.label}
                     </span>
                     {a.shortcut && (
-                      <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-1.5 text-[10px] font-mono tabular-nums text-[var(--text-tertiary)]">
+                      <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-1.5 text-[length:var(--ts-2xs)] font-mono tabular-nums text-[var(--text-tertiary)]">
                         {a.shortcut}
                       </kbd>
                     )}
@@ -157,7 +157,7 @@ export function QuickActionsFab() {
               );
             })}
             {/* Hint teclado global */}
-            <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 bg-black/40 backdrop-blur rounded-full px-3 py-1">
+            <div className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-black/40 backdrop-blur rounded-full px-3 py-1">
               ESC para cerrar · ⌘K para abrir
             </div>
           </m.div>

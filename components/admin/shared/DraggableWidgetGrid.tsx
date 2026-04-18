@@ -59,7 +59,7 @@ function DraggableWidget({ id, children }: DraggableWidgetProps) {
         className="absolute top-3 right-3 opacity-0 group-hover/widget:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 z-10"
         aria-label="Arrastrar widget"
       >
-        <GripVertical className="w-4 h-4 text-gray-400" />
+        <GripVertical className="w-4 h-4 text-[var(--text-tertiary)]" />
       </button>
       {children}
     </div>

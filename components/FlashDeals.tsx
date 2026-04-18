@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
-import { Flame, ShoppingCart, Package, Zap, Minus, Plus } from "lucide-react";
+import { Clock, ShoppingCart, Package, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -77,7 +77,7 @@ function loadOrCreateDeals(allProducts: Product[], discount: number) {
   return deals;
 }
 
-export default function FlashDeals({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
+export default function FlashDeals({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
   const { homepage: hp } = useSettings();
   const [deals, setDeals] = useState<Array<Product & { originalPrice: number; discount: number }>>([]);
   const [endTime] = useState(getEndOfDay);
@@ -91,12 +91,24 @@ export default function FlashDeals({ serverProducts, showEmpty = false }: { serv
 
   useEffect(() => {
     // Solo construir deals cuando los productos ya cargaron
-    if (isLoading || products.length === 0) return;
-    // Prefer admin-selected deals, fall back to random daily picks
+    if (isLoading || products.length === 0) {
+      // En modo estricto, si no hay productos aun, no picar nada — dejamos al
+      // placeholder manejar el render.
+      if (strictAdminOnly) startTransition(() => setDeals([]));
+      return;
+    }
     const adminIds = hp.flashDealIds ?? [];
     const adminDeals = adminIds.length > 0 ? buildAdminDeals(products, adminIds, discount) : [];
+
+    // Regla dura (pedido del dueno): si strictAdminOnly = true, NUNCA picar
+    // deals random del catalogo. Sin seleccion admin = sin seccion.
+    if (strictAdminOnly) {
+      startTransition(() => setDeals(adminDeals));
+      return;
+    }
+
     startTransition(() => setDeals(adminDeals.length > 0 ? adminDeals : loadOrCreateDeals(products, discount)));
-  }, [products, isLoading, hp.flashDealIds, discount]);
+  }, [products, isLoading, hp.flashDealIds, discount, strictAdminOnly]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(getTimeLeft(endTime)), 1000);
@@ -104,7 +116,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false }: { serv
   }, [endTime]);
 
   if (isLoading) return <SectionPlaceholder title="Ofertas Relampago" hint="Cargando..." cols={6} />;
-  if (deals.length === 0) return showEmpty ? <SectionPlaceholder title="Ofertas Relampago" hint="Configura ofertas desde Mi Tienda en el panel admin" cols={6} /> : null;
+  if (deals.length === 0) return showEmpty ? <SectionPlaceholder title="Ofertas Relampago" hint="Configura ofertas desde Mi Tienda en el panel admin" cols={6} variant={emptyVariant} publicTitle="Ofertas relampago" /> : null;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {
@@ -123,7 +135,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false }: { serv
   };
 
   return (
-    <section className="py-10 sm:py-14 bg-orange-50/70 dark:bg-surface">
+    <section className="py-10 sm:py-14 bg-[var(--surface-sunken)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(flashOffersSchema) }}
@@ -132,25 +144,26 @@ export default function FlashDeals({ serverProducts, showEmpty = false }: { serv
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-red-500 text-white">
-                <Flame className="h-5 w-5" />
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div className="flex items-center justify-center h-9 w-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]">
+                <Clock className="h-4 w-4" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-                Ofertas <span className="text-red-500">Relámpago</span>
+              <h2 className="text-fs-h2 font-semibold text-[var(--text-primary)]">
+                Ofertas Relámpago
               </h2>
-              <Zap className="h-5 w-5 text-amber-500 fill-amber-500 animate-pulse" />
             </div>
-            <p className="text-sm text-muted">¡Aprovecha antes de que se acaben! Precios especiales solo por hoy.</p>
+            <p className="text-sm text-[var(--text-secondary)]">
+              Disponibilidad limitada — aprovecha esta semana.
+            </p>
           </div>
 
           {/* Countdown */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wide mr-2">Termina en:</span>
+            <span className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-[0.12em] mr-2">Termina en</span>
             <TimeBox value={pad(time.h)} label="Hrs" />
-            <span className="text-xl font-bold text-red-500 animate-pulse">:</span>
+            <span className="text-lg font-bold text-[var(--text-tertiary)] -mt-3">:</span>
             <TimeBox value={pad(time.m)} label="Min" />
-            <span className="text-xl font-bold text-red-500 animate-pulse">:</span>
+            <span className="text-lg font-bold text-[var(--text-tertiary)] -mt-3">:</span>
             <TimeBox value={pad(time.s)} label="Seg" />
           </div>
         </div>
@@ -170,37 +183,37 @@ export default function FlashDeals({ serverProducts, showEmpty = false }: { serv
 function TimeBox({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="bg-foreground text-background font-mono text-lg sm:text-xl font-extrabold px-2.5 py-1.5 rounded-lg shadow-md min-w-10 text-center">
+      <span className="bg-[var(--text-primary)] text-[var(--surface-canvas)] font-mono text-base sm:text-lg font-bold tabular-nums px-2.5 py-1 rounded-md min-w-10 text-center">
         {value}
       </span>
-      <span className="text-[9px] uppercase tracking-wider text-muted mt-1 font-semibold">{label}</span>
+      <span className="text-[9px] uppercase tracking-wider text-[var(--text-tertiary)] mt-1 font-medium">{label}</span>
     </div>
   );
 }
 
 function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { originalPrice: number; discount: number }; qty: number; onAdd: () => void; onDec: () => void; onInc: () => void }) {
   return (
-    <div className="group relative bg-white dark:bg-card rounded-xl overflow-hidden border border-gray-100 dark:border-card-border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-      {/* Discount badge */}
+    <div className="group relative bg-[var(--surface-canvas)] rounded-xl overflow-hidden border border-[var(--rule-soft)] hover:border-[var(--rule-base)] transition-colors duration-200">
+      {/* Discount badge — teal accent soft (no scarcity-red) */}
       {deal.discount > 0 && (
-        <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-extrabold">
+        <div className="absolute top-1.5 left-1.5 z-10 bg-[var(--accent-soft)] text-[var(--accent)] rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
           -{deal.discount}%
         </div>
       )}
 
       {/* Image */}
-      <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">
+      <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
         {deal.image ? (
           <Image
             src={deal.image}
             alt={deal.name}
             fill
             loading="lazy"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-gray-300">
+          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
             <Package className="h-8 w-8" />
           </div>
         )}
@@ -208,20 +221,20 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
 
       {/* Body */}
       <div className="p-3">
-        <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 mb-2">
+        <h3 className="font-medium text-[var(--text-primary)] text-sm leading-tight line-clamp-2 mb-2">
           {deal.name}
         </h3>
         <div className="flex items-center justify-between gap-1">
           <div>
-            <span className="text-base font-extrabold text-red-500">S/{deal.price.toFixed(2)}</span>
-            <span className="block text-xs text-muted line-through">S/{deal.originalPrice.toFixed(2)}</span>
+            <span className="text-base font-bold text-[var(--text-primary)] tabular-nums">S/{deal.price.toFixed(2)}</span>
+            <span className="block text-xs text-[var(--text-tertiary)] line-through tabular-nums">S/{deal.originalPrice.toFixed(2)}</span>
           </div>
           {qty > 0 ? (
-            <div className="flex items-center gap-0.5 bg-red-500 rounded-full px-1 py-1 shrink-0 sm:px-1.5">
+            <div className="flex items-center gap-0.5 bg-[var(--accent)] rounded-full px-1 py-1 shrink-0 sm:px-1.5">
               <button onClick={onDec} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">
                 <Minus className="h-3.5 w-3.5" />
               </button>
-              <span className="text-white font-extrabold text-xs sm:text-sm min-w-4 sm:min-w-5 text-center">{qty}</span>
+              <span className="text-white font-semibold text-xs sm:text-sm min-w-4 sm:min-w-5 text-center tabular-nums">{qty}</span>
               <button onClick={onInc} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Aumentar">
                 <Plus className="h-3.5 w-3.5" />
               </button>
@@ -229,7 +242,7 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
           ) : (
             <button
               onClick={onAdd}
-              className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-red-500 text-white hover:bg-red-600 active:scale-95 shrink-0"
+              className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-600)] active:scale-95 shrink-0 transition-colors"
               aria-label={`Agregar ${deal.name}`}
             >
               <ShoppingCart className="h-5 w-5" />

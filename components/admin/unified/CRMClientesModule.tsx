@@ -1,10 +1,11 @@
 "use client";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
   Users, Star, Layers, MapPin, MessageSquare,
   Maximize2, Minimize2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
@@ -39,12 +40,12 @@ function ExpandableMapSection() {
   return (
     <div className={cn("space-y-4", maximized && "fixed inset-0 z-50 bg-white dark:bg-card p-4 overflow-auto")}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground flex items-center gap-1.5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-primary" /> Ubicación de clientes
-        </h3>
+        </CardTitle>
         <button
           onClick={() => setMaximized(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
         >
           {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {maximized ? "Minimizar" : "Maximizar mapa"}
@@ -70,8 +71,8 @@ export default function CRMClientesModule() {
         title="Mis Clientes"
         description="CRM, segmentación y fidelización"
         icon={Users}
-        bgTint="bg-violet-50 dark:bg-violet-900/20"
-        iconColorClass="text-violet-600 dark:text-violet-400"
+        bgTint="bg-[var(--surface-sunken)]"
+        iconColorClass="text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
       />
 
       <AdminTabBar

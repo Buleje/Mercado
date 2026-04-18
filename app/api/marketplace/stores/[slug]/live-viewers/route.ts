@@ -20,8 +20,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 // ── Redis client (lazy singleton) ─────────────────────────────────────────────
 
 function getRedis(): Redis | null {

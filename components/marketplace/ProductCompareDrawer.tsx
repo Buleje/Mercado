@@ -223,7 +223,7 @@ export default function ProductCompareDrawer() {
                       style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
                     >
                       {items.map((item) => (
-                        <span key={item.productId} className="truncate">{item.name}</span>
+                        <span key={item.id} className="truncate">{item.name}</span>
                       ))}
                     </div>
                   </div>
@@ -246,9 +246,9 @@ export default function ProductCompareDrawer() {
                     >
                       {items.map((item) => (
                         <ProductColumn
-                          key={item.productId}
+                          key={item.id}
                           item={item}
-                          onRemove={() => remove(item.productId)}
+                          onRemove={() => remove(item.id)}
                         />
                       ))}
                     </div>

@@ -2,19 +2,12 @@
 
 import {
   ExternalLink, Mail, XCircle, CheckCircle2, Loader2,
-  DollarSign, ArrowDownRight, ArrowUpRight, TrendingUp,
-  ShoppingCart, Package, Users, Store, ShoppingBag,
-  BarChart3, Trash2, Eraser, LogIn, AlertCircle,
+  ArrowDownRight, ArrowUpRight,
+  Package, Users, Store, ShoppingBag,
+  BarChart3, Trash2, Eraser, LogIn,
 } from "lucide-react";
-import type { TenantRow, PlanId } from "@/lib/superadmin-types";
-import { PlanBadge } from "@/components/superadmin/_shared";
-
-const CARD_BG: Record<PlanId, string> = {
-  free: "#6b7280",
-  pro: "#00B4A6",
-  business: "#7c3aed",
-  enterprise: "#d97706",
-};
+import type { TenantRow } from "@/lib/superadmin-types";
+import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
 
 interface TenantCardProps {
   tenant: TenantRow;
@@ -29,6 +22,13 @@ interface TenantCardProps {
   onPurge: (slug: string, name: string) => void;
   onViewProducts?: (tenant: TenantRow) => void;
 }
+
+const PLAN_LABEL: Record<string, string> = {
+  free: "Free",
+  pro: "Pro",
+  business: "Business",
+  enterprise: "Enterprise",
+};
 
 /** Computes a health score for the tenant. */
 function computeHealth(t: TenantRow): { ok: boolean; issues: string[] } {
@@ -54,7 +54,6 @@ export function TenantCard({
   onViewProducts,
 }: TenantCardProps) {
   const t = tenant;
-  const planColor = CARD_BG[t.plan] ?? CARD_BG.free;
   const initials = t.name.slice(0, 2).toUpperCase();
   const health = computeHealth(t);
 
@@ -81,69 +80,65 @@ export function TenantCard({
     (t.monthOrders ?? 0) > 0 ||
     revenue > 0 ||
     (storeInfo?._count.products ?? 0) > 0;
+  const planLabel = PLAN_LABEL[t.plan] ?? t.plan;
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:border-teal-300 dark:hover:border-teal-700 transition-all hover:shadow-md overflow-hidden">
-      {/* Gradient strip */}
-      <div className="h-2 w-full" style={{ background: `linear-gradient(90deg, ${planColor}, ${planColor}88)` }} />
-
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-sm)] hover:border-[var(--rule-strong)] transition-colors overflow-hidden">
       <div className="p-5 space-y-4">
+        {/* Kicker: plan label + status pill, sin gradient */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)] font-semibold">
+            Plan {planLabel}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {t.plan === "enterprise" ? (
+              <ProductBadge intent="premium">Enterprise</ProductBadge>
+            ) : null}
+            {isOnMarketplace && (
+              <ProductBadge intent="fresh">
+                <ShoppingBag className="w-2.5 h-2.5 mr-1 inline" />Marketplace
+              </ProductBadge>
+            )}
+            {!health.ok && (
+              <ProductBadge intent="offer">
+                {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
+              </ProductBadge>
+            )}
+          </div>
+        </div>
+
         {/* Avatar + Name + Status */}
         <div className="flex items-start gap-3">
-          <div
-            className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${planColor}, ${planColor}99)` }}
-          >
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-[var(--surface-sunken)] text-[var(--text-primary)] font-bold text-base shrink-0 border border-[var(--rule-base)]">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-bold text-gray-900 dark:text-white text-base truncate">{t.name}</div>
-              <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${t.active ? "bg-green-500" : "bg-red-500"}`} />
-            </div>
-            <div className="text-gray-400 text-xs font-mono">{t.slug}</div>
-            {t.ownerEmail && <div className="text-gray-400 text-[10px] truncate mt-0.5">{t.ownerEmail}</div>}
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <PlanBadge plan={t.plan} />
-            {isOnMarketplace && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-[9px] font-semibold text-teal-700 dark:text-teal-300">
-                <ShoppingBag className="w-2.5 h-2.5" /> Marketplace
-              </span>
-            )}
-            {/* Health badge */}
-            {health.ok ? (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-[9px] font-semibold text-green-700 dark:text-green-300" title="Tienda configurada correctamente">
-                <CheckCircle2 className="w-2.5 h-2.5" /> OK
-              </span>
-            ) : (
+              <div className="font-bold text-[var(--text-primary)] text-base truncate">{t.name}</div>
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-[9px] font-semibold text-red-700 dark:text-red-300 cursor-help"
-                title={health.issues.join(", ")}
-              >
-                <AlertCircle className="w-2.5 h-2.5" /> {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
-              </span>
+                className={`w-2 h-2 rounded-full shrink-0 ${t.active ? "bg-[var(--data-success)]" : "bg-[var(--text-tertiary)]"}`}
+                title={t.active ? "Activo" : "Suspendido"}
+              />
+            </div>
+            <div className="text-[var(--text-tertiary)] text-xs font-mono">{t.slug}</div>
+            {t.ownerEmail && (
+              <div className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] truncate mt-0.5">
+                {t.ownerEmail}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Financial KPIs */}
+        {/* Financial KPIs — uniformes via StatCard density=compact, sin icon
+            para no comprimir el label en grid 4-col estrecho. */}
         <div className="grid grid-cols-4 gap-2">
-          {[
-            { val: fmtMoney(revenue), lbl: "Ventas mes", icon: DollarSign, color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
-            { val: fmtMoney(expenses), lbl: "Gastos mes", icon: ArrowDownRight, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
-            { val: fmtMoney(profit), lbl: "Ganancia", icon: TrendingUp, color: profit >= 0 ? "text-teal-600" : "text-red-500", bg: profit >= 0 ? "bg-teal-50 dark:bg-teal-950/30" : "bg-red-50 dark:bg-red-950/30" },
-            { val: String(t.monthOrders ?? 0), lbl: "Pedidos mes", icon: ShoppingCart, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          ].map(({ val, lbl, icon: Icon, color, bg }) => (
-            <div key={lbl} className={`${bg} rounded-xl p-2 text-center`}>
-              <Icon className={`w-3 h-3 mx-auto mb-0.5 ${color}`} />
-              <div className={`text-sm font-extrabold ${color}`}>{val}</div>
-              <div className="text-[9px] text-gray-400 leading-tight">{lbl}</div>
-            </div>
-          ))}
+          <StatCard density="compact" label="Ventas" value={fmtMoney(revenue)} />
+          <StatCard density="compact" label="Gastos" value={fmtMoney(expenses)} />
+          <StatCard density="compact" label="Ganancia" value={fmtMoney(profit)} />
+          <StatCard density="compact" label="Pedidos" value={String(t.monthOrders ?? 0)} />
         </div>
 
-        {/* Resources */}
+        {/* Resources — chips neutros uniformes */}
         <div className="grid grid-cols-3 gap-2">
           {[
             { val: t.usage?.products ?? 0, lbl: "Productos", icon: Package, max: t.limits?.maxProducts ?? -1, clickable: true },
@@ -159,20 +154,33 @@ export function TenantCard({
                 onClick={canClick ? () => onViewProducts?.(t) : undefined}
                 role={canClick ? "button" : undefined}
                 tabIndex={canClick ? 0 : undefined}
-                className={`rounded-xl p-2.5 text-center ${
-                  isEmpty
-                    ? "bg-gray-50 dark:bg-gray-800/30 border border-dashed border-gray-200 dark:border-gray-700"
-                    : "bg-gray-50 dark:bg-gray-800/50"
-                } ${canClick ? "cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-200 dark:hover:border-teal-800 border border-transparent transition-colors" : ""}`}
+                className={`rounded-lg p-2.5 text-center bg-[var(--surface-sunken)] border border-[var(--rule-soft)] ${
+                  canClick
+                    ? "cursor-pointer hover:border-[var(--rule-strong)] transition-colors"
+                    : ""
+                }`}
               >
-                <Icon className={`w-3.5 h-3.5 mx-auto mb-1 ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`} />
-                <div className={`text-base font-bold ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-900 dark:text-white"}`}>{val}</div>
-                <div className={`text-[9px] ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`}>
+                <Icon className="w-3.5 h-3.5 mx-auto mb-1 text-[var(--text-secondary)]" />
+                <div className={`text-base font-bold ${isEmpty ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}>
+                  {val}
+                </div>
+                <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                   {canClick ? (isEmpty ? "Sin datos ▸" : `${lbl} ▸`) : isEmpty ? "Sin datos" : lbl}
                 </div>
                 {max !== -1 && !isEmpty && (
-                  <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full mt-1 overflow-hidden">
-                    <div className={`h-full rounded-full ${usagePct >= 100 ? "bg-red-500" : usagePct >= 80 ? "bg-amber-400" : "bg-teal-500"}`} style={{ width: `${usagePct}%` }} />
+                  <div className="h-1 bg-[var(--rule-soft)] rounded-full mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${usagePct}%`,
+                        background:
+                          usagePct >= 100
+                            ? "var(--data-error)"
+                            : usagePct >= 80
+                              ? "var(--data-warning)"
+                              : "var(--accent)",
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -180,78 +188,78 @@ export function TenantCard({
           })}
         </div>
 
-        {/* Panel data status */}
-        <div
-          className={`rounded-xl border px-3 py-2 ${
-            hasVisibleAdminData
-              ? "border-green-200 dark:border-green-800 bg-green-50/70 dark:bg-green-950/20"
-              : "border-red-200 dark:border-red-800 bg-red-50/70 dark:bg-red-950/20"
-          }`}
-        >
-          <div
-            className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-              hasVisibleAdminData ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"
-            }`}
-          >
-            {hasVisibleAdminData ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-            {hasVisibleAdminData ? "Panel con información" : "Panel sin información útil"}
-          </div>
-          <p
-            className={`mt-0.5 text-[10px] ${
-              hasVisibleAdminData ? "text-green-700/80 dark:text-green-300/80" : "text-red-700/80 dark:text-red-300/80"
-            }`}
-          >
-            {hasVisibleAdminData
-              ? "Esta tienda ya muestra datos en su admin del negocio."
-              : "Faltan productos o movimientos; revisar la carga inicial de la tienda."}
-          </p>
-        </div>
+        {/* Panel data status — DS Alert */}
+        {hasVisibleAdminData ? (
+          <SuccessAlert
+            title="Panel con información"
+            description="Esta tienda ya muestra datos en su admin del negocio."
+          />
+        ) : (
+          <WarningAlert
+            title="Panel sin información útil"
+            description="Faltan productos o movimientos; revisar la carga inicial de la tienda."
+          />
+        )}
 
         {/* Plan usage bar */}
         {t.usage && t.limits && (
           <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <span>Uso del plan</span>
-              <span className={totalUsagePct >= 100 ? "text-red-500" : totalUsagePct >= 80 ? "text-amber-500" : "text-teal-500"}>{totalUsagePct}%</span>
+              <span
+                className={
+                  totalUsagePct >= 100
+                    ? "text-[var(--data-error)]"
+                    : totalUsagePct >= 80
+                      ? "text-[var(--data-warning)]"
+                      : "text-[var(--text-secondary)]"
+                }
+              >
+                {totalUsagePct}%
+              </span>
             </div>
-            <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full ${totalUsagePct >= 100 ? "bg-red-500" : totalUsagePct >= 80 ? "bg-amber-400" : "bg-teal-500"}`} style={{ width: `${totalUsagePct}%` }} />
+            <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${totalUsagePct}%`,
+                  background:
+                    totalUsagePct >= 100
+                      ? "var(--data-error)"
+                      : totalUsagePct >= 80
+                        ? "var(--data-warning)"
+                        : "var(--accent)",
+                }}
+              />
             </div>
           </div>
         )}
 
         {/* Row 1: Tienda + Panel Admin */}
-        <div className="flex gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex gap-2 pt-1 border-t border-[var(--rule-base)]">
           <a
             href={`/tienda`}
             onClick={(e) => { e.preventDefault(); window.open(`/t/${t.slug}/tienda`, "_blank"); }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-secondary)] transition-colors cursor-pointer"
           >
             <Store className="w-3.5 h-3.5" /> Ir a Tienda
           </a>
           <button
             type="button"
             onClick={() => onImpersonate(t.slug)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)" }}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-600)] text-white transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" /> Panel Admin
           </button>
         </div>
 
-        {/* Row 2: Marketplace + Login */}
+        {/* Row 2: Marketplace + Login — outline neutros */}
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => onToggleMarketplace(t)}
             disabled={actionLoading === `${t.slug}-marketplace`}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-50 ${
-              isOnMarketplace
-                ? "border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
-                : hasStore
-                ? "border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950"
-                : "border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed"
-            }`}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border border-[var(--rule-base)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {actionLoading === `${t.slug}-marketplace` ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -266,22 +274,26 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onLoginAs(t)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border border-[var(--rule-base)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <LogIn className="w-3.5 h-3.5" /> Iniciar sesión
           </button>
         </div>
 
-        {/* Row 3: Invite + Suspend + Purge + Delete + Detail */}
+        {/* Row 3: Invite + Suspend + Purge + Delete + Detail — neutros */}
         <div className="flex gap-2">
-          <button type="button" onClick={() => onInvite(t.slug, t.name)} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950 transition-colors">
+          <button
+            type="button"
+            onClick={() => onInvite(t.slug, t.name)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+          >
             <Mail className="w-3.5 h-3.5" /> Invitar
           </button>
           <button
             type="button"
             onClick={() => onToggleActive(t.slug, t.active)}
             disabled={actionLoading === `${t.slug}-active`}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border transition-colors disabled:opacity-50 ${t.active ? "border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950" : "border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950"}`}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
           >
             {actionLoading === `${t.slug}-active`
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -294,7 +306,7 @@ export function TenantCard({
             type="button"
             onClick={() => onPurge(t.slug, t.name)}
             disabled={actionLoading === `${t.slug}-purge`}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
             title="Limpiar datos de esta tienda (productos, pedidos, movimientos)"
           >
             {actionLoading === `${t.slug}-purge` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eraser className="w-3.5 h-3.5" />}
@@ -303,7 +315,7 @@ export function TenantCard({
             type="button"
             onClick={() => onDelete(t.slug, t.name)}
             disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             title={t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
           >
             {actionLoading === `${t.slug}-delete` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
@@ -311,7 +323,7 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onDetail(t)}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
           >
             <BarChart3 className="w-3.5 h-3.5" />
           </button>

@@ -13,30 +13,46 @@ interface StatusBadgeProps {
   onClick?: () => void;
 }
 
+/**
+ * Variants 100% por tokens — ADR-074 Phase 2 (structural redesign).
+ *
+ * Cada variante usa:
+ *   - background: mix semántico via `color-mix(in oklch, var(--data-*) 12%, transparent)`
+ *     Esto respeta automáticamente dark mode porque los tokens ya cambian.
+ *   - text: color puro del token
+ *   - dot: color puro del token
+ *
+ * Ya no hay `bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]` hardcoded — un rebrand
+ * cambia `--data-success` y las 6 variantes siguen sin editar.
+ */
 const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {
   success: {
-    badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-    dot: "bg-emerald-500 dark:bg-emerald-400",
+    badge:
+      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)]",
+    dot: "bg-[var(--data-success)]",
   },
   warning: {
-    badge: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
-    dot: "bg-amber-500 dark:bg-amber-400",
+    badge:
+      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning)]",
+    dot: "bg-[var(--data-warning)]",
   },
   error: {
-    badge: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400",
-    dot: "bg-red-500 dark:bg-red-400",
+    badge:
+      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error)]",
+    dot: "bg-[var(--data-error)]",
   },
   info: {
-    badge: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-    dot: "bg-blue-500 dark:bg-blue-400",
+    badge:
+      "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info)]",
+    dot: "bg-[var(--data-info)]",
   },
   neutral: {
-    badge: "bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400",
-    dot: "bg-gray-400 dark:bg-zinc-500",
+    badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+    dot: "bg-[var(--text-tertiary)]",
   },
   pending: {
-    badge: "bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
-    dot: "bg-violet-500 dark:bg-violet-400",
+    badge: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+    dot: "bg-[var(--text-primary)]",
   },
 };
 
@@ -51,7 +67,7 @@ function StatusBadge({ variant, label, size = "md", dot = false, icon: Icon, pul
       className={cn(
         "rounded-full font-medium inline-flex items-center gap-1",
         styles.badge,
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs",
+        size === "sm" ? "px-2 py-0.5 text-[length:var(--ts-2xs)]" : "px-2.5 py-0.5 text-xs",
         pulse && "animate-pulse",
         onClick && "cursor-pointer hover:opacity-80 transition-opacity",
       )}

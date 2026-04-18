@@ -41,8 +41,8 @@ interface AnalyticsData {
 const PLAN_LABELS: Record<PlanId, { label: string; color: string }> = {
   free:       { label: "Free",       color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
   pro:        { label: "Pro",        color: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300" },
-  business:   { label: "Business",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300" },
-  enterprise: { label: "Enterprise", color: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300" },
+  business:   { label: "Business",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
+  enterprise: { label: "Enterprise", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
 };
 
 function PlanBadge({ plan }: { plan: PlanId }) {
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
   if (error || !analytics) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-400">
-        <p className="text-red-500">{error || "Error desconocido"}</p>
+        <p className="text-[var(--data-error)]">{error || "Error desconocido"}</p>
         <button
           type="button"
           onClick={() => void loadData()}
@@ -140,46 +140,41 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics de plataforma</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Analytics de plataforma</h1>
         <p className="text-gray-500 text-sm mt-1">Métricas globales de todos los tenants.</p>
       </div>
 
-      {/* Growth metrics */}
+      {/* Growth metrics — Ola 3: removido border-top gradient semaforo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           {
             label: "Nuevos tenants (mes)",
             value: analytics.growth.tenantsThisMonth,
             sub: `${analytics.growth.tenantGrowthPct > 0 ? "+" : ""}${analytics.growth.tenantGrowthPct}% vs mes anterior`,
-            accent: "linear-gradient(90deg,#00B4A6,#2dd4bf)",
           },
           {
             label: "Pedidos este mes",
             value: analytics.growth.ordersThisMonth,
             sub: `${analytics.growth.orderGrowthPct > 0 ? "+" : ""}${analytics.growth.orderGrowthPct}% vs mes anterior`,
-            accent: "#6366f1",
           },
           {
             label: "MRR",
             value: fmtAmount(analytics.overview.mrr),
             sub: `ARR: ${fmtAmount(analytics.overview.arr)}`,
-            accent: "#22c55e",
           },
           {
             label: "Tiendas en riesgo",
             value: analytics.atRiskCount,
             sub: "Cancelando o trial vencido",
-            accent: "#f59e0b",
           },
-        ].map(({ label, value, sub, accent }) => (
+        ].map(({ label, value, sub }) => (
           <div
             key={label}
-            className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 overflow-hidden shadow-sm dark:shadow-none"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5"
           >
-            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: accent }} />
-            <div className="text-gray-500 dark:text-gray-400 text-xs mb-2">{label}</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
-            <div className="text-gray-400 text-xs mt-1">{sub}</div>
+            <div className="text-[var(--text-tertiary)] text-xs mb-2">{label}</div>
+            <div className="text-2xl font-bold text-[var(--text-primary)]">{value}</div>
+            <div className="text-[var(--text-tertiary)] text-xs mt-1">{sub}</div>
           </div>
         ))}
       </div>
@@ -188,14 +183,14 @@ export default function AnalyticsPage() {
       <RevenueCharts />
 
       {/* Plan distribution */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-teal-500" /> Distribución por plan
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
+        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-[var(--text-secondary)]" /> Distribución por plan
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {(["free", "pro", "business", "enterprise"] as PlanId[]).map((plan) => (
-            <div key={plan} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div key={plan} className="bg-[var(--surface-sunken)]/50 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">
                 {analytics.planDistribution[plan] ?? 0}
               </div>
               <div className="mt-1.5">
@@ -208,8 +203,8 @@ export default function AnalyticsPage() {
 
       {/* Comisiones */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-teal-500" /> Comisiones
+        <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-[var(--text-secondary)]" /> Comisiones
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
@@ -217,48 +212,44 @@ export default function AnalyticsPage() {
               label: "Comisiones del mes",
               value: commThisMonth,
               sub: "No liquidadas aún",
-              accent: "linear-gradient(90deg,#00B4A6,#2dd4bf)",
-              icon: <DollarSign className="w-3.5 h-3.5" />,
+              icon: <DollarSign className="w-3.5 h-3.5 text-[var(--text-secondary)]" />,
             },
             {
               label: "Comisiones pagadas",
               value: commPaid,
               sub: "Status: paid",
-              accent: "#22c55e",
-              icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />,
+              icon: <CheckCircle2 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />,
             },
             {
               label: "Pendiente de liquidar",
               value: commPending,
               sub: "Status: pending",
-              accent: "#f59e0b",
-              icon: <Clock className="w-3.5 h-3.5 text-amber-400" />,
+              icon: <Clock className="w-3.5 h-3.5 text-[var(--text-secondary)]" />,
             },
-          ].map(({ label, value, sub, accent, icon }) => (
+          ].map(({ label, value, sub, icon }) => (
             <div
               key={label}
-              className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 overflow-hidden shadow-sm dark:shadow-none"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: accent }} />
-              <div className="text-gray-500 dark:text-gray-400 text-xs mb-2 flex items-center gap-1.5">
+              <div className="text-[var(--text-tertiary)] text-xs mb-2 flex items-center gap-1.5">
                 {icon} {label}
               </div>
               {commLoading ? (
-                <div className="h-8 w-24 bg-gray-100 dark:bg-gray-800 animate-pulse rounded" />
+                <div className="h-8 w-24 bg-[var(--surface-sunken)] animate-pulse rounded" />
               ) : (
-                <div className="text-2xl font-bold text-gray-900 dark:text-white font-mono">
+                <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                   {fmtAmount(value)}
                 </div>
               )}
-              <div className="text-gray-400 text-xs mt-1">{sub}</div>
+              <div className="text-[var(--text-tertiary)] text-xs mt-1">{sub}</div>
             </div>
           ))}
         </div>
 
         {/* Tabla comisiones recientes */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">Comisiones recientes</span>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+          <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Comisiones recientes</span>
             <span className="text-xs text-gray-400">Últimas 20</span>
           </div>
           {commLoading ? (
@@ -271,7 +262,7 @@ export default function AnalyticsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+                  <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider">
                     <th className="text-left px-5 py-3">Orden</th>
                     <th className="text-left px-4 py-3">Tienda</th>
                     <th className="text-left px-4 py-3">Tipo</th>
@@ -286,8 +277,8 @@ export default function AnalyticsPage() {
                     <tr key={c.id} className="hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-colors">
                       <td className="px-5 py-3 text-xs font-mono text-gray-400 truncate max-w-32">{c.orderId}</td>
                       <td className="px-4 py-3 text-xs font-mono text-gray-400">{c.storeId ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">{c.type}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white font-mono">
+                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{c.type}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)] font-mono">
                         {fmtAmount(c.amount)}
                       </td>
                       <td className="px-4 py-3 text-right text-xs text-gray-400">
@@ -297,10 +288,10 @@ export default function AnalyticsPage() {
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                             c.status === "paid"
-                              ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                              ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success)] text-[var(--data-success)] dark:text-[var(--data-success)]"
                               : c.status === "pending"
-                                ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
-                                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                           }`}
                         >
                           {c.status}
@@ -317,9 +308,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Resumen de uso agregado */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Package className="w-5 h-5 text-emerald-500" /> Resumen de uso agregado
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <Package className="w-5 h-5 text-[var(--text-secondary)]" /> Resumen de uso agregado
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
@@ -336,8 +327,8 @@ export default function AnalyticsPage() {
               label: "Pedidos este mes (total)",
             },
           ].map(({ value, label }) => (
-            <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">
                 {value.toLocaleString("es-PE")}
               </div>
               <div className="text-gray-400 text-xs mt-1">{label}</div>
@@ -347,14 +338,14 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Top tenants por actividad */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-teal-500" /> Top tiendas por actividad
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-[var(--text-secondary)]" /> Top tiendas por actividad
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+              <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider">
                 <th className="text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3">Tienda</th>
                 <th className="text-left px-4 py-3">Plan</th>
@@ -371,13 +362,13 @@ export default function AnalyticsPage() {
                   <tr key={t.id} className="hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-colors">
                     <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900 dark:text-white">{t.name}</div>
+                      <div className="font-semibold text-[var(--text-primary)]">{t.name}</div>
                       <div className="text-gray-400 text-xs font-mono">{t.slug}</div>
                     </td>
                     <td className="px-4 py-3">
                       <PlanBadge plan={t.plan} />
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">
+                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
                       {t.usage?.ordersThisMonth ?? 0}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-400">{t.usage?.products ?? 0}</td>
@@ -390,9 +381,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Tiendas en riesgo */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-amber-400" /> Tiendas en riesgo
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-[var(--data-warning)]" /> Tiendas en riesgo
         </h3>
         <p className="text-gray-400 text-xs mb-4">
           Tiendas que cancelarán pronto, tienen trial vencido, o están suspendidas
@@ -408,23 +399,23 @@ export default function AnalyticsPage() {
             .map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-3"
+                className="flex items-center justify-between bg-[var(--surface-sunken)]/50 rounded-xl px-4 py-3"
               >
                 <div className="flex items-center gap-3">
                   <div>
-                    <span className="text-gray-900 dark:text-white font-semibold text-sm">{t.name}</span>
+                    <span className="text-[var(--text-primary)] font-semibold text-sm">{t.name}</span>
                     <span className="text-gray-400 text-xs ml-2 font-mono">{t.slug}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <PlanBadge plan={t.plan} />
                   {t.cancelAtPeriodEnd && (
-                    <span className="text-orange-500 dark:text-orange-400 text-xs flex items-center gap-1">
+                    <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs flex items-center gap-1">
                       <Clock className="w-3 h-3" /> Cancela pronto
                     </span>
                   )}
                   {!t.active && (
-                    <span className="text-red-500 dark:text-red-400 text-xs flex items-center gap-1">
+                    <span className="text-[var(--data-error)] dark:text-[var(--data-error)] text-xs flex items-center gap-1">
                       <XCircle className="w-3 h-3" /> Suspendida
                     </span>
                   )}

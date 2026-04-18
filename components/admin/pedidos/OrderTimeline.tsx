@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "@/components/admin/providers";
-import { Check, X, Clock, Package, Truck, CheckCircle } from "lucide-react";
+import { Check, X, Clock, Package, Truck, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -92,16 +92,16 @@ export default function OrderTimeline({
                   className={cn(
                     "h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all",
                     isCancelled
-                      ? "border-red-300 bg-red-50 dark:bg-red-950/30"
+                      ? "border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/30"
                       : isCompleted
-                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-white"
                         : isCurrent
                           ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                          : "border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
+                          : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                   )}
                 >
                   {isCancelled ? (
-                    <X className="h-4 w-4 text-red-500" />
+                    <X className="h-4 w-4 text-[var(--data-error)]" />
                   ) : isCompleted ? (
                     <Check className="h-4 w-4" />
                   ) : isCurrent ? (
@@ -118,21 +118,21 @@ export default function OrderTimeline({
 
                 {/* Label */}
                 <p className={cn(
-                  "text-[10px] font-bold mt-1 text-center",
+                  "text-[length:var(--ts-2xs)] font-bold mt-1 text-center",
                   isCancelled
-                    ? "text-red-400"
+                    ? "text-[var(--data-error)]"
                     : isCompleted
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                       : isCurrent
                         ? "text-[#f97316]"
-                        : "text-gray-400 dark:text-gray-500"
+                        : "text-[var(--text-tertiary)]"
                 )}>
                   {step.label}
                 </p>
 
                 {/* Timestamp */}
                 {timestamp && (
-                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
                     {fmtDate(timestamp)} {fmtTime(timestamp)}
                   </p>
                 )}
@@ -143,9 +143,9 @@ export default function OrderTimeline({
                     className={cn(
                       "absolute top-4 h-0.5 z-0",
                       isCancelled
-                        ? "bg-red-200 dark:bg-red-800/30"
+                        ? "bg-[var(--data-error)] dark:bg-[var(--data-error)]/30"
                         : isCompleted
-                          ? "bg-emerald-400"
+                          ? "bg-[var(--accent-soft)]"
                           : "bg-gray-200 dark:bg-gray-700"
                     )}
                     style={{
@@ -162,9 +162,9 @@ export default function OrderTimeline({
 
       {/* Cancelled banner */}
       {isCancelled && (
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
-          <X className="h-4 w-4 text-red-500 shrink-0" />
-          <p className="text-xs font-bold text-red-600 dark:text-red-400">Pedido cancelado</p>
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30">
+          <X className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+          <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Pedido cancelado</p>
         </div>
       )}
 
@@ -186,7 +186,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus("cancelado")}
             disabled={updating}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600 text-xs font-bold hover:bg-red-100 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] text-xs font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
           >
             <X className="h-3.5 w-3.5" /> Cancelar
           </button>

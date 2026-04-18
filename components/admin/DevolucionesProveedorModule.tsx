@@ -1,6 +1,7 @@
 "use client";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download } from "lucide-react";
+import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download } from "@buleje/design-system/icons";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -43,9 +44,9 @@ const MOTIVOS = [
 ];
 
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
-  PENDIENTE: "bg-amber-100 text-amber-700",
-  ENVIADA:   "bg-emerald-100 text-emerald-700",
-  RESUELTA:  "bg-emerald-100 text-emerald-700",
+  PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  ENVIADA:   "bg-[var(--accent-soft)] text-[var(--data-success)]",
+  RESUELTA:  "bg-[var(--accent-soft)] text-[var(--data-success)]",
 };
 
 const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
@@ -281,9 +282,9 @@ export default function DevolucionesProveedorModule() {
             onClick={fetchDevoluciones}
             disabled={loading}
             aria-label="Recargar devoluciones"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
+            <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", loading && "animate-spin")} />
           </button>
           <button
             onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
@@ -305,7 +306,7 @@ export default function DevolucionesProveedorModule() {
               "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors min-h-[36px]",
               filtroEstado === estado
                 ? "bg-primary text-white border-primary"
-                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:bg-gray-50"
             )}
           >
             {estado === "" ? `Todas (${devoluciones.length})` : `${estado} (${conteos[estado as DevolucionEstado]})`}
@@ -315,28 +316,28 @@ export default function DevolucionesProveedorModule() {
 
       {/* Formulario nueva devolución */}
       {mostrarFormulario && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 text-sm">Nueva devolución</h3>
+            <CardTitle className="font-semibold text-[var(--text-primary)] text-sm">Nueva devolución</CardTitle>
             <button
               onClick={() => setMostrarFormulario(false)}
               className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
-              <X className="h-4 w-4 text-gray-500" />
+              <X className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </div>
 
           {/* Proveedor */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600">Proveedor *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Proveedor *</label>
               {loadingProveedores ? (
                 <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
               ) : (
                 <select
                   value={proveedorId}
                   onChange={e => setProveedorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map(p => (
@@ -346,11 +347,11 @@ export default function DevolucionesProveedorModule() {
               )}
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600">Motivo *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Motivo *</label>
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -360,7 +361,7 @@ export default function DevolucionesProveedorModule() {
           {/* Items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600">Items a devolver *</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Items a devolver *</label>
               <button
                 onClick={agregarItem}
                 className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium"
@@ -375,19 +376,19 @@ export default function DevolucionesProveedorModule() {
                   placeholder="Nombre del producto"
                   value={item.nombre}
                   onChange={e => actualizarItem(index, "nombre", e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <input
                   type="number"
                   min={1}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-16 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <select
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-20 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="und">und</option>
                   <option value="kg">kg</option>
@@ -398,7 +399,7 @@ export default function DevolucionesProveedorModule() {
                 {items.length > 1 && (
                   <button
                     onClick={() => quitarItem(index)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -409,13 +410,13 @@ export default function DevolucionesProveedorModule() {
 
           {/* Notas */}
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-600">Notas adicionales</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)]">Notas adicionales</label>
             <textarea
               value={notas}
               onChange={e => setNotas(e.target.value)}
               rows={2}
               placeholder="Información adicional sobre la devolución..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
+              className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
           </div>
 
@@ -423,7 +424,7 @@ export default function DevolucionesProveedorModule() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px]"
+              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors min-h-[44px]"
             >
               Cancelar
             </button>
@@ -441,15 +442,13 @@ export default function DevolucionesProveedorModule() {
 
       {/* Lista de devoluciones */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
+        <LoadingState />
       ) : (
         <div className="space-y-2">
           {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-              <RotateCcw className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm text-gray-400">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-8 text-center">
+              <RotateCcw className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
+              <p className="text-sm text-[var(--text-tertiary)]">
                 {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
               </p>
               {!filtroEstado && (
@@ -465,7 +464,7 @@ export default function DevolucionesProveedorModule() {
             devolucionesFiltradas.map(dev => (
               <div
                 key={dev.id}
-                className="bg-white border border-gray-200 rounded-xl overflow-hidden"
+                className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden"
               >
                 {/* Cabecera de la tarjeta */}
                 <div className="flex items-center gap-3 p-3">
@@ -474,18 +473,18 @@ export default function DevolucionesProveedorModule() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-gray-900 truncate">
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                         {dev.proveedorNombre}
                       </span>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
                         {dev.estado}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-[var(--text-tertiary)]">
                         {new Date(dev.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
                       </span>
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <span className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
                         <Package className="h-3 w-3" />
                         {dev.items.length} {dev.items.length === 1 ? "item" : "items"}
                       </span>
@@ -504,7 +503,7 @@ export default function DevolucionesProveedorModule() {
                     )}
                     <button
                       onClick={() => setExpandedId(expandedId === dev.id ? null : dev.id)}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       {expandedId === dev.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
@@ -513,30 +512,30 @@ export default function DevolucionesProveedorModule() {
 
                 {/* Detalle expandido */}
                 {expandedId === dev.id && (
-                  <div className="border-t border-gray-100 px-4 py-3 space-y-3 bg-gray-50/50">
+                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3 bg-gray-50/50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Motivo</p>
+                        <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">Motivo</p>
                         <div className="flex items-start gap-1.5">
-                          <AlertCircle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                          <span className="text-sm text-gray-700">{dev.motivo}</span>
+                          <AlertCircle className="h-3.5 w-3.5 text-[var(--data-warning)] mt-0.5 shrink-0" />
+                          <span className="text-sm text-[var(--text-primary)]">{dev.motivo}</span>
                         </div>
                       </div>
                       {dev.notas && (
                         <div>
-                          <p className="text-xs font-medium text-gray-500 mb-1">Notas</p>
-                          <p className="text-sm text-gray-600">{dev.notas}</p>
+                          <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">Notas</p>
+                          <p className="text-sm text-[var(--text-secondary)]">{dev.notas}</p>
                         </div>
                       )}
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-500 mb-2">Items devueltos</p>
+                      <p className="text-xs font-medium text-[var(--text-secondary)] mb-2">Items devueltos</p>
                       <div className="space-y-1">
                         {dev.items.map((item, i) => (
                           <div key={i} className="flex items-center gap-2 text-sm">
-                            <Package className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                            <span className="flex-1 text-gray-700">{item.nombre}</span>
-                            <span className="font-medium text-gray-900 tabular-nums">
+                            <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
+                            <span className="flex-1 text-[var(--text-primary)]">{item.nombre}</span>
+                            <span className="font-medium text-[var(--text-primary)] tabular-nums">
                               {item.cantidad} {item.unidad}
                             </span>
                           </div>
@@ -547,7 +546,7 @@ export default function DevolucionesProveedorModule() {
                       <button
                         onClick={() => eliminar(dev.id)}
                         disabled={actionId === dev.id}
-                        className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors min-h-[36px] px-2 disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)] font-medium transition-colors min-h-[36px] px-2 disabled:opacity-50 flex items-center gap-1"
                       >
                         {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         Eliminar registro
@@ -562,7 +561,7 @@ export default function DevolucionesProveedorModule() {
       )}
 
       {/* ── Panel de Reportes ─────────────────────────────────────────── */}
-      <div className="mt-6 border border-gray-200 rounded-xl overflow-hidden">
+      <div className="mt-6 border border-[var(--rule-base)] rounded-xl overflow-hidden">
         <button
           type="button"
           onClick={() => setShowReportes(v => !v)}
@@ -570,7 +569,7 @@ export default function DevolucionesProveedorModule() {
         >
           <div className="flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-gray-800">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">
               Reportes de Devoluciones
             </span>
             <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
@@ -586,7 +585,7 @@ export default function DevolucionesProveedorModule() {
             >
               <Download className="h-3.5 w-3.5" /> CSV
             </button>
-            {showReportes ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+            {showReportes ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
           </div>
         </button>
 
@@ -595,14 +594,14 @@ export default function DevolucionesProveedorModule() {
             {/* Tarjetas resumen */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Total", value: devoluciones.length, color: "text-gray-700" },
-                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-amber-600" },
-                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-emerald-600" },
-                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-emerald-600" },
+                { label: "Total", value: devoluciones.length, color: "text-[var(--text-primary)]" },
+                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-[var(--data-warning)]" },
+                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-[var(--data-success)]" },
+                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-[var(--data-success)]" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white border border-gray-100 rounded-xl p-3 text-center">
+                <div key={label} className="bg-white border border-[var(--rule-soft)] rounded-xl p-3 text-center">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
@@ -610,7 +609,7 @@ export default function DevolucionesProveedorModule() {
             {/* Gráfico mensual */}
             {reportesPorMes.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-3">
+                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-3">
                   Devoluciones por mes
                 </p>
                 <ResponsiveContainer width="100%" height={180}>
@@ -631,7 +630,7 @@ export default function DevolucionesProveedorModule() {
             {/* Top motivos + proveedores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-2">
+                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
                   Top motivos
                 </p>
                 <div className="space-y-1.5">
@@ -641,8 +640,8 @@ export default function DevolucionesProveedorModule() {
                       <div key={motivo} className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-gray-700 truncate">{motivo}</span>
-                            <span className="text-xs font-bold text-gray-900 ml-2">{total}</span>
+                            <span className="text-xs text-[var(--text-primary)] truncate">{motivo}</span>
+                            <span className="text-xs font-bold text-[var(--text-primary)] ml-2">{total}</span>
                           </div>
                           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
@@ -657,7 +656,7 @@ export default function DevolucionesProveedorModule() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-2">
+                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
                   Top proveedores
                 </p>
                 <div className="space-y-1.5">
@@ -667,8 +666,8 @@ export default function DevolucionesProveedorModule() {
                       <div key={proveedor} className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-gray-700 truncate">{proveedor}</span>
-                            <span className="text-xs font-bold text-gray-900 ml-2">{total}</span>
+                            <span className="text-xs text-[var(--text-primary)] truncate">{proveedor}</span>
+                            <span className="text-xs font-bold text-[var(--text-primary)] ml-2">{total}</span>
                           </div>
                           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
@@ -685,7 +684,7 @@ export default function DevolucionesProveedorModule() {
             </div>
 
             {devoluciones.length === 0 && (
-              <p className="text-center text-sm text-gray-400 py-4">Sin datos para mostrar aún</p>
+              <p className="text-center text-sm text-[var(--text-tertiary)] py-4">Sin datos para mostrar aún</p>
             )}
           </div>
         )}

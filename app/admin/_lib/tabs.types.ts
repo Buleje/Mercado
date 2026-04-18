@@ -51,7 +51,12 @@ export type Tab =
   // BullMQ Bull Board — monitoreo de colas
   | "colas"
   // Soporte unificado (WhatsApp + reviews pendientes)
-  | "support-inbox";
+  | "support-inbox"
+  // ── ENRICH-5 bridges (marketplace admin surfaces) ─────────────────────────
+  | "subscriptions"          // Bodega al Mes
+  | "gift-cards-admin"       // Gift cards gestión
+  | "socio-members"          // Socio Buleje
+  | "lives-admin";           // Transmisiones en vivo
 
 /**
  * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
@@ -75,6 +80,7 @@ export const VALID_TABS: readonly Tab[] = [
   "ai-command",
   "fiados",
   "turnos",
+  "prestamos",
   "cotizaciones",
   "guias-remision",
   "notas-credito",
@@ -91,4 +97,8 @@ export const VALID_TABS: readonly Tab[] = [
   "support-inbox",
   "facturacion",
   "pagina-inicio",
+  "subscriptions",
+  "gift-cards-admin",
+  "socio-members",
+  "lives-admin",
 ] as const;

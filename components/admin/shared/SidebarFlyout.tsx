@@ -47,8 +47,8 @@ export function SidebarFlyout({
         zIndex: 100,
       }}
       className={cn(
-        "bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800 min-w-[220px] overflow-hidden",
-        "transition-all duration-150",
+        "bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 min-w-[220px] overflow-hidden",
+        "transition-all duration-[var(--dur-fast)]",
         visible
           ? "opacity-100 translate-x-0"
           : "opacity-0 translate-x-1"
@@ -58,18 +58,18 @@ export function SidebarFlyout({
     >
       {/* Arrow pointing left */}
       <div
-        className="absolute top-6 -left-[6px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-b border-gray-100 dark:border-zinc-800 rotate-45"
+        className="absolute top-6 -left-[6px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-b border-[var(--rule-soft)] dark:border-zinc-800 rotate-45"
       />
 
       {/* Header */}
       <div className="bg-gray-50 dark:bg-zinc-800/50 px-4 py-2">
-        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <span className="text-sm font-semibold text-[var(--text-secondary)]">
           {category.label}
         </span>
       </div>
 
       {/* Divider */}
-      <div className="border-t border-gray-100 dark:border-zinc-800" />
+      <div className="border-t border-[var(--rule-soft)] dark:border-zinc-800" />
 
       {/* Tab options */}
       <div className="py-1">
@@ -83,20 +83,20 @@ export function SidebarFlyout({
                 onClose();
               }}
               className={cn(
-                "relative w-full flex items-center gap-2.5 px-4 py-2 text-[13px] font-medium transition-colors",
+                "relative w-full flex items-center gap-2.5 px-4 py-2 text-[length:var(--ts-sm)] font-medium transition-colors",
                 isActive
-                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-zinc-800/40 hover:text-gray-900 dark:hover:text-gray-200"
+                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
+                  : "text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)] dark:hover:text-gray-200"
               )}
             >
               {/* Active indicator bar */}
               {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-emerald-500 rounded-r-full" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-[var(--accent-soft)] rounded-r-full" />
               )}
               <Icon
                 className={cn(
                   "h-4 w-4 shrink-0",
-                  isActive ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"
+                  isActive ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
                 )}
               />
               <span className="truncate">{label}</span>

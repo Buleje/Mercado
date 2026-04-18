@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DollarSign, TrendingUp, ShoppingCart, Users } from "lucide-react";
+import { DollarSign, TrendingUp, ShoppingCart, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface SalesToday {
@@ -56,8 +56,8 @@ export default function LiveSalesWidget() {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 transition-all",
-      flash && "ring-2 ring-emerald-400 ring-offset-2"
+      "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4 transition-all",
+      flash && "ring-2 ring-[var(--data-success)]/40 ring-offset-2"
     )}>
       <div className="flex items-center gap-4">
         {/* Circular progress */}
@@ -67,15 +67,15 @@ export default function LiveSalesWidget() {
               <circle cx="24" cy="24" r="20" fill="none" stroke="#E5E7EB" strokeWidth="3" className="dark:stroke-gray-700" />
               <circle
                 cx="24" cy="24" r="20" fill="none"
-                stroke={goalPct >= 100 ? "#10B981" : "var(--color-primary)"}
+                stroke={goalPct >= 100 ? "#00B4A6" : "var(--color-primary)"}
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
-                className="transition-all duration-700"
+                className="transition-all duration-[var(--dur-slower)]"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300">
+            <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
               {goalPct.toFixed(0)}%
             </span>
           </div>
@@ -85,33 +85,33 @@ export default function LiveSalesWidget() {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
             <span className={cn(
-              "text-xl font-black text-gray-900 dark:text-foreground transition-colors",
-              flash && "text-emerald-600"
+              "text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground transition-colors",
+              flash && "text-[var(--data-success)]"
             )}>
               {fmt(data.revenue)}
             </span>
             {data.revenue > prevRevenue && prevRevenue > 0 && (
-              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success)]" />
             )}
           </div>
-          <p className="text-[11px] text-gray-400 mt-0.5">Ventas hoy</p>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">Ventas hoy</p>
         </div>
 
         {/* Mini stats */}
         <div className="flex gap-4 shrink-0">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1">
-              <ShoppingCart className="h-3 w-3 text-emerald-500" />
-              <span className="text-sm font-bold text-gray-900 dark:text-foreground">{data.orders}</span>
+              <ShoppingCart className="h-3 w-3 text-[var(--data-success)]" />
+              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{data.orders}</span>
             </div>
-            <p className="text-[9px] text-gray-400">pedidos</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">pedidos</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1">
-              <Users className="h-3 w-3 text-violet-500" />
-              <span className="text-sm font-bold text-gray-900 dark:text-foreground">{data.customers}</span>
+              <Users className="h-3 w-3 text-[var(--text-secondary)]" />
+              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{data.customers}</span>
             </div>
-            <p className="text-[9px] text-gray-400">clientes</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">clientes</p>
           </div>
         </div>
       </div>

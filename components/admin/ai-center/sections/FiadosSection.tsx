@@ -7,7 +7,7 @@ import {
   CreditCard,
   ShieldAlert,
   ArrowRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -76,13 +76,13 @@ function sortFiados(list: FiadoEntry[]): FiadoEntry[] {
 
 function SkeletonKPI() {
   return (
-    <div className="h-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 animate-pulse" />
+    <div className="h-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 animate-pulse" />
   );
 }
 
 function SkeletonRow() {
   return (
-    <div className="h-12 rounded border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 animate-pulse" />
+    <div className="h-12 rounded border border-[var(--rule-base)] bg-[var(--surface-sunken)]/30 animate-pulse" />
   );
 }
 
@@ -96,28 +96,28 @@ interface KPICardProps {
 
 function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProps) {
   const iconColor = {
-    emerald: "text-emerald-500",
+    emerald: "text-[var(--data-success)]",
     red: "text-red-500",
     amber: "text-amber-500",
-    gray: "text-gray-400",
+    gray: "text-[var(--text-tertiary)]",
   }[accent];
 
   const valueColor = {
-    emerald: "text-emerald-700 dark:text-emerald-400",
+    emerald: "text-[var(--data-success)] dark:text-[var(--data-success)]",
     red: "text-red-700 dark:text-red-400",
     amber: "text-amber-700 dark:text-amber-400",
-    gray: "text-gray-800 dark:text-gray-100",
+    gray: "text-[var(--text-primary)]",
   }[accent];
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center gap-2 mb-2">
         <Icon className={cn("w-4 h-4 shrink-0", iconColor)} />
-        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{label}</span>
+        <span className="text-xs text-[var(--text-tertiary)] truncate">{label}</span>
       </div>
       <p className={cn("text-xl font-semibold leading-none", valueColor)}>{value}</p>
       {sub && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>
+        <p className="text-xs text-[var(--text-tertiary)] mt-1">{sub}</p>
       )}
     </div>
   );
@@ -135,22 +135,22 @@ function StatusBadge({ status }: StatusBadgeProps) {
     VENCIDO: {
       label: "Vencido",
       className:
-        "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+        "bg-[var(--data-error-50)] text-[var(--data-error)] border border-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)] dark:border-[var(--data-error)]",
     },
     ACTIVO: {
       label: "Activo",
       className:
-        "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
+        "bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30",
     },
     PAGADO: {
       label: "Pagado",
       className:
-        "bg-gray-50 text-gray-500 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+        "bg-gray-50 text-[var(--text-secondary)] border border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)]",
     },
     CANCELADO: {
       label: "Cancelado",
       className:
-        "bg-gray-50 text-gray-400 border border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700 line-through",
+        "bg-gray-50 text-[var(--text-tertiary)] border border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-secondary)] dark:border-[var(--rule-base)] line-through",
     },
   };
 
@@ -173,7 +173,7 @@ function DaysInfo({ entry }: DaysInfoProps) {
   if (entry.status === "VENCIDO" && entry.dueDate) {
     const n = daysOverdue(entry.dueDate);
     return (
-      <span className="text-xs text-red-600 dark:text-red-400">
+      <span className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
         Vencido hace {n} {n === 1 ? "dia" : "dias"}
       </span>
     );
@@ -184,20 +184,20 @@ function DaysInfo({ entry }: DaysInfoProps) {
     if (d < 0) {
       const n = Math.abs(d);
       return (
-        <span className="text-xs text-red-600 dark:text-red-400">
+        <span className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
           Vencido hace {n} {n === 1 ? "dia" : "dias"}
         </span>
       );
     }
     if (d === 0) {
       return (
-        <span className="text-xs text-amber-600 dark:text-amber-400">
+        <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
           Vence hoy
         </span>
       );
     }
     return (
-      <span className="text-xs text-gray-500 dark:text-gray-400">
+      <span className="text-xs text-[var(--text-tertiary)]">
         Vence en {d} {d === 1 ? "dia" : "dias"}
       </span>
     );
@@ -336,8 +336,8 @@ export default function FiadosSection() {
             className={cn(
               "px-3 py-1 text-xs rounded border transition-colors",
               filter === f.key
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:border-gray-600"
+                ? "bg-[var(--accent-soft)] text-[var(--data-success)] border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30"
+                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
             )}
           >
             {f.label}
@@ -353,19 +353,19 @@ export default function FiadosSection() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-10 text-center">
-          <p className="text-sm text-gray-400 dark:text-gray-500">
+        <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] py-10 text-center">
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay fiados registrados
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-            <span className="text-xs text-gray-400 dark:text-gray-500">Cliente</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500 text-right">Monto</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">Estado</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">Plazo</span>
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+            <span className="text-xs text-[var(--text-tertiary)]">Cliente</span>
+            <span className="text-xs text-[var(--text-tertiary)] text-right">Monto</span>
+            <span className="text-xs text-[var(--text-tertiary)]">Estado</span>
+            <span className="text-xs text-[var(--text-tertiary)]">Plazo</span>
           </div>
 
           {/* Rows */}
@@ -376,12 +376,12 @@ export default function FiadosSection() {
                 className={cn(
                   "grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center px-4 py-3",
                   idx !== filtered.length - 1 &&
-                    "border-b border-gray-100 dark:border-gray-800"
+                    "border-b border-[var(--rule-base)]"
                 )}
               >
                 {/* Customer name */}
                 <span
-                  className="text-sm text-gray-800 dark:text-gray-100 truncate"
+                  className="text-sm text-[var(--text-primary)] truncate"
                   title={entry.customerName ?? "—"}
                 >
                   {entry.customerName ?? "—"}
@@ -392,8 +392,8 @@ export default function FiadosSection() {
                   className={cn(
                     "text-sm font-medium text-right tabular-nums",
                     isVencido(entry)
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-gray-700 dark:text-gray-200"
+                      ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      : "text-[var(--text-secondary)]"
                   )}
                 >
                   {formatCurrency(entry.balance ?? 0)}
@@ -413,13 +413,13 @@ export default function FiadosSection() {
       )}
 
       {/* Deep-link Footer */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+      <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p className="text-sm text-[var(--text-tertiary)]">
           Para cobrar, ajustar limites o ver historial completo
         </p>
         <button
           type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-emerald-500 text-emerald-600 dark:text-emerald-400 dark:border-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors shrink-0"
           onClick={() => {}}
         >
           Ir a Gestion de Fiados

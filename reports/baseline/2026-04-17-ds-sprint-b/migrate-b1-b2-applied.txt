@@ -1,0 +1,15 @@
+# Migration to DS — APPLIED
+Scanned: 675 files in components/admin, app/admin
+Files changed: 382
+Total replacements: 901
+Lucide imports rewritten: 0
+Headings migrated to DS: 885 (h1=72, h2=231, h3=582)
+Inline styles rewritten to className: 16
+
+## By transform
+  heading-h3-to-ds: 582
+  heading-h2-to-ds: 231
+  heading-h1-to-ds: 72
+  style-inline-to-class: 16
+
+## Report-only patterns (require manual decision): 0 hits

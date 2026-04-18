@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export interface Crumb {
@@ -48,7 +48,7 @@ export function BreadcrumbEditorial({
     <nav
       aria-label="Breadcrumb"
       className={cn(
-        "flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em]",
+        "flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
         className,
       )}
     >

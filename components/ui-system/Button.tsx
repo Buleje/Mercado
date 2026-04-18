@@ -8,7 +8,7 @@ const button = tv({
   base: [
     "inline-flex items-center justify-center gap-2",
     "font-bold whitespace-nowrap rounded-full",
-    "transition-all duration-150 ease-out",
+    "transition-all duration-[var(--dur-fast)] ease-out",
     "active:scale-[0.98]",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
     "disabled:opacity-50 disabled:pointer-events-none",
@@ -22,14 +22,14 @@ const button = tv({
         "focus-visible:ring-gray-900/30 dark:focus-visible:ring-white/30",
       ],
       secondary: [
-        "bg-white dark:bg-gray-900 text-gray-900 dark:text-white",
-        "border border-gray-200 dark:border-gray-800",
+        "bg-[var(--surface-raised)] text-[var(--text-primary)]",
+        "border border-[var(--rule-base)]",
         "hover:border-gray-900 dark:hover:border-gray-400",
         "focus-visible:ring-gray-900/20",
       ],
       ghost: [
-        "bg-transparent text-gray-700 dark:text-gray-200",
-        "hover:bg-gray-100 dark:hover:bg-gray-800",
+        "bg-transparent text-[var(--text-secondary)]",
+        "hover:bg-[var(--surface-sunken)]",
         "focus-visible:ring-gray-400",
       ],
       accent: [
@@ -43,12 +43,12 @@ const button = tv({
         "focus-visible:ring-red-500/30",
       ],
       link: [
-        "text-gray-900 dark:text-white underline-offset-4 hover:underline",
+        "text-[var(--text-primary)] underline-offset-4 hover:underline",
         "px-0 py-0 rounded-none",
       ],
     },
     size: {
-      xs: "text-[11px] h-7 px-3",
+      xs: "text-[length:var(--ts-xs)] h-7 px-3",
       sm: "text-xs h-8 px-3.5",
       md: "text-sm h-10 px-5",
       lg: "text-sm h-11 px-6",

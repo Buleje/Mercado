@@ -16,13 +16,22 @@ import {
   Star,
   ChevronRight,
   Truck,
+  Scale,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCompare } from "@/contexts/compare-context";
 import ProductGallery from "@/components/marketplace/ProductGallery";
 import ProductVariantSelector from "@/components/marketplace/ProductVariantSelector";
 import { RecommendationsWidget } from "@/components/marketplace/RecommendationsWidget";
-import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
+import SubscribeAndSaveWidget, {
+  isSubscribableCategory,
+} from "@/components/marketplace/product-detail/SubscribeAndSaveWidget";
+import { BulejeAssistant } from "@/components/marketplace/product-detail/BulejeAssistant";
+import { BotMessageSquare } from "lucide-react";
+import ProductReviews from "@/components/marketplace/product-detail/ProductReviews";
+import ProductQA from "@/components/marketplace/product-detail/ProductQA";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,7 +64,6 @@ interface ProductData {
     slug: string;
     logo: string | null;
     description: string | null;
-    whatsappNumber?: string | null;
   };
 }
 
@@ -70,6 +78,7 @@ export default function ProductDetailPage() {
   const params = useParams<{ slug: string; productId: string }>();
   const router = useRouter();
   const { addItem } = useMarketplaceCart();
+  const { add: addToCompare, remove: removeCompare, isIn: isInCompare, max: compareMax, items: compareItems } = useCompare();
 
   const [product, setProduct] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +87,7 @@ export default function ProductDetailPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>();
   const [finalPrice, setFinalPrice] = useState<number | null>(null);
   const [added, setAdded] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   useEffect(() => {
     if (!params.productId) return;
@@ -129,6 +139,33 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
+  const handleToggleCompare = useCallback(() => {
+    if (!product) return;
+    if (isInCompare(product.id)) {
+      removeCompare(product.id);
+      return;
+    }
+    if (compareItems.length >= compareMax) {
+      return;
+    }
+    addToCompare({
+      id: product.id,
+      name: product.name,
+      category: product.category ?? "",
+      price: displayPrice,
+      image: product.image,
+      unit: product.unit ?? "",
+      badge: product.badge ?? undefined,
+      stock: product.stock ?? undefined,
+      description: product.description ?? undefined,
+      storeSlug: product.store.slug,
+      storeName: product.store.name,
+    });
+  }, [product, isInCompare, removeCompare, addToCompare, compareItems.length, compareMax, displayPrice]);
+
+  const inCompare = product ? isInCompare(product.id) : false;
+  const compareFull = compareItems.length >= compareMax;
+
   // ── Loading ──────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -157,7 +194,9 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-7xl mb-6">📦</div>
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 dark:bg-primary/10 text-primary">
+            <Package className="h-8 w-8" />
+          </div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
             Producto no encontrado
           </h2>
@@ -338,6 +377,17 @@ export default function ProductDetailPage() {
               </p>
             )}
 
+            {/* Asistente Buleje CTA */}
+            <button
+              type="button"
+              onClick={() => setAssistantOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-primary/40 hover:text-primary transition-colors"
+              aria-label="Abrir el asistente Buleje para preguntar sobre este producto"
+            >
+              <BotMessageSquare className="h-4 w-4" />
+              ¿Tenés dudas? Preguntale al asistente
+            </button>
+
             {/* Variants */}
             {product.variants.length > 0 && (
               <ProductVariantSelector
@@ -345,6 +395,17 @@ export default function ProductDetailPage() {
                 basePrice={product.price}
                 selectedVariantId={selectedVariantId}
                 onSelect={handleVariantSelect}
+              />
+            )}
+
+            {/* Bodega al Mes — Subscribe & Save */}
+            {isSubscribableCategory(product.category) && (
+              <SubscribeAndSaveWidget
+                productId={product.id}
+                productName={product.name}
+                productImage={product.image || ""}
+                unitPrice={displayPrice}
+                quantity={quantity}
               />
             )}
 
@@ -395,26 +456,62 @@ export default function ProductDetailPage() {
                   : `Agregar al carrito · ${fmt(displayPrice * quantity)}`}
               </button>
 
-              {/* Share */}
-              <button
-                onClick={handleShare}
-                className="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <Share2 className="h-4 w-4" />
-                Compartir producto
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Share */}
+                <button
+                  onClick={handleShare}
+                  className="py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Compartir
+                </button>
 
-              {/* WhatsApp CTA */}
-              <StoreWhatsAppButton
-                whatsappNumber={product.store.whatsappNumber}
-                storeName={product.store.name}
-                productName={product.name}
-                productSlug={product.store.slug}
-                variant="outline"
-              />
+                {/* Compare */}
+                <button
+                  onClick={handleToggleCompare}
+                  disabled={!inCompare && compareFull}
+                  className={cn(
+                    "py-3 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
+                    inCompare
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary hover:bg-primary/10"
+                      : compareFull
+                        ? "border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-400 cursor-not-allowed"
+                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800",
+                  )}
+                  title={
+                    !inCompare && compareFull
+                      ? `Máximo ${compareMax} productos en comparación`
+                      : inCompare
+                        ? "Quitar de comparación"
+                        : "Agregar a comparación"
+                  }
+                >
+                  {inCompare ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      En comparación
+                    </>
+                  ) : (
+                    <>
+                      <Scale className="h-4 w-4" />
+                      Comparar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
+
+        {/* Reviews (rating breakdown + lista filtrable + write modal) */}
+        <div className="mt-12 lg:mt-16">
+          <ProductReviews productId={product.id} productName={product.name} />
+        </div>
+
+        {/* Q&A (preguntas de la comunidad + vendor badge) */}
+        <div className="mt-12 lg:mt-16">
+          <ProductQA productId={product.id} storeName={product.store.name} />
+        </div>
 
         {/* Recommendations */}
         <div className="mt-12 lg:mt-16">
@@ -454,6 +551,19 @@ export default function ProductDetailPage() {
         </div>
       </div>
       <div className="h-20 lg:hidden" />
+
+      {/* Asistente Buleje — widget flotante + panel lateral */}
+      <BulejeAssistant
+        key={`assistant-${product.id}-${assistantOpen ? "open" : "closed"}`}
+        product={{
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          category: product.category,
+          storeName: product.store.name,
+        }}
+        defaultOpen={assistantOpen}
+      />
     </div>
   );
 }

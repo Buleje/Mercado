@@ -1,10 +1,12 @@
+"use client";
+
+import { SectionTitle } from "@buleje/design-system";
  
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Plus, Trash2, Edit3, Save, X, TrendingUp, Star } from "lucide-react";
+import { LayoutGrid, Plus, Trash2, Edit3, Save, X, TrendingUp, Star } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,18 +84,18 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
     <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Nombre del area
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Metros cuadrados (m2)
           </label>
           <input
@@ -102,11 +104,11 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             step={0.5}
             value={sqm}
             onChange={(e) => setSqm(Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
             Ventas mensuales (S/)
           </label>
           <input
@@ -114,11 +116,11 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             min={0}
             value={revenue}
             onChange={(e) => setRevenue(Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
             Categorias en esta area
           </label>
           <div className="flex flex-wrap gap-1.5">
@@ -130,7 +132,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
                   "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
                   cats.includes(cat)
                     ? "bg-primary text-white border-primary"
-                    : "border-gray-200 text-gray-600"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)]"
                 )}
               >
                 {cat}
@@ -150,9 +152,9 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 rounded-xl border border-gray-200"
+          className="px-4 py-2.5 rounded-xl border border-[var(--rule-base)]"
         >
-          <X className="w-4 h-4 text-gray-500" />
+          <X className="w-4 h-4 text-[var(--text-secondary)]" />
         </button>
       </div>
     </div>
@@ -206,18 +208,18 @@ export default function RevenuePerSquareMeter() {
   const bottomArea = ranked[ranked.length - 1];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-primary/10">
             <LayoutGrid className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-bold text-gray-900">
+            <SectionTitle className="font-bold text-[var(--text-primary)]">
               Rentabilidad por m2
-            </h2>
-            <p className="text-xs text-gray-500">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)]">
               {areas.length} area{areas.length !== 1 ? "s" : ""} configurada{areas.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -247,7 +249,7 @@ export default function RevenuePerSquareMeter() {
                 Recomendacion
               </p>
             </div>
-            <p className="text-xs text-gray-700">
+            <p className="text-xs text-[var(--text-primary)]">
               Amplia el espacio de{" "}
               <span className="font-semibold">{topArea?.name}</span> ({fmt(topArea?.revenuePerSqm ?? 0)}/m2).
               Reduce el area de{" "}
@@ -273,26 +275,26 @@ export default function RevenuePerSquareMeter() {
                   "p-4 rounded-xl border",
                   index === 0
                     ? "border-primary/30 bg-primary/5"
-                    : "border-gray-100 bg-gray-50"
+                    : "border-[var(--rule-soft)] bg-gray-50"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <div
                       className={cn(
-                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black",
+                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold",
                         index === 0
                           ? "bg-primary text-white"
-                          : "bg-gray-200 text-gray-600"
+                          : "bg-gray-200 text-[var(--text-secondary)]"
                       )}
                     >
                       {index === 0 ? <Star className="w-3.5 h-3.5" /> : index + 1}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm truncate">
+                      <p className="font-semibold text-[var(--text-primary)] text-sm truncate">
                         {area.name}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                         {area.sqm} m2 — {area.categories.join(", ")}
                       </p>
                     </div>
@@ -303,32 +305,32 @@ export default function RevenuePerSquareMeter() {
                       className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"
                       aria-label="Editar"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-gray-500" />
+                      <Edit3 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
                     </button>
                     <button
                       onClick={() => deleteArea(area.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition-colors"
                       aria-label="Eliminar"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      <Trash2 className="w-3.5 h-3.5 text-[var(--data-error)]" />
                     </button>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-4">
                   <div>
-                    <p className="text-xs text-gray-400">Ventas/mes</p>
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-xs text-[var(--text-tertiary)]">Ventas/mes</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)]">
                       {fmt(area.revenue)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Por m2</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">Por m2</p>
                     <p
                       className={cn(
-                        "text-sm font-black",
+                        "text-sm font-extrabold",
                         index === 0
                           ? "text-primary"
-                          : "text-gray-900"
+                          : "text-[var(--text-primary)]"
                       )}
                     >
                       {fmt(area.revenuePerSqm)}/m2
@@ -357,7 +359,7 @@ export default function RevenuePerSquareMeter() {
         </div>
 
         {areas.length === 0 && !showForm && (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-[var(--text-tertiary)] text-center py-6">
             Agrega areas de tu tienda para calcular la rentabilidad por metro cuadrado.
           </p>
         )}

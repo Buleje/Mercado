@@ -1,7 +1,8 @@
 "use client";
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { X, Loader2, Search, CheckCircle, XCircle } from "lucide-react";
+import { X, Loader2, Search, CheckCircle, XCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -52,11 +53,11 @@ function TagInput({
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[44px] focus-within:ring-2 focus-within:ring-[#00B4A6]">
+    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] min-h-[44px] focus-within:ring-2 focus-within:ring-[#00B4A6]">
       {tags.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 text-xs font-medium"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)] text-xs font-medium"
         >
           {tag}
           <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-teal-900 dark:hover:text-teal-100">
@@ -72,7 +73,7 @@ function TagInput({
           onKeyDown={handleKeyDown}
           onBlur={() => { if (input) { addTag(input); setInput(""); } }}
           placeholder={tags.length === 0 ? "Escribe y presiona Enter..." : ""}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-gray-800 dark:text-gray-200 focus:outline-none"
+          className="flex-1 min-w-[120px] bg-transparent text-sm text-[var(--text-primary)] focus:outline-none"
         />
       )}
     </div>
@@ -86,18 +87,18 @@ function SerpPreview({ title, description }: { title: string; description: strin
   const displayDesc = description || "Descripción de la página en los resultados de Google.";
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-950">
-      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 flex items-center gap-1.5">
+    <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-[var(--surface-canvas)]">
+      <p className="text-xs text-[var(--text-tertiary)] mb-3 flex items-center gap-1.5">
         <Search className="h-3.5 w-3.5" /> Vista previa en Google
       </p>
       <div className="space-y-0.5">
-        <p className="text-[#1558d6] text-[17px] leading-snug hover:underline cursor-pointer truncate font-normal">
+        <p className="text-[#1558d6] text-[length:var(--ts-base)] leading-snug hover:underline cursor-pointer truncate font-normal">
           {displayTitle.slice(0, 70)}
         </p>
-        <p className="text-[#006621] dark:text-green-400 text-xs">
+        <p className="text-[#006621] dark:text-[var(--data-success)] text-xs">
           bodegasanmartin.pe › producto
         </p>
-        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-2">
+        <p className="text-[var(--text-secondary)] text-sm leading-relaxed line-clamp-2">
           {displayDesc.slice(0, 160)}
         </p>
       </div>
@@ -178,13 +179,13 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Editor SEO</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] shrink-0">
+          <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">Editor SEO</SectionTitle>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -193,20 +194,18 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-            </div>
+            <LoadingState />
           ) : (
             <>
               {/* Meta Title */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-sm font-medium text-[var(--text-secondary)]">
                     Meta título
                   </label>
                   <span className={cn(
                     "text-xs",
-                    form.metaTitle.length > 70 ? "text-red-500" : "text-gray-400"
+                    form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {form.metaTitle.length}/70
                   </span>
@@ -216,27 +215,27 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaTitle}
                   onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
                     errors.metaTitle
-                      ? "border-red-400 dark:border-red-600"
-                      : "border-gray-300 dark:border-gray-700"
+                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
+                      : "border-[var(--rule-base)]"
                   )}
                   placeholder="Título optimizado para Google"
                 />
                 {errors.metaTitle && (
-                  <p className="text-xs text-red-500 mt-1">{errors.metaTitle}</p>
+                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaTitle}</p>
                 )}
               </div>
 
               {/* Meta Description */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-sm font-medium text-[var(--text-secondary)]">
                     Meta descripción
                   </label>
                   <span className={cn(
                     "text-xs",
-                    form.metaDescription.length > 160 ? "text-red-500" : "text-gray-400"
+                    form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {form.metaDescription.length}/160
                   </span>
@@ -246,44 +245,44 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaDescription}
                   onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
+                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
                     errors.metaDescription
-                      ? "border-red-400 dark:border-red-600"
-                      : "border-gray-300 dark:border-gray-700"
+                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
+                      : "border-[var(--rule-base)]"
                   )}
                   placeholder="Descripción que aparecerá en los resultados de búsqueda"
                 />
                 {errors.metaDescription && (
-                  <p className="text-xs text-red-500 mt-1">{errors.metaDescription}</p>
+                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaDescription}</p>
                 )}
               </div>
 
               {/* Keywords */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-sm font-medium text-[var(--text-secondary)]">
                     Palabras clave
                   </label>
-                  <span className="text-xs text-gray-400">{form.keywords.length}/10</span>
+                  <span className="text-xs text-[var(--text-tertiary)]">{form.keywords.length}/10</span>
                 </div>
                 <TagInput
                   tags={form.keywords}
                   onChange={(tags) => setForm((f) => ({ ...f, keywords: tags }))}
                   max={10}
                 />
-                <p className="text-xs text-gray-400 mt-1">Presiona Enter para agregar cada keyword</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">Presiona Enter para agregar cada keyword</p>
               </div>
 
               {/* OG Image */}
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">
+                <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">
                   Imagen OG (URL)
                 </label>
                 <input
                   type="text"
                   value={form.ogImage}
                   onChange={(e) => setForm((f) => ({ ...f, ogImage: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                   placeholder="https://..."
                 />
               </div>
@@ -295,11 +294,11 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-[var(--rule-base)] flex gap-3 shrink-0">
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -318,7 +317,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
       {toast && (
         <div className={cn(
           "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-          toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+          toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
         )}>
           {toast.type === "success"
             ? <CheckCircle className="h-4 w-4 shrink-0" />

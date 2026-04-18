@@ -158,7 +158,7 @@ export default function SuppliersQueueClient() {
   return (
     <div className="space-y-4">
       {/* ── Tabs ─────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-fit">
+      <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 w-fit">
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
@@ -169,17 +169,17 @@ export default function SuppliersQueueClient() {
               className={
                 "px-4 py-2 rounded-lg text-sm font-semibold transition " +
                 (active
-                  ? "bg-white dark:bg-gray-900 text-emerald-600 shadow-sm"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white")
+                  ? "bg-[var(--surface-raised)] text-emerald-600 shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-gray-900 dark:hover:text-white")
               }
             >
               {t.label}{" "}
               <span
                 className={
-                  "ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold " +
+                  "ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold " +
                   (active
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300")
+                    : "bg-gray-200 dark:bg-gray-700 text-[var(--text-secondary)]")
                 }
               >
                 {badgeFor(t.id)}
@@ -190,30 +190,30 @@ export default function SuppliersQueueClient() {
       </div>
 
       {/* ── Table ────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-sm text-gray-500">
             Cargando…
           </div>
         ) : error ? (
           <div className="p-10 text-center">
-            <p className="text-sm text-red-500">{error}</p>
+            <p className="text-sm text-[var(--data-error)]">{error}</p>
             <button
               type="button"
               onClick={load}
-              className="mt-3 text-xs text-emerald-600 hover:underline"
+              className="mt-3 text-xs text-[var(--data-success)] hover:underline"
             >
               Reintentar
             </button>
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-10 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="p-10 text-center text-sm text-[var(--text-tertiary)]">
             Sin solicitudes en esta bandeja.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800/50 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <thead className="bg-[var(--surface-sunken)]/50 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
                 <tr>
                   {columns.map((c) => (
                     <th key={c} className="px-4 py-3 text-left whitespace-nowrap">
@@ -226,34 +226,34 @@ export default function SuppliersQueueClient() {
                 {rows.map((r) => (
                   <tr
                     key={r.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                    className="hover:bg-[var(--surface-sunken)]/30"
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                       {r.ruc ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-gray-900 dark:text-white font-medium">
+                    <td className="px-4 py-3 text-[var(--text-primary)] font-medium">
                       {r.razonSocial ?? r.name}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 capitalize">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)] capitalize">
                         {r.category ?? "—"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs">
-                      <div className="text-gray-700 dark:text-gray-300 font-medium">
+                      <div className="text-[var(--text-secondary)] font-medium">
                         {r.contactName ?? "—"}
                       </div>
-                      <div className="text-gray-500 dark:text-gray-400">
+                      <div className="text-[var(--text-tertiary)]">
                         {r.contactPhone ?? ""}
                       </div>
-                      <div className="text-gray-500 dark:text-gray-400">
+                      <div className="text-[var(--text-tertiary)]">
                         {r.contactEmail ?? ""}
                       </div>
                     </td>
 
                     {tab === "pending_review" && (
                       <>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] whitespace-nowrap">
                           {formatDate(r.appliedAt ?? r.createdAt)}
                         </td>
                         <td className="px-4 py-3">
@@ -264,7 +264,7 @@ export default function SuppliersQueueClient() {
                                 handleApprove(r.id, r.razonSocial ?? r.name)
                               }
                               disabled={busyId === r.id}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success)] hover:bg-[var(--data-success)] text-white disabled:opacity-50"
                             >
                               {busyId === r.id ? "…" : "Aprobar"}
                             </button>
@@ -272,7 +272,7 @@ export default function SuppliersQueueClient() {
                               type="button"
                               onClick={() => openReject(r.id)}
                               disabled={busyId === r.id}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 disabled:opacity-50"
                             >
                               Rechazar
                             </button>
@@ -283,10 +283,10 @@ export default function SuppliersQueueClient() {
 
                     {tab === "approved" && (
                       <>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] whitespace-nowrap">
                           {formatDate(r.approvedAt)}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                        <td className="px-4 py-3 text-xs text-[var(--text-tertiary)]">
                           {r.approvedBy ?? "—"}
                         </td>
                       </>
@@ -294,10 +294,10 @@ export default function SuppliersQueueClient() {
 
                     {tab === "rejected" && (
                       <>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] whitespace-nowrap">
                           {formatDate(r.rejectedAt)}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 max-w-[240px]">
+                        <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] max-w-[240px]">
                           {r.rejectionReason ?? "—"}
                         </td>
                       </>
@@ -313,15 +313,15 @@ export default function SuppliersQueueClient() {
       {/* ── Modal: API key shown once ──────────────────────────────── */}
       {approvedKey && (
         <Modal onClose={() => setApprovedKey(null)} title="Proveedor aprobado">
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+          <p className="text-sm text-[var(--text-secondary)] mb-2">
             <strong>{approvedKey.name}</strong> fue aprobado y recibirá un
             mensaje por WhatsApp. Esta es su API key — cópiala ahora porque{" "}
-            <span className="font-bold text-red-500">
+            <span className="font-bold text-[var(--data-error)]">
               no se volverá a mostrar
             </span>
             .
           </p>
-          <div className="rounded-lg bg-gray-900 dark:bg-black border border-gray-700 p-3 font-mono text-xs text-emerald-400 break-all">
+          <div className="rounded-lg bg-gray-900 dark:bg-black border border-gray-700 p-3 font-mono text-xs text-[var(--data-success)] break-all">
             {approvedKey.apiKey}
           </div>
           <div className="mt-4 flex justify-end gap-2">
@@ -333,14 +333,14 @@ export default function SuppliersQueueClient() {
                   .then(() => alert("Copiado"))
                   .catch(() => alert("No se pudo copiar"));
               }}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--data-success)] hover:bg-[var(--data-success)] text-white"
             >
               Copiar API key
             </button>
             <button
               type="button"
               onClick={() => setApprovedKey(null)}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+              className="px-4 py-2 rounded-lg text-xs font-bold bg-gray-200 dark:bg-gray-800 text-[var(--text-secondary)]"
             >
               Cerrar
             </button>
@@ -358,7 +358,7 @@ export default function SuppliersQueueClient() {
           }}
           title="Rechazar solicitud"
         >
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <p className="text-sm text-[var(--text-secondary)] mb-2">
             La razón se enviará al proveedor por WhatsApp.
           </p>
           <textarea
@@ -367,7 +367,7 @@ export default function SuppliersQueueClient() {
             rows={4}
             maxLength={500}
             placeholder="Ej: No podemos verificar la información del RUC. Por favor contáctanos."
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/30"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error)]/30"
           />
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -377,7 +377,7 @@ export default function SuppliersQueueClient() {
                 setRejectReason("");
               }}
               disabled={!!busyId}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-xs font-bold bg-gray-200 dark:bg-gray-800 text-[var(--text-secondary)] disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -385,7 +385,7 @@ export default function SuppliersQueueClient() {
               type="button"
               onClick={confirmReject}
               disabled={!!busyId || rejectReason.trim().length < 5}
-              className="px-4 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white disabled:opacity-50"
             >
               {busyId ? "Rechazando…" : "Confirmar rechazo"}
             </button>
@@ -428,10 +428,10 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-6"
+        className="w-full max-w-md rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+        <h2 className="text-lg font-bold text-[var(--text-primary)] mb-3">
           {title}
         </h2>
         {children}

@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import {
   UserCog, Plus, Pencil, Trash2, KeyRound, X, Check,
   Loader2, ShieldCheck, ShieldAlert, ShieldOff, Eye, EyeOff,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
@@ -19,9 +20,9 @@ type AdminUserRow = {
 };
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; variant: BadgeVariant; icon: React.ElementType }> = {
-  admin: { label: "Administrador", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", variant: "error", icon: ShieldCheck },
-  cajero: { label: "Cajero", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", variant: "info", icon: ShieldAlert },
-  almacenero: { label: "Almacenero", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", variant: "warning", icon: ShieldOff },
+  admin: { label: "Administrador", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", variant: "error", icon: ShieldCheck },
+  cajero: { label: "Cajero", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", variant: "info", icon: ShieldAlert },
+  almacenero: { label: "Almacenero", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]", variant: "warning", icon: ShieldOff },
 };
 
 type FormMode = "create" | "edit-info" | "reset-password" | null;
@@ -195,8 +196,8 @@ export default function AdminUsersTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Usuarios del Panel</h2>
-          <p className="text-sm text-gray-500 dark:text-muted">Gestiona accesos, roles y contraseñas</p>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Usuarios del Panel</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Gestiona accesos, roles y contraseñas</p>
         </div>
         <button
           onClick={openCreate}
@@ -208,26 +209,26 @@ export default function AdminUsersTab() {
 
       {/* Success toast */}
       {successMsg && (
-        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold border border-emerald-200 dark:border-emerald-800">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-semibold border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
           <Check className="h-4 w-4 shrink-0" /> {successMsg}
         </div>
       )}
 
       {/* Global error */}
       {error && !formMode && (
-        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-semibold border border-red-200 dark:border-red-800">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-semibold border border-[var(--data-error)] dark:border-[var(--data-error)]">
           <X className="h-4 w-4 shrink-0" /> {error}
         </div>
       )}
 
       {/* Users list */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-y-hidden overflow-x-auto">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-y-hidden overflow-x-auto">
         {loading ? (
-          <div className="h-40 flex flex-wrap items-center justify-center text-gray-400 dark:text-muted gap-2">
+          <div className="h-40 flex flex-wrap items-center justify-center text-[var(--text-tertiary)] dark:text-muted gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
           </div>
         ) : users.length === 0 ? (
-          <div className="h-40 flex flex-col items-center justify-center text-gray-400 dark:text-muted gap-2">
+          <div className="h-40 flex flex-col items-center justify-center text-[var(--text-tertiary)] dark:text-muted gap-2">
             <UserCog className="h-8 w-8" />
             <p className="text-sm">No hay usuarios registrados</p>
           </div>
@@ -235,11 +236,11 @@ export default function AdminUsersTab() {
           <div className="overflow-x-auto -mx-2 px-2">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface">
-                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted">Usuario</th>
-                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">Rol</th>
-                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">Estado</th>
-                <th className="text-right px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted">Acciones</th>
+              <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
+                <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Usuario</th>
+                <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Rol</th>
+                <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">Estado</th>
+                <th className="text-right px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -254,8 +255,8 @@ export default function AdminUsersTab() {
                           <span className="text-primary font-extrabold text-sm">{u.name.charAt(0).toUpperCase()}</span>
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900 dark:text-foreground">{u.name}</p>
-                          <p className="text-xs text-gray-400 dark:text-muted">@{u.username}</p>
+                          <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{u.name}</p>
+                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">@{u.username}</p>
                         </div>
                       </div>
                     </td>
@@ -270,21 +271,21 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openEditInfo(u)}
                           title="Editar usuario"
-                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-gray-700 dark:hover:text-foreground transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-[var(--text-primary)] dark:hover:text-foreground transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openResetPw(u)}
                           title="Cambiar contraseña"
-                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success)] transition-colors"
                         >
                           <KeyRound className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => { setConfirmDeleteId(u.id); setError(null); }}
                           title="Eliminar usuario"
-                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error)] transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -329,7 +330,7 @@ export default function AdminUsersTab() {
                   className={cn(inputCls, "pr-10")}
                 />
                 <button type="button" onClick={() => setShowPw(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted hover:text-gray-600 transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] transition-colors">
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
@@ -363,12 +364,12 @@ export default function AdminUsersTab() {
                 onClick={() => setForm(p => ({ ...p, active: !p.active }))}
                 className={cn(
                   "relative w-12 h-6 rounded-full transition-colors",
-                  form.active ? "bg-emerald-500" : "bg-gray-300 dark:bg-surface"
+                  form.active ? "bg-[var(--accent-soft)]" : "bg-gray-300 dark:bg-surface"
                 )}
               >
                 <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", form.active && "translate-x-6")} />
               </button>
-              <span className="text-sm text-gray-600 dark:text-muted ml-2">{form.active ? "Activo" : "Inactivo"}</span>
+              <span className="text-sm text-[var(--text-secondary)] dark:text-muted ml-2">{form.active ? "Activo" : "Inactivo"}</span>
             </Field>
             <FormError msg={error} />
             <FormFooter onCancel={closeForm} saving={saving} label="Guardar cambios" />
@@ -389,7 +390,7 @@ export default function AdminUsersTab() {
                   className={cn(inputCls, "pr-10")}
                 />
                 <button type="button" onClick={() => setShowPw(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted hover:text-gray-600 transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] transition-colors">
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
@@ -405,26 +406,26 @@ export default function AdminUsersTab() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmDeleteId(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                <Trash2 className="h-5 w-5 text-red-500" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 flex items-center justify-center shrink-0">
+                <Trash2 className="h-5 w-5 text-[var(--data-error)]" />
               </div>
               <div>
-                <p className="font-extrabold text-gray-900 dark:text-foreground">Eliminar usuario</p>
-                <p className="text-xs text-gray-500 dark:text-muted">Esta acción no se puede deshacer</p>
+                <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Eliminar usuario</p>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer</p>
               </div>
             </div>
-            {error && <p className="text-sm text-red-600 dark:text-red-400 mb-3">{error}</p>}
+            {error && <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">{error}</p>}
             <div className="flex flex-wrap gap-3 mt-2">
               <button
                 onClick={() => { setConfirmDeleteId(null); setError(null); }}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
                 disabled={deleting}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors disabled:opacity-60"
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Eliminar"}
               </button>
@@ -438,12 +439,12 @@ export default function AdminUsersTab() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted";
+const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1.5">{label}</label>
+      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1.5">{label}</label>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
@@ -465,7 +466,7 @@ function RoleSelect({ value, onChange }: { value: string; onChange: (v: string) 
 function FormError({ msg }: { msg: string | null }) {
   if (!msg) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm border border-red-100 dark:border-red-800">
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm border border-[var(--data-error)] dark:border-[var(--data-error)]">
       <X className="h-4 w-4 shrink-0" /> {msg}
     </div>
   );
@@ -475,7 +476,7 @@ function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving:
   return (
     <div className="flex flex-wrap justify-end gap-3 pt-2">
       <button type="button" onClick={onCancel}
-        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
         Cancelar
       </button>
       <button type="submit" disabled={saving}
@@ -491,12 +492,12 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <UserCog className="h-5 w-5 text-primary" />
             {title}
-          </h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          </CardTitle>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>

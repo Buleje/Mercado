@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MessageCircleQuestion, X, Send, ChevronDown, Loader2, CheckCircle, Circle, MessageSquare } from "lucide-react";
+import { MessageCircleQuestion, X, Send, ChevronDown, Loader2, CheckCircle, Circle, MessageSquare } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -27,9 +27,9 @@ const PRIORITY_LABELS: Record<Priority, string> = {
 };
 
 const PRIORITY_COLORS: Record<Priority, string> = {
-  low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  low: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+  medium: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  high: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
@@ -129,7 +129,7 @@ export default function SupportWidget() {
           {open ? <X className="w-4 h-4" /> : <MessageCircleQuestion className="w-4 h-4" />}
           <span className="hidden sm:inline">{open ? "Cerrar" : "¿Necesitas ayuda?"}</span>
           {!open && unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--data-error)] text-white text-xs flex items-center justify-center font-bold">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -140,13 +140,13 @@ export default function SupportWidget() {
       <div
         className={cn(
           "fixed bottom-20 right-6 z-50 w-[360px] max-w-[calc(100vw-1.5rem)] rounded-xl",
-          "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
-          "transition-all duration-200 origin-bottom-right",
+          "bg-[var(--surface-raised)] border border-[var(--rule-base)]",
+          "transition-all duration-[var(--dur-base)] origin-bottom-right",
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none",
         )}
       >
         {/* Encabezado */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
           <div className="flex gap-2">
             <button
               onClick={() => setView("form")}
@@ -154,7 +154,7 @@ export default function SupportWidget() {
                 "px-3 py-1 rounded-lg text-xs font-medium transition-colors",
                 view === "form"
                   ? "bg-[#00B4A6] text-white"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               Nuevo ticket
@@ -165,18 +165,18 @@ export default function SupportWidget() {
                 "relative px-3 py-1 rounded-lg text-xs font-medium transition-colors",
                 view === "list"
                   ? "bg-[#00B4A6] text-white"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               Mis tickets
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] flex items-center justify-center font-bold">
                   {unreadCount}
                 </span>
               )}
             </button>
           </div>
-          <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button onClick={() => setOpen(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)]">
             <ChevronDown className="w-4 h-4" />
           </button>
         </div>
@@ -188,7 +188,7 @@ export default function SupportWidget() {
           {view === "form" && (
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Asunto</label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Asunto</label>
                 <input
                   type="text"
                   value={subject}
@@ -196,11 +196,11 @@ export default function SupportWidget() {
                   placeholder="¿En qué podemos ayudarte?"
                   maxLength={200}
                   required
-                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Mensaje</label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Mensaje</label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -208,11 +208,11 @@ export default function SupportWidget() {
                   rows={4}
                   maxLength={2000}
                   required
-                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
+                  className="w-full text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prioridad</label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Prioridad</label>
                 <div className="flex gap-2">
                   {(["low", "medium", "high"] as Priority[]).map((p) => (
                     <button
@@ -223,7 +223,7 @@ export default function SupportWidget() {
                         "flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
                         priority === p
                           ? PRIORITY_COLORS[p] + " border-transparent"
-                          : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400",
+                          : "border-[var(--rule-base)] text-[var(--text-tertiary)]",
                       )}
                     >
                       {PRIORITY_LABELS[p]}
@@ -233,11 +233,11 @@ export default function SupportWidget() {
               </div>
 
               {error && (
-                <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
               )}
 
               {submitted ? (
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                <div className="flex items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-medium">
                   <CheckCircle className="w-4 h-4" />
                   Ticket enviado correctamente
                 </div>
@@ -263,15 +263,15 @@ export default function SupportWidget() {
             <div className="space-y-3">
               {loadingTickets ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  <Loader2 className="w-5 h-5 animate-spin text-[var(--text-tertiary)]" />
                 </div>
               ) : tickets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-gray-400">
+                <div className="flex flex-col items-center justify-center py-8 text-center text-[var(--text-tertiary)]">
                   <MessageSquare className="w-8 h-8 mb-2 opacity-40" />
                   <p className="text-sm">No tienes tickets aún</p>
                   <button
                     onClick={() => setView("form")}
-                    className="mt-2 text-xs text-[#00B4A6] dark:text-emerald-400 hover:underline"
+                    className="mt-2 text-xs text-[#00B4A6] dark:text-[var(--data-success)] hover:underline"
                   >
                     Crear el primero
                   </button>
@@ -280,31 +280,31 @@ export default function SupportWidget() {
                 tickets.map((t) => (
                   <div
                     key={t.id}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 space-y-1.5"
+                    className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 space-y-1.5"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white leading-tight">{t.subject}</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">{t.subject}</p>
                       <span className={cn("flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium", PRIORITY_COLORS[t.priority])}>
                         {PRIORITY_LABELS[t.priority]}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       {t.status === "open" ? (
-                        <Circle className="w-3 h-3 text-amber-500" />
+                        <Circle className="w-3 h-3 text-[var(--data-warning)]" />
                       ) : t.status === "replied" ? (
-                        <CheckCircle className="w-3 h-3 text-emerald-500" />
+                        <CheckCircle className="w-3 h-3 text-[var(--data-success)]" />
                       ) : (
-                        <CheckCircle className="w-3 h-3 text-gray-400" />
+                        <CheckCircle className="w-3 h-3 text-[var(--text-tertiary)]" />
                       )}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{STATUS_LABELS[t.status]}</span>
-                      <span className="text-xs text-gray-400">·</span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-[var(--text-tertiary)]">{STATUS_LABELS[t.status]}</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">·</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">
                         {new Date(t.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
                       </span>
                     </div>
                     {t.reply && (
-                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300 bg-emerald-50 dark:bg-emerald-900/20 rounded p-2 border-l-2 border-emerald-400">
-                        <span className="font-medium text-emerald-600 dark:text-emerald-400">Respuesta: </span>
+                      <div className="mt-1 text-xs text-[var(--text-secondary)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded p-2 border-l-2 border-[var(--data-success)]/30">
+                        <span className="font-medium text-[var(--data-success)] dark:text-[var(--data-success)]">Respuesta: </span>
                         {t.reply}
                       </div>
                     )}

@@ -37,16 +37,16 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-teal-800/30 rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-teal-800/30 rounded-xl p-6 w-full max-w-md space-y-5 shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-bold text-gray-900 dark:text-white">Invitar usuario</h2>
+            <h2 className="font-bold text-[var(--text-primary)]">Invitar usuario</h2>
             <p className="text-gray-500 text-xs mt-0.5">
-              <span className="text-gray-700 dark:text-gray-300">{tenantName}</span>{" "}
+              <span className="text-[var(--text-secondary)]">{tenantName}</span>{" "}
               <span className="font-mono">({tenantSlug})</span>
             </p>
           </div>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-400">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -55,21 +55,21 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
           <>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Email del invitado</label>
+                <label className="block text-xs text-[var(--text-tertiary)] mb-1">Email del invitado</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="usuario@empresa.com"
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Rol</label>
+                <label className="block text-xs text-[var(--text-tertiary)] mb-1">Rol</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as typeof role)}
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
                 >
                   <option value="admin">Administrador</option>
                   <option value="editor">Editor</option>
@@ -77,7 +77,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
                 </select>
               </div>
             </div>
-            {error && <p className="text-red-500 text-xs">{error}</p>}
+            {error && <p className="text-[var(--data-error)] text-xs">{error}</p>}
             <button
               type="button"
               onClick={() => void handleSend()}
@@ -91,14 +91,14 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
           </>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
+            <div className="flex items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
               <CheckCircle2 className="w-4 h-4 shrink-0" /> Enlace generado.
             </div>
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-3 text-xs font-mono break-all">{inviteUrl}</div>
+            <div className="bg-[var(--surface-sunken)] rounded-xl p-3 text-xs font-mono break-all">{inviteUrl}</div>
             <button
               type="button"
               onClick={handleCopy}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white text-sm font-semibold"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-sm font-semibold"
             >
               <Copy className="w-4 h-4" /> {copied ? "¡Copiado!" : "Copiar enlace"}
             </button>

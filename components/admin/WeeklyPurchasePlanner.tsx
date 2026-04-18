@@ -1,6 +1,8 @@
+"use client";
+
+import { SectionTitle } from "@buleje/design-system";
 
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -11,7 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Download,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -58,8 +60,8 @@ function getUrgency(daysLeft: number): PlanItem["urgency"] {
 
 const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; label: string }> = {
   critical: {
-    badge: "bg-red-100 text-red-700",
-    row: "border-red-200 bg-red-50/50",
+    badge: "bg-[var(--data-error-100)] text-[var(--data-error)]",
+    row: "border-[var(--data-error)] bg-[var(--data-error-50)]/50",
     label: "Critico",
   },
   high: {
@@ -68,13 +70,13 @@ const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; 
     label: "Urgente",
   },
   medium: {
-    badge: "bg-emerald-100 text-emerald-700",
-    row: "border-gray-200 bg-white",
+    badge: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+    row: "border-[var(--rule-base)] bg-white",
     label: "Esta semana",
   },
   low: {
-    badge: "bg-gray-100 text-gray-600",
-    row: "border-gray-100 bg-gray-50",
+    badge: "bg-gray-100 text-[var(--text-secondary)]",
+    row: "border-[var(--rule-soft)] bg-gray-50",
     label: "Monitorear",
   },
 };
@@ -180,19 +182,19 @@ export default function WeeklyPurchasePlanner() {
   }, [plan]);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
               <ShoppingBag className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900">
+              <SectionTitle className="font-bold text-[var(--text-primary)]">
                 Planner de compras semanal
-              </h2>
-              <p className="text-xs text-gray-500">
+              </SectionTitle>
+              <p className="text-xs text-[var(--text-secondary)]">
                 Basado en ventas de los ultimos 7 dias
               </p>
             </div>
@@ -204,7 +206,7 @@ export default function WeeklyPurchasePlanner() {
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 title="Exportar CSV"
               >
-                <Download className="w-5 h-5 text-gray-500" />
+                <Download className="w-5 h-5 text-[var(--text-secondary)]" />
               </button>
             )}
             <button
@@ -214,7 +216,7 @@ export default function WeeklyPurchasePlanner() {
               aria-label="Actualizar"
             >
               <RefreshCw
-                className={cn("w-5 h-5 text-gray-500", loading && "animate-spin")}
+                className={cn("w-5 h-5 text-[var(--text-secondary)]", loading && "animate-spin")}
               />
             </button>
           </div>
@@ -223,9 +225,9 @@ export default function WeeklyPurchasePlanner() {
         {/* Summary */}
         {!loading && (
           <div className="mt-4 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-200">
-              <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-              <span className="text-xs font-semibold text-red-700">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--data-error-50)] border border-[var(--data-error)]">
+              <AlertTriangle className="w-3.5 h-3.5 text-[var(--data-error)]" />
+              <span className="text-xs font-semibold text-[var(--data-error)]">
                 {plan.filter((i) => i.urgency === "critical").length} criticos
               </span>
             </div>
@@ -257,10 +259,10 @@ export default function WeeklyPurchasePlanner() {
         ) : plan.length === 0 ? (
           <div className="p-8 text-center">
             <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-[var(--text-primary)]">
               Todo en orden
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               No hay productos que necesiten reabastecimiento esta semana
             </p>
           </div>
@@ -282,10 +284,10 @@ export default function WeeklyPurchasePlanner() {
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">
+                  <p className="font-semibold text-[var(--text-primary)] text-sm truncate">
                     {item.product.name}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                     Stock: {item.currentStock} {item.product.unit ?? "u"} —
                     Venta: {item.dailySales}/dia —{" "}
                     {item.daysLeft >= 99 ? "sin ventas" : `${item.daysLeft} dias restantes`}
@@ -293,8 +295,8 @@ export default function WeeklyPurchasePlanner() {
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="text-right">
-                    <p className="text-xs text-gray-400">Comprar</p>
-                    <p className="font-bold text-gray-900 text-sm">
+                    <p className="text-xs text-[var(--text-tertiary)]">Comprar</p>
+                    <p className="font-bold text-[var(--text-primary)] text-sm">
                       {item.suggestedQty} {item.product.unit ?? "u"}
                     </p>
                     <p className="text-xs text-primary">

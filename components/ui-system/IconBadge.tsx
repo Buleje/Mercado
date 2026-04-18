@@ -6,24 +6,24 @@ import { tv, type VariantProps } from "tailwind-variants";
 const iconBadge = tv({
   base: [
     "inline-flex items-center justify-center shrink-0",
-    "transition-colors duration-150",
+    "transition-colors duration-[var(--dur-fast)]",
   ],
   variants: {
     variant: {
       outline: [
-        "bg-white dark:bg-gray-900",
-        "border border-gray-200 dark:border-gray-800",
-        "text-gray-700 dark:text-gray-300",
+        "bg-[var(--surface-raised)]",
+        "border border-[var(--rule-base)]",
+        "text-[var(--text-secondary)]",
       ],
       solid: [
         "bg-gray-900 dark:bg-white",
         "text-white dark:text-gray-900",
       ],
       soft: [
-        "bg-gray-100 dark:bg-gray-800",
-        "text-gray-600 dark:text-gray-300",
+        "bg-[var(--surface-sunken)]",
+        "text-[var(--text-secondary)]",
       ],
-      ghost: "bg-transparent text-gray-500 dark:text-gray-400",
+      ghost: "bg-transparent text-[var(--text-tertiary)]",
       accent: [
         "bg-primary/10 text-primary",
       ],

@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   RotateCcw, Package, AlertTriangle, Search, Download,
   ChevronDown, ChevronUp, BarChart3, Clock,
   CheckCircle2, XCircle, Truck, Eye,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type ReturnStatus = "solicitada" | "aprobada" | "recogida" | "inspeccion" | "completada" | "rechazada";
@@ -26,12 +27,12 @@ type Return = {
 };
 
 const STATUS_CONFIG: Record<ReturnStatus, { label: string; color: string; step: number }> = {
-  solicitada:  { label: "Solicitada",  color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",    step: 0 },
-  aprobada:    { label: "Aprobada",    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",          step: 1 },
-  recogida:    { label: "En recojo",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",  step: 2 },
-  inspeccion:  { label: "Inspección",  color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",  step: 3 },
-  completada:  { label: "Completada",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", step: 4 },
-  rechazada:   { label: "Rechazada",   color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",              step: -1 },
+  solicitada:  { label: "Solicitada",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",    step: 0 },
+  aprobada:    { label: "Aprobada",    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",          step: 1 },
+  recogida:    { label: "En recojo",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",  step: 2 },
+  inspeccion:  { label: "Inspección",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",  step: 3 },
+  completada:  { label: "Completada",  color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", step: 4 },
+  rechazada:   { label: "Rechazada",   color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",              step: -1 },
 };
 
 const TIMELINE_STEPS: { key: ReturnStatus; label: string; icon: typeof Clock }[] = [
@@ -99,17 +100,17 @@ export default function ReturnLogisticsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <RotateCcw className="h-6 w-6 text-primary" />
             Logística Inversa
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Devoluciones, recojos y reembolsos</p>
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Devoluciones, recojos y reembolsos</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["list", "reasons"] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted"
+                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
               )}>
               {v === "list" ? "Devoluciones" : "Motivos"}
             </button>
@@ -130,17 +131,17 @@ export default function ReturnLogisticsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Devoluciones activas", value: kpis.active,             color: "text-amber-500",   icon: RotateCcw },
-          { label: "Total registradas",    value: returns.length,           color: "text-emerald-500",    icon: BarChart3 },
-          { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-red-500",     icon: XCircle },
-          { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-violet-500",  icon: AlertTriangle },
+          { label: "Devoluciones activas", value: kpis.active,             color: "text-[var(--data-warning)]",   icon: RotateCcw },
+          { label: "Total registradas",    value: returns.length,           color: "text-[var(--data-success)]",    icon: BarChart3 },
+          { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-[var(--data-error)]",     icon: XCircle },
+          { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-[var(--text-secondary)]",  icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-start gap-3">
+          <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted leading-tight">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</p>
               <p className={cn("text-xl font-extrabold mt-0.5", color)}>{value}</p>
             </div>
           </div>
@@ -152,10 +153,10 @@ export default function ReturnLogisticsTab() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
                 placeholder="Buscar por pedido o cliente…"
               />
             </div>
@@ -163,7 +164,7 @@ export default function ReturnLogisticsTab() {
               {(["all", "solicitada", "aprobada", "recogida", "inspeccion", "completada", "rechazada"] as const).map(s => (
                 <button key={s} onClick={() => setFilterStatus(s)}
                   className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                    filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted"
+                    filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
                   )}>
                   {s === "all" ? "Todas" : STATUS_CONFIG[s].label}
                 </button>
@@ -174,14 +175,14 @@ export default function ReturnLogisticsTab() {
           {/* Returns list */}
           {!loading && filtered.length === 0 && (
             <div className="text-center py-12">
-              <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500 dark:text-muted">No se encontraron devoluciones</p>
+              <Package className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
+              <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No se encontraron devoluciones</p>
             </div>
           )}
 
           <div className="space-y-3">
             {filtered.map(r => (
-              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 {/* Summary row */}
                 <button
                   onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
@@ -189,30 +190,30 @@ export default function ReturnLogisticsTab() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="font-bold text-sm text-gray-900 dark:text-foreground">{r.orderId}</span>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_CONFIG[r.status].color)}>
+                      <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{r.orderId}</span>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", STATUS_CONFIG[r.status].color)}>
                         {STATUS_CONFIG[r.status].label}
                       </span>
-                      <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-full">
                         {r.reason}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-muted">
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                       {r.customer} · {r.items.length} producto{r.items.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-red-600">{fmt(r.refundAmount)}</p>
-                      <p className="text-[10px] text-gray-400">{fmtDate(r.requestDate)}</p>
+                      <p className="text-sm font-extrabold text-[var(--data-error)]">{fmt(r.refundAmount)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(r.requestDate)}</p>
                     </div>
-                    {expandedId === r.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {expandedId === r.id ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
                   </div>
                 </button>
 
                 {/* Expanded: timeline + items */}
                 {expandedId === r.id && (
-                  <div className="px-4 pb-4 border-t border-gray-100 dark:border-card-border pt-4 space-y-4">
+                  <div className="px-4 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-4">
                     {/* Timeline */}
                     {r.status !== "rechazada" && (
                       <div className="relative flex items-center gap-0">
@@ -230,11 +231,11 @@ export default function ReturnLogisticsTab() {
                                     ? "bg-primary border-primary text-white"
                                     : current
                                     ? "bg-primary/10 border-primary text-primary"
-                                    : "bg-gray-100 dark:bg-surface border-gray-200 dark:border-card-border text-gray-400"
+                                    : "bg-gray-100 dark:bg-surface border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)]"
                                 )}>
                                   <Icon className="h-3.5 w-3.5" />
                                 </div>
-                                <span className="text-[9px] text-gray-500 dark:text-muted mt-1 text-center leading-tight w-14">{step.label}</span>
+                                <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mt-1 text-center leading-tight w-14">{step.label}</span>
                               </div>
                               {idx < TIMELINE_STEPS.length - 1 && (
                                 <div className={cn("flex-1 h-0.5 mb-4", done ? "bg-primary" : "bg-gray-200 dark:bg-card-border")} />
@@ -246,7 +247,7 @@ export default function ReturnLogisticsTab() {
                     )}
 
                     {r.status === "rechazada" && (
-                      <div className="flex items-center gap-2 text-xs bg-red-50 dark:bg-red-950/10 text-red-600 dark:text-red-400 px-3 py-2 rounded-xl">
+                      <div className="flex items-center gap-2 text-xs bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error)] dark:text-[var(--data-error)] px-3 py-2 rounded-xl">
                         <XCircle className="h-3.5 w-3.5 shrink-0" /> Devolución rechazada
                       </div>
                     )}
@@ -254,7 +255,7 @@ export default function ReturnLogisticsTab() {
                     {/* Items */}
                     <div className="flex flex-wrap gap-2">
                       {r.items.map((item, i) => (
-                        <span key={i} className="text-[10px] bg-gray-50 dark:bg-surface px-2 py-1.5 rounded-lg text-gray-600 dark:text-muted border border-gray-100 dark:border-card-border">
+                        <span key={i} className="text-[length:var(--ts-2xs)] bg-gray-50 dark:bg-surface px-2 py-1.5 rounded-lg text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-soft)] dark:border-card-border">
                           {item.name} ×{item.qty} <span className="text-primary font-bold">({fmt(item.price)})</span>
                         </span>
                       ))}
@@ -262,14 +263,14 @@ export default function ReturnLogisticsTab() {
 
                     {/* Notes */}
                     {r.notes && (
-                      <div className="flex items-start gap-2 text-xs bg-emerald-50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400 px-3 py-2 rounded-xl">
+                      <div className="flex items-start gap-2 text-xs bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                         {r.notes}
                       </div>
                     )}
 
                     {r.resolvedDate && (
-                      <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-semibold flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Resuelto el {fmtDate(r.resolvedDate)}
                       </p>
                     )}
@@ -282,17 +283,17 @@ export default function ReturnLogisticsTab() {
       )}
 
       {view === "reasons" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-4">
-          <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Motivos más frecuentes de devolución</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-6 space-y-4">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Motivos más frecuentes de devolución</CardTitle>
           {reasonFreq.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Sin datos todavía</p>
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-6">Sin datos todavía</p>
           ) : (
             <div className="space-y-3">
               {reasonFreq.map(([reason, count]) => (
                 <div key={reason}>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="font-semibold text-gray-700 dark:text-foreground">{reason}</span>
-                    <span className="font-extrabold text-primary">{count} <span className="text-xs font-normal text-gray-400">({((count / returns.length) * 100).toFixed(0)}%)</span></span>
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{reason}</span>
+                    <span className="font-extrabold text-primary">{count} <span className="text-xs font-normal text-[var(--text-tertiary)]">({((count / returns.length) * 100).toFixed(0)}%)</span></span>
                   </div>
                   <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div

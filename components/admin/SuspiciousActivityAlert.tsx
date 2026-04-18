@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, RefreshCw, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { ActivityEntry } from "./ActivityTracker";
 
@@ -173,10 +173,10 @@ export default function SuspiciousActivityAlert() {
       <button
         onClick={() => setExpanded((v) => !v)}
         className={cn(
-          "relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+          "relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-[var(--dur-fast)]",
           highCount > 0
-            ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/60"
-            : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+            ? "bg-[var(--data-error-50)] dark:bg-red-950/40 text-[var(--data-error)] dark:text-[var(--data-error)] border border-[var(--data-error)] dark:border-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:hover:bg-red-950/60"
+            : "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] hover:bg-[var(--data-warning-100)] dark:hover:bg-amber-950/50"
         )}
         aria-label={`${totalCount} alerta${totalCount !== 1 ? "s" : ""} de actividad sospechosa`}
       >
@@ -184,7 +184,7 @@ export default function SuspiciousActivityAlert() {
         <span>{totalCount} alerta{totalCount !== 1 ? "s" : ""}</span>
         {/* Red dot for high severity */}
         {highCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
             {highCount}
           </span>
         )}
@@ -196,28 +196,28 @@ export default function SuspiciousActivityAlert() {
         <div
           className={cn(
             "absolute right-0 top-full mt-2 w-96 z-50 rounded-xl",
-            "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
+            "bg-[var(--surface-raised)] border border-[var(--rule-base)]",
             "overflow-hidden"
           )}
         >
           {/* Panel header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={15} className="text-red-500" />
-              <span className="font-semibold text-sm text-gray-800 dark:text-white">Actividad sospechosa</span>
+              <AlertTriangle size={15} className="text-[var(--data-error)]" />
+              <span className="font-semibold text-sm text-[var(--text-primary)]">Actividad sospechosa</span>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={analyze}
                 disabled={loading}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 aria-label="Actualizar"
               >
                 <RefreshCw size={13} className={cn(loading && "animate-spin")} />
               </button>
               <button
                 onClick={() => setExpanded(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 aria-label="Cerrar"
               >
                 <X size={13} />
@@ -233,15 +233,15 @@ export default function SuspiciousActivityAlert() {
                   <div className="flex items-start gap-2 min-w-0">
                     <span
                       className={cn(
-                        "mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold",
-                        alert.severity === "high" ? "bg-red-500" : "bg-amber-500"
+                        "mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold",
+                        alert.severity === "high" ? "bg-[var(--data-error)]" : "bg-[var(--data-warning)]"
                       )}
                     >
                       {alert.count}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{alert.label}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{alert.details}</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{alert.label}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{alert.details}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -253,7 +253,7 @@ export default function SuspiciousActivityAlert() {
                     </button>
                     <button
                       onClick={() => setDismissed((prev) => new Set([...prev, alert.id]))}
-                      className="p-0.5 text-gray-300 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+                      className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
                       aria-label="Ignorar alerta"
                     >
                       <X size={12} />
@@ -267,10 +267,10 @@ export default function SuspiciousActivityAlert() {
                     {alert.entries.map((entry, i) => (
                       <div
                         key={i}
-                        className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between gap-2"
+                        className="text-xs text-[var(--text-tertiary)] flex items-center justify-between gap-2"
                       >
                         <span className="truncate">{entry.details}</span>
-                        <span className="shrink-0 tabular-nums text-gray-400 dark:text-gray-500">
+                        <span className="shrink-0 tabular-nums text-[var(--text-tertiary)]">
                           {fmtDate(entry.timestamp)}
                         </span>
                       </div>

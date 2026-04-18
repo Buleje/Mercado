@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, DragEvent, ChangeEvent } from "react";
-import { CheckCircle, AlertTriangle, Loader2, X, Users } from "lucide-react";
+import { CheckCircle, AlertTriangle, Loader2, X, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -174,15 +175,15 @@ export default function CustomerImporter() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Importar clientes desde CSV
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Campos requeridos: nombre, telefono. Opcional: email
           </p>
         </div>
         {step !== "idle" && (
-          <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          <button onClick={reset} className="flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]">
             <X className="h-4 w-4" />
             Reiniciar
           </button>
@@ -200,13 +201,13 @@ export default function CustomerImporter() {
             "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging
               ? "border-[#00B4A6] bg-[#00B4A6]/5"
-              : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
+              : "border-[var(--rule-base)] hover:border-[#00B4A6]"
           )}
         >
-          <Users className="h-10 w-10 text-gray-400" />
+          <Users className="h-10 w-10 text-[var(--text-tertiary)]" />
           <div className="text-center">
-            <p className="font-medium text-gray-700 dark:text-gray-300">Arrastra el CSV de clientes</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">o haz clic para seleccionar</p>
+            <p className="font-medium text-[var(--text-secondary)]">Arrastra el CSV de clientes</p>
+            <p className="text-sm text-[var(--text-tertiary)]">o haz clic para seleccionar</p>
           </div>
           <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={onFileChange} />
         </div>
@@ -216,51 +217,51 @@ export default function CustomerImporter() {
       {step === "preview" && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="text-gray-500">Archivo: <strong>{fileName}</strong></span>
-            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <span className="text-[var(--text-secondary)]">Archivo: <strong>{fileName}</strong></span>
+            <span className="flex items-center gap-1 text-[var(--data-success)] dark:text-[var(--data-success)]">
               <CheckCircle className="h-4 w-4" />
               {valid.length} validos
             </span>
             {invalid.length > 0 && (
-              <span className="flex items-center gap-1 text-red-500">
+              <span className="flex items-center gap-1 text-[var(--data-error)]">
                 <AlertTriangle className="h-4 w-4" />
                 {invalid.length} con errores
               </span>
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+              <thead className="bg-[var(--surface-sunken)]">
                 <tr>
                   {["Fila", "Nombre", "Telefono", "Email", "Estado"].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left font-medium text-gray-500 dark:text-gray-400">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left font-medium text-[var(--text-tertiary)]">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-[var(--surface-raised)]">
                 {preview.map((c) => (
                   <tr
                     key={c._rowIndex}
                     className={cn(
                       c._errors.length > 0
-                        ? "bg-red-50 dark:bg-red-900/10"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10"
+                        : "hover:bg-[var(--surface-sunken)]/50"
                     )}
                   >
-                    <td className="px-4 py-2 text-gray-500">{c._rowIndex}</td>
-                    <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                      {c.nombre || <span className="text-red-500 italic">vacio</span>}
+                    <td className="px-4 py-2 text-[var(--text-secondary)]">{c._rowIndex}</td>
+                    <td className="px-4 py-2 font-medium text-[var(--text-primary)]">
+                      {c.nombre || <span className="text-[var(--data-error)] italic">vacio</span>}
                     </td>
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                      {c.telefono || <span className="text-red-500 italic">vacio</span>}
+                    <td className="px-4 py-2 text-[var(--text-secondary)]">
+                      {c.telefono || <span className="text-[var(--data-error)] italic">vacio</span>}
                     </td>
-                    <td className="px-4 py-2 text-gray-500">{c.email || "—"}</td>
+                    <td className="px-4 py-2 text-[var(--text-secondary)]">{c.email || "—"}</td>
                     <td className="px-4 py-2">
                       {c._errors.length === 0 ? (
-                        <span className="text-green-600 dark:text-green-400 text-xs font-medium">OK</span>
+                        <span className="text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-medium">OK</span>
                       ) : (
-                        <span className="text-red-500 text-xs">{c._errors.join(", ")}</span>
+                        <span className="text-[var(--data-error)] text-xs">{c._errors.join(", ")}</span>
                       )}
                     </td>
                   </tr>
@@ -270,7 +271,7 @@ export default function CustomerImporter() {
           </div>
 
           {parsed.length > 10 && (
-            <p className="text-xs text-gray-500">Mostrando 10 de {parsed.length} filas.</p>
+            <p className="text-xs text-[var(--text-secondary)]">Mostrando 10 de {parsed.length} filas.</p>
           )}
 
           <div className="flex gap-3">
@@ -281,12 +282,12 @@ export default function CustomerImporter() {
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 valid.length > 0
                   ? "bg-[#00B4A6] text-white hover:bg-[#235c43]"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800"
+                  : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
               Importar {valid.length} cliente{valid.length !== 1 ? "s" : ""}
             </button>
-            <button onClick={reset} className="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <button onClick={reset} className="px-5 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">
               Cancelar
             </button>
           </div>
@@ -295,42 +296,42 @@ export default function CustomerImporter() {
 
       {/* Importing */}
       {step === "importing" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 flex flex-col items-center gap-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-          <p className="font-medium text-gray-700 dark:text-gray-300">Importando clientes...</p>
-          <div className="w-full max-w-sm bg-gray-100 dark:bg-gray-800 rounded-full h-3">
-            <div className="bg-[#00B4A6] h-3 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+          <p className="font-medium text-[var(--text-secondary)]">Importando clientes...</p>
+          <div className="w-full max-w-sm bg-[var(--surface-sunken)] rounded-full h-3">
+            <div className="bg-[#00B4A6] h-3 rounded-full transition-all duration-[var(--dur-base)]" style={{ width: `${progress}%` }} />
           </div>
-          <p className="text-sm text-gray-500">{progress}% completado</p>
+          <p className="text-sm text-[var(--text-secondary)]">{progress}% completado</p>
         </div>
       )}
 
       {/* Done */}
       {step === "done" && summary && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-green-500" />
+            <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
             <div>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">Importacion completada</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-semibold text-[var(--text-primary)]">Importacion completada</p>
+              <p className="text-sm text-[var(--text-secondary)]">
                 {summary.imported} importados · {summary.duplicates} duplicados · {summary.errors.length} errores
               </p>
             </div>
           </div>
 
           {summary.duplicates > 0 && (
-            <div className="rounded-lg bg-amber-50 dark:bg-amber-900/10 px-4 py-3">
-              <p className="text-sm text-amber-700 dark:text-amber-400">
+            <div className="rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 px-4 py-3">
+              <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                 {summary.duplicates} cliente{summary.duplicates !== 1 ? "s" : ""} ya existian en el sistema (no duplicados).
               </p>
             </div>
           )}
 
           {summary.errors.length > 0 && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/10 p-4 space-y-1">
-              <p className="text-sm font-medium text-red-700 dark:text-red-400">Clientes no importados:</p>
+            <div className="rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-4 space-y-1">
+              <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)]">Clientes no importados:</p>
               {summary.errors.map((e, i) => (
-                <p key={i} className="text-xs text-red-600 dark:text-red-400">
+                <p key={i} className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
                   Fila {e.row} &mdash; {e.nombre}: {e.error}
                 </p>
               ))}

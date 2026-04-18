@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface AdminSectionHeaderTab {
@@ -20,11 +21,11 @@ interface AdminSectionHeaderProps {
 }
 
 const iconBgMap: Record<string, string> = {
-  emerald: "bg-emerald-50 dark:bg-emerald-900/20",
-  blue: "bg-emerald-50 dark:bg-emerald-900/20",
+  emerald: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+  blue: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   amber: "bg-amber-50 dark:bg-amber-900/20",
   red: "bg-red-50 dark:bg-red-900/20",
-  violet: "bg-violet-50 dark:bg-violet-900/20",
+  violet: "bg-[var(--surface-sunken)]",
   gray: "bg-gray-50 dark:bg-zinc-800",
 };
 
@@ -53,11 +54,11 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
             </div>
           )}
           <div className="min-w-0">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+            <SectionTitle className="text-xl truncate">
               {title}
-            </h2>
+            </SectionTitle>
             {subtitle && (
-              <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">
+              <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 truncate">
                 {subtitle}
               </p>
             )}
@@ -72,7 +73,7 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
       </div>
 
       {tabs && tabs.length > 0 && (
-        <div className="flex items-center gap-1 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center gap-1 border-b border-[var(--rule-soft)] dark:border-zinc-800">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -80,8 +81,8 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
               className={cn(
                 "px-3 py-2 text-sm font-medium transition-colors relative",
                 tab.active
-                  ? "text-gray-900 dark:text-white"
-                  : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300",
+                  ? "text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)] dark:hover:text-zinc-300",
               )}
             >
               {tab.label}

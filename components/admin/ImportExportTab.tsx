@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
@@ -168,12 +169,12 @@ export default function ImportExportTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["export", "import", "history"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
+            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
               {v === "export" ? "Descargar" : v === "import" ? "Subir" : "Historial"}
             </button>
           ))}
@@ -187,12 +188,12 @@ export default function ImportExportTab() {
             const isExportingCSV = exporting === `${mod.id}-csv`;
             const isExportingXLS = exporting === `${mod.id}-excel`;
             return (
-              <div key={mod.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+              <div key={mod.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></div>
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-foreground">{mod.label}</h3>
-                    <p className="text-xs text-gray-500 dark:text-muted">Datos reales desde la base de datos</p>
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{mod.label}</CardTitle>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Datos reales desde la base de datos</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -207,7 +208,7 @@ export default function ImportExportTab() {
                   <button
                     onClick={() => handleExport(mod.id, "excel")}
                     disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-60"
                   >
                     {isExportingXLS ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     Excel
@@ -222,11 +223,11 @@ export default function ImportExportTab() {
       {view === "import" && (
         <div className="space-y-6">
           {/* Module selector */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <h3 className="font-bold text-gray-900 dark:text-foreground mb-3">1. Elige a dónde van los datos</h3>
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3">1. Elige a dónde van los datos</CardTitle>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
-                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-gray-50 dark:bg-surface text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary")}>
+                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary")}>
                   {m.label}
                 </button>
               ))}
@@ -234,31 +235,28 @@ export default function ImportExportTab() {
           </div>
 
           {/* Upload zone */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <h3 className="font-bold text-gray-900 dark:text-foreground mb-3">2. Sube tu archivo</h3>
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3">2. Sube tu archivo</CardTitle>
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className={cn("border-2 border-dashed rounded-xl p-8 text-center transition-colors", dragOver ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border")}
+              className={cn("border-2 border-dashed rounded-xl p-8 text-center transition-colors", dragOver ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border")}
             >
               {importing ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm font-semibold text-gray-500 dark:text-muted">Procesando archivo…</p>
-                </div>
+                <LoadingState message="Procesando archivo..." />
               ) : importResult ? (
                 <div className="flex flex-col items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-emerald-500" />
-                  <p className="text-sm font-bold text-emerald-600">{importResult.count} registros importados</p>
-                  {importResult.errors > 0 && <p className="text-xs text-amber-600">{importResult.errors} errores encontrados</p>}
+                  <CheckCircle className="h-8 w-8 text-[var(--data-success)]" />
+                  <p className="text-sm font-bold text-[var(--data-success)]">{importResult.count} registros importados</p>
+                  {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning)]">{importResult.errors} errores encontrados</p>}
                   <button onClick={() => setImportResult(null)} className="text-xs text-primary font-bold underline">Importar otro</button>
                 </div>
               ) : (
                 <>
-                  <Upload className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-gray-500 dark:text-muted mb-1">Arrastra tu archivo CSV o Excel aquí</p>
-                  <p className="text-xs text-gray-400 mb-3">Formatos: .csv, .xlsx, máximo 10MB</p>
+                  <Upload className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Arrastra tu archivo CSV o Excel aquí</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mb-3">Formatos: .csv, .xlsx, máximo 10MB</p>
                   <label className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 cursor-pointer transition-colors">
                     <Upload className="h-4 w-4" /> Seleccionar archivo
                     <input type="file" accept=".csv,.xlsx" onChange={handleFileInput} className="hidden" />
@@ -269,10 +267,10 @@ export default function ImportExportTab() {
           </div>
 
           {/* Rules */}
-          <div className="bg-amber-50 dark:bg-amber-950/10 rounded-xl border border-amber-200 dark:border-amber-900/30 p-4">
+          <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/10 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 p-4">
             <div className="flex flex-wrap items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0 mt-0.5" />
+              <div className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                 <p className="font-bold mb-1">Reglas para subir archivos:</p>
                 <ul className="list-disc ml-4 space-y-0.5">
                   <li>La primera fila debe contener los encabezados</li>
@@ -287,27 +285,27 @@ export default function ImportExportTab() {
       )}
 
       {view === "history" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-y-hidden overflow-x-auto">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-y-hidden overflow-x-auto">
           <table className="w-full min-w-150 text-sm">
             <thead><tr className="bg-gray-50 dark:bg-surface text-left">
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Archivo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Módulo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Registros</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Estado</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Fecha</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Archivo</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Registros</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
             </tr></thead>
             <tbody>
               {IMPORT_HISTORY.map(r => (
-                <tr key={r.id} className="border-t border-gray-100 dark:border-card-border">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-gray-400 shrink-0" /><span className="font-semibold text-gray-900 dark:text-foreground truncate max-w-48">{r.filename}</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{r.module}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-700 dark:text-foreground">{r.records}</td>
+                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-48">{r.filename}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.records}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : r.status === "partial" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
                       {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                     </span>
                   </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(r.date)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(r.date)}</td>
                 </tr>
               ))}
             </tbody>

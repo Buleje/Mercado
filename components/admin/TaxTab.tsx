@@ -1,11 +1,14 @@
 "use client";
 
+import { LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   Receipt, Loader2, RefreshCw, AlertTriangle,
   CheckCircle, BookOpen,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import AdminCard from "./shared/AdminCard";
+import StatusBadge from "./shared/StatusBadge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -147,136 +150,137 @@ export default function TaxTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Header — kicker uppercase + H1 + subtitle */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Receipt className="h-6 w-6 text-primary" />
+          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">SUNAT / Tributario</p>
+          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
+            <Receipt className="h-5 w-5 currentColor" />
             Impuestos &amp; IGV
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de ventas y compras, libro tributario, IGV a pagar</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Registro de ventas y compras, libro tributario, IGV a pagar</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
             {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <BookOpen className="h-4 w-4" /> Libro ventas
           </button>
-          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <BookOpen className="h-4 w-4" /> Libro compras
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        <LoadingState />
       ) : (
         <>
-          {/* IGV Balance card */}
-          <div className={cn("rounded-xl p-3 sm:p-6 border", summary.igvBalance > 0 ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40" : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40")}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+          {/* IGV Balance card — AdminCard + intent via StatusBadge */}
+          <AdminCard padding="lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-gray-500 dark:text-muted mb-1">IGV del período — {MONTHS[month]} {year}</p>
-                <p className={cn("text-4xl font-extrabold", summary.igvBalance > 0 ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400")}>
+                <p className="text-xs uppercase tracking-[var(--ls-wider)] font-semibold text-[var(--text-tertiary)] mb-2">IGV del período — {MONTHS[month]} {year}</p>
+                <p className={cn("text-4xl font-semibold tabular-nums", summary.igvBalance > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>
                   {fmt(summary.igvBalance)}
                 </p>
-                <p className={cn("text-sm font-semibold mt-1", summary.igvBalance > 0 ? "text-amber-600 dark:text-amber-500" : "text-emerald-600 dark:text-emerald-500")}>
-                  {summary.igvBalance > 0 ? "IGV a pagar a SUNAT" : "Crédito fiscal a favor"}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
-                <div className="bg-white/60 dark:bg-card/40 rounded-xl p-3 text-center">
-                  <p className="text-xs text-gray-500 dark:text-muted mb-1">IGV Ventas</p>
-                  <p className="font-extrabold text-emerald-600">{fmt(summary.salesIGV)}</p>
-                  <p className="text-xs text-gray-400 dark:text-muted">Base: {fmt(summary.salesBase)}</p>
+                <div className="mt-2">
+                  <StatusBadge
+                    variant={summary.igvBalance > 0 ? "warning" : "success"}
+                    label={summary.igvBalance > 0 ? "IGV a pagar a SUNAT" : "Crédito fiscal a favor"}
+                    dot
+                  />
                 </div>
-                <div className="bg-white/60 dark:bg-card/40 rounded-xl p-3 text-center">
-                  <p className="text-xs text-gray-500 dark:text-muted mb-1">IGV Compras</p>
-                  <p className="font-extrabold text-emerald-600">{fmt(summary.purchasesIGV)}</p>
-                  <p className="text-xs text-gray-400 dark:text-muted">Base: {fmt(summary.purchasesBase)}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
+                  <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Ventas</p>
+                  <p className="font-semibold text-[var(--data-success)] tabular-nums">{fmt(summary.salesIGV)}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.salesBase)}</p>
+                </div>
+                <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
+                  <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Compras</p>
+                  <p className="font-semibold text-[var(--data-success)] tabular-nums">{fmt(summary.purchasesIGV)}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.purchasesBase)}</p>
                 </div>
               </div>
             </div>
-          </div>
+          </AdminCard>
 
           {/* Tabs */}
           <div className="flex flex-wrap items-center gap-2">
             {(["resumen", "ventas", "compras"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
                 {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
               </button>
             ))}
           </div>
 
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                 <tr>
-                  <th className="text-left px-5 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Fecha</th>
-                  <th className="text-left px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Tipo</th>
-                  <th className="text-left px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Doc</th>
-                  <th className="text-left px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Entidad</th>
-                  <th className="text-right px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Base</th>
-                  <th className="text-right px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">IGV</th>
-                  <th className="text-right px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Total</th>
-                  <th className="text-center px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Estado</th>
-                  <th className="text-center px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Acc.</th>
+                  <th className="text-left px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Fecha</th>
+                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Tipo</th>
+                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Doc</th>
+                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Entidad</th>
+                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Base</th>
+                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">IGV</th>
+                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Total</th>
+                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Estado</th>
+                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Acc.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                 {visibleLines.map(line => (
                   <tr key={line.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                    <td className="px-5 py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(line.date)}</td>
+                    <td className="px-5 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
                     <td className="px-3 py-3">
-                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", line.type === "venta" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400")}>
-                        {line.type === "venta" ? "V" : "C"}
-                      </span>
+                      <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
+                    <td className="px-3 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
                     <td className="px-3 py-3">
-                      <p className="text-sm text-gray-800 dark:text-foreground truncate max-w-[140px]">{line.entity}</p>
-                      <p className="text-xs text-gray-400 dark:text-muted">{line.entityDoc}</p>
+                      <p className="text-sm text-[var(--text-primary)] dark:text-foreground truncate max-w-[140px]">{line.entity}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
                     </td>
-                    <td className="px-3 py-3 text-right text-sm text-gray-600 dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-amber-600">{fmt(line.igv)}</td>
-                    <td className="px-3 py-3 text-right font-bold text-gray-800 dark:text-foreground">{fmt(line.total)}</td>
+                    <td className="px-3 py-3 text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-[var(--data-warning)]">{fmt(line.igv)}</td>
+                    <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(line.total)}</td>
                     <td className="px-3 py-3 text-center hidden sm:table-cell">
-                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", line.status === "declarado" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted")}>
-                        {line.status === "declarado" ? "Declarado" : "Pendiente"}
-                      </span>
+                      <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
                     </td>
                     <td className="px-3 py-3 text-center hidden sm:table-cell">
                       {line.status === "pendiente" && (
                         <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
                       )}
-                      {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-emerald-500 mx-auto" />}
+                      {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success)] mx-auto" />}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {visibleLines.length === 0 && <p className="text-center py-10 text-gray-400 dark:text-muted text-sm">Sin registros para el período.</p>}
+            {visibleLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
           </div>
 
-          {/* Pending alert */}
+          {/* Pending alert — AdminCard con intent warning */}
           {lines.filter(l => l.status === "pendiente").length > 0 && (
-            <div className="flex flex-wrap items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <AdminCard padding="md" className="flex items-start gap-3 border-l-2 border-l-[var(--data-warning)]">
+              <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Registros pendientes de declaración</p>
-                <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Registros pendientes de declaración</p>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Tienes {lines.filter(l => l.status === "pendiente").length} registro(s) aún no marcados como declarados ante SUNAT.
                 </p>
               </div>
-            </div>
+            </AdminCard>
           )}
         </>
       )}

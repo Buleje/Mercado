@@ -1,9 +1,10 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle,
   Calendar, ArrowUpRight, ArrowDownRight, RefreshCw, MessageCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import {
   AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
@@ -84,7 +85,7 @@ function urgencyLabel(days: number): string {
 function urgencyBadge(days: number): string {
   if (days < 0) return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400";
   if (days <= 7) return "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400";
-  return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400";
+  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]";
 }
 
 // ── Custom Tooltip ─────────────────────────────────────────────────────────────
@@ -96,8 +97,8 @@ function FlowTooltip({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-xs">
-      <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">{label}</p>
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs">
+      <p className="font-semibold text-[var(--text-secondary)] mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }} className="font-mono">
           {p.name === "ingresos" ? "Ingresos" : p.name === "gastos" ? "Gastos" : "Delta"}: {fmtShort(p.value)}
@@ -267,18 +268,18 @@ export default function TreasuryDashboard() {
           aria-label="Actualizar datos"
           className={cn(
             "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
-            "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+            "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
             loading && "animate-spin opacity-60",
           )}
         >
-          <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
       </AdminModuleHeader>
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Error al cargar datos: {error}</span>
         </div>
@@ -328,13 +329,13 @@ export default function TreasuryDashboard() {
       </div>
 
       {/* Gráfico flujo 30 días */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5 ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Flujo de caja — últimos 30 días</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Ingresos vs gastos diarios</p>
+            <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Flujo de caja — últimos 30 días</SectionTitle>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Ingresos vs gastos diarios</p>
           </div>
-          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-[#00B4A6]" />
               Ingresos
@@ -387,11 +388,11 @@ export default function TreasuryDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Tabla de vencimientos */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="h-4 w-4 text-[#f97316]" />
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Próximos vencimientos</h2>
-            <span className="ml-auto text-xs text-gray-400">{pendingPayables.length} pendientes</span>
+            <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Próximos vencimientos</SectionTitle>
+            <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingPayables.length} pendientes</span>
           </div>
 
           {loading ? (
@@ -400,32 +401,32 @@ export default function TreasuryDashboard() {
             </div>
           ) : pendingPayables.length === 0 ? (
             <div className="text-center py-8">
-              <TrendingUp className="h-10 w-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Sin cuentas por pagar pendientes</p>
+              <TrendingUp className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--text-tertiary)]">Sin cuentas por pagar pendientes</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <th className="text-left pb-2 text-gray-500 dark:text-gray-400 font-medium">Proveedor / Concepto</th>
-                    <th className="text-right pb-2 text-gray-500 dark:text-gray-400 font-medium">Monto</th>
-                    <th className="text-right pb-2 text-gray-500 dark:text-gray-400 font-medium">Vence</th>
+                  <tr className="border-b border-[var(--rule-base)]">
+                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Proveedor / Concepto</th>
+                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Monto</th>
+                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Vence</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pendingPayables.map(p => {
                     const days = daysUntil(p.dueDate);
                     return (
-                      <tr key={p.id} className="border-b border-gray-50 dark:border-gray-800/50 last:border-0">
-                        <td className="py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[120px]">
+                      <tr key={p.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
+                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[120px]">
                           {p.supplier ?? p.description ?? "Sin nombre"}
                         </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-gray-800 dark:text-white">
+                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
                           {fmt(p.amount)}
                         </td>
                         <td className="py-2.5 text-right">
-                          <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-medium", urgencyBadge(days))}>
+                          <span className={cn("px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium", urgencyBadge(days))}>
                             {urgencyLabel(days)}
                           </span>
                         </td>
@@ -439,11 +440,11 @@ export default function TreasuryDashboard() {
         </div>
 
         {/* Tabla de cobranzas */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
           <div className="flex items-center gap-2 mb-4">
             <DollarSign className="h-4 w-4 text-[#00B4A6]" />
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Cobranzas pendientes (fiados)</h2>
-            <span className="ml-auto text-xs text-gray-400">{pendingFiados.length} clientes</span>
+            <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Cobranzas pendientes (fiados)</SectionTitle>
+            <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingFiados.length} clientes</span>
           </div>
 
           {loading ? (
@@ -452,18 +453,18 @@ export default function TreasuryDashboard() {
             </div>
           ) : pendingFiados.length === 0 ? (
             <div className="text-center py-8">
-              <TrendingUp className="h-10 w-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Todos los fiados al día</p>
+              <TrendingUp className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--text-tertiary)]">Todos los fiados al día</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <th className="text-left pb-2 text-gray-500 dark:text-gray-400 font-medium">Cliente</th>
-                    <th className="text-right pb-2 text-gray-500 dark:text-gray-400 font-medium">Pendiente</th>
-                    <th className="text-right pb-2 text-gray-500 dark:text-gray-400 font-medium">Mora</th>
-                    <th className="text-right pb-2 text-gray-500 dark:text-gray-400 font-medium">Acción</th>
+                  <tr className="border-b border-[var(--rule-base)]">
+                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
+                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Pendiente</th>
+                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Mora</th>
+                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,20 +473,20 @@ export default function TreasuryDashboard() {
                     const moraDays = f.dueDate ? Math.max(0, -daysUntil(f.dueDate)) : 0;
                     const phone = f.phone ?? f.customerPhone ?? f.customer?.phone;
                     return (
-                      <tr key={f.id} className="border-b border-gray-50 dark:border-gray-800/50 last:border-0">
-                        <td className="py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[130px]">
+                      <tr key={f.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
+                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[130px]">
                           {f.customerName}
                         </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-gray-800 dark:text-white">
+                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
                           {fmt(pending)}
                         </td>
                         <td className="py-2.5 text-right">
                           {moraDays > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]">
                               {moraDays}d mora
                             </span>
                           ) : (
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                               Al día
                             </span>
                           )}
@@ -498,7 +499,7 @@ export default function TreasuryDashboard() {
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-[10px] font-medium transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <MessageCircle className="h-3 w-3" />

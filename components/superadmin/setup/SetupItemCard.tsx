@@ -34,12 +34,12 @@ export default function SetupItemCard({
   return (
     <div
       className={[
-        "bg-white dark:bg-gray-950 border rounded-2xl p-5 transition-all",
+        "bg-[var(--surface-canvas)] border rounded-xl p-5 transition-all",
         isDone
           ? "border-emerald-200 dark:border-emerald-900/40 opacity-60"
           : isBlocked
             ? "border-amber-200 dark:border-amber-900/40"
-            : "border-gray-200 dark:border-gray-800 hover:border-teal-300 dark:hover:border-teal-700",
+            : "border-[var(--rule-base)] hover:border-teal-300 dark:hover:border-teal-700",
       ].join(" ")}
     >
       <div className="flex items-start gap-4">
@@ -50,9 +50,9 @@ export default function SetupItemCard({
           title={isDone ? "Marcar como pendiente" : "Marcar como hecho"}
         >
           {isDone ? (
-            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+            <CheckCircle2 className="w-6 h-6 text-[var(--data-success)]" />
           ) : (
-            <Circle className="w-6 h-6 text-gray-300 dark:text-gray-600 hover:text-teal-500" />
+            <Circle className="w-6 h-6 text-gray-300 dark:text-gray-600 hover:text-[var(--accent)]" />
           )}
         </button>
 
@@ -63,7 +63,7 @@ export default function SetupItemCard({
             <h3
               className={[
                 "text-base font-bold",
-                isDone ? "text-gray-400 line-through" : "text-gray-900 dark:text-white",
+                isDone ? "text-gray-400 line-through" : "text-[var(--text-primary)]",
               ].join(" ")}
             >
               {item.title}
@@ -72,15 +72,15 @@ export default function SetupItemCard({
             {/* Badges */}
             <div className="flex items-center gap-1.5 shrink-0">
               <span
-                className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${pCfg.cls}`}
+                className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${pCfg.cls}`}
               >
                 {pCfg.label}
               </span>
-              <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                 {CATEGORY_ICON[item.category]}
                 {item.category}
               </span>
-              <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                 <Clock className="w-2.5 h-2.5" />
                 {item.estimatedMinutes}m
               </span>
@@ -88,11 +88,11 @@ export default function SetupItemCard({
           </div>
 
           {/* Description */}
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{item.description}</p>
+          <p className="text-sm text-[var(--text-tertiary)] mb-3">{item.description}</p>
 
           {/* Blocked reason */}
           {item.blockedReason && (
-            <div className="mb-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+            <div className="mb-3 p-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] flex items-center gap-2">
               <AlertCircle className="w-3 h-3 shrink-0" />
               {item.blockedReason}
             </div>
@@ -101,14 +101,14 @@ export default function SetupItemCard({
           {/* Steps */}
           {!isDone && (
             <details className="mb-3 group">
-              <summary className="text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer hover:text-teal-600 list-none flex items-center gap-1">
+              <summary className="text-xs font-semibold text-[var(--text-secondary)] cursor-pointer hover:text-teal-600 list-none flex items-center gap-1">
                 <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
                 Pasos exactos ({item.steps.length})
               </summary>
-              <ol className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-gray-400">
+              <ol className="mt-2 ml-4 space-y-1 text-xs text-[var(--text-secondary)]">
                 {item.steps.map((step, idx) => (
                   <li key={idx} className="flex gap-2">
-                    <span className="text-teal-600 dark:text-teal-400 font-bold shrink-0">
+                    <span className="text-[var(--accent)] font-bold shrink-0">
                       {idx + 1}.
                     </span>
                     <span>{step}</span>
@@ -139,7 +139,7 @@ export default function SetupItemCard({
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                   isBlocked
                     ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200",
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
                 ].join(" ")}
               >
                 {isBlocked ? "✓ Bloqueado" : "Marcar bloqueado"}

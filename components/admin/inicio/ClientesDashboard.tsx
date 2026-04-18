@@ -1,10 +1,11 @@
 "use client";
 
+import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
   Users, UserPlus, UserCheck, Star, ArrowUpRight, ArrowDownRight,
   AlertTriangle, RefreshCw, TrendingUp, Heart, Crown, ShoppingCart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
@@ -199,7 +200,7 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
       { label: "S/ 0-50", min: 0, max: 50, color: "#94a3b8" },
       { label: "S/ 51-200", min: 50.01, max: 200, color: "#3b82f6" },
       { label: "S/ 201-500", min: 200.01, max: 500, color: "#8b5cf6" },
-      { label: "S/ 500+", min: 500.01, max: Infinity, color: "#10b981" },
+      { label: "S/ 500+", min: 500.01, max: Infinity, color: "#00B4A6" },
     ];
     const distribucionGasto = spendRanges.map(r => ({
       rango: r.label,
@@ -215,7 +216,7 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
       { label: "1 compra", min: 1, max: 1, color: "#94a3b8" },
       { label: "2-3 compras", min: 2, max: 3, color: "#3b82f6" },
       { label: "4-7 compras", min: 4, max: 7, color: "#f59e0b" },
-      { label: "8+ compras", min: 8, max: Infinity, color: "#10b981" },
+      { label: "8+ compras", min: 8, max: Infinity, color: "#00B4A6" },
     ];
     const frecuenciaCompra = freqRanges.map(r => ({
       frecuencia: r.label,
@@ -264,8 +265,8 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
   if (loading) return <DashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
-      <AlertTriangle className="h-10 w-10 text-amber-500" />
-      <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+      <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
+      <p className="text-sm text-[var(--text-secondary)]">{error}</p>
       <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
@@ -273,31 +274,31 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Total Clientes" value={String(data.totalClientes)} Icon={Users} accent="blue" />
-        <KPICard label="Activos" value={String(data.clientesActivos)} Icon={UserCheck} delta={data.dActivos} accent="emerald" />
-        <KPICard label="Nuevos" value={String(data.nuevos)} Icon={UserPlus} delta={data.dNuevos} accent="violet" />
-        <KPICard label="Recurrentes" value={String(data.recurrentes)} Icon={Heart} accent="cyan" />
-        <KPICard label="Rating Prom." value={data.ratingPromedio.toFixed(1)} Icon={Star} accent={data.ratingPromedio >= 4 ? "emerald" : data.ratingPromedio >= 3 ? "amber" : "red"} />
-        <KPICard label="Reseñas" value={String(data.totalResenas)} Icon={Crown} accent="amber" />
+        <StatCard label="Total Clientes" value={String(data.totalClientes)} icon={Users} />
+        <StatCard label="Activos" value={String(data.clientesActivos)} icon={UserCheck} delta={data.dActivos} />
+        <StatCard label="Nuevos" value={String(data.nuevos)} icon={UserPlus} delta={data.dNuevos} />
+        <StatCard label="Recurrentes" value={String(data.recurrentes)} icon={Heart} />
+        <StatCard label="Rating Prom." value={data.ratingPromedio.toFixed(1)} icon={Star} emphasis={data.ratingPromedio >= 4 ? "success" : data.ratingPromedio >= 3 ? "warning" : "error"} />
+        <StatCard label="Reseñas" value={String(data.totalResenas)} icon={Crown} />
       </div>
 
       {/* ── Retention summary bar ── */}
       {data.clientesActivos > 0 && (
-        <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
-          <TrendingUp className="h-4 w-4 text-gray-400" />
+        <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+          <TrendingUp className="h-4 w-4 text-[var(--text-tertiary)]" />
           <div className="flex-1 flex items-center gap-4 text-sm">
-            <span className="text-gray-500 dark:text-muted">Retención:</span>
-            <span className="font-bold text-gray-900 dark:text-foreground">
+            <span className="text-[var(--text-secondary)] dark:text-muted">Retención:</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
               {data.clientesActivos > 0 ? Math.round((data.recurrentes / data.clientesActivos) * 100) : 0}%
             </span>
-            <span className="text-gray-300 dark:text-gray-600">|</span>
-            <span className="text-gray-500 dark:text-muted">Nuevos:</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400">{data.nuevos}</span>
-            <span className="text-gray-300 dark:text-gray-600">|</span>
-            <span className="text-gray-500 dark:text-muted">Recurrentes:</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400">{data.recurrentes}</span>
+            <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>
+            <span className="text-[var(--text-secondary)] dark:text-muted">Nuevos:</span>
+            <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.nuevos}</span>
+            <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>
+            <span className="text-[var(--text-secondary)] dark:text-muted">Recurrentes:</span>
+            <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{data.recurrentes}</span>
           </div>
         </div>
       )}
@@ -318,32 +319,32 @@ function KPICard({ label, value, Icon, delta, accent }: {
 }) {
   const isPositive = delta != null ? delta >= 0 : false;
   const colorMap = {
-    emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
-    cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
-    amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },
-    red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500" },
+    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
+    blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
+    cyan: { bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30", icon: "text-cyan-500" },
+    amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: "text-amber-500" },
+    red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: "text-red-500" },
   };
   const c = colorMap[accent];
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
         </div>
         {delta != null && (
           <div className={cn("flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-bold",
-            isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+            isPositive ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
           )}>
             {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(delta).toFixed(1)}%
           </div>
         )}
       </div>
-      <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">{label}</p>
     </div>
   );
 }
@@ -352,10 +353,10 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-28 animate-pulse" />)}
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28 animate-pulse" />)}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-64 animate-pulse" />)}
       </div>
     </div>
   );

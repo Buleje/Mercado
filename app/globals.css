@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Excluir docs, reports, HEALING del scanner de Tailwind v4.
+   Los ADRs y reportes contienen ejemplos de sintaxis con wildcards que
+   generan CSS invalido al ser escaneados como si fueran clases reales. */
+@source not "../docs/**/*";
+@source not "../reports/**/*";
+@source not "../HEALING/**/*";
+@source not "../scripts/**/*";
+@source not "../.claude/**/*";
+
 /* Habilitar dark mode por clase (.dark en <html>) */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -1343,9 +1352,46 @@ button,
   --data-6: #0ea5e9;
   --data-7: #d97706;
   --data-8: #8b5cf6;
-  --data-success: #047857;
-  --data-warning: #b45309;
-  --data-error: #b91c1c;
+
+  /* ── Data state scale (Sprint C1 — ADR-075 addendum) ─────────────────────
+     Escalas {50, 100, 500, 600, 700} por estado semántico.
+     Uso: bg-[var(--data-*-50)] para soft bg (alerts), text-[var(--data-*)]
+     para iconos/labels, border-[var(--data-*)] para bordes, hover con -600. */
+
+  /* Success (teal brand Buleje) */
+  --data-success-50: #e6f8f6;      /* bg-soft (alerts, chips) */
+  --data-success-100: #cdf1ed;     /* bg-soft-hover */
+  --data-success-500: #00B4A6;     /* default (icons, text, borders) */
+  --data-success-600: #00998d;     /* hover */
+  --data-success-700: #007f74;     /* pressed */
+
+  /* Warning (amber) */
+  --data-warning-50: #fef3c7;
+  --data-warning-100: #fde68a;
+  --data-warning-500: #f59e0b;
+  --data-warning-600: #d97706;
+  --data-warning-700: #b45309;
+
+  /* Error (red) */
+  --data-error-50: #fee2e2;
+  --data-error-100: #fecaca;
+  --data-error-500: #ef4444;
+  --data-error-600: #dc2626;
+  --data-error-700: #b91c1c;
+
+  /* Info (blue/sky) */
+  --data-info-50: #dbeafe;
+  --data-info-100: #bfdbfe;
+  --data-info-500: #0ea5e9;
+  --data-info-600: #0284c7;
+  --data-info-700: #0369a1;
+
+  /* Aliases backward compatibility — ahora apuntan al -500.
+     Light mode adopta el -500 default (antes usaba -700 más oscuro, ADR-075 unifica). */
+  --data-success: var(--data-success-500);
+  --data-warning: var(--data-warning-700);
+  --data-error: var(--data-error-700);
+  --data-info: var(--data-info-700);
 
   /* ─── Brand System v4 (Ola 1) — signature + heros ─── */
   --brand-ink: #060a0d;
@@ -1387,6 +1433,34 @@ button,
   --fs-caption: 0.75rem;
   --fs-kicker: 0.625rem;
 
+  /* ─── Type scale fija (ADR-070) ─── */
+  /* Usar en admin/dashboards donde el fluid no es deseable (tabular data). */
+  --ts-2xs: 0.625rem;   /* 10px — badges, sparklines, kickers */
+  --ts-xs: 0.75rem;     /* 12px — labels, timestamps */
+  --ts-sm: 0.875rem;    /* 14px — body default admin */
+  --ts-base: 1rem;      /* 16px — reading body */
+  --ts-lg: 1.125rem;    /* 18px — subtitulos */
+  --ts-xl: 1.25rem;     /* 20px — titulos seccion */
+  --ts-2xl: 1.5rem;     /* 24px — H2 modulo */
+  --ts-3xl: 1.875rem;   /* 30px — hero KPI */
+
+  /* Font weights semanticos (ADR-070) */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-extrabold: 800;  /* exclusivo KPI values */
+
+  /* Line heights (ADR-070) */
+  --lh-tight: 1.2;
+  --lh-snug: 1.4;
+  --lh-normal: 1.6;
+
+  /* Letter spacings (ADR-070) */
+  --ls-tight: -0.01em;   /* headings */
+  --ls-normal: 0;
+  --ls-wide: 0.06em;     /* section kickers */
+  --ls-wider: 0.2em;     /* uppercase labels */
+
   /* ─── Motion curves v4 ─── */
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-snap: cubic-bezier(0.4, 0, 0.1, 1);
@@ -1394,6 +1468,35 @@ button,
   --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── Motion duration scale (ADR-071) ─── */
+  --dur-instant: 0ms;        /* No animar — reduced motion */
+  --dur-micro: 80ms;         /* Hover feedback inmediato */
+  --dur-fast: 160ms;         /* Small transitions (button press, tooltip) */
+  --dur-base: 240ms;         /* UI default (modal open, tab switch) */
+  --dur-slow: 400ms;         /* Complex transitions (accordion, drawer) */
+  --dur-slower: 600ms;       /* Page transitions, celebration */
+
+  /* ─── Shadow scale (ADR-072) ─── */
+  /* Alias semanticos para shadows editoriales. Los --elev-N ya existen;
+     estos tokens son para usar como bg-* / shadow-[var(--shadow-*)]. */
+  --shadow-none: none;
+  --shadow-sm: var(--elev-1);       /* Hover subtle, card flat */
+  --shadow-md: var(--elev-2);       /* Dropdown, popover */
+  --shadow-lg: var(--elev-3);       /* Modal, drawer */
+  --shadow-xl: var(--elev-4);       /* Toast elevado, hero lift */
+
+  /* ─── ADR-067 Ola P — Paleta Amazónica Pucallpa (light) ───
+     Uso: 5% del diseño — accents culturales específicos.
+     Regla 60-30-10-5: 60% neutro · 30% slate · 10% teal · 5% amazónico.
+     NUNCA reemplazar tokens existentes — complementar en contexts específicos. */
+  --amazon-earth: #8B5A3C;      /* Tierra húmeda — accents finanzas */
+  --amazon-sunset: #E8824A;     /* Atardecer río — alerts amigables */
+  --amazon-jungle: #3D5D3F;     /* Verde selva — success/delivery */
+  --amazon-river: #4A6A7A;      /* Agua Ucayali — info/links regional */
+  --shipibo-red: #A84333;       /* Textil shipibo — accent cultural */
+  --cushma-cream: #F0E4CC;      /* Textil sagrado — backgrounds cálidos */
+  --clay-terracotta: #C77746;   /* Cerámica shipiba — highlights */
 }
 
 .dark {
@@ -1422,9 +1525,45 @@ button,
   --data-6: #38bdf8;
   --data-7: #f59e0b;
   --data-8: #a78bfa;
-  --data-success: #10b981;
-  --data-warning: #f59e0b;
-  --data-error: #ef4444;
+
+  /* ── Data state scale — dark overrides (Sprint C1) ───────────────────────
+     Light -500 no sirve en dark — usamos -400/300 para contraste AA sobre
+     fondos oscuros. Los tokens -50/-100 mantienen función "soft bg" con
+     color-mix (transparente sobre canvas dark). */
+
+  /* Success dark (teal-400) */
+  --data-success-50: rgba(45, 212, 191, 0.12);
+  --data-success-100: rgba(45, 212, 191, 0.20);
+  --data-success-500: #2dd4bf;
+  --data-success-600: #14b8a6;
+  --data-success-700: #0d9488;
+
+  /* Warning dark (amber-400) */
+  --data-warning-50: rgba(251, 191, 36, 0.12);
+  --data-warning-100: rgba(251, 191, 36, 0.20);
+  --data-warning-500: #fbbf24;
+  --data-warning-600: #f59e0b;
+  --data-warning-700: #d97706;
+
+  /* Error dark (red-400) */
+  --data-error-50: rgba(248, 113, 113, 0.12);
+  --data-error-100: rgba(248, 113, 113, 0.20);
+  --data-error-500: #f87171;
+  --data-error-600: #ef4444;
+  --data-error-700: #dc2626;
+
+  /* Info dark (sky-400) */
+  --data-info-50: rgba(56, 189, 248, 0.12);
+  --data-info-100: rgba(56, 189, 248, 0.20);
+  --data-info-500: #38bdf8;
+  --data-info-600: #0ea5e9;
+  --data-info-700: #0284c7;
+
+  /* Aliases dark — apuntan al -500 para contraste AA */
+  --data-success: var(--data-success-500);
+  --data-warning: var(--data-warning-500);
+  --data-error: var(--data-error-500);
+  --data-info: var(--data-info-500);
 
   /* v4 dark overrides */
   --brand-ink: #060a0d;
@@ -1434,6 +1573,15 @@ button,
   --elev-2: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
   --elev-3: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
   --elev-4: 0 24px 48px rgba(0, 0, 0, 0.55), 0 8px 16px rgba(0, 0, 0, 0.35);
+
+  /* ADR-067 Ola P — Paleta Amazónica (dark adjusted) */
+  --amazon-earth: #A6724D;
+  --amazon-sunset: #F0975F;
+  --amazon-jungle: #6B8F6D;
+  --amazon-river: #7A96A6;
+  --shipibo-red: #C46050;
+  --cushma-cream: #2A2920;
+  --clay-terracotta: #D89766;
 }
 
 /* ─── Tipografia utility editorial ─── */
@@ -1669,6 +1817,15 @@ button,
 
 /* Prefers-reduced-motion global — desactiva cualquier animacion decorativa */
 @media (prefers-reduced-motion: reduce) {
+  /* ADR-071: desactivar tokens de duracion para consumers que lean var(--dur-*)
+     directamente en inline styles o framer-motion. */
+  :root {
+    --dur-micro: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-slower: 0ms;
+  }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

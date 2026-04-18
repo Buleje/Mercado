@@ -1,9 +1,10 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Barcode, Printer, Plus, X, Search, Package,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Barcode rendering (Code128B — no external lib) ────────────────────────────
@@ -145,9 +146,9 @@ function LabelPreview({ item }: { item: LabelItem }) {
   }, [code, item.name, item.price]);
 
   return (
-    <div className="bg-white border border-gray-200 dark:border-card-border rounded-xl p-2 flex flex-col items-center gap-1">
+    <div className="bg-white border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 flex flex-col items-center gap-1">
       <canvas ref={canvasRef} className="max-w-full" style={{ imageRendering: "pixelated" }} />
-      <p className="text-[10px] text-gray-400 truncate max-w-full">{item.name}</p>
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate max-w-full">{item.name}</p>
     </div>
   );
 }
@@ -230,10 +231,10 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <Barcode className="h-6 w-6 text-primary" />
           Generador de Códigos de Barra
-        </h2>
+        </SectionTitle>
         {batch.length > 0 && (
           <button
             onClick={handlePrint}
@@ -246,20 +247,20 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
       </div>
 
       {/* Input manual */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase">Ingresar código manualmente</p>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+        <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Ingresar código manualmente</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <input
             value={manualCode}
             onChange={e => setManualCode(e.target.value)}
             placeholder="Código (EAN-13 o interno)"
-            className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <input
             value={manualName}
             onChange={e => setManualName(e.target.value)}
             placeholder="Nombre del producto"
-            className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <div className="flex gap-2">
             <input
@@ -269,7 +270,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
               type="number"
               min={0}
               step={0.01}
-              className="flex-1 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <button
               onClick={addManual}
@@ -283,32 +284,32 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
       </div>
 
       {/* Búsqueda de productos */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase">Buscar producto del catálogo</p>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+        <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Buscar producto del catálogo</p>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Nombre del producto…"
-            className="w-full pl-9 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {searching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           )}
         </div>
         {searchResults.length > 0 && (
-          <div className="border border-gray-200 dark:border-card-border rounded-xl overflow-hidden divide-y divide-gray-50 dark:divide-card-border max-h-48 overflow-y-auto">
+          <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden divide-y divide-gray-50 dark:divide-card-border max-h-48 overflow-y-auto">
             {searchResults.map(p => (
               <button
                 key={p.id}
                 onClick={() => addToBatch(p)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors"
               >
-                <Package className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                <span className="text-sm font-semibold text-gray-800 dark:text-foreground flex-1 truncate">{p.name}</span>
+                <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
+                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground flex-1 truncate">{p.name}</span>
                 {p.barcode && (
-                  <span className="text-[10px] text-gray-400 font-mono shrink-0">{p.barcode}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono shrink-0">{p.barcode}</span>
                 )}
                 <Plus className="h-3.5 w-3.5 text-primary shrink-0" />
               </button>
@@ -321,12 +322,12 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
       {batch.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-gray-700 dark:text-foreground">
+            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
               {batch.length} etiqueta{batch.length !== 1 ? "s" : ""} para imprimir
             </p>
             <button
               onClick={() => setBatch([])}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+              className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
             >
               Limpiar todo
             </button>
@@ -342,7 +343,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
                 <LabelPreview item={item} />
                 <button
                   onClick={() => removeFromBatch(item.id)}
-                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
+                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[var(--data-error)] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -353,7 +354,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
       )}
 
       {batch.length === 0 && (
-        <div className="text-center py-10 text-gray-400 dark:text-muted">
+        <div className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted">
           <Barcode className={cn("h-10 w-10 mx-auto mb-2 opacity-20")} />
           <p className="text-sm">Agrega productos o ingresa un código para generar etiquetas</p>
         </div>

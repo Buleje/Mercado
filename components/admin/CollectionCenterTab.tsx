@@ -1,12 +1,13 @@
 "use client";
 
+import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   DollarSign, Download, Search, Eye, X,
   Phone, Clock, Calendar,
   ShieldAlert, Loader2, RefreshCw, AlertTriangle,
   CheckCircle, TrendingDown,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -50,10 +51,10 @@ function getBucket(days: number): AgeBucket {
 }
 
 const BUCKET_META: Record<AgeBucket, { label: string; color: string; bg: string; border: string }> = {
-  "0-30": { label: "0–30 días",  color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-200 dark:border-emerald-800" },
-  "31-60":{ label: "31–60 días", color: "text-amber-700 dark:text-amber-400",    bg: "bg-amber-50 dark:bg-amber-950/20",    border: "border-amber-200 dark:border-amber-800"   },
-  "61-90":{ label: "61–90 días", color: "text-orange-700 dark:text-orange-400",  bg: "bg-orange-50 dark:bg-orange-950/20",  border: "border-orange-200 dark:border-orange-800" },
-  "90+":  { label: ">90 días",   color: "text-red-700 dark:text-red-400",        bg: "bg-red-50 dark:bg-red-950/20",        border: "border-red-200 dark:border-red-800"       },
+  "0-30": { label: "0–30 días",  color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
+  "31-60":{ label: "31–60 días", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]"   },
+  "61-90":{ label: "61–90 días", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/20",  border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]" },
+  "90+":  { label: ">90 días",   color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        border: "border-[var(--data-error)] dark:border-[var(--data-error)]"       },
 };
 
 function ordersToDebts(orders: OrderRecord[]): DebtRecord[] {
@@ -152,18 +153,15 @@ export default function CollectionCenterTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500 dark:text-muted">Cargando cuentas por cobrar...</p>
-      </div>
+      <LoadingState message="Cargando cuentas por cobrar..." />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
@@ -179,10 +177,10 @@ export default function CollectionCenterTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" /> Centro de Cobros
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             {debts.length} cuentas por cobrar activas de {orders.length} pedidos
           </p>
         </div>
@@ -202,7 +200,7 @@ export default function CollectionCenterTab() {
               "centro-cobros"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -211,15 +209,15 @@ export default function CollectionCenterTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: DollarSign },
-          { label: "Vencido (+30d)", value: fmt(stats.overdue), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: Clock },
-          { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
-          { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-red-600" : "text-emerald-600", bg: stats.critical > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: ShieldAlert },
+          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: DollarSign },
+          { label: "Vencido (+30d)", value: fmt(stats.overdue), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: Clock },
+          { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+          { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: stats.critical > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ShieldAlert },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
               <p className={cn("text-xl font-extrabold", color)}>{value}</p>
             </div>
           </div>
@@ -227,10 +225,10 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Gráfico de antigüedad */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">
           Antigüedad de cartera
-        </h3>
+        </CardTitle>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(Object.keys(BUCKET_META) as AgeBucket[]).map((b) => {
             const meta = BUCKET_META[b];
@@ -249,7 +247,7 @@ export default function CollectionCenterTab() {
               >
                 <p className={cn("text-xs font-bold", meta.color)}>{meta.label}</p>
                 <p className={cn("text-lg font-extrabold mt-1", meta.color)}>{fmt(data.total)}</p>
-                <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
                   {data.count} deudor{data.count !== 1 ? "es" : ""} · {pct.toFixed(0)}%
                 </p>
                 <div className="mt-2 h-1.5 bg-white/50 dark:bg-black/20 rounded-full overflow-hidden">
@@ -266,13 +264,13 @@ export default function CollectionCenterTab() {
 
       {/* Alerta críticos */}
       {stats.critical > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
-          <TrendingDown className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
+          <TrendingDown className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-red-700 dark:text-red-400">
+            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
               {stats.critical} cliente(s) con mora mayor a 90 días
             </p>
-            <p className="text-xs text-red-600/80">Considera acciones legales o acuerdo de pago urgente</p>
+            <p className="text-xs text-[var(--data-error)]/80">Considera acciones legales o acuerdo de pago urgente</p>
           </div>
         </div>
       )}
@@ -280,18 +278,18 @@ export default function CollectionCenterTab() {
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar cliente o pedido..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
           />
         </div>
         <select
           value={filterBucket}
           onChange={(e) => setFilterBucket(e.target.value as AgeBucket | "todos")}
-          className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
         >
           <option value="todos">Todos los tramos</option>
           {(Object.keys(BUCKET_META) as AgeBucket[]).map((b) => (
@@ -303,11 +301,11 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface">
+              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Pedido</th>
                 <th className="px-4 py-3 text-right">Monto</th>
@@ -326,25 +324,25 @@ export default function CollectionCenterTab() {
                   <tr
                     key={d.id}
                     className={cn(
-                      "border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
-                      d.bucket === "90+" && "bg-red-50/50 dark:bg-red-950/10",
-                      d.bucket === "61-90" && "bg-orange-50/30 dark:bg-orange-950/5"
+                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
+                      d.bucket === "90+" && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10",
+                      d.bucket === "61-90" && "bg-[var(--data-warning-50)]/30 dark:bg-orange-950/5"
                     )}
                   >
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{d.customer}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-muted">{d.orderRef}</td>
-                    <td className="px-4 py-3 text-right text-gray-600 dark:text-muted">{fmt(d.amount)}</td>
-                    <td className="px-4 py-3 text-right font-extrabold text-red-600">{fmt(saldo)}</td>
+                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{d.customer}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)] dark:text-muted">{d.orderRef}</td>
+                    <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(d.amount)}</td>
+                    <td className="px-4 py-3 text-right font-extrabold text-[var(--data-error)]">{fmt(saldo)}</td>
                     <td
                       className={cn(
                         "px-4 py-3 text-center font-bold",
                         d.daysOverdue <= 30
-                          ? "text-emerald-600"
+                          ? "text-[var(--data-success)]"
                           : d.daysOverdue <= 60
-                          ? "text-amber-600"
+                          ? "text-[var(--data-warning)]"
                           : d.daysOverdue <= 90
-                          ? "text-orange-600"
-                          : "text-red-600"
+                          ? "text-[var(--data-warning)]"
+                          : "text-[var(--data-error)]"
                       )}
                     >
                       {d.daysOverdue}
@@ -370,7 +368,7 @@ export default function CollectionCenterTab() {
                           {d.phone}
                         </a>
                       ) : (
-                        <span className="text-xs text-gray-300 dark:text-muted">—</span>
+                        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -386,7 +384,7 @@ export default function CollectionCenterTab() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400 dark:text-muted text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
                     {debts.length === 0
                       ? "No hay cuentas por cobrar pendientes. ¡Todos los clientes al día!"
                       : "No se encontraron registros con los filtros seleccionados."}
@@ -405,66 +403,66 @@ export default function CollectionCenterTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.customer}</h3>
-                <p className="text-xs text-gray-400">{detail.orderRef}</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.customer}</CardTitle>
+                <p className="text-xs text-[var(--text-tertiary)]">{detail.orderRef}</p>
               </div>
               <button onClick={() => setDetail(null)}>
-                <X className="h-4 w-4 text-gray-400" />
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-xs text-gray-400">Monto original</p>
-                <p className="font-bold text-gray-800 dark:text-foreground">{fmt(detail.amount)}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">Monto original</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(detail.amount)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Pagado</p>
-                <p className="font-bold text-emerald-600">{fmt(detail.paid)}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">Pagado</p>
+                <p className="font-bold text-[var(--data-success)]">{fmt(detail.paid)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Saldo pendiente</p>
-                <p className="font-extrabold text-red-600">{fmt(detail.amount - detail.paid)}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">Saldo pendiente</p>
+                <p className="font-extrabold text-[var(--data-error)]">{fmt(detail.amount - detail.paid)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Días desde pedido</p>
-                <p className={cn("font-extrabold", detail.daysOverdue > 30 ? "text-red-600" : "text-amber-600")}>
+                <p className="text-xs text-[var(--text-tertiary)]">Días desde pedido</p>
+                <p className={cn("font-extrabold", detail.daysOverdue > 30 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
                   {detail.daysOverdue} días
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Tramo de antigüedad</p>
+                <p className="text-xs text-[var(--text-tertiary)]">Tramo de antigüedad</p>
                 <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", BUCKET_META[detail.bucket].bg, BUCKET_META[detail.bucket].color)}>
                   {BUCKET_META[detail.bucket].label}
                 </span>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Teléfono</p>
-                <p className="font-bold text-gray-800 dark:text-foreground">{detail.phone || "—"}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">Teléfono</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.phone || "—"}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
               {detail.phone && (
                 <a
                   href={`https://wa.me/51${detail.phone.replace(/\D/g, "")}?text=Hola%20${encodeURIComponent(detail.customer)}%2C%20le%20recordamos%20su%20deuda%20pendiente%20de%20${fmt(detail.amount - detail.paid)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5" /> WhatsApp
                 </a>
               )}
               <a
                 href={`tel:${detail.phone}`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
               >
                 <Phone className="h-3.5 w-3.5" /> Llamar
               </a>
-              <span className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
+              <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] ml-auto">
                 <Calendar className="h-3 w-3" />
                 {new Date(detail.createdAt).toLocaleDateString("es-PE")}
               </span>

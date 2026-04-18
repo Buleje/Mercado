@@ -66,11 +66,11 @@ const STYLES = `
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="flex flex-col gap-0.5 px-4 py-3 rounded-2xl"
+      className="flex flex-col gap-0.5 px-4 py-3 rounded-xl"
       style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
     >
       <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>{label}</span>
-      <span className="text-lg font-black text-white">{value}</span>
+      <span className="text-lg font-extrabold text-white">{value}</span>
     </div>
   );
 }
@@ -229,7 +229,7 @@ export default function SuperAdminLoginPage() {
               {/* Logo plataforma */}
               <div className="flex items-center gap-3 mb-10">
                 <div
-                  className="relative flex items-center justify-center w-12 h-12 rounded-2xl"
+                  className="relative flex items-center justify-center w-12 h-12 rounded-xl"
                   style={{ background: "rgba(255,255,255,0.15)" }}
                 >
                   <ShieldCheck className="w-6 h-6 text-white" />
@@ -256,7 +256,7 @@ export default function SuperAdminLoginPage() {
 
               {/* Headline */}
               <h2
-                className="font-black text-white mb-3"
+                className="font-extrabold text-white mb-3"
                 style={{
                   fontSize: "clamp(1.6rem, 2.8vw, 2.2rem)",
                   lineHeight: "1.15",
@@ -348,7 +348,7 @@ export default function SuperAdminLoginPage() {
               <>
                 {/* Session expired banner */}
                 {sessionExpired && (
-                  <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-amber-800 text-sm">
+                  <div className="mb-4 flex items-center gap-2 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)] px-4 py-3 text-[var(--data-warning)] text-sm">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     Tu sesión expiró. Ingresa de nuevo para continuar.
                   </div>
@@ -356,7 +356,7 @@ export default function SuperAdminLoginPage() {
                 {/* Título del formulario */}
                 <div className="mb-7">
                   <h1
-                    className="font-black text-gray-900 mb-1"
+                    className="font-extrabold text-gray-900 mb-1"
                     style={{ fontSize: "clamp(1.3rem, 2.5vw, 1.65rem)", letterSpacing: "-0.02em" }}
                   >
                     Bienvenido, Admin
@@ -382,7 +382,7 @@ export default function SuperAdminLoginPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       required
                       placeholder="Usuario"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 text-sm bg-gray-50 text-gray-900 placeholder:text-gray-400 outline-none transition-all duration-200 border-gray-200 focus:border-teal-500"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 text-sm bg-gray-50 text-gray-900 placeholder:text-gray-400 outline-none transition-all duration-[var(--dur-base)] border-[var(--rule-base)] focus:border-teal-500"
                       style={{ minHeight: "48px" }}
                     />
                   </div>
@@ -400,10 +400,10 @@ export default function SuperAdminLoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       placeholder="Contraseña"
-                      className={`w-full pl-10 pr-12 py-3 rounded-xl border-2 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all duration-200 ${
+                      className={`w-full pl-10 pr-12 py-3 rounded-xl border-2 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all duration-[var(--dur-base)] ${
                         error
-                          ? "border-red-400 bg-red-50"
-                          : "border-gray-200 bg-gray-50 focus:border-teal-500"
+                          ? "border-[var(--data-error)] bg-[var(--data-error-50)]"
+                          : "border-[var(--rule-base)] bg-gray-50 focus:border-teal-500"
                       }`}
                       style={{ minHeight: "48px" }}
                     />
@@ -420,7 +420,7 @@ export default function SuperAdminLoginPage() {
                   {/* Error banner con shake */}
                   {error && (
                     <div
-                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-red-50 text-red-600 border border-red-200 ${shaking ? "anim-shake" : ""}`}
+                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-[var(--data-error-50)] text-[var(--data-error)] border border-[var(--data-error)] ${shaking ? "anim-shake" : ""}`}
                     >
                       <AlertTriangle className="w-4 h-4 shrink-0" />
                       {error}
@@ -431,7 +431,7 @@ export default function SuperAdminLoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98]"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-[var(--dur-base)] disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98]"
                     style={{
                       minHeight: "48px",
                       background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
@@ -462,13 +462,13 @@ export default function SuperAdminLoginPage() {
               <>
                 <div className="mb-7">
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                     style={{ background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)" }}
                   >
                     <KeyRound className="w-6 h-6 text-white" />
                   </div>
                   <h1
-                    className="font-black text-gray-900 mb-1"
+                    className="font-extrabold text-gray-900 mb-1"
                     style={{ fontSize: "clamp(1.3rem, 2.5vw, 1.65rem)", letterSpacing: "-0.02em" }}
                   >
                     Verificación 2FA
@@ -490,13 +490,13 @@ export default function SuperAdminLoginPage() {
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                     required
                     placeholder="000000"
-                    className="w-full bg-gray-50 border-2 border-gray-200 focus:border-teal-500 text-gray-900 rounded-xl px-4 py-4 text-center text-3xl font-mono tracking-[0.4em] outline-none transition-all"
+                    className="w-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] focus:border-[var(--accent)] text-[var(--text-primary)] rounded-xl px-4 py-4 text-center text-3xl font-mono tracking-[var(--ls-wider)] outline-none transition-all"
                     style={{ minHeight: "64px" }}
                   />
 
                   {error && (
                     <div
-                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-red-50 text-red-600 border border-red-200 ${shaking ? "anim-shake" : ""}`}
+                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-[var(--data-error-50)] text-[var(--data-error)] border border-[var(--data-error)] ${shaking ? "anim-shake" : ""}`}
                     >
                       <AlertTriangle className="w-4 h-4 shrink-0" />
                       {error}
@@ -506,7 +506,7 @@ export default function SuperAdminLoginPage() {
                   <button
                     type="submit"
                     disabled={loading || code.length !== 6}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98]"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-[var(--dur-base)] disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98]"
                     style={{
                       minHeight: "48px",
                       background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",

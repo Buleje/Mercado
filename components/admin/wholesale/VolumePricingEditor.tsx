@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Save, RefreshCw, Info } from "lucide-react";
+import { Plus, Trash2, Save, RefreshCw, Info } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -123,10 +124,10 @@ export default function VolumePricingEditor({
       {/* Encabezado */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+          <CardTitle className="font-semibold text-[var(--text-primary)] text-sm">
             Precios por volumen
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          </CardTitle>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             {productName}
             {wholesalePrice != null && (
               <span className="ml-2 text-[#00B4A6] font-medium">
@@ -137,7 +138,7 @@ export default function VolumePricingEditor({
         </div>
         <button
           onClick={fetchTiers}
-          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
           title="Recargar tramos"
         >
           <RefreshCw className="h-4 w-4" />
@@ -146,7 +147,7 @@ export default function VolumePricingEditor({
 
       {/* Aviso si no hay precio base */}
       {wholesalePrice == null && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
           <Info className="h-4 w-4 shrink-0" />
           <span>
             Este producto no tiene precio mayorista base. El precio resultante no se puede calcular.
@@ -156,10 +157,10 @@ export default function VolumePricingEditor({
 
       {/* Tabla de tramos */}
       {tiers.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
+              <tr className="bg-[var(--surface-sunken)] text-xs font-medium text-[var(--text-tertiary)]">
                 <th className="px-4 py-2.5 text-left">Cantidad mínima</th>
                 <th className="px-4 py-2.5 text-left">Descuento %</th>
                 <th className="px-4 py-2.5 text-left">Precio resultante</th>
@@ -168,7 +169,7 @@ export default function VolumePricingEditor({
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {tiers.map((tier, i) => (
-                <tr key={i} className="bg-white dark:bg-gray-900">
+                <tr key={i} className="bg-[var(--surface-raised)]">
                   {/* Cantidad mínima */}
                   <td className="px-4 py-2">
                     <input
@@ -177,7 +178,7 @@ export default function VolumePricingEditor({
                       step={1}
                       value={tier.minQty}
                       onChange={(e) => handleChangeTier(i, "minQty", e.target.value)}
-                      className="w-24 px-2 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                      className="w-24 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                     />
                   </td>
                   {/* Descuento % */}
@@ -190,9 +191,9 @@ export default function VolumePricingEditor({
                         step={0.5}
                         value={tier.discount}
                         onChange={(e) => handleChangeTier(i, "discount", e.target.value)}
-                        className="w-20 px-2 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-20 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                       />
-                      <span className="text-gray-400 text-xs">%</span>
+                      <span className="text-[var(--text-tertiary)] text-xs">%</span>
                     </div>
                   </td>
                   {/* Precio resultante (preview) */}
@@ -202,13 +203,13 @@ export default function VolumePricingEditor({
                         "font-medium text-sm",
                         tier.discount > 0
                           ? "text-[#00B4A6]"
-                          : "text-gray-400",
+                          : "text-[var(--text-tertiary)]",
                       )}
                     >
                       {calcResultingPrice(wholesalePrice, tier.discount)}
                     </span>
                     {tier.discount > 0 && wholesalePrice != null && (
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
                         en vez de S/ {wholesalePrice.toFixed(2)}
                       </p>
                     )}
@@ -217,7 +218,7 @@ export default function VolumePricingEditor({
                   <td className="px-4 py-2">
                     <button
                       onClick={() => handleRemoveTier(i)}
-                      className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      className="p-1 text-[var(--data-error)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 rounded transition-colors"
                       title="Eliminar tramo"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -229,7 +230,7 @@ export default function VolumePricingEditor({
           </table>
         </div>
       ) : (
-        <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+        <p className="text-sm text-[var(--text-tertiary)] text-center py-6 border border-dashed border-[var(--rule-base)] rounded-lg">
           Sin tramos de precio por volumen. Agrega uno para empezar.
         </p>
       )}
@@ -240,7 +241,7 @@ export default function VolumePricingEditor({
         if (!best || best.discount <= 0) return null;
         const resultingPrice = (wholesalePrice * (1 - best.discount / 100)).toFixed(2);
         return (
-          <div className="p-3 rounded-lg bg-[#00B4A6]/10 border border-[#00B4A6]/20 text-xs text-[#00B4A6] dark:text-green-400">
+          <div className="p-3 rounded-lg bg-[#00B4A6]/10 border border-[#00B4A6]/20 text-xs text-[#00B4A6] dark:text-[var(--data-success)]">
             Si compran {best.minQty}+, pagan{" "}
             <strong>S/ {resultingPrice}</strong>{" "}
             en vez de S/ {wholesalePrice.toFixed(2)}
@@ -250,7 +251,7 @@ export default function VolumePricingEditor({
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 px-3 py-2 rounded-lg">
           {error}
         </p>
       )}
@@ -271,7 +272,7 @@ export default function VolumePricingEditor({
           className={cn(
             "flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg text-white transition-colors",
             saved
-              ? "bg-green-600"
+              ? "bg-[var(--accent-soft)]"
               : saving
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-[#00B4A6] hover:bg-[#1e4d38]",

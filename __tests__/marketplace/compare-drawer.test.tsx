@@ -59,11 +59,14 @@ const mockUseCompare = vi.mocked(useCompare);
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const makeItem = (id: number): CompareItem => ({
+  id,
   productId: id,
   storeSlug: `tienda-${id}`,
   name: `Producto ${id}`,
+  category: "abarrotes",
+  unit: "und",
   price: 10 * id,
-  image: null,
+  image: "",
   stock: 5,
   rating: 4,
 });
@@ -78,8 +81,7 @@ function setupMock(items: CompareItem[], open = true) {
     clear: mockClear,
     has: vi.fn(),
     isIn: vi.fn(),
-    limitWarning: null,
-    clearLimitWarning: vi.fn(),
+    max: 4,
   });
 }
 

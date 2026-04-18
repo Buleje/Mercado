@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const CHANGELOG = [
@@ -77,18 +78,18 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <h2 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Novedades</h2>
+              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Novedades</SectionTitle>
             </div>
             <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </div>
 
@@ -100,11 +101,11 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
                   <span className="text-sm font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                     v{release.version}
                   </span>
-                  <span className="text-xs text-gray-400 dark:text-muted">
+                  <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
                     {release.fecha}
                   </span>
                   {release.version === CURRENT_VERSION && (
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full uppercase">
                       Actual
                     </span>
                   )}
@@ -113,7 +114,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
                   {release.items.map((item, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
+                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
                     >
                       <span className="text-primary mt-0.5 shrink-0">&#8226;</span>
                       <span>{item}</span>
@@ -125,7 +126,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-gray-200 dark:border-card-border">
+          <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border">
             <button
               onClick={onClose}
               className={cn(

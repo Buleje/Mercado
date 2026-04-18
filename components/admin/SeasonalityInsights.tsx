@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
@@ -8,7 +9,7 @@ import {
   RefreshCw,
   AlertTriangle,
   ChevronRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,13 +102,13 @@ function SalesBar({
   return (
     <div className="group relative flex flex-1 flex-col items-center gap-1">
       {/* Tooltip */}
-      <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center group-hover:block dark:border-gray-600 dark:bg-gray-800">
-        <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
+      <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1.5 text-center group-hover:block dark:border-gray-600 dark:bg-gray-800">
+        <p className="text-xs font-semibold text-[var(--text-primary)]">
           {month.label}
         </p>
         <p className="text-xs text-[#00B4A6]">{fmt(month.total)}</p>
         {compareVal !== undefined && (
-          <p className="text-xs text-gray-400">Ant: {fmt(compareVal)}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Ant: {fmt(compareVal)}</p>
         )}
       </div>
 
@@ -128,7 +129,7 @@ function SalesBar({
           style={{ height: `${Math.max(pct, 2)}%` }}
         />
       </div>
-      <span className="text-center text-[9px] text-gray-500 dark:text-gray-400">
+      <span className="text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         {month.shortLabel}
       </span>
     </div>
@@ -249,16 +250,16 @@ export default function SeasonalityInsights() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-[#00B4A6]" />
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
             Análisis de estacionalidad
-          </h3>
+          </CardTitle>
         </div>
         <div className="flex items-center gap-2">
           {error && (
-            <span className="text-xs text-amber-500">{error}</span>
+            <span className="text-xs text-[var(--data-warning)]">{error}</span>
           )}
-          {loading && <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />}
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-600">
+          {loading && <RefreshCw className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}
+          <div className="flex rounded-lg border border-[var(--rule-base)] dark:border-gray-600">
             {(["chart", "patterns"] as const).map((v) => (
               <button
                 key={v}
@@ -267,7 +268,7 @@ export default function SeasonalityInsights() {
                   "px-3 py-1.5 text-xs font-medium transition first:rounded-l-lg last:rounded-r-lg",
                   view === v
                     ? "bg-[#00B4A6] text-white"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
                 )}
               >
                 {v === "chart" ? "Gráfico" : "Patrones"}
@@ -279,24 +280,24 @@ export default function SeasonalityInsights() {
 
       {/* Chart view */}
       {view === "chart" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-4 flex flex-wrap items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-[#00B4A6]" />
-              <span className="text-gray-500">{currentYear}</span>
+              <span className="text-[var(--text-secondary)]">{currentYear}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-gray-200 dark:bg-gray-700" />
-              <span className="text-gray-500">{currentYear - 1}</span>
+              <span className="text-[var(--text-secondary)]">{currentYear - 1}</span>
             </div>
             <div className="ml-auto flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-[#f97316]" />
-              <span className="text-gray-500">Menor que año anterior</span>
+              <span className="text-[var(--text-secondary)]">Menor que año anterior</span>
             </div>
           </div>
 
           {monthlyData.length === 0 && !loading ? (
-            <p className="py-8 text-center text-sm text-gray-400">Sin datos de ventas disponibles.</p>
+            <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Sin datos de ventas disponibles.</p>
           ) : (
             <div className="flex items-end gap-1">
               {thisYear.length > 0
@@ -316,26 +317,26 @@ export default function SeasonalityInsights() {
 
       {/* Patterns view */}
       {view === "patterns" && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Comparación {currentYear} vs {currentYear - 1}
             </p>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
             {patterns.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-400">
+              <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
                 Se necesitan datos de 2 años para comparar.
               </p>
             ) : (
               patterns.map((p) => (
                 <div key={p.month} className="flex items-center gap-3 px-5 py-3">
-                  <div className="w-8 text-center text-xs font-semibold text-gray-400">
+                  <div className="w-8 text-center text-xs font-semibold text-[var(--text-tertiary)]">
                     {p.shortLabel}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                      <span className="text-sm font-medium text-[var(--text-primary)]">
                         {MONTH_NAMES[p.month]}
                       </span>
                       {Math.abs(p.pctChange) >= 10 && (
@@ -343,8 +344,8 @@ export default function SeasonalityInsights() {
                           className={cn(
                             "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-bold",
                             p.pctChange >= 0
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                              : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
                           )}
                         >
                           {p.pctChange >= 0 ? (
@@ -357,18 +358,18 @@ export default function SeasonalityInsights() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       {p.recommendation}
                     </p>
                   </div>
-                  <div className="text-right text-xs text-gray-400">
+                  <div className="text-right text-xs text-[var(--text-tertiary)]">
                     {p.avgThisYear > 0 && (
-                      <p className="font-medium text-gray-700 dark:text-gray-300">
+                      <p className="font-medium text-[var(--text-secondary)]">
                         {fmt(p.avgThisYear)}
                       </p>
                     )}
                     {p.avgLastYear > 0 && (
-                      <p className="text-gray-400">Ant: {fmt(p.avgLastYear)}</p>
+                      <p className="text-[var(--text-tertiary)]">Ant: {fmt(p.avgLastYear)}</p>
                     )}
                   </div>
                 </div>
@@ -383,7 +384,7 @@ export default function SeasonalityInsights() {
         <div className="rounded-xl border border-[#f97316]/30 bg-[#f97316]/5 p-5 dark:bg-[#f97316]/10">
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-[#f97316]" />
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               Alertas de estacionalidad
             </p>
           </div>
@@ -391,13 +392,13 @@ export default function SeasonalityInsights() {
             {notable.map((p) => (
               <div key={p.month} className="flex items-center gap-2 text-sm">
                 <ChevronRight className="h-3.5 w-3.5 text-[#f97316]" />
-                <span className="text-gray-700 dark:text-gray-300">{p.recommendation}</span>
+                <span className="text-[var(--text-secondary)]">{p.recommendation}</span>
                 <span
                   className={cn(
                     "ml-auto text-xs font-bold",
                     p.pctChange >= 0
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
+                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                      : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                   )}
                 >
                   {p.pctChange > 0 ? "+" : ""}{p.pctChange.toFixed(0)}%

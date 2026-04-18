@@ -40,7 +40,7 @@ export default memo(function PuntoCompraProductCard({
       disabled={isOutOfStock}
       aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
       className={cn(
-        "relative border border-gray-200 dark:border-card-border rounded-xl p-3 transition-all bg-white dark:bg-card",
+        "relative border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 transition-all bg-white dark:bg-card",
         "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
         isOutOfStock
           ? "opacity-60 cursor-not-allowed"
@@ -51,14 +51,14 @@ export default memo(function PuntoCompraProductCard({
       {(product.stock ?? 0) === 0 ? (
         <span
           aria-label="Producto agotado"
-          className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white z-10"
+          className="absolute top-2 left-2 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error)] text-white z-10"
         >
           AGOTADO
         </span>
       ) : needsReorder(product) ? (
         <span
           aria-label="Necesita reposición"
-          className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 z-10"
+          className="absolute top-2 left-2 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] z-10"
         >
           REPONER
         </span>
@@ -101,25 +101,25 @@ export default memo(function PuntoCompraProductCard({
       </div>
 
       {/* Nombre */}
-      <p className="text-xs font-semibold text-gray-800 dark:text-white line-clamp-2 leading-tight mb-1.5 min-h-[2.5em]">
+      <p className="text-xs font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-1.5 min-h-[2.5em]">
         {displayName}
       </p>
 
       {/* Precio y stock */}
       <div className="flex items-baseline justify-between gap-1 mb-0.5">
         <span
-          className="text-sm font-bold text-gray-900 dark:text-white"
+          className="text-sm font-bold text-[var(--text-primary)]"
           title={`Costo: S/${displayPrice.toFixed(2)} | Venta: S/${product.price.toFixed(2)} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
         >
           S/{displayPrice.toFixed(2)}
         </span>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-[var(--text-tertiary)]">
           Stock: {product.stock ?? "—"}
         </span>
       </div>
 
       {/* Cantidad sugerida */}
-      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+      <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
         <span title={`Stock: ${product.stock ?? 0} | Meta: ${targetStock} → Pedir ${suggestedQty}`}>
           Sugerido: {suggestedQty} {product.unit}
         </span>

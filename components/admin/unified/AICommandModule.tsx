@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Brain } from "lucide-react";
+import { Brain } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";

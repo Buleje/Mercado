@@ -4,15 +4,15 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
 import {
-  GeolocationPrompt,
-  CategoriesGridClient,
   DiscountBanner,
-  AnimatedSearchBar,
   ReviewsCarousel,
 } from "@/components/landing/LandingClientSections";
-import HeroParallax from "@/components/landing/HeroParallax";
+import { SocioPromoBanner } from "@/components/socio-buleje/SocioPromoBanner";
+import LandingHero from "@/components/landing/LandingHero";
+import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
 import FeaturedStoresCarousel from "@/components/landing/FeaturedStoresCarousel";
 import ScrollyHowItWorks from "@/components/landing/ScrollyHowItWorks";
+import { RecommendationsEngine } from "@/components/landing/recommendations/RecommendationsEngine";
 import { Button, Card, SectionHeader, Kicker } from "@/components/ui-system";
 import { Store, Bike } from "lucide-react";
 
@@ -114,6 +114,81 @@ async function getFeaturedStores() {
   }
 }
 
+// ── Cached products for recommendations engine ──
+async function getRecommendationProducts() {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("recommendation-products");
+  const { prisma } = await import("@/lib/prisma");
+  try {
+    const rows = await prisma.storeProduct.findMany({
+      where: { isActive: true, store: { isPublished: true } },
+      orderBy: { product: { badge: "asc" } },
+      take: 24,
+      select: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            image: true,
+            description: true,
+            unit: true,
+            badge: true,
+            stock: true,
+          },
+        },
+        retailPrice: true,
+      },
+    });
+    return rows.map((r) => ({
+      id: r.product.id,
+      name: r.product.name,
+      category: r.product.category,
+      price: Number(r.retailPrice),
+      image: r.product.image ?? undefined,
+      description: r.product.description ?? undefined,
+      unit: r.product.unit,
+      badge: r.product.badge ?? undefined,
+      stock: r.product.stock ?? undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// ── Cached stores for recommendations engine (new arrivals) ──
+async function getRecommendationStores() {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("recommendation-stores");
+  const { prisma } = await import("@/lib/prisma");
+  try {
+    const stores = await prisma.store.findMany({
+      where: { isPublished: true },
+      orderBy: [{ reviewCount: "asc" }, { rating: "asc" }],
+      take: 8,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        logo: true,
+        category: true,
+        zone: true,
+        rating: true,
+        reviewCount: true,
+        description: true,
+      },
+    });
+    return stores.map((s) => ({
+      ...s,
+      rating: Number(s.rating),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ── Cached reviews from DB ──
 async function getMarketplaceReviews() {
   "use cache";
@@ -167,11 +242,11 @@ function BulejeJsonLd() {
   );
 }
 
-// ── Hero — Parallax multicapa con stats animados ──
+// ── Hero — 2-column layout con ilustraciones locales + stats trust strip ──
 async function HeroSection() {
   const stats = await getMarketplaceStats();
   return (
-    <HeroParallax
+    <LandingHero
       storeCount={stats.storeCount}
       productCount={stats.productCount}
       avgRating={stats.avgRating}
@@ -179,27 +254,8 @@ async function HeroSection() {
   );
 }
 
-// ── Categories grid — minimal editorial con lucide icons ──
-const CATEGORIES = [
-  { label: "Bodegas", slug: "bodegas", desc: "Abarrotes, bebidas y más" },
-  { label: "Restaurantes", slug: "restaurantes", desc: "Comida lista para ti" },
-  { label: "Licorería", slug: "licoreria", desc: "Cervezas, vinos y licores" },
-  { label: "Farmacia", slug: "farmacia", desc: "Medicinas y cuidado personal" },
-  { label: "Frutas y Verduras", slug: "frutas-verduras", desc: "Frescos del mercado" },
-  { label: "Panadería", slug: "panaderia", desc: "Pan caliente y pasteles" },
-  { label: "Limpieza", slug: "limpieza", desc: "Productos para tu hogar" },
-  { label: "Mascotas", slug: "mascotas", desc: "Alimento y accesorios" },
-  { label: "Carnicería", slug: "carniceria", desc: "Carnes frescas del día" },
-  { label: "Congelados", slug: "congelados", desc: "Helados y comida congelada" },
-  { label: "Snacks", slug: "snacks", desc: "Galletas, dulces y más" },
-  { label: "Cuidado Personal", slug: "higiene", desc: "Jabones, shampoo, crema" },
-];
-
-function CategoriesGrid() {
-  return <CategoriesGridClient categories={CATEGORIES} />;
-}
-
-// HowItWorks fue reemplazado por <ScrollyHowItWorks /> del design system.
+// Categories grid — reemplazado por <PopularCategoriesTiles /> con ilustraciones DS.
+// HowItWorks — reemplazado por <ScrollyHowItWorks /> del design system.
 
 // ── Featured Stores section (real DB data) ──
 async function FeaturedStoresSection() {
@@ -383,6 +439,19 @@ function FinalCTA() {
   );
 }
 
+// ── Recommendations section (server fetches + client engine) ──
+async function RecommendationsSection() {
+  const [products, stores] = await Promise.all([
+    getRecommendationProducts(),
+    getRecommendationStores(),
+  ]);
+  // Si no hay datos (DB vacia en dev) no renderizamos nada
+  if (products.length === 0 && stores.length === 0) return null;
+  return (
+    <RecommendationsEngine initialProducts={products} initialStores={stores} />
+  );
+}
+
 // ── Main page ──
 export default async function Home() {
   return (
@@ -393,10 +462,17 @@ export default async function Home() {
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
       </Suspense>
-      <CategoriesGrid />
+      <PopularCategoriesTiles />
+
+      {/* ── Recomendaciones: InspiredByHistory + TopSellersToday ── */}
+      <Suspense fallback={<RecommendationsSkeleton />}>
+        <RecommendationsSection />
+      </Suspense>
+
       <Suspense fallback={<SectionSkeleton />}>
         <FeaturedStoresSection />
       </Suspense>
+      <SocioPromoBanner />
       <ScrollyHowItWorks />
       <Suspense fallback={<SectionSkeleton />}>
         <ReviewsSection />
@@ -416,6 +492,22 @@ function HeroSkeleton() {
         <div className="h-12 w-80 bg-gray-200 dark:bg-gray-800 rounded-xl mx-auto mb-4 animate-pulse" />
         <div className="h-6 w-96 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto mb-8 animate-pulse" />
         <div className="h-14 max-w-xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function RecommendationsSkeleton() {
+  return (
+    <div className="py-12 sm:py-16 border-t border-gray-100 dark:border-gray-800">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="h-5 w-24 bg-gray-100 dark:bg-gray-800 rounded mb-2 animate-pulse" />
+        <div className="h-8 w-72 bg-gray-200 dark:bg-gray-800 rounded-lg mb-8 animate-pulse" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+          ))}
+        </div>
       </div>
     </div>
   );

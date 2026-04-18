@@ -1,6 +1,8 @@
 ﻿"use client";
+
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
-import { AlertTriangle, TrendingUp, TrendingDown, Download, X } from "lucide-react";
+import { AlertTriangle, TrendingUp, TrendingDown, Download, X } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── types ──────────────────────────────────────────────────── */
@@ -28,10 +30,10 @@ const PRODUCTS: ReorderProduct[] = [];
 
 const CATEGORIES = ["Abarrotes", "Bebidas", "Lácteos", "Limpieza", "Higiene Personal", "Panadería", "Carnes y Embutidos", "Congelados", "Snacks", "Mascotas", "Otros"];
 const STATUS_CONFIG = {
-  urgente:    { label: "Urgente",     color: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",           dot: "bg-red-500" },
-  pronto:     { label: "Pronto",      color: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",   dot: "bg-amber-500" },
-  ok:         { label: "OK",          color: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-500" },
-  sobrestock: { label: "Sobrestock",  color: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",       dot: "bg-emerald-500" },
+  urgente:    { label: "Urgente",     color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",           dot: "bg-[var(--data-error)]" },
+  pronto:     { label: "Pronto",      color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",   dot: "bg-[var(--data-warning)]" },
+  ok:         { label: "OK",          color: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
+  sobrestock: { label: "Sobrestock",  color: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",       dot: "bg-[var(--accent-soft)]" },
 };
 
 /* ── component ──────────────────────────────────────────────── */
@@ -64,8 +66,8 @@ export default function DynamicReorderTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">Punto de Reorden Dinámico</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">Cálculo automático de cuándo y cuánto reordenar basado en demanda real</p>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Punto de Reorden Dinámico</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Cálculo automático de cuándo y cuánto reordenar basado en demanda real</p>
         </div>
         <button
           onClick={() => exportToCSV(filtered.map(p => ({ Producto: p.name, SKU: p.sku, StockActual: p.currentStock, VentaDiaria: p.avgDailySales, LeadTime: p.leadTimeDays, PuntoReorden: p.dynamicROP, EOQ: p.eoq, DíasAgotamiento: p.daysUntilStockout, Estado: p.status })), "punto-reorden")}
@@ -77,54 +79,54 @@ export default function DynamicReorderTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800 p-4 ">
-          <p className="text-xs text-red-600 dark:text-red-400 font-semibold">Reorden urgente</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-red-700 dark:text-red-400 mt-1">{urgentCount}</p>
-          <p className="text-xs text-red-500">productos bajo ROP</p>
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 ">
+          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">Reorden urgente</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">{urgentCount}</p>
+          <p className="text-xs text-[var(--data-error)]">productos bajo ROP</p>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 ">
-          <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Reorden pronto</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-amber-700 dark:text-amber-400 mt-1">{prontCount}</p>
-          <p className="text-xs text-amber-500">próximos 7 días</p>
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] p-4 ">
+          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">Reorden pronto</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">{prontCount}</p>
+          <p className="text-xs text-[var(--data-warning)]">próximos 7 días</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 ">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Stock saludable</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{PRODUCTS.filter(p => p.status === "ok").length}</p>
-          <p className="text-xs text-emerald-500">nivel adecuado</p>
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4 ">
+          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Stock saludable</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{PRODUCTS.filter(p => p.status === "ok").length}</p>
+          <p className="text-xs text-[var(--data-success)]">nivel adecuado</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 ">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Sobrestock</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{overstockCount}</p>
-          <p className="text-xs text-emerald-500">capital inmovilizado</p>
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 p-4 ">
+          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">Sobrestock</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">{overstockCount}</p>
+          <p className="text-xs text-[var(--data-success)]">capital inmovilizado</p>
         </div>
       </div>
 
       {/* Urgent alert */}
       {urgentCount > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-red-700 dark:text-red-400 text-sm">¡{urgentCount} producto(s) necesitan reorden inmediata!</h4>
-            <p className="text-xs text-red-600 dark:text-red-400 mt-1">{PRODUCTS.filter(p => p.status === "urgente").map(p => p.name).join(", ")}</p>
+            <h4 className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">¡{urgentCount} producto(s) necesitan reorden inmediata!</h4>
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">{PRODUCTS.filter(p => p.status === "urgente").map(p => p.name).join(", ")}</p>
           </div>
         </div>
       )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <input type="text" placeholder="Buscar producto o SKU..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-56" />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <input type="text" placeholder="Buscar producto o SKU..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary w-56" />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todos los estados</option>
           <option value="urgente">Urgente</option>
           <option value="pronto">Pronto</option>
           <option value="ok">OK</option>
           <option value="sobrestock">Sobrestock</option>
         </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="stockout">Días agotamiento</option>
           <option value="name">Nombre</option>
           <option value="stock">Stock actual</option>
@@ -132,41 +134,41 @@ export default function DynamicReorderTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border  overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Producto</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Stock</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Venta/día</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">ROP</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">EOQ</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Días restantes</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Tendencia</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Estado</th>
+              <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Producto</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Stock</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Venta/día</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">ROP</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">EOQ</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Días restantes</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Tendencia</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Estado</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(p => {
                 const cfg = STATUS_CONFIG[p.status];
                 return (
-                  <tr key={p.id} onClick={() => setDetail(p)} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
+                  <tr key={p.id} onClick={() => setDetail(p)} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-gray-900 dark:text-foreground">{p.name}</p>
-                      <p className="text-xs text-gray-400 dark:text-muted">{p.sku} · {p.category}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{p.name}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.sku} · {p.category}</p>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-gray-900 dark:text-foreground">{p.currentStock}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-gray-700 dark:text-foreground">{p.avgDailySales.toFixed(1)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-[var(--text-primary)] dark:text-foreground">{p.currentStock}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{p.avgDailySales.toFixed(1)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-primary">{p.dynamicROP}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-gray-700 dark:text-foreground">{p.eoq}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{p.eoq}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      <span className={cn("font-extrabold", p.daysUntilStockout <= 3 ? "text-red-600" : p.daysUntilStockout <= 7 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{p.daysUntilStockout}d</span>
+                      <span className={cn("font-extrabold", p.daysUntilStockout <= 3 ? "text-[var(--data-error)]" : p.daysUntilStockout <= 7 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{p.daysUntilStockout}d</span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {p.trend === "up" && <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto" />}
-                      {p.trend === "down" && <TrendingDown className="h-4 w-4 text-red-500 mx-auto" />}
-                      {p.trend === "stable" && <span className="text-gray-400">→</span>}
+                      {p.trend === "up" && <TrendingUp className="h-4 w-4 text-[var(--data-success)] mx-auto" />}
+                      {p.trend === "down" && <TrendingDown className="h-4 w-4 text-[var(--data-error)] mx-auto" />}
+                      {p.trend === "stable" && <span className="text-[var(--text-tertiary)]">→</span>}
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold", cfg.color)}>
@@ -186,41 +188,41 @@ export default function DynamicReorderTab() {
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
-              <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
+              <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
-                <div><p className="text-xs text-gray-500 dark:text-muted">SKU</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.sku}</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Categoría</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.category}</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Stock actual</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.currentStock} u</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Venta diaria promedio</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.avgDailySales.toFixed(1)} u/día</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Lead time proveedor</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.leadTimeDays} días</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Stock seguridad</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.safetyStock} u</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">SKU</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.sku}</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Categoría</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.category}</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock actual</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.currentStock} u</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Venta diaria promedio</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.avgDailySales.toFixed(1)} u/día</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Lead time proveedor</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.leadTimeDays} días</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock seguridad</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.safetyStock} u</p></div>
               </div>
 
               <div className="bg-primary/5 rounded-xl p-4 space-y-2">
                 <h4 className="font-bold text-primary text-sm">Cálculo dinámico</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-muted">Punto de reorden (ROP)</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Punto de reorden (ROP)</p>
                     <p className="font-extrabold text-primary text-lg">{detail.dynamicROP} u</p>
-                    <p className="text-xs text-gray-400 dark:text-muted">= (Venta/día × Lead time) + Stock seguridad</p>
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">= (Venta/día × Lead time) + Stock seguridad</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-muted">Cantidad económica (EOQ)</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Cantidad económica (EOQ)</p>
                     <p className="font-extrabold text-primary text-lg">{detail.eoq} u</p>
-                    <p className="text-xs text-gray-400 dark:text-muted">Lote óptimo de compra</p>
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Lote óptimo de compra</p>
                   </div>
                 </div>
               </div>
 
-              <div className={cn("rounded-xl p-4 text-center", detail.status === "urgente" ? "bg-red-50 dark:bg-red-950/20" : detail.status === "pronto" ? "bg-amber-50 dark:bg-amber-950/20" : detail.status === "sobrestock" ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-emerald-50 dark:bg-emerald-950/20")}>
+              <div className={cn("rounded-xl p-4 text-center", detail.status === "urgente" ? "bg-[var(--data-error-50)] dark:bg-red-950/20" : detail.status === "pronto" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : detail.status === "sobrestock" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
                 <p className="text-xl sm:text-3xl font-extrabold">{detail.daysUntilStockout}</p>
-                <p className="text-sm text-gray-500 dark:text-muted">días hasta agotamiento</p>
-                {detail.status === "urgente" && <p className="text-xs text-red-600 font-bold mt-2">¡Realizar pedido de {detail.eoq} unidades HOY!</p>}
-                {detail.status === "sobrestock" && <p className="text-xs text-emerald-600 font-bold mt-2">Considere reducir siguiente pedido o liquidar excedente</p>}
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">días hasta agotamiento</p>
+                {detail.status === "urgente" && <p className="text-xs text-[var(--data-error)] font-bold mt-2">¡Realizar pedido de {detail.eoq} unidades HOY!</p>}
+                {detail.status === "sobrestock" && <p className="text-xs text-[var(--data-success)] font-bold mt-2">Considere reducir siguiente pedido o liquidar excedente</p>}
               </div>
             </div>
           </div>
@@ -228,9 +230,9 @@ export default function DynamicReorderTab() {
       )}
 
       {/* Methodology */}
-      <div className="bg-gray-50 dark:bg-surface rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-        <h3 className="font-extrabold text-gray-700 dark:text-foreground text-sm mb-2">Metodología del cálculo</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-gray-600 dark:text-muted">
+      <div className="bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm mb-2">Metodología del cálculo</CardTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-[var(--text-secondary)] dark:text-muted">
           <div><strong>ROP (Punto de Reorden):</strong> Venta diaria × Lead Time + Stock Seguridad. Ajustado dinámicamente según tendencia de ventas.</div>
           <div><strong>EOQ (Cantidad Económica):</strong> Lote óptimo de compra que minimiza costos totales de inventario. Basado en demanda anual y costos de ordenar.</div>
           <div><strong>Stock Seguridad:</strong> Buffer calculado con desviación estándar de la demanda × factor de servicio (95%). Protege contra variabilidad.</div>

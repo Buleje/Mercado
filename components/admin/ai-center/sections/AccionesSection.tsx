@@ -13,7 +13,7 @@ import {
   TrendingDown,
   Users,
   Layers,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
 
@@ -223,20 +223,20 @@ const PRIORITY_CONFIG: Record<
 > = {
   urgente: {
     label: "Urgente",
-    dotClass: "bg-red-500",
+    dotClass: "bg-[var(--data-error)]",
     labelClass: "text-red-600 dark:text-red-400",
     icon: AlertCircle,
   },
   importante: {
     label: "Importante",
-    dotClass: "bg-amber-500",
+    dotClass: "bg-[var(--data-warning)]",
     labelClass: "text-amber-600 dark:text-amber-400",
     icon: Clock,
   },
   recomendado: {
     label: "Recomendado",
     dotClass: "bg-gray-400",
-    labelClass: "text-gray-500 dark:text-gray-400",
+    labelClass: "text-[var(--text-tertiary)]",
     icon: Lightbulb,
   },
 };
@@ -253,15 +253,15 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
   const total = CHECKLIST_ITEMS.length;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+    <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+      <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3 dark:border-[var(--rule-base)]">
         <div className="flex items-center gap-2">
-          <CheckSquare className="h-4 w-4 text-emerald-500" />
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <CheckSquare className="h-4 w-4 text-[var(--data-success)]" />
+          <span className="text-sm font-medium text-[var(--text-primary)]">
             Checklist del dia
           </span>
         </div>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-[var(--text-tertiary)]">
           {completedCount}/{total} completados
         </span>
       </div>
@@ -275,20 +275,20 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
               onClick={() => onToggle(item.id)}
               className={cn(
                 "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                "hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                "hover:bg-[var(--surface-sunken)]/50",
               )}
             >
               {done ? (
-                <CheckSquare className="h-4 w-4 shrink-0 text-emerald-500" />
+                <CheckSquare className="h-4 w-4 shrink-0 text-[var(--data-success)]" />
               ) : (
-                <Square className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600" />
+                <Square className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
               )}
               <span
                 className={cn(
                   "text-sm",
                   done
-                    ? "text-gray-400 line-through dark:text-gray-500"
-                    : "text-gray-700 dark:text-gray-300",
+                    ? "text-[var(--text-tertiary)] line-through dark:text-[var(--text-secondary)]"
+                    : "text-[var(--text-secondary)]",
                 )}
               >
                 {item.label}
@@ -299,9 +299,9 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
       </div>
 
       {completedCount === total && (
-        <div className="flex items-center gap-2 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
-          <Check className="h-4 w-4 text-emerald-500" />
-          <span className="text-xs text-emerald-600 dark:text-emerald-400">
+        <div className="flex items-center gap-2 border-t border-[var(--rule-soft)] px-4 py-2.5 dark:border-[var(--rule-base)]">
+          <Check className="h-4 w-4 text-[var(--data-success)]" />
+          <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
             Checklist completo
           </span>
         </div>
@@ -325,8 +325,8 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3",
-        "dark:border-gray-700 dark:bg-gray-900",
+        "flex items-start gap-3 rounded-lg border border-[var(--rule-base)] bg-white px-4 py-3",
+        "dark:border-[var(--rule-base)] dark:bg-gray-900",
       )}
     >
       {/* Dot */}
@@ -336,10 +336,10 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
 
       {/* Icon + Content */}
       <div className="flex min-w-0 flex-1 items-start gap-2">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-gray-800 dark:text-gray-200">{task.description}</p>
-          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{task.impact}</p>
+          <p className="text-sm text-[var(--text-primary)]">{task.description}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{task.impact}</p>
         </div>
       </div>
 
@@ -347,9 +347,9 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
       <button
         onClick={() => onMarkDone(task.id)}
         className={cn(
-          "shrink-0 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-500",
-          "transition-colors hover:border-emerald-300 hover:text-emerald-600",
-          "dark:border-gray-700 dark:text-gray-400 dark:hover:border-emerald-600 dark:hover:text-emerald-400",
+          "shrink-0 rounded border border-[var(--rule-base)] px-2.5 py-1 text-xs text-[var(--text-secondary)]",
+          "transition-colors hover:border-[var(--data-success)]/30 hover:text-[var(--data-success)]",
+          "dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:border-[var(--data-success)]/30 dark:hover:text-[var(--data-success)]",
         )}
       >
         Hecho
@@ -374,7 +374,7 @@ function PriorityGroup({ priority, tasks, doneTasks, onMarkDone }: PriorityGroup
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
         <span className={cn("text-xs font-medium", config.labelClass)}>{config.label}</span>
-        <span className="text-xs text-gray-400 dark:text-gray-500">({visible.length})</span>
+        <span className="text-xs text-[var(--text-tertiary)]">({visible.length})</span>
       </div>
       <div className="space-y-2">
         {visible.map((task) => (
@@ -451,12 +451,12 @@ export default function AccionesSection({ data }: AccionesSectionProps) {
         {(noTasks || allDone) ? (
           <div
             className={cn(
-              "rounded-lg border border-gray-200 bg-white px-4 py-6 text-center",
-              "dark:border-gray-700 dark:bg-gray-900",
+              "rounded-lg border border-[var(--rule-base)] bg-white px-4 py-6 text-center",
+              "dark:border-[var(--rule-base)] dark:bg-gray-900",
             )}
           >
-            <Check className="mx-auto mb-2 h-5 w-5 text-emerald-500" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <Check className="mx-auto mb-2 h-5 w-5 text-[var(--data-success)]" />
+            <p className="text-sm text-[var(--text-tertiary)]">
               Todo en orden — no hay acciones urgentes hoy
             </p>
           </div>

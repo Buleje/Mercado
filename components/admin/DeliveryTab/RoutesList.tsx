@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Truck, MapPin, Clock, User, Package } from "lucide-react";
+import { Truck, MapPin, Clock, User, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   ROUTE_STATUS_COLORS,
@@ -117,7 +117,7 @@ export function RoutesList({
                   </span>
                 )}
                 {route.vehicleType !== "moto" && (
-                  <span className="text-[10px] uppercase">{route.vehicleType}</span>
+                  <span className="text-[length:var(--ts-2xs)] uppercase">{route.vehicleType}</span>
                 )}
               </div>
 

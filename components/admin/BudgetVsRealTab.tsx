@@ -1,9 +1,10 @@
 "use client";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
   Download, Loader2, RefreshCw, Target, Save,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Types ──────────────────────────────────────────────────── */
@@ -140,15 +141,15 @@ function ProgressBar({
 
   // Para ventas: verde >80%, amarillo 50-80%, rojo <50%
   // Para gastos: verde <80%, amarillo 80-100%, rojo >100%
-  let color = "bg-emerald-500";
-  let textColor = "text-emerald-600";
-  let bgLight = "bg-emerald-100";
+  let color = "bg-[var(--accent-soft)]";
+  let textColor = "text-[var(--data-success)]";
+  let bgLight = "bg-[var(--accent-soft)]";
   if (isSales) {
-    if (pct >= 80) { color = "bg-emerald-500"; textColor = "text-emerald-600"; bgLight = "bg-emerald-100"; }
+    if (pct >= 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success)]"; bgLight = "bg-[var(--accent-soft)]"; }
     else if (pct >= 50) { color = "bg-amber-400"; textColor = "text-amber-600"; bgLight = "bg-amber-100"; }
     else { color = "bg-red-500"; textColor = "text-red-600"; bgLight = "bg-red-100"; }
   } else {
-    if (pct < 80) { color = "bg-emerald-500"; textColor = "text-emerald-600"; bgLight = "bg-emerald-100"; }
+    if (pct < 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success)]"; bgLight = "bg-[var(--accent-soft)]"; }
     else if (pct <= 100) { color = "bg-amber-400"; textColor = "text-amber-600"; bgLight = "bg-amber-100"; }
     else { color = "bg-red-500"; textColor = "text-red-600"; bgLight = "bg-red-100"; }
   }
@@ -156,14 +157,14 @@ function ProgressBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-700">{label}</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)]">{label}</span>
         <span className={cn("text-sm font-bold", textColor)}>
           {pct.toFixed(0)}% {isSales ? "logrado" : "utilizado"}
         </span>
       </div>
       <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", color)}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)}
           style={{ width: `${display}%` }}
         />
       </div>
@@ -172,7 +173,7 @@ function ProgressBar({
           Llevas {fmt(current)} de {fmt(goal)}
         </span>
         {goal > 0 && (
-          <span className="text-gray-400">
+          <span className="text-[var(--text-tertiary)]">
             {isSales ? `Falta ${fmt(Math.max(goal - current, 0))}` : `Queda ${fmt(Math.max(goal - current, 0))}`}
           </span>
         )}
@@ -197,43 +198,43 @@ function CategoryChart({
         return (
           <div key={c.label} className="space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-gray-700 truncate max-w-[140px] sm:max-w-none">
+              <span className="font-semibold text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-none">
                 {c.label}
               </span>
-              <span className={cn("font-bold", isOver ? "text-red-600" : isUnder ? "text-emerald-600" : "text-gray-500")}>
+              <span className={cn("font-bold", isOver ? "text-[var(--data-error)]" : isUnder ? "text-[var(--data-success)]" : "text-[var(--text-secondary)]")}>
                 {fmtPct(variance)}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 w-14 shrink-0">Presup.</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Presup.</span>
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-emerald-300"
+                  className="h-full rounded-full bg-[var(--accent-soft)]"
                   style={{ width: `${(c.budgeted / max) * 100}%` }}
                 />
               </div>
-              <span className="text-[10px] text-gray-500 w-20 text-right shrink-0">{fmt(c.budgeted)}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] w-20 text-right shrink-0">{fmt(c.budgeted)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 w-14 shrink-0">Real</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Real</span>
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={cn("h-full rounded-full", isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-primary")}
+                  className={cn("h-full rounded-full", isOver ? "bg-[var(--data-error)]" : isUnder ? "bg-[var(--accent-soft)]" : "bg-primary")}
                   style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-gray-700 w-20 text-right shrink-0">
+              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] w-20 text-right shrink-0">
                 {fmt(c.actual)}
               </span>
             </div>
           </div>
         );
       })}
-      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-300" /> Presupuestado</span>
+      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[var(--text-tertiary)]">
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--accent-soft)]" /> Presupuestado</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary" /> Real (OK)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500" /> Real (exceso)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-500" /> Real (ahorro)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--data-error)]" /> Real (exceso)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--accent-soft)]" /> Real (ahorro)</span>
       </div>
     </div>
   );
@@ -392,18 +393,15 @@ export default function BudgetVsRealTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500">Cargando datos...</p>
-      </div>
+      <LoadingState message="Cargando datos..." />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-gray-500 text-sm">Error cargando datos</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-[var(--text-secondary)] text-sm">Error cargando datos</p>
         <button
           onClick={load}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
@@ -424,10 +422,10 @@ export default function BudgetVsRealTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
             Meta vs Real
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             {monthName} {yearNum} · Día {day} de {totalDays}
           </p>
         </div>
@@ -452,16 +450,16 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* ── 1. Configurador de metas mensuales ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <Target className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-gray-700">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
             Mis metas de {monthName} {yearNum}
-          </h3>
+          </CardTitle>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">
+            <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
               Meta de ventas del mes (S/)
             </label>
             <input
@@ -470,11 +468,11 @@ export default function BudgetVsRealTab() {
               value={formSalesGoal}
               onChange={(e) => setFormSalesGoal(e.target.value)}
               placeholder="Ej: 15000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">
+            <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
               Máximo de gastos del mes (S/)
             </label>
             <input
@@ -483,7 +481,7 @@ export default function BudgetVsRealTab() {
               value={formExpensesGoal}
               onChange={(e) => setFormExpensesGoal(e.target.value)}
               placeholder="Ej: 8000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </div>
         </div>
@@ -492,7 +490,7 @@ export default function BudgetVsRealTab() {
           className={cn(
             "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all min-h-[44px]",
             savedFlash
-              ? "bg-emerald-500 text-white"
+              ? "bg-[var(--accent-soft)] text-white"
               : "bg-primary text-white hover:bg-primary/90"
           )}
         >
@@ -505,7 +503,7 @@ export default function BudgetVsRealTab() {
       {(budgetConfig.salesGoal > 0 || budgetConfig.expensesGoal > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {budgetConfig.salesGoal > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               <ProgressBar
                 label="Ventas del mes"
                 current={currentMonthSales}
@@ -515,7 +513,7 @@ export default function BudgetVsRealTab() {
             </div>
           )}
           {budgetConfig.expensesGoal > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               <ProgressBar
                 label="Gastos del mes"
                 current={currentMonthExpenses}
@@ -529,53 +527,53 @@ export default function BudgetVsRealTab() {
 
       {/* ── 4. Proyección fin de mes ── */}
       {(currentMonthSales > 0 || currentMonthExpenses > 0) && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h3 className="text-sm font-bold text-gray-700 mb-3">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">
             Proyeccion al {totalDays} de {monthName}
-          </h3>
+          </CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-semibold mb-1">Ventas proyectadas</p>
+              <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ventas proyectadas</p>
               <div className="flex items-center gap-2">
                 {projection.sales >= (budgetConfig.salesGoal || projection.sales)
-                  ? <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
-                  : <TrendingDown className="h-4 w-4 text-amber-500 shrink-0" />}
-                <span className="text-lg font-extrabold text-gray-900">
+                  ? <TrendingUp className="h-4 w-4 text-[var(--data-success)] shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-[var(--data-warning)] shrink-0" />}
+                <span className="text-lg font-extrabold text-[var(--text-primary)]">
                   {fmt(projection.sales)}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 Al ritmo actual ({fmt(currentMonthSales)} en {day} días)
               </p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-semibold mb-1">Gastos proyectados</p>
+              <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Gastos proyectados</p>
               <div className="flex items-center gap-2">
                 {projection.expenses > (budgetConfig.expensesGoal || projection.expenses)
-                  ? <TrendingUp className="h-4 w-4 text-red-500 shrink-0" />
-                  : <TrendingDown className="h-4 w-4 text-emerald-500 shrink-0" />}
-                <span className="text-lg font-extrabold text-gray-900">
+                  ? <TrendingUp className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-[var(--data-success)] shrink-0" />}
+                <span className="text-lg font-extrabold text-[var(--text-primary)]">
                   {fmt(projection.expenses)}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 Al ritmo actual ({fmt(currentMonthExpenses)} en {day} días)
               </p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-semibold mb-1">Ganancia proyectada</p>
+              <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ganancia proyectada</p>
               <div className="flex items-center gap-2">
                 {(projection.sales - projection.expenses) >= 0
-                  ? <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
-                  : <TrendingDown className="h-4 w-4 text-red-500 shrink-0" />}
+                  ? <TrendingUp className="h-4 w-4 text-[var(--data-success)] shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-[var(--data-error)] shrink-0" />}
                 <span className={cn(
                   "text-lg font-extrabold",
-                  (projection.sales - projection.expenses) >= 0 ? "text-emerald-600" : "text-red-600"
+                  (projection.sales - projection.expenses) >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                 )}>
                   {fmt(projection.sales - projection.expenses)}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 Ventas menos gastos
               </p>
             </div>
@@ -585,48 +583,48 @@ export default function BudgetVsRealTab() {
 
       {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 font-semibold">Total presupuestado</p>
-          <p className="text-xl font-extrabold text-gray-900 mt-1">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+          <p className="text-xs text-[var(--text-secondary)] font-semibold">Total presupuestado</p>
+          <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
             {fmt(totals.budgeted)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 font-semibold">Total ejecutado</p>
-          <p className="text-xl font-extrabold text-gray-900 mt-1">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+          <p className="text-xs text-[var(--text-secondary)] font-semibold">Total ejecutado</p>
+          <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
             {fmt(totals.actual)}
           </p>
         </div>
         <div className={cn(
           "bg-white rounded-xl border p-4",
-          totals.variance > 0 ? "border-red-200" : "border-emerald-200"
+          totals.variance > 0 ? "border-[var(--data-error)]" : "border-[var(--data-success)]/30"
         )}>
-          <p className="text-xs text-gray-500 font-semibold">Desviación gastos</p>
-          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-red-600" : "text-emerald-600")}>
+          <p className="text-xs text-[var(--text-secondary)] font-semibold">Desviación gastos</p>
+          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
             {totals.variance > 0 ? "+" : ""}{fmt(totals.variance)}
           </p>
-          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-red-500" : "text-emerald-600")}>
+          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
             {fmtPct(totals.pct)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 font-semibold">Alertas</p>
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+          <p className="text-xs text-[var(--text-secondary)] font-semibold">Alertas</p>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-red-600 font-extrabold text-lg">{overBudgetCount}</span>
-            <span className="text-xs text-gray-400">sobre</span>
-            <span className="text-emerald-600 font-extrabold text-lg">{underBudgetCount}</span>
-            <span className="text-xs text-gray-400">bajo</span>
+            <span className="text-[var(--data-error)] font-extrabold text-lg">{overBudgetCount}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">sobre</span>
+            <span className="text-[var(--data-success)] font-extrabold text-lg">{underBudgetCount}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">bajo</span>
           </div>
         </div>
       </div>
 
       {/* ── 3. Gráfico de barras por categoría principal ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Ventas · Gastos · Ganancia · Por departamento
-        </h3>
+        </CardTitle>
         {mainCategories.every((c) => c.actual === 0 && c.budgeted === 0) ? (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-[var(--text-tertiary)] text-center py-6">
             Sin datos para este mes. Registra ventas o gastos para ver el gráfico.
           </p>
         ) : (
@@ -641,12 +639,12 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
+          className="px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
         <select
           value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los meses</option>
           {MONTHS.filter((m) => m !== "all").map((m) => (
@@ -656,14 +654,14 @@ export default function BudgetVsRealTab() {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los dptos</option>
           {DEPARTMENTS.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
           {(
             [
               ["all", "Todos"],
@@ -679,7 +677,7 @@ export default function BudgetVsRealTab() {
                 "px-3 py-2 text-sm font-semibold transition-colors min-h-[44px]",
                 alertFilter === val
                   ? "bg-primary text-white"
-                  : "text-gray-600 hover:bg-gray-50"
+                  : "text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
               {lbl}
@@ -689,19 +687,19 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 text-gray-500 font-semibold">Categoría</th>
-                <th className="text-left px-4 py-3 text-gray-500 font-semibold">Depto</th>
-                <th className="text-left px-4 py-3 text-gray-500 font-semibold">Mes</th>
-                <th className="text-right px-4 py-3 text-gray-500 font-semibold">Presupuesto</th>
-                <th className="text-right px-4 py-3 text-gray-500 font-semibold">Real</th>
-                <th className="text-right px-4 py-3 text-gray-500 font-semibold">Variación</th>
-                <th className="text-center px-4 py-3 text-gray-500 font-semibold">Barra</th>
-                <th className="text-center px-4 py-3 text-gray-500 font-semibold">Estado</th>
+              <tr className="bg-gray-50 border-b border-[var(--rule-base)]">
+                <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Categoría</th>
+                <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Depto</th>
+                <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Mes</th>
+                <th className="text-right px-4 py-3 text-[var(--text-secondary)] font-semibold">Presupuesto</th>
+                <th className="text-right px-4 py-3 text-[var(--text-secondary)] font-semibold">Real</th>
+                <th className="text-right px-4 py-3 text-[var(--text-secondary)] font-semibold">Variación</th>
+                <th className="text-center px-4 py-3 text-[var(--text-secondary)] font-semibold">Barra</th>
+                <th className="text-center px-4 py-3 text-[var(--text-secondary)] font-semibold">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -712,16 +710,16 @@ export default function BudgetVsRealTab() {
                 return (
                   <tr
                     key={b.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-3 font-semibold text-gray-900">{b.category}</td>
-                    <td className="px-4 py-3 text-gray-500">{b.department}</td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{b.month}</td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-700">{fmt(b.budgeted)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900">{fmt(b.actual)}</td>
+                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">{b.category}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{b.department}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--text-tertiary)]">{b.month}</td>
+                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">{fmt(b.budgeted)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>
                     <td className={cn(
                       "px-4 py-3 text-right font-bold",
-                      status === "over" ? "text-red-600" : status === "under" ? "text-emerald-600" : "text-gray-500"
+                      status === "over" ? "text-[var(--data-error)]" : status === "under" ? "text-[var(--data-success)]" : "text-[var(--text-secondary)]"
                     )}>
                       {fmtPct(variance)}
                     </td>
@@ -730,7 +728,7 @@ export default function BudgetVsRealTab() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-emerald-500"
+                            status === "over" ? "bg-[var(--data-error)]" : status === "under" ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]"
                           )}
                           style={{ width: `${Math.min(pctUsed, 100)}%` }}
                         />
@@ -738,17 +736,17 @@ export default function BudgetVsRealTab() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {status === "ok" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold">
                           <CheckCircle className="h-3 w-3" /> OK
                         </span>
                       )}
                       {status === "over" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error)] text-xs font-bold">
                           <AlertTriangle className="h-3 w-3" /> Exceso
                         </span>
                       )}
                       {status === "under" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold">
                           <TrendingDown className="h-3 w-3" /> Ahorro
                         </span>
                       )}
@@ -758,7 +756,7 @@ export default function BudgetVsRealTab() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-[var(--text-tertiary)]">
                     {expenses.length === 0
                       ? "No hay gastos registrados aún. Registra gastos en el módulo de Egresos."
                       : "No se encontraron líneas con los filtros seleccionados."}

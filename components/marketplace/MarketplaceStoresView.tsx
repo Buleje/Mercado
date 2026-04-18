@@ -4,20 +4,40 @@ import { useState, useCallback } from "react";
 import {
   MapPin,
   Star,
-  Store,
   ShoppingBag,
   ChevronRight,
   Package,
   LocateFixed,
+  Store,
+  ShoppingCart,
+  Building2,
+  Apple,
+  Beef,
+  CroissantIcon,
+  Wine,
+  Pill,
+  UtensilsCrossed,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
-import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
 import { Plane } from "lucide-react";
+import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
+import { DoniaElena } from "@/components/ui-system/illustrations/pucallpa-locals";
+import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
+
+// Fallback illustration rotation deterministico por store.id para store cards sin logo.
+function StoreFallbackIllustration({ id, className }: { id: string; className?: string }) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  const pick = Math.abs(hash) % 4;
+  if (pick === 0) return <BodegaAbriendo size={110} strokeWidth={1.5} className={className} />;
+  if (pick === 1) return <DoniaElena size={110} strokeWidth={1.5} className={className} />;
+  if (pick === 2) return <MotoRuta size={110} strokeWidth={1.5} className={className} />;
+  return <BodegueroCelebrando size={110} strokeWidth={1.5} className={className} />;
+}
 
 /* ── Category config ───────────────────────────────────────────────────────── */
 
@@ -61,6 +81,20 @@ interface ProductPreview {
 
 /* ── Store Card ────────────────────────────────────────────────────────────── */
 
+/** Renderer explicito por id de categoria — cumple react-hooks/static-components. */
+function CategoryIconRenderer({ id, className }: { id: string; className?: string }) {
+  const common = { className, strokeWidth: 1.75, "aria-hidden": true } as const;
+  if (id === "bodega") return <ShoppingCart {...common} />;
+  if (id === "minimarket") return <Building2 {...common} />;
+  if (id === "fruteria") return <Apple {...common} />;
+  if (id === "carniceria") return <Beef {...common} />;
+  if (id === "panaderia") return <CroissantIcon {...common} />;
+  if (id === "licoreria") return <Wine {...common} />;
+  if (id === "farmacia") return <Pill {...common} />;
+  if (id === "restaurante") return <UtensilsCrossed {...common} />;
+  return <Store {...common} />;
+}
+
 function StoreCard({ store, index }: { store: MarketplaceStore; index: number }) {
   const categoryMeta = CATEGORIES.find((c) => c.id === store.category) ?? CATEGORIES[0];
   const [preview, setPreview] = useState<ProductPreview[]>([]);
@@ -100,11 +134,11 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
         aria-label={linkAriaLabel}
         className="group block bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
       >
-        {/* Banner / gradient top */}
-        <div className="relative h-32 bg-linear-to-br from-primary/10 via-primary/5 to-secondary/10 dark:from-primary/20 dark:via-primary/10 dark:to-secondary/20 overflow-hidden">
+        {/* Banner — surface-sunken con ilustracion grande o logo real */}
+        <div className="relative h-32 bg-[var(--surface-sunken)] overflow-hidden">
           {store.logo ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-20 h-20 rounded-2xl bg-white dark:bg-card shadow-lg border-2 border-white dark:border-card-border overflow-hidden group-hover:scale-110 transition-transform duration-300">
+              <div className="relative w-20 h-20 rounded-2xl bg-white dark:bg-card shadow-[var(--shadow-md)] border border-[var(--rule-base)] overflow-hidden group-hover:scale-105 transition-transform duration-300">
                 <Image
                   src={store.logo}
                   alt={`Logo de ${store.name}`}
@@ -116,26 +150,22 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
             </div>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card-border shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Store className="h-10 w-10 text-primary" aria-hidden="true" />
-              </div>
+              <StoreFallbackIllustration
+                id={store.id || store.slug}
+                className="text-[var(--text-tertiary)] opacity-70 group-hover:opacity-85 transition-opacity"
+              />
             </div>
           )}
 
           {/* Category badge */}
-          {(() => {
-            const CatIcon = getStoreCategoryIcon(categoryMeta.id);
-            return (
-              <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-[11px] font-bold text-gray-700 dark:text-gray-200">
-                <CatIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
-                {categoryMeta.label}
-              </span>
-            );
-          })()}
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-[11px] font-bold text-gray-700 dark:text-gray-200">
+            <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
+            {categoryMeta.label}
+          </span>
 
           {/* Vacation badge */}
           {store.vacationMode && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-[var(--data-warning)]/40 text-[11px] font-bold text-[var(--data-warning)]">
               <Plane className="h-3 w-3" strokeWidth={1.75} />
               De vacaciones
             </span>
@@ -143,8 +173,8 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
 
           {/* Rating badge */}
           {store.rating > 0 && (
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-xs font-bold text-amber-700 dark:text-amber-400">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+            <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)]">
+              <Star className="h-3 w-3 fill-current text-[var(--accent)]" />
               {store.rating.toFixed(1)}
             </span>
           )}

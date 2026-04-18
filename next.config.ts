@@ -106,7 +106,13 @@ const nextConfig: NextConfig = {
       "@dnd-kit/core",
       "@dnd-kit/sortable",
       "@dnd-kit/utilities",
+      "@buleje/design-system",
     ],
+
+    // Next.js 16.2+ — cache de filesystem para Turbopack en dev.
+    // Sobrevive restarts: rebuilds ~5s en vez de 30-60s.
+    // Fuente: nextjs.org/blog/next-16-2
+    turbopackFileSystemCacheForDev: true,
   },
 
   // Add long-lived cache headers for static assets and security headers

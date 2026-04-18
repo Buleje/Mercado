@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { BusinessData, Product } from "../ai-center.types";
 
@@ -52,7 +52,7 @@ function SubTabBar({
   onChange: (t: SubTab) => void;
 }) {
   return (
-    <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700 mb-4">
+    <div className="flex gap-0 border-b border-[var(--rule-base)] mb-4">
       {SUBTABS.map((tab) => (
         <button
           key={tab.id}
@@ -60,8 +60,8 @@ function SubTabBar({
           className={cn(
             "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
             active === tab.id
-              ? "text-emerald-600 border-emerald-500 dark:text-emerald-400"
-              : "text-gray-500 border-transparent hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+              ? "text-[var(--data-success)] border-[var(--data-success)]/30 dark:text-[var(--data-success)]"
+              : "text-[var(--text-secondary)] border-transparent hover:text-[var(--text-secondary)] dark:hover:text-gray-200",
           )}
         >
           {tab.label}
@@ -81,7 +81,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
 
   if (products.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-gray-500">
+      <div className="flex items-center justify-center py-12 text-sm text-[var(--text-tertiary)]">
         No hay productos con precio y costo definidos
       </div>
     );
@@ -92,20 +92,20 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <tr className="border-b border-[var(--rule-base)]">
+              <th className="text-left py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
                 Producto
               </th>
-              <th className="text-right py-2 pr-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <th className="text-right py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
                 Costo
               </th>
-              <th className="text-right py-2 pr-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <th className="text-right py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
                 Precio
               </th>
-              <th className="text-right py-2 pr-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <th className="text-right py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
                 Margen
               </th>
-              <th className="text-left py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <th className="text-left py-2 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
                 Recomendacion
               </th>
             </tr>
@@ -117,15 +117,15 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
               return (
                 <tr
                   key={p.id}
-                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="border-b border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]/50"
                 >
-                  <td className="py-2.5 pr-4 text-gray-800 dark:text-gray-200 max-w-[180px] truncate">
+                  <td className="py-2.5 pr-4 text-[var(--text-primary)] max-w-[180px] truncate">
                     {p.name}
                   </td>
-                  <td className="py-2.5 pr-4 text-right text-gray-600 dark:text-gray-400 tabular-nums">
+                  <td className="py-2.5 pr-4 text-right text-[var(--text-secondary)] tabular-nums">
                     {formatCurrency(p.costPrice)}
                   </td>
-                  <td className="py-2.5 pr-4 text-right text-gray-600 dark:text-gray-400 tabular-nums">
+                  <td className="py-2.5 pr-4 text-right text-[var(--text-secondary)] tabular-nums">
                     {formatCurrency(p.price)}
                   </td>
                   <td className="py-2.5 pr-4 text-right tabular-nums">
@@ -133,10 +133,10 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
                       className={cn(
                         "inline-flex items-center gap-1 font-medium",
                         isLow
-                          ? "text-red-600 dark:text-red-400"
+                          ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
                           : isMid
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-emerald-600 dark:text-emerald-400",
+                            ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                            : "text-[var(--data-success)] dark:text-[var(--data-success)]",
                       )}
                     >
                       {isLow ? (
@@ -151,16 +151,16 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
                   </td>
                   <td className="py-2.5 text-xs">
                     {isLow ? (
-                      <span className="text-red-600 dark:text-red-400">
+                      <span className="text-[var(--data-error)] dark:text-[var(--data-error)]">
                         Subir precio &mdash; sugerido{" "}
                         {formatCurrency(suggestedPriceAt15(p.costPrice))}
                       </span>
                     ) : isMid ? (
-                      <span className="text-amber-600 dark:text-amber-400">
+                      <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                         Revisar
                       </span>
                     ) : (
-                      <span className="text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">
                         Saludable
                       </span>
                     )}
@@ -175,7 +175,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
       {hasMore && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-3 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+          className="mt-3 text-xs text-[var(--data-success)] dark:text-[var(--data-success)] hover:underline"
         >
           {expanded
             ? "Ver menos"
@@ -236,7 +236,7 @@ function SimuladorTab({
 
   if (products.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-gray-500">
+      <div className="flex items-center justify-center py-12 text-sm text-[var(--text-tertiary)]">
         No hay productos con precio y costo definidos
       </div>
     );
@@ -247,7 +247,7 @@ function SimuladorTab({
       {/* Inputs row */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
             Producto
           </label>
           <select
@@ -256,7 +256,7 @@ function SimuladorTab({
               setSelectedId(e.target.value);
               setResult(null);
             }}
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40"
           >
             {products.map((p) => (
               <option key={p.id} value={String(p.id)}>
@@ -267,7 +267,7 @@ function SimuladorTab({
         </div>
 
         <div className="w-32">
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
             Cambio de precio
           </label>
           <div className="relative">
@@ -279,9 +279,9 @@ function SimuladorTab({
                 setResult(null);
               }}
               placeholder="5"
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-7 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full border border-[var(--rule-base)] rounded-lg pl-3 pr-7 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40"
             />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
               %
             </span>
           </div>
@@ -290,7 +290,7 @@ function SimuladorTab({
         <button
           onClick={handleSimulate}
           disabled={!selectedProduct}
-          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-40 text-white text-sm font-medium rounded-lg transition-colors"
         >
           Simular
         </button>
@@ -298,42 +298,42 @@ function SimuladorTab({
 
       {/* Result card */}
       {result && selectedProduct && (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+        <div className="border border-[var(--rule-base)] rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
                 Precio actual
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums">
+              <p className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
                 {formatCurrency(result.oldPrice)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
                 Precio nuevo
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums">
+              <p className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
                 {formatCurrency(result.newPrice)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
                 Margen actual
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums">
+              <p className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
                 {result.oldMargin.toFixed(1)}%
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
                 Margen nuevo
               </p>
               <p
                 className={cn(
                   "text-sm font-medium tabular-nums",
                   result.newMargin > result.oldMargin
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-red-600 dark:text-red-400",
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]",
                 )}
               >
                 {result.newMargin.toFixed(1)}%
@@ -341,10 +341,10 @@ function SimuladorTab({
             </div>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+          <div className="border-t border-[var(--rule-base)] pt-3">
+            <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
               Impacto mensual estimado
-              <span className="text-gray-400 dark:text-gray-500">
+              <span className="text-[var(--text-tertiary)]">
                 {" "}({result.qty30d} unid. vendidas en 30d)
               </span>
             </p>
@@ -352,8 +352,8 @@ function SimuladorTab({
               className={cn(
                 "text-base font-semibold tabular-nums",
                 result.monthlyImpact >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400",
+                  ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                  : "text-[var(--data-error)] dark:text-[var(--data-error)]",
               )}
             >
               {result.monthlyImpact >= 0 ? "+" : ""}
@@ -389,13 +389,13 @@ function CalculadoraTab() {
 
   return (
     <div className="max-w-sm">
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
-        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+      <div className="border border-[var(--rule-base)] rounded-lg p-4 space-y-4">
+        <p className="text-sm font-medium text-[var(--text-primary)]">
           Calculadora de margen
         </p>
 
         <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
             Costo (S/)
           </label>
           <input
@@ -405,12 +405,12 @@ function CalculadoraTab() {
             value={cost}
             onChange={(e) => setCost(e.target.value)}
             placeholder="0.00"
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
             Margen deseado (%)
           </label>
           <input
@@ -421,41 +421,41 @@ function CalculadoraTab() {
             value={desiredMargin}
             onChange={(e) => setDesiredMargin(e.target.value)}
             className={cn(
-              "w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500",
+              "w-full border rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success)]/40",
               showWarning
-                ? "border-red-300 dark:border-red-700"
-                : "border-gray-200 dark:border-gray-700",
+                ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
+                : "border-[var(--rule-base)]",
             )}
           />
           {showWarning && (
-            <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+            <p className="mt-1 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
               El margen debe estar entre 1% y 99%
             </p>
           )}
         </div>
 
-        <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2">
+        <div className="border-t border-[var(--rule-base)] pt-3 space-y-2">
           {calc ? (
             <>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-[var(--text-tertiary)]">
                   Precio sugerido
                 </span>
-                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                <span className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">
                   {formatCurrency(calc.price)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-[var(--text-tertiary)]">
                   Ganancia por unidad
                 </span>
-                <span className="text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums">
+                <span className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
                   {formatCurrency(calc.profit)}
                 </span>
               </div>
             </>
           ) : (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Ingresa el costo para ver el precio sugerido
             </p>
           )}

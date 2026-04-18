@@ -1,5 +1,6 @@
 "use client";
 
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ClipboardList,
@@ -12,7 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -283,8 +284,8 @@ export default function PhysicalCountTab() {
   // ── Render helpers ────────────────────────────────────────────────────────────
 
   const diffColor = (d: number) => {
-    if (d === 0) return "text-emerald-600";
-    return d > 0 ? "text-emerald-600" : "text-red-600";
+    if (d === 0) return "text-[var(--data-success)]";
+    return d > 0 ? "text-[var(--data-success)]" : "text-red-600";
   };
 
   // ─── View: START ─────────────────────────────────────────────────────────────
@@ -294,13 +295,13 @@ export default function PhysicalCountTab() {
       <div className="space-y-6">
         <div className="flex items-center gap-2 mb-2">
           <ClipboardList className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-bold text-gray-900">
+          <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
             Conteo físico
-          </h2>
+          </SectionTitle>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <div className="rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error)] p-3 text-sm text-[var(--data-error)]">
             {error}
           </div>
         )}
@@ -318,7 +319,7 @@ export default function PhysicalCountTab() {
             )}
             <div>
               <p className="font-bold text-primary">Iniciar conteo de hoy</p>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 Carga todos los productos con su stock actual
               </p>
             </div>
@@ -326,12 +327,12 @@ export default function PhysicalCountTab() {
 
           <button
             onClick={() => setView("history")}
-            className="flex items-center gap-3 p-5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+            className="flex items-center gap-3 p-5 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 transition-colors text-left"
           >
-            <History className="h-8 w-8 text-gray-400 shrink-0" />
+            <History className="h-8 w-8 text-[var(--text-tertiary)] shrink-0" />
             <div>
-              <p className="font-bold text-gray-700">Ver historial</p>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="font-bold text-[var(--text-primary)]">Ver historial</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 {sessions.length} conteo{sessions.length !== 1 ? "s" : ""} guardado{sessions.length !== 1 ? "s" : ""}
               </p>
             </div>
@@ -339,7 +340,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {sessions.length > 0 && sessions[0].status === "pendiente" && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--data-warning-50)] border border-[var(--data-warning)] p-3 text-sm text-[var(--data-warning)] flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             Tienes un conteo pendiente del {sessions[0].date}. Al iniciar nuevo, se retomará ese.
           </div>
@@ -359,11 +360,11 @@ export default function PhysicalCountTab() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <SectionTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-primary" />
               Conteo: {session.date}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               {countedCount} / {total} productos contados
             </p>
           </div>
@@ -387,7 +388,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {success && (
-          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700 flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -403,31 +404,30 @@ export default function PhysicalCountTab() {
 
         {/* Busqueda */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             placeholder="Buscar producto o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
           />
         </div>
 
         {/* Tabla */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full min-w-[480px] text-sm">
+        <DataTable className="min-w-[480px]">
             <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-3 py-2.5 font-semibold text-gray-600 w-full">Producto</th>
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-right whitespace-nowrap">Sistema</th>
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-right whitespace-nowrap">Real</th>
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-right whitespace-nowrap">Diferencia</th>
+              <tr>
+                <th className="w-full">Producto</th>
+                <th className="text-right whitespace-nowrap">Sistema</th>
+                <th className="text-right whitespace-nowrap">Real</th>
+                <th className="text-right whitespace-nowrap">Diferencia</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-8 text-center text-gray-400 text-sm">
+                  <td colSpan={4} className="px-3 py-8 text-center text-[var(--text-tertiary)] text-sm">
                     No se encontraron productos
                   </td>
                 </tr>
@@ -438,13 +438,13 @@ export default function PhysicalCountTab() {
                 return (
                   <tr
                     key={row.productId}
-                    className={`transition-colors ${hasDiff ? "bg-red-50/40" : "hover:bg-gray-50"}`}
+                    className={`transition-colors ${hasDiff ? "bg-[var(--data-error-50)]/40" : "hover:bg-gray-50"}`}
                   >
                     <td className="px-3 py-2">
-                      <p className="font-medium text-gray-900 leading-tight">{row.productName}</p>
-                      {row.sku && <p className="text-xs text-gray-400">{row.sku}</p>}
+                      <p className="font-medium text-[var(--text-primary)] leading-tight">{row.productName}</p>
+                      {row.sku && <p className="text-xs text-[var(--text-tertiary)]">{row.sku}</p>}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-gray-600">
+                    <td className="px-3 py-2 text-right font-mono text-[var(--text-secondary)]">
                       {row.systemStock}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -454,7 +454,7 @@ export default function PhysicalCountTab() {
                         value={row.realStock}
                         onChange={(e) => updateRow(row.productId, "realStock", e.target.value)}
                         placeholder="—"
-                        className="w-20 text-right px-2 py-1 rounded border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                        className="w-20 text-right px-2 py-1 rounded border border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                       />
                     </td>
                     <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
@@ -464,8 +464,7 @@ export default function PhysicalCountTab() {
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </DataTable>
       </div>
     );
   }
@@ -477,18 +476,18 @@ export default function PhysicalCountTab() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <SectionTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-secondary" />
               Reconciliación — {session.date}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               {withDiff.length} diferencia{withDiff.length !== 1 ? "s" : ""} encontrada{withDiff.length !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setView("counting")}
-              className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
             >
               Volver al conteo
             </button>
@@ -504,35 +503,35 @@ export default function PhysicalCountTab() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <div className="rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error)] p-3 text-sm text-[var(--data-error)]">
             {error}
           </div>
         )}
         {success && (
-          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700 flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
         )}
 
         {withDiff.length === 0 ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-8 text-center">
-            <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-            <p className="font-semibold text-emerald-700">Sin diferencias</p>
-            <p className="text-sm text-gray-500 mt-1">
+          <div className="rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)]/50 p-8 text-center">
+            <CheckCircle className="h-10 w-10 text-[var(--data-success)] mx-auto mb-2" />
+            <p className="font-semibold text-[var(--data-success)]">Sin diferencias</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               El stock físico coincide con el sistema en todos los productos contados.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left">
-                  <th className="px-3 py-2.5 font-semibold text-gray-600">Producto</th>
-                  <th className="px-3 py-2.5 font-semibold text-gray-600 text-right">Sistema</th>
-                  <th className="px-3 py-2.5 font-semibold text-gray-600 text-right">Real</th>
-                  <th className="px-3 py-2.5 font-semibold text-gray-600 text-right">Diferencia</th>
-                  <th className="px-3 py-2.5 font-semibold text-gray-600">Motivo</th>
+                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)]">Producto</th>
+                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Sistema</th>
+                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Real</th>
+                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Diferencia</th>
+                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)]">Motivo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -541,11 +540,11 @@ export default function PhysicalCountTab() {
                   return (
                     <tr key={row.productId} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
-                        <p className="font-medium text-gray-900">{row.productName}</p>
-                        {row.sku && <p className="text-xs text-gray-400">{row.sku}</p>}
+                        <p className="font-medium text-[var(--text-primary)]">{row.productName}</p>
+                        {row.sku && <p className="text-xs text-[var(--text-tertiary)]">{row.sku}</p>}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-600">{row.systemStock}</td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-900">{row.realStock}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[var(--text-secondary)]">{row.systemStock}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[var(--text-primary)]">{row.realStock}</td>
                       <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
                         {d > 0 ? `+${d}` : d}
                       </td>
@@ -554,7 +553,7 @@ export default function PhysicalCountTab() {
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
                           disabled={session.status === "aplicado"}
-                          className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                          className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                         >
                           {REASONS.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>
@@ -578,27 +577,27 @@ export default function PhysicalCountTab() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <SectionTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
             Historial de conteos
-          </h2>
+          </SectionTitle>
           <button
             onClick={() => setView("start")}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+            className="px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
           >
             Volver
           </button>
         </div>
 
         {success && (
-          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700 flex items-center gap-2">
+          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
         )}
 
         {sessions.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
+          <div className="rounded-xl border border-[var(--rule-base)] p-8 text-center text-[var(--text-tertiary)] text-sm">
             No hay conteos guardados aún.
           </div>
         ) : (
@@ -606,7 +605,7 @@ export default function PhysicalCountTab() {
             {sessions.map((s) => (
               <div
                 key={s.id}
-                className="rounded-xl border border-gray-200 overflow-hidden"
+                className="rounded-xl border border-[var(--rule-base)] overflow-hidden"
               >
                 <button
                   onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
@@ -616,29 +615,29 @@ export default function PhysicalCountTab() {
                     <span
                       className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
                         s.status === "aplicado"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
                       }`}
                     >
                       {s.status}
                     </span>
-                    <span className="font-semibold text-gray-900">{s.date}</span>
-                    <span className="text-xs text-gray-400 hidden sm:block">
+                    <span className="font-semibold text-[var(--text-primary)]">{s.date}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] hidden sm:block">
                       {s.totalCounted} productos · {s.differences} diferencia{s.differences !== 1 ? "s" : ""}
                     </span>
                   </div>
                   {expandedSession === s.id ? (
-                    <ChevronUp className="h-4 w-4 text-gray-400 shrink-0" />
+                    <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                    <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
                   )}
                 </button>
 
                 {expandedSession === s.id && (
-                  <div className="border-t border-gray-100 px-4 py-3 space-y-3">
-                    <div className="flex gap-4 text-sm text-gray-600">
-                      <span>Productos contados: <strong className="text-gray-900">{s.totalCounted}</strong></span>
-                      <span>Diferencias: <strong className={s.differences > 0 ? "text-red-600" : "text-gray-900"}>{s.differences}</strong></span>
+                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3">
+                    <div className="flex gap-4 text-sm text-[var(--text-secondary)]">
+                      <span>Productos contados: <strong className="text-[var(--text-primary)]">{s.totalCounted}</strong></span>
+                      <span>Diferencias: <strong className={s.differences > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]"}>{s.differences}</strong></span>
                     </div>
 
                     {s.status === "pendiente" && (
@@ -657,7 +656,7 @@ export default function PhysicalCountTab() {
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[400px] text-xs">
                           <thead>
-                            <tr className="text-left text-gray-500">
+                            <tr className="text-left text-[var(--text-secondary)]">
                               <th className="pb-1.5 font-semibold">Producto</th>
                               <th className="pb-1.5 font-semibold text-right">Sistema</th>
                               <th className="pb-1.5 font-semibold text-right">Real</th>
@@ -671,8 +670,8 @@ export default function PhysicalCountTab() {
                                 const d = (r.realStock as number) - r.systemStock;
                                 return (
                                   <tr key={r.productId}>
-                                    <td className="py-1 text-gray-700">{r.productName}</td>
-                                    <td className="py-1 text-right font-mono text-gray-500">{r.systemStock}</td>
+                                    <td className="py-1 text-[var(--text-primary)]">{r.productName}</td>
+                                    <td className="py-1 text-right font-mono text-[var(--text-secondary)]">{r.systemStock}</td>
                                     <td className="py-1 text-right font-mono">{r.realStock}</td>
                                     <td className={`py-1 text-right font-bold font-mono ${diffColor(d)}`}>
                                       {d > 0 ? `+${d}` : d}

@@ -225,7 +225,7 @@ export default function BottomNav() {
                       className={cn(
                         "absolute -top-1.5 -right-1.5",
                         "flex h-4 min-w-4 items-center justify-center",
-                        "rounded-full bg-red-500 px-1",
+                        "rounded-full bg-[var(--accent)] px-1",
                         "text-[10px] font-black text-white leading-none",
                         "ring-1 ring-white dark:ring-gray-900"
                       )}

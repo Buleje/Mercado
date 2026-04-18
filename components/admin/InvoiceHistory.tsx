@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   FileText, Search, RefreshCw,
   Loader2, ChevronLeft, ChevronRight,
-  XCircle } from "lucide-react";
+  XCircle } from "@buleje/design-system/icons";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,18 +51,18 @@ function fmtDate(iso: string) {
 function EstadoBadge({ estado }: { estado: InvoiceRecord["estado"] }) {
   const styles = {
     emitido:
-      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/30",
+      "bg-[var(--accent-soft)] text-[var(--data-success)] border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] dark:border-[var(--data-success)]/30",
     anulado:
-      "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800/30",
+      "bg-[var(--data-error-50)] text-[var(--data-error)] border-[var(--data-error)] dark:bg-red-950/20 dark:text-[var(--data-error)] dark:border-[var(--data-error)]/30",
     pendiente:
-      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800/30",
+      "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)] dark:bg-amber-950/20 dark:text-[var(--data-warning)] dark:border-[var(--data-warning)]/30",
   };
 
   const labels = { emitido: "Emitido", anulado: "Anulado", pendiente: "Pendiente" };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[11px] font-bold ${styles[estado]}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[length:var(--ts-xs)] font-bold ${styles[estado]}`}
     >
       {labels[estado]}
     </span>
@@ -123,17 +124,17 @@ export default function InvoiceHistory() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
             Historial de Comprobantes
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-muted">
+          </CardTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
             Boletas y facturas emitidas
           </p>
         </div>
         <button
           onClick={fetchRecords}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-surface text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-surface/80 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-surface text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-surface/80 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
@@ -144,13 +145,13 @@ export default function InvoiceHistory() {
       <div className="flex flex-col sm:flex-row gap-2">
         {/* Búsqueda */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por cliente, número..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
         </div>
 
@@ -163,7 +164,7 @@ export default function InvoiceHistory() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 tipoFilter === t
                   ? "bg-white dark:bg-card text-primary "
-                  : "text-gray-500 dark:text-muted hover:text-gray-700"
+                  : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]"
               }`}
             >
               {t === "todos" ? "Todos" : t === "boleta" ? "Boletas" : "Facturas"}
@@ -180,7 +181,7 @@ export default function InvoiceHistory() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 estadoFilter === e
                   ? "bg-white dark:bg-card text-primary "
-                  : "text-gray-500 dark:text-muted hover:text-gray-700"
+                  : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]"
               }`}
             >
               {e === "todos" ? "Todos" : e.charAt(0).toUpperCase() + e.slice(1)}
@@ -191,13 +192,11 @@ export default function InvoiceHistory() {
 
       {/* ── Contenido ────────────────────────────────────────────────────── */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 text-primary animate-spin" />
-        </div>
+        <LoadingState />
       ) : error ? (
         <div className="text-center py-8">
-          <XCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
-          <p className="text-sm text-red-600 dark:text-red-400 font-semibold">{error}</p>
+          <XCircle className="h-8 w-8 text-[var(--data-error)] mx-auto mb-2" />
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{error}</p>
           <button
             onClick={fetchRecords}
             className="mt-2 text-xs font-bold text-primary hover:underline"
@@ -207,11 +206,11 @@ export default function InvoiceHistory() {
         </div>
       ) : records.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="h-10 w-10 text-gray-300 dark:text-muted mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-muted font-semibold">
+          <FileText className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted font-semibold">
             No hay comprobantes registrados
           </p>
-          <p className="text-xs text-gray-400 dark:text-muted mt-1">
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
             Los comprobantes emitidos aparecerán aquí
           </p>
         </div>
@@ -221,7 +220,7 @@ export default function InvoiceHistory() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-gray-500 dark:text-muted uppercase border-b border-gray-200 dark:border-card-border">
+                <tr className="text-xs text-[var(--text-secondary)] dark:text-muted uppercase border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left py-2 px-2 font-bold">Tipo</th>
                   <th className="text-left py-2 px-2 font-bold">Serie-Número</th>
                   <th className="text-left py-2 px-2 font-bold">Cliente</th>
@@ -234,36 +233,36 @@ export default function InvoiceHistory() {
                 {paginatedRecords.map((record) => (
                   <tr
                     key={record.id}
-                    className="border-b border-gray-100 dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
                   >
                     <td className="py-2.5 px-2">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                           record.tipo === "factura"
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                             : "bg-primary/10 text-primary"
                         }`}
                       >
                         {record.tipo === "factura" ? "Factura" : "Boleta"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-2 font-mono font-bold text-gray-900 dark:text-foreground">
+                    <td className="py-2.5 px-2 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">
                       {record.numeroCompleto}
                     </td>
                     <td className="py-2.5 px-2">
-                      <div className="text-gray-900 dark:text-foreground font-semibold">
+                      <div className="text-[var(--text-primary)] dark:text-foreground font-semibold">
                         {record.clienteNombre}
                       </div>
                       {record.clienteDoc && (
-                        <div className="text-[11px] text-gray-400 dark:text-muted">
+                        <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
                           {record.clienteDoc}
                         </div>
                       )}
                     </td>
-                    <td className="py-2.5 px-2 text-gray-600 dark:text-muted">
+                    <td className="py-2.5 px-2 text-[var(--text-secondary)] dark:text-muted">
                       {fmtDate(record.fecha)}
                     </td>
-                    <td className="py-2.5 px-2 text-right font-bold text-gray-900 dark:text-foreground">
+                    <td className="py-2.5 px-2 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
                       {fmt(record.total)}
                     </td>
                     <td className="py-2.5 px-2 text-center">
@@ -280,13 +279,13 @@ export default function InvoiceHistory() {
             {paginatedRecords.map((record) => (
               <div
                 key={record.id}
-                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 space-y-2"
+                className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                       record.tipo === "factura"
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                         : "bg-primary/10 text-primary"
                     }`}
                   >
@@ -295,12 +294,12 @@ export default function InvoiceHistory() {
                   <EstadoBadge estado={record.estado} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-sm text-gray-900 dark:text-foreground">
+                  <span className="font-mono font-bold text-sm text-[var(--text-primary)] dark:text-foreground">
                     {record.numeroCompleto}
                   </span>
                   <span className="font-extrabold text-primary">{fmt(record.total)}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-muted">
+                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] dark:text-muted">
                   <span>{record.clienteNombre}</span>
                   <span>{fmtDate(record.fecha)}</span>
                 </div>
@@ -310,24 +309,24 @@ export default function InvoiceHistory() {
 
           {/* Paginación */}
           <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-gray-500 dark:text-muted">
+            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
               {records.length} comprobante{records.length !== 1 ? "s" : ""}
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs font-bold text-gray-600 dark:text-muted">
+              <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

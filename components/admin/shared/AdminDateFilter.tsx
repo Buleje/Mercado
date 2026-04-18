@@ -62,8 +62,8 @@ export default function AdminDateFilter({
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
               value === p.id && !showCustom
-                ? "bg-white text-gray-900 "
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50",
+                ? "bg-white text-[var(--text-primary)] "
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-50",
             )}
           >
             {p.label}
@@ -74,8 +74,8 @@ export default function AdminDateFilter({
           className={cn(
             "px-2 py-1.5 rounded-md text-xs font-medium transition-all",
             showCustom
-              ? "bg-white text-gray-900 "
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50",
+              ? "bg-white text-[var(--text-primary)] "
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-50",
           )}
           title="Rango personalizado"
         >
@@ -93,9 +93,9 @@ export default function AdminDateFilter({
               setCustomFrom(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
+            className="px-2 py-1 rounded-md border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-[var(--text-tertiary)]">—</span>
           <input
             type="date"
             value={customTo}
@@ -103,21 +103,21 @@ export default function AdminDateFilter({
               setCustomTo(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
+            className="px-2 py-1 rounded-md border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       )}
 
       {/* Time display */}
       {showTime && (
-        <span className="text-xs text-gray-400 tabular-nums">{timeStr}</span>
+        <span className="text-xs text-[var(--text-tertiary)] tabular-nums">{timeStr}</span>
       )}
 
       {/* Refresh button */}
       {showRefresh && onRefresh && (
         <button
           onClick={onRefresh}
-          className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 transition-colors"
           title="Actualizar"
         >
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

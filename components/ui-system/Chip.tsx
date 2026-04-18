@@ -8,14 +8,14 @@ const chip = tv({
     "inline-flex items-center gap-1.5",
     "text-xs font-semibold whitespace-nowrap",
     "rounded-full border",
-    "transition-colors duration-150",
+    "transition-colors duration-[var(--dur-fast)]",
   ],
   variants: {
     variant: {
       neutral: [
-        "bg-white dark:bg-gray-900",
-        "text-gray-700 dark:text-gray-200",
-        "border-gray-200 dark:border-gray-800",
+        "bg-[var(--surface-raised)]",
+        "text-[var(--text-secondary)]",
+        "border-[var(--rule-base)]",
         "hover:border-gray-900 dark:hover:border-gray-400",
       ],
       solid: [
@@ -24,8 +24,8 @@ const chip = tv({
         "border-gray-900 dark:border-white",
       ],
       muted: [
-        "bg-gray-100 dark:bg-gray-800",
-        "text-gray-600 dark:text-gray-300",
+        "bg-[var(--surface-sunken)]",
+        "text-[var(--text-secondary)]",
         "border-transparent",
       ],
       accent: [
@@ -48,13 +48,13 @@ const chip = tv({
         "border-red-200 dark:border-red-900",
       ],
       ghost: [
-        "bg-transparent text-gray-500 dark:text-gray-400",
+        "bg-transparent text-[var(--text-tertiary)]",
         "border-transparent",
       ],
     },
     size: {
-      xs: "h-5 px-2 text-[10px]",
-      sm: "h-6 px-2.5 text-[11px]",
+      xs: "h-5 px-2 text-[length:var(--ts-2xs)]",
+      sm: "h-6 px-2.5 text-[length:var(--ts-xs)]",
       md: "h-7 px-3 text-xs",
       lg: "h-8 px-3.5 text-xs",
     },

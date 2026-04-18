@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Users, Plus, X, LogOut, BarChart2, Clock, ShoppingBasket,
-  CheckCircle, ChevronRight, User, RefreshCw } from "lucide-react";
+  CheckCircle, ChevronRight, User, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -81,9 +81,9 @@ function sessionStats(session: CashierSession) {
 
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900/50">
-      <span className="text-base font-black text-primary">{value}</span>
-      <span className="text-xs text-gray-500 dark:text-muted">{label}</span>
+    <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-[var(--surface-canvas)]/50">
+      <span className="text-base font-extrabold text-primary">{value}</span>
+      <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{label}</span>
     </div>
   );
 }
@@ -183,18 +183,18 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
   }, [registerSale]);
 
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
         <Users className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Multi-Cajero</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Multi-Cajero</span>
         <div className="ml-auto flex items-center gap-2">
           {openSessions.length > 0 && (
-            <span className="text-xs font-medium text-gray-500 dark:text-muted">{openSessions.length} activo{openSessions.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs font-medium text-[var(--text-secondary)] dark:text-muted">{openSessions.length} activo{openSessions.length !== 1 ? "s" : ""}</span>
           )}
           <button type="button" onClick={() => setView("admin")}
             className={cn("text-xs px-2 py-1 rounded-lg font-medium transition-colors",
-              view === "admin" ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-muted hover:bg-gray-200"
+              view === "admin" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
             )}>
             <BarChart2 className="h-3.5 w-3.5 inline mr-1" />
             Resumen
@@ -205,14 +205,14 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
       <div className="p-4 space-y-4">
         {/* ── Closing summary overlay ── */}
         {closingSummary && (
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Turno cerrado — {closingSummary.name}</span>
+                <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />
+                <span className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Turno cerrado — {closingSummary.name}</span>
               </div>
               <button type="button" onClick={() => setClosingSummary(null)}>
-                <X className="h-4 w-4 text-emerald-400" />
+                <X className="h-4 w-4 text-[var(--data-success)]" />
               </button>
             </div>
             {(() => {
@@ -225,7 +225,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 </div>
               );
             })()}
-            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
               Inicio: {fmtTime(closingSummary.startedAt)} — Cierre: {fmtTime(closingSummary.closedAt ?? new Date().toISOString())}
             </p>
           </div>
@@ -234,7 +234,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
         {/* ── Selector view ── */}
         {view === "selector" && (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600 dark:text-muted">Quien esta cobrando?</p>
+            <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Quien esta cobrando?</p>
 
             {/* Open sessions */}
             {openSessions.length > 0 && (
@@ -246,18 +246,18 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                       key={session.id}
                       type="button"
                       onClick={() => selectCashier(session)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-gray-100 dark:border-card-border hover:border-primary bg-white dark:bg-card transition-all group"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-[var(--rule-soft)] dark:border-card-border hover:border-primary bg-white dark:bg-card transition-all group"
                     >
                       <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <User className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{session.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-muted">
+                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{session.name}</p>
+                        <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                           Desde {fmtTime(session.startedAt)} · {count} venta{count !== 1 ? "s" : ""} · {fmt(total)}
                         </p>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-primary transition-colors" />
+                      <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                     </button>
                   );
                 })}
@@ -274,14 +274,14 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                   onKeyDown={(e) => { if (e.key === "Enter") addCashier(); if (e.key === "Escape") setShowAddForm(false); }}
                   placeholder="Nombre del cajero"
                   autoFocus
-                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
+                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary"
                 />
                 <button type="button" onClick={addCashier}
                   className="px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={() => setShowAddForm(false)}
-                  className="px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-500 hover:text-gray-700">
+                  className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -289,7 +289,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-secondary)] dark:text-muted hover:border-primary hover:text-primary transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Agregar cajero
@@ -306,8 +306,8 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-foreground">{activeSession.name}</p>
-                <p className="text-xs text-gray-500 dark:text-muted">
+                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{activeSession.name}</p>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                   <Clock className="h-3 w-3 inline mr-1" />
                   Turno desde {fmtTime(activeSession.startedAt)}
                 </p>
@@ -315,7 +315,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <button
                 type="button"
                 onClick={() => { setView("selector"); setActiveCashierIdState(null); setActiveCashierId(null); onCashierChange?.(null, null); }}
-                className="ml-auto text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300 flex items-center gap-1"
+                className="ml-auto text-xs px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 flex items-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" />
                 Cambiar
@@ -337,12 +337,12 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
             {/* Recent sales */}
             {activeSession.sales.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-gray-500 dark:text-muted">Ultimas ventas</p>
+                <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Ultimas ventas</p>
                 {[...activeSession.sales].reverse().slice(0, 5).map((sale) => (
                   <div key={sale.id} className="flex items-center gap-2 text-xs py-1.5 border-b border-gray-50 dark:border-card-border last:border-0">
-                    <ShoppingBasket className="h-3.5 w-3.5 text-gray-300 shrink-0" />
-                    <span className="text-gray-500 dark:text-muted">{fmtTime(sale.createdAt)}</span>
-                    <span className="text-gray-600 dark:text-muted flex-1">{sale.items} item{sale.items !== 1 ? "s" : ""}</span>
+                    <ShoppingBasket className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
+                    <span className="text-[var(--text-secondary)] dark:text-muted">{fmtTime(sale.createdAt)}</span>
+                    <span className="text-[var(--text-secondary)] dark:text-muted flex-1">{sale.items} item{sale.items !== 1 ? "s" : ""}</span>
                     <span className="font-semibold text-primary">{fmt(sale.total)}</span>
                   </div>
                 ))}
@@ -353,7 +353,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
             <button
               type="button"
               onClick={() => closeShift(activeSession.id)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
             >
               <LogOut className="h-4 w-4" />
               Cerrar turno
@@ -365,7 +365,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
         {view === "admin" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-700 dark:text-foreground">Sesiones de hoy</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Sesiones de hoy</p>
               <button type="button" onClick={() => setView(activeCashierId ? "active" : "selector")}
                 className="text-xs text-primary hover:underline">
                 Volver
@@ -373,7 +373,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
             </div>
 
             {sessions.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-6 text-gray-300 dark:text-gray-600">
+              <div className="flex flex-col items-center gap-2 py-6 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
                 <Users className="h-8 w-8" />
                 <p className="text-sm">Sin sesiones registradas</p>
               </div>
@@ -382,31 +382,31 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 {sessions.map((session) => {
                   const { total, count, avg } = sessionStats(session);
                   return (
-                    <div key={session.id} className="rounded-xl border border-gray-100 dark:border-card-border p-3 space-y-2">
+                    <div key={session.id} className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm font-semibold text-gray-800 dark:text-foreground flex-1">{session.name}</span>
+                        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground flex-1">{session.name}</span>
                         {session.closedAt ? (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-muted">Cerrado</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">Cerrado</span>
                         ) : (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">Activo</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">Activo</span>
                         )}
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">
                         <div className="text-center">
                           <p className="text-sm font-bold text-primary">{count}</p>
-                          <p className="text-xs text-gray-400 dark:text-muted">ventas</p>
+                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">ventas</p>
                         </div>
                         <div className="text-center">
                           <p className="text-sm font-bold text-primary">S/{total.toFixed(0)}</p>
-                          <p className="text-xs text-gray-400 dark:text-muted">total</p>
+                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">total</p>
                         </div>
                         <div className="text-center">
                           <p className="text-sm font-bold text-primary">{avg > 0 ? `S/${avg.toFixed(0)}` : "—"}</p>
-                          <p className="text-xs text-gray-400 dark:text-muted">ticket</p>
+                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">ticket</p>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-muted">
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
                         {fmtDate(session.startedAt)} {fmtTime(session.startedAt)}
                         {session.closedAt ? ` → ${fmtTime(session.closedAt)}` : " (en curso)"}
                       </p>
@@ -422,10 +422,10 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               const grandCount = sessions.reduce((s, sess) => s + sessionStats(sess).count, 0);
               return (
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-foreground">Total del dia</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Total del dia</span>
                   <div className="text-right">
-                    <p className="text-base font-black text-primary">{fmt(grandTotal)}</p>
-                    <p className="text-xs text-gray-500 dark:text-muted">{grandCount} ventas</p>
+                    <p className="text-base font-extrabold text-primary">{fmt(grandTotal)}</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{grandCount} ventas</p>
                   </div>
                 </div>
               );

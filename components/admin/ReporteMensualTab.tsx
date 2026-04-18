@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
 import {
   FileText,
@@ -12,7 +13,7 @@ import {
   TrendingUp,
   TrendingDown,
   Users,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -61,9 +62,9 @@ function KpiCard({
   color: "green" | "red" | "blue";
 }) {
   const colors = {
-    green: "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
-    red:   "bg-red-50   dark:bg-red-900/20   text-red-700   dark:text-red-400   border-red-200   dark:border-red-800",
-    blue:  "bg-emerald-50  dark:bg-emerald-900/20  text-emerald-700  dark:text-emerald-400  border-emerald-200  dark:border-emerald-800",
+    green: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error)]/20   text-[var(--data-error)]   dark:text-[var(--data-error)]   border-[var(--data-error)]   dark:border-[var(--data-error)]",
+    blue:  "bg-[var(--accent-soft)]  dark:bg-[var(--accent-muted)]  text-[var(--data-success)]  dark:text-[var(--data-success)]  border-[var(--data-success)]/30  dark:border-[var(--data-success)]/30",
   };
   return (
     <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
@@ -162,8 +163,8 @@ export default function ReporteMensualTab() {
           <FileText className="h-5 w-5 text-[#00B4A6]" />
         </div>
         <div>
-          <h2 className="font-bold text-gray-900 dark:text-white">Reporte Mensual</h2>
-          <p className="text-xs text-gray-500">
+          <SectionTitle className="font-bold text-[var(--text-primary)]">Reporte Mensual</SectionTitle>
+          <p className="text-xs text-[var(--text-secondary)]">
             Genera el reporte PDF con ingresos, gastos, top productos y fiados.
             Se envía automáticamente el día 1 de cada mes.
           </p>
@@ -171,15 +172,15 @@ export default function ReporteMensualTab() {
       </div>
 
       {/* Selector de período + botón */}
-      <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+      <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]">
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Mes
           </label>
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
           >
             {MONTH_NAMES.map((name, i) => (
               <option key={i + 1} value={i + 1}>
@@ -190,7 +191,7 @@ export default function ReporteMensualTab() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Año
           </label>
           <input
@@ -199,7 +200,7 @@ export default function ReporteMensualTab() {
             max={2030}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
           />
         </div>
 
@@ -224,7 +225,7 @@ export default function ReporteMensualTab() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -234,12 +235,12 @@ export default function ReporteMensualTab() {
       {result && (
         <div className="space-y-6">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="font-semibold text-gray-900 dark:text-white">
+            <CheckCircle className="h-5 w-5 text-[var(--data-success)]" />
+            <span className="font-semibold text-[var(--text-primary)]">
               Reporte {result.period} generado
             </span>
             {result.emailSent && (
-              <span className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
+              <span className="text-xs text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
                 Email enviado
               </span>
             )}
@@ -268,7 +269,7 @@ export default function ReporteMensualTab() {
           </div>
 
           {/* Info PDF */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
             <FileText className="h-4 w-4 shrink-0" />
             <span>
               PDF generado ({(result.pdfSize / 1024).toFixed(1)} KB) con top 10 productos,
@@ -281,24 +282,24 @@ export default function ReporteMensualTab() {
       {/* Historial de reportes generados en esta sesión */}
       {history.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-2">
             <Users className="h-4 w-4" />
             Reportes generados en esta sesión
-          </h3>
+          </CardTitle>
           <div className="space-y-2">
             {history.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between gap-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+                className="flex items-center justify-between gap-4 p-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)]"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
                     {entry.period}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     Ingresos: {fmt(entry.ingresos)} · Utilidad: {fmt(entry.utilidad)}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     Generado: {new Date(entry.generatedAt).toLocaleString("es-PE")}
                   </p>
                 </div>
@@ -318,7 +319,7 @@ export default function ReporteMensualTab() {
       )}
 
       {/* Nota sobre automatización */}
-      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-xs text-gray-500 flex items-start gap-2">
+      <div className="p-3 rounded-lg bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)] text-xs text-[var(--text-secondary)] flex items-start gap-2">
         <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
         <span>
           El reporte se genera automáticamente el{" "}

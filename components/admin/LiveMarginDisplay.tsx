@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { TrendingUp, ChevronDown, ChevronUp, DollarSign } from "lucide-react";
+import { TrendingUp, ChevronDown, ChevronUp, DollarSign } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -52,9 +52,9 @@ const LEVEL_STYLES: Record<MarginLevel, { bar: string; text: string; badge: stri
     badge: "bg-secondary/10 text-secondary",
   },
   danger: {
-    bar: "bg-red-500",
-    text: "text-red-500",
-    badge: "bg-red-50 text-red-600",
+    bar: "bg-[var(--data-error)]",
+    text: "text-[var(--data-error)]",
+    badge: "bg-[var(--data-error-50)] text-[var(--data-error)]",
   },
 };
 
@@ -73,12 +73,12 @@ function ProductRow({ item }: ProductRowProps) {
   const styles = LEVEL_STYLES[level];
 
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-100 last:border-0">
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">
+        <p className="text-sm font-medium text-[var(--text-primary)] truncate">
           {item.name}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-[var(--text-tertiary)]">
           {item.qty} x {fmt(item.price)} — costo {fmt(item.cost)}
         </p>
       </div>
@@ -131,7 +131,7 @@ export default function LiveMarginDisplay({ items }: Props) {
           ? "border-primary/30"
           : level === "warning"
             ? "border-secondary/30"
-            : "border-red-300"
+            : "border-[var(--data-error)]"
       )}
     >
       {/* Summary bar */}
@@ -147,7 +147,7 @@ export default function LiveMarginDisplay({ items }: Props) {
                 ? "bg-primary/10"
                 : level === "warning"
                   ? "bg-secondary/10"
-                  : "bg-red-50"
+                  : "bg-[var(--data-error-50)]"
             )}
           >
             <TrendingUp
@@ -157,15 +157,15 @@ export default function LiveMarginDisplay({ items }: Props) {
                   ? "text-primary"
                   : level === "warning"
                     ? "text-secondary"
-                    : "text-red-500"
+                    : "text-[var(--data-error)]"
               )}
             />
           </div>
           <div className="text-left">
-            <p className="text-xs text-gray-500 font-semibold">
+            <p className="text-xs text-[var(--text-secondary)] font-semibold">
               Margen total
             </p>
-            <p className={cn("text-xl font-black", styles.text)}>
+            <p className={cn("text-xl font-extrabold", styles.text)}>
               {fmt(totals.margin)}{" "}
               <span className="text-base font-bold">({totals.marginPct}%)</span>
             </p>
@@ -173,21 +173,21 @@ export default function LiveMarginDisplay({ items }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-xs text-gray-400">Ingreso</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs text-[var(--text-tertiary)]">Ingreso</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               {fmt(totals.revenue)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-400">Costo</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs text-[var(--text-tertiary)]">Costo</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               {fmt(totals.cost)}
             </p>
           </div>
           {expanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-[var(--text-tertiary)]" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-[var(--text-tertiary)]" />
           )}
         </div>
       </button>
@@ -195,17 +195,17 @@ export default function LiveMarginDisplay({ items }: Props) {
       {/* Progress bar */}
       <div className="h-2 w-full bg-gray-100">
         <div
-          className={cn("h-full transition-all duration-500", styles.bar)}
+          className={cn("h-full transition-all duration-[var(--dur-slow)]", styles.bar)}
           style={{ width: `${Math.min(100, totals.marginPct)}%` }}
         />
       </div>
 
       {/* Breakdown */}
       {expanded && items.length > 0 && (
-        <div className="bg-white px-5 py-3 border-t border-gray-100">
+        <div className="bg-white px-5 py-3 border-t border-[var(--rule-soft)]">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-600">
+            <DollarSign className="w-4 h-4 text-[var(--text-tertiary)]" />
+            <p className="text-xs font-semibold text-[var(--text-secondary)]">
               Desglose por producto
             </p>
           </div>
@@ -217,7 +217,7 @@ export default function LiveMarginDisplay({ items }: Props) {
 
       {expanded && items.length === 0 && (
         <div className="bg-white px-5 py-6 text-center">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay items en esta venta
           </p>
         </div>

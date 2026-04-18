@@ -12,10 +12,10 @@ interface FunnelData {
 }
 
 const STAGES = [
-  { key: "registered" as const, label: "Registrados", icon: Users, color: "bg-emerald-500" },
-  { key: "onboarded" as const, label: "Onboarding completo", icon: CheckCircle2, color: "bg-violet-500" },
-  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-amber-500" },
-  { key: "withSales" as const, label: "Con ventas", icon: ShoppingCart, color: "bg-emerald-500" },
+  { key: "registered" as const, label: "Registrados", icon: Users, color: "bg-[var(--data-success)]" },
+  { key: "onboarded" as const, label: "Onboarding completo", icon: CheckCircle2, color: "bg-[var(--data-info)]" },
+  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[var(--data-warning)]" },
+  { key: "withSales" as const, label: "Con ventas", icon: ShoppingCart, color: "bg-[var(--data-success)]" },
 ];
 
 export default function TenantFunnel() {
@@ -44,13 +44,13 @@ export default function TenantFunnel() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="h-5 w-32 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+          <div className="h-5 w-32 bg-[var(--surface-sunken)] rounded animate-pulse" />
         </div>
         <div className="flex gap-3">
           {[0, 1, 2, 3].map(i => (
-            <div key={i} className="flex-1 h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+            <div key={i} className="flex-1 h-24 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -62,10 +62,10 @@ export default function TenantFunnel() {
   const maxVal = Math.max(data.registered, 1);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
       <div className="flex items-center gap-2 mb-5">
-        <TrendingUp className="h-4.5 w-4.5 text-emerald-600" />
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white">Embudo de conversión</h3>
+        <TrendingUp className="h-4.5 w-4.5 text-[var(--data-success)]" />
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Embudo de conversión</h3>
       </div>
 
       <div className="flex items-end gap-2">
@@ -80,7 +80,7 @@ export default function TenantFunnel() {
             <div key={stage.key} className="flex-1 flex flex-col items-center gap-2">
               {/* Conversion rate from previous */}
               {convRate && (
-                <span className="text-[10px] font-semibold text-gray-400">
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">
                   {convRate}%
                 </span>
               )}
@@ -95,7 +95,7 @@ export default function TenantFunnel() {
                   }}
                 >
                   <div className={cn("absolute inset-0 rounded-t-lg", stage.color)} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-t-lg" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent rounded-t-lg" />
                 </div>
                 <div className={cn("w-full h-1 rounded-b-lg", stage.color)} />
               </div>
@@ -103,8 +103,8 @@ export default function TenantFunnel() {
               {/* Value */}
               <div className="text-center">
                 <Icon className="h-4 w-4 text-gray-400 mx-auto mb-0.5" />
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
-                <p className="text-[10px] text-gray-500 leading-tight">{stage.label}</p>
+                <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-500 leading-tight">{stage.label}</p>
               </div>
             </div>
           );

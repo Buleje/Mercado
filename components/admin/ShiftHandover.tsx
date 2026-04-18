@@ -1,7 +1,8 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from "react";
-import { ClipboardList, Clock, History, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "lucide-react";
+import { ClipboardList, Clock, History, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -99,12 +100,12 @@ export default function ShiftHandover() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ClipboardList className="w-5 h-5 text-[#00B4A6]" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Entrega de Turno
-          </h2>
+          </SectionTitle>
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center gap-1 rounded-lg border border-[var(--rule-base)] p-1 bg-[var(--surface-sunken)]">
           {(["current", "close", "history"] as const).map((v) => (
             <button
               key={v}
@@ -113,7 +114,7 @@ export default function ShiftHandover() {
                 "px-3 py-1 rounded-md text-sm font-medium transition-colors",
                 view === v
                   ? "bg-[#00B4A6] text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
               )}
             >
               {v === "current" ? "Turno actual" : v === "close" ? "Cerrar turno" : "Historial"}
@@ -127,21 +128,21 @@ export default function ShiftHandover() {
         <div className="rounded-xl border border-[#f97316]/40 bg-[#f97316]/5 dark:bg-[#f97316]/5 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-[#f97316]" />
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
               Notas del turno anterior —{" "}
               <span className="font-bold">{lastHandover.cashierName}</span>
             </p>
           </div>
           {lastHandover.notes ? (
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+            <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">
               {lastHandover.notes}
             </p>
           ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+            <p className="text-sm text-[var(--text-tertiary)] italic">
               Sin notas para este turno.
             </p>
           )}
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-xs text-[var(--text-tertiary)] mt-2">
             Cerrado:{" "}
             {new Date(lastHandover.closedAt ?? "").toLocaleString("es-PE", {
               dateStyle: "short",
@@ -155,28 +156,28 @@ export default function ShiftHandover() {
       {view === "current" && (
         <>
           {loading && (
-            <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500">
+            <div className="flex items-center justify-center py-8 text-[var(--text-tertiary)]">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
               Cargando datos del turno...
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               {error}
             </div>
           )}
           {!loading && !error && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ventas del turno</p>
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+                <p className="text-xs text-[var(--text-tertiary)] mb-1">Ventas del turno</p>
                 <p className="text-2xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
                   {fmt(todayStats.total)}
                 </p>
               </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Transacciones</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+                <p className="text-xs text-[var(--text-tertiary)] mb-1">Transacciones</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">
                   {todayStats.count}
                 </p>
               </div>
@@ -184,9 +185,9 @@ export default function ShiftHandover() {
           )}
 
           {!loading && sales.length > 0 && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+              <div className="px-4 py-3 border-b border-[var(--rule-base)]">
+                <p className="text-sm font-medium text-[var(--text-secondary)]">
                   Ultimas ventas del turno
                 </p>
               </div>
@@ -196,13 +197,13 @@ export default function ShiftHandover() {
                     key={s.id}
                     className="px-4 py-2.5 flex items-center justify-between text-sm"
                   >
-                    <span className="text-gray-600 dark:text-gray-400 text-xs">
+                    <span className="text-[var(--text-secondary)] text-xs">
                       {new Date(s.createdAt).toLocaleTimeString("es-PE", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                     </span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                    <span className="font-medium text-[var(--text-primary)]">
                       {fmt(s.total)}
                     </span>
                   </div>
@@ -215,28 +216,28 @@ export default function ShiftHandover() {
 
       {/* Vista: Cerrar turno */}
       {view === "close" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">
             Resumen de cierre
           </p>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-lg bg-gray-50 dark:bg-gray-750 px-3 py-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Ventas</p>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-[var(--text-tertiary)]">Ventas</p>
+              <p className="font-semibold text-[var(--text-primary)]">
                 {fmt(todayStats.total)}
               </p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-750 px-3 py-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Transacciones</p>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-[var(--text-tertiary)]">Transacciones</p>
+              <p className="font-semibold text-[var(--text-primary)]">
                 {todayStats.count}
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-[var(--text-secondary)]">
               Tu nombre (cajero)
             </label>
             <input
@@ -244,12 +245,12 @@ export default function ShiftHandover() {
               value={cashierName}
               onChange={(e) => setCashierName(e.target.value)}
               placeholder="Ej: Maria Lopez"
-              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-[var(--text-secondary)]">
               Notas para el siguiente turno
             </label>
             <textarea
@@ -257,7 +258,7 @@ export default function ShiftHandover() {
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
               placeholder="Ej: Queda poco azucar, hay un pedido pendiente de Juan, la impresora falla..."
-              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
             />
           </div>
 
@@ -275,14 +276,14 @@ export default function ShiftHandover() {
       {view === "history" && (
         <div className="space-y-3">
           {handovers.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">
+            <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
               No hay cierres de turno registrados.
             </div>
           ) : (
             handovers.map((h) => (
               <div
                 key={h.id}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+                className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
               >
                 <button
                   onClick={() =>
@@ -291,12 +292,12 @@ export default function ShiftHandover() {
                   className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <History className="w-4 h-4 text-gray-400" />
+                    <History className="w-4 h-4 text-[var(--text-tertiary)]" />
                     <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">
                         {h.cashierName}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                      <p className="text-xs text-[var(--text-tertiary)]">
                         {new Date(h.closedAt ?? "").toLocaleString("es-PE", {
                           dateStyle: "short",
                           timeStyle: "short",
@@ -309,28 +310,28 @@ export default function ShiftHandover() {
                       {fmt(h.totalSales)}
                     </span>
                     {expandedId === h.id ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                      <ChevronUp className="w-4 h-4 text-[var(--text-tertiary)]" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 text-[var(--text-tertiary)]" />
                     )}
                   </div>
                 </button>
                 {expandedId === h.id && (
-                  <div className="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                  <div className="px-4 pb-4 pt-1 border-t border-[var(--rule-base)] space-y-2">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="rounded-lg bg-gray-50 dark:bg-gray-750 px-3 py-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Ventas</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">Ventas</p>
                         <p className="font-medium">{fmt(h.totalSales)}</p>
                       </div>
                       <div className="rounded-lg bg-gray-50 dark:bg-gray-750 px-3 py-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Transacciones</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">Transacciones</p>
                         <p className="font-medium">{h.saleCount}</p>
                       </div>
                     </div>
                     {h.notes && (
                       <div className="rounded-lg bg-[#f97316]/5 border border-[#f97316]/20 px-3 py-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Notas</p>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Notas</p>
+                        <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">
                           {h.notes}
                         </p>
                       </div>

@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
   Search, X, Upload, Download, CheckCircle, XCircle,
   Loader2, AlertTriangle, ImageOff, ToggleLeft, ToggleRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}
@@ -55,9 +56,9 @@ function ConfirmModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-sm">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Confirmar cambios</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+      <div className="bg-[var(--surface-raised)] rounded-xl p-6 w-full max-w-sm">
+        <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-2">Confirmar cambios</CardTitle>
+        <p className="text-sm text-[var(--text-secondary)] mb-6">
           Se aplicarán <span className="font-semibold text-[#00B4A6]">{changeCount}</span> cambios a productos.
           Esta acción no se puede deshacer.
         </p>
@@ -65,7 +66,7 @@ function ConfirmModal({
           <button
             onClick={onCancel}
             disabled={applying}
-            className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -281,9 +282,7 @@ export default function BulkPriceEditorTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-      </div>
+      <LoadingState />
     );
   }
 
@@ -292,17 +291,17 @@ export default function BulkPriceEditorTab() {
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[160px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="h-4 w-4 text-gray-400" />
+              <X className="h-4 w-4 text-[var(--text-tertiary)]" />
             </button>
           )}
         </div>
@@ -310,7 +309,7 @@ export default function BulkPriceEditorTab() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
         >
           {categories.map((c) => (
             <option key={c} value={c}>{c === "todas" ? "Todas las categorías" : c}</option>
@@ -322,27 +321,27 @@ export default function BulkPriceEditorTab() {
           placeholder="Precio mín"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
         />
         <input
           type="number"
           placeholder="Precio máx"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
         />
 
         <div className="flex gap-2 ml-auto">
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <Upload className="h-4 w-4" /> Importar CSV
           </button>
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <Download className="h-4 w-4" /> Exportar CSV
           </button>
@@ -360,7 +359,7 @@ export default function BulkPriceEditorTab() {
       {progress > 0 && (
         <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#00B4A6] transition-all duration-300"
+            className="h-full bg-[#00B4A6] transition-all duration-[var(--dur-base)]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -368,39 +367,39 @@ export default function BulkPriceEditorTab() {
 
       {/* Aviso de error de carga */}
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-700 dark:text-amber-400">
+        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Usando datos de ejemplo — {error}
         </div>
       )}
 
       {/* Tabla */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+            <tr className="bg-[var(--surface-canvas)] border-b border-[var(--rule-base)]">
               <th className="px-4 py-3 text-left">
                 <input
                   type="checkbox"
                   checked={filtered.length > 0 && selected.size === filtered.length}
                   onChange={toggleSelectAll}
-                  className="rounded border-gray-300"
+                  className="rounded border-[var(--rule-base)]"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">ID</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Imagen</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Nombre</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Categoría</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Precio actual</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Nuevo precio</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Stock</th>
-              <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">Activo</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">ID</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Imagen</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Nombre</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Categoría</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Precio actual</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Nuevo precio</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Stock</th>
+              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Activo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-gray-400 dark:text-gray-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-tertiary)]">
                   No hay productos con esos filtros
                 </td>
               </tr>
@@ -412,8 +411,8 @@ export default function BulkPriceEditorTab() {
                   <tr
                     key={p.id}
                     className={cn(
-                      "hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors",
-                      isChanged && "bg-amber-50/50 dark:bg-amber-900/10",
+                      "hover:bg-[var(--surface-sunken)]/50 transition-colors",
+                      isChanged && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10",
                       selected.has(p.id) && "bg-teal-50/50 dark:bg-teal-900/10",
                     )}
                   >
@@ -422,10 +421,10 @@ export default function BulkPriceEditorTab() {
                         type="checkbox"
                         checked={selected.has(p.id)}
                         onChange={() => toggleSelect(p.id)}
-                        className="rounded border-gray-300"
+                        className="rounded border-[var(--rule-base)]"
                       />
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{p.id}</td>
+                    <td className="px-4 py-3 text-[var(--text-tertiary)]">{p.id}</td>
                     <td className="px-4 py-3">
                       {p.image ? (
                         <Image
@@ -436,14 +435,14 @@ export default function BulkPriceEditorTab() {
                           className="rounded-lg object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                          <ImageOff className="h-3.5 w-3.5 text-gray-400" />
+                        <div className="w-8 h-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
+                          <ImageOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 max-w-[200px] truncate">{p.name}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{p.category}</td>
-                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">S/ {p.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 font-medium text-[var(--text-primary)] max-w-[200px] truncate">{p.name}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{p.category}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">S/ {p.price.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <input
                         type="number"
@@ -468,7 +467,7 @@ export default function BulkPriceEditorTab() {
                             });
                           }
                         }}
-                        className="w-24 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -481,7 +480,7 @@ export default function BulkPriceEditorTab() {
                           const v = parseInt(e.target.value);
                           if (!isNaN(v)) applyChange(p.id, "stock", v);
                         }}
-                        className="w-20 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -493,7 +492,7 @@ export default function BulkPriceEditorTab() {
                         {(ch.active ?? p.active) ? (
                           <ToggleRight className="h-6 w-6 text-[#00B4A6]" />
                         ) : (
-                          <ToggleLeft className="h-6 w-6 text-gray-400" />
+                          <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />
                         )}
                       </button>
                     </td>
@@ -505,7 +504,7 @@ export default function BulkPriceEditorTab() {
         </table>
       </div>
 
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-[var(--text-tertiary)]">
         {filtered.length} productos · {selected.size} seleccionados · {changeCount} con cambios pendientes
       </p>
 

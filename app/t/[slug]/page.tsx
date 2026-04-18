@@ -94,8 +94,8 @@ export async function generateMetadata({
 
 function TenantPageSkeleton() {
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
-      <section className="bg-gradient-to-br from-teal-600 to-teal-700" style={{ minHeight: "320px" }}>
+    <main className="min-h-screen bg-[var(--surface-canvas)] animate-pulse">
+      <section className="bg-[#00B4A6]" style={{ minHeight: "320px" }}>
         <div className="max-w-3xl mx-auto px-4 py-16 text-center">
           <div className="w-24 h-24 rounded-3xl mx-auto mb-6 bg-white/20" />
           <div className="h-10 w-60 bg-white/20 rounded-lg mx-auto mb-3" />
@@ -106,8 +106,8 @@ function TenantPageSkeleton() {
         <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded mb-6" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-              <div className="aspect-square bg-gray-100 dark:bg-gray-800" />
+            <div key={i} className="rounded-2xl bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] overflow-hidden">
+              <div className="aspect-square bg-[var(--surface-sunken)]" />
               <div className="p-3 space-y-2">
                 <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
                 <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
@@ -163,7 +163,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const badge = planBadge[tenant.plan] ?? planBadge.free;
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <main className="min-h-screen bg-[var(--surface-canvas)]">
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
 
@@ -197,7 +197,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
         <div className="relative z-10 max-w-3xl mx-auto px-4 py-16 sm:py-20 text-center">
           <div
-            className="w-24 h-24 rounded-3xl mx-auto mb-6 flex items-center justify-center text-2xl font-black shadow-xl"
+            className="w-24 h-24 rounded-3xl mx-auto mb-6 flex items-center justify-center text-2xl font-extrabold shadow-xl"
             style={{
               background: "rgba(255,255,255,0.2)",
               border: "2px solid rgba(255,255,255,0.3)",
@@ -216,7 +216,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             )}
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-3 tracking-tight">
             {heroTitle}
           </h1>
 
@@ -271,7 +271,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     <p className="text-white/85 text-sm truncate">{p.description}</p>
                   )}
                 </div>
-                <div className="flex-shrink-0 px-3 py-1 rounded-full bg-white/25 text-white font-black text-sm">
+                <div className="flex-shrink-0 px-3 py-1 rounded-full bg-white/25 text-white font-extrabold text-sm">
                   {p.discountType === "percent"
                     ? `${p.discountValue}% OFF`
                     : p.discountType === "amount"
@@ -282,15 +282,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             ))}
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-4 rounded-2xl shadow-lg border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur">
-            <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3 p-4 rounded-2xl shadow-lg border-2 border-dashed border-[var(--rule-base)] bg-white/80 dark:bg-gray-900/80 backdrop-blur">
+            <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center flex-shrink-0">
               <Tag className="w-5 h-5 text-gray-300 dark:text-gray-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-gray-400 dark:text-gray-500">Promoción destacada</p>
+              <p className="font-bold text-[var(--text-tertiary)]">Promoción destacada</p>
               <p className="text-gray-300 dark:text-gray-600 text-sm">Configura desde Mi Tienda &gt; Secciones</p>
             </div>
-            <div className="flex-shrink-0 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 font-black text-sm">
+            <div className="flex-shrink-0 px-3 py-1 rounded-full bg-[var(--surface-sunken)] text-gray-300 dark:text-gray-600 font-extrabold text-sm">
               % OFF
             </div>
           </div>
@@ -299,7 +299,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
       {/* Featured products */}
       <section className="max-w-5xl mx-auto px-4 py-12">
-        <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
+        <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2">
           <Sparkles className="w-6 h-6" style={{ color: featured.length > 0 ? primary : "#d1d5db" }} />
           Productos destacados
         </h2>
@@ -313,15 +313,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               return (
                 <div
                   key={p.id}
-                  className="group relative rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-800"
+                  className="group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-xl transition-shadow border border-[var(--rule-base)]"
                 >
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden">
                     {p.productImage && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={p.productImage}
                         alt={p.productName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                       />
                     )}
                   </div>
@@ -329,7 +329,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   {/* Exclusive badge */}
                   {isExclusive && p.savingsPercent != null && p.savingsPercent > 0 && (
                     <div
-                      className="absolute top-2 left-2 px-2 py-1 rounded-full text-white font-black text-xs shadow-lg"
+                      className="absolute top-2 left-2 px-2 py-1 rounded-full text-white font-extrabold text-xs shadow-lg"
                       style={{ background: accent }}
                     >
                       -{p.savingsPercent}%
@@ -338,7 +338,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
                   {/* Custom badge */}
                   {p.badge && (
-                    <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-white/95 text-gray-900 font-bold text-[10px] shadow">
+                    <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-white/95 text-gray-900 font-bold text-[length:var(--ts-2xs)] shadow">
                       {p.badge}
                     </div>
                   )}
@@ -348,7 +348,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     <p className="text-xs text-gray-500 mb-2">{p.productUnit}</p>
                     <div className="flex items-baseline gap-2">
                       <span
-                        className="font-black text-lg"
+                        className="font-extrabold text-lg"
                         style={{ color: isExclusive ? primary : undefined }}
                       >
                         {formatPrice(shownPrice)}
@@ -369,19 +369,19 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-700"
+                className="rounded-2xl overflow-hidden bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)]"
               >
-                <div className="aspect-square bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                <div className="aspect-square bg-[var(--surface-sunken)] flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
                       <ShoppingBag className="w-6 h-6 text-gray-300 dark:text-gray-600" />
                     </div>
                     <p className="text-xs font-semibold text-gray-300 dark:text-gray-600">Imagen {i + 1}</p>
                   </div>
                 </div>
                 <div className="p-3 space-y-2">
-                  <div className="h-4 w-20 bg-gray-100 dark:bg-gray-800 rounded" />
-                  <div className="h-5 w-14 bg-gray-100 dark:bg-gray-800 rounded" />
+                  <div className="h-4 w-20 bg-[var(--surface-sunken)] rounded" />
+                  <div className="h-5 w-14 bg-[var(--surface-sunken)] rounded" />
                 </div>
               </div>
             ))}
@@ -392,12 +392,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* About */}
       {(customization.aboutTitle || customization.aboutBody) ? (
         <section className="max-w-3xl mx-auto px-4 py-8">
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
-            <h2 className="text-xl font-black mb-3">
+          <div className="p-6 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
+            <h2 className="text-xl font-extrabold mb-3">
               {customization.aboutTitle ?? "Sobre nosotros"}
             </h2>
             {customization.aboutBody && (
-              <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
+              <p className="text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed">
                 {customization.aboutBody}
               </p>
             )}
@@ -405,14 +405,14 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </section>
       ) : (
         <section className="max-w-3xl mx-auto px-4 py-8">
-          <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60">
-            <h2 className="text-xl font-black mb-3 text-gray-300 dark:text-gray-600">
+          <div className="p-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-gray-900/60">
+            <h2 className="text-xl font-extrabold mb-3 text-gray-300 dark:text-gray-600">
               Sobre nosotros
             </h2>
             <div className="space-y-2">
-              <div className="h-4 w-full bg-gray-100 dark:bg-gray-800 rounded" />
-              <div className="h-4 w-4/5 bg-gray-100 dark:bg-gray-800 rounded" />
-              <div className="h-4 w-3/5 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-4 w-full bg-[var(--surface-sunken)] rounded" />
+              <div className="h-4 w-4/5 bg-[var(--surface-sunken)] rounded" />
+              <div className="h-4 w-3/5 bg-[var(--surface-sunken)] rounded" />
             </div>
             <p className="text-xs text-gray-300 dark:text-gray-600 mt-3">Configura desde Mi Tienda &gt; Identidad</p>
           </div>
@@ -424,7 +424,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <Link
             href={`/t/${tenant.slug}/tienda`}
-            className="group flex items-center gap-4 p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-100 dark:border-gray-800"
+            className="group flex items-center gap-4 p-6 bg-[var(--surface-raised)] rounded-2xl shadow-md hover:shadow-xl transition-all border border-[var(--rule-base)]"
           >
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -441,7 +441,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
           <Link
             href={`/t/${tenant.slug}/admin`}
-            className="group flex items-center gap-4 p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-100 dark:border-gray-800"
+            className="group flex items-center gap-4 p-6 bg-[var(--surface-raised)] rounded-2xl shadow-md hover:shadow-xl transition-all border border-[var(--rule-base)]"
           >
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-50 dark:bg-orange-900/20">
               <Settings className="w-7 h-7 text-[#f4a261]" />
@@ -460,12 +460,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           customization.address ||
           tenant.ownerPhone ||
           tenant.customDomain) ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <div className="bg-[var(--surface-raised)] rounded-2xl p-6 shadow-sm border border-[var(--rule-base)] space-y-3">
+            <h3 className="text-sm font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
               Contacto
             </h3>
             {(customization.whatsappPhone || tenant.ownerPhone) && (
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+              <div className="flex items-center gap-3 text-[var(--text-secondary)]">
                 <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <a
                   href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}`}
@@ -476,13 +476,13 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               </div>
             )}
             {customization.address && (
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+              <div className="flex items-center gap-3 text-[var(--text-secondary)]">
                 <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span className="text-sm">{customization.address}</span>
               </div>
             )}
             {customization.contactEmail && (
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+              <div className="flex items-center gap-3 text-[var(--text-secondary)]">
                 <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <a
                   href={`mailto:${customization.contactEmail}`}
@@ -494,17 +494,17 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             )}
           </div>
         ) : (
-          <div className="rounded-2xl p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 space-y-3">
+          <div className="rounded-2xl p-6 border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-gray-900/60 space-y-3">
             <h3 className="text-sm font-bold text-gray-300 dark:text-gray-600 uppercase tracking-wider">
               Contacto
             </h3>
             <div className="flex items-center gap-3">
               <Phone className="w-4 h-4 text-gray-200 dark:text-gray-700 flex-shrink-0" />
-              <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-4 w-32 bg-[var(--surface-sunken)] rounded" />
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="w-4 h-4 text-gray-200 dark:text-gray-700 flex-shrink-0" />
-              <div className="h-4 w-48 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-4 w-48 bg-[var(--surface-sunken)] rounded" />
             </div>
             <p className="text-xs text-gray-300 dark:text-gray-600">Configura desde Mi Tienda &gt; Contacto</p>
           </div>

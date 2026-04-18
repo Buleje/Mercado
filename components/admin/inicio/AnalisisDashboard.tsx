@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import dynamic from "next/dynamic";
 
 const S = () => (
@@ -17,19 +18,19 @@ export default function AnalisisDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Análisis ABC</h3>
+        <CardTitle className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-3">Análisis ABC</CardTitle>
         <ABCAnalysisTab />
       </div>
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Control de Vencimientos</h3>
+      <div className="border-t border-[var(--rule-base)] pt-6">
+        <CardTitle className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-3">Control de Vencimientos</CardTitle>
         <ExpiryDashboardTab />
       </div>
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Predicción de Stock</h3>
+      <div className="border-t border-[var(--rule-base)] pt-6">
+        <CardTitle className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-3">Predicción de Stock</CardTitle>
         <StockPredictionWidget />
       </div>
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Estacionalidad</h3>
+      <div className="border-t border-[var(--rule-base)] pt-6">
+        <CardTitle className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-3">Estacionalidad</CardTitle>
         <SeasonalityInsights />
       </div>
     </div>

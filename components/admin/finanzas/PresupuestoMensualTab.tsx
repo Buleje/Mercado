@@ -1,7 +1,9 @@
 'use client';
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
+
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "lucide-react";
+import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -42,14 +44,14 @@ function getBarColor(porcentaje: number): string {
   if (porcentaje > 100) return "bg-red-500 animate-pulse";
   if (porcentaje > 80) return "bg-red-500";
   if (porcentaje > 60) return "bg-amber-500";
-  return "bg-emerald-500";
+  return "bg-[var(--accent-soft)]";
 }
 
 function getBarTrack(porcentaje: number): string {
   if (porcentaje > 100) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 80) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 60) return "bg-amber-100 dark:bg-amber-900/20";
-  return "bg-emerald-100 dark:bg-emerald-900/20";
+  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -153,17 +155,15 @@ export default function PresupuestoMensualTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-      </div>
+      <LoadingState />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-2">
-        <AlertTriangle className="h-8 w-8 text-red-400" />
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
       </div>
     );
@@ -177,8 +177,8 @@ export default function PresupuestoMensualTab() {
           <Wallet className="h-8 w-8 text-[#00B4A6]" />
         </div>
         <div className="text-center">
-          <p className="text-base font-bold text-gray-900 dark:text-white">No has definido un presupuesto</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Crea uno para controlar tus gastos mensuales.</p>
+          <p className="text-base font-bold text-[var(--text-primary)]">No has definido un presupuesto</p>
+          <p className="text-sm text-[var(--text-tertiary)] mt-1">Crea uno para controlar tus gastos mensuales.</p>
         </div>
         <button
           onClick={openEdit}
@@ -196,9 +196,9 @@ export default function PresupuestoMensualTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+          <CardTitle className="text-base font-bold text-[var(--text-primary)]">
             Presupuesto Mensual &mdash; {mesLabel(data.mes)}
-          </h3>
+          </CardTitle>
         </div>
         <button
           onClick={openEdit}
@@ -217,19 +217,19 @@ export default function PresupuestoMensualTab() {
           return (
             <div
               key={cat.nombre}
-              className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  space-y-3"
+              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">{cat.nombre}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{cat.nombre}</p>
                 <span className={cn(
                   "text-xs font-bold px-2 py-0.5 rounded-lg",
                   cat.porcentaje > 100
-                    ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 animate-pulse"
+                    ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] animate-pulse"
                     : cat.porcentaje > 80
-                      ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                      ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
                       : cat.porcentaje > 60
-                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                        : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                        ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                        : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
                 )}>
                   {cat.porcentaje}%
                 </span>
@@ -238,13 +238,13 @@ export default function PresupuestoMensualTab() {
               {/* Progress bar */}
               <div className={cn("h-2.5 rounded-full overflow-hidden", getBarTrack(cat.porcentaje))}>
                 <div
-                  className={cn("h-full rounded-full transition-all duration-500", getBarColor(cat.porcentaje))}
+                  className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", getBarColor(cat.porcentaje))}
                   style={{ width: `${barWidth}%` }}
                 />
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-[var(--text-tertiary)]">
                   {formatCurrency(cat.gastado)} de {formatCurrency(cat.limite)}
                 </span>
               </div>
@@ -252,8 +252,8 @@ export default function PresupuestoMensualTab() {
               <p className={cn(
                 "text-xs font-bold",
                 restante >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
+                  ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                  : "text-[var(--data-error)] dark:text-[var(--data-error)]"
               )}>
                 {restante >= 0
                   ? `Quedan ${formatCurrency(restante)}`
@@ -262,7 +262,7 @@ export default function PresupuestoMensualTab() {
               </p>
 
               {cat.porcentaje > 100 && (
-                <p className="text-[10px] font-bold text-red-600 dark:text-red-400 animate-pulse">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] animate-pulse">
                   Excedido
                 </p>
               )}
@@ -272,25 +272,25 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* Resumen inferior */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-[10px] uppercase font-bold text-gray-400">Total presupuestado</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(totalPresupuestado)}</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total presupuestado</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">{formatCurrency(totalPresupuestado)}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-gray-400">Total gastado</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(totalGastado)}</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total gastado</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">{formatCurrency(totalGastado)}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-gray-400">% del presupuesto</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">% del presupuesto</p>
             <p className={cn(
               "text-lg font-bold",
               porcentajeTotal > 100
-                ? "text-red-600 dark:text-red-400"
+                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 : porcentajeTotal > 80
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-emerald-600 dark:text-emerald-400"
+                  ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                  : "text-[var(--data-success)] dark:text-[var(--data-success)]"
             )}>
               {porcentajeTotal}%
             </p>
@@ -298,7 +298,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <div className={cn("h-2 rounded-full overflow-hidden mt-3", getBarTrack(porcentajeTotal))}>
           <div
-            className={cn("h-full rounded-full transition-all duration-500", getBarColor(porcentajeTotal))}
+            className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", getBarColor(porcentajeTotal))}
             style={{ width: `${Math.min(porcentajeTotal, 100)}%` }}
           />
         </div>
@@ -312,11 +312,11 @@ export default function PresupuestoMensualTab() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={e => e.target === e.currentTarget && setShowEdit(false)}
           >
-            <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="w-full max-w-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Editar Presupuesto</h3>
+                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Editar Presupuesto</CardTitle>
                 <button onClick={() => setShowEdit(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
-                  <X className="h-4 w-4 text-gray-500" />
+                  <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
 
@@ -324,17 +324,17 @@ export default function PresupuestoMensualTab() {
                 {draft.map((d, i) => (
                   <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
                     <div className="flex-1">
-                      <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Categoria</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Categoria</label>
                       <input
                         type="text"
                         value={d.nombre}
                         onChange={e => updateDraft(i, "nombre", e.target.value)}
                         placeholder="Ej: Mercaderia"
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                        className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                     <div className="w-28">
-                      <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Limite (S/)</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Limite (S/)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -342,12 +342,12 @@ export default function PresupuestoMensualTab() {
                         value={d.limite}
                         onChange={e => updateDraft(i, "limite", e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                        className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                     <button
                       onClick={() => removeDraftCat(i)}
-                      className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                      className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -362,12 +362,12 @@ export default function PresupuestoMensualTab() {
                 <Plus className="h-3.5 w-3.5" /> Agregar categoria
               </button>
 
-              {saveError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{saveError}</p>}
+              {saveError && <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{saveError}</p>}
 
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setShowEdit(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancelar
                 </button>

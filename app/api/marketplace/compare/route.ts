@@ -1,104 +1,61 @@
 /**
- * GET /api/marketplace/compare?name=arroz&productId=123
+ * GET /api/marketplace/compare?ids=1,2,3,4
  *
- * Compares prices of the same product across multiple stores.
- * Returns stores sorted by price (cheapest first).
- *
- * Diferenciador: ningun competidor en Pucallpa ofrece comparacion de precios.
+ * Resuelve hasta 4 productos para comparación side-by-side.
+ * Endpoint público — no requiere auth (marketplace browsing).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { MarketplaceCompareDB } from "@/lib/db/marketplace-compare.db";
 import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
-  name: z.string().min(1).optional(),
-  productId: z.coerce.number().int().positive().optional(),
-}).refine(d => d.name || d.productId, { message: "name or productId required" });
+  ids: z.string().min(1).max(200),
+});
 
 export async function GET(req: NextRequest) {
+  const parsed = QuerySchema.safeParse({
+    ids: req.nextUrl.searchParams.get("ids") ?? "",
+  });
+  if (!parsed.success) {
+    return NextResponse.json({ error: "ids requerido" }, { status: 400 });
+  }
+
+  const ids = parsed.data.ids
+    .split(",")
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isInteger(n) && n > 0)
+    .slice(0, 4); // Hard-cap 4 para evitar abuso
+
+  if (ids.length === 0) {
+    return NextResponse.json({ data: [] });
+  }
+
   try {
-    const raw = {
-      name: req.nextUrl.searchParams.get("name") ?? undefined,
-      productId: req.nextUrl.searchParams.get("productId") ?? undefined,
-    };
-
-    const parsed = QuerySchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "name o productId requerido", issues: parsed.error.issues },
-        { status: 400 },
-      );
-    }
-
-    const { name, productId } = parsed.data;
-
-    // Find products matching by name or ID across ALL tenants (marketplace is cross-tenant)
-    const whereClause: Record<string, unknown> = { active: true };
-    if (productId) {
-      // Find the product name first, then search across stores
-      const source = await prisma.product.findUnique({
-        where: { id: productId },
-        select: { name: true },
-      });
-      if (source) {
-        whereClause.name = { contains: source.name, mode: "insensitive" };
-      } else {
-        return NextResponse.json({ data: [] });
-      }
-    } else if (name) {
-      whereClause.name = { contains: name, mode: "insensitive" };
-    }
-
-    const storeProducts = await prisma.storeProduct.findMany({
-      where: {
-        isActive: true,
-        product: whereClause,
-      },
-      select: {
-        retailPrice: true,
-        storeId: true,
-        product: {
-          select: { id: true, name: true, stock: true },
-        },
-        store: {
-          select: {
-            slug: true,
-            name: true,
-            logo: true,
-            rating: true,
-            isPublished: true,
-          },
-        },
-      },
-      take: 20,
-      orderBy: { retailPrice: "asc" },
+    // El marketplace es "global" para consumers — pero seguimos usando el tenant
+    // main como scope por convención. Si un producto es de otro tenant, aún así
+    // se muestra porque la marketplace lista es unificada.
+    const mainTenant = await prisma.tenant.findFirst({
+      where: { slug: "main" },
+      select: { id: true },
     });
+    const tenantId = mainTenant?.id ?? "global";
 
-    // Deduplicate by store (keep cheapest per store)
-    const seen = new Set<string>();
-    const data = storeProducts
-      .filter(sp => {
-        if (seen.has(sp.storeId)) return false;
-        seen.add(sp.storeId);
-        return true;
-      })
-      .map(sp => ({
-        storeSlug: sp.store.slug,
-        storeName: sp.store.name,
-        storeLogo: sp.store.logo ?? null,
-        storeRating: sp.store.rating ? Number(sp.store.rating) : null,
-        price: Number(sp.retailPrice),
-        originalPrice: null,
-        inStock: (sp.product.stock ?? 0) > 0,
-        deliveryAvailable: sp.store.isPublished,
-      }));
+    const data = await MarketplaceCompareDB.getProductsForCompare(tenantId, ids);
 
-    return NextResponse.json({ data });
+    return NextResponse.json(
+      { data },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=30, s-maxage=60",
+          "X-Total-Count": String(data.length),
+        },
+      },
+    );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    logger.error("[marketplace/compare] Error", { error: msg });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    logger.error("[marketplace/compare] failed", { err: String(err) });
+    return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }

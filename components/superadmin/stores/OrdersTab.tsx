@@ -17,11 +17,11 @@ function fmt(n: number) {
 }
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
-  pendiente: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  procesando: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  completado: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  cancelado: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  enviado: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  procesando: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
+  completado: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
+  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+  enviado: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
@@ -35,7 +35,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     label: "Tienda",
     render: (row) => (
       <div>
-        <div className="text-sm font-medium text-gray-900 dark:text-white">{row.storeName}</div>
+        <div className="text-sm font-medium text-[var(--text-primary)]">{row.storeName}</div>
         <div className="text-xs text-gray-400">{row.storeSlug}</div>
       </div>
     ),
@@ -45,7 +45,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     label: "Cliente",
     render: (row) => (
       <div>
-        <div className="text-sm text-gray-800 dark:text-gray-200">{row.customerName}</div>
+        <div className="text-sm text-[var(--text-primary)]">{row.customerName}</div>
         <div className="text-xs text-gray-400">{row.customerPhone}</div>
       </div>
     ),
@@ -62,7 +62,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     key: "itemCount",
     label: "Items",
     render: (row) => (
-      <span className="text-sm text-gray-600 dark:text-gray-400 tabular-nums">{row.itemCount}</span>
+      <span className="text-sm text-[var(--text-secondary)] tabular-nums">{row.itemCount}</span>
     ),
   },
   {
@@ -162,12 +162,12 @@ export function OrdersTab() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar pedido, cliente o tienda..."
-          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
         />
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 rounded-xl px-4 py-3 text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
           {error}
         </div>
       )}

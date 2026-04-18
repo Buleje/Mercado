@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   CalendarDays, Loader2, Sun, Sunset, Moon, Package,
   User, MapPin, Clock, ChevronLeft, ChevronRight, X,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type SlotKey = "manana" | "tarde" | "noche";
@@ -34,30 +35,30 @@ const SLOT_CONFIG: Record<SlotKey, { label: string; range: string; icon: typeof 
     label: "Mañana",
     range: "8:00 – 12:00",
     icon: Sun,
-    color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
-    border: "border-amber-200 dark:border-amber-800",
+    color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
   },
   tarde: {
     label: "Tarde",
     range: "12:00 – 18:00",
     icon: Sunset,
-    color: "text-orange-600 bg-orange-50 dark:bg-orange-900/20",
-    border: "border-orange-200 dark:border-orange-800",
+    color: "text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
   },
   noche: {
     label: "Noche",
     range: "18:00 – 21:00",
     icon: Moon,
-    color: "text-violet-600 bg-violet-50 dark:bg-violet-900/20",
-    border: "border-violet-200 dark:border-violet-800",
+    color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
+    border: "border-[var(--rule-base)]",
   },
 };
 
 const STATUS_SLOT_CONFIG: Record<string, { label: string; dot: string }> = {
-  pendiente:  { label: "Pendiente",   dot: "bg-amber-400" },
-  "en-camino":{ label: "En camino",   dot: "bg-emerald-500" },
-  entregado:  { label: "Entregado",   dot: "bg-emerald-500" },
-  fallido:    { label: "Fallido",     dot: "bg-red-500" },
+  pendiente:  { label: "Pendiente",   dot: "bg-[var(--data-warning)]" },
+  "en-camino":{ label: "En camino",   dot: "bg-[var(--accent-soft)]" },
+  entregado:  { label: "Entregado",   dot: "bg-[var(--accent-soft)]" },
+  fallido:    { label: "Fallido",     dot: "bg-[var(--data-error)]" },
 };
 
 function getWeekDates(offset: number): string[] {
@@ -138,20 +139,20 @@ export default function DeliveryCalendarTab() {
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
           <CalendarDays className="h-6 w-6 text-primary" />
           Calendario de Entregas
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Planifica y rastrea los pedidos por franja horaria</p>
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Planifica y rastrea los pedidos por franja horaria</p>
       </div>
 
       {/* Week navigation */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => setWeekOffset(w => w - 1)}
-          className="p-2 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
         >
-          <ChevronLeft className="h-4 w-4 text-gray-500" />
+          <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
         <div className="flex-1 flex gap-1 overflow-x-auto pb-1">
           {weekDates.map(d => {
@@ -169,14 +170,14 @@ export default function DeliveryCalendarTab() {
                     ? "bg-primary text-white"
                     : isToday
                     ? "bg-primary/10 text-primary border border-primary/30"
-                    : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                    : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >
-                <span className="capitalize text-[10px] font-semibold">{day}</span>
+                <span className="capitalize text-[length:var(--ts-2xs)] font-semibold">{day}</span>
                 <span className="text-lg font-extrabold leading-tight">{num}</span>
-                <span className="text-[10px] capitalize opacity-70">{month}</span>
+                <span className="text-[length:var(--ts-2xs)] capitalize opacity-70">{month}</span>
                 {count > 0 && (
-                  <span className={cn("mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold", isSelected ? "bg-white/20" : "bg-primary/10 text-primary")}>
+                  <span className={cn("mt-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold", isSelected ? "bg-white/20" : "bg-primary/10 text-primary")}>
                     {count}
                   </span>
                 )}
@@ -186,22 +187,22 @@ export default function DeliveryCalendarTab() {
         </div>
         <button
           onClick={() => setWeekOffset(w => w + 1)}
-          className="p-2 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
         >
-          <ChevronRight className="h-4 w-4 text-gray-500" />
+          <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
       </div>
 
       {/* Day KPIs */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: "Total",       value: dayKpis.total,      color: "text-gray-700 dark:text-foreground" },
-          { label: "Entregados",  value: dayKpis.entregados, color: "text-emerald-600" },
-          { label: "En camino",   value: dayKpis.enCamino,   color: "text-emerald-500" },
-          { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-red-500" },
+          { label: "Total",       value: dayKpis.total,      color: "text-[var(--text-primary)] dark:text-foreground" },
+          { label: "Entregados",  value: dayKpis.entregados, color: "text-[var(--data-success)]" },
+          { label: "En camino",   value: dayKpis.enCamino,   color: "text-[var(--data-success)]" },
+          { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-[var(--data-error)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-muted">{k.label}</p>
+          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
@@ -209,9 +210,7 @@ export default function DeliveryCalendarTab() {
 
       {/* Slot columns */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <LoadingState />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {(Object.entries(SLOT_CONFIG) as [SlotKey, typeof SLOT_CONFIG.manana][]).map(([key, cfg]) => {
@@ -224,7 +223,7 @@ export default function DeliveryCalendarTab() {
                   <Icon className="h-4 w-4 shrink-0" />
                   <div className="flex-1">
                     <span className="font-extrabold text-sm">{cfg.label}</span>
-                    <span className="text-[10px] ml-1.5 opacity-70">{cfg.range}</span>
+                    <span className="text-[length:var(--ts-2xs)] ml-1.5 opacity-70">{cfg.range}</span>
                   </div>
                   <span className="text-xs font-bold bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-full">
                     {slotOrders.length} pedidos
@@ -234,7 +233,7 @@ export default function DeliveryCalendarTab() {
                 {/* Orders list */}
                 <div className="p-3 space-y-2 min-h-[100px]">
                   {slotOrders.length === 0 && (
-                    <p className="text-xs text-gray-400 dark:text-muted text-center py-4">Sin entregas programadas</p>
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">Sin entregas programadas</p>
                   )}
                   {slotOrders.map(s => {
                     const st = s.status ?? "pendiente";
@@ -247,21 +246,21 @@ export default function DeliveryCalendarTab() {
                         <span className={cn("mt-1 w-2 h-2 rounded-full shrink-0", stCfg.dot)} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1 flex-wrap">
-                            <span className="font-bold text-gray-800 dark:text-foreground">
+                            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
                               #{s.orderId.slice(-6)}
                             </span>
-                            <span className="text-[10px] text-gray-400 bg-white dark:bg-card px-1.5 py-0.5 rounded-full">
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-white dark:bg-card px-1.5 py-0.5 rounded-full">
                               {stCfg.label}
                             </span>
                           </div>
                           {s.customerName && (
-                            <div className="flex items-center gap-1 text-gray-500 dark:text-muted mt-0.5">
+                            <div className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted mt-0.5">
                               <User className="h-2.5 w-2.5 shrink-0" />
                               <span className="truncate">{s.customerName}</span>
                             </div>
                           )}
                           {s.address && (
-                            <div className="flex items-center gap-1 text-gray-400 dark:text-muted mt-0.5">
+                            <div className="flex items-center gap-1 text-[var(--text-tertiary)] dark:text-muted mt-0.5">
                               <MapPin className="h-2.5 w-2.5 shrink-0" />
                               <span className="truncate">{s.address}</span>
                             </div>
@@ -272,7 +271,7 @@ export default function DeliveryCalendarTab() {
                         </div>
                         <button
                           onClick={() => removeSlot(s.id)}
-                          className="opacity-0 group-hover:opacity-100 transition p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-gray-300 hover:text-red-400"
+                          className="opacity-0 group-hover:opacity-100 transition p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -304,21 +303,21 @@ export default function DeliveryCalendarTab() {
           onClick={() => setAssigningSlot(null)}
         >
           <div
-            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-gray-200 dark:border-card-border"
+            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-[var(--rule-base)] dark:border-card-border"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
                 Asignar pedido — {SLOT_CONFIG[assigningSlot].label}
-              </h3>
+              </CardTitle>
               <button onClick={() => setAssigningSlot(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface">
-                <X className="h-4 w-4 text-gray-400" />
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
             {orders.length === 0 ? (
               <div className="text-center py-6">
-                <Package className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No hay pedidos pendientes de asignar</p>
+                <Package className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-2" />
+                <p className="text-sm text-[var(--text-tertiary)]">No hay pedidos pendientes de asignar</p>
               </div>
             ) : (
               <div className="max-h-64 overflow-y-auto space-y-2">
@@ -326,19 +325,19 @@ export default function DeliveryCalendarTab() {
                   <button
                     key={o.id}
                     onClick={() => assignSlot(o.id)}
-                    className="w-full text-left p-3 border border-gray-200 dark:border-card-border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
+                    className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-gray-800 dark:text-foreground">#{o.id.slice(-6)}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">#{o.id.slice(-6)}</span>
                       <span className="font-extrabold text-primary">S/ {o.total.toFixed(2)}</span>
                     </div>
                     {o.customerName && (
-                      <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1">
                         <User className="h-3 w-3" /> {o.customerName}
                       </p>
                     )}
                     {o.address && (
-                      <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1">
                         <MapPin className="h-3 w-3" /> {o.address}
                       </p>
                     )}

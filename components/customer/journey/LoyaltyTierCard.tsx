@@ -4,6 +4,7 @@ import { memo } from "react";
 import NumberFlow from "@number-flow/react";
 import { Star, Award, Trophy, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IconBadge } from "@buleje/design-system";
 
 /**
  * LoyaltyTierCard — fidelidad gamificada Bronce/Plata/Oro.
@@ -66,7 +67,7 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
       {/* Hero */}
       <div className="p-6 sm:p-8 border-b border-[var(--rule-soft)]" style={{ background: "var(--brand-ink)" }}>
         {customerName && (
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-3">
             Hola, {customerName}
           </p>
         )}
@@ -78,7 +79,7 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
               </span>
               <h2
                 id="loyalty-tier-title"
-                className="text-xl sm:text-2xl font-extrabold tracking-[-0.02em] text-white"
+                className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-white"
               >
                 Nivel {currentTier.label}
               </h2>
@@ -89,12 +90,12 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-1">
               Tus puntos
             </p>
             <NumberFlow
               value={currentPoints}
-              className="text-4xl sm:text-5xl font-extrabold tabular-nums tracking-[-0.03em] text-white leading-none"
+              className="text-4xl sm:text-5xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-white leading-none"
             />
           </div>
         </div>
@@ -104,7 +105,7 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
       {nextTier && (
         <div className="p-5 sm:p-6 border-b border-[var(--rule-soft)]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Próximo nivel
             </span>
             <span className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">
@@ -135,21 +136,19 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
 
       {/* Perks list */}
       <div className="p-5 sm:p-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
           Tus beneficios activos
         </p>
         <ul className="space-y-2">
           {currentTier.perks.map((perk) => (
             <li key={perk} className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
-              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)]">
-                <Sparkles className="h-2.5 w-2.5" strokeWidth={2} />
-              </span>
+              <IconBadge size="sm"><Sparkles className="h-2.5 w-2.5" strokeWidth={2} /></IconBadge>
               {perk}
             </li>
           ))}
         </ul>
         {totalSpent != null && (
-          <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] tabular-nums">
+          <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] tabular-nums">
             Llevás gastado S/ {totalSpent.toLocaleString("es-PE")} en Buleje
           </p>
         )}
@@ -181,12 +180,12 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
                 <TIcon className="h-3 w-3" strokeWidth={1.75} />
               </span>
               <p className={cn(
-                "text-[10px] font-bold uppercase tracking-[0.15em]",
+                "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
                 isCurrent ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]",
               )}>
                 {t.label}
               </p>
-              <p className="text-[10px] text-[var(--text-tertiary)] font-semibold tabular-nums">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-semibold tabular-nums">
                 {t.minPoints.toLocaleString("es-PE")}+
               </p>
             </div>

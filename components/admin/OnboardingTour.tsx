@@ -1,12 +1,13 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import React, { useEffect } from "react";
 import { TourSpotlight } from "./TourSpotlight";
 import {
   ChevronLeft, ChevronRight, X, Sparkles,
   Brain, ShoppingCart, Package, Tag, Truck, Wallet, Users, Settings,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 type Tab =
   | "asistente-ia"
@@ -155,17 +156,17 @@ export function OnboardingTour({
 
   return (
     <TourSpotlight targetSelector={targetSelector}>
-      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#2563EB] dark:text-emerald-400">
+            <span className="text-xs font-bold text-[#2563EB] dark:text-[var(--data-success)]">
               Paso {currentStep + 1} de {totalSteps}
             </span>
           </div>
           <button
             onClick={onSkip}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="Saltar tour"
           >
             <X className="h-4 w-4" />
@@ -174,9 +175,9 @@ export function OnboardingTour({
 
         {/* Progress bar */}
         <div className="px-4 pb-2">
-          <div className="h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#2563EB] rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-[#2563EB] rounded-full transition-all duration-[var(--dur-slow)] ease-out"
               style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
             />
           </div>
@@ -185,31 +186,31 @@ export function OnboardingTour({
         {/* Content */}
         <div className="px-4 pb-3">
           <div className="flex items-start gap-3 mb-2">
-            <div className="h-9 w-9 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+            <div className="h-9 w-9 shrink-0 rounded-lg bg-[var(--surface-canvas)] border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)]">
               <step.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">
+              <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
                 {step.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-1.5">
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed mt-1.5">
                 {step.text}
               </p>
             </div>
           </div>
-          <div className="bg-[#f0fdf4] dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
-            <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+          <div className="bg-[#f0fdf4] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg px-3 py-2">
+            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
               {step.example}
             </p>
           </div>
         </div>
 
         {/* Footer with navigation */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 bg-[var(--surface-sunken)]/50 border-t border-[var(--rule-base)]">
           <button
             onClick={onPrev}
             disabled={currentStep === 0}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
@@ -217,7 +218,7 @@ export function OnboardingTour({
 
           <button
             onClick={onSkip}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
           >
             Saltar tour
           </button>

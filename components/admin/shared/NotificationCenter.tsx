@@ -11,6 +11,7 @@
  * Este componente es una alternativa ligera con datos hardcodeados de demo.
  */
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Bell, ShoppingCart, Package, MessageSquare, Shield,
@@ -40,22 +41,22 @@ const TYPE_CONFIG: Record<
 > = {
   order: {
     icon: ShoppingCart,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    color: "text-[var(--data-success)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   stock: {
     icon: Package,
-    color: "text-amber-600",
-    bg: "bg-amber-50 dark:bg-amber-950/30",
+    color: "text-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",
   },
   message: {
     icon: MessageSquare,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    color: "text-[var(--data-success)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
   },
   system: {
     icon: Shield,
-    color: "text-gray-600 dark:text-gray-400",
+    color: "text-[var(--text-secondary)]",
     bg: "bg-gray-100 dark:bg-zinc-800",
   },
 };
@@ -179,12 +180,12 @@ export default function NotificationCenter() {
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           open
             ? "bg-primary/10 text-primary"
-            : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
+            : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
         )}
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1 ">
+          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error)] rounded-full px-1 ">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -199,16 +200,16 @@ export default function NotificationCenter() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-80 max-h-[400px] flex flex-col bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800 z-50 overflow-hidden"
+            className="absolute right-0 top-full mt-2 w-80 max-h-[400px] flex flex-col bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 z-50 overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
+            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">
+                <CardTitle className="text-sm font-bold">
                   Notificaciones
-                </h3>
+                </CardTitle>
                 {unreadCount > 0 && (
-                  <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-4 text-center">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error)] rounded-full px-1.5 py-0.5 min-w-4 text-center">
                     {unreadCount}
                   </span>
                 )}
@@ -216,7 +217,7 @@ export default function NotificationCenter() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  className="flex items-center gap-1 text-[length:var(--ts-xs)] font-medium text-primary hover:underline"
                 >
                   <CheckCheck className="h-3 w-3" />
                   Marcar todas como leidas
@@ -229,9 +230,9 @@ export default function NotificationCenter() {
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
                   <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center mb-3">
-                    <Bell className="h-6 w-6 text-gray-300 dark:text-zinc-600" />
+                    <Bell className="h-6 w-6 text-[var(--text-tertiary)] dark:text-zinc-600" />
                   </div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-muted">
+                  <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-muted">
                     Sin notificaciones
                   </p>
                 </div>
@@ -245,7 +246,7 @@ export default function NotificationCenter() {
                       onClick={() => markAsRead(notif.id)}
                       className={cn(
                         "px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 border-b border-gray-50 dark:border-zinc-800/50 cursor-pointer transition-colors flex items-start gap-3 group",
-                        !notif.read && "bg-blue-50/50 dark:bg-blue-900/10"
+                        !notif.read && "bg-[var(--accent-soft)]/40 dark:bg-[var(--accent-muted)]/40"
                       )}
                     >
                       {/* Icono */}
@@ -264,28 +265,28 @@ export default function NotificationCenter() {
                           <p className={cn(
                             "text-sm leading-tight",
                             notif.read
-                              ? "text-gray-700 dark:text-gray-300"
-                              : "text-gray-900 dark:text-foreground font-semibold"
+                              ? "text-[var(--text-secondary)]"
+                              : "text-[var(--text-primary)] dark:text-foreground font-semibold"
                           )}>
                             {notif.title}
                           </p>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {!notif.read && (
-                              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                              <span className="w-2 h-2 rounded-full bg-[var(--accent)] shrink-0" />
                             )}
                             <button
                               onClick={(e) => { e.stopPropagation(); dismiss(notif.id); }}
-                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-opacity"
                               title="Descartar"
                             >
                               <X className="h-3 w-3" />
                             </button>
                           </div>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-muted mt-0.5 truncate">
+                        <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">
                           {notif.description}
                         </p>
-                        <span className="text-[11px] text-gray-400 dark:text-muted mt-1 block">
+                        <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted mt-1 block">
                           {timeAgo(notif.timestamp)}
                         </span>
                       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   Users,
@@ -15,7 +16,7 @@ import {
   EyeOff,
   CheckCircle2,
   XCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type Role = "admin" | "cajero" | "almacenero";
@@ -42,9 +43,9 @@ const ROLE_ICONS: Record<Role, React.ReactNode> = {
 };
 
 const ROLE_COLORS: Record<Role, string> = {
-  admin: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-  cajero: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  almacenero: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  admin: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+  cajero: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  almacenero: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
 };
 
 interface FormData {
@@ -171,8 +172,8 @@ export default function TeamTab() {
           className={cn(
             "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-medium",
             toast.ok
-              ? "bg-emerald-600 text-white"
-              : "bg-red-600 text-white"
+              ? "bg-[var(--accent-soft)] text-white"
+              : "bg-[var(--data-error)] text-white"
           )}
         >
           {toast.ok ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
@@ -184,7 +185,7 @@ export default function TeamTab() {
       <div className="flex items-center justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Users className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-bold">Equipo de la tienda</h2>
+          <SectionTitle className="text-lg font-bold">Equipo de la tienda</SectionTitle>
           <span className="text-xs text-muted bg-(--color-surface) px-2 py-0.5 rounded-full">
             {users.length} usuario{users.length !== 1 ? "s" : ""}
           </span>
@@ -209,9 +210,7 @@ export default function TeamTab() {
 
       {/* User list */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-muted" />
-        </div>
+        <LoadingState />
       ) : users.length === 0 ? (
         <div className="text-center py-12 text-muted text-sm">
           <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
@@ -252,7 +251,7 @@ export default function TeamTab() {
                   title={u.active ? "Desactivar" : "Activar"}
                   className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
-                  {u.active ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <XCircle className="w-4 h-4" />}
+                  {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => openEdit(u)}
@@ -262,7 +261,7 @@ export default function TeamTab() {
                 </button>
                 <button
                   onClick={() => handleDelete(u)}
-                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-muted hover:text-red-600"
+                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-muted hover:text-[var(--data-error)]"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -278,9 +277,9 @@ export default function TeamTab() {
           <div className="bg-(--color-card) rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4">
             {/* Modal header */}
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-base">
+              <CardTitle className="font-bold text-base">
                 {editingId ? "Editar usuario" : "Nuevo usuario"}
-              </h3>
+              </CardTitle>
               <button onClick={() => setShowForm(false)} className="p-1 rounded-lg hover:bg-(--color-surface)">
                 <X className="w-4 h-4" />
               </button>

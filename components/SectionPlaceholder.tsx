@@ -5,27 +5,42 @@ import { Package, ShoppingBag, Sparkles } from "lucide-react";
 /**
  * Elegant empty state for store sections without content.
  * Shows styled placeholder cards that match the marketplace card format.
+ *
+ * Variants:
+ * - `admin` (default): hint orientado al dueno (ej: "Crea combos desde Mi Tienda").
+ * - `public`: copy simple y directo para visitantes de la tienda
+ *   ("No hay productos agregados todavía").
  */
 export default function SectionPlaceholder({
   title,
   hint,
   cols = 4,
   icon: Icon = Package,
+  variant = "admin",
+  publicTitle,
 }: {
   title: string;
   hint: string;
   cols?: number;
   icon?: React.ComponentType<{ className?: string }>;
+  variant?: "admin" | "public";
+  /** Optional override for the heading shown in public variant. */
+  publicTitle?: string;
 }) {
+  const resolvedTitle = variant === "public" ? (publicTitle ?? title) : title;
+  const resolvedHint =
+    variant === "public"
+      ? "No hay productos agregados todavía"
+      : hint;
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       {/* Section header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
           <Icon className="w-3.5 h-3.5" />
-          {title}
+          {resolvedTitle}
         </div>
-        <p className="text-sm text-muted-foreground">{hint}</p>
+        <p className="text-sm text-muted-foreground">{resolvedHint}</p>
       </div>
 
       {/* Placeholder cards grid — styled like marketplace cards */}

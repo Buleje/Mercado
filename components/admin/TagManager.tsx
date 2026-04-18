@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Tag as TagIcon, Package, Users, ShoppingCart, Loader2 } from "lucide-react";
+import { Plus, Trash2, Tag as TagIcon, Package, Users, ShoppingCart, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import TagBadge, { TAG_COLORS, type TagColor, type Tag } from "./TagBadge";
 
@@ -87,11 +88,11 @@ export default function TagManager() {
   const filtered = tags.filter(t => t.entity === entity);
 
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5 space-y-4">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
         <TagIcon className="h-5 w-5 text-[#00B4A6]" />
-        <h3 className="text-base font-bold text-foreground">Etiquetas personalizadas</h3>
+        <CardTitle className="text-base font-bold text-foreground">Etiquetas personalizadas</CardTitle>
       </div>
 
       {/* Entity filter tabs */}
@@ -105,7 +106,7 @@ export default function TagManager() {
               "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors min-h-[36px]",
               entity === tab.id
                 ? "bg-white dark:bg-card text-[#00B4A6] "
-                : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-gray-300"
+                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
             )}
           >
             {tab.icon}
@@ -123,7 +124,7 @@ export default function TagManager() {
           onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
           placeholder="Nueva etiqueta..."
           maxLength={30}
-          className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
+          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
         />
         {/* Color picker */}
         <div className="flex items-center gap-1 flex-wrap">
@@ -154,19 +155,19 @@ export default function TagManager() {
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{error}</p>
+        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">{error}</p>
       )}
 
       {/* Tag list */}
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-8">
-          <TagIcon className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-          <p className="text-sm text-gray-500 dark:text-muted">Sin etiquetas para {ENTITY_TABS.find(t => t.id === entity)?.label.toLowerCase()}</p>
-          <p className="text-xs text-gray-400 mt-1">Crea la primera etiqueta arriba</p>
+          <TagIcon className="h-8 w-8 mx-auto text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-2" />
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin etiquetas para {ENTITY_TABS.find(t => t.id === entity)?.label.toLowerCase()}</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">Crea la primera etiqueta arriba</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -176,14 +177,14 @@ export default function TagManager() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors group"
             >
               <TagBadge tag={{ name: tag.name, color: tag.color }} />
-              <span className="flex-1 text-xs text-gray-400 dark:text-muted">
+              <span className="flex-1 text-xs text-[var(--text-tertiary)] dark:text-muted">
                 {tag.count > 0 ? `${tag.count} uso${tag.count !== 1 ? "s" : ""}` : "Sin usos"}
               </span>
               <button
                 type="button"
                 onClick={() => handleDelete(tag.name)}
                 disabled={deleteId === tag.name}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-all disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center"
                 aria-label={`Eliminar etiqueta ${tag.name}`}
               >
                 {deleteId === tag.name

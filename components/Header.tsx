@@ -6,7 +6,7 @@ import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
   Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
-  Home, Zap, RotateCw, Star, Phone,
+  Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import { useTheme } from "@/contexts/theme-context";
 import type { Product } from "@/data/products";
 import { cn } from "@/lib/utils";
 import { dispatchAppEvent, onAppEvent } from "@/lib/events";
+import { BulejeMark } from "@/components/ui-system/illustrations";
 
 /** Safe text highlight — no dangerouslySetInnerHTML */
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -534,6 +535,24 @@ export default function Header() {
     scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
   );
 
+  // Helper: resuelve active state basado en el pathname actual.
+  // /tienda + /tienda/* → "tienda"; /recetas → "recetas"; etc.
+  const isNavActive = (id: string): boolean => {
+    if (!pathname) return false;
+    if (id === "tienda") return pathname.startsWith("/tienda");
+    if (id === "ofertas") return pathname.startsWith("/tienda") && pathname.includes("ofertas");
+    if (id === "recetas") return pathname.startsWith("/recetas");
+    if (id === "marketplace") return pathname.startsWith("/marketplace");
+    if (id === "historial") return pathname.startsWith("/cuenta/historial");
+    if (id === "inicio") return pathname === "/";
+    return false;
+  };
+
+  const activeNavCls = cn(
+    "after:content-[''] after:absolute after:left-4 after:right-4 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-[var(--accent)]",
+    scrolled ? "text-[var(--accent)]" : "text-white",
+  );
+
   const renderDesktopNavItem = (id: string) => {
     switch (id) {
       case "inicio":
@@ -626,25 +645,51 @@ export default function Header() {
           </div>
         );
       case "tienda":
-        return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
+        // Re-label "Tienda" → "Comprar" — verbo CTA directo (no sustantivo pasivo).
+        return (
+          <Link key="tienda" href="/tienda" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("tienda") && activeNavCls)}>
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} /> Comprar
+          </Link>
+        );
+      case "explorar":
+        // Hub de descubrimiento estilo Amazon homepage adaptado a Buleje.
+        return (
+          <Link key="explorar" href="/marketplace/explorar" className={cn(navLinkCls, "flex items-center gap-1.5 relative")}>
+            <Compass className="h-4 w-4" strokeWidth={1.75} /> Explorar
+          </Link>
+        );
+      case "ofertas":
+        // Captura price-sensitive shoppers — ancla a seccion ofertas o query.
+        return (
+          <Link key="ofertas" href="/tienda?category=ofertas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("ofertas") && activeNavCls)}>
+            <Tag className="h-4 w-4" strokeWidth={1.75} /> Ofertas
+          </Link>
+        );
+      case "a-domicilio":
+        // Confianza en entrega — ancla a cobertura/footer o pagina dedicada.
+        return (
+          <Link key="a-domicilio" href="/#a-domicilio" className={cn(navLinkCls, "flex items-center gap-1.5 relative")}>
+            <MapPin className="h-4 w-4" strokeWidth={1.75} /> A domicilio
+          </Link>
+        );
       case "categorias":
         return null;
       case "recetas":
         return (
-          <Link key="recetas" href="/recetas" className={cn(navLinkCls, "flex items-center gap-1.5")}>
-            <ChefHat className="h-4 w-4" /> Recetas
+          <Link key="recetas" href="/recetas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("recetas") && activeNavCls)}>
+            <ChefHat className="h-4 w-4" strokeWidth={1.75} /> Recetas
           </Link>
         );
       case "marketplace":
         return (
-          <Link key="marketplace" href="/marketplace" className={cn(navLinkCls, "flex items-center gap-1.5")}>
-            <Globe className="h-4 w-4" /> Marketplace
+          <Link key="marketplace" href="/marketplace" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("marketplace") && activeNavCls)}>
+            <Globe className="h-4 w-4" strokeWidth={1.75} /> Marketplace
           </Link>
         );
       case "historial":
         return (
-          <Link key="historial" href="/cuenta/historial" className={cn(navLinkCls, "flex items-center gap-1.5")}>
-            <History className="h-4 w-4" /> Historial
+          <Link key="historial" href="/cuenta/historial" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("historial") && activeNavCls)}>
+            <History className="h-4 w-4" strokeWidth={1.75} /> Historial
           </Link>
         );
       default:
@@ -725,7 +770,30 @@ export default function Header() {
           </div>
         );
       case "tienda":
-        return <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cls}>Tienda</Link>;
+        // Label "Comprar" + icon ShoppingBag en mobile drawer.
+        return (
+          <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <ShoppingBag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Comprar
+          </Link>
+        );
+      case "explorar":
+        return (
+          <Link key="explorar" href="/marketplace/explorar" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Compass className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Explorar
+          </Link>
+        );
+      case "ofertas":
+        return (
+          <Link key="ofertas" href="/tienda?category=ofertas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Tag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Ofertas
+          </Link>
+        );
+      case "a-domicilio":
+        return (
+          <Link key="a-domicilio" href="/#a-domicilio" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <MapPin className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> A domicilio
+          </Link>
+        );
       case "categorias":
         return null;
       case "recetas":
@@ -737,13 +805,13 @@ export default function Header() {
       case "marketplace":
         return (
           <Link key="marketplace" href="/marketplace" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <Globe className="h-4 w-4 text-teal-500" /> Marketplace
+            <Globe className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Marketplace
           </Link>
         );
       case "historial":
         return (
           <Link key="historial" href="/cuenta/historial" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <History className="h-4 w-4 text-pink-500" /> Historial
+            <History className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Historial
           </Link>
         );
       default:
@@ -788,25 +856,17 @@ export default function Header() {
               {storeTheme?.logo ? (
                 <Image src={storeTheme.logo} alt={storeTheme.name || businessName || "logo"} width={40} height={40} className="h-full w-full object-cover" />
               ) : (
-                <Store className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
+                <BulejeMark size={22} strokeWidth={1.75} />
               )}
             </div>
             <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1.5">
+                {/* Logo name sin badge "v1 Beta" — aura profesional, confianza B2C */}
                 <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
                   scrolled ? "text-primary-dark" : "text-white")}>
                   {storeTheme?.name || businessName || "Mi Bodega"}
                 </span>
-                <span className={cn(
-                  "inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold leading-none tracking-wide border",
-                  scrolled
-                    ? "bg-amber-500/15 text-amber-700 border-amber-500/25 dark:bg-amber-400/15 dark:text-amber-400 dark:border-amber-400/25"
-                    : "bg-amber-400/25 text-amber-200 border-amber-400/35"
-                )}>
-                  v1 Beta
-                </span>
               </div>
-
             </div>
           </Link>
 
@@ -926,7 +986,7 @@ export default function Header() {
                       {trendingProducts.length > 0 && (
                         <div className="px-4 pt-2 pb-3 border-t border-gray-100 dark:border-card-border">
                           <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3 flex items-center gap-1.5">
-                            <Flame className="h-4 w-4 text-orange-500" /> Populares ahora
+                            <Flame className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} /> Populares ahora
                           </p>
                           <div className="space-y-1">
                             {trendingProducts.slice(0, 3).map(p => (
@@ -1287,13 +1347,13 @@ export default function Header() {
               href="/tienda"
               onClick={() => {}}
               className={cn(
-                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
+                "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                 scrolled
-                  ? "bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
                   : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
               )}
             >
-              <span className="text-xl leading-none">🔍</span>
+              <Search className="h-3.5 w-3.5" strokeWidth={1.75} />
               Ver todos
             </Link>
           </div>
@@ -1556,7 +1616,7 @@ export default function Header() {
               {searchQuery.length === 0 && trendingProducts.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
-                    <Flame className="h-3 w-3 text-orange-500" /> Productos populares ahora
+                    <Flame className="h-3 w-3 text-[var(--accent)]" strokeWidth={1.75} /> Productos populares ahora
                   </p>
                   <div className="space-y-1">
                     {trendingProducts.map(p => (
@@ -1572,7 +1632,7 @@ export default function Header() {
                           <span className="font-semibold text-xs block truncate">{p.name}</span>
                           <span className="text-[10px] text-muted">S/{p.price.toFixed(2)}</span>
                         </div>
-                        <Flame className="h-3 w-3 text-orange-400 shrink-0" />
+                        <Flame className="h-3 w-3 text-[var(--accent)] shrink-0" strokeWidth={1.75} />
                       </button>
                     ))}
                   </div>
@@ -1606,8 +1666,8 @@ export default function Header() {
       )}
       {/* Voice ordering confirmation toast */}
       {voiceResult && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold animate-bounce">
-          ✅ {voiceResult.qty}x {voiceResult.product} agregado al carrito
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[var(--accent)] text-white px-5 py-3 rounded-xl shadow-[var(--shadow-md)] text-sm font-semibold">
+          {voiceResult.qty}x {voiceResult.product} agregado al carrito
         </div>
       )}
     </header>

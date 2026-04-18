@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import PostDeliverySurvey from "./PostDeliverySurvey";
+import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
+import { PedidoLlegando } from "@/components/ui-system/illustrations/empty-states";
 
 const LS_PREFIX = "buleje-pending-survey-";
 const MIN_WAIT_MS = 30 * 60 * 1000; // 30 minutes
@@ -90,7 +92,7 @@ export default function PostDeliverySurveyTrigger() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 relative animate-in fade-in zoom-in-95">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-[var(--shadow-xl)] max-w-sm w-full p-5 relative animate-in fade-in zoom-in-95">
         {/* Close button */}
         <button
           onClick={handleDismiss}
@@ -102,18 +104,22 @@ export default function PostDeliverySurveyTrigger() {
 
         {submitted ? (
           <div className="text-center py-6 space-y-3">
-            <span className="text-5xl">🎉</span>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">¡Gracias por tu opinión!</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Tu feedback nos ayuda a mejorar cada día.</p>
+            <div className="flex justify-center text-[var(--accent)]">
+              <BodegueroCelebrando size={96} strokeWidth={1.5} />
+            </div>
+            <p className="text-lg font-bold text-[var(--text-primary)]">¡Gracias por tu opinión!</p>
+            <p className="text-sm text-[var(--text-tertiary)]">Tu feedback nos ayuda a mejorar cada día.</p>
           </div>
         ) : (
           <>
             <div className="text-center mb-4">
-              <span className="text-4xl">📦</span>
-              <p className="text-base font-bold text-gray-900 dark:text-white mt-2">
+              <div className="flex justify-center text-[var(--text-secondary)]">
+                <PedidoLlegando size={72} strokeWidth={1.5} />
+              </div>
+              <p className="text-base font-bold text-[var(--text-primary)] mt-2">
                 ¿Cómo estuvo tu pedido?
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 Pedido #{pendingSurvey.orderId.slice(-6).toUpperCase()}
               </p>
             </div>

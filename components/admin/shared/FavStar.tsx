@@ -17,13 +17,13 @@ export default function FavStar({
   return (
     <button
       onClick={() => favs.toggle(id)}
-      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+      className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors"
       title={favs.isFav(id) ? "Quitar de favoritos" : "Agregar a favoritos"}
     >
       {favs.isFav(id) ? (
-        <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+        <Star className="h-4 w-4 text-[var(--data-warning)] fill-[var(--data-warning)]" />
       ) : (
-        <Star className="h-4 w-4 text-gray-300" />
+        <Star className="h-4 w-4 text-[var(--text-tertiary)]" />
       )}
     </button>
   );

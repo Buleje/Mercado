@@ -10,7 +10,7 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { EyeOff, Maximize2 } from "lucide-react";
+import { EyeOff, Maximize2 } from "@buleje/design-system/icons";
 
 export interface AdminFloatingButtonsProps {
   focusMode: boolean;

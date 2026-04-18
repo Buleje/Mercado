@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ function buildCohorts(customers: Customer[]): CohortRow[] {
 function retentionColor(pct: number): string {
   if (pct >= 70) return "bg-[#00B4A6] text-white";
   if (pct >= 50) return "bg-[#33C4B8] text-white";
-  if (pct >= 35) return "bg-[#74c69d] text-gray-900";
+  if (pct >= 35) return "bg-[#74c69d] text-[var(--text-primary)]";
   if (pct >= 20) return "bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100";
   return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
 }
@@ -150,7 +151,7 @@ export default function CustomerRetentionChart() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-gray-500">
+      <div className="flex items-center gap-2 py-8 text-[var(--text-secondary)]">
         <RefreshCw className="h-5 w-5 animate-spin" />
         Calculando retencion de clientes...
       </div>
@@ -159,7 +160,7 @@ export default function CustomerRetentionChart() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-6 text-sm text-red-600 dark:text-red-400">
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
         {error}
         <button onClick={load} className="ml-3 underline">Reintentar</button>
       </div>
@@ -168,7 +169,7 @@ export default function CustomerRetentionChart() {
 
   if (cohorts.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center text-gray-500">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-secondary)]">
         No hay suficientes datos para calcular cohortes de retencion.
       </div>
     );
@@ -180,16 +181,16 @@ export default function CustomerRetentionChart() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Retencion de clientes
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Porcentaje de clientes que volvieron a comprar en meses siguientes
           </p>
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -201,8 +202,8 @@ export default function CustomerRetentionChart() {
         <div className={cn(
           "rounded-xl px-5 py-3 text-sm font-medium",
           avgRetention >= 50
-            ? "bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
-            : "bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+            : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]"
         )}>
           Tu retencion promedio al primer mes es <strong>{avgRetention}%</strong>
           {avgRetention >= 50
@@ -212,30 +213,30 @@ export default function CustomerRetentionChart() {
       )}
 
       {/* Cohort table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-800">
+          <thead className="bg-[var(--surface-sunken)]">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)] whitespace-nowrap">
                 Cohorte
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)] whitespace-nowrap">
                 Clientes
               </th>
               {Array.from({ length: maxCols }, (_, i) => (
-                <th key={i} className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                <th key={i} className="px-4 py-3 text-center font-medium text-[var(--text-tertiary)] whitespace-nowrap">
                   Mes {i + 1}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-[var(--surface-raised)]">
             {cohorts.map((row) => (
               <tr key={row.cohortMonth}>
-                <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                <td className="px-4 py-3 font-medium text-[var(--text-primary)] whitespace-nowrap">
                   {row.label}
                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">
+                <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">
                   {row.initial}
                 </td>
                 {Array.from({ length: maxCols }, (_, i) => {
@@ -243,7 +244,7 @@ export default function CustomerRetentionChart() {
                   return (
                     <td key={i} className="px-4 py-3 text-center">
                       {val === null ? (
-                        <span className="text-gray-300 dark:text-gray-600">—</span>
+                        <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">—</span>
                       ) : (
                         <span className={cn("inline-block px-2 py-0.5 rounded-md text-xs font-semibold min-w-[3rem]", retentionColor(val))}>
                           {val}%
@@ -263,18 +264,18 @@ export default function CustomerRetentionChart() {
         {[
           { label: "70%+", cls: "bg-[#00B4A6] text-white" },
           { label: "50-69%", cls: "bg-[#33C4B8] text-white" },
-          { label: "35-49%", cls: "bg-[#74c69d] text-gray-900" },
-          { label: "20-34%", cls: "bg-amber-200 text-amber-900" },
-          { label: "<20%", cls: "bg-red-100 text-red-700" },
+          { label: "35-49%", cls: "bg-[#74c69d] text-[var(--text-primary)]" },
+          { label: "20-34%", cls: "bg-[var(--data-warning)] text-[var(--data-warning)]" },
+          { label: "<20%", cls: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
         ].map((l) => (
           <div key={l.label} className="flex items-center gap-1.5">
             <span className={cn("inline-block h-4 w-8 rounded", l.cls)} />
-            <span className="text-gray-500 dark:text-gray-400">{l.label}</span>
+            <span className="text-[var(--text-tertiary)]">{l.label}</span>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-[var(--text-tertiary)]">
         Basado en fecha de ultima compra vs mes de ingreso. Para cohortes exactas se requiere historial completo de pedidos por cliente.
       </p>
     </div>

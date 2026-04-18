@@ -23,7 +23,7 @@ export function RuledTitle({ children, as: Comp = "h3", size = "md", className }
   return (
     <Comp
       className={cn(
-        "flex items-baseline gap-4 font-extrabold tracking-tight text-gray-900 dark:text-white",
+        "flex items-baseline gap-4 font-extrabold tracking-tight text-[var(--text-primary)]",
         SIZES[size],
         className,
       )}

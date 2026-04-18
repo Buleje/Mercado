@@ -74,15 +74,15 @@ const CATEGORIAS = [
 const DIFICULTADES = ["Facil", "Media", "Dificil"];
 
 const DIFICULTAD_BADGE: Record<string, string> = {
-  Facil: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  Media: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  Dificil: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  Facil: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
+  Media: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  Dificil: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };
 
 const inputCls =
-  "w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-shadow";
+  "w-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 transition-shadow";
 const selectCls = `${inputCls} appearance-none cursor-pointer`;
-const labelCls = "block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1";
+const labelCls = "block text-xs font-semibold text-[var(--text-secondary)] mb-1";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -309,11 +309,11 @@ export default function SuperAdminRecetarioPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <ChefHat className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <ChefHat className="w-6 h-6 text-[var(--data-success)] dark:text-[var(--data-success)]" />
             Recetario Global
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <p className="text-[var(--text-tertiary)] text-sm mt-1">
             {filtered.length} receta{filtered.length !== 1 ? "s" : ""}
             {recetas.length !== filtered.length ? ` de ${recetas.length}` : ""}
           </p>
@@ -323,14 +323,14 @@ export default function SuperAdminRecetarioPage() {
             type="button"
             onClick={() => void loadRecetas()}
             disabled={loading}
-            className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors disabled:opacity-50"
+            className="p-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-tertiary)] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button
             type="button"
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm shadow-emerald-600/25"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] hover:brightness-110 text-white text-sm font-semibold transition-colors shadow-[var(--shadow-sm)]"
           >
             <Plus className="w-4 h-4" />
             Nueva Receta
@@ -352,7 +352,7 @@ export default function SuperAdminRecetarioPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center justify-between gap-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
+        <div className="flex items-center justify-between gap-3 bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
           <span className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
@@ -369,12 +369,12 @@ export default function SuperAdminRecetarioPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden animate-pulse"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden animate-pulse"
             >
               <div className="h-32 bg-gray-200 dark:bg-gray-800" />
               <div className="p-4 space-y-3">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full" />
+                <div className="h-3 bg-[var(--surface-sunken)] rounded w-full" />
               </div>
             </div>
           ))}
@@ -389,10 +389,10 @@ export default function SuperAdminRecetarioPage() {
               {filtered.map((r) => (
                 <div
                   key={r.id}
-                  className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
                   {/* Card image area */}
-                  <div className="relative h-36 bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div className="relative h-36 bg-[var(--surface-sunken)] overflow-hidden">
                     {r.imageUrl ? (
                       <Image
                         src={r.imageUrl}
@@ -416,7 +416,7 @@ export default function SuperAdminRecetarioPage() {
                     {/* Active/inactive overlay */}
                     {!r.activa && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold bg-red-500/80 px-3 py-1 rounded-full">
+                        <span className="text-white text-xs font-bold bg-[var(--data-error)]/80 px-3 py-1 rounded-full">
                           Inactiva
                         </span>
                       </div>
@@ -425,49 +425,49 @@ export default function SuperAdminRecetarioPage() {
 
                   {/* Card body */}
                   <div className="p-4">
-                    <h3 className="font-bold text-gray-900 dark:text-white text-sm leading-snug line-clamp-1">
+                    <h3 className="font-bold text-[var(--text-primary)] text-sm leading-snug line-clamp-1">
                       {r.nombre}
                     </h3>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                       {r.tenantName}
                     </p>
 
                     {/* Meta badges */}
                     <div className="flex items-center flex-wrap gap-1.5 mt-2">
                       {r.categoria && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <span className="text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]">
                           {r.categoria}
                         </span>
                       )}
                       {r.dificultad && (
                         <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${DIFICULTAD_BADGE[r.dificultad] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}
+                          className={`text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full ${DIFICULTAD_BADGE[r.dificultad] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}
                         >
                           {r.dificultad}
                         </span>
                       )}
                       {r.tiempoMinutos != null && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+                        <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           <Clock className="w-3 h-3" /> {r.tiempoMinutos}m
                         </span>
                       )}
                       {r.porciones != null && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+                        <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           <Users className="w-3 h-3" /> {r.porciones}
                         </span>
                       )}
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--rule-base)]">
                       <button
                         type="button"
                         onClick={() => void handleToggleActive(r)}
-                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-[var(--text-secondary)] dark:hover:text-gray-200 transition-colors"
                         title={r.activa ? "Desactivar" : "Activar"}
                       >
                         {r.activa ? (
-                          <ToggleRight className="w-5 h-5 text-green-500" />
+                          <ToggleRight className="w-5 h-5 text-[var(--data-success)]" />
                         ) : (
                           <ToggleLeft className="w-5 h-5 text-gray-400" />
                         )}
@@ -477,7 +477,7 @@ export default function SuperAdminRecetarioPage() {
                         <button
                           type="button"
                           onClick={() => openEdit(r)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors"
                           title="Editar"
                         >
                           <Pencil className="w-4 h-4" />
@@ -485,7 +485,7 @@ export default function SuperAdminRecetarioPage() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(r)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -498,13 +498,13 @@ export default function SuperAdminRecetarioPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mb-4">
-                <ChefHat className="w-8 h-8 text-emerald-400" />
+              <div className="w-16 h-16 rounded-xl bg-[var(--data-success-50)] dark:bg-[var(--data-success)]/20 flex items-center justify-center mb-4">
+                <ChefHat className="w-8 h-8 text-[var(--data-success)]" />
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+              <h3 className="font-semibold text-[var(--text-primary)] mb-1">
                 {search ? "Sin resultados" : "Sin recetas aun"}
               </h3>
-              <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
+              <p className="text-sm text-[var(--text-tertiary)] max-w-xs">
                 {search
                   ? `No hay recetas que coincidan con "${search}".`
                   : "El recetario esta vacio. Crea la primera receta."}
@@ -513,7 +513,7 @@ export default function SuperAdminRecetarioPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 underline hover:no-underline"
+                  className="mt-4 text-sm text-[var(--data-success)] dark:text-[var(--data-success)] underline hover:no-underline"
                 >
                   Limpiar busqueda
                 </button>
@@ -526,17 +526,17 @@ export default function SuperAdminRecetarioPage() {
       {/* ── Create/Edit Modal ─────────────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-xl)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <ChefHat className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center justify-between p-5 border-b border-[var(--rule-base)]">
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <ChefHat className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
                 {editingId ? "Editar Receta" : "Nueva Receta"}
               </h2>
               <button
                 type="button"
                 onClick={closeForm}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-500 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -674,7 +674,7 @@ export default function SuperAdminRecetarioPage() {
                   className={inputCls}
                 />
                 {form.imageUrl && (
-                  <div className="relative mt-2 h-32 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <div className="relative mt-2 h-32 rounded-xl overflow-hidden border border-[var(--rule-base)]">
                     <Image
                       src={form.imageUrl}
                       alt="Vista previa"
@@ -692,7 +692,7 @@ export default function SuperAdminRecetarioPage() {
 
               {/* Activa toggle */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                <span className="text-sm text-[var(--text-secondary)] font-medium">
                   Receta activa
                 </span>
                 <button
@@ -701,11 +701,11 @@ export default function SuperAdminRecetarioPage() {
                   className="flex items-center gap-2 text-sm"
                 >
                   {form.activa ? (
-                    <ToggleRight className="w-6 h-6 text-green-500" />
+                    <ToggleRight className="w-6 h-6 text-[var(--data-success)]" />
                   ) : (
                     <ToggleLeft className="w-6 h-6 text-gray-400" />
                   )}
-                  <span className={form.activa ? "text-green-600 font-semibold" : "text-gray-400"}>
+                  <span className={form.activa ? "text-[var(--data-success)] font-semibold" : "text-gray-400"}>
                     {form.activa ? "Activa" : "Inactiva"}
                   </span>
                 </button>
@@ -713,7 +713,7 @@ export default function SuperAdminRecetarioPage() {
 
               {/* Error */}
               {formError && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl px-3 py-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {formError}
                 </div>
@@ -721,11 +721,11 @@ export default function SuperAdminRecetarioPage() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-[var(--rule-base)]">
               <button
                 type="button"
                 onClick={closeForm}
-                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 Cancelar
               </button>
@@ -733,7 +733,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-success)] hover:bg-[var(--data-success)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? "Guardar cambios" : "Crear receta"}
@@ -746,14 +746,14 @@ export default function SuperAdminRecetarioPage() {
       {/* ── Delete Confirm Modal ──────────────────────────────────────────── */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-7 h-7 text-red-500" />
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-xl)] w-full max-w-sm p-6 text-center">
+            <div className="w-14 h-14 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-[var(--data-error)]" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">
               Eliminar receta
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-sm text-[var(--text-tertiary)] mb-6">
               Estas seguro de eliminar <strong>{deleteTarget.nombre}</strong>?
               Esta accion no se puede deshacer.
             </p>
@@ -762,7 +762,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
-                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 Cancelar
               </button>
@@ -770,7 +770,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => void handleDelete()}
                 disabled={deleting}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-error)] hover:bg-[var(--data-error)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
                 Eliminar
@@ -783,8 +783,8 @@ export default function SuperAdminRecetarioPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all ${
-            toast.ok ? "bg-emerald-600" : "bg-red-600"
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${
+            toast.ok ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]"
           }`}
         >
           {toast.ok ? (

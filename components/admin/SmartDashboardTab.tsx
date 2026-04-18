@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import {
   useState,
   useEffect,
@@ -25,7 +26,7 @@ import {
   Settings,
   CreditCard,
   Gauge,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -177,7 +178,7 @@ function formatCurrencyShort(n: number, config: RegionalConfig): string {
 
 function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 animate-pulse", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 animate-pulse", className)}>
       <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-zinc-700 mb-3" />
       <div className="h-7 w-1/2 rounded bg-gray-200 dark:bg-zinc-700 mb-2" />
       <div className="h-1 w-full rounded bg-gray-200 dark:bg-zinc-700 mt-3" />
@@ -194,14 +195,14 @@ interface KpiCardNewProps {
 
 function KpiCardNew({ label, value, subtext, subtextColorClass, colorClass, isEmpty, emptyLabel }: KpiCardNewProps) {
   return (
-    <div className={cn("bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 transition-all", isEmpty && "opacity-60")}>
-      <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">{label}</p>
+    <div className={cn("bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6 transition-all", isEmpty && "opacity-60")}>
+      <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">{label}</p>
       {isEmpty && emptyLabel ? (
-        <p className="text-lg font-mono font-bold text-gray-400 dark:text-zinc-500 mt-1">{emptyLabel}</p>
+        <p className="text-lg font-mono font-bold text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{emptyLabel}</p>
       ) : (
-        <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{value}</p>
+        <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100 mt-1">{value}</p>
       )}
-      {subtext && <p className={cn("text-[10px] mt-1", subtextColorClass ?? "text-gray-400 dark:text-zinc-500")}>{subtext}</p>}
+      {subtext && <p className={cn("text-[length:var(--ts-2xs)] mt-1", subtextColorClass ?? "text-[var(--text-tertiary)] dark:text-zinc-500")}>{subtext}</p>}
       <div className={cn("h-1 rounded-full mt-2", colorClass)} />
     </div>
   );
@@ -762,57 +763,57 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {/* Header — formato estandar: icono + titulo + subtitulo + acciones */}
       <AdminModuleHeader
         icon={Gauge}
-        bgTint="bg-emerald-50 dark:bg-emerald-900/20"
-        iconColorClass="text-emerald-600 dark:text-emerald-400"
+        bgTint="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+        iconColorClass="text-[var(--data-success)] dark:text-[var(--data-success)]"
         title="Panel"
         description={`${getGreeting().text}, ${adminName} — ${formatDateLong()}`}
       >
         <div className="flex items-center bg-gray-100 dark:bg-zinc-700 rounded-lg p-0.5">
           {([{ id: "hoy" as Period, label: "Hoy" }, { id: "semana" as Period, label: "Semana" }, { id: "mes" as Period, label: "Mes actual" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-md transition-all", period === p.id ? "bg-white dark:bg-zinc-800 text-primary " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300")}>
+            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-md transition-all", period === p.id ? "bg-white dark:bg-zinc-800 text-primary " : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)] dark:hover:text-zinc-300")}>
               {p.label}
             </button>
           ))}
         </div>
-        {lastUpdated && <span className="text-[11px] text-gray-400 dark:text-zinc-500 hidden sm:inline">{lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>}
-        <button onClick={() => { setLoading(true); load(); }} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors">
+        {lastUpdated && <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-zinc-500 hidden sm:inline">{lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>}
+        <button onClick={() => { setLoading(true); load(); }} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors">
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
         <div className="relative">
-          <button onClick={() => setShowRegionalConfig(!showRegionalConfig)} className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors" title="Configuracion regional">
+          <button onClick={() => setShowRegionalConfig(!showRegionalConfig)} className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors" title="Configuracion regional">
             <Settings className="w-3.5 h-3.5" />
           </button>
           {showRegionalConfig && (
-            <div className="absolute right-0 top-full mt-1 z-30 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 w-72">
+            <div className="absolute right-0 top-full mt-1 z-30 bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-xl p-4 w-72">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-gray-700 dark:text-zinc-300">Configuracion Regional</span>
-                <button onClick={() => setShowRegionalConfig(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200"><X className="w-4 h-4" /></button>
+                <span className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-300">Configuracion Regional</span>
+                <button onClick={() => setShowRegionalConfig(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-zinc-200"><X className="w-4 h-4" /></button>
               </div>
               <div className="mb-3">
-                <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 block mb-1.5">Moneda</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-zinc-400 block mb-1.5">Moneda</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => updateRegionalConfig({ currency: "PEN" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "PEN" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}>
+                  <button onClick={() => updateRegionalConfig({ currency: "PEN" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "PEN" ? "bg-primary/10 border-primary text-primary" : "border-[var(--rule-base)] dark:border-zinc-600 text-[var(--text-secondary)] dark:text-zinc-400 hover:border-gray-300")}>
                     S/ Soles {regionalConfig.currency === "PEN" && <Check className="w-3 h-3 inline ml-1" />}
                   </button>
-                  <button onClick={() => updateRegionalConfig({ currency: "USD" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "USD" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}>
+                  <button onClick={() => updateRegionalConfig({ currency: "USD" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "USD" ? "bg-primary/10 border-primary text-primary" : "border-[var(--rule-base)] dark:border-zinc-600 text-[var(--text-secondary)] dark:text-zinc-400 hover:border-gray-300")}>
                     $ Dolar {regionalConfig.currency === "USD" && <Check className="w-3 h-3 inline ml-1" />}
                   </button>
                 </div>
               </div>
               <div className="mb-3">
-                <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 block mb-1.5">Formato de fecha</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-zinc-400 block mb-1.5">Formato de fecha</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => updateRegionalConfig({ dateFormat: "DD/MM/YYYY" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "DD/MM/YYYY" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}>
+                  <button onClick={() => updateRegionalConfig({ dateFormat: "DD/MM/YYYY" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "DD/MM/YYYY" ? "bg-primary/10 border-primary text-primary" : "border-[var(--rule-base)] dark:border-zinc-600 text-[var(--text-secondary)] dark:text-zinc-400 hover:border-gray-300")}>
                     DD/MM/YYYY {regionalConfig.dateFormat === "DD/MM/YYYY" && <Check className="w-3 h-3 inline ml-1" />}
                   </button>
-                  <button onClick={() => updateRegionalConfig({ dateFormat: "MM/DD/YYYY" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "MM/DD/YYYY" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}>
+                  <button onClick={() => updateRegionalConfig({ dateFormat: "MM/DD/YYYY" })} className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "MM/DD/YYYY" ? "bg-primary/10 border-primary text-primary" : "border-[var(--rule-base)] dark:border-zinc-600 text-[var(--text-secondary)] dark:text-zinc-400 hover:border-gray-300")}>
                     MM/DD/YYYY {regionalConfig.dateFormat === "MM/DD/YYYY" && <Check className="w-3 h-3 inline ml-1" />}
                   </button>
                 </div>
               </div>
-              <div className="pt-2 border-t border-gray-100 dark:border-zinc-700">
-                <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 block mb-1">Zona horaria</span>
-                <span className="text-xs text-gray-400 dark:text-zinc-500">America/Lima (UTC-5)</span>
+              <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-zinc-700">
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-zinc-400 block mb-1">Zona horaria</span>
+                <span className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">America/Lima (UTC-5)</span>
               </div>
             </div>
           )}
@@ -820,7 +821,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       </AdminModuleHeader>
 
       {/* Dashboard sub-tabs — underline style */}
-      <div className="flex items-center gap-6 border-b border-gray-200 dark:border-zinc-800 overflow-x-auto">
+      <div className="flex items-center gap-6 border-b border-[var(--rule-base)] dark:border-zinc-800 overflow-x-auto">
         {DASHBOARD_TABS.map(tab => (
           <button
             key={tab.id}
@@ -828,14 +829,14 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             className={cn(
               "pb-3 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-1.5",
               dashTab === tab.id
-                ? "text-emerald-600"
-                : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "text-[var(--data-success)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-zinc-400 dark:hover:text-zinc-300"
             )}
           >
             <tab.Icon className="w-3.5 h-3.5" />
             {tab.label}
             {dashTab === tab.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent-soft)] rounded-full" />
             )}
           </button>
         ))}
@@ -843,7 +844,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
 
       {/* Error banner */}
       {fetchError && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm px-4 py-3">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm px-4 py-3">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {fetchError}
         </div>
@@ -858,26 +859,26 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
         ) : (
           <DraggableWidgetGrid storageKey="dashboard-kpis-order" columns={3} className="grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             <div key="kpi-ventas"><KpiCardNew label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`} value={fmtR(revenueFiltered)} subtext={`${filteredSales.length} transacciones`} colorClass="bg-primary" isEmpty={revenueFiltered === 0} emptyLabel="Sin ventas" /></div>
-            <div key="kpi-clientes"><KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-emerald-500" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" /></div>
-            <div key="kpi-margen"><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-emerald-600 dark:text-emerald-400" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[#f97316]" isEmpty={marginFiltered === 0} /></div>
-            <div key="kpi-ayer"><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-emerald-500" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></div>
-            <div key="kpi-ticket"><KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-purple-500" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" /></div>
+            <div key="kpi-clientes"><KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-[var(--accent-soft)]" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" /></div>
+            <div key="kpi-margen"><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[#f97316]" isEmpty={marginFiltered === 0} /></div>
+            <div key="kpi-ayer"><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></div>
+            <div key="kpi-ticket"><KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-[var(--text-primary)]" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" /></div>
           </DraggableWidgetGrid>
         )
       )}
 
       {/* Monthly sales chart (shared: resumen + ventas) */}
       {!loading && (dashTab === "resumen" || dashTab === "ventas") && (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Total de ventas</h2>
-              <p className="text-xs text-gray-400 dark:text-zinc-500">La grafica muestra el valor de tus ventas con impuestos incluidos</p>
+              <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Total de ventas</SectionTitle>
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">La grafica muestra el valor de tus ventas con impuestos incluidos</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
+              <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
               {monthDelta !== 0 && (
-                <span className={cn("text-xs font-bold", monthDelta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
+                <span className={cn("text-xs font-bold", monthDelta >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
                   {monthDelta >= 0 ? "+" : ""}{monthDelta.toFixed(1)}% vs mes anterior
                 </span>
               )}
@@ -887,7 +888,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             <MonthlySalesAreaChart data={monthlyDailyData} fmtShort={fmtShort} fmt={fmt} />
           ) : (
             <div className="flex items-center justify-center h-[280px]">
-              <p className="text-sm text-gray-400 dark:text-zinc-500">Sin ventas registradas este mes</p>
+              <p className="text-sm text-[var(--text-tertiary)] dark:text-zinc-500">Sin ventas registradas este mes</p>
             </div>
           )}
         </div>
@@ -896,29 +897,29 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {/* Financial cards (shared: resumen + finanzas) */}
       {!loading && (dashTab === "resumen" || dashTab === "finanzas") && dashTab === "resumen" && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
-            <a href="/admin?module=fiados" className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
-            <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorCobrar.total)}</p>
-            <div className="flex items-center gap-2 mt-2 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorCobrar.vigentes)}</span></span></div>
-            <div className="flex items-center gap-2 mt-0.5 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span></span></div>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
+            <a href="/admin?module=fiados" className="text-sm font-semibold text-[var(--text-primary)] hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
+            <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100 mt-1">{fmtR(cuentasPorCobrar.total)}</p>
+            <div className="flex items-center gap-2 mt-2 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorCobrar.vigentes)}</span></span></div>
+            <div className="flex items-center gap-2 mt-0.5 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span></span></div>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
           </div>
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
-            <a href="/admin?module=compras" className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
-            <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorPagar.total)}</p>
-            <div className="flex items-center gap-2 mt-2 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorPagar.vigentes)}</span></span></div>
-            <div className="flex items-center gap-2 mt-0.5 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span></span></div>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
+            <a href="/admin?module=compras" className="text-sm font-semibold text-[var(--text-primary)] hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
+            <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100 mt-1">{fmtR(cuentasPorPagar.total)}</p>
+            <div className="flex items-center gap-2 mt-2 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorPagar.vigentes)}</span></span></div>
+            <div className="flex items-center gap-2 mt-0.5 text-[length:var(--ts-2xs)]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error)] inline-block" /><span className="text-[var(--text-secondary)] dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span></span></div>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
           </div>
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">Impuestos en venta</span>
-            <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(igvVentasMes)}</p>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">IGV estimado del mes</p>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Impuestos en venta</span>
+            <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-zinc-100 mt-1">{fmtR(igvVentasMes)}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-2">IGV estimado del mes</p>
           </div>
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">Devoluciones</span>
-            <p className={cn("text-2xl font-mono font-bold mt-1", devoluciones > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-zinc-100")}>{fmtR(devoluciones)}</p>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Incluye impuestos</p>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Devoluciones</span>
+            <p className={cn("text-2xl font-mono font-bold mt-1", devoluciones > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-zinc-100")}>{fmtR(devoluciones)}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-2">Incluye impuestos</p>
           </div>
         </div>
       )}
@@ -1080,39 +1081,39 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {!loading && dashTab === "ventas" && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {bestDay && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Mejor dia de la semana</span>
+                <TrendingUp className="w-4 h-4 text-[var(--data-warning)]" />
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Mejor dia de la semana</span>
               </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}</p>
-              {bestDay.worst && <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>}
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}</p>
+              {bestDay.worst && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>}
             </div>
           )}
           {growingCategory?.top && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Categoria en crecimiento</span>
+                <TrendingUp className="w-4 h-4 text-[var(--data-success)]" />
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Categoria en crecimiento</span>
               </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
-              {growingCategory.bottom && <p className="text-[10px] text-orange-500 dark:text-orange-400 mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>}
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
+              {growingCategory.bottom && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>}
             </div>
           )}
           {topClientMonth && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Cliente del mes</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Cliente del mes</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "var(--color-primary)" }}>{topClientMonth.name.charAt(0).toUpperCase()}</span>
-                <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{topClientMonth.name}</p>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>{topClientMonth.name.charAt(0).toUpperCase()}</span>
+                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{topClientMonth.name}</p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">{topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}</p>
-              <span className="inline-block text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full mt-1.5 capitalize">Cliente mas fiel de {topClientMonth.monthName}</span>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-1">{topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}</p>
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">Cliente mas fiel de {topClientMonth.monthName}</span>
             </div>
           )}
         </div>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { LoadingState } from "@buleje/design-system";
 import {
-  Zap, Banknote, Smartphone, CreditCard, Loader2, CheckCircle,
+  Zap, Banknote, Smartphone, CreditCard, CheckCircle,
   Clock, X, History, TrendingUp,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -156,12 +157,12 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
   const dailyCount = history.length;
 
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
         <Zap className="h-4 w-4 text-secondary" />
-        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Cobro Rapido</span>
-        <span className="ml-auto text-xs text-gray-400 dark:text-muted">Para ventas rapidas sin producto</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Cobro Rapido</span>
+        <span className="ml-auto text-xs text-[var(--text-tertiary)] dark:text-muted">Para ventas rapidas sin producto</span>
       </div>
 
       <div className="p-4 space-y-4">
@@ -169,7 +170,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
         {dailyCount > 0 && (
           <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/10">
             <TrendingUp className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span className="text-xs text-gray-600 dark:text-muted flex-1">
+            <span className="text-xs text-[var(--text-secondary)] dark:text-muted flex-1">
               Hoy: <strong className="text-primary">{dailyCount}</strong> cobro{dailyCount !== 1 ? "s" : ""} — <strong className="text-primary">{fmt(dailyTotal)}</strong>
             </span>
             <button type="button" onClick={() => setShowHistory((v) => !v)}
@@ -182,14 +183,14 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* History panel */}
         {showHistory && history.length > 0 && (
-          <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
+          <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
             {history.slice(0, 10).map((charge) => (
               <div key={charge.id} className="flex items-center gap-2 px-3 py-2 text-xs bg-white dark:bg-card">
-                <Clock className="h-3.5 w-3.5 text-gray-300 shrink-0" />
-                <span className="text-gray-500 dark:text-muted">{fmtTime(charge.createdAt)}</span>
-                <span className="flex-1 text-gray-600 dark:text-muted truncate">{charge.note ?? "Venta rapida"}</span>
+                <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
+                <span className="text-[var(--text-secondary)] dark:text-muted">{fmtTime(charge.createdAt)}</span>
+                <span className="flex-1 text-[var(--text-secondary)] dark:text-muted truncate">{charge.note ?? "Venta rapida"}</span>
                 <span className="font-semibold text-primary">{fmt(charge.amount)}</span>
-                <span className="text-gray-400 dark:text-muted capitalize">{charge.payment}</span>
+                <span className="text-[var(--text-tertiary)] dark:text-muted capitalize">{charge.payment}</span>
               </div>
             ))}
           </div>
@@ -197,9 +198,9 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* Amount input */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-gray-600 dark:text-muted block">Monto a cobrar</label>
+          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block">Monto a cobrar</label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 select-none">S/</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-[var(--text-tertiary)] select-none">S/</span>
             <input
               ref={inputRef}
               type="number"
@@ -209,7 +210,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
               onChange={(e) => { setAmount(e.target.value); setError(""); }}
               onKeyDown={handleKeyDown}
               placeholder="0.00"
-              className="w-full pl-12 pr-4 py-4 text-3xl font-black rounded-xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
+              className="w-full pl-12 pr-4 py-4 text-3xl font-extrabold rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
             />
           </div>
 
@@ -224,7 +225,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                   "px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors",
                   parsed === v
                     ? "bg-primary text-white border-primary"
-                    : "bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary"
+                    : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary"
                 )}
               >
                 S/{v}
@@ -235,7 +236,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* Optional note */}
         <div>
-          <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Descripcion (opcional)</label>
+          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Descripcion (opcional)</label>
           <input
             type="text"
             value={note}
@@ -243,13 +244,13 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
             onKeyDown={handleKeyDown}
             placeholder="Ej: agua, pan, cargador..."
             maxLength={80}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
         {/* Payment method */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-gray-600 dark:text-muted block">Metodo de pago</label>
+          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block">Metodo de pago</label>
           <div className="grid grid-cols-4 gap-1.5">
             {PAYMENT_OPTIONS.map(({ key, label, icon: Icon }) => (
               <button
@@ -260,7 +261,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                   "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                   payment === key
                     ? "border-primary bg-primary/5 text-primary"
-                    : "border-gray-100 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
+                    : "border-[var(--rule-soft)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -272,17 +273,17 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-            <X className="h-3.5 w-3.5 text-red-500 shrink-0" />
-            <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]">
+            <X className="h-3.5 w-3.5 text-[var(--data-error)] shrink-0" />
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
           </div>
         )}
 
         {/* Success */}
         {success && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
-            <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Cobro registrado</p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+            <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success)] shrink-0" />
+            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">Cobro registrado</p>
           </div>
         )}
 
@@ -292,16 +293,16 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
           onClick={handleCharge}
           disabled={!validAmount || loading || success}
           className={cn(
-            "w-full py-4 rounded-xl font-black text-xl transition-all flex items-center justify-center gap-3",
+            "w-full py-4 rounded-xl font-extrabold text-xl transition-all flex items-center justify-center gap-3",
             success
-              ? "bg-emerald-500 text-white"
+              ? "bg-[var(--accent-soft)] text-white"
               : validAmount && !loading
               ? "bg-primary text-white hover:bg-primary/90 active:scale-98"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+              : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
           )}
         >
           {loading ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <LoadingState variant="inline" size="sm" />
           ) : success ? (
             <CheckCircle className="h-6 w-6" />
           ) : (
@@ -311,7 +312,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
         </button>
 
         {/* Hint */}
-        <p className="text-center text-xs text-gray-400 dark:text-muted">
+        <p className="text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
           Solo para ventas rapidas menores a S/ 10. Para ventas con productos usa el POS.
         </p>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export default function WhatsAppButton({
         "inline-flex items-center gap-1.5 font-bold rounded-xl transition-colors",
         "bg-[#25D366] hover:bg-[#20bd5a] text-white",
         size === "sm"
-          ? "px-2.5 py-1 text-[11px]"
+          ? "px-2.5 py-1 text-[length:var(--ts-xs)]"
           : "px-3.5 py-2 text-sm",
         className,
       )}

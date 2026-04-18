@@ -1,10 +1,12 @@
 ﻿"use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
+
 import { useState, useMemo, useEffect } from "react";
 import {
   ScrollText, Download, Search, Eye, X, AlertTriangle,
   Shield, Trash2, Pencil, Plus, Settings, UserCog, Loader2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import ResponsiveTable from "@/components/ui/ResponsiveTable";
 // import type { ReactNode } from "react";
@@ -37,20 +39,20 @@ function fmtDate(iso: string) {
 }
 
 const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color: string }> = {
-  crear:    { label: "Crear",    icon: Plus,     color: "text-emerald-600" },
-  editar:   { label: "Editar",   icon: Pencil,   color: "text-emerald-600" },
-  eliminar: { label: "Eliminar", icon: Trash2,   color: "text-red-500" },
-  login:    { label: "Login",    icon: UserCog,  color: "text-violet-600" },
-  config:   { label: "Config",   icon: Settings, color: "text-amber-600" },
-  exportar: { label: "Exportar", icon: Download,  color: "text-cyan-600" },
-  precio:   { label: "Precio",   icon: Pencil,   color: "text-orange-600" },
-  permiso:  { label: "Permiso",  icon: Shield,   color: "text-pink-600" },
+  crear:    { label: "Crear",    icon: Plus,     color: "text-[var(--data-success)]" },
+  editar:   { label: "Editar",   icon: Pencil,   color: "text-[var(--data-success)]" },
+  eliminar: { label: "Eliminar", icon: Trash2,   color: "text-[var(--data-error)]" },
+  login:    { label: "Login",    icon: UserCog,  color: "text-[var(--text-secondary)]" },
+  config:   { label: "Config",   icon: Settings, color: "text-[var(--data-warning)]" },
+  exportar: { label: "Exportar", icon: Download,  color: "text-[var(--data-info)]" },
+  precio:   { label: "Precio",   icon: Pencil,   color: "text-[var(--data-warning)]" },
+  permiso:  { label: "Permiso",  icon: Shield,   color: "text-[var(--text-secondary)]" },
 };
 
 const SEVERITY_META: Record<AuditSeverity, { label: string; color: string; bg: string }> = {
-  info:        { label: "Info",        color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  advertencia: { label: "Advertencia", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  critica:     { label: "Crítica",     color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
+  info:        { label: "Info",        color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  advertencia: { label: "Advertencia", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  critica:     { label: "Crítica",     color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
 };
 
 const MODULES = ["Inventario", "Ventas", "Clientes", "Proveedores", "Finanzas", "RRHH", "Configuración", "Usuarios", "Precios", "Pedidos"];
@@ -114,15 +116,15 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
     key: "timestamp",
     header: "Fecha/Hora",
     hideOnMobile: true,
-    render: (e: AuditEntry) => <span className="text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">{fmtDate(e.timestamp)}</span>,
   },
   {
     key: "user",
     header: "Usuario",
     render: (e: AuditEntry) => (
       <div>
-        <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{e.user}</p>
-        <p className="text-[10px] text-gray-400">{e.role}</p>
+        <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{e.user}</p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.role}</p>
       </div>
     ),
   },
@@ -139,18 +141,18 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
     key: "module",
     header: "Módulo",
     hideOnMobile: true,
-    render: (e: AuditEntry) => <span className="text-xs text-gray-500 dark:text-muted">{e.module}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{e.module}</span>,
   },
   {
     key: "description",
     header: "Descripción",
-    render: (e: AuditEntry) => <span className="text-xs text-gray-700 dark:text-foreground max-w-60 truncate block">{e.description}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-[var(--text-primary)] dark:text-foreground max-w-60 truncate block">{e.description}</span>,
   },
   {
     key: "detail",
     header: "",
     hideOnMobile: true,
-    render: () => <Eye className="h-3.5 w-3.5 text-gray-400" />,
+    render: () => <Eye className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />,
   },
 ];
 
@@ -251,18 +253,18 @@ export default function AuditLogTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <ScrollText className="h-6 w-6 text-primary" /> Auditoría Avanzada
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       {loading && (
-        <div className="flex flex-wrap items-center justify-center py-16 gap-3 text-gray-400 dark:text-muted">
+        <div className="flex flex-wrap items-center justify-center py-16 gap-3 text-[var(--text-tertiary)] dark:text-muted">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-sm font-semibold">Cargando registro de auditoría…</span>
         </div>
@@ -271,13 +273,13 @@ export default function AuditLogTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total eventos", value: String(stats.total), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Hoy", value: String(stats.hoy), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
-          { label: "Advertencias", value: String(stats.advertencias), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Críticas", value: String(stats.criticas), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
+          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Hoy", value: String(stats.hoy), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+          { label: "Advertencias", value: String(stats.advertencias), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Críticas", value: String(stats.criticas), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
         ))}
@@ -285,11 +287,11 @@ export default function AuditLogTab() {
 
       {/* Alert */}
       {stats.criticas > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-red-700 dark:text-red-400 text-sm">Eventos críticos detectados</p>
-            <p className="text-xs text-red-600 dark:text-red-300 mt-0.5">{stats.criticas} evento(s) de severidad crítica — eliminaciones, cambios de permisos o precios masivos.</p>
+            <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">Eventos críticos detectados</p>
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{stats.criticas} evento(s) de severidad crítica — eliminaciones, cambios de permisos o precios masivos.</p>
           </div>
         </div>
       )}
@@ -297,22 +299,22 @@ export default function AuditLogTab() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
-        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todas las severidades</option>
           {(Object.keys(SEVERITY_META) as AuditSeverity[]).map(s => <option key={s} value={s}>{SEVERITY_META[s].label}</option>)}
         </select>
-        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todas las acciones</option>
           {(Object.keys(ACTION_META) as AuditAction[]).map(a => <option key={a} value={a}>{ACTION_META[a].label}</option>)}
         </select>
-        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todos los módulos</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todos los usuarios</option>
           {users.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -337,7 +339,7 @@ export default function AuditLogTab() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
           >
             {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
             {loadingMore ? "Cargando…" : "Cargar más eventos"}
@@ -348,10 +350,10 @@ export default function AuditLogTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del evento</h3>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle del evento</CardTitle>
+              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
               {[
@@ -361,8 +363,8 @@ export default function AuditLogTab() {
                 ["Detalles", detail.details], ["IP", detail.ip],
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
-                  <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
-                  <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
+                  <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
                 </div>
               ))}
             </div>

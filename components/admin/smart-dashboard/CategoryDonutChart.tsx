@@ -35,7 +35,7 @@ function renderActiveShape(props: any) {
       <text x={cx} y={cy - 10} textAnchor="middle" className="fill-gray-900 dark:fill-white text-xs font-bold">
         {payload.name}
       </text>
-      <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 dark:fill-zinc-400 text-[10px]">
+      <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 dark:fill-zinc-400 text-[length:var(--ts-2xs)]">
         {(percent * 100).toFixed(0)}%
       </text>
     </g>
@@ -91,8 +91,8 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
         {/* Central number */}
         {activeIndex === null && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{fmtR(total)}</span>
-            <span className="text-[10px] text-gray-400">Total</span>
+            <span className="text-2xl font-bold text-[var(--text-primary)]">{fmtR(total)}</span>
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Total</span>
           </div>
         )}
       </div>
@@ -115,13 +115,13 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
                   opacity: isHidden ? 0.2 : 1,
                 }}
               />
-              <span className={`text-xs flex-1 truncate ${isHidden ? "text-gray-300 dark:text-zinc-600 line-through" : "text-gray-700 dark:text-zinc-300"}`}>
+              <span className={`text-xs flex-1 truncate ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600 line-through" : "text-[var(--text-primary)] dark:text-zinc-300"}`}>
                 {item.name}
               </span>
-              <span className={`text-xs font-mono tabular-nums ${isHidden ? "text-gray-300 dark:text-zinc-600" : "text-gray-500 dark:text-zinc-400"}`}>
+              <span className={`text-xs font-mono tabular-nums ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600" : "text-[var(--text-secondary)] dark:text-zinc-400"}`}>
                 {isHidden ? "--" : `${pct}%`}
               </span>
-              <span className={`text-xs font-semibold tabular-nums ${isHidden ? "text-gray-300 dark:text-zinc-600" : "text-gray-900 dark:text-white"}`}>
+              <span className={`text-xs font-semibold tabular-nums ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600" : "text-[var(--text-primary)]"}`}>
                 {isHidden ? "--" : fmtR(item.value)}
               </span>
             </button>

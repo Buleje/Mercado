@@ -1,8 +1,9 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
-import { Send, CheckCheck, Clock, Trash2, Bell } from "lucide-react";
+import { Send, CheckCheck, Clock, Trash2, Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -99,10 +100,10 @@ export default function ShiftNotes() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
               Notas de Turno
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            </SectionTitle>
+            <p className="text-sm text-[var(--text-tertiary)]">
               Mensajes entre turnos del personal
             </p>
           </div>
@@ -116,7 +117,7 @@ export default function ShiftNotes() {
         {unreadCount > 0 && (
           <button
             onClick={markAllRead}
-            className="flex items-center gap-1.5 text-sm text-[#00B4A6] hover:underline dark:text-emerald-400"
+            className="flex items-center gap-1.5 text-sm text-[#00B4A6] hover:underline dark:text-[var(--data-success)]"
           >
             <CheckCheck className="h-4 w-4" />
             Marcar todo como leido
@@ -125,21 +126,21 @@ export default function ShiftNotes() {
       </div>
 
       {/* New note form */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-        <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
+        <CardTitle className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
           Dejar una nota para el siguiente turno
-        </h3>
+        </CardTitle>
 
         {/* Author */}
         <div className="mb-3">
-          <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+          <label className="mb-1 block text-xs font-medium text-[var(--text-tertiary)]">
             Tu nombre
           </label>
           <input
             value={author}
             onChange={(e) => saveUser(e.target.value)}
             placeholder="Ej: Maria, Juan cajero turno manana..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
           />
         </div>
 
@@ -152,11 +153,11 @@ export default function ShiftNotes() {
           }}
           rows={3}
           placeholder="Escribe aqui tu nota... (Ctrl+Enter para enviar)"
-          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
         />
 
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             {text.length}/500 caracteres
           </p>
           <button
@@ -173,18 +174,18 @@ export default function ShiftNotes() {
       {/* Notes list */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
             Notas recientes
-          </h3>
-          <span className="text-xs text-gray-400">
+          </CardTitle>
+          <span className="text-xs text-[var(--text-tertiary)]">
             Mostrando las ultimas {notes.length} notas
           </span>
         </div>
 
         {notes.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-200 py-10 text-center dark:border-gray-700">
-            <Clock className="h-8 w-8 text-gray-300 dark:text-gray-700" />
-            <p className="text-sm text-gray-400">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center dark:border-[var(--rule-base)]">
+            <Clock className="h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
+            <p className="text-sm text-[var(--text-tertiary)]">
               No hay notas de turno todavia. Escribe la primera nota arriba.
             </p>
           </div>
@@ -196,8 +197,8 @@ export default function ShiftNotes() {
                 className={cn(
                   "group relative rounded-xl border p-4 transition",
                   note.read
-                    ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
-                    : "border-[#f97316]/40 bg-amber-50 dark:border-[#f97316]/30 dark:bg-amber-900/10"
+                    ? "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
+                    : "border-[#f97316]/40 bg-[var(--data-warning-50)] dark:border-[#f97316]/30 dark:bg-[var(--data-warning)]/10"
                 )}
               >
                 {/* Unread dot */}
@@ -211,17 +212,17 @@ export default function ShiftNotes() {
                     {(note.author[0] ?? "C").toUpperCase()}
                   </div>
                   <div>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">
                       {note.author}
                     </span>
-                    <span className="ml-2 text-xs text-gray-400">
+                    <span className="ml-2 text-xs text-[var(--text-tertiary)]">
                       {fmtDate(note.createdAt)}
                     </span>
                   </div>
                 </div>
 
                 {/* Text */}
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-secondary)]">
                   {note.text}
                 </p>
 
@@ -230,21 +231,21 @@ export default function ShiftNotes() {
                   {!note.read && (
                     <button
                       onClick={() => markAsRead(note.id)}
-                      className="flex items-center gap-1.5 text-xs font-medium text-[#00B4A6] hover:underline dark:text-emerald-400"
+                      className="flex items-center gap-1.5 text-xs font-medium text-[#00B4A6] hover:underline dark:text-[var(--data-success)]"
                     >
                       <CheckCheck className="h-3.5 w-3.5" />
                       Marcar como leido
                     </button>
                   )}
                   {note.read && (
-                    <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <CheckCheck className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+                      <CheckCheck className="h-3.5 w-3.5 text-[var(--data-success)]" />
                       Leido
                     </span>
                   )}
                   <button
                     onClick={() => removeNote(note.id)}
-                    className="ml-auto flex items-center gap-1 text-xs text-gray-300 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 dark:text-gray-600"
+                    className="ml-auto flex items-center gap-1 text-xs text-[var(--text-tertiary)] opacity-0 transition-opacity hover:text-[var(--data-error)] group-hover:opacity-100 dark:text-[var(--text-secondary)]"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Eliminar

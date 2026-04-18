@@ -6,21 +6,21 @@ import { tv, type VariantProps } from "tailwind-variants";
 const card = tv({
   base: [
     "relative flex flex-col",
-    "bg-white dark:bg-gray-900",
-    "border border-gray-200 dark:border-gray-800",
+    "bg-[var(--surface-raised)]",
+    "border border-[var(--rule-base)]",
     "rounded-xl overflow-hidden",
-    "transition-colors duration-200",
+    "transition-colors duration-[var(--dur-base)]",
   ],
   variants: {
     variant: {
       base: "",
       interactive: "hover:border-gray-900 dark:hover:border-gray-500 cursor-pointer",
       lifted: [
-        "transition-all duration-300 ease-out",
+        "transition-all duration-[var(--dur-base)] ease-out",
         "hover:border-gray-900 dark:hover:border-gray-500",
         "hover:-translate-y-0.5",
       ],
-      flat: "border-transparent bg-gray-50 dark:bg-gray-950",
+      flat: "border-transparent bg-[var(--surface-canvas)]",
       inverse: [
         "bg-gray-900 dark:bg-white",
         "text-white dark:text-gray-900",
@@ -57,7 +57,7 @@ export const CardHeader = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
   ({ className = "", ...props }, ref) => (
     <div
       ref={ref}
-      className={`px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800 ${className}`}
+      className={`px-6 pt-5 pb-4 border-b border-[var(--rule-base)] ${className}`}
       {...props}
     />
   ),
@@ -75,7 +75,7 @@ export const CardFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
   ({ className = "", ...props }, ref) => (
     <div
       ref={ref}
-      className={`px-6 py-4 border-t border-gray-100 dark:border-gray-800 ${className}`}
+      className={`px-6 py-4 border-t border-[var(--rule-base)] ${className}`}
       {...props}
     />
   ),

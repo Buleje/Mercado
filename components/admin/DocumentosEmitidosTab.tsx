@@ -1,8 +1,10 @@
 'use client';
 
+import { SectionTitle } from "@buleje/design-system";
+
 import { useState, useEffect, useCallback } from "react";
 import {
-  FileText, Search, Printer, MessageCircle, Eye, Filter, FileSignature, ArrowRight, AlertTriangle } from "lucide-react";
+  FileText, Search, Printer, MessageCircle, Eye, Filter, FileSignature, ArrowRight, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -48,14 +50,14 @@ const TIPO_FILTERS: { id: TipoFiltro; label: string }[] = [
 ];
 
 const TIPO_BADGES: Record<string, { bg: string; text: string; label: string }> = {
-  boleta: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-400", label: "Boleta" },
-  factura: { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-400", label: "Factura" },
-  cotizacion: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-400", label: "Cotizacion" },
-  proforma: { bg: "bg-cyan-100 dark:bg-cyan-900/30", text: "text-cyan-700 dark:text-cyan-400", label: "Proforma" },
-  grr: { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400", label: "GRR" },
-  nc: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", label: "NC" },
-  ticket: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-400", label: "Ticket" },
-  contrato: { bg: "bg-violet-100 dark:bg-violet-900/30", text: "text-violet-700 dark:text-violet-400", label: "Contrato" },
+  boleta: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", label: "Boleta" },
+  factura: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", label: "Factura" },
+  cotizacion: { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", label: "Cotizacion" },
+  proforma: { bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info)]/30", text: "text-[var(--data-info)] dark:text-[var(--data-info)]", label: "Proforma" },
+  grr: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", label: "GRR" },
+  nc: { bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30", text: "text-[var(--data-error)] dark:text-[var(--data-error)]", label: "NC" },
+  ticket: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)]", label: "Ticket" },
+  contrato: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", label: "Contrato" },
 };
 
 function fmt(n: number) {
@@ -150,39 +152,39 @@ export default function DocumentosEmitidosTab() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <FileText className="h-5 w-5 text-primary" />
           Documentos Emitidos
-        </h2>
-        <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
+        </SectionTitle>
+        <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
           Boletas, facturas, cotizaciones, contratos y mas — todo en un lugar
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Boletas del mes</p>
-          <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{kpis.boletasMes}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Boletas del mes</p>
+          <p className="text-xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{kpis.boletasMes}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Facturas del mes</p>
-          <p className="text-xl font-extrabold text-purple-600 dark:text-purple-400">{kpis.facturasMes}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Facturas del mes</p>
+          <p className="text-xl font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{kpis.facturasMes}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Total facturado</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Total facturado</p>
           <p className="text-xl font-extrabold text-primary">{fmt(kpis.totalFacturado)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Documentos hoy</p>
-          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{kpis.docsHoy}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Documentos hoy</p>
+          <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{kpis.docsHoy}</p>
         </div>
         {/* Contratos KPI */}
-        <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-xl p-3">
-          <p className="text-[10px] font-bold text-violet-500 dark:text-violet-400">Contratos activos</p>
-          <p className="text-xl font-extrabold text-violet-600 dark:text-violet-400">{contratoKpis.activos}</p>
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">Contratos activos</p>
+          <p className="text-xl font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{contratoKpis.activos}</p>
           {contratoKpis.porVencer > 0 && (
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5 flex items-center gap-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] font-bold mt-0.5 flex items-center gap-0.5">
               <AlertTriangle className="h-3 w-3" />
               {contratoKpis.porVencer} por vencer
             </p>
@@ -192,18 +194,18 @@ export default function DocumentosEmitidosTab() {
 
       {/* Contratos Alert Banner */}
       {contratoKpis.porVencer > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
             <div>
-              <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
+              <p className="text-sm font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                 {contratoKpis.porVencer} contrato{contratoKpis.porVencer > 1 ? "s" : ""} por vencer en los proximos 30 dias
               </p>
             </div>
           </div>
           <button
             onClick={() => setTipoFiltro("contrato")}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs font-bold hover:bg-[var(--data-warning)] dark:hover:bg-[var(--data-warning)]/50 transition-colors"
           >
             Ver contratos <ArrowRight className="h-3 w-3" />
           </button>
@@ -222,9 +224,9 @@ export default function DocumentosEmitidosTab() {
                 "px-3 py-1.5 rounded-lg text-xs font-bold border transition-all",
                 tipoFiltro === f.id
                   ? f.id === "contrato"
-                    ? "border-violet-400 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 ring-1 ring-violet-300"
+                    ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] ring-1 ring-[var(--rule-base)]"
                     : "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                  : "border-gray-200 dark:border-card-border text-gray-400 dark:text-muted hover:border-gray-300"
+                  : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] dark:text-muted hover:border-gray-300"
               )}
             >
               {f.id === "contrato" && <FileSignature className="h-3 w-3 inline mr-1" />}
@@ -236,13 +238,13 @@ export default function DocumentosEmitidosTab() {
         {/* Search + Date range */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)]" />
             <input
               type="text"
               placeholder="Buscar por numero o cliente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
             />
           </div>
           <div className="flex gap-2">
@@ -250,13 +252,13 @@ export default function DocumentosEmitidosTab() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs text-gray-700 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
             />
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs text-gray-700 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
             />
           </div>
         </div>
@@ -264,36 +266,36 @@ export default function DocumentosEmitidosTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6">
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+              <div key={i} className="h-10 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
             ))}
           </div>
         </div>
       ) : documentos.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-8 text-center">
-          <Filter className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-          <p className="text-sm text-gray-500 dark:text-muted">No hay documentos emitidos para estos filtros</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
+          <Filter className="h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No hay documentos emitidos para estos filtros</p>
           {tipoFiltro === "contrato" && (
-            <p className="text-xs text-gray-400 dark:text-muted mt-1">
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
               Puedes crear contratos desde el modulo de Contratos
             </p>
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface/30">
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Tipo</th>
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">N Documento</th>
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Cliente</th>
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Fecha</th>
-                  <th className="text-right px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Total</th>
-                  <th className="text-center px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Estado</th>
-                  <th className="text-center px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Acciones</th>
+                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface/30">
+                  <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">N Documento</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+                  <th className="text-right px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Total</th>
+                  <th className="text-center px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
+                  <th className="text-center px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,26 +304,26 @@ export default function DocumentosEmitidosTab() {
                   return (
                     <tr key={`${doc.fuente}-${doc.id}`} className="border-b border-gray-50 dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-3 py-2.5">
-                        <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", badge.bg, badge.text)}>
+                        <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", badge.bg, badge.text)}>
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 font-mono font-bold text-gray-900 dark:text-foreground">{doc.numero}</td>
-                      <td className="px-3 py-2.5 text-gray-700 dark:text-foreground truncate max-w-[150px]">{doc.cliente}</td>
-                      <td className="px-3 py-2.5 text-gray-500 dark:text-muted whitespace-nowrap">
+                      <td className="px-3 py-2.5 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{doc.numero}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-primary)] dark:text-foreground truncate max-w-[150px]">{doc.cliente}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
                         {new Date(doc.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </td>
-                      <td className="px-3 py-2.5 text-right font-bold text-gray-900 dark:text-foreground">{doc.total > 0 ? fmt(doc.total) : "-"}</td>
+                      <td className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{doc.total > 0 ? fmt(doc.total) : "-"}</td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={cn(
-                          "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                          "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
                           doc.estado === "emitido" || doc.estado === "enviada" || doc.estado === "emitida" || doc.estado === "activo"
-                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
                             : doc.estado === "anulado" || doc.estado === "anulada"
-                            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                            ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
                             : doc.estado === "vencido"
-                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                            ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                         )}>
                           {doc.estado}
                         </span>
@@ -330,20 +332,20 @@ export default function DocumentosEmitidosTab() {
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => window.print()}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-muted transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-[var(--text-secondary)] dark:text-muted transition-colors"
                             title="Imprimir"
                           >
                             <Printer className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleWhatsApp(doc)}
-                            className="p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] transition-colors"
                             title="Enviar por WhatsApp"
                           >
                             <MessageCircle className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] transition-colors"
                             title="Ver detalle"
                           >
                             <Eye className="h-3.5 w-3.5" />

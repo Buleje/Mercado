@@ -1,9 +1,10 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, DragEvent, ChangeEvent } from "react";
 import {
   Upload, AlertTriangle, CheckCircle, Loader2, X, FileText, Download,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -331,10 +332,10 @@ export default function ExcelProductImporter() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Importar productos desde Excel / CSV
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Arrastra un archivo .xlsx o .csv, o seleccionalo manualmente
           </p>
         </div>
@@ -351,7 +352,7 @@ export default function ExcelProductImporter() {
           {step !== "idle" && (
             <button
               onClick={reset}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
             >
               <X className="h-4 w-4" />
               Reiniciar
@@ -371,15 +372,15 @@ export default function ExcelProductImporter() {
             "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging
               ? "border-[#00B4A6] bg-[#00B4A6]/5"
-              : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6] dark:hover:border-[#00B4A6]"
+              : "border-[var(--rule-base)] hover:border-[#00B4A6] dark:hover:border-[#00B4A6]"
           )}
         >
-          <Upload className="h-10 w-10 text-gray-400" />
+          <Upload className="h-10 w-10 text-[var(--text-tertiary)]" />
           <div className="text-center">
-            <p className="font-medium text-gray-700 dark:text-gray-300">
+            <p className="font-medium text-[var(--text-secondary)]">
               Arrastra tu archivo aqui
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-[var(--text-tertiary)]">
               Acepta .xlsx, .xls, .csv, .txt — maximo 1000 filas
             </p>
           </div>
@@ -395,14 +396,14 @@ export default function ExcelProductImporter() {
 
       {/* Mapping step */}
       {step === "mapping" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-5">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-[#00B4A6]" />
-            <span className="font-medium text-gray-800 dark:text-gray-200">{fileName}</span>
-            <span className="text-sm text-gray-500">· {rawRows.length} filas detectadas</span>
+            <span className="font-medium text-[var(--text-primary)]">{fileName}</span>
+            <span className="text-sm text-[var(--text-secondary)]">· {rawRows.length} filas detectadas</span>
           </div>
 
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">
             Asigna las columnas del archivo a los campos del sistema:
           </p>
 
@@ -420,11 +421,11 @@ export default function ExcelProductImporter() {
               ] as { key: keyof ColumnMap; label: string }[]
             ).map(({ key, label }) => (
               <div key={key} className="space-y-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">{label}</label>
                 <select
                   value={columnMap[key]}
                   onChange={(e) => setColumnMap((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                 >
                   <option value="">-- No mapear --</option>
                   {headers.map((h) => (
@@ -443,7 +444,7 @@ export default function ExcelProductImporter() {
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 columnMap.nombre && columnMap.precio
                   ? "bg-[#00B4A6] text-white hover:bg-[#235c43]"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800"
+                  : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
               Previsualizar datos
@@ -456,63 +457,63 @@ export default function ExcelProductImporter() {
       {step === "preview" && (
         <div className="space-y-6">
           <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <span className="flex items-center gap-1 text-[var(--data-success)] dark:text-[var(--data-success)]">
               <CheckCircle className="h-4 w-4" />
               {validCount} productos validos
             </span>
             {errorCount > 0 && (
-              <span className="flex items-center gap-1 text-red-500">
+              <span className="flex items-center gap-1 text-[var(--data-error)]">
                 <AlertTriangle className="h-4 w-4" />
                 {errorCount} con errores (no se importaran)
               </span>
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+              <thead className="bg-[var(--surface-sunken)]">
                 <tr>
                   {["Fila", "Nombre", "Precio", "Costo", "Stock", "Stock min.", "Categoria", "Unidad", "Cod. Barras", "Estado"].map(
                     (h) => (
-                      <th key={h} className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      <th key={h} className="px-3 py-2 text-left font-medium text-[var(--text-tertiary)] whitespace-nowrap">
                         {h}
                       </th>
                     )
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-[var(--surface-raised)]">
                 {previewRows.map((p) => (
                   <tr
                     key={p._rowIndex}
                     className={cn(
-                      p._errors.length > 0 ? "bg-red-50 dark:bg-red-900/10" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      p._errors.length > 0 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10" : "hover:bg-[var(--surface-sunken)]/50"
                     )}
                   >
-                    <td className="px-3 py-2 text-gray-500">{p._rowIndex}</td>
-                    <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
-                      {p.nombre || <span className="text-red-500 italic">vacio</span>}
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{p._rowIndex}</td>
+                    <td className="px-3 py-2 font-medium text-[var(--text-primary)]">
+                      {p.nombre || <span className="text-[var(--data-error)] italic">vacio</span>}
                     </td>
-                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">
                       {p.precio < 0 ? (
-                        <span className="text-red-500">{p.precio}</span>
+                        <span className="text-[var(--data-error)]">{p.precio}</span>
                       ) : (
                         `S/ ${p.precio.toFixed(2)}`
                       )}
                     </td>
-                    <td className="px-3 py-2 text-gray-500">
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">
                       {p.precioCosto != null ? `S/ ${p.precioCosto.toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{p.stock}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.stockMinimo ?? "—"}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.categoria || "—"}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.unidad}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.codigoBarras || "—"}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{p.stock}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{p.stockMinimo ?? "—"}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{p.categoria || "—"}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{p.unidad}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{p.codigoBarras || "—"}</td>
                     <td className="px-3 py-2">
                       {p._errors.length === 0 ? (
-                        <span className="text-green-600 dark:text-green-400 text-xs font-medium">OK</span>
+                        <span className="text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-medium">OK</span>
                       ) : (
-                        <span className="text-red-500 text-xs" title={p._errors.join(", ")}>
+                        <span className="text-[var(--data-error)] text-xs" title={p._errors.join(", ")}>
                           {p._errors.join(", ")}
                         </span>
                       )}
@@ -524,7 +525,7 @@ export default function ExcelProductImporter() {
           </div>
 
           {parsed.length > 10 && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-[var(--text-secondary)]">
               Mostrando 10 de {parsed.length} filas. Se importaran todas las validas.
             </p>
           )}
@@ -537,14 +538,14 @@ export default function ExcelProductImporter() {
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 validCount > 0
                   ? "bg-[#00B4A6] text-white hover:bg-[#235c43]"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800"
+                  : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
               Importar {validCount} producto{validCount !== 1 ? "s" : ""}
             </button>
             <button
               onClick={() => setStep("mapping")}
-              className="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="px-5 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"
             >
               Volver al mapeo
             </button>
@@ -554,37 +555,37 @@ export default function ExcelProductImporter() {
 
       {/* Importing progress */}
       {step === "importing" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 flex flex-col items-center gap-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-          <p className="font-medium text-gray-700 dark:text-gray-300">Importando productos...</p>
-          <div className="w-full max-w-sm bg-gray-100 dark:bg-gray-800 rounded-full h-3">
+          <p className="font-medium text-[var(--text-secondary)]">Importando productos...</p>
+          <div className="w-full max-w-sm bg-[var(--surface-sunken)] rounded-full h-3">
             <div
-              className="bg-[#00B4A6] h-3 rounded-full transition-all duration-500"
+              className="bg-[#00B4A6] h-3 rounded-full transition-all duration-[var(--dur-slow)]"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-sm text-gray-500">{progress}% completado</p>
+          <p className="text-sm text-[var(--text-secondary)]">{progress}% completado</p>
         </div>
       )}
 
       {/* Done */}
       {step === "done" && result && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-green-500" />
+            <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
             <div>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">Importacion completada</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-semibold text-[var(--text-primary)]">Importacion completada</p>
+              <p className="text-sm text-[var(--text-secondary)]">
                 {result.created} creados · {result.errors.length} errores
               </p>
             </div>
           </div>
 
           {result.errors.length > 0 && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/10 p-4 space-y-1 max-h-40 overflow-y-auto">
-              <p className="text-sm font-medium text-red-700 dark:text-red-400">Filas no importadas:</p>
+            <div className="rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-4 space-y-1 max-h-40 overflow-y-auto">
+              <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)]">Filas no importadas:</p>
               {result.errors.map((e, i) => (
-                <p key={i} className="text-xs text-red-600 dark:text-red-400">
+                <p key={i} className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
                   {e.row > 0 ? `Fila ${e.row} — ` : ""}{e.message}
                 </p>
               ))}

@@ -1,4 +1,5 @@
 "use client";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -6,7 +7,7 @@ import {
   Truck, BarChart3, PackagePlus,
   ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
   CheckCircle2, Maximize2, X as XIcon, RotateCcw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -67,7 +68,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 export const TabError = () => (
   <div className="text-center py-12">
-    <p className="text-sm text-red-500">Error al cargar el módulo</p>
+    <p className="text-sm text-[var(--data-error)]">Error al cargar el módulo</p>
     <button onClick={() => window.location.reload()} className="mt-2 text-xs text-primary hover:underline">Recargar página</button>
   </div>
 );
@@ -311,8 +312,8 @@ function ComprasDashboard() {
       {/* === Alertas Compras === */}
       {(kpis.ocPendientes > 0 || kpis.deudaVencida > 0) && (
         <div className="flex flex-wrap gap-2">
-          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
-          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
+          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
+          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
         </div>
       )}
 
@@ -324,8 +325,8 @@ function ComprasDashboard() {
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (ultimos 6 meses)</CardTitle></div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
             <defs>
@@ -343,9 +344,9 @@ function ComprasDashboard() {
               const val = typeof rawVal === "number" ? rawVal : 0;
               const count = (payload[0]?.payload as { count?: number } | undefined)?.count || 0;
               return (
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
-                  <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                <div className="bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+                  <p className="text-xs font-semibold text-[var(--text-primary)]">{String(label ?? "")}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
                     S/ {val.toLocaleString()} ({count} OCs)
                   </p>
                 </div>
@@ -358,9 +359,9 @@ function ComprasDashboard() {
 
       {/* === Distribucion por Proveedor (PieChart + tabla) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900">Gasto por proveedor</h3>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Gasto por proveedor</CardTitle>
             <div className="flex items-center gap-2">
               {pieFilter && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
@@ -368,7 +369,7 @@ function ComprasDashboard() {
                   <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -387,8 +388,8 @@ function ComprasDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Ranking de proveedores</h3>
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Ranking de proveedores</CardTitle>
           <div className="max-h-70 space-y-3 overflow-y-auto">
             {supplierSpend.length === 0 ? (
               <EmptyState title="Sin datos de proveedores" className="py-8" />
@@ -397,18 +398,18 @@ function ComprasDashboard() {
                 const pct = totalSpend > 0 ? (s.total / totalSpend) * 100 : 0;
                 return (
                   <div key={i} className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-bold w-5 text-gray-400 shrink-0">#{i + 1}</span>
+                    <span className="text-xs font-mono font-bold w-5 text-[var(--text-tertiary)] shrink-0">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-800 truncate">{s.name}</span>
-                        <span className="text-xs font-mono font-bold text-gray-900 shrink-0 ml-2">S/ {s.total.toLocaleString()}</span>
+                        <span className="text-xs font-medium text-[var(--text-primary)] truncate">{s.name}</span>
+                        <span className="text-xs font-mono font-bold text-[var(--text-primary)] shrink-0 ml-2">S/ {s.total.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
-                        <span className="text-[10px] text-gray-400 shrink-0">{s.count} OCs</span>
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{s.count} OCs</span>
                       </div>
                     </div>
                   </div>
@@ -420,15 +421,15 @@ function ComprasDashboard() {
       </div>
 
       {/* === Estado de OC (BarChart stacked) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Estado de ordenes por mes</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Estado de ordenes por mes</CardTitle>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={statusByMonth}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
             <YAxis tick={{ fontSize: 11 }} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
             <Bar dataKey="Pendiente" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
             <Bar dataKey="En proceso" stackId="a" fill="#457b9d" />
             <Bar dataKey="Recibido" stackId="a" fill="var(--color-primary)" />
@@ -439,8 +440,8 @@ function ComprasDashboard() {
 
       {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Deuda por proveedor</h3>
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Deuda por proveedor</CardTitle>
           {debtBySupplier.length === 0 ? (
             <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
           ) : (
@@ -460,8 +461,8 @@ function ComprasDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Proximos pagos</h3>
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Proximos pagos</CardTitle>
           {nextPayments.length === 0 ? (
             <EmptyState title="Sin pagos pendientes" description="No hay pagos próximos registrados" />
           ) : (
@@ -470,24 +471,24 @@ function ComprasDashboard() {
                 const isOverdue = p.days < 0;
                 const isUrgent = p.days >= 0 && p.days <= 7;
                 const badgeColor = isOverdue
-                  ? "bg-red-100 text-red-700"
+                  ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
                   : isUrgent
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-green-100 text-green-700";
-                const dotColor = isOverdue ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-green-500";
+                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                    : "bg-[var(--accent-soft)] text-[var(--data-success)]";
+                const dotColor = isOverdue ? "bg-[var(--data-error)]" : isUrgent ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]";
 
                 return (
-                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
+                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-soft)] bg-gray-50/50">
                     <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", dotColor)} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
-                      <p className="text-lg font-mono font-bold text-gray-900">S/ {p.amount.toLocaleString()}</p>
+                      <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}</p>
+                      <p className="text-lg font-mono font-bold text-[var(--text-primary)]">S/ {p.amount.toLocaleString()}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
                         {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
                       </span>
-                      <button className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1">
+                      <button className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Pagado
                       </button>
                     </div>
@@ -500,16 +501,16 @@ function ComprasDashboard() {
       </div>
 
       {/* === Tendencia de Gastos vs Promedio Movil (ComposedChart) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
-        <h3 className="text-sm font-bold text-gray-900 mb-1">Tendencia de gastos</h3>
-        <p className="text-[10px] text-gray-400 mb-4">Gasto real vs promedio movil 3 meses</p>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Tendencia de gastos</CardTitle>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Gasto real vs promedio movil 3 meses</p>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
             <Bar dataKey="total" fill="var(--color-primary)" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
             <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. movil 3m" />
           </ComposedChart>

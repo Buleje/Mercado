@@ -36,11 +36,11 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Tiendas activas", value: growthData.length, color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-950/30" },
-          { label: "Ingresos totales/mes", value: `S/${totalRevenue.toFixed(0)}`, color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
-          { label: "Pedidos totales/mes", value: totalOrders, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Crecimiento promedio", value: `${avgGrowth.toFixed(0)}%`, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30" },
+          { label: "Ingresos totales/mes", value: `S/${totalRevenue.toFixed(0)}`, color: "text-[var(--data-success)]", bg: "bg-[var(--data-success-50)] dark:bg-green-950/30" },
+          { label: "Pedidos totales/mes", value: totalOrders, color: "text-[var(--data-success)]", bg: "bg-[var(--data-success-50)] dark:bg-emerald-950/30" },
+          { label: "Crecimiento promedio", value: `${avgGrowth.toFixed(0)}%`, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={`${bg} rounded-2xl p-4 text-center`}>
+          <div key={label} className={`${bg} rounded-xl p-4 text-center`}>
             <div className={`text-2xl font-extrabold ${color}`}>{value}</div>
             <div className="text-gray-500 text-xs mt-1">{label}</div>
           </div>
@@ -55,25 +55,25 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
           const maxRevenue = Math.max(...store.months.map((m) => m.revenue), 1);
 
           return (
-            <div key={store.slug} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 space-y-3 hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
+            <div key={store.slug} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-3 hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--accent)] flex items-center justify-center text-white font-bold text-sm">
                     {store.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900 dark:text-white">{store.name}</div>
+                    <div className="font-bold text-[var(--text-primary)]">{store.name}</div>
                     <div className="text-xs text-gray-400 font-mono">{store.slug}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${store.growthPct > 0 ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : store.growthPct < 0 ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
+                  <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${store.growthPct > 0 ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : store.growthPct < 0 ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]" : "bg-[var(--surface-sunken)] text-gray-500"}`}>
                     {store.growthPct > 0 ? <ArrowUpRight className="w-3 h-3" /> : store.growthPct < 0 ? <ArrowDownRight className="w-3 h-3" /> : null}
                     {store.growthPct > 0 ? "+" : ""}{store.growthPct}%
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold text-gray-900 dark:text-white">S/{(lastMonth?.revenue ?? 0).toFixed(0)}</div>
-                    <div className="text-[10px] text-gray-400">{lastMonth?.orders ?? 0} pedidos</div>
+                    <div className="text-sm font-bold text-[var(--text-primary)]">S/{(lastMonth?.revenue ?? 0).toFixed(0)}</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400">{lastMonth?.orders ?? 0} pedidos</div>
                   </div>
                 </div>
               </div>
@@ -87,36 +87,36 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
                       style={{ height: `${Math.max(4, (m.revenue / maxRevenue) * 100)}%` }}
                       title={`${m.month}: S/${m.revenue.toFixed(0)} (${m.orders} pedidos)`}
                     />
-                    <span className="text-[8px] text-gray-400 leading-none">{m.month}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 leading-none">{m.month}</span>
                   </div>
                 ))}
               </div>
 
               {/* Monthly detail row */}
-              <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
                 <div className="text-center">
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">S/{store.totalRevenue.toFixed(0)}</div>
-                  <div className="text-[9px] text-gray-400">Ingresos 6 meses</div>
+                  <div className="text-xs font-bold text-[var(--text-primary)]">S/{store.totalRevenue.toFixed(0)}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-gray-400">Ingresos 6 meses</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">{store.totalOrders}</div>
-                  <div className="text-[9px] text-gray-400">Pedidos 6 meses</div>
+                  <div className="text-xs font-bold text-[var(--text-primary)]">{store.totalOrders}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-gray-400">Pedidos 6 meses</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">
+                  <div className="text-xs font-bold text-[var(--text-primary)]">
                     S/{store.totalOrders > 0 ? (store.totalRevenue / store.totalOrders).toFixed(0) : "0"}
                   </div>
-                  <div className="text-[9px] text-gray-400">Ticket promedio</div>
+                  <div className="text-[length:var(--ts-2xs)] text-gray-400">Ticket promedio</div>
                 </div>
               </div>
 
               {/* Projection */}
               {lastMonth && prevMonth && (
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl px-3 py-2 text-xs flex items-center gap-2">
-                  <TrendingUp className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                <div className="bg-[var(--surface-sunken)]/50 rounded-xl px-3 py-2 text-xs flex items-center gap-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
                   <span className="text-gray-500">
                     Proyección próximo mes:{" "}
-                    <span className="font-bold text-gray-900 dark:text-white">
+                    <span className="font-bold text-[var(--text-primary)]">
                       S/{Math.max(0, lastMonth.revenue + (lastMonth.revenue - prevMonth.revenue)).toFixed(0)}
                     </span>
                     {" "}({Math.max(0, lastMonth.orders + (lastMonth.orders - prevMonth.orders))} pedidos)

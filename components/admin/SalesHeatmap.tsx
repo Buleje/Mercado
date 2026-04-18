@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ function hourLabel(h: number): string {
 // ─── Color scale ──────────────────────────────────────────────────────────────
 
 function heatColor(value: number, max: number): string {
-  if (max === 0 || value === 0) return "bg-gray-100 dark:bg-gray-800";
+  if (max === 0 || value === 0) return "bg-[var(--surface-sunken)]";
   const ratio = value / max;
   if (ratio >= 0.85) return "bg-[#007A72]";
   if (ratio >= 0.65) return "bg-[#00B4A6]";
@@ -97,7 +98,7 @@ export default function SalesHeatmap() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-gray-500">
+      <div className="flex items-center gap-2 py-8 text-[var(--text-secondary)]">
         <RefreshCw className="h-5 w-5 animate-spin" />
         Cargando mapa de calor...
       </div>
@@ -106,7 +107,7 @@ export default function SalesHeatmap() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-6 text-sm text-red-600 dark:text-red-400">
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
         {error}
         <button onClick={load} className="ml-3 underline">Reintentar</button>
       </div>
@@ -119,16 +120,16 @@ export default function SalesHeatmap() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Mapa de calor de ventas
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Cuando se vende mas — util para planear personal y stock
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
+          <div className="flex gap-1 rounded-lg border border-[var(--rule-base)] p-1">
             {(["7d", "30d", "90d"] as const).map((p) => (
               <button
                 key={p}
@@ -137,7 +138,7 @@ export default function SalesHeatmap() {
                   "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
                   period === p
                     ? "bg-[#00B4A6] text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 )}
               >
                 {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : "90 dias"}
@@ -146,7 +147,7 @@ export default function SalesHeatmap() {
           </div>
           <button
             onClick={load}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -155,7 +156,7 @@ export default function SalesHeatmap() {
 
       {/* Best slot insight */}
       {bestCell && bestCell.amount > 0 && (
-        <div className="rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 px-5 py-3 text-sm text-[#00B4A6] dark:text-green-400">
+        <div className="rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 px-5 py-3 text-sm text-[#00B4A6] dark:text-[var(--data-success)]">
           Hora pico: <strong>{bestCell.day} {hourLabel(bestCell.hour)}</strong> &mdash;{" "}
           {formatCurrency(bestCell.amount)} en {bestCell.value} venta{bestCell.value !== 1 ? "s" : ""}
         </div>
@@ -166,13 +167,13 @@ export default function SalesHeatmap() {
         {/* Tooltip */}
         {tooltip && (
           <div
-            className="pointer-events-none fixed z-50 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs"
+            className="pointer-events-none fixed z-50 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-xs"
             style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
           >
-            <p className="font-medium text-gray-800 dark:text-gray-200">
+            <p className="font-medium text-[var(--text-primary)]">
               {tooltip.day} {hourLabel(tooltip.hour)}
             </p>
-            <p className="text-gray-500">
+            <p className="text-[var(--text-secondary)]">
               {formatCurrency(tooltip.amount)} &middot; {tooltip.count} venta{tooltip.count !== 1 ? "s" : ""}
             </p>
           </div>
@@ -181,9 +182,9 @@ export default function SalesHeatmap() {
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="w-12 pr-2 text-right font-medium text-gray-400 dark:text-gray-500" />
+              <th className="w-12 pr-2 text-right font-medium text-[var(--text-tertiary)]" />
               {hours.map((h) => (
-                <th key={h} className="px-0.5 pb-2 text-center font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                <th key={h} className="px-0.5 pb-2 text-center font-medium text-[var(--text-tertiary)] whitespace-nowrap">
                   {hourLabel(h)}
                 </th>
               ))}
@@ -192,7 +193,7 @@ export default function SalesHeatmap() {
           <tbody>
             {DAYS.map((day) => (
               <tr key={day}>
-                <td className="pr-3 text-right font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap py-0.5">
+                <td className="pr-3 text-right font-medium text-[var(--text-tertiary)] whitespace-nowrap py-0.5">
                   {day}
                 </td>
                 {hours.map((hour) => {
@@ -222,10 +223,10 @@ export default function SalesHeatmap() {
       </div>
 
       {/* Color legend */}
-      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <span>Menos ventas</span>
         <div className="flex gap-1">
-          {["bg-gray-100 dark:bg-gray-800", "bg-[#b7e4c7]", "bg-[#74c69d]", "bg-[#33C4B8]", "bg-[#00B4A6]", "bg-[#007A72]"].map((cls, i) => (
+          {["bg-[var(--surface-sunken)]", "bg-[#b7e4c7]", "bg-[#74c69d]", "bg-[#33C4B8]", "bg-[#00B4A6]", "bg-[#007A72]"].map((cls, i) => (
             <div key={i} className={cn("h-4 w-6 rounded", cls)} />
           ))}
         </div>

@@ -23,26 +23,45 @@ export default function SmoothScrollProvider() {
     const isTouch = window.matchMedia("(hover: none)").matches;
     if (isTouch) return;
 
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 1.2,
-    });
-
-    document.documentElement.classList.add("lenis", "lenis-smooth");
-
+    // Difiere la init de Lenis al idle callback — libera el main thread
+    // durante hidratación y primer paint en cada navegación cliente.
+    let lenis: Lenis | null = null;
     let rafId = 0;
-    function raf(time: number) {
-      lenis.raf(time);
+    let idleId = 0;
+
+    const init = () => {
+      lenis = new Lenis({
+        duration: 1.1,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 1.2,
+      });
+      document.documentElement.classList.add("lenis", "lenis-smooth");
+      const raf = (time: number) => {
+        lenis?.raf(time);
+        rafId = requestAnimationFrame(raf);
+      };
       rafId = requestAnimationFrame(raf);
+    };
+
+    const ric: typeof requestIdleCallback | undefined = (
+      window as Window & { requestIdleCallback?: typeof requestIdleCallback }
+    ).requestIdleCallback;
+    if (typeof ric === "function") {
+      idleId = ric(init, { timeout: 500 });
+    } else {
+      idleId = window.setTimeout(init, 200) as unknown as number;
     }
-    rafId = requestAnimationFrame(raf);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
+      const cic: typeof cancelIdleCallback | undefined = (
+        window as Window & { cancelIdleCallback?: typeof cancelIdleCallback }
+      ).cancelIdleCallback;
+      if (typeof cic === "function") cic(idleId);
+      else window.clearTimeout(idleId);
+      if (rafId) cancelAnimationFrame(rafId);
+      lenis?.destroy();
       document.documentElement.classList.remove("lenis", "lenis-smooth");
     };
   }, []);

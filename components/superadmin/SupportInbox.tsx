@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   Inbox,
@@ -130,15 +131,15 @@ const MOCK_TICKETS: SupportTicket[] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: typeof Inbox }> = {
-  open: { label: "Abierto", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: Mail },
-  in_progress: { label: "En progreso", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },
-  closed: { label: "Cerrado", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: CheckCircle2 },
+  open: { label: "Abierto", color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]", icon: Mail },
+  in_progress: { label: "En progreso", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]", icon: Clock },
+  closed: { label: "Cerrado", color: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]", icon: CheckCircle2 },
 };
 
 const PRIORITY_COLOR: Record<TicketPriority, string> = {
   low: "text-gray-400",
-  medium: "text-amber-500",
-  high: "text-red-500",
+  medium: "text-[var(--data-warning)]",
+  high: "text-[var(--data-error)]",
 };
 
 function timeAgo(iso: string): string {
@@ -249,21 +250,19 @@ export default function SupportInbox() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-muted" />
-      </div>
+      <LoadingState />
     );
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-0 h-[600px] bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+    <div className="flex flex-col lg:flex-row gap-0 h-[600px] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
       {/* Ticket list (Gmail style) */}
       <div className={cn(
-        "flex flex-col border-r border-gray-200 dark:border-card-border",
+        "flex flex-col border-r border-[var(--rule-base)] dark:border-card-border",
         selected ? "hidden lg:flex lg:w-96" : "w-full",
       )}>
         {/* Header + filters */}
-        <div className="p-3 border-b border-gray-200 dark:border-card-border space-y-2">
+        <div className="p-3 border-b border-[var(--rule-base)] dark:border-card-border space-y-2">
           <div className="flex items-center gap-2">
             <Inbox className="w-5 h-5 text-primary" />
             <h2 className="font-bold text-sm">Soporte</h2>
@@ -278,7 +277,7 @@ export default function SupportInbox() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar tickets..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex gap-1">
@@ -287,7 +286,7 @@ export default function SupportInbox() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "text-[10px] font-semibold px-2 py-1 rounded-lg transition-colors",
+                  "text-[length:var(--ts-2xs)] font-semibold px-2 py-1 rounded-lg transition-colors",
                   filter === f
                     ? "bg-primary/10 text-primary"
                     : "text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5",
@@ -314,7 +313,7 @@ export default function SupportInbox() {
                   key={ticket.id}
                   onClick={() => setSelectedId(ticket.id)}
                   className={cn(
-                    "w-full text-left px-3 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors",
+                    "w-full text-left px-3 py-3 border-b border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors",
                     selectedId === ticket.id && "bg-primary/5",
                   )}
                 >
@@ -322,20 +321,20 @@ export default function SupportInbox() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <AlertTriangle className={cn("w-3 h-3 shrink-0", PRIORITY_COLOR[ticket.priority])} />
-                        <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">
                           {ticket.subject}
                         </p>
                       </div>
-                      <p className="text-[10px] text-gray-500 mt-0.5 truncate">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5 truncate">
                         {ticket.tenantName} &mdash; {ticket.senderEmail}
                       </p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5 truncate">
                         {ticket.lastMessage}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-[9px] text-gray-400">{timeAgo(ticket.createdAt)}</span>
-                      <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", statusCfg.color)}>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400">{timeAgo(ticket.createdAt)}</span>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", statusCfg.color)}>
                         {statusCfg.label}
                       </span>
                     </div>
@@ -351,10 +350,10 @@ export default function SupportInbox() {
       {selected ? (
         <div className="flex-1 flex flex-col">
           {/* Detail header */}
-          <div className="p-4 border-b border-gray-200 dark:border-card-border">
+          <div className="p-4 border-b border-[var(--rule-base)] dark:border-card-border">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                <h3 className="font-bold text-sm text-[var(--text-primary)]">
                   {selected.subject}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
@@ -374,7 +373,7 @@ export default function SupportInbox() {
               {selected.status !== "closed" && (
                 <button
                   onClick={() => handleStatusChange(selected.id, "closed")}
-                  className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:opacity-80 flex items-center gap-1"
+                  className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)] hover:opacity-80 flex items-center gap-1"
                 >
                   <CheckCircle2 className="w-3 h-3" /> Cerrar
                 </button>
@@ -382,14 +381,14 @@ export default function SupportInbox() {
               {selected.status === "closed" && (
                 <button
                   onClick={() => handleStatusChange(selected.id, "open")}
-                  className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:opacity-80 flex items-center gap-1"
+                  className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)] hover:opacity-80 flex items-center gap-1"
                 >
                   <Mail className="w-3 h-3" /> Reabrir
                 </button>
               )}
               <button
                 onClick={() => handleStatusChange(selected.id, "in_progress")}
-                className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:opacity-80 flex items-center gap-1"
+                className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)] hover:opacity-80 flex items-center gap-1"
               >
                 <ArrowUpRight className="w-3 h-3" /> Escalar
               </button>
@@ -402,7 +401,7 @@ export default function SupportInbox() {
               <div
                 key={msg.id}
                 className={cn(
-                  "max-w-[85%] rounded-2xl px-4 py-3",
+                  "max-w-[85%] rounded-xl px-4 py-3",
                   msg.from === "tenant"
                     ? "bg-gray-100 dark:bg-white/5 mr-auto"
                     : "bg-primary/10 dark:bg-primary/15 ml-auto",
@@ -411,7 +410,7 @@ export default function SupportInbox() {
                 <p className="text-xs text-gray-800 dark:text-foreground whitespace-pre-wrap">
                   {msg.body}
                 </p>
-                <p className="text-[9px] text-gray-400 mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
                   {msg.from === "support" ? "Soporte" : selected.tenantName} &bull; {timeAgo(msg.createdAt)}
                 </p>
               </div>
@@ -419,7 +418,7 @@ export default function SupportInbox() {
           </div>
 
           {/* Reply box */}
-          <div className="p-3 border-t border-gray-200 dark:border-card-border">
+          <div className="p-3 border-t border-[var(--rule-base)] dark:border-card-border">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -432,7 +431,7 @@ export default function SupportInbox() {
                   }
                 }}
                 placeholder="Escribe una respuesta..."
-                className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="flex-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <button
                 onClick={handleReply}

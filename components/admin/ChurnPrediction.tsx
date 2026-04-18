@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useMemo } from "react";
@@ -7,7 +8,7 @@ import {
   AlertCircle,
   Phone,
   Tag,
-  RefreshCw } from "lucide-react";
+  RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -61,21 +62,21 @@ const RISK_CONFIG: Record<
 > = {
   alto: {
     label: "Alto",
-    color: "text-red-600 dark:text-red-400",
-    bg: "bg-red-100 dark:bg-red-900/30",
+    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+    bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
     bar: "bg-red-400",
   },
   medio: {
     label: "Medio",
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-100 dark:bg-amber-900/30",
+    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
     bar: "bg-amber-400",
   },
   bajo: {
     label: "Bajo",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-100 dark:bg-emerald-900/30",
-    bar: "bg-emerald-400",
+    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bar: "bg-[var(--accent-soft)]",
   },
 };
 
@@ -189,17 +190,17 @@ export default function ChurnPrediction() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Prediccion de Abandono
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Clientes que podrian dejar de comprar segun su frecuencia habitual
           </p>
         </div>
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -216,13 +217,13 @@ export default function ChurnPrediction() {
               "rounded-xl border p-4 text-left transition",
               filterRisk === r
                 ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+                : "border-[var(--rule-base)] bg-white hover:border-[var(--rule-base)] dark:bg-gray-900"
             )}
           >
             <p className={cn("text-2xl font-bold", RISK_CONFIG[r].color)}>
               {counts[r]}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Riesgo {RISK_CONFIG[r].label}
             </p>
           </button>
@@ -230,18 +231,16 @@ export default function ChurnPrediction() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Filter bar */}
-          <div className="flex gap-2 border-b border-gray-100 p-4 dark:border-gray-800">
+          <div className="flex gap-2 border-b border-[var(--rule-soft)] p-4 dark:border-[var(--rule-base)]">
             {["todos", "alto", "medio", "bajo"].map((r) => (
               <button
                 key={r}
@@ -250,7 +249,7 @@ export default function ChurnPrediction() {
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                   filterRisk === r
                     ? "bg-[#00B4A6] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                    : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-[var(--text-tertiary)] dark:hover:bg-gray-700"
                 )}
               >
                 {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -264,7 +263,7 @@ export default function ChurnPrediction() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">
+            <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">
               No hay clientes en esta categoria.
             </div>
           ) : (
@@ -277,7 +276,7 @@ export default function ChurnPrediction() {
                   {/* Name & risk */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-[var(--text-primary)]">
                         {r.name}
                       </span>
                       <span
@@ -290,7 +289,7 @@ export default function ChurnPrediction() {
                         Riesgo {RISK_CONFIG[r.risk].label}
                       </span>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[var(--text-tertiary)]">
                       <span>
                         Ultima compra:{" "}
                         {r.lastOrder
@@ -306,8 +305,8 @@ export default function ChurnPrediction() {
                       </span>
                     </div>
                     <div className="mt-1.5 flex items-center gap-1.5">
-                      <Tag className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <Tag className="h-3 w-3 text-[var(--text-tertiary)]" />
+                      <span className="text-xs text-[var(--text-tertiary)]">
                         {r.action}
                       </span>
                     </div>
@@ -318,7 +317,7 @@ export default function ChurnPrediction() {
                     href={waLink(r.phone, r.name)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 self-start rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 sm:self-auto"
+                    className="flex items-center gap-1.5 self-start rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--accent-soft)] sm:self-auto"
                   >
                     <Phone className="h-3.5 w-3.5" />
                     Contactar

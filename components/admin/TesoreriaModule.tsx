@@ -11,11 +11,12 @@ import {
   PiggyBank, Smartphone, Check,
   FileDown, Power, AlertCircle, ChevronDown,
   SlidersHorizontal,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import {
   AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+import { CardTitle, LoadingState, PageTitle, WarningAlert } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -92,17 +93,17 @@ function fmtDateShort(iso: string) {
 }
 
 const TIPO_META: Record<CuentaTipo, { label: string; shortLabel: string; icon: typeof Landmark; color: string; bg: string }> = {
-  BANCO_AHORRO:    { label: "Banco Ahorro",      shortLabel: "Ahorro",   icon: PiggyBank,  color: "text-emerald-700",   bg: "bg-emerald-100" },
-  BANCO_CORRIENTE: { label: "Banco Corriente",    shortLabel: "Corriente", icon: Building2,  color: "text-purple-700", bg: "bg-purple-100" },
-  CAJA_FISICA:     { label: "Caja Física",        shortLabel: "Caja",     icon: Banknote,   color: "text-emerald-700", bg: "bg-emerald-100" },
-  MONEDERO_DIGITAL:{ label: "Monedero Digital",   shortLabel: "Digital",  icon: Smartphone, color: "text-orange-700", bg: "bg-orange-100" },
+  BANCO_AHORRO:    { label: "Banco Ahorro",      shortLabel: "Ahorro",   icon: PiggyBank,  color: "text-[var(--data-success)]",   bg: "bg-[var(--accent-soft)]" },
+  BANCO_CORRIENTE: { label: "Banco Corriente",    shortLabel: "Corriente", icon: Building2,  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+  CAJA_FISICA:     { label: "Caja Física",        shortLabel: "Caja",     icon: Banknote,   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
+  MONEDERO_DIGITAL:{ label: "Monedero Digital",   shortLabel: "Digital",  icon: Smartphone, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)]" },
 };
 
 const MOV_META: Record<MovimientoTipo, { label: string; color: string; icon: typeof ArrowUpFromLine }> = {
-  INGRESO:          { label: "Ingreso",           color: "text-emerald-600", icon: ArrowDownToLine },
-  EGRESO:           { label: "Egreso",            color: "text-red-600",         icon: ArrowUpFromLine },
-  TRANSFERENCIA_IN: { label: "Transferencia ←",   color: "text-emerald-600",       icon: ArrowLeftRight },
-  TRANSFERENCIA_OUT:{ label: "Transferencia →",   color: "text-amber-600",     icon: ArrowLeftRight },
+  INGRESO:          { label: "Ingreso",           color: "text-[var(--data-success)]", icon: ArrowDownToLine },
+  EGRESO:           { label: "Egreso",            color: "text-[var(--data-error)]",         icon: ArrowUpFromLine },
+  TRANSFERENCIA_IN: { label: "Transferencia ←",   color: "text-[var(--data-success)]",       icon: ArrowLeftRight },
+  TRANSFERENCIA_OUT:{ label: "Transferencia →",   color: "text-[var(--data-warning)]",     icon: ArrowLeftRight },
 };
 
 const TIPO_COLORS: Record<CuentaTipo, string> = {
@@ -118,8 +119,8 @@ function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><Wallet className="h-6 w-6 text-primary" /></div>
-      <p className="text-sm font-medium text-gray-500">{message}</p>
-      <p className="text-xs text-gray-400 mt-1">Los datos aparecerán cuando registres movimientos</p>
+      <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
+      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres movimientos</p>
     </div>
   );
 }
@@ -157,51 +158,51 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       {/* KPIs */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white border border-gray-200 rounded-xl  p-4 border-b-4 border-b-[#2563EB]">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-[#2563EB]">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <Wallet className="h-4 w-4 text-[#2563EB]" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Saldo total</p>
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Saldo total</p>
               </div>
               <button onClick={() => setShowBalance(!showBalance)} className="p-1 rounded-lg hover:bg-gray-100">
-                {showBalance ? <Eye className="h-3.5 w-3.5 text-gray-400" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
+                {showBalance ? <Eye className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
               </button>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-gray-900">
+            <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">
               {showBalance ? fmtCurrency(saldoTotal) : "S/••••••"}
             </p>
-            <p className="text-[10px] text-gray-400 mt-1">{cuentasActivas} cuenta{cuentasActivas !== 1 ? "s" : ""} activa{cuentasActivas !== 1 ? "s" : ""}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">{cuentasActivas} cuenta{cuentasActivas !== 1 ? "s" : ""} activa{cuentasActivas !== 1 ? "s" : ""}</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl  p-4 border-b-4 border-b-emerald-500">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-emerald-500">
             <div className="flex items-center gap-1.5 mb-2">
-              <ArrowDownToLine className="h-4 w-4 text-emerald-500" />
-              <p className="text-[10px] uppercase font-bold text-gray-400">Ingresos mes</p>
+              <ArrowDownToLine className="h-4 w-4 text-[var(--data-success)]" />
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ingresos mes</p>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-emerald-600">
+            <p className="text-2xl font-extrabold font-mono text-[var(--data-success)]">
               {showBalance ? fmtCurrency(ingresosMes) : "S/••••"}
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl  p-4 border-b-4 border-b-red-500">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-red-500">
             <div className="flex items-center gap-1.5 mb-2">
-              <ArrowUpFromLine className="h-4 w-4 text-red-500" />
-              <p className="text-[10px] uppercase font-bold text-gray-400">Egresos mes</p>
+              <ArrowUpFromLine className="h-4 w-4 text-[var(--data-error)]" />
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Egresos mes</p>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-red-600">
+            <p className="text-2xl font-extrabold font-mono text-[var(--data-error)]">
               {showBalance ? fmtCurrency(egresosMes) : "S/••••"}
             </p>
           </div>
 
           <div className={cn(
-            "bg-white border border-gray-200 rounded-xl  p-4 border-b-4",
+            "bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4",
             flujoNeto >= 0 ? "border-b-[#2563EB]" : "border-b-red-600"
           )}>
             <div className="flex items-center gap-1.5 mb-2">
-              {flujoNeto >= 0 ? <TrendingUp className="h-4 w-4 text-[#2563EB]" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
-              <p className="text-[10px] uppercase font-bold text-gray-400">Flujo neto</p>
+              {flujoNeto >= 0 ? <TrendingUp className="h-4 w-4 text-[#2563EB]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-error)]" />}
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Flujo neto</p>
             </div>
-            <p className={cn("text-2xl font-extrabold font-mono", flujoNeto >= 0 ? "text-[#2563EB]" : "text-red-600")}>
+            <p className={cn("text-2xl font-extrabold font-mono", flujoNeto >= 0 ? "text-[#2563EB]" : "text-[var(--data-error)]")}>
               {showBalance ? fmtCurrency(flujoNeto) : "S/••••"}
             </p>
           </div>
@@ -211,28 +212,28 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       {/* Account cards */}
       {cuentas.length > 0 && (
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-sm font-bold text-gray-700 mb-3">Mis cuentas</h3>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Mis cuentas</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {cuentas.filter(c => c.activa).map(cuenta => {
               const meta = TIPO_META[cuenta.tipo];
               const Icon = meta.icon;
               return (
-                <div key={cuenta.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
+                <div key={cuenta.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", meta.bg)}>
                       <Icon className={cn("h-5 w-5", meta.color)} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-gray-900 truncate">{cuenta.nombre}</p>
-                      <p className="text-[10px] text-gray-400">{meta.label}{cuenta.banco ? ` · ${cuenta.banco}` : ""}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{cuenta.nombre}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{meta.label}{cuenta.banco ? ` · ${cuenta.banco}` : ""}</p>
                     </div>
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" title="Activa" />
+                    <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)] shrink-0" title="Activa" />
                   </div>
-                  <p className="text-xl font-extrabold font-mono text-gray-900">
+                  <p className="text-xl font-extrabold font-mono text-[var(--text-primary)]">
                     {showBalance ? fmtCurrency(cuenta.saldo, cuenta.moneda) : `${cuenta.moneda === "USD" ? "$" : "S/"}••••`}
                   </p>
                   {cuenta.numeroCuenta && (
-                    <p className="text-[10px] text-gray-400 mt-1 font-mono">•••• {cuenta.numeroCuenta.slice(-4)}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1 font-mono">•••• {cuenta.numeroCuenta.slice(-4)}</p>
                   )}
                 </div>
               );
@@ -245,15 +246,15 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Flow chart */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 ">
-            <h3 className="text-sm font-bold text-gray-700 mb-4">Flujo de caja (6 meses)</h3>
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Flujo de caja (6 meses)</CardTitle>
             {flowData.some(d => d.ingresos > 0 || d.egresos > 0) ? (
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={flowData}>
                   <defs>
                     <linearGradient id="tresoIngGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="tresoEgrGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -267,7 +268,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
                     formatter={((v: number, name: string) => [fmtCurrency(Number(v)), name === "ingresos" ? "Ingresos" : "Egresos"]) as never}
                     contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }}
                   />
-                  <Area type="monotone" dataKey="ingresos" stroke="#10b981" fill="url(#tresoIngGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="ingresos" stroke="#00B4A6" fill="url(#tresoIngGrad)" strokeWidth={2} />
                   <Area type="monotone" dataKey="egresos" stroke="#ef4444" fill="url(#tresoEgrGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -277,8 +278,8 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           </div>
 
           {/* Pie by tipo */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 ">
-            <h3 className="text-sm font-bold text-gray-700 mb-4">Saldo por tipo de cuenta</h3>
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Saldo por tipo de cuenta</CardTitle>
             {tipoPieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -307,23 +308,26 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       {/* Low Balance Alerts */}
       {cuentas.filter(c => c.activa && c.saldo < LOW_BALANCE_THRESHOLD).length > 0 && (
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <h3 className="text-sm font-bold text-amber-800">Cuentas con saldo bajo</h3>
-            </div>
-            <div className="space-y-2">
-              {cuentas.filter(c => c.activa && c.saldo < LOW_BALANCE_THRESHOLD).map(c => (
-                <div key={c.id} className="flex items-center justify-between text-sm">
-                  <span className="text-amber-700 font-medium">{c.nombre}</span>
-                  <span className="font-mono font-bold text-amber-800">{fmtCurrency(c.saldo, c.moneda)}</span>
+          <WarningAlert
+            title="Cuentas con saldo bajo"
+            description={
+              <>
+                <div className="space-y-2 mt-1">
+                  {cuentas.filter(c => c.activa && c.saldo < LOW_BALANCE_THRESHOLD).map(c => (
+                    <div key={c.id} className="flex items-center justify-between text-sm">
+                      <span className="text-[var(--text-primary)] font-medium">{c.nombre}</span>
+                      <span className="font-mono font-bold text-[var(--data-warning)]">
+                        {fmtCurrency(c.saldo, c.moneda)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <p className="text-[10px] text-amber-600/70 mt-2">
-              Umbral: menos de S/{LOW_BALANCE_THRESHOLD.toFixed(2)}
-            </p>
-          </div>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">
+                  Umbral: menos de S/{LOW_BALANCE_THRESHOLD.toFixed(2)}
+                </p>
+              </>
+            }
+          />
         </m.div>
       )}
     </div>
@@ -756,32 +760,29 @@ export default function TesoreriaModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-lg bg-[#2563EB] text-white flex items-center justify-center  shrink-0">
-            <Landmark className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Tesorería
-              {activeCuentas.length > 0 && (
-                <span className="ml-2 text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full align-middle">
-                  {activeCuentas.length} cuenta{activeCuentas.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </h1>
-            <p className="text-sm text-gray-500">Bancos, cajas, billeteras y movimientos de dinero</p>
-          </div>
+      {/* Header — ADR-074 Phase 3 */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3 justify-between">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas / Tesorería</p>
+          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
+            <Landmark className="h-5 w-5 currentColor" />
+            Tesorería
+            {activeCuentas.length > 0 && (
+              <span className="ml-2 text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success)] px-2 py-0.5 rounded-full align-middle">
+                {activeCuentas.length} cuenta{activeCuentas.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Bancos, cajas, billeteras y movimientos de dinero</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => fetchAll()} className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Actualizar">
-            <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
+        <div className="flex gap-2 shrink-0">
+          <button onClick={() => fetchAll()} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors" title="Actualizar">
+            <RefreshCw className={cn("h-4 w-4 text-[var(--text-tertiary)]", loading && "animate-spin")} />
           </button>
           {activeTab === "cuentas" && (
             <button
               onClick={() => { resetCuentaForm(); setShowCreateCuenta(true); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
               <Plus className="h-4 w-4" /> Nueva cuenta
             </button>
@@ -791,7 +792,7 @@ export default function TesoreriaModule() {
               <button
                 onClick={handleExportCSV}
                 disabled={filteredMov.length === 0}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 disabled:opacity-30 transition-colors"
                 title="Exportar CSV"
               >
                 <FileDown className="h-4 w-4" />
@@ -817,7 +818,7 @@ export default function TesoreriaModule() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 -mx-1 px-1 overflow-x-auto">
+      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">
         {tabs.map(t => {
           const Icon = t.icon;
           return (
@@ -828,7 +829,7 @@ export default function TesoreriaModule() {
                 "shrink-0 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
                 activeTab === t.id
                   ? "border-[#2563EB] text-[#2563EB]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -840,15 +841,13 @@ export default function TesoreriaModule() {
 
       {/* Loading */}
       {loading && activeTab === "dashboard" && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#2563EB]" />
-        </div>
+        <LoadingState />
       )}
 
       {error && (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <AlertTriangle className="h-8 w-8 text-red-400" />
-          <p className="text-sm text-red-600">{error}</p>
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)]">{error}</p>
           <button onClick={fetchAll} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
         </div>
       )}
@@ -862,10 +861,10 @@ export default function TesoreriaModule() {
       {activeTab === "cuentas" && !loading && (
         <div className="space-y-6">
           {cuentas.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white border border-gray-200 rounded-xl">
-              <div className="text-6xl mb-4">🏦</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin cuentas</h3>
-              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Crea tu primera cuenta (banco, caja o billetera digital)</p>
+            <div className="text-center py-16 px-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+              <Landmark className="h-14 w-14 mb-4 text-[var(--text-tertiary)] mx-auto" />
+              <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin cuentas</CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Crea tu primera cuenta (banco, caja o billetera digital)</p>
               <button
                 onClick={() => { resetCuentaForm(); setShowCreateCuenta(true); }}
                 className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]"
@@ -885,7 +884,7 @@ export default function TesoreriaModule() {
                     animate={{ opacity: 1, scale: 1 }}
                     className={cn(
                       "bg-white border rounded-xl p-5 hover:shadow-lg transition-all cursor-pointer group",
-                      cuenta.activa ? "border-gray-200" : "border-dashed border-gray-300 opacity-60"
+                      cuenta.activa ? "border-[var(--rule-base)]" : "border-dashed border-[var(--rule-base)] opacity-60"
                     )}
                     onClick={() => openEditCuenta(cuenta)}
                   >
@@ -894,41 +893,41 @@ export default function TesoreriaModule() {
                         <Icon className={cn("h-6 w-6", meta.color)} />
                       </div>
                       <span className={cn(
-                        "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
+                        "text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full",
                         cuenta.activa
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-gray-100 text-gray-500"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          : "bg-gray-100 text-[var(--text-secondary)]"
                       )}>
                         {cuenta.activa ? "Activa" : "Inactiva"}
                       </span>
                     </div>
-                    <h4 className="text-base font-bold text-gray-900 truncate">{cuenta.nombre}</h4>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{meta.label}{cuenta.banco ? ` · ${cuenta.banco}` : ""}</p>
-                    <p className="text-2xl font-extrabold font-mono text-gray-900 mt-3">
+                    <h4 className="text-base font-bold text-[var(--text-primary)] truncate">{cuenta.nombre}</h4>
+                    <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">{meta.label}{cuenta.banco ? ` · ${cuenta.banco}` : ""}</p>
+                    <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)] mt-3">
                       {fmtCurrency(cuenta.saldo, cuenta.moneda)}
                     </p>
                     {cuenta.activa && cuenta.saldo < LOW_BALANCE_THRESHOLD && (
-                      <div className="flex items-center gap-1 mt-2 text-[10px] text-amber-600">
+                      <div className="flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] text-[var(--data-warning)]">
                         <AlertCircle className="h-3 w-3" />
                         <span className="font-bold">Saldo bajo</span>
                       </div>
                     )}
                     {cuenta.numeroCuenta && (
-                      <p className="text-[11px] text-gray-400 mt-1.5 font-mono">N° •••• {cuenta.numeroCuenta.slice(-4)}</p>
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1.5 font-mono">N° •••• {cuenta.numeroCuenta.slice(-4)}</p>
                     )}
                     <div className="flex items-center justify-between mt-2">
-                      <p className="text-[10px] text-gray-300">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         Creada {fmtDate(cuenta.createdAt)}
                       </p>
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeactivateTarget(cuenta); setShowDeactivateModal(true); }}
                         className={cn(
                           "p-1 rounded-lg transition-colors opacity-0 group-hover:opacity-100",
-                          cuenta.activa ? "hover:bg-red-50" : "hover:bg-emerald-50"
+                          cuenta.activa ? "hover:bg-[var(--data-error-50)]" : "hover:bg-[var(--accent-soft)]"
                         )}
                         title={cuenta.activa ? "Desactivar" : "Activar"}
                       >
-                        <Power className={cn("h-3.5 w-3.5", cuenta.activa ? "text-red-400" : "text-emerald-400")} />
+                        <Power className={cn("h-3.5 w-3.5", cuenta.activa ? "text-[var(--data-error)]" : "text-[var(--data-success)]")} />
                       </button>
                     </div>
                   </m.div>
@@ -947,7 +946,7 @@ export default function TesoreriaModule() {
             <select
               value={movCuentaFilter}
               onChange={e => setMovCuentaFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
               <option value="">Todas las cuentas</option>
               {activeCuentas.map(c => (
@@ -957,7 +956,7 @@ export default function TesoreriaModule() {
             <select
               value={movTipoFilter}
               onChange={e => setMovTipoFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
               <option value="">Todos los tipos</option>
               <option value="INGRESO">Ingresos</option>
@@ -966,13 +965,13 @@ export default function TesoreriaModule() {
               <option value="TRANSFERENCIA_OUT">Transferencia →</option>
             </select>
             <div className="relative flex-1 min-w-50">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 type="text"
                 value={movSearch}
                 onChange={e => setMovSearch(e.target.value)}
                 placeholder="Buscar..."
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
               />
             </div>
             <button
@@ -981,7 +980,7 @@ export default function TesoreriaModule() {
                 "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-colors",
                 showAdvancedFilters || hasActiveFilters
                   ? "border-[#2563EB] bg-[#2563EB]/5 text-[#2563EB]"
-                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -1000,32 +999,32 @@ export default function TesoreriaModule() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-3">
+                <div className="bg-gray-50 rounded-xl border border-[var(--rule-base)] p-4 space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-1">Desde</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Desde</label>
                       <input
                         type="date"
                         value={movFechaDesde}
                         onChange={e => setMovFechaDesde(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-1">Hasta</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Hasta</label>
                       <input
                         type="date"
                         value={movFechaHasta}
                         onChange={e => setMovFechaHasta(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-1">Categoría</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Categoría</label>
                       <select
                         value={movCategoriaFilter}
                         onChange={e => setMovCategoriaFilter(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       >
                         <option value="">Todas</option>
                         {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1033,25 +1032,25 @@ export default function TesoreriaModule() {
                     </div>
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <label className="block text-[10px] font-bold text-gray-500 mb-1">Min S/</label>
+                        <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Min S/</label>
                         <input
                           type="number"
                           step="0.01"
                           value={movMontoMin}
                           onChange={e => setMovMontoMin(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="block text-[10px] font-bold text-gray-500 mb-1">Max S/</label>
+                        <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Max S/</label>
                         <input
                           type="number"
                           step="0.01"
                           value={movMontoMax}
                           onChange={e => setMovMontoMax(e.target.value)}
                           placeholder="∞"
-                          className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -1069,22 +1068,22 @@ export default function TesoreriaModule() {
           {/* Totalizador Bar */}
           {filteredMov.length > 0 && (
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-emerald-600 mb-0.5">Ingresos</p>
-                <p className="text-lg font-extrabold font-mono text-emerald-700">+{fmtCurrency(movTotals.ingresos)}</p>
+              <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-success)] mb-0.5">Ingresos</p>
+                <p className="text-lg font-extrabold font-mono text-[var(--data-success)]">+{fmtCurrency(movTotals.ingresos)}</p>
               </div>
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-red-600 mb-0.5">Egresos</p>
-                <p className="text-lg font-extrabold font-mono text-red-700">-{fmtCurrency(movTotals.egresos)}</p>
+              <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-error)] mb-0.5">Egresos</p>
+                <p className="text-lg font-extrabold font-mono text-[var(--data-error)]">-{fmtCurrency(movTotals.egresos)}</p>
               </div>
               <div className={cn(
                 "border rounded-xl p-3 text-center",
                 movTotals.neto >= 0
-                  ? "bg-emerald-50 border-emerald-200"
-                  : "bg-orange-50 border-orange-200"
+                  ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30"
+                  : "bg-[var(--data-warning-50)] border-[var(--data-warning)]"
               )}>
-                <p className={cn("text-[10px] uppercase font-bold mb-0.5", movTotals.neto >= 0 ? "text-emerald-600" : "text-orange-600")}>Neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", movTotals.neto >= 0 ? "text-emerald-700" : "text-orange-700")}>
+                <p className={cn("text-[length:var(--ts-2xs)] uppercase font-bold mb-0.5", movTotals.neto >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>Neto</p>
+                <p className={cn("text-lg font-extrabold font-mono", movTotals.neto >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>
                   {movTotals.neto >= 0 ? "+" : ""}{fmtCurrency(movTotals.neto)}
                 </p>
               </div>
@@ -1092,12 +1091,12 @@ export default function TesoreriaModule() {
           )}
 
           {/* Movements table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden ">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             {filteredMov.length === 0 ? (
               <div className="text-center py-16 px-4">
-                <div className="text-6xl mb-4">💸</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin movimientos</h3>
-                <p className="text-sm text-gray-500 mb-6">Registra ingresos y egresos para ver tu historial</p>
+                <Wallet className="h-14 w-14 mb-4 text-[var(--text-tertiary)] mx-auto" />
+                <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin movimientos</CardTitle>
+                <p className="text-sm text-[var(--text-secondary)] mb-6">Registra ingresos y egresos para ver tu historial</p>
                 <button
                   onClick={() => { setMovFormError(null); setShowCreateMov(true); }}
                   className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]"
@@ -1110,9 +1109,9 @@ export default function TesoreriaModule() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-150 text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 text-left">
+                      <tr className="border-b border-[var(--rule-soft)] text-left">
                         <th
-                          className="px-4 py-3 font-semibold text-gray-500 cursor-pointer hover:text-gray-700 select-none"
+                          className="px-4 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)] select-none"
                           onClick={() => toggleSort("fecha")}
                         >
                           <span className="inline-flex items-center gap-1">
@@ -1120,12 +1119,12 @@ export default function TesoreriaModule() {
                             {movSortField === "fecha" && <ChevronDown className={cn("h-3 w-3 transition-transform", movSortDir === "asc" && "rotate-180")} />}
                           </span>
                         </th>
-                        <th className="px-4 py-3 font-semibold text-gray-500">Cuenta</th>
-                        <th className="px-4 py-3 font-semibold text-gray-500">Tipo</th>
-                        <th className="px-4 py-3 font-semibold text-gray-500">Categoría</th>
-                        <th className="px-4 py-3 font-semibold text-gray-500">Descripción</th>
+                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Cuenta</th>
+                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Tipo</th>
+                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Categoría</th>
+                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Descripción</th>
                         <th
-                          className="px-4 py-3 font-semibold text-gray-500 text-right cursor-pointer hover:text-gray-700 select-none"
+                          className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right cursor-pointer hover:text-[var(--text-primary)] select-none"
                           onClick={() => toggleSort("monto")}
                         >
                           <span className="inline-flex items-center gap-1 justify-end">
@@ -1133,7 +1132,7 @@ export default function TesoreriaModule() {
                             {movSortField === "monto" && <ChevronDown className={cn("h-3 w-3 transition-transform", movSortDir === "asc" && "rotate-180")} />}
                           </span>
                         </th>
-                        <th className="px-4 py-3 font-semibold text-gray-500 text-right hidden sm:table-cell">Saldo</th>
+                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell">Saldo</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1143,24 +1142,24 @@ export default function TesoreriaModule() {
                         const isIngreso = m.tipo === "INGRESO" || m.tipo === "TRANSFERENCIA_IN";
                         return (
                           <tr key={m.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDateShort(m.createdAt)}</td>
-                            <td className="px-4 py-3 font-medium text-gray-900">{m.cuentaNombre ?? "—"}</td>
+                            <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmtDateShort(m.createdAt)}</td>
+                            <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{m.cuentaNombre ?? "—"}</td>
                             <td className="px-4 py-3">
                               <span className={cn("inline-flex items-center gap-1 text-xs font-bold", meta.color)}>
                                 <MovIcon className="h-3 w-3" />
                                 {meta.label}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-xs text-gray-500">
+                            <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                               {m.categoria ? (
                                 <span className="px-2 py-0.5 rounded-full bg-gray-100 font-medium">{m.categoria}</span>
                               ) : "—"}
                             </td>
-                            <td className="px-4 py-3 text-gray-600 max-w-50 truncate">{m.descripcion || "—"}</td>
-                            <td className={cn("px-4 py-3 text-right font-bold font-mono", isIngreso ? "text-emerald-600" : "text-red-600")}>
+                            <td className="px-4 py-3 text-[var(--text-secondary)] max-w-50 truncate">{m.descripcion || "—"}</td>
+                            <td className={cn("px-4 py-3 text-right font-bold font-mono", isIngreso ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                               {isIngreso ? "+" : "-"}{fmtCurrency(m.monto)}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono text-gray-500 hidden sm:table-cell">
+                            <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)] hidden sm:table-cell">
                               {fmtCurrency(m.saldoPosterior)}
                             </td>
                           </tr>
@@ -1170,8 +1169,8 @@ export default function TesoreriaModule() {
                   </table>
                 </div>
                 {movTotalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                    <p className="text-xs text-gray-500">{filteredMov.length} movimiento{filteredMov.length !== 1 ? "s" : ""} — Pág. {movPage}/{movTotalPages}</p>
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
+                    <p className="text-xs text-[var(--text-secondary)]">{filteredMov.length} movimiento{filteredMov.length !== 1 ? "s" : ""} — Pág. {movPage}/{movTotalPages}</p>
                     <div className="flex gap-1">
                       <button disabled={movPage <= 1} onClick={() => setMovPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
                         <ChevronLeft className="h-4 w-4" />
@@ -1192,10 +1191,10 @@ export default function TesoreriaModule() {
       {activeTab === "transferencias" && (
         <div className="space-y-6">
           {transferencias.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white border border-gray-200 rounded-xl">
+            <div className="text-center py-16 px-4 bg-white border border-[var(--rule-base)] rounded-xl">
               <div className="text-6xl mb-4">↔️</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin transferencias</h3>
-              <p className="text-sm text-gray-500 mb-6">Mueve dinero entre tus cuentas</p>
+              <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin transferencias</CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mb-6">Mueve dinero entre tus cuentas</p>
               <button
                 onClick={() => { setTransError(null); setShowCreateTransfer(true); }}
                 className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]"
@@ -1215,37 +1214,37 @@ export default function TesoreriaModule() {
                   key={t.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white border border-gray-200 rounded-xl p-4"
+                  className="bg-white border border-[var(--rule-base)] rounded-xl p-4"
                 >
                   <div className="flex items-center gap-3">
                     {/* Origen */}
                     <div className="flex-1 min-w-0 text-center">
                       <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center mx-auto mb-1", origenMeta?.bg ?? "bg-gray-100")}>
-                        {origenMeta ? (() => { const OI = origenMeta.icon; return <OI className={cn("h-5 w-5", origenMeta.color)} />; })() : <Wallet className="h-5 w-5 text-gray-400" />}
+                        {origenMeta ? (() => { const OI = origenMeta.icon; return <OI className={cn("h-5 w-5", origenMeta.color)} />; })() : <Wallet className="h-5 w-5 text-[var(--text-tertiary)]" />}
                       </div>
-                      <p className="text-xs font-bold text-gray-900 truncate">{t.origenNombre ?? "Origen"}</p>
-                      <p className="text-[10px] text-red-500 font-mono font-bold">-{fmtCurrency(t.monto)}</p>
+                      <p className="text-xs font-bold text-[var(--text-primary)] truncate">{t.origenNombre ?? "Origen"}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] font-mono font-bold">-{fmtCurrency(t.monto)}</p>
                     </div>
 
                     {/* Arrow */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <ArrowLeftRight className="h-4 w-4 text-emerald-600" />
+                      <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+                        <ArrowLeftRight className="h-4 w-4 text-[var(--data-success)]" />
                       </div>
-                      <p className="text-lg font-extrabold font-mono text-emerald-600">{fmtCurrency(t.monto)}</p>
-                      <p className="text-[10px] text-gray-400">{fmtDate(t.createdAt)}</p>
+                      <p className="text-lg font-extrabold font-mono text-[var(--data-success)]">{fmtCurrency(t.monto)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(t.createdAt)}</p>
                     </div>
 
                     {/* Destino */}
                     <div className="flex-1 min-w-0 text-center">
                       <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center mx-auto mb-1", destinoMeta?.bg ?? "bg-gray-100")}>
-                        {destinoMeta ? (() => { const DI = destinoMeta.icon; return <DI className={cn("h-5 w-5", destinoMeta.color)} />; })() : <Wallet className="h-5 w-5 text-gray-400" />}
+                        {destinoMeta ? (() => { const DI = destinoMeta.icon; return <DI className={cn("h-5 w-5", destinoMeta.color)} />; })() : <Wallet className="h-5 w-5 text-[var(--text-tertiary)]" />}
                       </div>
-                      <p className="text-xs font-bold text-gray-900 truncate">{t.destinoNombre ?? "Destino"}</p>
-                      <p className="text-[10px] text-emerald-500 font-mono font-bold">+{fmtCurrency(t.monto)}</p>
+                      <p className="text-xs font-bold text-[var(--text-primary)] truncate">{t.destinoNombre ?? "Destino"}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-mono font-bold">+{fmtCurrency(t.monto)}</p>
                     </div>
                   </div>
-                  {t.descripcion && <p className="text-xs text-gray-400 mt-2 text-center truncate">{t.descripcion}</p>}
+                  {t.descripcion && <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center truncate">{t.descripcion}</p>}
                 </m.div>
                 );
               })}
@@ -1273,32 +1272,32 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-gray-200 overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">
                     {editCuenta ? "Editar cuenta" : "Nueva cuenta"}
-                  </h3>
+                  </CardTitle>
                   <button onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }} className="p-2 rounded-lg hover:bg-gray-100">
-                    <X className="h-5 w-5 text-gray-500" />
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Nombre *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre *</label>
                     <input
                       value={formNombre}
                       onChange={e => setFormNombre(e.target.value)}
                       placeholder="Ej: BCP Ahorro, Caja Principal, Yape..."
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
                   {!editCuenta && (
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Tipo de cuenta *</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipo de cuenta *</label>
                       <div className="grid grid-cols-2 gap-2">
                         {(Object.keys(TIPO_META) as CuentaTipo[]).map(tipo => {
                           const m = TIPO_META[tipo];
@@ -1312,7 +1311,7 @@ export default function TesoreriaModule() {
                                 "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all",
                                 formTipo === tipo
                                   ? "border-[#2563EB] bg-[#2563EB]/5 text-[#2563EB] ring-2 ring-[#2563EB]/20"
-                                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50"
                               )}
                             >
                               <TipoIcon className="h-4 w-4 shrink-0" />
@@ -1327,28 +1326,28 @@ export default function TesoreriaModule() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Banco / Entidad</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Banco / Entidad</label>
                       <input
                         value={formBanco}
                         onChange={e => setFormBanco(e.target.value)}
                         placeholder="BCP, BBVA, Yape..."
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">N° Cuenta</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° Cuenta</label>
                       <input
                         value={formNumeroCuenta}
                         onChange={e => setFormNumeroCuenta(e.target.value)}
                         placeholder="123-456-789"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
 
                   {!editCuenta && (
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Saldo inicial (S/)</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Saldo inicial (S/)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -1356,34 +1355,34 @@ export default function TesoreriaModule() {
                         value={formSaldoInicial}
                         onChange={e => setFormSaldoInicial(e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Notas</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas</label>
                     <textarea
                       rows={2}
                       value={formNotas}
                       onChange={e => setFormNotas(e.target.value)}
                       placeholder="Notas opcionales..."
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                     />
                   </div>
                 </div>
 
                 {formError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200">
-                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-                    <p className="text-sm text-red-600">{formError}</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+                    <p className="text-sm text-[var(--data-error)]">{formError}</p>
                   </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1417,23 +1416,23 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-gray-200 overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900">Registrar movimiento</h3>
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Registrar movimiento</CardTitle>
                   <button onClick={() => setShowCreateMov(false)} className="p-2 rounded-lg hover:bg-gray-100">
-                    <X className="h-5 w-5 text-gray-500" />
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Cuenta *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cuenta *</label>
                     <select
                       value={movFormCuenta}
                       onChange={e => setMovFormCuenta(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar cuenta...</option>
                       {activeCuentas.map(c => (
@@ -1443,7 +1442,7 @@ export default function TesoreriaModule() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Tipo *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipo *</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
@@ -1451,8 +1450,8 @@ export default function TesoreriaModule() {
                         className={cn(
                           "flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-all",
                           movFormTipo === "INGRESO"
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20"
-                            : "border-gray-200 text-gray-600"
+                            ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)] ring-2 ring-[var(--data-success)]/40"
+                            : "border-[var(--rule-base)] text-[var(--text-secondary)]"
                         )}
                       >
                         <ArrowDownToLine className="h-4 w-4" /> Ingreso
@@ -1463,8 +1462,8 @@ export default function TesoreriaModule() {
                         className={cn(
                           "flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-all",
                           movFormTipo === "EGRESO"
-                            ? "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-500/20"
-                            : "border-gray-200 text-gray-600"
+                            ? "border-[var(--data-error)] bg-[var(--data-error-50)] text-[var(--data-error)] ring-2 ring-[var(--data-error)]/20"
+                            : "border-[var(--rule-base)] text-[var(--text-secondary)]"
                         )}
                       >
                         <ArrowUpFromLine className="h-4 w-4" /> Egreso
@@ -1473,7 +1472,7 @@ export default function TesoreriaModule() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Monto (S/) *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto (S/) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1481,40 +1480,40 @@ export default function TesoreriaModule() {
                       value={movFormMonto}
                       onChange={e => setMovFormMonto(e.target.value)}
                       placeholder="100.00"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Categoría</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Categoría</label>
                       <select
                         value={movFormCategoria}
                         onChange={e => setMovFormCategoria(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       >
                         <option value="">Sin categoría</option>
                         {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1">Referencia</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Referencia</label>
                       <input
                         value={movFormRef}
                         onChange={e => setMovFormRef(e.target.value)}
                         placeholder="N° boleta, fact..."
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Descripción</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción</label>
                     <input
                       value={movFormDesc}
                       onChange={e => setMovFormDesc(e.target.value)}
                       placeholder="Detalle del movimiento..."
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1525,9 +1524,9 @@ export default function TesoreriaModule() {
                   const monto = parseFloat(movFormMonto);
                   if (cuenta && monto > cuenta.saldo) {
                     return (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-                        <p className="text-sm text-amber-700">
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)]">
+                        <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+                        <p className="text-sm text-[var(--data-warning)]">
                           El monto ({fmtCurrency(monto)}) supera el saldo disponible ({fmtCurrency(cuenta.saldo)}). La cuenta quedará en negativo.
                         </p>
                       </div>
@@ -1537,16 +1536,16 @@ export default function TesoreriaModule() {
                 })()}
 
                 {movFormError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200">
-                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-                    <p className="text-sm text-red-600">{movFormError}</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+                    <p className="text-sm text-[var(--data-error)]">{movFormError}</p>
                   </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setShowCreateMov(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1555,7 +1554,7 @@ export default function TesoreriaModule() {
                     disabled={movFormSubmitting}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-50 transition-colors",
-                      movFormTipo === "INGRESO" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
+                      movFormTipo === "INGRESO" ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]"
                     )}
                   >
                     {movFormSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1583,23 +1582,23 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-gray-200 overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900">Transferencia entre cuentas</h3>
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Transferencia entre cuentas</CardTitle>
                   <button onClick={() => setShowCreateTransfer(false)} className="p-2 rounded-lg hover:bg-gray-100">
-                    <X className="h-5 w-5 text-gray-500" />
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Cuenta origen *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cuenta origen *</label>
                     <select
                       value={transOrigen}
                       onChange={e => setTransOrigen(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar origen...</option>
                       {activeCuentas.map(c => (
@@ -1609,17 +1608,17 @@ export default function TesoreriaModule() {
                   </div>
 
                   <div className="flex justify-center">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <ArrowDownToLine className="h-4 w-4 text-emerald-600" />
+                    <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+                      <ArrowDownToLine className="h-4 w-4 text-[var(--data-success)]" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Cuenta destino *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cuenta destino *</label>
                     <select
                       value={transDestino}
                       onChange={e => setTransDestino(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar destino...</option>
                       {activeCuentas.filter(c => c.id !== transOrigen).map(c => (
@@ -1629,7 +1628,7 @@ export default function TesoreriaModule() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Monto (S/) *</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto (S/) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1637,17 +1636,17 @@ export default function TesoreriaModule() {
                       value={transMonto}
                       onChange={e => setTransMonto(e.target.value)}
                       placeholder="500.00"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Descripción</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción</label>
                     <input
                       value={transDesc}
                       onChange={e => setTransDesc(e.target.value)}
                       placeholder="Motivo de la transferencia..."
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1658,9 +1657,9 @@ export default function TesoreriaModule() {
                   const monto = parseFloat(transMonto);
                   if (cuenta && monto > cuenta.saldo) {
                     return (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-                        <p className="text-sm text-amber-700">
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)]">
+                        <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+                        <p className="text-sm text-[var(--data-warning)]">
                           El monto supera el saldo de la cuenta origen ({fmtCurrency(cuenta.saldo)}).
                         </p>
                       </div>
@@ -1670,23 +1669,23 @@ export default function TesoreriaModule() {
                 })()}
 
                 {transError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200">
-                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-                    <p className="text-sm text-red-600">{transError}</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]">
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
+                    <p className="text-sm text-[var(--data-error)]">{transError}</p>
                   </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setShowCreateTransfer(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleCreateTransfer}
                     disabled={transSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors"
                   >
                     {transSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     Transferir
@@ -1713,34 +1712,34 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-md bg-white rounded-xl border border-gray-200 overflow-hidden"
+              className="fixed inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-md bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "h-12 w-12 rounded-xl flex items-center justify-center",
-                    deactivateTarget.activa ? "bg-red-100" : "bg-emerald-100"
+                    deactivateTarget.activa ? "bg-[var(--data-error-100)]" : "bg-[var(--accent-soft)]"
                   )}>
-                    <Power className={cn("h-6 w-6", deactivateTarget.activa ? "text-red-600" : "text-emerald-600")} />
+                    <Power className={cn("h-6 w-6", deactivateTarget.activa ? "text-[var(--data-error)]" : "text-[var(--data-success)]")} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">
                       {deactivateTarget.activa ? "Desactivar" : "Activar"} cuenta
-                    </h3>
-                    <p className="text-sm text-gray-500">{deactivateTarget.nombre}</p>
+                    </CardTitle>
+                    <p className="text-sm text-[var(--text-secondary)]">{deactivateTarget.nombre}</p>
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[var(--text-secondary)]">
                   {deactivateTarget.activa
                     ? "La cuenta no aparecerá en la lista activa ni podrá recibir movimientos. El saldo se conserva."
                     : "La cuenta volverá a aparecer en la lista activa y podrá recibir movimientos."}
                 </p>
 
                 {deactivateTarget.activa && deactivateTarget.saldo > 0 && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-                    <p className="text-sm text-amber-700">
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning)]">
+                    <AlertCircle className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
+                    <p className="text-sm text-[var(--data-warning)]">
                       Esta cuenta tiene un saldo de {fmtCurrency(deactivateTarget.saldo)}. Considera transferir el dinero antes.
                     </p>
                   </div>
@@ -1749,7 +1748,7 @@ export default function TesoreriaModule() {
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1758,7 +1757,7 @@ export default function TesoreriaModule() {
                     disabled={deactivating}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-50 transition-colors",
-                      deactivateTarget.activa ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"
+                      deactivateTarget.activa ? "bg-[var(--data-error)] hover:bg-[var(--data-error)]" : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
                     )}
                   >
                     {deactivating && <Loader2 className="h-4 w-4 animate-spin" />}

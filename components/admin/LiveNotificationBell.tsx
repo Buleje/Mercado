@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Bell, BellOff, Package, ShoppingBag, CreditCard,
   Truck, AlertTriangle, CheckCheck, Banknote,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useAdminSSE, type SSEEvent, type SSEEventType } from "@/hooks/use-admin-sse";
 
@@ -65,42 +65,42 @@ const TYPE_CONFIG: Record<
   order_status_changed: {
     label: "Estado de pedido",
     Icon: Package,
-    dot: "bg-emerald-500",
-    bg: "bg-emerald-50 dark:bg-emerald-900/20",
-    text: "text-emerald-700 dark:text-emerald-400",
-    border: "border-emerald-200 dark:border-emerald-800",
+    dot: "bg-[var(--accent-soft)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
   },
   low_stock: {
     label: "Stock bajo",
     Icon: AlertTriangle,
-    dot: "bg-red-500",
-    bg: "bg-red-50 dark:bg-red-900/20",
-    text: "text-red-700 dark:text-red-400",
-    border: "border-red-200 dark:border-red-800",
+    dot: "bg-[var(--data-error)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
+    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+    border: "border-[var(--data-error)] dark:border-[var(--data-error)]",
   },
   payment: {
     label: "Pago recibido",
     Icon: CreditCard,
-    dot: "bg-green-500",
-    bg: "bg-green-50 dark:bg-green-900/20",
-    text: "text-green-700 dark:text-green-400",
-    border: "border-green-200 dark:border-green-800",
+    dot: "bg-[var(--accent-soft)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
   },
   delivery: {
     label: "Delivery",
     Icon: Truck,
-    dot: "bg-orange-500",
-    bg: "bg-orange-50 dark:bg-orange-900/20",
-    text: "text-orange-700 dark:text-orange-400",
-    border: "border-orange-200 dark:border-orange-800",
+    dot: "bg-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
   },
   fiado_vencido: {
     label: "Fiado vencido",
     Icon: Banknote,
-    dot: "bg-amber-500",
-    bg: "bg-amber-50 dark:bg-amber-900/20",
-    text: "text-amber-700 dark:text-amber-400",
-    border: "border-amber-200 dark:border-amber-800",
+    dot: "bg-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
   },
 };
 
@@ -127,7 +127,7 @@ function MiniToast({
         "flex items-start gap-3 px-4 py-3 rounded-xl border min-w-[260px] max-w-xs",
         cfg.bg,
         cfg.border,
-        "animate-in slide-in-from-right-4 fade-in duration-300"
+        "animate-in slide-in-from-right-4 fade-in duration-[var(--dur-base)]"
       )}
     >
       <span className={cn("mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center", cfg.bg)}>
@@ -135,12 +135,12 @@ function MiniToast({
       </span>
       <div className="flex-1 min-w-0">
         <p className={cn("text-xs font-bold", cfg.text)}>{cfg.label}</p>
-        <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{notif.message}</p>
+        <p className="text-xs text-[var(--text-secondary)] truncate">{notif.message}</p>
       </div>
       <button
         type="button"
         onClick={onDismiss}
-        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0 min-w-[28px] min-h-[28px] flex items-center justify-center"
+        className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 flex-shrink-0 min-w-[28px] min-h-[28px] flex items-center justify-center"
       >
         <span className="sr-only">Cerrar</span>
         <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
@@ -209,20 +209,20 @@ export default function LiveNotificationBell() {
           }}
           className={cn(
             "relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
-            "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+            "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
             open && "bg-teal-50 dark:bg-teal-900/30",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
           )}
         >
           {isConnected ? (
-            <Bell className={cn("h-5 w-5", open ? "text-[#00B4A6]" : "text-gray-600 dark:text-gray-300")} />
+            <Bell className={cn("h-5 w-5", open ? "text-[#00B4A6]" : "text-[var(--text-secondary)]")} />
           ) : (
-            <BellOff className="h-5 w-5 text-gray-400 dark:text-gray-600" />
+            <BellOff className="h-5 w-5 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
           )}
 
           {/* Unread badge */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none ">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center leading-none ">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -230,7 +230,7 @@ export default function LiveNotificationBell() {
           {/* Connection dot */}
           <span
             className={cn(
-              "absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-900",
+              "absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-[var(--rule-base)]",
               isConnected ? "bg-teal-500" : "bg-gray-400"
             )}
           />
@@ -238,14 +238,14 @@ export default function LiveNotificationBell() {
 
         {/* ── Dropdown ─────────────────────────────────────────────── */}
         {open && (
-          <div className="absolute right-0 mt-2 w-80 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150">
+          <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-[var(--dur-fast)]">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-[#00B4A6]" />
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Tiempo real</span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">Tiempo real</span>
                 {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full">
                     {unreadCount}
                   </span>
                 )}
@@ -254,7 +254,7 @@ export default function LiveNotificationBell() {
                 <button
                   type="button"
                   onClick={markAllRead}
-                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-[#00B4A6] dark:hover:text-teal-400 transition-colors"
+                  className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-teal-400 transition-colors"
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
                   Leer todas
@@ -265,10 +265,10 @@ export default function LiveNotificationBell() {
             {/* List */}
             <div className="max-h-[360px] overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
               {notifs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-300 dark:text-gray-600 gap-2">
+                <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] gap-2">
                   <Bell className="h-9 w-9 opacity-30" />
-                  <p className="text-sm font-medium text-gray-400 dark:text-gray-500">No hay notificaciones</p>
-                  <p className="text-xs text-gray-300 dark:text-gray-600">Las alertas aparecen aquí en tiempo real</p>
+                  <p className="text-sm font-medium text-[var(--text-tertiary)]">No hay notificaciones</p>
+                  <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">Las alertas aparecen aquí en tiempo real</p>
                 </div>
               ) : (
                 notifs.map((n) => {
@@ -280,8 +280,8 @@ export default function LiveNotificationBell() {
                       className={cn(
                         "flex items-start gap-3 px-4 py-3 transition-colors",
                         n.read
-                          ? "bg-white dark:bg-gray-900"
-                          : "bg-gray-50 dark:bg-gray-800/60"
+                          ? "bg-[var(--surface-raised)]"
+                          : "bg-[var(--surface-sunken)]/60"
                       )}
                     >
                       <span className={cn("mt-0.5 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center", cfg.bg)}>
@@ -294,10 +294,10 @@ export default function LiveNotificationBell() {
                             <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", cfg.dot)} />
                           )}
                         </div>
-                        <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5 leading-snug">
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-snug">
                           {n.message}
                         </p>
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
                           {relativeTime(n.timestamp)}
                         </p>
                       </div>
@@ -308,7 +308,7 @@ export default function LiveNotificationBell() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+            <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span
@@ -317,11 +317,11 @@ export default function LiveNotificationBell() {
                       isConnected ? "bg-teal-500 animate-pulse" : "bg-gray-400"
                     )}
                   />
-                  <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
                     {isConnected ? "Conectado en tiempo real" : "Reconectando..."}
                   </p>
                 </div>
-                <p className="text-[10px] text-gray-300 dark:text-gray-700">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-primary)]">
                   {notifs.length}/{MAX_NOTIFS}
                 </p>
               </div>

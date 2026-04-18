@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { Upload, X, Loader2, ImageIcon } from "lucide-react";
+import { LoadingState } from "@buleje/design-system";
+import { Upload, X, ImageIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type ImageUploadProps = {
@@ -99,7 +100,7 @@ export default function ImageUpload({
       {value ? (
         /* ── Con imagen ─────────────────────────────────────── */
         <div className="relative group">
-          <div className={cn("relative rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface", ASPECT_MAP[aspectRatio])}>
+          <div className={cn("relative rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface", ASPECT_MAP[aspectRatio])}>
             <Image
               src={value}
               alt={label ?? ""}
@@ -115,23 +116,19 @@ export default function ImageUpload({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="bg-white/90 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-white transition-colors"
+              className="bg-white/90 text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-white transition-colors"
             >
               Cambiar
             </button>
             <button
               type="button"
               onClick={handleClear}
-              className="bg-red-500/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-500 transition-colors"
+              className="bg-[var(--data-error)]/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--data-error)] transition-colors"
             >
               Quitar
             </button>
           </div>
-          {uploading && (
-            <div className="absolute inset-0 bg-white/70 dark:bg-black/50 rounded-xl flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          )}
+          {uploading && <LoadingState variant="overlay" message="" size="sm" />}
         </div>
       ) : (
         /* ── Sin imagen — drop zone ─────────────────────────── */
@@ -145,19 +142,19 @@ export default function ImageUpload({
             ASPECT_MAP[aspectRatio],
             dragOver
               ? "border-primary bg-primary/5 dark:bg-primary/10"
-              : "border-gray-200 dark:border-card-border hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface",
+              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface",
             uploading && "pointer-events-none opacity-60",
           )}
         >
           {uploading ? (
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <LoadingState variant="inline" size="md" />
           ) : (
             <>
-              <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center">
                 {dragOver ? (
                   <Upload className="h-5 w-5 text-primary" />
                 ) : (
-                  <ImageIcon className="h-5 w-5 text-gray-400" />
+                  <ImageIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
                 )}
               </div>
               <div className="text-center">
@@ -182,7 +179,7 @@ export default function ImageUpload({
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
           <X className="h-3 w-3" />
           {error}
         </div>

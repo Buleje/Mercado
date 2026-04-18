@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Lightbulb, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Lightbulb, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface PriceSuggestionProps {
@@ -73,11 +73,11 @@ export default function PriceSuggestionBadge({
 
   const _Icon = suggestion.action === "subir" ? TrendingUp : TrendingDown;
   const colors = suggestion.action === "subir"
-    ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-400"
-    : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/30 text-emerald-700 dark:text-emerald-400";
+    ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]";
 
   return (
-    <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold", colors, className)}>
+    <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[length:var(--ts-2xs)] font-bold", colors, className)}>
       <Lightbulb className="h-3 w-3 shrink-0" />
       <span className="truncate max-w-48">{suggestion.reason}</span>
       <button onClick={() => setDismissed(true)} className="shrink-0 opacity-50 hover:opacity-100">

@@ -1,8 +1,10 @@
+"use client";
+
+import { CardTitle } from "@buleje/design-system";
 // ═══════════════════════════════════════════════════════
 // CMS PAGE BUILDER - Simple Editor
 // ═══════════════════════════════════════════════════════
 
-"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import * as Sentry from "@sentry/nextjs";
@@ -25,7 +27,7 @@ import {
   ShoppingCart,
   CircleHelp,
   Megaphone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import HeroBlock from "@/components/blocks/HeroBlock";
 import AboutBlock from "@/components/blocks/AboutBlock";
 import BenefitsBlock from "@/components/blocks/BenefitsBlock";
@@ -327,9 +329,9 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
               type="text"
               value={page.title}
               onChange={(e) => setPage({ ...page, title: e.target.value })}
-              className="text-xl font-bold border-b-2 border-transparent hover:border-gray-300 focus:border-emerald-500 outline-none"
+              className="text-xl font-bold border-b-2 border-transparent hover:border-gray-300 focus:border-[var(--data-success)]/30 outline-none"
             />
-            <p className="text-sm text-gray-500">/{page.slug}</p>
+            <p className="text-sm text-[var(--text-secondary)]">/{page.slug}</p>
           </div>
         </div>
 
@@ -345,7 +347,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
           <button
             onClick={savePage}
             disabled={saving}
-            className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center gap-2"
+            className="px-4 py-2 bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {saving ? "Guardando..." : "Guardar"}
@@ -357,15 +359,15 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         {/* Sidebar - Blocks */}
         <div className="w-64 bg-gray-50 border-r overflow-y-auto">
           <div className="p-4">
-            <h3 className="font-bold mb-3">Bloques disponibles</h3>
+            <CardTitle className="font-bold mb-3">Bloques disponibles</CardTitle>
             <div className="space-y-2">
               {AVAILABLE_BLOCKS.map((block) => (
                 <button
                   key={block.type}
                   onClick={() => addBlock(block.type)}
-                  className="w-full p-3 bg-white border rounded-lg hover:bg-emerald-50 hover:border-emerald-500 text-left flex items-center gap-2"
+                  className="w-full p-3 bg-white border rounded-lg hover:bg-[var(--accent-soft)] hover:border-[var(--data-success)]/30 text-left flex items-center gap-2"
                 >
-                  <block.icon className="h-5 w-5 text-emerald-600" />
+                  <block.icon className="h-5 w-5 text-[var(--data-success)]" />
                   <span className="font-medium">{block.name}</span>
                 </button>
               ))}
@@ -373,7 +375,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
           </div>
 
           <div className="border-t p-4">
-            <h3 className="font-bold mb-3">Bloques activos</h3>
+            <CardTitle className="font-bold mb-3">Bloques activos</CardTitle>
             <div className="space-y-2">
               {page.blocks
                 .sort((a: Block, b: Block) => a.order - b.order)
@@ -382,7 +384,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                     key={block.id}
                     className={`p-2 bg-white border rounded cursor-pointer ${
                       selectedBlock === block.id
-                        ? "border-emerald-500 bg-emerald-50"
+                        ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)]"
                         : ""
                     }`}
                     onClick={() => setSelectedBlock(block.id)}
@@ -402,7 +404,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                         >
                           <Eye
                             className={`w-4 h-4 ${
-                              block.visible ? "text-emerald-500" : "text-gray-400"
+                              block.visible ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
                             }`}
                           />
                         </button>
@@ -411,9 +413,9 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             e.stopPropagation();
                             deleteBlock(block.id);
                           }}
-                          className="p-1 hover:bg-red-100 rounded"
+                          className="p-1 hover:bg-[var(--data-error-100)] rounded"
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-[var(--data-error)]" />
                         </button>
                       </div>
                     </div>
@@ -427,7 +429,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         <div className="flex-1 overflow-y-auto bg-gray-100 p-8">
           <div className="max-w-6xl mx-auto bg-white">
             {page.blocks.length === 0 ? (
-              <div className="p-16 text-center text-gray-500">
+              <div className="p-16 text-center text-[var(--text-secondary)]">
                 <p className="text-xl mb-2">No hay bloques</p>
                 <p>Agrega bloques desde la barra lateral</p>
               </div>
@@ -444,7 +446,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                       key={block.id}
                       className={`relative ${
                         selectedBlock === block.id
-                          ? "ring-4 ring-emerald-500"
+                          ? "ring-4 ring-[var(--data-success)]/40"
                           : ""
                       }`}
                       onClick={() => setSelectedBlock(block.id)}
@@ -467,13 +469,13 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
               {/* Panel header */}
               <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between sticky top-0 z-10">
                 <div>
-                  <h3 className="font-bold text-sm">Editar bloque</h3>
-                  <p className="text-xs text-gray-500 capitalize">{block.type}</p>
+                  <CardTitle className="font-bold text-sm">Editar bloque</CardTitle>
+                  <p className="text-xs text-[var(--text-secondary)] capitalize">{block.type}</p>
                 </div>
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent-soft)] text-white text-xs font-bold rounded-lg hover:bg-[var(--accent-soft)] disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {savingProps ? "Guardando..." : "Guardar"}
@@ -483,7 +485,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
               {/* Fields */}
               <div className="p-4 space-y-4 flex-1">
                 {fields.length === 0 ? (
-                  <p className="text-sm text-gray-400">No hay campos editables para este bloque.</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">No hay campos editables para este bloque.</p>
                 ) : (
                   fields.map((field) => {
                     const FieldIcon = FIELD_TYPE_ICON[field.type];
@@ -491,8 +493,8 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
 
                     return (
                       <div key={field.key}>
-                        <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
-                          <FieldIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+                          <FieldIcon className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
                           {field.label}
                         </label>
 
@@ -500,10 +502,10 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                           <button
                             onClick={() => setDraftProps((p) => ({ ...p, [field.key]: !val }))}
                             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                              val ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-gray-50 text-gray-500"
+                              val ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)]" : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)]"
                             }`}
                           >
-                            <span className={`w-9 h-5 rounded-full transition-colors relative ${val ? "bg-emerald-500" : "bg-gray-300"}`}>
+                            <span className={`w-9 h-5 rounded-full transition-colors relative ${val ? "bg-[var(--accent-soft)]" : "bg-gray-300"}`}>
                               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${val ? "left-4" : "left-0.5"}`} />
                             </span>
                             {val ? "Activado" : "Desactivado"}
@@ -514,14 +516,14 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                               type="color"
                               value={val ?? "#312e81"}
                               onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
-                              className="h-9 w-16 rounded border border-gray-200 cursor-pointer"
+                              className="h-9 w-16 rounded border border-[var(--rule-base)] cursor-pointer"
                             />
                             <input
                               type="text"
                               value={val ?? ""}
                               onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                               placeholder="#312e81"
-                              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 font-mono"
+                              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 focus:border-[var(--data-success)]/30 font-mono"
                             />
                           </div>
                         ) : field.type === "textarea" ? (
@@ -530,7 +532,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
                             rows={3}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 resize-y"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 focus:border-[var(--data-success)]/30 resize-y"
                           />
                         ) : (
                           <input
@@ -538,13 +540,13 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             value={val ?? ""}
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 focus:border-[var(--data-success)]/30"
                           />
                         )}
 
                         {/* Image preview */}
                         {field.type === "url" && val && (
-                          <div className="relative mt-2 w-full h-24 rounded-lg overflow-hidden border border-gray-200">
+                          <div className="relative mt-2 w-full h-24 rounded-lg overflow-hidden border border-[var(--rule-base)]">
                             <Image src={val} alt="preview" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           </div>
                         )}
@@ -559,7 +561,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-500 text-white text-sm font-bold rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--accent-soft)] text-white text-sm font-bold rounded-lg hover:bg-[var(--accent-soft)] disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   {savingProps ? "Guardando cambios..." : "Guardar cambios"}

@@ -29,10 +29,10 @@ const QUADRANT_META: Record<BCGQuadrant, {
   label: string; icon: string; color: string;
   bg: string; text: string; recommendation: string;
 }> = {
-  star:     { label: "Estrellas",    icon: "↑↑", color: "#00B4A6", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", recommendation: "Invertir para crecer — alta prioridad" },
-  cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-300", recommendation: "Mantener y cosechar — generan caja" },
-  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-emerald-100 dark:bg-emerald-900/30",  text: "text-emerald-800 dark:text-emerald-300",  recommendation: "Evaluar potencial — requieren inversion" },
-  dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",    text: "text-red-800 dark:text-red-300",    recommendation: "Reducir o descontinuar" },
+  star:     { label: "Estrellas",    icon: "↑↑", color: "#00B4A6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", recommendation: "Invertir para crecer — alta prioridad" },
+  cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]", recommendation: "Mantener y cosechar — generan caja" },
+  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success)] dark:text-[var(--data-success)]",  recommendation: "Evaluar potencial — requieren inversion" },
+  dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",    recommendation: "Reducir o descontinuar" },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
 
   return (
     <div
-      className="absolute cursor-pointer transition-transform duration-150"
+      className="absolute cursor-pointer transition-transform duration-[var(--dur-fast)]"
       style={{
         left: `${product.xPct}%`,
         bottom: `${product.yPct}%`,
@@ -65,7 +65,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
       onMouseLeave={() => setHover(false)}
     >
       <div
-        className="rounded-full border-2 border-white dark:border-gray-800  transition-transform duration-150"
+        className="rounded-full border-2 border-white dark:border-[var(--rule-base)]  transition-transform duration-[var(--dur-fast)]"
         style={{
           width: size,
           height: size,
@@ -74,7 +74,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
         }}
       />
       {hover && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[10px] whitespace-nowrap z-30 pointer-events-none min-w-[120px]">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[length:var(--ts-2xs)] whitespace-nowrap z-30 pointer-events-none min-w-[120px]">
           <p className="font-semibold">{product.name}</p>
           <p>Participacion: {product.share.toFixed(1)}%</p>
           <p>Crecimiento: {fmtPct(product.growth)}</p>
@@ -188,7 +188,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
             <div className="flex items-center gap-1">
               <span className="font-bold text-base" style={{ color: meta.color }}>{meta.icon}</span>
               <span className={cn("text-xs font-semibold", meta.text)}>{meta.label}</span>
-              <span className="ml-auto text-sm font-bold text-gray-700 dark:text-gray-200">
+              <span className="ml-auto text-sm font-bold text-[var(--text-secondary)]">
                 {byQuadrant[q].length}
               </span>
             </div>
@@ -197,34 +197,34 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
       </div>
 
       {/* Matrix plot */}
-      <div className="relative rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
+      <div className="relative rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 overflow-hidden">
         {/* Axis labels */}
-        <div className="absolute top-1 right-2 text-[9px] text-gray-400 dark:text-gray-500 z-10">
+        <div className="absolute top-1 right-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] z-10">
           Crecimiento (%)
         </div>
-        <div className="absolute bottom-1 right-2 text-[9px] text-gray-400 dark:text-gray-500 z-10">
+        <div className="absolute bottom-1 right-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] z-10">
           Participacion →
         </div>
 
         {/* Quadrant backgrounds */}
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-          <div className="bg-emerald-50/30 dark:bg-emerald-900/10 border-r border-b border-dashed border-gray-300 dark:border-gray-600" />
-          <div className="bg-green-50/30 dark:bg-green-900/10 border-b border-dashed border-gray-300 dark:border-gray-600" />
-          <div className="bg-red-50/30 dark:bg-red-900/10 border-r border-dashed border-gray-300 dark:border-gray-600" />
-          <div className="bg-amber-50/30 dark:bg-amber-900/10" />
+          <div className="bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)] border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)] border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error)]/10 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-[var(--data-warning-50)]/30 dark:bg-[var(--data-warning)]/10" />
         </div>
 
         {/* Quadrant labels in corners */}
-        <div className="absolute top-1 left-2 text-[9px] text-emerald-400 dark:text-emerald-500 font-medium">
+        <div className="absolute top-1 left-2 text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
           Interrogantes
         </div>
-        <div className="absolute top-1 right-8 text-[9px] text-green-600 dark:text-green-400 font-medium">
+        <div className="absolute top-1 right-8 text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
           Estrellas
         </div>
-        <div className="absolute bottom-4 left-2 text-[9px] text-red-400 dark:text-red-500 font-medium">
+        <div className="absolute bottom-4 left-2 text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">
           Perros
         </div>
-        <div className="absolute bottom-4 right-8 text-[9px] text-amber-500 dark:text-amber-400 font-medium">
+        <div className="absolute bottom-4 right-8 text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
           Vacas
         </div>
 
@@ -234,7 +234,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
             <BubblePoint key={p.id} product={p} />
           ))}
           {bcgProducts.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
               Sin datos de ventas para trazar la matriz
             </div>
           )}
@@ -244,25 +244,25 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
       {/* Product list by quadrant */}
       {activeQuadrant && (
         <div>
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">
             {QUADRANT_META[activeQuadrant].label} — {QUADRANT_META[activeQuadrant].recommendation}
           </p>
           <div className="flex flex-col gap-1 max-h-64 overflow-auto">
             {byQuadrant[activeQuadrant].map((p) => (
               <div
                 key={p.id}
-                className="flex items-center gap-2 px-2 py-1 rounded bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-xs"
+                className="flex items-center gap-2 px-2 py-1 rounded bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs"
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"
                   style={{ backgroundColor: QUADRANT_META[activeQuadrant].color }}
                 />
-                <span className="flex-1 truncate text-gray-800 dark:text-foreground">{p.name}</span>
-                <span className="text-gray-500 dark:text-gray-400">{p.share.toFixed(1)}%</span>
+                <span className="flex-1 truncate text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
+                <span className="text-[var(--text-tertiary)]">{p.share.toFixed(1)}%</span>
                 <span
                   className={cn(
                     "font-medium",
-                    p.growth >= 0 ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400"
+                    p.growth >= 0 ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                   )}
                 >
                   {fmtPct(p.growth)}
@@ -270,7 +270,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
               </div>
             ))}
             {byQuadrant[activeQuadrant].length === 0 && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">
+              <p className="text-xs text-[var(--text-tertiary)] text-center py-2">
                 Ningun producto en este cuadrante
               </p>
             )}

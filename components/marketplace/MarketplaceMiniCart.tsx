@@ -55,7 +55,7 @@ export default function MarketplaceMiniCart() {
       >
         <div className="relative">
           <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-          <span className="absolute -top-2 -right-2 h-5 min-w-5 px-1 rounded-full bg-orange-500 text-white text-[10px] font-extrabold flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 h-5 min-w-5 px-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-extrabold flex items-center justify-center">
             <NumberFlow value={totalItems > 99 ? 99 : totalItems} />
             {totalItems > 99 && <span>+</span>}
           </span>

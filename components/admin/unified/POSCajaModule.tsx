@@ -1,4 +1,5 @@
 "use client";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { m } from "@/components/admin/providers";
@@ -9,7 +10,7 @@ import {
 import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
   Banknote, History, ArrowRight, Clock, BarChart3, Maximize2, X,
-  Brain, Users, AlertTriangle } from "lucide-react";
+  Brain, Users, AlertTriangle } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import FavStar from "@/components/admin/shared/FavStar";
@@ -300,29 +301,29 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     // Mejora 6: Alertas inteligentes Ventas
     ...(pedidosPendientes > 0 || fiadoTotal > 0 ? [
       <div key="alertas" className="flex flex-wrap gap-2">
-        {pedidosPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" /> {pedidosPendientes} pedidos pendientes</span>}
-        {fiadoTotal > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700"><AlertTriangle className="h-3 w-3" /> S/ {fiadoTotal.toFixed(0)} en fiados</span>}
+        {pedidosPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]"><AlertTriangle className="h-3 w-3" /> {pedidosPendientes} pedidos pendientes</span>}
+        {fiadoTotal > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]"><AlertTriangle className="h-3 w-3" /> S/ {fiadoTotal.toFixed(0)} en fiados</span>}
       </div>,
     ] : []),
     // Section 1: KPIs with sparklines (Mejora 8) and comparativo (Mejora 7)
     <div key="kpis" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {[
         { label: "Ventas periodo", value: `S/ ${ventasPeriodo.toFixed(0)}`, color: "border-b-4 border-primary", spark: true, strokeColor: "var(--color-primary)", sparkVal: ventasPeriodo },
-        { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-emerald-500", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
-        { label: "Ticket promedio", value: `S/ ${ticketPromedio.toFixed(0)}`, color: "border-b-4 border-purple-500", spark: true, strokeColor: "#8b5cf6", sparkVal: ticketPromedio },
-        { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-amber-500", spark: false, strokeColor: "", sparkVal: 0 },
-        { label: "Fiados", value: `S/ ${fiadoTotal.toFixed(0)}`, color: "border-b-4 border-orange-500", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("cuentas-cobrar") : undefined },
-        { label: "Total ventas mes", value: `S/ ${ventasMes.toFixed(0)}`, color: "border-b-4 border-cyan-500", spark: false, strokeColor: "", sparkVal: 0 },
+        { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-[var(--data-success)]/30", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
+        { label: "Ticket promedio", value: `S/ ${ticketPromedio.toFixed(0)}`, color: "border-b-4 border-[var(--rule-base)]0", spark: true, strokeColor: "#8b5cf6", sparkVal: ticketPromedio },
+        { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-[var(--data-warning)]", spark: false, strokeColor: "", sparkVal: 0 },
+        { label: "Fiados", value: `S/ ${fiadoTotal.toFixed(0)}`, color: "border-b-4 border-[var(--data-warning)]", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("cuentas-cobrar") : undefined },
+        { label: "Total ventas mes", value: `S/ ${ventasMes.toFixed(0)}`, color: "border-b-4 border-[var(--data-info)]", spark: false, strokeColor: "", sparkVal: 0 },
       ].map((k, idx) => {
         // Valores determinísticos (no Math.random — pureza en render). Placeholder hasta que
         // venga un cálculo real de trend vs periodo anterior desde el backend.
         const change = [12, 8, -3, -6, 15, 4][idx] ?? 0;
         return (
-          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-lg border border-gray-200 p-4  transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-sm")}>
-            <p className="text-[10px] text-gray-500 font-medium">{k.label}</p>
+          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-lg border border-[var(--rule-base)] p-4  transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-sm")}>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-medium">{k.label}</p>
             <div className="flex items-center gap-1.5">
-              <p className="text-2xl font-mono font-bold mt-1 text-gray-900">{k.value}</p>
-              <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
+              <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
+              <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
             </div>
             {k.spark && (
               <div className="h-8 w-20 mt-1">
@@ -338,11 +339,11 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       })}
     </div>,
     // Section 2: Ventas por hora
-    <div key="hourly" className="bg-white rounded-xl border border-gray-200 p-6  relative">
+    <div key="hourly" className="bg-white rounded-xl border border-[var(--rule-base)] p-6  relative">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1"><FavStar id="ventas-hora" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Ventas por hora</h3></div>
+        <div className="flex items-center gap-1"><FavStar id="ventas-hora" favs={salesFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Ventas por hora</CardTitle></div>
         <button onClick={() => setExpandedChart("hourly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
-          <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
+          <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
       </div>
       {hourlyData.some(h => h.total > 0) ? (
@@ -360,9 +361,9 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     </div>,
     // Section 3: PieChart + Top5
     <div key="charts-row" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-1"><FavStar id="metodo-pago" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Por metodo de pago</h3></div>
+          <div className="flex items-center gap-1"><FavStar id="metodo-pago" favs={salesFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Por metodo de pago</CardTitle></div>
           {pieFilter && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
               Filtrando: {pieFilter}
@@ -383,15 +384,15 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           </ResponsiveContainer>
         ) : <EmptyState icon={BarChart3} title="Sin ventas en este periodo" description="Los datos apareceran cuando registres ventas" />}
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 p-6 ">
-        <div className="flex items-center gap-1 mb-4"><FavStar id="top-productos" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Top 5 productos</h3></div>
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+        <div className="flex items-center gap-1 mb-4"><FavStar id="top-productos" favs={salesFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Top 5 productos</CardTitle></div>
         {topProducts.length > 0 ? (
           <div className="space-y-2.5">
             {topProducts.map((p, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
-                <span className="flex-1 text-sm text-gray-700 truncate">{p.name}</span>
-                <span className="text-sm font-bold font-mono text-gray-900">S/ {p.total.toFixed(0)}</span>
+                <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{p.name}</span>
+                <span className="text-sm font-bold font-mono text-[var(--text-primary)]">S/ {p.total.toFixed(0)}</span>
               </div>
             ))}
           </div>
@@ -399,11 +400,11 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
     </div>,
     // Section 4: Tendencia semanal
-    <div key="weekly" className="bg-white rounded-xl border border-gray-200 p-6  relative">
+    <div key="weekly" className="bg-white rounded-xl border border-[var(--rule-base)] p-6  relative">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-gray-700">Tendencia de ventas &mdash; Ultimos 7 dias</h3>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Tendencia de ventas &mdash; Ultimos 7 dias</CardTitle>
         <button onClick={() => setExpandedChart("weekly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
-          <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
+          <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
       </div>
       <ResponsiveContainer width="100%" height={250}>
@@ -423,8 +424,8 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </ResponsiveContainer>
     </div>,
     // Section 5: Mejora 4 — Comparativo vs semana pasada
-    <div key="comparison" className="bg-white rounded-xl border border-gray-200 p-6 ">
-      <h3 className="text-sm font-bold text-gray-700 mb-4">vs Semana Pasada</h3>
+    <div key="comparison" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+      <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">vs Semana Pasada</CardTitle>
       {comparisonData.some(d => d.estaSemana > 0 || d.semanaPasada > 0) ? (
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={comparisonData}>
@@ -435,10 +436,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 text-xs">
+                  <div className="bg-white rounded-xl border border-[var(--rule-base)] px-4 py-3 text-xs">
                     <p className="font-semibold mb-1">{label}</p>
                     <p className="text-primary font-mono font-bold">Esta semana: S/ {payload[0]?.value?.toLocaleString()}</p>
-                    <p className="text-gray-400 font-mono">Semana pasada: S/ {payload[1]?.value?.toLocaleString()}</p>
+                    <p className="text-[var(--text-tertiary)] font-mono">Semana pasada: S/ {payload[1]?.value?.toLocaleString()}</p>
                   </div>
                 );
               }}
@@ -451,23 +452,23 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       ) : <EmptyState icon={BarChart3} title="Sin datos comparativos" description="Los datos apareceran cuando registres ventas" />}
     </div>,
     // Section 6: Mejora 17 — Mapa de calor
-    <div key="heatmap" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="heatmap" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-gray-700">Mapa de Calor de Ventas</h3>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Mapa de Calor de Ventas</CardTitle>
         <button onClick={() => setExpandedChart("heatmap")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
-          <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
+          <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
       </div>
       <div className="overflow-x-auto">
         <div className="min-w-150">
           <div className="flex gap-0.5 mb-1 ml-10">
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className="flex-1 text-center text-[8px] text-gray-400">{h}</div>
+              <div key={h} className="flex-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{h}</div>
             ))}
           </div>
           {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day, di) => (
             <div key={day} className="flex gap-0.5 items-center mb-0.5">
-              <span className="w-9 text-[9px] text-gray-500 text-right pr-1 shrink-0">{day}</span>
+              <span className="w-9 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] text-right pr-1 shrink-0">{day}</span>
               {Array.from({ length: 24 }, (_, h) => {
                 const val = heatmapData[di]?.[h] ?? 0;
                 const intensity = heatmapMax > 0 ? val / heatmapMax : 0;
@@ -483,25 +484,25 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             </div>
           ))}
           <div className="flex items-center gap-2 mt-2 justify-end">
-            <span className="text-[9px] text-gray-400">Menos</span>
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Menos</span>
             {[0.08, 0.25, 0.5, 0.75, 1].map((o, i) => (
               <div key={i} className="w-4 h-3 rounded-sm" style={{ backgroundColor: `rgba(45,106,79,${o})` }} />
             ))}
-            <span className="text-[9px] text-gray-400">Mas</span>
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Mas</span>
           </div>
         </div>
       </div>
     </div>,
     // Section 7: Mejora 18 — Forecast con IA
-    <div key="forecast" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="forecast" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-purple-500" />
-          <h3 className="text-sm font-bold text-gray-700">Pronostico 7 dias</h3>
-          <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
+          <Brain className="h-4 w-4 text-[var(--text-secondary)]" />
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Pronostico 7 dias</CardTitle>
+          <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-primary)] px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
         </div>
         <button onClick={() => setExpandedChart("forecast")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
-          <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
+          <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
       </div>
       <ResponsiveContainer width="100%" height={280}>
@@ -517,36 +518,36 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </ResponsiveContainer>
     </div>,
     // Section 8: Mejora 20 — Comparativo entre meses
-    <div key="month-compare" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="month-compare" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h3 className="text-sm font-bold text-gray-700">Comparar Meses</h3>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</CardTitle>
         <div className="flex items-center gap-2">
-          <select value={month1} onChange={e => setMonth1(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+          <select value={month1} onChange={e => setMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-[var(--text-primary)]">
             {monthOptions.map(o => <option key={o} value={o}>{MESES_LABEL[o]}</option>)}
           </select>
-          <span className="text-xs text-gray-400">vs</span>
-          <select value={month2} onChange={e => setMonth2(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+          <span className="text-xs text-[var(--text-tertiary)]">vs</span>
+          <select value={month2} onChange={e => setMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-[var(--text-primary)]">
             {monthOptions.map(o => <option key={o} value={o}>{MESES_LABEL[o]}</option>)}
           </select>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">{MESES_LABEL[month1]}</p>
-          <p className={cn("text-lg font-extrabold", monthComparisonData.total1 === 0 ? "text-gray-300" : "text-primary")}>{formatCurrency(monthComparisonData.total1, { decimals: 0 })}</p>
-          <p className="text-[10px] text-gray-400">{monthComparisonData.count1} ventas</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month1]}</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.total1 === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(monthComparisonData.total1, { decimals: 0 })}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{monthComparisonData.count1} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">{MESES_LABEL[month2]}</p>
-          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-gray-300" : "text-[#f97316]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
-          <p className="text-[10px] text-gray-400">{monthComparisonData.count2} ventas</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month2]}</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-[var(--text-tertiary)]" : "text-[#f97316]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{monthComparisonData.count2} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">Diferencia</p>
-          <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-emerald-600" : "text-red-600")}>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">Diferencia</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
             {monthComparisonData.diffPct >= 0 ? "+" : ""}{monthComparisonData.diffPct}%
           </p>
-          <p className="text-[10px] text-gray-400">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
         </div>
       </div>
       {monthComparisonData.weekData.some(w => w.mes1 > 0 || w.mes2 > 0) ? (
@@ -617,12 +618,12 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <div className="min-w-175">
               <div className="flex gap-1 mb-2 ml-14">
                 {Array.from({ length: 24 }, (_, h) => (
-                  <div key={h} className="flex-1 text-center text-[10px] text-gray-400">{h}h</div>
+                  <div key={h} className="flex-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{h}h</div>
                 ))}
               </div>
               {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day, di) => (
                 <div key={day} className="flex gap-1 items-center mb-1">
-                  <span className="w-12 text-xs text-gray-500 text-right pr-2 shrink-0 font-medium">{day}</span>
+                  <span className="w-12 text-xs text-[var(--text-secondary)] text-right pr-2 shrink-0 font-medium">{day}</span>
                   {Array.from({ length: 24 }, (_, h) => {
                     const val = heatmapData[di]?.[h] ?? 0;
                     const intensity = heatmapMax > 0 ? val / heatmapMax : 0;
@@ -657,33 +658,33 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDrillHour(null)}>
           <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-gray-900">Ventas de las {drillHour}:00</h3>
-              <button onClick={() => setDrillHour(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="text-base font-bold text-[var(--text-primary)]">Ventas de las {drillHour}:00</CardTitle>
+              <button onClick={() => setDrillHour(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             {(() => {
               const hourSales = filteredSales.filter(s => {
                 const d = new Date(String(s.createdAt ?? ""));
                 return !isNaN(d.getTime()) && d.getHours() === drillHour;
               });
-              if (hourSales.length === 0) return <p className="text-sm text-gray-400 text-center py-4">Sin ventas en esta hora</p>;
+              if (hourSales.length === 0) return <p className="text-sm text-[var(--text-tertiary)] text-center py-4">Sin ventas en esta hora</p>;
               const totalHour = hourSales.reduce((s: number, v) => s + (Number(v.total) || 0), 0);
               return (
                 <>
                   <div className="flex items-center gap-3 mb-4 p-3 bg-primary/5 rounded-xl">
-                    <p className="text-xs text-gray-500">{hourSales.length} ventas</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{hourSales.length} ventas</p>
                     <p className="text-sm font-extrabold text-primary">Total: S/ {totalHour.toFixed(2)}</p>
                   </div>
                   <div className="space-y-2">
                     {hourSales.slice(0, 20).map((s, i) => (
                       <div key={i} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl text-xs">
                         <div>
-                          <p className="font-medium text-gray-700">{new Date(String(s.createdAt ?? "")).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</p>
-                          <p className="text-gray-400 text-[10px]">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
+                          <p className="font-medium text-[var(--text-primary)]">{new Date(String(s.createdAt ?? "")).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</p>
+                          <p className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
                         </div>
-                        <p className="font-mono font-bold text-gray-900">S/ {(Number(s.total) || 0).toFixed(2)}</p>
+                        <p className="font-mono font-bold text-[var(--text-primary)]">S/ {(Number(s.total) || 0).toFixed(2)}</p>
                       </div>
                     ))}
-                    {hourSales.length > 20 && <p className="text-xs text-gray-400 text-center">y {hourSales.length - 20} mas...</p>}
+                    {hourSales.length > 20 && <p className="text-xs text-[var(--text-tertiary)] text-center">y {hourSales.length - 20} mas...</p>}
                   </div>
                 </>
               );
@@ -802,10 +803,10 @@ function ShiftCloseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md overflow-hidden">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-primary px-6 py-4">
-          <h3 className="text-lg font-extrabold text-white">Cerrar Turno</h3>
+          <CardTitle className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>
           <p className="text-sm text-white/80">Resumen del dia antes de cerrar</p>
         </div>
 
@@ -816,17 +817,17 @@ function ShiftCloseModal({
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : error ? (
-            <div className="text-sm text-red-600 bg-red-50 rounded-xl p-4 text-center">
+            <div className="text-sm text-[var(--data-error)] bg-[var(--data-error-50)] rounded-xl p-4 text-center">
               {error}
               <button onClick={fetchSummary} className="block mx-auto mt-2 text-xs font-bold underline">Reintentar</button>
             </div>
           ) : summary ? (
             <>
               {/* Big total */}
-              <div className="text-center pb-2 border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-500 mb-1">Total vendido en el turno</p>
+              <div className="text-center pb-2 border-b border-[var(--rule-soft)]">
+                <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">Total vendido en el turno</p>
                 <div className="flex items-center justify-center gap-2">
-                  <p className="text-4xl font-black text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
+                  <p className="text-4xl font-extrabold text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
                 </div>
                 <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
                   <History className="h-3.5 w-3.5" />
@@ -836,52 +837,52 @@ function ShiftCloseModal({
 
               {/* Payment breakdown - Premium Grid */}
               <div className="space-y-3">
-                <p className="text-xs font-extrabold text-gray-400 pl-1">Desglose de ingresos</p>
+                <p className="text-xs font-extrabold text-[var(--text-tertiary)] pl-1">Desglose de ingresos</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
-                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all" />
+                  <div className="col-span-2 bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
+                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-[var(--accent-soft)] rounded-full blur-xl group-hover:bg-[var(--accent-soft)] transition-all" />
                     <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <Banknote className="h-5 w-5 text-emerald-600" />
+                      <div className="h-10 w-10 bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
+                        <Banknote className="h-5 w-5 text-[var(--data-success)]" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-emerald-600/80">Efectivo (Caja)</p>
-                        <p className="text-lg font-black text-emerald-700">{fmt(summary.efectivo)}</p>
+                        <p className="text-xs font-bold text-[var(--data-success)]/80">Efectivo (Caja)</p>
+                        <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(summary.efectivo)}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-purple-500" />
-                      <p className="text-xs font-bold text-purple-700/80">Yape</p>
+                      <div className="h-2 w-2 rounded-full bg-[var(--text-primary)]" />
+                      <p className="text-xs font-bold text-[var(--text-secondary)]/80">Yape</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-purple-700">{fmt(summary.yape)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--text-secondary)]">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <p className="text-xs font-bold text-emerald-700/80">Plin</p>
+                      <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
+                      <p className="text-xs font-bold text-[var(--data-success)]/80">Plin</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.plin)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success)]">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <CreditCard className="h-3 w-3 text-emerald-500" />
-                      <p className="text-xs font-bold text-emerald-700/80">Tarjeta / POS</p>
+                      <CreditCard className="h-3 w-3 text-[var(--data-success)]" />
+                      <p className="text-xs font-bold text-[var(--data-success)]/80">Tarjeta / POS</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.tarjeta)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success)]">{fmt(summary.tarjeta)}</p>
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Wallet className="h-3 w-3 text-amber-500" />
-                      <p className="text-xs font-bold text-amber-700/80">Fiado</p>
+                      <Wallet className="h-3 w-3 text-[var(--data-warning)]" />
+                      <p className="text-xs font-bold text-[var(--data-warning)]/80">Fiado</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-amber-700">{fmt(summary.fiado)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-warning)]">{fmt(summary.fiado)}</p>
                   </div>
                 </div>
               </div>
@@ -893,14 +894,14 @@ function ShiftCloseModal({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || !!error || confirming}
-            className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
           >
             {confirming ? "Cerrando..." : "Confirmar Cierre"}
             {!confirming && <ArrowRight className="h-4 w-4" />}
@@ -960,7 +961,7 @@ export default function POSCajaModule() {
         {/* Badge de turno */}
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-bold hidden sm:inline-flex",
-          turnoAbierto ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+          turnoAbierto ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]"
         )}>
           {turnoAbierto ? "Turno abierto" : "Sin turno"}
         </span>
@@ -969,7 +970,7 @@ export default function POSCajaModule() {
           {turnoAbierto ? (
             <button
               onClick={handleOpenCloseModal}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error)] transition-colors"
             >
               Cerrar Turno
             </button>
@@ -1001,7 +1002,7 @@ export default function POSCajaModule() {
         {turnoAbierto ? (
           <button
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors flex items-center gap-1.5"
           >
             <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
             Cerrar Turno

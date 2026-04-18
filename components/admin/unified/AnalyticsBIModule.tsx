@@ -1,4 +1,5 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -7,7 +8,7 @@ import {
   BarChart3, Flame, TrendingUp,
   CreditCard, Users, Trophy, Package,
   LayoutDashboard, DollarSign,
-  Target, Clock, AlertTriangle } from "lucide-react";
+  Target, Clock, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -75,7 +76,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-gray-200 p-6  transition-shadow hover:shadow-sm",
+      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -86,8 +87,8 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
             </div>
           )}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 leading-tight">{title}</h3>
-            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
+            {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
           </div>
         </div>
       </div>
@@ -100,9 +101,9 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 function _SectionHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-2">
-      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+      <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">{title}</SectionTitle>
       <div className="w-12 h-1 bg-primary rounded-full mt-2" />
-      <p className="text-sm text-gray-500 mt-2">{description}</p>
+      <p className="text-sm text-[var(--text-secondary)] mt-2">{description}</p>
     </div>
   );
 }
@@ -156,12 +157,12 @@ function InlineKPIStrip() {
   }
 
   const items = [
-    { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-emerald-600" },
-    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-emerald-600" },
-    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-emerald-600" : "text-amber-600" },
-    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-purple-600" },
-    { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-red-500" : "text-gray-500" },
-    { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-cyan-600" },
+    { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-[var(--data-success)]" },
+    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-[var(--data-success)]" },
+    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]" },
+    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
+    { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error)]" : "text-[var(--text-secondary)]" },
+    { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-[var(--data-info)]" },
   ];
 
   return (
@@ -169,9 +170,9 @@ function InlineKPIStrip() {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5  text-center"
+          className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2.5  text-center"
         >
-          <p className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -190,24 +191,24 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
 
       if (section === "ventas") {
           setItems([
-            { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
-            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
-            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-purple-600" },
-            { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-amber-600" },
+            { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success)]" },
+            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success)]" },
+            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-[var(--text-secondary)]" },
+            { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-[var(--data-warning)]" },
           ]);
         } else if (section === "productos") {
           setItems([
-            { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-emerald-600" },
-            { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-red-500" },
-            { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-cyan-600" },
+            { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-[var(--data-success)]" },
+            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-[var(--data-success)]" },
+            { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-[var(--data-error)]" },
+            { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-[var(--data-info)]" },
           ]);
         } else if (section === "clientes") {
           setItems([
-            { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-red-500" },
-            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-purple-600" },
+            { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-[var(--data-success)]" },
+            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-[var(--data-success)]" },
+            { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-error)]" },
+            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-[var(--text-secondary)]" },
           ]);
         }
       })();
@@ -226,8 +227,8 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-3 py-2  text-center">
-          <p className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</p>
+        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2  text-center">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -246,7 +247,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-gray-200 p-6  transition-shadow hover:shadow-sm",
+      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -257,11 +258,11 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
             </div>
           )}
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 leading-tight">{title}</h3>
-            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
+            {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex gap-1 border-b border-gray-200">
+        <div className="flex gap-1 border-b border-[var(--rule-base)]">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -270,7 +271,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
                 "px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors",
                 activeTab === t.id
                   ? "bg-primary/10 text-primary border-b-2 border-primary"
-                  : "text-gray-500 hover:bg-gray-50"
+                  : "text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
               {t.label}
@@ -330,38 +331,38 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
   return (
     <div className="overflow-x-auto">
       {customers.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">No hay datos de clientes disponibles</p>
+        <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay datos de clientes disponibles</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left">
-              <th className="px-3 py-3 font-semibold text-gray-500 text-xs">#</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 text-xs">Cliente</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right">Gasto total</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right hidden sm:table-cell">Compras</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right hidden md:table-cell">Ticket prom</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-center">Tendencia</th>
+            <tr className="border-b border-[var(--rule-base)] text-left">
+              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">#</th>
+              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">Cliente</th>
+              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right">Gasto total</th>
+              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right hidden sm:table-cell">Compras</th>
+              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right hidden md:table-cell">Ticket prom</th>
+              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-center">Tendencia</th>
             </tr>
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+              <tr key={c.id} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
                 <td className="px-3 py-3 text-center">
-                  {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-gray-400">{i + 1}</span>}
+                  {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>}
                 </td>
                 <td className="px-3 py-3">
-                  <p className="font-medium text-gray-900 truncate max-w-50">{c.nombre}</p>
+                  <p className="font-medium text-[var(--text-primary)] truncate max-w-50">{c.nombre}</p>
                 </td>
                 <td className="px-3 py-3 text-right font-bold text-primary">{formatCurrency(c.gastoTotal)}</td>
-                <td className="px-3 py-3 text-right text-gray-500 hidden sm:table-cell">{c.compras} compras</td>
-                <td className="px-3 py-3 text-right text-gray-500 hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+                <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{c.compras} compras</td>
+                <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
                 <td className="px-3 py-3 text-center">
                   {c.tendencia > 5 ? (
-                    <span className="text-emerald-500 text-xs font-bold">&#8593; +{c.tendencia.toFixed(0)}%</span>
+                    <span className="text-[var(--data-success)] text-xs font-bold">&#8593; +{c.tendencia.toFixed(0)}%</span>
                   ) : c.tendencia < -5 ? (
-                    <span className="text-red-500 text-xs font-bold">&#8595; {c.tendencia.toFixed(0)}%</span>
+                    <span className="text-[var(--data-error)] text-xs font-bold">&#8595; {c.tendencia.toFixed(0)}%</span>
                   ) : (
-                    <span className="text-gray-400 text-xs font-bold">&#8594; Estable</span>
+                    <span className="text-[var(--text-tertiary)] text-xs font-bold">&#8594; Estable</span>
                   )}
                 </td>
               </tr>
@@ -435,19 +436,19 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   if (!star) {
     return (
       <div>
-        <p className="text-sm font-semibold text-gray-500 flex items-center gap-2">
+        <p className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
           <Flame className="h-4 w-4 text-secondary" /> Producto Estrella
         </p>
-        <p className="text-xs text-gray-400 mt-2">Aun no hay ventas esta semana</p>
+        <p className="text-xs text-[var(--text-tertiary)] mt-2">Aun no hay ventas esta semana</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-linear-to-br from-secondary/5 to-secondary/10 p-4 border border-secondary/20">
+    <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-[var(--rule-base)]">
             <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}
@@ -457,12 +458,12 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
               Mas vendido
             </span>
           </div>
-          <p className="text-lg font-extrabold text-gray-900 truncate">{star.name}</p>
+          <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{star.name}</p>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <span className="text-sm text-gray-500">{star.qty} unidades esta semana</span>
+            <span className="text-sm text-[var(--text-secondary)]">{star.qty} unidades esta semana</span>
             <span className="text-sm font-bold text-primary">S/{star.revenue.toFixed(0)}</span>
             {star.trend !== 0 && (
-              <span className={`text-xs font-bold ${star.trend > 0 ? "text-emerald-600" : "text-red-500"}`}>
+              <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
                 {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{star.trend.toFixed(0)}% vs sem. pasada
               </span>
             )}
@@ -500,12 +501,12 @@ function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
   if (sales.length === 0 && orders.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-3">
+          <svg className="w-5 h-5 text-[var(--data-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-sm text-gray-500">Sin anomalias — Todo marcha bien</p>
+        <p className="text-sm text-[var(--text-secondary)]">Sin anomalias — Todo marcha bien</p>
       </div>
     );
   }

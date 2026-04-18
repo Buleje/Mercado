@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Boxes, Plus, Trash2, Save, Loader2, Package } from "lucide-react";
+import { Boxes, Plus, Trash2, Save, Loader2, Package } from "@buleje/design-system/icons";
 
 type ComboItem = { productId: number; productName: string; quantity: number };
 type Combo = {
@@ -49,9 +50,7 @@ export default function CombosTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <LoadingState />
     );
   }
 
@@ -59,8 +58,8 @@ export default function CombosTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Combos de tu tienda</h2>
-          <p className="text-sm text-gray-500">Agrupa productos con precio especial para aumentar el ticket promedio</p>
+          <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Combos de tu tienda</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)]">Agrupa productos con precio especial para aumentar el ticket promedio</p>
         </div>
         <button
           onClick={() => { setForm(EMPTY); setShowForm(true); }}
@@ -77,30 +76,30 @@ export default function CombosTab() {
           <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
             <Boxes className="h-7 w-7 text-primary" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Sin combos creados</h3>
-          <p className="text-xs text-gray-400 max-w-xs">Crea tu primer combo agrupando productos con un precio especial. Los clientes ven el ahorro al instante.</p>
+          <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-1">Sin combos creados</CardTitle>
+          <p className="text-xs text-[var(--text-tertiary)] max-w-xs">Crea tu primer combo agrupando productos con un precio especial. Los clientes ven el ahorro al instante.</p>
         </div>
       )}
 
       {combos.map((combo) => (
-        <div key={combo.id} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-start gap-4">
+        <div key={combo.id} className="rounded-xl border border-[var(--rule-base)] p-4 flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <Boxes className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-900 dark:text-white">{combo.name}</h3>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${combo.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+              <CardTitle className="font-semibold text-[var(--text-primary)]">{combo.name}</CardTitle>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${combo.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]"}`}>
                 {combo.active ? "Activo" : "Inactivo"}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">{combo.items.length} productos</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{combo.items.length} productos</p>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-lg font-bold text-primary">S/{combo.comboPrice.toFixed(2)}</span>
-              <span className="text-sm text-gray-400 line-through">S/{combo.originalPrice.toFixed(2)}</span>
+              <span className="text-sm text-[var(--text-tertiary)] line-through">S/{combo.originalPrice.toFixed(2)}</span>
             </div>
           </div>
-          <button className="text-red-400 hover:text-red-600 transition-colors p-1">
+          <button className="text-[var(--data-error)] hover:text-[var(--data-error)] transition-colors p-1">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -109,49 +108,49 @@ export default function CombosTab() {
       {/* Create form */}
       {showForm && (
         <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6 space-y-4">
-          <h3 className="font-bold text-gray-900 dark:text-white">Nuevo combo</h3>
+          <CardTitle className="font-bold text-[var(--text-primary)]">Nuevo combo</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Nombre del combo</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)] block mb-1">Nombre del combo</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Ej: Canasta Familiar"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Precio del combo (S/)</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)] block mb-1">Precio del combo (S/)</label>
               <input
                 type="number"
                 step="0.01"
                 value={form.comboPrice || ""}
                 onChange={(e) => setForm({ ...form, comboPrice: Number(e.target.value) })}
                 placeholder="Ej: 45.00"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Descripcion</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] block mb-1">Descripcion</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Describe el combo para tus clientes..."
               rows={2}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
 
           {/* Product selector */}
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-2">Productos en el combo</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)] block mb-2">Productos en el combo</label>
             {form.items.map((item, i) => (
               <div key={i} className="flex items-center gap-2 mb-2">
-                <Package className="h-4 w-4 text-gray-400 shrink-0" />
+                <Package className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
                 <span className="text-sm flex-1">{item.productName}</span>
-                <span className="text-xs text-gray-400">x{item.quantity}</span>
-                <button onClick={() => setForm({ ...form, items: form.items.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600">
+                <span className="text-xs text-[var(--text-tertiary)]">x{item.quantity}</span>
+                <button onClick={() => setForm({ ...form, items: form.items.filter((_, j) => j !== i) })} className="text-[var(--data-error)] hover:text-[var(--data-error)]">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -162,7 +161,7 @@ export default function CombosTab() {
                 if (p) setForm({ ...form, items: [...form.items, { productId: p.id, productName: p.name, quantity: 1 }] });
                 e.target.value = "";
               }}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-500"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)]"
               defaultValue=""
             >
               <option value="" disabled>+ Agregar producto al combo...</option>
@@ -173,7 +172,7 @@ export default function CombosTab() {
           </div>
 
           {discount > 0 && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-700 font-medium">
+            <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-lg px-3 py-2 text-sm text-[var(--data-success)] font-medium">
               Descuento: {discount}% de ahorro para el cliente
             </div>
           )}
@@ -192,7 +191,7 @@ export default function CombosTab() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Guardar combo
             </button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               Cancelar
             </button>
           </div>

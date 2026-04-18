@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import { Unlock, Check, X, ArrowRight } from "lucide-react";
+import { Unlock, Check, X, ArrowRight } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 // ── Beneficios por modulo Pro ──────────────────────────────────────────────────
@@ -199,9 +200,9 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
             </span>
 
             {/* Titulo */}
-            <h2 className="text-white text-2xl font-extrabold leading-tight mb-2">
+            <SectionTitle className="text-white text-2xl font-extrabold leading-tight mb-2">
               Desbloquea {displayName}
-            </h2>
+            </SectionTitle>
 
             {/* Subtitulo */}
             <p className="text-white/80 text-sm mb-6">

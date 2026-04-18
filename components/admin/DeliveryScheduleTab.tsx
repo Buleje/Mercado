@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Clock, MapPin, Save, Plus, Trash2, CheckCircle } from "lucide-react";
+import { Clock, MapPin, Save, Plus, Trash2, CheckCircle } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 
 type DaySchedule = { day: string; open: string; close: string; enabled: boolean };
@@ -91,23 +92,23 @@ export default function DeliveryScheduleTab() {
     setConfig((prev) => ({ ...prev, zones: prev.zones.filter((_, i) => i !== idx) }));
   };
 
-  if (loading) return <div className="text-center py-20 text-gray-500">Cargando...</div>;
+  if (loading) return <div className="text-center py-20 text-[var(--text-secondary)]">Cargando...</div>;
 
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
-          <Clock className="w-5 h-5 text-emerald-400" />
+        <SectionTitle className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
+          <Clock className="w-5 h-5 text-[var(--data-success)]" />
           Horarios y Zonas de Delivery
-        </h2>
+        </SectionTitle>
         <button
           onClick={save}
           disabled={saving}
           className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition ${
             saved
-              ? "bg-green-600 text-white"
-              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              ? "bg-[var(--accent-soft)] text-white"
+              : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white"
           } disabled:opacity-50`}
         >
           {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -116,7 +117,7 @@ export default function DeliveryScheduleTab() {
       </div>
 
       {saveError && (
-        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
+        <div className="flex items-center gap-2 bg-[var(--data-error)]/10 border border-[var(--data-error)]/20 rounded-xl p-3 text-sm text-[var(--data-error)]">
           <span>{saveError}</span>
           <button onClick={save} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
         </div>
@@ -124,10 +125,10 @@ export default function DeliveryScheduleTab() {
 
       {/* Schedule */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-          <Clock className="w-4 h-4 text-amber-400" />
+        <CardTitle className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
+          <Clock className="w-4 h-4 text-[var(--data-warning)]" />
           Horarios por día
-        </h3>
+        </CardTitle>
         <div className="space-y-2">
           {config.hours.map((h, i) => (
             <div
@@ -143,7 +144,7 @@ export default function DeliveryScheduleTab() {
                   type="checkbox"
                   checked={h.enabled}
                   onChange={(e) => updateHour(i, "enabled", e.target.checked)}
-                  className="accent-emerald-500"
+                  className="accent-[var(--data-success)]"
                 />
                 <span className="text-sm text-white font-medium">{h.day}</span>
               </label>
@@ -154,7 +155,7 @@ export default function DeliveryScheduleTab() {
                 disabled={!h.enabled}
                 className="bg-white/10 border border-white/10 rounded px-2 py-1 text-sm text-white disabled:opacity-40"
               />
-              <span className="text-gray-500 text-sm">a</span>
+              <span className="text-[var(--text-secondary)] text-sm">a</span>
               <input
                 type="time"
                 value={h.close}
@@ -170,13 +171,13 @@ export default function DeliveryScheduleTab() {
       {/* Zones */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white flex flex-wrap items-center gap-2">
-            <MapPin className="w-4 h-4 text-green-400" />
+          <CardTitle className="text-sm font-semibold text-white flex flex-wrap items-center gap-2">
+            <MapPin className="w-4 h-4 text-[var(--data-success)]" />
             Zonas de cobertura
-          </h3>
+          </CardTitle>
           <button
             onClick={addZone}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600/20 text-green-300 rounded-lg hover:bg-green-600/30 transition"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--accent-soft)] text-[var(--data-success)] rounded-lg hover:bg-[var(--accent-soft)] transition"
           >
             <Plus className="w-3 h-3" /> Agregar zona
           </button>
@@ -195,7 +196,7 @@ export default function DeliveryScheduleTab() {
                 type="checkbox"
                 checked={z.enabled}
                 onChange={(e) => updateZone(i, "enabled", e.target.checked)}
-                className="accent-green-500"
+                className="accent-[var(--data-success)]"
               />
               <input
                 value={z.name}
@@ -211,10 +212,10 @@ export default function DeliveryScheduleTab() {
                   className="w-16 bg-white/10 border border-white/10 rounded px-2 py-1 text-sm text-white text-center"
                   min={0}
                 />
-                <span className="text-xs text-gray-500">km</span>
+                <span className="text-xs text-[var(--text-secondary)]">km</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">S/</span>
+                <span className="text-xs text-[var(--text-secondary)]">S/</span>
                 <input
                   type="number"
                   value={z.price}
@@ -226,7 +227,7 @@ export default function DeliveryScheduleTab() {
               </div>
               <button
                 onClick={() => removeZone(i)}
-                className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition"
+                className="p-1.5 text-[var(--data-error)] hover:bg-[var(--data-error)]/10 rounded transition"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -237,11 +238,11 @@ export default function DeliveryScheduleTab() {
 
       {/* Free delivery threshold */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-white mb-3">Delivery gratis</h3>
+        <CardTitle className="text-sm font-semibold text-white mb-3">Delivery gratis</CardTitle>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-gray-400">Monto mínimo para delivery gratis:</span>
+          <span className="text-sm text-[var(--text-tertiary)]">Monto mínimo para delivery gratis:</span>
           <div className="flex items-center gap-1">
-            <span className="text-sm text-gray-500">S/</span>
+            <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
               type="number"
               value={config.freeDeliveryMin}

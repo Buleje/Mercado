@@ -19,8 +19,8 @@ import { useTenantActions } from "@/components/superadmin/tenants/useTenantActio
 import type { SortField, SortDir, ViewMode, GrowthEntry } from "@/components/superadmin/tenants/types";
 
 const inputCls =
-  "bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40";
-const selectCls = `appearance-none ${inputCls} pr-8 text-gray-700 dark:text-gray-300 cursor-pointer`;
+  "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+const selectCls = `appearance-none ${inputCls} pr-8 text-[var(--text-secondary)] cursor-pointer`;
 
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<TenantRow[]>([]);
@@ -127,7 +127,7 @@ export default function TenantsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Building2 className="w-6 h-6 text-teal-500" /> Tenants
           </h1>
           <p className="text-gray-500 text-sm mt-1">
@@ -136,34 +136,35 @@ export default function TenantsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mr-2">
+          <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 mr-2">
             {(["tiendas", "crecimiento"] as const).map((tab) => (
               <button key={tab} type="button" onClick={() => setPageTab(tab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${pageTab === tab ? "bg-white dark:bg-gray-700 text-teal-600 dark:text-teal-400 shadow-sm" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${pageTab === tab ? "bg-white dark:bg-gray-700 text-[var(--accent)] shadow-sm" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}>
                 {tab === "tiendas" ? "Tiendas" : "Crecimiento"}
               </button>
             ))}
           </div>
           {pageTab === "tiendas" && (
-            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+            <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1">
               <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-white dark:bg-gray-700 text-teal-600 dark:text-teal-400 shadow-sm" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}>
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-white dark:bg-gray-700 text-[var(--accent)] shadow-sm" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}>
                 <List className="w-4 h-4" />
               </button>
               <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-white dark:bg-gray-700 text-teal-600 dark:text-teal-400 shadow-sm" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}>
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-white dark:bg-gray-700 text-[var(--accent)] shadow-sm" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}>
                 <LayoutGrid className="w-4 h-4" />
               </button>
             </div>
           )}
           <button type="button" onClick={() => void loadTenants()} disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40">
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
           </button>
+          {/* Ola 2: trigger neutro; confirm modal (NuclearResetModal) mantiene danger sólido */}
           <button type="button" onClick={() => setNuclearResetOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-transparent text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
             title="Borrar todos los datos del sistema">
-            <Bomb className="w-4 h-4" /> Limpiar datos
+            <Bomb className="w-4 h-4 text-[var(--text-secondary)]" /> Limpiar datos
           </button>
         </div>
       </div>
@@ -194,7 +195,7 @@ export default function TenantsPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+            <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
               {error}
               <button type="button" onClick={() => void loadTenants()} className="underline hover:no-underline text-xs">Reintentar</button>
             </div>
@@ -247,7 +248,7 @@ export default function TenantsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all ${toast.ok ? "bg-teal-600" : "bg-red-600"}`}>
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${toast.ok ? "bg-teal-600" : "bg-[var(--data-error)]"}`}>
           {toast.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
           {toast.msg}
         </div>

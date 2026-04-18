@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import {
   BarChart3, ClipboardList, CreditCard, LineChart, AlertCircle, WifiOff,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./ai-center.types";
@@ -182,11 +182,11 @@ export default function AICommandCenter() {
   }, [fetchData]);
 
   return (
-    <div className="flex min-h-[600px] bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+    <div className="flex min-h-[600px] bg-[var(--surface-canvas)] rounded-xl border border-[var(--rule-base)] overflow-hidden">
       {/* ── Inline sidebar ──────────────────────────────────────────── */}
-      <aside className="hidden sm:flex w-48 flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/60 shrink-0">
-        <div className="px-3 py-3.5 border-b border-gray-200 dark:border-gray-800">
-          <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+      <aside className="hidden sm:flex w-48 flex-col border-r border-[var(--rule-base)] bg-gray-50/80 dark:bg-gray-900/60 shrink-0">
+        <div className="px-3 py-3.5 border-b border-[var(--rule-base)]">
+          <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
             Centro IA
           </p>
         </div>
@@ -201,18 +201,18 @@ export default function AICommandCenter() {
                 key={s.id}
                 onClick={() => changeSection(s.id)}
                 className={cn(
-                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all mb-0.5",
+                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all mb-0.5",
                   isActive
                     ? "bg-primary/10 text-primary dark:bg-primary/20 font-semibold border-l-[3px] border-primary"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border-l-[3px] border-transparent",
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border-l-[3px] border-transparent",
                 )}
               >
-                <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-gray-400")} />
+                <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-[var(--text-tertiary)]")} />
                 <span className="truncate flex-1 text-left">{s.label}</span>
                 {badge != null && badge > 0 && (
                   <span className={cn(
-                    "text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                    isActive ? "bg-primary/20 text-primary" : "bg-red-500 text-white",
+                    "text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
+                    isActive ? "bg-primary/20 text-primary" : "bg-[var(--data-error)] text-white",
                   )}>
                     {badge > 99 ? "99+" : badge}
                   </span>
@@ -222,15 +222,15 @@ export default function AICommandCenter() {
           })}
         </nav>
 
-        <div className="border-t border-gray-100 dark:border-gray-800 px-3 py-2">
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+        <div className="border-t border-[var(--rule-base)] px-3 py-2">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
             {lastRefresh ? getRelativeTime(lastRefresh) : "Cargando..."}
           </p>
         </div>
       </aside>
 
       {/* ── Mobile nav (visible < sm) ─────────────────────────────── */}
-      <div className="sm:hidden flex items-center gap-1 p-1 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 overflow-x-auto scrollbar-hide w-full absolute top-0 left-0 z-10">
+      <div className="sm:hidden flex items-center gap-1 p-1 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-x-auto scrollbar-hide w-full absolute top-0 left-0 z-10">
         {SECTIONS.map(s => {
           const Icon = s.icon;
           const isActive = activeSection === s.id;
@@ -243,13 +243,13 @@ export default function AICommandCenter() {
                 "relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
                 isActive
                   ? "bg-primary text-white"
-                  : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800",
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               <Icon className="w-3.5 h-3.5" />
               {s.label}
               {badge != null && badge > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full px-1 min-w-4 text-center">
+                <span className="absolute -top-1 -right-1 bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1 min-w-4 text-center">
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
@@ -263,14 +263,14 @@ export default function AICommandCenter() {
         <HITLApprovalsBanner />
 
         {isOffline && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 text-sm">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-b border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
             <WifiOff className="w-4 h-4 shrink-0" />
             <span>Sin conexion. Datos pueden estar desactualizados.</span>
           </div>
         )}
 
         {error && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 text-sm">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--data-error-50)] dark:bg-red-950/30 border-b border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -280,7 +280,7 @@ export default function AICommandCenter() {
           {loading && !data ? (
             <LoadingSkeleton />
           ) : !data ? (
-            <div className="text-center py-12 text-gray-400 text-sm">
+            <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
               No se pudieron cargar los datos. Intenta recargar.
             </div>
           ) : (
@@ -301,7 +301,7 @@ function LoadingSkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="h-32 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+        <div key={i} className="h-32 rounded-lg bg-[var(--surface-sunken)] animate-pulse" />
       ))}
     </div>
   );

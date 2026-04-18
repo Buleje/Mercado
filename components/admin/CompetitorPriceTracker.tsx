@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, Trash2, TrendingUp, TrendingDown, Minus, Search, BarChart3 } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Minus, Search, BarChart3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -174,8 +175,8 @@ export default function CompetitorPriceTracker() {
           <BarChart3 className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Tracker de Competencia</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Tracker de Competencia</SectionTitle>
+          <p className="text-xs text-[var(--text-tertiary)]">
             {data.competitors.length} competidores · {data.products.length} productos
           </p>
         </div>
@@ -184,15 +185,15 @@ export default function CompetitorPriceTracker() {
       {/* Insights */}
       {insights.totalCompared > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
+            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-semibold">
               <TrendingUp className="inline h-3.5 w-3.5 mr-1" />
               Eres más barato en {insights.cheaperCount} de {insights.totalCompared} comparaciones
             </p>
           </div>
           {insights.bestOpportunity && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3">
+              <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
                 Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; S/{insights.bestOpportunity.gap.toFixed(2)} y seguir competitivo
               </p>
             </div>
@@ -228,8 +229,8 @@ export default function CompetitorPriceTracker() {
 
         if (suggestions.length === 0) return null;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-            <p className="text-xs font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+            <p className="text-xs font-bold text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-[#00B4A6]" />
               Sugerencia de Precio Inteligente
             </p>
@@ -239,30 +240,30 @@ export default function CompetitorPriceTracker() {
                 return (
                   <div key={s.productId} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-surface/50">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 dark:text-white truncate">{s.productName}</p>
-                      <p className="text-[10px] text-gray-500">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.productName}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
                         Mi precio: S/{s.myPrice.toFixed(2)} · Promedio: S/{s.avg.toFixed(2)}
                       </p>
                     </div>
                     {s.status === "caro" && (
                       <div className="text-right shrink-0">
-                        <p className="text-[10px] font-bold text-amber-600">S/{Math.abs(s.diff).toFixed(2)} mas caro</p>
-                        <p className="text-[9px] text-gray-400">Sugerido: S/{s.sugerido.toFixed(2)}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">S/{Math.abs(s.diff).toFixed(2)} mas caro</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sugerido: S/{s.sugerido.toFixed(2)}</p>
                       </div>
                     )}
                     {s.status === "barato" && (
                       <div className="text-right shrink-0">
-                        <p className="text-[10px] font-bold text-emerald-600">S/{Math.abs(s.diff).toFixed(2)} mas barato</p>
-                        {s.gananciaExtra > 0 && <p className="text-[9px] text-emerald-500">Puedes subir a S/{s.sugerido.toFixed(2)} (+S/{s.gananciaExtra.toFixed(0)}/mes)</p>}
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)]">S/{Math.abs(s.diff).toFixed(2)} mas barato</p>
+                        {s.gananciaExtra > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)]">Puedes subir a S/{s.sugerido.toFixed(2)} (+S/{s.gananciaExtra.toFixed(0)}/mes)</p>}
                       </div>
                     )}
                     {s.status === "alineado" && (
-                      <span className="text-[10px] text-gray-400 shrink-0">Alineado</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">Alineado</span>
                     )}
                     {s.status !== "alineado" && (
                       <button
                         onClick={() => updateMyPrice(s.productId, s.sugerido)}
-                        className="shrink-0 px-2 py-1 rounded-lg bg-[#00B4A6] text-white text-[10px] font-bold hover:bg-[#245a41] transition-colors"
+                        className="shrink-0 px-2 py-1 rounded-lg bg-[#00B4A6] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#245a41] transition-colors"
                       >
                         Ajustar
                       </button>
@@ -272,9 +273,9 @@ export default function CompetitorPriceTracker() {
               })}
             </div>
             {(caros.length > 0 || baratos.length > 0) && (
-              <div className="mt-3 pt-2 border-t border-gray-100 dark:border-card-border flex gap-3 text-[10px]">
-                {caros.length > 0 && <span className="text-amber-600 font-bold">{caros.length} productos mas caros que la competencia</span>}
-                {baratos.length > 0 && <span className="text-emerald-600 font-bold">{baratos.length} con margen para subir</span>}
+              <div className="mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 text-[length:var(--ts-2xs)]">
+                {caros.length > 0 && <span className="text-[var(--data-warning)] font-bold">{caros.length} productos mas caros que la competencia</span>}
+                {baratos.length > 0 && <span className="text-[var(--data-success)] font-bold">{baratos.length} con margen para subir</span>}
               </div>
             )}
           </div>
@@ -282,8 +283,8 @@ export default function CompetitorPriceTracker() {
       })()}
 
       {/* Add competitor */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">Agregar competidor</p>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">Agregar competidor</p>
         <div className="flex gap-2">
           <input
             type="text"
@@ -291,7 +292,7 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewCompetitor(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCompetitor()}
             placeholder='Ej: "Bodega Pérez", "Market Plaza"'
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <button
             onClick={addCompetitor}
@@ -304,9 +305,9 @@ export default function CompetitorPriceTracker() {
         {data.competitors.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {data.competitors.map(c => (
-              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium text-gray-700 dark:text-gray-300">
+              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium text-[var(--text-secondary)]">
                 {c.name}
-                <button onClick={() => removeCompetitor(c.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                <button onClick={() => removeCompetitor(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </span>
@@ -316,15 +317,15 @@ export default function CompetitorPriceTracker() {
       </div>
 
       {/* Add product */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">Agregar producto a comparar</p>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">Agregar producto a comparar</p>
         <div className="flex gap-2">
           <input
             type="text"
             value={newProduct}
             onChange={e => setNewProduct(e.target.value)}
             placeholder="Nombre del producto"
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <input
             type="number"
@@ -332,7 +333,7 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewMyPrice(e.target.value)}
             placeholder="Mi precio"
             step="0.10"
-            className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <button
             onClick={addProduct}
@@ -347,35 +348,35 @@ export default function CompetitorPriceTracker() {
       {/* Search */}
       {data.products.length > 3 && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
       )}
 
       {/* Price comparison table */}
       {filtered.length > 0 && data.competitors.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-card-border">
+        <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-surface">
-                <th className="text-left px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400">Producto</th>
+                <th className="text-left px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)]">Producto</th>
                 <th className="text-right px-3 py-2.5 text-xs font-bold text-[#00B4A6]">Mi precio</th>
                 {data.competitors.map(c => (
-                  <th key={c.id} className="text-right px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400">{c.name}</th>
+                  <th key={c.id} className="text-right px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)]">{c.name}</th>
                 ))}
-                <th className="text-center px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 w-10"></th>
+                <th className="text-center px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)] w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.map(product => (
                 <tr key={product.productId} className="hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors">
-                  <td className="px-3 py-2.5 font-medium text-gray-900 dark:text-white text-xs">{product.productName}</td>
+                  <td className="px-3 py-2.5 font-medium text-[var(--text-primary)] text-xs">{product.productName}</td>
                   <td className="px-3 py-2.5 text-right">
                     {editingCell?.productId === product.productId && editingCell?.competitorId === "my" ? (
                       <input
@@ -386,7 +387,7 @@ export default function CompetitorPriceTracker() {
                         onBlur={() => { updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         onKeyDown={e => { if (e.key === "Enter") updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         step="0.10"
-                        className="w-20 px-2 py-1 rounded-lg border border-[#00B4A6] text-xs text-right bg-white dark:bg-card focus:outline-none text-gray-900 dark:text-white"
+                        className="w-20 px-2 py-1 rounded-lg border border-[#00B4A6] text-xs text-right bg-white dark:bg-card focus:outline-none text-[var(--text-primary)]"
                       />
                     ) : (
                       <button
@@ -413,20 +414,20 @@ export default function CompetitorPriceTracker() {
                             onBlur={() => updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null)}
                             onKeyDown={e => { if (e.key === "Enter") updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null); }}
                             step="0.10"
-                            className="w-20 px-2 py-1 rounded-lg border border-gray-300 text-xs text-right bg-white dark:bg-card focus:outline-none text-gray-900 dark:text-white"
+                            className="w-20 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-right bg-white dark:bg-card focus:outline-none text-[var(--text-primary)]"
                           />
                         ) : (
                           <button
                             onClick={() => { setEditingCell({ productId: product.productId, competitorId: comp.id }); setEditValue(compPrice != null ? String(compPrice) : ""); }}
-                            className="text-xs text-gray-600 dark:text-gray-400 hover:underline"
+                            className="text-xs text-[var(--text-secondary)] hover:underline"
                           >
                             {compPrice != null ? (
                               <span className="flex items-center justify-end gap-1">
                                 S/{compPrice.toFixed(2)}
                                 {diff && (
                                   <span className={cn(
-                                    "text-[10px] font-bold",
-                                    diff.cheaper ? "text-emerald-500" : "text-red-500"
+                                    "text-[length:var(--ts-2xs)] font-bold",
+                                    diff.cheaper ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                                   )}>
                                     {diff.cheaper ? <TrendingUp className="inline h-3 w-3" /> : <TrendingDown className="inline h-3 w-3" />}
                                     {diff.label}
@@ -434,7 +435,7 @@ export default function CompetitorPriceTracker() {
                                 )}
                               </span>
                             ) : (
-                              <span className="text-gray-300 dark:text-gray-600">
+                              <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
                                 <Minus className="inline h-3 w-3" /> click
                               </span>
                             )}
@@ -446,7 +447,7 @@ export default function CompetitorPriceTracker() {
                   <td className="px-2 py-2.5 text-center">
                     <button
                       onClick={() => removeProduct(product.productId)}
-                      className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -461,7 +462,7 @@ export default function CompetitorPriceTracker() {
 
       {/* Empty state */}
       {data.products.length === 0 && data.competitors.length === 0 && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-600">
+        <div className="text-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-50" />
           <p className="text-sm font-medium">Sin datos de competencia</p>
           <p className="text-xs mt-1">Agrega competidores y productos para empezar a comparar precios.</p>
@@ -469,7 +470,7 @@ export default function CompetitorPriceTracker() {
       )}
 
       {data.products.length === 0 && data.competitors.length > 0 && (
-        <div className="text-center py-8 text-gray-400 dark:text-gray-600">
+        <div className="text-center py-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           <p className="text-sm">Agrega productos para comparar precios con {data.competitors.map(c => c.name).join(", ")}.</p>
         </div>
       )}

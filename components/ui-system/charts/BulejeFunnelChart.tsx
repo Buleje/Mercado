@@ -50,7 +50,7 @@ export const BulejeFunnelChart = memo(function BulejeFunnelChart({
       {(label || sublabel) && (
         <div className="mb-6">
           {label && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {label}
             </p>
           )}
@@ -73,7 +73,7 @@ export const BulejeFunnelChart = memo(function BulejeFunnelChart({
             <div key={stage.label}>
               <div className="flex items-baseline justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)] tabular-nums">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] tabular-nums">
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span className="text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -84,7 +84,7 @@ export const BulejeFunnelChart = memo(function BulejeFunnelChart({
                   <span className="text-lg font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
                     {valueFormat(stage.value)}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)] tabular-nums">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] tabular-nums">
                     {pctOfTop.toFixed(0)}%
                   </span>
                 </div>
@@ -101,14 +101,14 @@ export const BulejeFunnelChart = memo(function BulejeFunnelChart({
                 />
                 {idx > 0 && dropRate != null && dropRate > 0 && (
                   <div className="absolute inset-y-0 right-2 flex items-center">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--data-error,#b91c1c)] tabular-nums">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error,#b91c1c)] tabular-nums">
                       -{dropRate.toFixed(1)}%
                     </span>
                   </div>
                 )}
               </div>
               {stage.sublabel && (
-                <p className="mt-1 text-[10px] text-[var(--text-tertiary)]">{stage.sublabel}</p>
+                <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{stage.sublabel}</p>
               )}
             </div>
           );
@@ -118,7 +118,7 @@ export const BulejeFunnelChart = memo(function BulejeFunnelChart({
       {/* Overall conversion */}
       {stages.length > 1 && (
         <div className="mt-6 pt-4 border-t border-[var(--rule-soft)] flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Conversión total
           </span>
           <span className="text-xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">

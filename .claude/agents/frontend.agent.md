@@ -10,6 +10,7 @@ maxTurns: 40
 memory: project
 permissionMode: acceptEdits
 effort: high
+isolation: worktree
 color: green
 ---
 

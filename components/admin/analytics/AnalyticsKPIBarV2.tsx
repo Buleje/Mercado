@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   RotateCw,
   RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -98,7 +98,7 @@ export default function AnalyticsKPIBarV2() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="h-24 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 animate-pulse p-3"
+            className="h-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse p-3"
           >
             <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
             <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
@@ -112,13 +112,13 @@ export default function AnalyticsKPIBarV2() {
   // ── Error state ──
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center h-24 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-        <p className="text-sm text-red-600 dark:text-red-400 mr-3">
+      <div className="flex items-center justify-center h-24 rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mr-3">
           No se pudieron cargar los KPIs
         </p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800/40 transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] dark:hover:bg-[var(--data-error)]/40 transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -267,37 +267,37 @@ export default function AnalyticsKPIBarV2() {
           <div
             key={card.key}
             className={cn(
-              "rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 flex flex-col justify-between border-l-[3px] transition-shadow hover:shadow-sm",
+              "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 flex flex-col justify-between border-l-[3px] transition-shadow hover:shadow-sm",
               "min-h-[96px]",
               borderColor[card.color]
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate">
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium truncate">
                 {card.label}
               </span>
-              <Icon className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+              <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
             </div>
 
             <div className="flex items-end justify-between gap-1">
               <div className="min-w-0">
-                <p className="text-2xl font-mono font-bold text-gray-900 dark:text-white truncate" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <p className="text-2xl font-mono font-bold text-[var(--text-primary)] truncate" style={{ fontVariantNumeric: "tabular-nums" }}>
                   {card.value}
                 </p>
                 {card.cambio !== undefined ? (
                   <span
                     className={cn(
-                      "text-[10px] font-mono px-2 py-0.5 rounded-full font-medium inline-block mt-0.5",
+                      "text-[length:var(--ts-2xs)] font-mono px-2 py-0.5 rounded-full font-medium inline-block mt-0.5",
                       card.cambio >= 0
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                        : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
                     )}
                   >
                     {card.cambio >= 0 ? "+" : ""}
                     {card.cambio.toFixed(1)}%
                   </span>
                 ) : card.subtitle ? (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate block">
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate block">
                     {card.subtitle}
                   </span>
                 ) : null}

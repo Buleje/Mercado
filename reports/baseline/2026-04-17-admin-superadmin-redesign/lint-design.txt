@@ -1,0 +1,5 @@
+
+> buleje@0.1.1 lint:design
+> tsx scripts/lint-design-tokens.ts
+
+Design tokens clean: 0 violations in 722 files

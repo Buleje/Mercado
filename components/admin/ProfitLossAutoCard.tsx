@@ -1,7 +1,8 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { DollarSign, Loader2, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { DollarSign, Loader2, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ export default function ProfitLossAutoCard() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900  overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -139,17 +140,15 @@ export default function ProfitLossAutoCard() {
 
       {/* Periodo */}
       <div className="px-5 pt-3 pb-0">
-        <p className="text-xs text-gray-500 dark:text-gray-400">{periodLabel}</p>
+        <p className="text-xs text-[var(--text-tertiary)]">{periodLabel}</p>
       </div>
 
       {/* Body */}
       <div className="p-5">
         {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-          </div>
+          <LoadingState />
         ) : error ? (
-          <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] text-center py-6">{error}</p>
         ) : (
           <div className="space-y-2">
             {/* Tabla P&L */}
@@ -159,22 +158,22 @@ export default function ProfitLossAutoCard() {
                 className={cn(
                   "flex items-center justify-between py-2",
                   row.isFinal
-                    ? "border-t-2 border-gray-300 dark:border-gray-600 pt-3 mt-2"
+                    ? "border-t-2 border-[var(--rule-base)] dark:border-gray-600 pt-3 mt-2"
                     : i < rows.length - 2
-                    ? "border-b border-gray-100 dark:border-gray-800"
+                    ? "border-b border-[var(--rule-base)]"
                     : ""
                 )}
               >
                 <span
                   className={cn(
                     "text-sm",
-                    row.indent && "pl-3 text-gray-500 dark:text-gray-400",
-                    row.isFinal && "font-bold text-gray-900 dark:text-white",
-                    !row.indent && !row.isFinal && "text-gray-700 dark:text-gray-300"
+                    row.indent && "pl-3 text-[var(--text-tertiary)]",
+                    row.isFinal && "font-bold text-[var(--text-primary)]",
+                    !row.indent && !row.isFinal && "text-[var(--text-secondary)]"
                   )}
                 >
                   {row.isSubtract && (
-                    <span className="text-gray-400 mr-1">-</span>
+                    <span className="text-[var(--text-tertiary)] mr-1">-</span>
                   )}
                   {row.label}
                 </span>
@@ -183,11 +182,11 @@ export default function ProfitLossAutoCard() {
                     "text-sm font-semibold tabular-nums",
                     row.isFinal
                       ? netProfit >= 0
-                        ? "text-emerald-600 dark:text-emerald-400 text-base"
-                        : "text-red-500 dark:text-red-400 text-base"
+                        ? "text-[var(--data-success)] dark:text-[var(--data-success)] text-base"
+                        : "text-[var(--data-error)] dark:text-[var(--data-error)] text-base"
                       : row.isSubtract
-                      ? "text-red-500 dark:text-red-400"
-                      : "text-gray-800 dark:text-gray-200"
+                      ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      : "text-[var(--text-primary)]"
                   )}
                 >
                   {row.isSubtract ? `- ${fmt(row.amount)}` : fmt(row.amount)}
@@ -196,14 +195,14 @@ export default function ProfitLossAutoCard() {
             ))}
 
             {/* Margen neto */}
-            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="mt-3 pt-3 border-t border-[var(--rule-base)]">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Margen neto</span>
+                <span className="text-xs text-[var(--text-tertiary)]">Margen neto</span>
                 <div className={cn(
                   "flex items-center gap-1 text-sm font-bold",
                   netMargin >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-red-500 dark:text-red-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}>
                   {netMargin >= 0
                     ? <TrendingUp className="h-4 w-4" />
@@ -215,7 +214,7 @@ export default function ProfitLossAutoCard() {
             </div>
 
             {/* Aviso COGS estimado */}
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">
               COGS calculado sobre costo registrado o estimado al 60% si no hay precio de costo.
             </p>
           </div>

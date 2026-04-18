@@ -1,8 +1,9 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw, GraduationCap } from "lucide-react";
+import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw, GraduationCap } from "@buleje/design-system/icons";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
@@ -40,6 +41,12 @@ const DeliveryLiveTab         = dynamic(() => import("@/components/admin/Deliver
 const MarketplaceChatTab      = dynamic(() => import("@/components/admin/ChatTab"),                         { loading: TabSpinner });
 const RendimientoModule       = dynamic(() => import("@/components/admin/unified/RendimientoModule"),       { loading: TabSpinner });
 const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
+
+// ── ENRICH-5 bridges ──────────────────────────────────────────────────────
+const SubscriptionsModule      = dynamic(() => import("@/components/admin/unified/SubscriptionsModule"),     { loading: TabSpinner });
+const GiftCardsAdminModule     = dynamic(() => import("@/components/admin/unified/GiftCardsAdminModule"),    { loading: TabSpinner });
+const SocioMembersAdminModule  = dynamic(() => import("@/components/admin/unified/SocioMembersAdminModule"), { loading: TabSpinner });
+const LivesAdminModule         = dynamic(() => import("@/components/admin/unified/LivesAdminModule"),        { loading: TabSpinner });
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
 const FiadosModule              = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: TabSpinner });
@@ -224,42 +231,42 @@ export function TabRouter({
         <SettingsTab storeMode={storeMode} onModeChange={onModeChange} />
 
         {/* ── Gestión de Equipo ── */}
-        <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5 text-gray-400" />
+            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5 text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Gestión de Equipo</h3>
-              <p className="text-xs text-gray-500 dark:text-muted">Gestiona tu equipo y control de acceso por rol</p>
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Gestión de Equipo</CardTitle>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Gestiona tu equipo y control de acceso por rol</p>
             </div>
           </div>
           <TeamTab />
         </div>
 
         {/* ── Navegación por defecto ── */}
-        <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
-              <SlidersHorizontal className="h-5 w-5 text-gray-400" />
+            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
+              <SlidersHorizontal className="h-5 w-5 text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Navegación</h3>
-              <p className="text-xs text-gray-500 dark:text-muted">Configura que tab se abre por defecto en cada seccion</p>
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Navegación</CardTitle>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Configura que tab se abre por defecto en cada seccion</p>
             </div>
           </div>
           <NavDefaultTabsConfig />
         </div>
 
         {/* ── Reordenar barra lateral ── */}
-        <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
-              <ArrowUpDown className="h-5 w-5 text-gray-400" />
+            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
+              <ArrowUpDown className="h-5 w-5 text-[var(--text-tertiary)]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Reordenar barra lateral</h3>
-              <p className="text-xs text-gray-500 dark:text-muted">Cambia el orden de las secciones en tu menú lateral</p>
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Reordenar barra lateral</CardTitle>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Cambia el orden de las secciones en tu menú lateral</p>
             </div>
           </div>
           <SidebarReorderPanel
@@ -269,15 +276,15 @@ export function TabRouter({
         </div>
 
         {/* ── Repetir tutorial ── */}
-        <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="pt-8 border-t border-[var(--rule-base)] dark:border-card-border">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-11 h-11 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
-                <GraduationCap className="h-5 w-5 text-gray-400" />
+              <div className="w-11 h-11 rounded-xl bg-[var(--surface-sunken)]/40 flex items-center justify-center shrink-0">
+                <GraduationCap className="h-5 w-5 text-[var(--text-tertiary)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 dark:text-foreground text-sm">Tutorial de bienvenida</p>
-                <p className="text-xs text-gray-500 dark:text-muted">Repasa cómo funciona cada sección del panel</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Tutorial de bienvenida</p>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Repasa cómo funciona cada sección del panel</p>
               </div>
             </div>
             <button
@@ -285,7 +292,7 @@ export function TabRouter({
                 onboarding.resetTour();
                 onNavigateTab("asistente-ia");
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100  transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100  transition-colors shrink-0"
             >
               <RefreshCw className="h-4 w-4" />
               Repetir tutorial de bienvenida
@@ -312,6 +319,12 @@ export function TabRouter({
   if (tab === "delivery-partners") return <DeliveryPartnersModule />;
   if (tab === "delivery-live")     return <DeliveryLiveTab />;
   if (tab === "marketplace-chat")  return <MarketplaceChatTab />;
+
+  // ── ENRICH-5 bridges (marketplace admin surfaces) ──
+  if (tab === "subscriptions")     return <SubscriptionsModule />;
+  if (tab === "gift-cards-admin")  return <GiftCardsAdminModule />;
+  if (tab === "socio-members")     return <SocioMembersAdminModule />;
+  if (tab === "lives-admin")       return <LivesAdminModule />;
 
   // ── Rendimiento técnico ──
   if (tab === "rendimiento") return <RendimientoModule />;

@@ -48,7 +48,7 @@ Templates: `.claude/team-templates/`. HOTFIX/FEATURE sin Director.
 
 | Grupo | Comandos |
 |---|---|
-| **Dev** | `npm run dev` · `npm run dev:clean` |
+| **Dev** | `npm run dev` (turbopack, default) · `npm run dev:fast` (alias) · `npm run dev:clean` (kill+lock) · `npm run dev:nuke` (kill+wipe `.next`) |
 | **Check** | `npm run lint` · `npx tsc --noEmit` · `npm run test` · `npm run build` |
 | **DB** | `npm run db:seed` · `npm run db:migrate` (DIRECT_URL) |
 
@@ -58,3 +58,24 @@ Commits: Conventional Commits via Husky (`feat|fix|docs|refactor|perf|test|chore
 
 Minimas: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL`.
 Prod: + `STRIPE_*`, `CRON_SECRET`. Completo en `.env.example`.
+
+---
+
+## Power rules para el agente (velocidad + potencia)
+
+Reglas para que Claude trabaje rapido y eficaz:
+
+1. **Paralelismo maximo**: multiples Agent/Bash/Read en UN mensaje cuando son independientes. Si hay 3+ tareas, invocar `turbo-parallel` skill.
+2. **No matar `node.exe` ni wipear `.next`**: restarts de Turbopack son caros (30-90s). Solo `dev:clean` si hay lock corrupto; `dev:nuke` solo si el cache realmente esta corrupto.
+3. **Grep/Glob antes que `Explore` agent**: Explore es para preguntas open-ended. Target conocido = Grep directo (mas rapido, menos tokens).
+4. **Batch reads**: leer N screenshots o N archivos en una sola tanda paralela, no secuencial.
+5. **Worktrees para `ultra-impact` >50 files**: `isolation: "worktree"` en Agent. Deja el dev server principal intacto.
+6. **Scripts bulk**: antes de auto-inyectar imports a `.tsx`, detectar `"use client"` y poner imports DESPUES del directive (no antes).
+7. **Pre-refactor primitive**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing (ej. PrestamosModule tenia SparklineKPICard interno clonado).
+8. **Visual verify focused**: no correr los 34 tabs cada vez. Script `scripts/visual-verify-admin-focused.mjs` cubre los 9 criticos (~30s).
+9. **Respuestas tipo tabla**: max 100 palabras prosa + tablas + snippets. No narrar deliberacion.
+10. **`HUSKY_SKIP_POSTCOMMIT=1`**: default. Vitest post-commit solo con `HUSKY_RUN_POSTCOMMIT_TESTS=1`. CI ya lo corre.
+11. **`NODE_OPTIONS="--max-old-space-size=8192"`**: ya configurado en pre-commit. Evita SIGKILL en bulk.
+12. **Credenciales QA admin** (para Playwright visual verify): `qaadmin` / `Qa-admin-1234` en tenant `main`. Crear con `node -r dotenv/config scripts/create-qa-admin-raw.mjs`.
+13. **Onboarding modal**: localStorage key real = `onboarding-completed-${tenantSlug}`. Setear a `"1"` en Playwright antes de screenshots.
+14. **Prisma schema drift** (suppliers `ColumnNotFound`): requiere `prisma migrate deploy` con DIRECT_URL accesible. DNS de Supabase directo puede fallar en algunas redes — correr desde red con acceso o aplicar la migration sobrante manualmente.

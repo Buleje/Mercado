@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Percent, DollarSign } from "lucide-react";
+import { Percent, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface POSGlobalDiscountProps {
@@ -58,13 +58,13 @@ export default function POSGlobalDiscount({
   const quickValues = mode === "percent" ? quickPercent : quickFixed;
 
   return (
-    <div className="space-y-2 bg-gray-50 dark:bg-surface rounded-xl p-2.5 border border-gray-100 dark:border-card-border">
+    <div className="space-y-2 bg-gray-50 dark:bg-surface rounded-xl p-2.5 border border-[var(--rule-soft)] dark:border-card-border">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold text-gray-600 dark:text-muted">
+        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
           Descuento:
         </span>
         {/* Toggle % / S/ */}
-        <div className="flex bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg overflow-hidden">
+        <div className="flex bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
           <button
             onClick={() => {
               setMode("percent");
@@ -75,7 +75,7 @@ export default function POSGlobalDiscount({
               "px-2 py-1 text-xs font-bold transition-colors flex items-center gap-0.5",
               mode === "percent"
                 ? "bg-primary text-white"
-                : "text-gray-400 dark:text-muted hover:text-gray-600"
+                : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
             )}
           >
             <Percent className="h-3 w-3" />
@@ -90,7 +90,7 @@ export default function POSGlobalDiscount({
               "px-2 py-1 text-xs font-bold transition-colors flex items-center gap-0.5",
               mode === "fixed"
                 ? "bg-primary text-white"
-                : "text-gray-400 dark:text-muted hover:text-gray-600"
+                : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
             )}
           >
             <DollarSign className="h-3 w-3" />
@@ -104,7 +104,7 @@ export default function POSGlobalDiscount({
           value={value}
           onChange={(e) => handleValueChange(e.target.value)}
           placeholder="0"
-          className="w-16 px-2 py-1 text-xs font-bold border border-gray-200 dark:border-card-border rounded-lg text-gray-900 dark:text-foreground outline-none focus:border-primary text-center"
+          className="w-16 px-2 py-1 text-xs font-bold border border-[var(--rule-base)] dark:border-card-border rounded-lg text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary text-center"
         />
       </div>
 
@@ -115,10 +115,10 @@ export default function POSGlobalDiscount({
             key={q}
             onClick={() => applyQuick(q)}
             className={cn(
-              "px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors",
+              "px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-bold border transition-colors",
               Number(value) === q
                 ? "border-primary bg-primary/10 text-primary"
-                : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-100"
+                : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
             )}
           >
             {mode === "percent" ? `${q}%` : `S/${q}`}
@@ -129,17 +129,17 @@ export default function POSGlobalDiscount({
       {/* Summary */}
       {discountAmount > 0 && (
         <div className="text-xs space-y-0.5">
-          <div className="flex justify-between text-gray-400 dark:text-muted">
+          <div className="flex justify-between text-[var(--text-tertiary)] dark:text-muted">
             <span>Subtotal</span>
             <span>{fmt(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-red-500 font-semibold">
+          <div className="flex justify-between text-[var(--data-error)] font-semibold">
             <span>
               Desc. {mode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}
             </span>
             <span>-{fmt(discountAmount)}</span>
           </div>
-          <div className="flex justify-between text-gray-900 dark:text-foreground font-extrabold border-t border-gray-200 dark:border-card-border pt-1">
+          <div className="flex justify-between text-[var(--text-primary)] dark:text-foreground font-extrabold border-t border-[var(--rule-base)] dark:border-card-border pt-1">
             <span>Total</span>
             <span>{fmt(total)}</span>
           </div>

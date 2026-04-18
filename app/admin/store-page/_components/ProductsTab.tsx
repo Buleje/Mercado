@@ -1,8 +1,9 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Loader2, Search, Star, Eye, EyeOff, Trash2, Plus } from "lucide-react";
+import { Loader2, Search, Star, Eye, EyeOff, Trash2, Plus } from "@buleje/design-system/icons";
 
 type Override = {
   id: string;
@@ -106,13 +107,13 @@ export default function ProductsTab() {
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar producto…"
-            className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+            className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
           />
         </div>
         <button
@@ -120,7 +121,7 @@ export default function ProductsTab() {
             if (catalog.length === 0) await loadCatalog();
             setShowPicker((v) => !v);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white font-semibold text-sm"
         >
           <Plus className="w-4 h-4" />
           Agregar producto
@@ -129,10 +130,10 @@ export default function ProductsTab() {
 
       {/* Picker modal inline */}
       {showPicker && (
-        <section className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10 space-y-2 max-h-96 overflow-y-auto">
+        <section className="p-4 rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] space-y-2 max-h-96 overflow-y-auto">
           <h4 className="font-bold text-sm mb-2">Selecciona un producto del inventario</h4>
           {catalogFiltered.length === 0 ? (
-            <p className="text-sm text-gray-500">Sin resultados</p>
+            <p className="text-sm text-[var(--text-secondary)]">Sin resultados</p>
           ) : (
             catalogFiltered.map((p) => (
               <button
@@ -148,11 +149,11 @@ export default function ProductsTab() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm truncate">{p.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     S/{p.price.toFixed(2)} · {p.category}
                   </p>
                 </div>
-                <Plus className="w-4 h-4 text-emerald-600" />
+                <Plus className="w-4 h-4 text-[var(--data-success)]" />
               </button>
             ))
           )}
@@ -161,11 +162,9 @@ export default function ProductsTab() {
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-        </div>
+        <LoadingState />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 text-sm">
+        <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
           Todavía no hay productos destacados. Agregá uno con el botón arriba.
         </div>
       ) : (
@@ -206,7 +205,7 @@ function OverrideRow({
   const [dirty, setDirty] = useState(false);
 
   return (
-    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center gap-4 flex-wrap">
+    <div className="p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center gap-4 flex-wrap">
       <div className="relative w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
         {override.productImage && (
           <Image
@@ -220,10 +219,10 @@ function OverrideRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-sm truncate">{override.productName}</p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-[var(--text-secondary)]">
           Precio base: <span className="font-mono">S/{override.productBasePrice.toFixed(2)}</span>
           {override.savingsPercent != null && override.savingsPercent > 0 && (
-            <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">
+            <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-[length:var(--ts-2xs)] font-bold">
               -{override.savingsPercent}%
             </span>
           )}
@@ -231,7 +230,7 @@ function OverrideRow({
       </div>
 
       <label className="flex items-center gap-2 text-xs">
-        <span className="text-gray-500">Precio exclusivo S/</span>
+        <span className="text-[var(--text-secondary)]">Precio exclusivo S/</span>
         <input
           type="number"
           step="0.01"
@@ -251,12 +250,12 @@ function OverrideRow({
             setDirty(false);
           }}
           placeholder="—"
-          className="w-20 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-mono"
+          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono"
         />
       </label>
 
       <label className="flex items-center gap-2 text-xs">
-        <span className="text-gray-500">Badge</span>
+        <span className="text-[var(--text-secondary)]">Badge</span>
         <input
           type="text"
           maxLength={40}
@@ -274,7 +273,7 @@ function OverrideRow({
             setDirty(false);
           }}
           placeholder="—"
-          className="w-24 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs"
+          className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
         />
       </label>
 
@@ -288,8 +287,8 @@ function OverrideRow({
         title="Destacado"
         className={`p-2 rounded-lg transition-colors ${
           override.featured
-            ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30"
-            : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30"
+            : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
         }`}
       >
         <Star
@@ -308,8 +307,8 @@ function OverrideRow({
         title={override.visible ? "Visible" : "Oculto"}
         className={`p-2 rounded-lg transition-colors ${
           override.visible
-            ? "bg-green-100 text-green-600 dark:bg-green-900/30"
-            : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)]"
+            : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
         }`}
       >
         {override.visible ? (
@@ -322,7 +321,7 @@ function OverrideRow({
       <button
         onClick={() => onRemove(override.productId)}
         title="Eliminar"
-        className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20"
+        className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/20"
       >
         <Trash2 className="w-4 h-4" />
       </button>

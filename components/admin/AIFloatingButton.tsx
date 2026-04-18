@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bot, X } from "lucide-react";
+import { Bot, X } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
@@ -49,8 +49,8 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
   }, []);
 
   const healthColor = healthScore !== null
-    ? healthScore > 70 ? "bg-emerald-500" : healthScore > 40 ? "bg-amber-500" : "bg-red-500"
-    : "bg-emerald-500";
+    ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+    : "bg-[var(--accent-soft)]";
 
   return (
     <>
@@ -59,9 +59,9 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
         onClick={() => setOpen(!open)}
         className={cn(
           "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-xl",
-          "flex items-center justify-center transition-all duration-300",
-          "bg-linear-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white",
-          "hover:scale-105 hover:shadow-violet-500/30",
+          "flex items-center justify-center transition-all duration-[var(--dur-base)]",
+          "bg-[var(--text-primary)] hover:opacity-90 text-[var(--surface-canvas)]",
+          "hover:scale-105",
           open && "rounded-xl",
           hasUnread && !open && "animate-bounce"
         )}
@@ -77,7 +77,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
 
         {/* Alert badge */}
         {alertCount > 0 && !open && (
-          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 bg-red-500 rounded-full border-2 border-white dark:border-card text-[9px] font-bold flex items-center justify-center text-white px-1 ">
+          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 bg-[var(--data-error)] rounded-full border-2 border-white dark:border-card text-[length:var(--ts-2xs)] font-bold flex items-center justify-center text-white px-1 ">
             {alertCount}
           </span>
         )}
@@ -93,7 +93,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
 
         {/* Mini health label */}
         {healthScore !== null && !open && alertCount === 0 && (
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-white dark:bg-card text-gray-700 dark:text-gray-300 px-1.5 rounded-full border border-gray-200 dark:border-card-border ">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-bold bg-white dark:bg-card text-[var(--text-secondary)] px-1.5 rounded-full border border-[var(--rule-base)] dark:border-card-border ">
             {healthScore}%
           </span>
         )}
@@ -107,7 +107,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-24 right-6 z-50 w-105 h-140 max-h-[80vh] rounded-xl border border-gray-200 dark:border-card-border overflow-hidden bg-white dark:bg-card"
+            className="fixed bottom-24 right-6 z-50 w-105 h-140 max-h-[80vh] rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden bg-white dark:bg-card"
           >
             <AIAssistant
               embedded

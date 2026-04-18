@@ -6,7 +6,7 @@ import {
   Search, TrendingDown, TrendingUp, RefreshCw,
   Undo2, Plus, ShoppingCart, Globe, Minus, AlertTriangle, ArrowLeftRight, HelpCircle,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ export default function SimpleMovementsTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-sm text-gray-400">
+      <div className="flex items-center justify-center py-20 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando movimientos...
       </div>
     );
@@ -141,41 +141,41 @@ export default function SimpleMovementsTab() {
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
-          <Package className="h-5 w-5 text-emerald-600 mb-1" />
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Movimientos hoy</p>
-          <p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">{stats.todayCount}</p>
+        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+          <Package className="h-5 w-5 text-[var(--data-success)] mb-1" />
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Movimientos hoy</p>
+          <p className="text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{stats.todayCount}</p>
         </div>
-        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
-          <ArrowUpCircle className="h-5 w-5 text-emerald-600 mb-1" />
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Entradas hoy</p>
-          <p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">+{stats.entries}</p>
+        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+          <ArrowUpCircle className="h-5 w-5 text-[var(--data-success)] mb-1" />
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Entradas hoy</p>
+          <p className="text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">+{stats.entries}</p>
         </div>
-        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-4">
-          <ArrowDownCircle className="h-5 w-5 text-amber-600 mb-1" />
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Salidas hoy</p>
-          <p className="text-2xl font-extrabold text-amber-700 dark:text-amber-400">−{stats.exits}</p>
+        <div className="rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 p-4">
+          <ArrowDownCircle className="h-5 w-5 text-[var(--data-warning)] mb-1" />
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Salidas hoy</p>
+          <p className="text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">−{stats.exits}</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
-        <div className="flex gap-1 rounded-xl border border-gray-200 dark:border-card-border p-0.5">
+        <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] dark:border-card-border p-0.5">
           {([["all", "Todos"], ["in", "Entradas"], ["out", "Salidas"]] as const).map(([v, l]) => (
             <button
               key={v}
               onClick={() => setFilterDir(v)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                filterDir === v ? "bg-primary text-white" : "text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface"
+                filterDir === v ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface"
               )}
             >
               {l}
@@ -184,7 +184,7 @@ export default function SimpleMovementsTab() {
         </div>
         <button
           onClick={() => void loadData()}
-          className="p-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           title="Refrescar"
         >
           <RefreshCw className="h-4 w-4" />
@@ -195,29 +195,29 @@ export default function SimpleMovementsTab() {
             tipo: m.label, cantidad: m.dir === "in" ? `+${m.quantity}` : `-${m.quantity}`,
             stock_resultado: m.newStock,
           })), `movimientos_${new Date().toISOString().slice(0, 10)}.csv`)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
         >
           <Download className="h-3.5 w-3.5" /> Excel
         </button>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Cuándo</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Qué pasó</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Cantidad</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Stock ahora</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Cuándo</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Qué pasó</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Cantidad</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Stock ahora</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-400 dark:text-muted">
+                  <td colSpan={5} className="px-4 py-12 text-center text-[var(--text-tertiary)] dark:text-muted">
                     <Package className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     <p className="font-medium">Sin movimientos</p>
                   </td>
@@ -226,16 +226,16 @@ export default function SimpleMovementsTab() {
               {filtered.map(m => (
                 <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                   <td className="px-4 py-3">
-                    <p className="text-xs font-semibold text-gray-700 dark:text-foreground">{fmtRelative(m.createdAt)}</p>
-                    <p className="text-[10px] text-gray-400 dark:text-muted">{fmtDate(m.createdAt)}</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtRelative(m.createdAt)}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{fmtDate(m.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-gray-900 dark:text-foreground truncate max-w-[180px] block">{m.productName}</span>
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[180px] block">{m.productName}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-                      m.dir === "in" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+                      m.dir === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                        : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]"
                     )}>
                       <m.Icon className="h-3 w-3" strokeWidth={1.75} />
                       {m.label}
@@ -243,14 +243,14 @@ export default function SimpleMovementsTab() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("text-sm font-extrabold",
-                      m.dir === "in" ? "text-emerald-600" : "text-red-500"
+                      m.dir === "in" ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                     )}>
                       {m.dir === "in" ? `+${m.quantity}` : `−${m.quantity}`}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("text-sm font-bold",
-                      m.newStock === 0 ? "text-red-500" : m.newStock <= 5 ? "text-amber-500" : "text-gray-800 dark:text-foreground"
+                      m.newStock === 0 ? "text-[var(--data-error)]" : m.newStock <= 5 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground"
                     )}>
                       {m.newStock}
                     </span>
@@ -261,7 +261,7 @@ export default function SimpleMovementsTab() {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-4 py-2 border-t border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface text-xs text-gray-400">
+          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface text-xs text-[var(--text-tertiary)]">
             Mostrando {filtered.length} de {enriched.length} movimientos
           </div>
         )}

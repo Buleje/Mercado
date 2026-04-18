@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Plus, Trash2, Search, Clock, Check, X } from "lucide-react";
+import { Plus, Trash2, Search, Clock, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -53,9 +54,9 @@ function getStatus(schedule: PriceSchedule): ScheduleStatus {
 }
 
 const STATUS_UI: Record<ScheduleStatus, { label: string; color: string; dot: string }> = {
-  programado: { label: "Programado", color: "text-emerald-600 dark:text-emerald-400",    dot: "bg-emerald-500" },
-  activo:     { label: "Activo",     color: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
-  expirado:   { label: "Expirado",   color: "text-gray-400 dark:text-gray-600",    dot: "bg-gray-400" },
+  programado: { label: "Programado", color: "text-[var(--data-success)] dark:text-[var(--data-success)]",    dot: "bg-[var(--accent-soft)]" },
+  activo:     { label: "Activo",     color: "text-[var(--data-success)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
+  expirado:   { label: "Expirado",   color: "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]",    dot: "bg-gray-400" },
 };
 
 function fmt(n: number) { return "S/ " + n.toFixed(2); }
@@ -126,13 +127,13 @@ function ProductSearchInput({
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
         <input
           type="text"
           value={query}
           onChange={e => handleChange(e.target.value)}
           placeholder="Buscar producto..."
-          className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
@@ -140,22 +141,22 @@ function ProductSearchInput({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           {results.map(p => (
             <button
               key={p.id}
               onClick={() => handleSelect(p)}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:bg-[var(--surface-sunken)] transition-colors"
             >
-              <span className="text-gray-800 dark:text-gray-200 truncate">{p.name}</span>
-              <span className="text-gray-500 dark:text-gray-400 shrink-0 ml-2">{fmt(p.price)}</span>
+              <span className="text-[var(--text-primary)] truncate">{p.name}</span>
+              <span className="text-[var(--text-tertiary)] shrink-0 ml-2">{fmt(p.price)}</span>
             </button>
           ))}
         </div>
       )}
 
       {open && results.length === 0 && !loading && query.length >= 2 && (
-        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
+        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-4 py-3 text-sm text-[var(--text-tertiary)]">
           Sin resultados para &ldquo;{query}&rdquo;
         </div>
       )}
@@ -208,26 +209,26 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
     : null;
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  space-y-4">
-      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Nuevo cambio programado</p>
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-4">
+      <p className="text-sm font-semibold text-[var(--text-secondary)]">Nuevo cambio programado</p>
 
       {/* Product search */}
       <div className="space-y-1">
-        <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Producto</label>
+        <label className="text-xs font-medium text-[var(--text-tertiary)]">Producto</label>
         <ProductSearchInput onSelect={p => { setForm(f => ({ ...f, product: p })); }} />
-        {errors.product && <p className="text-xs text-red-500">{errors.product}</p>}
+        {errors.product && <p className="text-xs text-[var(--data-error)]">{errors.product}</p>}
       </div>
 
       {/* Current vs new price */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Precio actual</label>
-          <div className="px-3 py-2 rounded-xl border border-gray-100 dark:border-card-border/50 bg-gray-50 dark:bg-gray-900/50 text-sm text-gray-500 dark:text-gray-400">
+          <label className="text-xs font-medium text-[var(--text-tertiary)]">Precio actual</label>
+          <div className="px-3 py-2 rounded-xl border border-[var(--rule-soft)] dark:border-card-border/50 bg-[var(--surface-canvas)]/50 text-sm text-[var(--text-tertiary)]">
             {form.product ? fmt(form.product.price) : "—"}
           </div>
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Precio nuevo (S/)</label>
+          <label className="text-xs font-medium text-[var(--text-tertiary)]">Precio nuevo (S/)</label>
           <input
             type="number"
             min="0.01"
@@ -236,11 +237,11 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, newPrice: e.target.value }))}
             placeholder="0.00"
             className={cn(
-              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-              errors.newPrice ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+              errors.newPrice ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
-          {errors.newPrice && <p className="text-xs text-red-500">{errors.newPrice}</p>}
+          {errors.newPrice && <p className="text-xs text-[var(--data-error)]">{errors.newPrice}</p>}
         </div>
       </div>
 
@@ -249,8 +250,8 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
         <div className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium",
           Number(priceDiff) > 0
-            ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-            : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+            ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
+            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
         )}>
           {Number(priceDiff) > 0 ? "Aumento" : "Descuento"} de {Math.abs(Number(priceDiff))}% ({Number(priceDiff) > 0 ? "+" : ""}{(Number(form.newPrice) - (form.product?.price ?? 0)).toFixed(2)})
         </div>
@@ -259,37 +260,37 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
       {/* Dates */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha de inicio</label>
+          <label className="text-xs font-medium text-[var(--text-tertiary)]">Fecha de inicio</label>
           <input
             type="datetime-local"
             value={form.startDate}
             onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
             className={cn(
-              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-              errors.startDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+              errors.startDate ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
-          {errors.startDate && <p className="text-xs text-red-500">{errors.startDate}</p>}
+          {errors.startDate && <p className="text-xs text-[var(--data-error)]">{errors.startDate}</p>}
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha de fin (opcional)</label>
+          <label className="text-xs font-medium text-[var(--text-tertiary)]">Fecha de fin (opcional)</label>
           <input
             type="datetime-local"
             value={form.endDate}
             onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
             className={cn(
-              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-              errors.endDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+              errors.endDate ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
-          {errors.endDate && <p className="text-xs text-red-500">{errors.endDate}</p>}
+          {errors.endDate && <p className="text-xs text-[var(--data-error)]">{errors.endDate}</p>}
         </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           Cancelar
         </button>
@@ -342,8 +343,8 @@ export default function PriceScheduler() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Programador de Precios</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Programador de Precios</SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Programa cambios de precio automaticos con fecha de inicio y fin
           </p>
         </div>
@@ -353,7 +354,7 @@ export default function PriceScheduler() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             showForm
-              ? "bg-gray-100 text-gray-400 dark:bg-gray-800 cursor-not-allowed"
+              ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 cursor-not-allowed"
               : "bg-[#00B4A6] text-white hover:bg-[#245a41]"
           )}
         >
@@ -374,14 +375,14 @@ export default function PriceScheduler() {
                 "bg-white dark:bg-card border rounded-xl p-3 text-left transition-colors",
                 filter === st
                   ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20"
-                  : "border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-gray-600"
+                  : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300 dark:hover:border-gray-600"
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <div className={cn("w-2 h-2 rounded-full", ui.dot)} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{ui.label}</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{ui.label}</span>
               </div>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{counts[st]}</p>
+              <p className="text-xl font-bold text-[var(--text-primary)]">{counts[st]}</p>
             </button>
           );
         })}
@@ -393,7 +394,7 @@ export default function PriceScheduler() {
 
       {/* List */}
       {filtered.length === 0 && !showForm && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-600">
+        <div className="text-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           <Clock className="w-8 h-8 mx-auto mb-2" />
           <p className="text-sm">Sin cambios {filter !== "todos" ? `en estado "${STATUS_UI[filter as ScheduleStatus].label}"` : "programados"}.</p>
         </div>
@@ -411,7 +412,7 @@ export default function PriceScheduler() {
               key={schedule.id}
               className={cn(
                 "bg-white dark:bg-card border rounded-xl p-4  transition-opacity",
-                status === "expirado" ? "border-gray-100 dark:border-card-border/50 opacity-70" : "border-gray-200 dark:border-card-border"
+                status === "expirado" ? "border-[var(--rule-soft)] dark:border-card-border/50 opacity-70" : "border-[var(--rule-base)] dark:border-card-border"
               )}
             >
               <div className="flex flex-wrap items-start gap-3">
@@ -422,20 +423,20 @@ export default function PriceScheduler() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{schedule.productName}</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{schedule.productName}</p>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
-                    <span className="text-xs text-gray-400 dark:text-gray-500 line-through">{fmt(schedule.currentPrice)}</span>
-                    <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{fmt(schedule.newPrice)}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] line-through">{fmt(schedule.currentPrice)}</span>
+                    <span className="text-xs font-semibold text-[var(--text-primary)]">{fmt(schedule.newPrice)}</span>
                     <span className={cn(
                       "text-xs font-medium px-1.5 py-0.5 rounded-md",
                       isUp
-                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                        : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
+                        : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                     )}>
                       {isUp ? "+" : ""}{diff}%
                     </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-[var(--text-tertiary)]">
                     <span className="flex items-center gap-1">
                       <Check className="w-3 h-3" />
                       Inicio: {new Date(schedule.startDate).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -446,14 +447,14 @@ export default function PriceScheduler() {
                         Fin: {new Date(schedule.endDate).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </span>
                     )}
-                    {!schedule.endDate && <span className="text-gray-300 dark:text-gray-700">Sin fecha de fin</span>}
+                    {!schedule.endDate && <span className="text-[var(--text-tertiary)] dark:text-[var(--text-primary)]">Sin fecha de fin</span>}
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleDelete(schedule.id)}
                   title="Eliminar"
-                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

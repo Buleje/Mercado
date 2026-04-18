@@ -4,8 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight, Store as StoreIcon, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
+import { DoniaElena, CuadernoFiadoReal } from "@/components/ui-system/illustrations/pucallpa-locals";
+import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
+
+/** Rotacion deterministica de ilustraciones para featured stores sin logo. */
+function FeaturedIllustration({ id, className }: { id: string; className?: string }) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  const pick = Math.abs(hash) % 5;
+  const common = { size: 120, strokeWidth: 1.5, className } as const;
+  if (pick === 0) return <BodegaAbriendo {...common} />;
+  if (pick === 1) return <DoniaElena {...common} />;
+  if (pick === 2) return <CuadernoFiadoReal {...common} />;
+  if (pick === 3) return <BodegueroCelebrando {...common} />;
+  return <MotoRuta {...common} />;
+}
 
 export interface FeaturedStore {
   id: string;
@@ -67,7 +83,7 @@ export default function FeaturedStoresCarousel({ stores }: Props) {
         className={cn(
           "hidden md:flex absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10",
           "h-11 w-11 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
-          "items-center justify-center shadow-lg",
+          "items-center justify-center shadow-[var(--shadow-md)]",
           "transition-all hover:scale-105",
           "disabled:opacity-0 disabled:pointer-events-none",
         )}
@@ -82,7 +98,7 @@ export default function FeaturedStoresCarousel({ stores }: Props) {
         className={cn(
           "hidden md:flex absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-10",
           "h-11 w-11 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
-          "items-center justify-center shadow-lg",
+          "items-center justify-center shadow-[var(--shadow-md)]",
           "transition-all hover:scale-105",
           "disabled:opacity-0 disabled:pointer-events-none",
         )}
@@ -97,69 +113,63 @@ export default function FeaturedStoresCarousel({ stores }: Props) {
               key={store.id}
               href={`/marketplace/${store.slug}`}
               className={cn(
-                "group shrink-0 basis-[48%] sm:basis-[32%] lg:basis-[18%]",
-                "bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700",
-                "p-4 text-center transition-all hover-lift hover:border-primary/40",
+                "group shrink-0 basis-[72%] sm:basis-[46%] lg:basis-[22%]",
+                "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)]",
+                "overflow-hidden transition-all hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5",
               )}
             >
-              <div className="relative w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 group-hover:scale-105 transition-transform duration-300">
+              {/* Illustration / logo area grande */}
+              <div className="relative aspect-[4/3] w-full bg-[var(--surface-sunken)] flex items-center justify-center">
                 {store.logo ? (
-                  <Image
-                    src={store.logo}
-                    alt={store.name}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-primary">
-                    <StoreIcon className="h-8 w-8" />
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-card border border-[var(--rule-base)]">
+                    <Image
+                      src={store.logo}
+                      alt={store.name}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                    />
                   </div>
+                ) : (
+                  <FeaturedIllustration
+                    id={store.id}
+                    className="text-[var(--text-tertiary)] opacity-70 group-hover:opacity-85 transition-opacity"
+                  />
                 )}
               </div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                {store.name}
-              </h3>
-              {store.rating > 0 && (
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 tabular-nums">
-                    {store.rating.toFixed(1)}
+
+              {/* Info content */}
+              <div className="p-4">
+                {/* Kicker mini teal "BODEGA DESTACADA" + separador */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                    Bodega destacada
                   </span>
-                  <span className="text-xs text-gray-400">
-                    ({store.reviewCount})
-                  </span>
+                  <span className="flex-1 h-px bg-[var(--rule-soft)]" />
                 </div>
-              )}
-              {store.zone && (
-                <p className="text-xs text-gray-400 mt-1 capitalize truncate">
-                  {store.zone.replace(/-/g, " ")}
-                </p>
-              )}
-              {store.products && store.products.length > 0 && (
-                <div className="flex items-center justify-center mt-2">
-                  {store.products.slice(0, 4).map((sp, i) => (
-                    <div
-                      key={i}
-                      className="h-7 w-7 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden shrink-0 border-2 border-white dark:border-gray-800"
-                      style={{ marginLeft: i > 0 ? "-6px" : "0" }}
-                      title={sp.product.name}
-                    >
-                      {sp.product.image ? (
-                        <Image
-                          src={sp.product.image}
-                          alt=""
-                          width={28}
-                          height={28}
-                          className="h-7 w-7 object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full" />
-                      )}
-                    </div>
-                  ))}
+
+                <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">
+                  {store.name}
+                </h3>
+
+                <div className="flex items-center gap-2 mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                  {store.rating > 0 && (
+                    <span className="inline-flex items-center gap-1 tabular-nums">
+                      <Star className="h-3 w-3 fill-current text-[var(--accent)]" />
+                      {store.rating.toFixed(1)}
+                      <span className="opacity-70">({store.reviewCount})</span>
+                    </span>
+                  )}
+                  {store.zone && (
+                    <>
+                      <span className="opacity-40">·</span>
+                      <span className="capitalize truncate">
+                        {store.zone.replace(/-/g, " ")}
+                      </span>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
             </Link>
           ))}
         </div>

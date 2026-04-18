@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { CardTitle } from "@buleje/design-system";
 import {
   AreaChart,
   Area,
@@ -33,27 +34,27 @@ function RevenueChart({
   prefix = "S/",
 }: RevenueChartProps) {
   return (
-    <div className="col-span-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+    <div className="col-span-full bg-white dark:bg-zinc-900 border border-[var(--rule-base)] dark:border-zinc-800 rounded-xl p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+          <CardTitle as="h2" className="text-sm font-semibold">
             {title}
-          </h2>
-          <p className="text-xs text-gray-400 mt-0.5">{period}</p>
-          <p className="text-4xl font-bold text-gray-900 dark:text-white mt-3">
+          </CardTitle>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{period}</p>
+          <p className="text-4xl font-bold text-[var(--text-primary)] mt-3">
             {prefix}
             {currentValue.toLocaleString("es-PE", {
               minimumFractionDigits: 2,
             })}
           </p>
-          <p className="text-xs text-gray-400 mt-1">{currentLabel}</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">{currentLabel}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           {objective !== undefined && (
             <div className="text-right">
-              <p className="text-xs text-gray-400">Objetivo</p>
-              <p className="text-sm font-medium text-gray-500">
+              <p className="text-xs text-[var(--text-tertiary)]">Objetivo</p>
+              <p className="text-sm font-medium text-[var(--text-secondary)]">
                 {prefix}
                 {objective.toLocaleString("es-PE")}
               </p>
@@ -63,7 +64,7 @@ function RevenueChart({
             <span
               className={cn(
                 "text-xs font-medium",
-                mom >= 0 ? "text-emerald-600" : "text-red-500"
+                mom >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
               )}
             >
               {mom >= 0 ? "\u25B2" : "\u25BC"} {Math.abs(mom).toFixed(1)}% MoM
@@ -77,8 +78,8 @@ function RevenueChart({
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+              <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -108,7 +109,7 @@ function RevenueChart({
           <Area
             type="monotone"
             dataKey="value"
-            stroke="#10b981"
+            stroke="#00B4A6"
             strokeWidth={2}
             fill="url(#emeraldGradient)"
           />

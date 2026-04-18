@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Send, Paperclip } from "lucide-react";
+import { Send, Paperclip } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
@@ -92,7 +92,7 @@ export function MessageComposer({
         </button>
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400">
+      <div className="mt-1.5 flex items-center justify-between text-[length:var(--ts-2xs)] text-slate-400">
         <span>Enter para enviar · Shift+Enter para salto de línea</span>
         <span>{body.length}/4000</span>
       </div>

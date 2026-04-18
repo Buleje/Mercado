@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Calendar, ChevronDown } from "lucide-react";
+import { Calendar, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       {/* Preset pills */}
-      <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+      <div className="flex items-center gap-0.5 bg-[var(--surface-sunken)] rounded-lg p-0.5">
         {PRESETS.map(p => (
           <button
             key={p.id}
@@ -112,8 +112,8 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap",
               value.preset === p.id && !showCustom
-                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
-                : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
+                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
             )}
           >
             <span className="hidden sm:inline">{p.label}</span>
@@ -125,8 +125,8 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
           className={cn(
             "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
             showCustom
-              ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
-              : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
+              ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
           )}
           title="Rango personalizado"
         >
@@ -137,26 +137,26 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
 
       {/* Custom range inputs */}
       {showCustom && (
-        <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-200">
+        <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]">
           <input
             type="date"
             value={toInputDate(value.from)}
             onChange={handleCustomFrom}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-xs text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
           />
-          <span className="text-xs text-gray-400 dark:text-muted font-medium">a</span>
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-medium">a</span>
           <input
             type="date"
             value={toInputDate(value.to)}
             onChange={handleCustomTo}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-xs text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
           />
         </div>
       )}
 
       {/* Range label for custom */}
       {rangeLabel && !showCustom && (
-        <span className="text-[10px] text-gray-400 dark:text-muted">{rangeLabel}</span>
+        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{rangeLabel}</span>
       )}
     </div>
   );

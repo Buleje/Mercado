@@ -162,7 +162,7 @@ async function fetchMeteringSnapshot(
 function MeteringCardSkeleton() {
   return (
     <div
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 animate-pulse"
+      className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 animate-pulse"
       aria-busy="true"
       aria-label="Cargando métricas de facturación"
     >
@@ -174,7 +174,7 @@ function MeteringCardSkeleton() {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-36 rounded-xl bg-gray-100 dark:bg-gray-800"
+            className="h-36 rounded-xl bg-[var(--surface-sunken)]"
             aria-hidden="true"
           />
         ))}

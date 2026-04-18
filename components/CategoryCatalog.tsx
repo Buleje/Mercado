@@ -28,6 +28,7 @@ import {
 import { getProductSlug, categories } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import useProductAnalyticsTracking from "@/hooks/useProductAnalyticsTracking";
+import { getCategoryIcon } from "@/lib/category-icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
@@ -511,16 +512,19 @@ export default function CategoryCatalog({
 
         {/* Other categories */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {otherCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/tienda/categoria/${cat.id}`}
-              className="shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-sm"
-            >
-              <span className="text-base">{cat.emoji}</span>
-              {cat.label}
-            </Link>
-          ))}
+          {otherCategories.map((cat) => {
+            const Icon = getCategoryIcon(cat.id);
+            return (
+              <Link
+                key={cat.id}
+                href={`/tienda/categoria/${cat.id}`}
+                className="shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-sm"
+              >
+                <Icon size={18} className="text-[var(--text-secondary)] hover:text-[var(--accent)]" />
+                {cat.label}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Search + Sort + Filters */}
