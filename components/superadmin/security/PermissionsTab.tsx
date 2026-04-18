@@ -192,7 +192,7 @@ export function PermissionsTab() {
               <tr>
                 <td colSpan={2 + RBAC_ROLES.length}>
                   <Caption className="block py-6 text-center text-[var(--text-tertiary)]">
-                    Sin resultados para "{filter}"
+                    Sin resultados para &ldquo;{filter}&rdquo;
                   </Caption>
                 </td>
               </tr>
