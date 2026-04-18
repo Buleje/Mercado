@@ -36,7 +36,7 @@ interface DriverData {
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType; next?: string; nextLabel?: string }> = {
   assigned:   { label: "Asignado",  color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/30",    icon: Clock,       next: "picked_up",  nextLabel: "Recogí el pedido" },
-  picked_up:  { label: "Recogido",  color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-950/30",      icon: Package,     next: "in_transit", nextLabel: "Estoy en camino" },
+  picked_up:  { label: "Recogido",  color: "text-emerald-600",    bg: "bg-emerald-50 dark:bg-emerald-950/30",      icon: Package,     next: "in_transit", nextLabel: "Estoy en camino" },
   in_transit: { label: "En camino", color: "text-teal-600",    bg: "bg-teal-50 dark:bg-teal-950/30",      icon: Navigation,  next: "delivered",  nextLabel: "Entregué el pedido" },
   delivered:  { label: "Entregado", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
 };
@@ -242,7 +242,7 @@ export default function DriverDashboardPage() {
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.customerLocation)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 text-xs font-semibold"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 text-xs font-semibold"
                           >
                             <Navigation className="h-3.5 w-3.5" />
                             Mapa

@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ---------- helpers ----------
 
@@ -8,6 +12,16 @@ function toISO(d: Date) {
 }
 
 const PHONE_RE = /^9\d{8}$/;
+
+const MarketplaceChatSchema = z.object({
+  storeId: z.string().min(1).max(100),
+  storePhone: z.string().max(30).optional(),
+  storeName: z.string().max(200).default("Tienda"),
+  customerPhone: z.string().min(1).max(30),
+  customerName: z.string().max(200).default("Cliente"),
+  message: z.string().min(1).max(500).transform((s) => s.trim()),
+  senderType: z.enum(["store", "customer"]),
+});
 
 /**
  * Normaliza phone: acepta "51XXXXXXXXX" y "9XXXXXXXX"
@@ -21,7 +35,10 @@ function normalizePhone(phone: string): string {
 // ---------- GET: obtener mensajes de un chat marketplace ----------
 // ?storeId=xxx&customerPhone=9xxxxxxxx&limit=50
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
+  const limited = applyRateLimit(req, "MODERATE", "chat-mkt-get");
+  if (limited) return limited;
+
   try {
     const { searchParams } = req.nextUrl;
     const storeId = searchParams.get("storeId");
@@ -66,55 +83,37 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data });
   } catch (err) {
-    console.error("[chat/marketplace GET]", err);
+    logger.error("[chat/marketplace GET]", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
-}
+});
 
 // ---------- POST: enviar mensaje ----------
 // Body: { storeId, storePhone, storeName, customerPhone, customerName, message, senderType: "store"|"customer" }
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("chat-marketplace-post", async (req, ctx) => {
+  const limited = applyRateLimit(req, "MODERATE", "chat-mkt-post");
+  if (limited) return limited;
+
   try {
     const body = await req.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "Body JSON inválido" }, { status: 400 });
+    const parsed = MarketplaceChatSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos de chat inválidos" }, { status: 400 });
     }
 
     const {
       storeId,
       storePhone,
-      storeName = "Tienda",
-      customerPhone: rawCustomerPhone,
-      customerName = "Cliente",
+      storeName,
+      customerName,
       message,
       senderType,
-    } = body as {
-      storeId?: string;
-      storePhone?: string;
-      storeName?: string;
-      customerPhone?: string;
-      customerName?: string;
-      message?: string;
-      senderType?: string;
-    };
+    } = parsed.data;
 
-    // Validaciones
-    if (!storeId?.trim()) {
-      return NextResponse.json({ error: "storeId requerido" }, { status: 400 });
-    }
-    if (!rawCustomerPhone) {
-      return NextResponse.json({ error: "customerPhone requerido" }, { status: 400 });
-    }
-    const customerPhone = normalizePhone(rawCustomerPhone);
+    const customerPhone = normalizePhone(parsed.data.customerPhone);
     if (!PHONE_RE.test(customerPhone)) {
-      return NextResponse.json({ error: "customerPhone inválido" }, { status: 400 });
-    }
-    if (!message?.trim() || message.trim().length > 500) {
-      return NextResponse.json({ error: "message requerido (máx 500 chars)" }, { status: 400 });
-    }
-    if (senderType !== "store" && senderType !== "customer") {
-      return NextResponse.json({ error: "senderType debe ser 'store' o 'customer'" }, { status: 400 });
+      return NextResponse.json({ error: "customerPhone inválido (9 dígitos)" }, { status: 400 });
     }
 
     // Obtener tenantId de la tienda para aislamiento multi-tenant
@@ -130,7 +129,7 @@ export async function POST(req: NextRequest) {
         customerPhone,
         customerName: storePrefix,
         sender: dbSender,
-        message: message.trim(),
+        message,
         tenantId,
       },
     });
@@ -145,10 +144,10 @@ export async function POST(req: NextRequest) {
       notifyWhatsApp(
         recipientPhone,
         senderType === "customer"
-          ? `Nuevo mensaje de ${customerName}: "${message.trim().slice(0, 100)}"`
-          : `Mensaje de ${storeName}: "${message.trim().slice(0, 100)}"`,
+          ? `Nuevo mensaje de ${customerName}: "${message.slice(0, 100)}"`
+          : `Mensaje de ${storeName}: "${message.slice(0, 100)}"`,
         storeId
-      ).catch(() => {});
+      ).catch((err) => logger.error("[chat/marketplace] WhatsApp notify failed", { error: String(err), storeId }));
     }
 
     return NextResponse.json(
@@ -166,10 +165,10 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
-    console.error("[chat/marketplace POST]", err);
+    logger.error("[chat/marketplace POST]", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
-}
+});
 
 // ---------- fire-and-forget helper ----------
 
@@ -194,6 +193,6 @@ async function notifyWhatsApp(
   });
 
   if (!res.ok) {
-    console.warn("[chat/marketplace] WhatsApp notify failed", res.status);
+    logger.warn("[chat/marketplace] WhatsApp notify failed", { detail: String(res.status) });
   }
 }

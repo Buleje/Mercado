@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Activity,
   Heart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,13 +44,13 @@ const CATEGORY_CONFIG = {
 } as const;
 
 const STATUS_CONFIG = {
-  ok: { icon: CheckCircle2, color: "#22c55e", label: "OK" },
+  ok: { icon: CheckCircle2, color: "#00B4A6", label: "OK" },
   warning: { icon: AlertTriangle, color: "#f59e0b", label: "Advertencia" },
   error: { icon: XCircle, color: "#ef4444", label: "Error" },
 } as const;
 
 const OVERALL_CONFIG = {
-  healthy: { color: "#22c55e", label: "Todo funciona perfecto", icon: CheckCircle2 },
+  healthy: { color: "#00B4A6", label: "Todo funciona perfecto", icon: CheckCircle2 },
   warning: { color: "#f59e0b", label: "Funciona con advertencias", icon: AlertTriangle },
   degraded: { color: "#f97316", label: "Algunos sistemas con problemas", icon: Activity },
   critical: { color: "#ef4444", label: "Problemas críticos detectados", icon: XCircle },
@@ -104,7 +104,7 @@ export default function AIHealthPanel() {
           <div className="h-16 w-16 rounded-full border-4 border-[#00B4A6]/20 border-t-[#00B4A6] animate-spin" />
           <Heart className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-[#00B4A6] animate-pulse" />
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Revisando sistemas de IA...</p>
+        <p className="text-sm text-[var(--text-tertiary)]">Revisando sistemas de IA...</p>
       </div>
     );
   }
@@ -112,8 +112,8 @@ export default function AIHealthPanel() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <XCircle className="h-12 w-12 text-red-500" />
-        <p className="text-sm text-red-500">Error al verificar: {error}</p>
+        <XCircle className="h-12 w-12 text-[var(--data-error)]" />
+        <p className="text-sm text-[var(--data-error)]">Error al verificar: {error}</p>
         <button
           onClick={fetchHealth}
           className="flex items-center gap-2 px-4 py-2 bg-[#00B4A6] text-white rounded-lg hover:bg-[#009e92] transition-colors text-sm"
@@ -142,7 +142,7 @@ export default function AIHealthPanel() {
               fill="none"
               stroke="currentColor"
               strokeWidth="8"
-              className="text-gray-200 dark:text-gray-700"
+              className="text-gray-200 dark:text-[var(--text-primary)]"
             />
             <circle
               cx="70" cy="70" r="60"
@@ -158,12 +158,12 @@ export default function AIHealthPanel() {
           {/* Score text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
-              className="text-3xl font-bold transition-all duration-1000"
+              className="text-3xl font-bold transition-all duration-[var(--dur-slower)]"
               style={{ color: overall.color }}
             >
               {data.score}%
             </span>
-            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
               Salud IA
             </span>
           </div>
@@ -177,13 +177,13 @@ export default function AIHealthPanel() {
         </div>
 
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+          <p className="text-lg font-semibold text-[var(--text-primary)]">
             <span className="inline-flex items-center gap-2">
               <OverallIcon className="h-5 w-5" style={{ color: overall.color }} />
               <span>{overall.label}</span>
             </span>
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
             {data.ok} activos · {data.warnings} advertencias · {data.errors} errores
           </p>
         </div>
@@ -191,11 +191,11 @@ export default function AIHealthPanel() {
         <div className="flex items-center gap-3">
           <button
             onClick={fetchHealth}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--surface-sunken)] text-[var(--text-secondary)] rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className="h-3 w-3" /> Actualizar
           </button>
-          <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
             Auto-refresh en {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")}
           </span>
         </div>
@@ -211,7 +211,7 @@ export default function AIHealthPanel() {
         return (
           <div
             key={cat}
-            className="rounded-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden"
+            className="rounded-xl border border-[var(--rule-base)] overflow-hidden"
             style={{
               opacity: animateIn ? 1 : 0,
               transform: animateIn ? "translateY(0)" : "translateY(20px)",
@@ -219,12 +219,12 @@ export default function AIHealthPanel() {
             }}
           >
             {/* Category header */}
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-sunken)]/50 border-b border-[var(--rule-base)]">
               <CatIcon className="h-4 w-4" style={{ color: config.color }} />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <span className="text-sm font-semibold text-[var(--text-secondary)]">
                 {config.label}
               </span>
-              <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+              <span className="ml-auto text-xs text-[var(--text-tertiary)]">
                 {checks.filter((c) => c.status === "ok").length}/{checks.length}
               </span>
             </div>
@@ -250,10 +250,10 @@ export default function AIHealthPanel() {
                       style={{ color: statusConf.color }}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">
                         {check.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                         {check.detail}
                       </p>
                     </div>
@@ -262,8 +262,8 @@ export default function AIHealthPanel() {
                       <span
                         className="relative flex h-2.5 w-2.5 mt-1.5 shrink-0"
                       >
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-soft)] opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--accent-soft)]" />
                       </span>
                     )}
                   </div>
@@ -277,7 +277,7 @@ export default function AIHealthPanel() {
       {/* ── Activity pulse bar (animated) ──────────────────────────────── */}
       <div className="flex items-center justify-center gap-2 py-3">
         <Activity className="h-4 w-4 text-[#00B4A6] animate-pulse" />
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-[var(--text-tertiary)]">
           Última verificación: {new Date(data.timestamp).toLocaleTimeString("es-PE")}
         </span>
       </div>

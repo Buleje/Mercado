@@ -1,13 +1,15 @@
+"use client";
+
+import { CardTitle, PageTitle, SectionTitle } from "@buleje/design-system";
 // ═══════════════════════════════════════════════════════
 // CMS DASHBOARD - Main entry point
 // ═══════════════════════════════════════════════════════
 
-"use client";
 
 import { useState, useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { Plus, FileText, Image as ImageIcon, Palette, Menu as MenuIcon } from "lucide-react";
+import { Plus, FileText, Image as ImageIcon, Palette, Menu as MenuIcon } from "@buleje/design-system/icons";
 
 interface Page {
   id: string;
@@ -47,8 +49,8 @@ export default function CMSDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Sistema CMS</h1>
-          <p className="text-gray-600">
+          <PageTitle className="text-3xl font-bold mb-2">Sistema CMS</PageTitle>
+          <p className="text-[var(--text-secondary)]">
             Gestiona el contenido de tu sitio web
           </p>
         </div>
@@ -57,37 +59,37 @@ export default function CMSDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Link
             href="/admin/cms/pages/new"
-            className="p-6 bg-linear-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-[var(--accent)] text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <FileText className="w-8 h-8 mb-2" />
-            <h3 className="font-bold">Páginas</h3>
+            <CardTitle className="font-bold">Páginas</CardTitle>
             <p className="text-sm opacity-90">{pages.length} páginas</p>
           </Link>
 
           <Link
             href="/admin/cms/media"
-            className="p-6 bg-linear-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-[var(--surface-sunken)] text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <ImageIcon className="w-8 h-8 mb-2" />
-            <h3 className="font-bold">Medios</h3>
+            <CardTitle className="font-bold">Medios</CardTitle>
             <p className="text-sm opacity-90">Biblioteca de imágenes</p>
           </Link>
 
           <Link
             href="/admin/cms/theme"
-            className="p-6 bg-linear-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-[var(--surface-sunken)] text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <Palette className="w-8 h-8 mb-2" />
-            <h3 className="font-bold">Tema</h3>
+            <CardTitle className="font-bold">Tema</CardTitle>
             <p className="text-sm opacity-90">Colores y estilos</p>
           </Link>
 
           <Link
             href="/admin/cms/navigation"
-            className="p-6 bg-linear-to-br from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-[var(--accent)] text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <MenuIcon className="w-8 h-8 mb-2" />
-            <h3 className="font-bold">Navegación</h3>
+            <CardTitle className="font-bold">Navegación</CardTitle>
             <p className="text-sm opacity-90">Menú del sitio</p>
           </Link>
         </div>
@@ -95,10 +97,10 @@ export default function CMSDashboard() {
         {/* Pages list */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="text-xl font-bold">Páginas recientes</h2>
+            <SectionTitle className="text-xl font-bold">Páginas recientes</SectionTitle>
             <Link
               href="/admin/cms/pages/new"
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+              className="px-4 py-2 bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Nueva página
@@ -107,9 +109,9 @@ export default function CMSDashboard() {
 
           <div className="divide-y">
             {loading ? (
-              <div className="p-8 text-center text-gray-500">Cargando...</div>
+              <div className="p-8 text-center text-[var(--text-secondary)]">Cargando...</div>
             ) : pages.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-[var(--text-secondary)]">
                 No hay páginas creadas. ¡Crea tu primera página!
               </div>
             ) : (
@@ -121,22 +123,22 @@ export default function CMSDashboard() {
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="font-semibold">{page.title}</h3>
-                      <p className="text-sm text-gray-600">/{page.slug}</p>
+                      <CardTitle className="font-semibold">{page.title}</CardTitle>
+                      <p className="text-sm text-[var(--text-secondary)]">/{page.slug}</p>
                     </div>
                     <div className="text-right">
                       <span
                         className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
                           page.status === "PUBLISHED"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
                             : page.status === "DRAFT"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
+                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                            : "bg-gray-100 text-[var(--text-primary)]"
                         }`}
                       >
                         {page.status}
                       </span>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">
                         {page._count.blocks} bloques
                       </p>
                     </div>
@@ -150,7 +152,7 @@ export default function CMSDashboard() {
             <div className="p-4 text-center border-t">
               <Link
                 href="/admin/cms/pages"
-                className="text-blue-500 hover:underline"
+                className="text-[var(--data-success)] hover:underline"
               >
                 Ver todas las páginas →
               </Link>

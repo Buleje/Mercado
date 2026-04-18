@@ -1,5 +1,7 @@
- 
 "use client";
+
+import { PageTitle } from "@buleje/design-system";
+ 
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -11,7 +13,7 @@ import {
   Maximize,
   Minimize,
   RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -63,24 +65,24 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
     <div
       className={cn(
         "flex flex-col items-center justify-center rounded-3xl p-10 gap-4",
-        "border-2 shadow-2xl transition-colors",
+        "border-2 transition-colors",
         accent
-          ? "border-[#f97316] bg-[#f97316]/10 dark:bg-[#f97316]/5"
-          : "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/5"
+          ? "border-secondary bg-secondary/10"
+          : "border-primary bg-primary/10"
       )}
     >
       <div
         className={cn(
           "p-5 rounded-full",
-          accent ? "bg-[#f97316]/20" : "bg-[#00B4A6]/20"
+          accent ? "bg-secondary/20" : "bg-primary/20"
         )}
       >
         {icon}
       </div>
-      <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight text-center">
+      <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight text-center">
         {value}
       </p>
-      <p className="text-xl font-semibold text-gray-500 dark:text-gray-400 text-center uppercase tracking-widest">
+      <p className="text-xl font-semibold text-[var(--text-secondary)] text-center">
         {label}
       </p>
     </div>
@@ -146,31 +148,31 @@ export default function TVDashboard() {
   const progress = pct(data.salesToday, data.dailyGoal);
   const barColor =
     progress >= 80
-      ? "bg-[#00B4A6]"
+      ? "bg-primary"
       : progress >= 50
-        ? "bg-[#f97316]"
-        : "bg-red-500";
+        ? "bg-secondary"
+        : "bg-[var(--data-error)]";
 
   return (
     <div
       ref={containerRef}
       className={cn(
-        "min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white",
+        "min-h-screen bg-gray-50 text-[var(--text-primary)]",
         "flex flex-col p-10 gap-10 select-none"
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-black tracking-tight text-[#00B4A6] dark:text-[#2dd4bf]">
+          <PageTitle className="text-5xl font-extrabold tracking-tight text-primary">
             Buleje
-          </h1>
-          <p className="text-2xl text-gray-500 dark:text-gray-400 mt-1">
+          </PageTitle>
+          <p className="text-2xl text-[var(--text-secondary)] mt-1">
             Panel en tiempo real
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-lg text-gray-400 dark:text-gray-500">
+          <span className="text-lg text-[var(--text-tertiary)]">
             Actualizado:{" "}
             {lastUpdate.toLocaleTimeString("es-PE", {
               hour: "2-digit",
@@ -181,25 +183,25 @@ export default function TVDashboard() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-3 rounded-full bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors disabled:opacity-50"
+            className="p-3 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
             aria-label="Actualizar"
           >
             <RefreshCw
               className={cn(
-                "w-7 h-7 text-[#00B4A6]",
+                "w-7 h-7 text-primary",
                 loading && "animate-spin"
               )}
             />
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-3 rounded-full bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
+            className="p-3 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
             aria-label={fullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
           >
             {fullscreen ? (
-              <Minimize className="w-7 h-7 text-[#00B4A6]" />
+              <Minimize className="w-7 h-7 text-primary" />
             ) : (
-              <Maximize className="w-7 h-7 text-[#00B4A6]" />
+              <Maximize className="w-7 h-7 text-primary" />
             )}
           </button>
         </div>
@@ -210,23 +212,23 @@ export default function TVDashboard() {
         <KpiCard
           label="Ventas hoy"
           value={fmt(data.salesToday)}
-          icon={<TrendingUp className="w-14 h-14 text-[#00B4A6]" />}
+          icon={<TrendingUp className="w-14 h-14 text-primary" />}
         />
         <KpiCard
           label="Meta %"
           value={`${progress}%`}
-          icon={<Target className="w-14 h-14 text-[#00B4A6]" />}
+          icon={<Target className="w-14 h-14 text-primary" />}
           accent={progress >= 100}
         />
         <KpiCard
           label="Pedidos activos"
           value={String(data.activeOrders)}
-          icon={<ShoppingCart className="w-14 h-14 text-[#00B4A6]" />}
+          icon={<ShoppingCart className="w-14 h-14 text-primary" />}
         />
         <KpiCard
           label={`#1 Cajero — ${data.topCashier}`}
           value={fmt(data.topCashierSales)}
-          icon={<Medal className="w-14 h-14 text-[#f97316]" />}
+          icon={<Medal className="w-14 h-14 text-secondary" />}
           accent
         />
       </div>
@@ -239,16 +241,16 @@ export default function TVDashboard() {
             {fmt(data.salesToday)} / {fmt(data.dailyGoal)}
           </span>
         </div>
-        <div className="w-full h-16 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden shadow-inner">
+        <div className="w-full h-16 rounded-full bg-gray-200 overflow-hidden shadow-inner">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700 ease-out",
+              "h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out",
               barColor
             )}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-center text-2xl font-semibold text-gray-500 dark:text-gray-400">
+        <p className="text-center text-2xl font-semibold text-[var(--text-secondary)]">
           {progress >= 100
             ? "Meta cumplida"
             : `Faltan ${fmt(data.dailyGoal - data.salesToday)} para la meta`}

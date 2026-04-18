@@ -11,10 +11,10 @@ export default function SuperAdminSuppliersPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">
           Cola de proveedores
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Revisa las solicitudes de registro de proveedores y aprueba o
           rechaza cada una. Las aprobaciones generan un API key único.
         </p>

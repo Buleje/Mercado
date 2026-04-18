@@ -1,7 +1,9 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, GripVertical, Check, X, AlertTriangle, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { Plus, Pencil, Trash2, GripVertical, Check, X, AlertTriangle, ExternalLink } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -29,7 +31,7 @@ const SEED: Banner[] = [
     title:    "Ofertas de la semana",
     subtitle: "Ahorra hasta 30% en abarrotes seleccionados",
     imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80",
-    bgColor:  "#00B4A6",
+    bgColor:  "#2563EB",
     link:     "/tienda",
     active:   true,
   },
@@ -49,13 +51,13 @@ function saveBanners(banners: Banner[]) {
 
 // ── Empty form ────────────────────────────────────────────────────────────────
 
-const PRESET_COLORS = ["#00B4A6", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#1d3557", "#457b9d"];
+const PRESET_COLORS = ["#2563EB", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#1d3557", "#457b9d"];
 
 const emptyForm = (): FormState => ({
   title:    "",
   subtitle: "",
   imageUrl: "",
-  bgColor:  "#00B4A6",
+  bgColor:  "#2563EB",
   link:     "",
 });
 
@@ -67,18 +69,19 @@ function BannerPreview({ banner }: { banner: Banner }) {
   return (
     <div
       className="relative rounded-xl overflow-hidden aspect-[3/1]"
-      style={{ backgroundColor: banner.bgColor || "#00B4A6" }}
+      style={{ backgroundColor: banner.bgColor || "#2563EB" }}
     >
       {banner.imageUrl && !imgError ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={banner.imageUrl}
           alt={banner.title}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
           onError={() => setImgError(true)}
         />
       ) : null}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center px-5">
+      <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent flex flex-col justify-center px-5">
         <p className="text-white font-bold text-base leading-snug drop-shadow">
           {banner.title || "Titulo del banner"}
         </p>
@@ -88,7 +91,7 @@ function BannerPreview({ banner }: { banner: Banner }) {
           </p>
         )}
         {banner.link && (
-          <div className="mt-2 inline-flex items-center gap-1 bg-white/90 text-gray-800 text-xs font-medium px-2 py-1 rounded-lg w-fit">
+          <div className="mt-2 inline-flex items-center gap-1 bg-white/90 text-[var(--text-primary)] text-xs font-medium px-2 py-1 rounded-lg w-fit">
             Ver mas <ExternalLink className="w-3 h-3" />
           </div>
         )}
@@ -126,24 +129,24 @@ function BannerForm({
 
   const renderField = (label: string, field: keyof FormState, placeholder: string, type = "text") => (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</label>
+      <label className="text-xs font-medium text-[var(--text-tertiary)]">{label}</label>
       <input
         type={type}
         value={form[field]}
         onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
         placeholder={placeholder}
         className={cn(
-          "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-          errors[field] ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+          "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+          errors[field] ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
         )}
       />
-      {errors[field] && <p className="text-xs text-red-500">{errors[field]}</p>}
+      {errors[field] && <p className="text-xs text-[var(--data-error)]">{errors[field]}</p>}
     </div>
   );
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm space-y-4">
-      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-4">
+      <p className="text-sm font-semibold text-[var(--text-secondary)]">
         {initial.title ? "Editar banner" : "Nuevo banner"}
       </p>
 
@@ -153,7 +156,7 @@ function BannerForm({
 
       {/* Mejora 17: Color de fondo */}
       <div className="space-y-1">
-        <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Color de fondo (si no hay imagen)</label>
+        <label className="text-xs font-medium text-[var(--text-tertiary)]">Color de fondo (si no hay imagen)</label>
         <div className="flex items-center gap-2 flex-wrap">
           {PRESET_COLORS.map(c => (
             <button
@@ -170,7 +173,7 @@ function BannerForm({
           ))}
           <input
             type="color"
-            value={form.bgColor || "#00B4A6"}
+            value={form.bgColor || "#2563EB"}
             onChange={e => setForm(f => ({ ...f, bgColor: e.target.value }))}
             className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0"
             title="Color personalizado"
@@ -183,7 +186,7 @@ function BannerForm({
       {/* Live preview */}
       {(form.title || form.imageUrl) && (
         <div className="space-y-1">
-          <p className="text-xs text-gray-400 dark:text-gray-500">Vista previa</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Vista previa</p>
           <BannerPreview banner={{ ...form, id: "preview", active: true }} />
         </div>
       )}
@@ -191,13 +194,13 @@ function BannerForm({
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 rounded-xl text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-[#245a41] transition-colors"
         >
           Guardar banner
         </button>
@@ -275,8 +278,8 @@ export default function BannerEditor() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editor de Banners</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Editor de Banners</SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             {activeCount}/{MAX_ACTIVE} banners activos en la tienda
           </p>
         </div>
@@ -286,8 +289,8 @@ export default function BannerEditor() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             creating
-              ? "bg-gray-100 text-gray-400 dark:bg-gray-800 cursor-not-allowed"
-              : "bg-[#00B4A6] text-white hover:bg-[#245a41]"
+              ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 cursor-not-allowed"
+              : "bg-primary text-white hover:bg-[#245a41]"
           )}
         >
           <Plus className="w-4 h-4" />
@@ -296,7 +299,7 @@ export default function BannerEditor() {
       </div>
 
       {activeCount >= MAX_ACTIVE && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           Limite de {MAX_ACTIVE} banners activos. Desactiva uno para agregar otro.
         </div>
@@ -313,7 +316,7 @@ export default function BannerEditor() {
 
       {/* Banners list */}
       {banners.length === 0 && !creating && (
-        <div className="text-center py-16 text-gray-400 dark:text-gray-600">
+        <div className="text-center py-16 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           <p className="text-sm">Sin banners configurados.</p>
           <p className="text-xs mt-1">Crea el primero para mostrar en la tienda.</p>
         </div>
@@ -324,7 +327,7 @@ export default function BannerEditor() {
           <div key={banner.id}>
             {editing?.id === banner.id ? (
               <BannerForm
-                initial={{ title: banner.title, subtitle: banner.subtitle, imageUrl: banner.imageUrl, bgColor: banner.bgColor || "#00B4A6", link: banner.link }}
+                initial={{ title: banner.title, subtitle: banner.subtitle, imageUrl: banner.imageUrl, bgColor: banner.bgColor || "#2563EB", link: banner.link }}
                 onSave={handleEdit}
                 onCancel={() => setEditing(null)}
               />
@@ -336,9 +339,9 @@ export default function BannerEditor() {
                 onDragOver={e => { e.preventDefault(); setDragOver(banner.id); }}
                 onDrop={() => handleDrop(banner.id)}
                 className={cn(
-                  "bg-white dark:bg-card border rounded-2xl overflow-hidden shadow-sm transition-all cursor-grab active:cursor-grabbing",
+                  "bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all cursor-grab active:cursor-grabbing",
                   dragging === banner.id ? "opacity-50 scale-[0.98]" : "",
-                  dragOver === banner.id && dragging !== banner.id ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/30" : "border-gray-200 dark:border-card-border"
+                  dragOver === banner.id && dragging !== banner.id ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)] dark:border-card-border"
                 )}
               >
                 {/* Banner mini preview */}
@@ -346,12 +349,12 @@ export default function BannerEditor() {
 
                 {/* Controls */}
                 <div className="px-4 py-3 flex flex-wrap items-center gap-3">
-                  <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+                  <GripVertical className="w-4 h-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{banner.title}</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{banner.title}</p>
                     {banner.link && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{banner.link}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] truncate">{banner.link}</p>
                     )}
                   </div>
 
@@ -362,8 +365,8 @@ export default function BannerEditor() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                       banner.active
-                        ? "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500",
+                        ? "bg-primary/10 text-primary dark:text-[#4a9e78]"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                       !banner.active && activeCount >= MAX_ACTIVE ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                     )}
                   >
@@ -374,14 +377,14 @@ export default function BannerEditor() {
                   <button
                     onClick={() => { setEditing(banner); setCreating(false); }}
                     title="Editar"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#4a9e78] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#4a9e78] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(banner.id)}
                     title="Eliminar"
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -393,7 +396,7 @@ export default function BannerEditor() {
       </div>
 
       {banners.length > 1 && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+        <p className="text-xs text-[var(--text-tertiary)] text-center">
           Arrastra los banners para cambiar el orden en que aparecen
         </p>
       )}

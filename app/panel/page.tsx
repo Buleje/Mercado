@@ -62,8 +62,8 @@ const SECTIONS: Section[] = [
   {
     title: "Admin de Tienda",
     description: "Panel de administracion del tenant activo",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/40",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40",
     links: [
       { label: "Panel Admin", href: "/admin", description: "Dashboard principal de tu tienda", icon: <LayoutDashboard className="h-4 w-4" /> },
       { label: "Login Admin", href: "/admin/login", description: "Iniciar sesion en el admin", icon: <Users className="h-4 w-4" /> },

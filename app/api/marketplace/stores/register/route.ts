@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 const BodySchema = z.object({
   name:        z.string().min(2).max(80),
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       `Nueva tienda en marketplace: ${store.name} (/${store.slug})`,
       store.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/stores/register] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json({ data: store }, { status: 201 });
   } catch (err) {

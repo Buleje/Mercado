@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MessageSquare,
@@ -10,7 +11,7 @@ import {
   Loader2,
   RefreshCw,
   ArrowLeft,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -209,19 +210,19 @@ export default function WhatsAppInbox() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] min-h-[500px] overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex h-[calc(100vh-10rem)] min-h-[500px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
       {/* ── Columna izquierda: lista de chats ── */}
       <div
         className={cn(
-          "flex w-full flex-col border-r border-gray-200 dark:border-gray-700 md:w-80 md:flex-shrink-0",
+          "flex w-full flex-col border-r border-[var(--rule-base)] md:w-80 md:flex-shrink-0",
           selectedPhone && "hidden md:flex",
         )}
       >
         {/* Header lista */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex items-center justify-between border-b border-[var(--rule-base)] px-4 py-3 dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-[#00B4A6]" />
-            <span className="font-semibold text-gray-800 dark:text-gray-100">
+            <span className="font-semibold text-[var(--text-primary)]">
               WhatsApp
             </span>
             {conversations.reduce((s, c) => s + c.unread, 0) > 0 && (
@@ -232,7 +233,7 @@ export default function WhatsAppInbox() {
           </div>
           <button
             onClick={fetchConversations}
-            className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="rounded-lg p-1.5 text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)]"
             aria-label="Actualizar"
           >
             <RefreshCw className="h-4 w-4" />
@@ -242,13 +243,13 @@ export default function WhatsAppInbox() {
         {/* Buscador */}
         <div className="px-3 py-2">
           <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-800">
-            <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
+            <Search className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" />
             <input
               type="text"
               placeholder="Buscar nombre o teléfono"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400 dark:text-gray-200"
+              className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] dark:text-gray-200"
             />
           </div>
         </div>
@@ -256,12 +257,10 @@ export default function WhatsAppInbox() {
         {/* Lista */}
         <div className="flex-1 overflow-y-auto">
           {loadingConvs ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-            </div>
+            <LoadingState />
           ) : errorConvs ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm text-red-500">Error al cargar conversaciones</p>
+              <p className="text-sm text-[var(--data-error)]">Error al cargar conversaciones</p>
               <button
                 onClick={fetchConversations}
                 className="mt-2 text-xs text-[#00B4A6] underline"
@@ -271,8 +270,8 @@ export default function WhatsAppInbox() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-4 py-12 text-center">
-              <MessageSquare className="mx-auto mb-2 h-10 w-10 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm text-gray-400">No hay conversaciones aún</p>
+              <MessageSquare className="mx-auto mb-2 h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
+              <p className="text-sm text-[var(--text-tertiary)]">No hay conversaciones aún</p>
             </div>
           ) : (
             filtered.map((conv) => (
@@ -280,9 +279,9 @@ export default function WhatsAppInbox() {
                 key={conv.phone}
                 onClick={() => selectConversation(conv)}
                 className={cn(
-                  "flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800",
+                  "flex w-full items-center gap-3 border-b border-[var(--rule-soft)] px-4 py-3 text-left transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:hover:bg-gray-800",
                   selectedPhone === conv.phone &&
-                    "bg-green-50 dark:bg-green-900/20",
+                    "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
                 )}
               >
                 {/* Avatar */}
@@ -293,24 +292,24 @@ export default function WhatsAppInbox() {
                 {/* Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                    <span className="truncate text-sm font-medium text-[var(--text-primary)]">
                       {conv.name}
                     </span>
-                    <span className="flex-shrink-0 text-xs text-gray-400">
+                    <span className="flex-shrink-0 text-xs text-[var(--text-tertiary)]">
                       {formatTime(conv.lastAt)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <span className="truncate text-xs text-gray-500 dark:text-gray-400">
+                    <span className="truncate text-xs text-[var(--text-tertiary)]">
                       {conv.lastMessage}
                     </span>
                     {conv.unread > 0 && (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#00B4A6] px-1 text-[11px] font-bold text-white">
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#00B4A6] px-1 text-[length:var(--ts-xs)] font-bold text-white">
                         {conv.unread > 99 ? "99+" : conv.unread}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] text-gray-400">{conv.phone}</span>
+                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{conv.phone}</span>
                 </div>
               </button>
             ))
@@ -327,18 +326,18 @@ export default function WhatsAppInbox() {
       >
         {!selectedPhone ? (
           // Empty state escritorio
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
             <MessageSquare className="h-16 w-16" />
             <p className="text-sm">Selecciona una conversación</p>
           </div>
         ) : (
           <>
             {/* Header conversación */}
-            <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+            <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-4 py-3 dark:border-[var(--rule-base)]">
               {/* Botón volver (mobile) */}
               <button
                 onClick={() => setSelectedPhone(null)}
-                className="min-h-[44px] min-w-[44px] rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 dark:hover:bg-gray-800 md:hidden"
+                className="min-h-[44px] min-w-[44px] rounded-lg p-2 text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)] md:hidden"
                 aria-label="Volver"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -349,23 +348,23 @@ export default function WhatsAppInbox() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-gray-800 dark:text-gray-100">
+                <p className="truncate font-medium text-[var(--text-primary)]">
                   {selectedName}
                 </p>
-                <p className="text-xs text-gray-400">{selectedPhone}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">{selectedPhone}</p>
               </div>
 
               <div className="flex items-center gap-1">
                 <a
                   href={`tel:${selectedPhone}`}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)]"
                   aria-label="Llamar"
                 >
                   <Phone className="h-5 w-5" />
                 </a>
                 <a
                   href={`/admin/clientes?phone=${encodeURIComponent(selectedPhone)}`}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)]"
                   aria-label="Ver cliente"
                 >
                   <User className="h-5 w-5" />
@@ -376,11 +375,9 @@ export default function WhatsAppInbox() {
             {/* Burbujas de mensajes */}
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {loadingMsgs ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-                </div>
+                <LoadingState />
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)]">
                   <MessageSquare className="mb-2 h-10 w-10 opacity-40" />
                   <p className="text-sm">Sin mensajes aún</p>
                 </div>
@@ -398,10 +395,10 @@ export default function WhatsAppInbox() {
                       >
                         <div
                           className={cn(
-                            "max-w-[75%] rounded-2xl px-4 py-2 text-sm shadow-sm",
+                            "max-w-[75%] rounded-xl px-4 py-2 text-sm ",
                             isAdmin
                               ? "rounded-br-sm bg-[#00B4A6] text-white"
-                              : "rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100",
+                              : "rounded-bl-sm bg-gray-100 text-[var(--text-primary)] dark:bg-gray-700 dark:text-gray-100",
                           )}
                         >
                           <p className="whitespace-pre-wrap break-words">
@@ -409,8 +406,8 @@ export default function WhatsAppInbox() {
                           </p>
                           <p
                             className={cn(
-                              "mt-1 text-right text-[10px]",
-                              isAdmin ? "text-green-200" : "text-gray-400",
+                              "mt-1 text-right text-[length:var(--ts-2xs)]",
+                              isAdmin ? "text-[var(--data-success)]" : "text-[var(--text-tertiary)]",
                             )}
                           >
                             {formatTime(msg.createdAt)}
@@ -425,7 +422,7 @@ export default function WhatsAppInbox() {
             </div>
 
             {/* Input de respuesta */}
-            <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+            <div className="border-t border-[var(--rule-base)] px-4 py-3 dark:border-[var(--rule-base)]">
               <div className="flex items-end gap-2">
                 <textarea
                   value={inputMsg}
@@ -434,13 +431,13 @@ export default function WhatsAppInbox() {
                   placeholder="Escribe un mensaje… (Enter para enviar)"
                   rows={1}
                   maxLength={500}
-                  className="min-h-[44px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                  className="min-h-[44px] flex-1 resize-none rounded-lg border border-[var(--rule-base)] bg-gray-50 px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-[var(--text-secondary)]"
                   style={{ maxHeight: "120px", overflowY: "auto" }}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!inputMsg.trim() || sending}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#00B4A6] text-white transition hover:bg-[#009690] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-[#00B4A6] text-white transition hover:bg-[#009690] disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Enviar mensaje"
                 >
                   {sending ? (
@@ -450,7 +447,7 @@ export default function WhatsAppInbox() {
                   )}
                 </button>
               </div>
-              <p className="mt-1 text-right text-[10px] text-gray-400">
+              <p className="mt-1 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                 {inputMsg.length}/500
               </p>
             </div>

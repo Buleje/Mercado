@@ -62,6 +62,12 @@ export async function GET(req: NextRequest) {
         id: r.id,
         nombre: r.nombre,
         descripcion: r.descripcion,
+        emoji: r.emoji,
+        tiempoMinutos: r.tiempoMinutos,
+        porciones: r.porciones,
+        dificultad: r.dificultad,
+        categoria: r.categoria,
+        imageUrl: r.imageUrl,
         costoTotal: Number(r.costoTotal),
         productoFinal: r.producto ? {
           id: r.producto.id,

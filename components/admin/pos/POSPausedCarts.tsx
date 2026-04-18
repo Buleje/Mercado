@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Pause, Play, Trash2, ClipboardList, X } from "lucide-react";
+import { Pause, Play, Trash2, ClipboardList, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface PausedCartItem {
@@ -139,7 +139,7 @@ export default function POSPausedCarts({
                     if (e.key === "Escape") setShowNameInput(false);
                   }}
                   placeholder="Nombre (opc.)"
-                  className="w-24 px-2 py-1 text-xs border border-gray-200 dark:border-card-border rounded-lg outline-none focus:border-primary text-gray-900 dark:text-foreground"
+                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground"
                   autoFocus
                 />
                 <button
@@ -150,7 +150,7 @@ export default function POSPausedCarts({
                 </button>
                 <button
                   onClick={() => setShowNameInput(false)}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -165,7 +165,7 @@ export default function POSPausedCarts({
                     setShowNameInput(true);
                   }
                 }}
-                className="flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-[var(--data-warning)] hover:text-[var(--data-warning)] transition-colors"
                 title="Pausar carrito"
               >
                 <Pause className="h-3.5 w-3.5" />
@@ -182,7 +182,7 @@ export default function POSPausedCarts({
               "flex items-center gap-1 text-xs font-semibold transition-colors",
               showList
                 ? "text-primary"
-                : "text-gray-500 dark:text-muted hover:text-primary"
+                : "text-[var(--text-secondary)] dark:text-muted hover:text-primary"
             )}
           >
             <ClipboardList className="h-3.5 w-3.5" />
@@ -193,17 +193,17 @@ export default function POSPausedCarts({
 
       {/* Paused carts list */}
       {showList && paused.length > 0 && (
-        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-gray-100 dark:border-card-border">
+        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-[var(--rule-soft)] dark:border-card-border">
           {paused.map((cart) => (
             <div
               key={cart.id}
-              className="flex items-center gap-2 p-2 bg-white dark:bg-card rounded-lg border border-gray-100 dark:border-card-border hover:border-primary/30 transition-colors"
+              className="flex items-center gap-2 p-2 bg-white dark:bg-card rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-primary/30 transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">
+                <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                   {cart.nombre}
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
                   {fmt(cart.total)} &middot; {cart.items.length}{" "}
                   {cart.items.length === 1 ? "item" : "items"} &middot;{" "}
                   {timeAgo(cart.timestamp)}
@@ -211,13 +211,13 @@ export default function POSPausedCarts({
               </div>
               <button
                 onClick={() => handleResume(cart)}
-                className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0"
+                className="flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-primary hover:underline shrink-0"
               >
                 <Play className="h-3 w-3" /> Retomar
               </button>
               <button
                 onClick={() => handleDelete(cart.id)}
-                className="p-1 text-gray-300 hover:text-red-500 transition-colors shrink-0"
+                className="p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
               >
                 <Trash2 className="h-3 w-3" />
               </button>

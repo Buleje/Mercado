@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { sendWhatsAppNotification } from "@/lib/whatsapp";
 import { sendOrderNotification } from "@/lib/mailer";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 const NotifySchema = z.object({
   partnerId: z.string().min(1, "partnerId requerido"),
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
       total: orderTotalNum,
       status: "en_camino",
       items: itemsAsNum,
-    }).catch(() => {});
+    }).catch((err) => logger.error("[delivery/notify] WhatsApp send to partner failed", { error: String(err), partnerId, orderId }));
     channels.push("whatsapp");
   }
 
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       total: orderTotalNum,
       paymentMethod: order.paymentMethod || undefined,
       items: itemsAsNum,
-    }).catch(() => {});
+    }).catch((err) => logger.error("[delivery/notify] email send to partner failed", { error: String(err), partnerId, orderId }));
     channels.push("email");
   }
 

@@ -22,14 +22,22 @@ export type YapeConfig = {
 export type NavLinkItem = { id: string; visible: boolean };
 
 export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
-  { id: "inicio", visible: false },
+  // Orden estrategico: Inicio → Comprar → Explorar → Ofertas → Recetas → A domicilio
+  // "tienda" se renderiza con label "Comprar" (verbo CTA directo).
+  // "explorar" es el hub de descubrimiento (estilo Amazon homepage adaptada).
+  // "ofertas" y "a-domicilio" son nuevas entries para capturar
+  // price-sensitive shoppers y transmitir confianza de entrega.
+  { id: "inicio", visible: true },
   { id: "tienda", visible: true },
-  { id: "recetas", visible: false },
-  { id: "marketplace", visible: true },
+  { id: "explorar", visible: true },
+  { id: "ofertas", visible: true },
+  { id: "recetas", visible: true },
+  { id: "a-domicilio", visible: true },
+  { id: "marketplace", visible: false },
   { id: "historial", visible: false },
   { id: "categorias", visible: false },
-  { id: "beneficios", visible: true },
-  { id: "contacto", visible: true },
+  { id: "beneficios", visible: false },
+  { id: "contacto", visible: false },
 ];
 
 export type StoreTheme = {

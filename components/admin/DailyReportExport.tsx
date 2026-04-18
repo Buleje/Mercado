@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2, FileSpreadsheet, TrendingUp, Package, Wallet } from "lucide-react";
+import { Download, Loader2, FileSpreadsheet, TrendingUp, Package, Wallet } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
         <button
           onClick={loadAndExport}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold transition-colors"
         >
           {loading
             ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -179,10 +179,10 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
           {loading ? "Generando reporte…" : "Descargar reporte del día"}
         </button>
         {error && (
-          <p className="text-xs text-red-500 font-semibold">Error al cargar datos. Intenta de nuevo.</p>
+          <p className="text-xs text-[var(--data-error)] font-semibold">Error al cargar datos. Intenta de nuevo.</p>
         )}
         {!loading && !error && stats && (
-          <p className="text-xs text-gray-400 dark:text-muted">
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
             Se generaron {[true, stats.topProducts.length > 0, stats.totalExpenses > 0].filter(Boolean).length} archivo(s) CSV
           </p>
         )}
@@ -191,46 +191,46 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
       {/* Preview de estadísticas */}
       {stats && !loading && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4">
+          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Ventas hoy</p>
+              <TrendingUp className="h-4 w-4 text-[var(--data-success)]" />
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas hoy</p>
             </div>
-            <p className="text-lg font-extrabold text-emerald-600">{fmt(stats.totalSales)}</p>
-            <p className="text-[10px] text-gray-400">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
+            <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(stats.totalSales)}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4">
+          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <Package className="h-4 w-4 text-blue-600" />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Top producto</p>
+              <Package className="h-4 w-4 text-[var(--data-success)]" />
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Top producto</p>
             </div>
-            <p className="text-sm font-bold text-blue-600 truncate">
+            <p className="text-sm font-bold text-[var(--data-success)] truncate">
               {stats.topProducts[0]?.name ?? "—"}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               {stats.topProducts[0] ? `${stats.topProducts[0].qty} unidades` : "Sin ventas"}
             </p>
           </div>
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-4">
+          <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <Download className="h-4 w-4 text-red-500" />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Gastos hoy</p>
+              <Download className="h-4 w-4 text-[var(--data-error)]" />
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Gastos hoy</p>
             </div>
-            <p className="text-lg font-extrabold text-red-500">{fmt(stats.totalExpenses)}</p>
+            <p className="text-lg font-extrabold text-[var(--data-error)]">{fmt(stats.totalExpenses)}</p>
           </div>
           <div className={cn(
-            "rounded-2xl p-4",
+            "rounded-xl p-4",
             stats.estimatedProfit >= 0
               ? "bg-primary/10 dark:bg-primary/20"
-              : "bg-red-50 dark:bg-red-900/20"
+              : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20"
           )}>
             <div className="flex items-center gap-1.5 mb-1">
-              <Wallet className={cn("h-4 w-4", stats.estimatedProfit >= 0 ? "text-primary" : "text-red-500")} />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Utilidad est.</p>
+              <Wallet className={cn("h-4 w-4", stats.estimatedProfit >= 0 ? "text-primary" : "text-[var(--data-error)]")} />
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Utilidad est.</p>
             </div>
             <p className={cn(
               "text-lg font-extrabold",
-              stats.estimatedProfit >= 0 ? "text-primary" : "text-red-500"
+              stats.estimatedProfit >= 0 ? "text-primary" : "text-[var(--data-error)]"
             )}>
               {fmt(stats.estimatedProfit)}
             </p>

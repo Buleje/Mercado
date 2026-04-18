@@ -3,6 +3,7 @@
 import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "lucide-react";
+import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -12,11 +13,14 @@ import type { Product } from "@/data/products";
 // Tiny 4×4 gray placeholder for blur-up effect while images load
 const BLUR_DATA_URL = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4=";
 
-const RANK_STYLES = [
-  { bg: "bg-amber-400", text: "text-amber-950", ring: "ring-amber-400/40", label: "#1" },
-  { bg: "bg-gray-300", text: "text-gray-800", ring: "ring-gray-300/40", label: "#2" },
-  { bg: "bg-orange-400", text: "text-orange-950", ring: "ring-orange-400/40", label: "#3" },
-];
+// Map string badges del backend → intent canónico del DS.
+const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
+  Popular: "popular",
+  Oferta: "offer",
+  Fresco: "fresh",
+  Nuevo: "new",
+  Premium: "premium",
+};
 
 /* Simulate popularity order: products with badge "Popular" first, then "Oferta", rest shuffled deterministically */
 function getPopularProducts(allProducts: Product[]) {
@@ -34,11 +38,23 @@ function getPopularProducts(allProducts: Product[]) {
   return scored.sort((a, b) => b.score - a.score).slice(0, 6);
 }
 
-export default function PopularProducts() {
+export default function PopularProducts({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const { products, isLoading } = useStoreProducts();
-  const popular = useMemo(() => getPopularProducts(products), [products]);
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
+  // En modo estricto solo consideramos productos con badge "Popular" como
+  // seleccion admin explicita. Sin productos con badge = no render.
+  const popular = useMemo(() => {
+    if (strictAdminOnly) {
+      const explicit = products
+        .filter((p) => p.badge === "Popular" && !(p.stock != null && p.stock <= 0))
+        .slice(0, 6);
+      return explicit;
+    }
+    return getPopularProducts(products);
+  }, [products, strictAdminOnly]);
   const lastClickRef = useRef(0);
   const guardedAdd = useCallback((p: Product) => {
     const now = Date.now();
@@ -47,8 +63,9 @@ export default function PopularProducts() {
     addItem(p);
   }, [addItem]);
 
-  // No render while loading or if empty — prevents blank gaps
-  if (isLoading || popular.length === 0) return <SectionPlaceholder title="Productos Populares" hint="Se muestran automaticamente los mas vendidos" cols={4} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Mas Vendidos" hint="Cargando..." cols={6} />;
+  if (popular.length === 0) return showEmpty ? <SectionPlaceholder title="Mas Vendidos" hint="Los productos populares apareceran aqui automaticamente" cols={6} variant={emptyVariant} publicTitle="Mas vendidos" /> : null;
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">
@@ -75,10 +92,10 @@ export default function PopularProducts() {
         {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
           {popular.map((product, i) => {
-            const rank = RANK_STYLES[i] ?? null;
             const cartItem = items.find((ci) => ci.id === product.id);
             const qty = cartItem?.quantity ?? 0;
             const isOutOfStock = product.stock != null && product.stock <= 0;
+            const badgeIntent = product.badge ? BADGE_INTENT[product.badge] : undefined;
 
             return (
               <div
@@ -88,16 +105,10 @@ export default function PopularProducts() {
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
               >
-                {/* Rank badge — top left corner */}
-                {rank ? (
-                  <div className={`absolute top-2.5 left-2.5 z-10 ${rank.bg} ${rank.text} rounded-full w-6 h-6 flex items-center justify-center text-[11px] font-extrabold shadow-md`}>
-                    {rank.label}
-                  </div>
-                ) : (
-                  <div className="absolute top-2.5 left-2.5 z-10 bg-white/90 dark:bg-black/50 text-foreground rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-bold shadow-sm">
-                    #{i + 1}
-                  </div>
-                )}
+                {/* Rank badge — uniforme accent-soft para todos los top 6 */}
+                <div className="absolute top-2.5 left-2.5 z-10 rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-bold bg-[var(--accent-soft)] text-[var(--accent)]">
+                  #{i + 1}
+                </div>
 
                 {/* Image */}
                 <div className="relative aspect-square bg-gray-50 dark:bg-white/5 overflow-hidden">
@@ -117,14 +128,11 @@ export default function PopularProducts() {
                       <Package className="h-10 w-10" />
                     </div>
                   )}
-                  {/* Badge — bottom right to avoid overlap with rank */}
-                  {product.badge && (
-                    <span
-                      className="absolute bottom-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"
-                      style={{ background: product.badge === "Popular" ? "#00B4A6" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
-                    >
-                      {product.badge}
-                    </span>
+                  {/* Badge unificado via DS — bottom right to avoid overlap with rank */}
+                  {badgeIntent && (
+                    <div className="absolute bottom-2 right-2">
+                      <ProductBadge intent={badgeIntent}>{product.badge}</ProductBadge>
+                    </div>
                   )}
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
@@ -136,12 +144,7 @@ export default function PopularProducts() {
                     {product.name}
                   </h3>
                   <div className="flex items-center justify-between gap-1">
-                    <div>
-                      <p className="text-lg font-extrabold text-primary leading-none">
-                        S/{product.price.toFixed(2)}
-                      </p>
-                      <p className="text-xs text-muted mt-0.5">por {product.unit}</p>
-                    </div>
+                    <ProductPrice price={product.price} unit={product.unit} size="md" />
                     {isOutOfStock ? (
                       <span className="text-[10px] font-bold text-gray-400 border border-gray-200 rounded-full px-2 py-1">Agotado</span>
                     ) : qty > 0 ? (
@@ -166,11 +169,6 @@ export default function PopularProducts() {
                     )}
                   </div>
                 </div>
-
-                {/* Top 3 accent bar at bottom */}
-                {i < 3 && (
-                  <div className="h-0.5 w-full" style={{ background: i === 0 ? "#f59e0b" : i === 1 ? "#9ca3af" : "#f97316" }} />
-                )}
               </div>
             );
           })}

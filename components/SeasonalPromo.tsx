@@ -12,8 +12,6 @@ interface Promo {
   subtitle: string;
   cta: string;
   category: string;
-  gradient: string;
-  accent: string;
 }
 
 const ALL_PROMOS: Promo[] = [
@@ -23,8 +21,6 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Las más frescas de la selva directo a tu mesa",
     cta: "Ver Frutas",
     category: "frutas-verduras",
-    gradient: "linear-gradient(to right, #f97316, #fbbf24)",
-    accent: "bg-orange-600",
   },
   {
     emoji: "🥩",
@@ -32,8 +28,6 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Cortes selectos al mejor precio de la zona",
     cta: "Ver Carnes",
     category: "carnes",
-    gradient: "linear-gradient(to right, #dc2626, #fb7185)",
-    accent: "bg-red-700",
   },
   {
     emoji: "🧹",
@@ -41,8 +35,6 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Todo para tu hogar con hasta 15% de ahorro",
     cta: "Ver Ofertas",
     category: "limpieza",
-    gradient: "linear-gradient(to right, #06b6d4, #60a5fa)",
-    accent: "bg-indigo-600",
   },
   {
     emoji: "🍼",
@@ -50,8 +42,6 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Leche, yogurt y quesos siempre frescos",
     cta: "Ver Lácteos",
     category: "lacteos",
-    gradient: "linear-gradient(to right, #00B4A6, #33C4B8)",
-    accent: "bg-blue-600",
   },
   {
     emoji: "🏪",
@@ -59,8 +49,6 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Arroz, fideos, aceite y todo lo esencial",
     cta: "Ver Abarrotes",
     category: "abarrotes",
-    gradient: "linear-gradient(to right, #f59e0b, #d97706)",
-    accent: "bg-amber-600",
   },
   {
     emoji: "🥤",
@@ -68,18 +56,22 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Gaseosas, jugos, agua y más para refrescarte",
     cta: "Ver Bebidas",
     category: "bebidas",
-    gradient: "linear-gradient(to right, #3b82f6, #6366f1)",
-    accent: "bg-blue-600",
   },
 ];
 
 const INTERVAL = 5000;
 
-export default function SeasonalPromo() {
+// Canonical teal wash — identidad Buleje (ADR-075)
+const TEAL_WASH =
+  "linear-gradient(135deg, color-mix(in oklch, var(--accent) 10%, var(--surface-canvas)), color-mix(in oklch, var(--accent) 4%, var(--surface-canvas)))";
+
+export default function SeasonalPromo({ serverProducts, showEmpty = false, emptyVariant = "admin" }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public" }) {
   const ref = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
 
   // Only show promos for categories that have at least 1 product
   const PROMOS = useMemo(() => {
@@ -99,8 +91,8 @@ export default function SeasonalPromo() {
     return () => clearInterval(t);
   }, [paused, next]);
 
-  // Don't render if loading or no matching promos for actual products
-  if (isLoading || PROMOS.length === 0) return <SectionPlaceholder title="Promo de Temporada" hint="Se activan automaticamente segun la epoca del ano" cols={6} />;
+  if (isLoading) return <SectionPlaceholder title="Promo de Temporada" hint="Cargando..." cols={6} />;
+  if (PROMOS.length === 0) return showEmpty ? <SectionPlaceholder title="Promo de Temporada" hint="Las promos se activan segun tus categorias de productos" cols={6} variant={emptyVariant} publicTitle="Promociones de temporada" /> : null;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;
@@ -125,43 +117,39 @@ export default function SeasonalPromo() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* bg gradient — inline style avoids Tailwind purge */}
+      {/* Canonical teal wash — identidad Buleje */}
       <div
-        className="absolute inset-0 transition-all duration-700"
-        style={{ background: promo.gradient }}
+        className="absolute inset-0 transition-opacity duration-700 border-y border-[var(--rule-soft)]"
+        style={{ background: TEAL_WASH }}
       />
-
-      {/* decorative circles */}
-      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10" />
-      <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-white/10" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-4">
         {/* left arrow */}
         <button
           onClick={prev}
           aria-label="Anterior promoción"
-          className="hidden sm:flex shrink-0 w-10 h-10 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+          className="hidden sm:flex shrink-0 w-10 h-10 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
         {/* content */}
-        <div className="flex-1 flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-white text-center sm:text-left">
-          <span className="text-5xl sm:text-6xl drop-shadow-lg animate-[bounce_2s_ease-in-out_infinite]">
+        <div className="flex-1 flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-center sm:text-left">
+          <span className="text-5xl sm:text-6xl" aria-hidden="true">
             {promo.emoji}
           </span>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-              <Tag className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-wider text-white/80">
+            <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5">
+              <Tag className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
                 Oferta de Temporada
               </span>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight">
+            <h3 className="text-fs-h2 font-semibold leading-tight text-[var(--text-primary)]">
               {promo.title}
             </h3>
-            <p className="text-white/90 text-sm sm:text-base mt-1">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               {promo.subtitle}
             </p>
           </div>
@@ -169,8 +157,8 @@ export default function SeasonalPromo() {
           <button
             onClick={handleCta}
             className={cn(
-              "shrink-0 flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm",
-              "bg-white text-gray-900 hover:scale-105 active:scale-95 transition-transform shadow-lg"
+              "shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium",
+              "bg-[var(--accent)] text-white hover:bg-[var(--accent-600)] transition-colors"
             )}
           >
             {promo.cta}
@@ -182,7 +170,7 @@ export default function SeasonalPromo() {
         <button
           onClick={next}
           aria-label="Siguiente promoción"
-          className="hidden sm:flex shrink-0 w-10 h-10 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+          className="hidden sm:flex shrink-0 w-10 h-10 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
@@ -196,8 +184,8 @@ export default function SeasonalPromo() {
             onClick={() => setIdx(i)}
             aria-label={`Promoción ${i + 1}`}
             className={cn(
-              "h-2 rounded-full transition-all duration-300",
-              i === safeIdx ? "w-6 bg-white" : "w-2 bg-white/40 hover:bg-white/60"
+              "h-1.5 rounded-full transition-all duration-300",
+              i === safeIdx ? "w-6 bg-[var(--accent)]" : "w-1.5 bg-[var(--rule-base)] hover:bg-[var(--text-tertiary)]"
             )}
           />
         ))}

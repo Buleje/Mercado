@@ -11,6 +11,7 @@ export type DbSavedLocation = { id: string; location: string; reference: string 
 export type DbCustomer = {
   phone: string;
   name: string;
+  email?: string;
   location: string;
   reference: string;
   locations: DbSavedLocation[];

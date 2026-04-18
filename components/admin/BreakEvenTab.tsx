@@ -1,6 +1,7 @@
 "use client";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
-import { Target, Download, Loader2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { Target, Download, Loader2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -213,21 +214,18 @@ export default function BreakEvenTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500 dark:text-muted">Cargando datos...</p>
-      </div>
+      <LoadingState message="Cargando datos..." />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -243,10 +241,10 @@ export default function BreakEvenTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Target className="h-6 w-6 text-red-500" /> Análisis Break-Even
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+            <Target className="h-6 w-6 text-[var(--data-error)]" /> Análisis Break-Even
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">
             Punto de equilibrio basado en {enrichedProducts.length} productos, {expenses.length} gastos y {sales.length} ventas reales
           </p>
         </div>
@@ -264,7 +262,7 @@ export default function BreakEvenTab() {
               "break-even"
             )
           }
-          className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90"
+          className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -281,8 +279,8 @@ export default function BreakEvenTab() {
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-bold transition-colors",
             selectedProduct === "general"
-              ? "bg-red-500 text-white"
-              : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
+              ? "bg-[var(--data-error)] text-white"
+              : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
           )}
         >
           Vista General
@@ -298,52 +296,52 @@ export default function BreakEvenTab() {
             className={cn(
               "px-3 py-2 rounded-xl text-sm font-bold transition-colors",
               selectedProduct === p.id
-                ? "bg-red-500 text-white"
-                : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
+                ? "bg-[var(--data-error)] text-white"
+                : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
             )}
           >
             {p.name.split(" ").slice(0, 2).join(" ")}
           </button>
         ))}
         {activeProducts.length === 0 && (
-          <span className="text-xs text-gray-400 dark:text-muted italic">
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-muted italic">
             Sin ventas recientes — los productos aparecen aquí cuando tienen ventas del último mes
           </span>
         )}
       </div>
 
       {/* Costos fijos */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3">
           Costos Fijos Mensuales
           {expenses.length > 0 && (
-            <span className="ml-2 text-xs font-normal text-gray-400">
+            <span className="ml-2 text-xs font-normal text-[var(--text-tertiary)]">
               ({fixedCosts.length} categorías del último mes)
             </span>
           )}
-        </h3>
+        </CardTitle>
         {fixedCosts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {fixedCosts.map((c) => (
               <div key={c.name} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
-                <p className="text-xs text-gray-400 truncate">{c.name}</p>
-                <p className="font-bold text-gray-900 dark:text-foreground">{fmt(c.amount)}</p>
+                <p className="text-xs text-[var(--text-tertiary)] truncate">{c.name}</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.amount)}</p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-400 dark:text-muted italic">
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted italic">
             No hay gastos registrados. Registra egresos para calcular costos fijos reales.
           </p>
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="text-sm font-bold text-gray-500">Total:</span>
-          <span className="text-lg font-extrabold text-red-600">{fmt(totalFixed)}</span>
+          <span className="text-sm font-bold text-[var(--text-secondary)]">Total:</span>
+          <span className="text-lg font-extrabold text-[var(--data-error)]">{fmt(totalFixed)}</span>
           <input
             value={customFixed}
             onChange={(e) => setCustomFixed(e.target.value.replace(/[^\d.]/g, ""))}
             placeholder="Sobrescribir total fijo"
-            className="ml-auto px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary w-52"
+            className="ml-auto px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary w-52"
           />
         </div>
       </div>
@@ -353,81 +351,81 @@ export default function BreakEvenTab() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Ventas del mes</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas del mes</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">
                 {fmt(generalAnalysis.totalRevenue)}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {enrichedProducts.filter((p) => (p.monthlySales ?? 0) > 0).length} productos vendidos
               </p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Punto de equilibrio</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Punto de equilibrio</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
                 {generalAnalysis.breakEvenRevenue === Infinity ? "∞" : fmt(generalAnalysis.breakEvenRevenue)}
               </p>
-              <p className="text-xs text-gray-400 mt-1">necesitas vender esto al mes</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">necesitas vender esto al mes</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Utilidad mensual</p>
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Utilidad mensual</p>
               <p
                 className={cn(
                   "text-xl sm:text-2xl font-extrabold mt-1",
-                  generalAnalysis.currentProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                  generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                 )}
               >
                 {fmt(generalAnalysis.currentProfit)}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 {generalAnalysis.currentProfit >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <TrendingUp className="h-3 w-3 text-[var(--data-success)]" />
                 ) : (
-                  <TrendingDown className="h-3 w-3 text-red-500" />
+                  <TrendingDown className="h-3 w-3 text-[var(--data-error)]" />
                 )}
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-[var(--text-tertiary)]">
                   {generalAnalysis.currentProfit >= 0 ? "Ganancia" : "Pérdida"} este mes
                 </p>
               </div>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Margen de seguridad</p>
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Margen de seguridad</p>
               <p
                 className={cn(
                   "text-xl sm:text-2xl font-extrabold mt-1",
                   generalAnalysis.safetyMargin >= 20
-                    ? "text-emerald-600"
+                    ? "text-[var(--data-success)]"
                     : generalAnalysis.safetyMargin >= 0
-                    ? "text-amber-600"
-                    : "text-red-600"
+                    ? "text-[var(--data-warning)]"
+                    : "text-[var(--data-error)]"
                 )}
               >
                 {generalAnalysis.safetyMargin.toFixed(1)}%
               </p>
-              <p className="text-xs text-gray-400 mt-1">distancia al punto de quiebre</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">distancia al punto de quiebre</p>
             </div>
           </div>
 
           {/* Mensaje clave */}
           <div
             className={cn(
-              "rounded-2xl border p-5 flex flex-wrap items-start gap-3",
+              "rounded-xl border p-5 flex flex-wrap items-start gap-3",
               generalAnalysis.currentProfit >= 0
-                ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
-                : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+                : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
             )}
           >
             <Target
               className={cn(
                 "h-6 w-6 shrink-0 mt-0.5",
-                generalAnalysis.currentProfit >= 0 ? "text-emerald-500" : "text-red-500"
+                generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
               )}
             />
             <div>
               <p
                 className={cn(
                   "font-extrabold text-lg",
-                  generalAnalysis.currentProfit >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
+                  generalAnalysis.currentProfit >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}
               >
                 {generalAnalysis.breakEvenRevenue === Infinity
@@ -436,17 +434,17 @@ export default function BreakEvenTab() {
                   ? `Superaste el break-even en ${fmt(generalAnalysis.currentProfit)}`
                   : `Necesitas vender ${fmt(Math.abs(generalAnalysis.currentProfit / (generalAnalysis.avgContribMargin || 1)))} más para cubrir costos`}
               </p>
-              <p className="text-sm text-gray-600 dark:text-muted mt-1">
+              <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">
                 Punto de equilibrio: <strong>{fmt(generalAnalysis.breakEvenRevenue === Infinity ? 0 : generalAnalysis.breakEvenRevenue)}</strong> · Margen de contribución promedio: <strong>{(generalAnalysis.avgContribMargin * 100).toFixed(1)}%</strong>
               </p>
             </div>
           </div>
 
           {/* Gráfico SVG */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6">
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">
               Gráfico Break-Even
-            </h3>
+            </CardTitle>
             <div className="relative h-64">
               <svg viewBox="0 0 400 200" className="w-full h-full">
                 {/* Ejes */}
@@ -455,7 +453,7 @@ export default function BreakEvenTab() {
                 {/* Línea de ingresos */}
                 <polyline
                   fill="none"
-                  stroke="#10b981"
+                  stroke="#00B4A6"
                   strokeWidth="2.5"
                   points={chartPoints
                     .map(
@@ -517,7 +515,7 @@ export default function BreakEvenTab() {
                   />
                 )}
               </svg>
-              <div className="absolute bottom-0 left-0 right-0 flex justify-between px-5 text-[10px] text-gray-400">
+              <div className="absolute bottom-0 left-0 right-0 flex justify-between px-5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                 <span>S/ 0</span>
                 {generalAnalysis.breakEvenRevenue !== Infinity && (
                   <span>BE: {fmt(generalAnalysis.breakEvenRevenue)}</span>
@@ -527,16 +525,16 @@ export default function BreakEvenTab() {
             </div>
             <div className="flex flex-wrap items-center gap-6 mt-4 text-xs">
               <span className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 bg-emerald-500" /> Ingresos
+                <div className="w-4 h-0.5 bg-[var(--accent-soft)]" /> Ingresos
               </span>
               <span className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 bg-red-500" /> Costos totales
+                <div className="w-4 h-0.5 bg-[var(--data-error)]" /> Costos totales
               </span>
               <span className="flex items-center gap-1.5">
                 <div className="w-4 h-px bg-gray-400" style={{ borderTop: "1.5px dashed" }} /> Costos fijos
               </span>
               <span className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-white" /> Punto equilibrio
+                <div className="w-3 h-3 rounded-full bg-[var(--data-error)] border-2 border-white" /> Punto equilibrio
               </span>
               <span className="flex items-center gap-1.5">
                 <div className="w-px h-3 bg-primary opacity-60" style={{ borderLeft: "1.5px dashed" }} /> Ventas actuales
@@ -550,29 +548,29 @@ export default function BreakEvenTab() {
       {productAnalysis && (
         <>
           {/* Inputs de simulación */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3">
               Simular Precio/Costo — {productAnalysis.product.name}
-            </h3>
+            </CardTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-gray-500">Precio Venta (S/)</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)]">Precio Venta (S/)</label>
                 <input
                   type="number"
                   step="0.10"
                   value={customPrice || productAnalysis.product.price}
                   onChange={(e) => setCustomPrice(e.target.value)}
-                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary"
+                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500">Costo Unitario (S/)</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)]">Costo Unitario (S/)</label>
                 <input
                   type="number"
                   step="0.10"
                   value={customCost || (productAnalysis.product.costPrice ?? productAnalysis.product.price * 0.65)}
                   onChange={(e) => setCustomCost(e.target.value)}
-                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary"
+                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -580,54 +578,54 @@ export default function BreakEvenTab() {
 
           {/* KPIs por producto */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Contribución/Unidad</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Contribución/Unidad</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
                 {fmt(productAnalysis.contrib)}
               </p>
-              <p className="text-xs text-gray-400 mt-1">por cada unidad vendida</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">por cada unidad vendida</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Punto equilibrio</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Punto equilibrio</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
                 {productAnalysis.breakEvenUnits === Infinity
                   ? "∞"
                   : productAnalysis.breakEvenUnits.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-400 mt-1">unidades/mes necesarias</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">unidades/mes necesarias</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Ventas del mes</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas del mes</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">
                 {productAnalysis.monthlySales.toLocaleString()} und
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {fmt(productAnalysis.currentRevenue)} en ingresos
               </p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">
+            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">
                 {productAnalysis.monthlySales >= productAnalysis.breakEvenUnits ? "Ganancia" : "Pérdida"}
               </p>
               <p
                 className={cn(
                   "text-xl sm:text-2xl font-extrabold mt-1",
-                  productAnalysis.currentProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                  productAnalysis.currentProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                 )}
               >
                 {fmt(productAnalysis.currentProfit)}
               </p>
-              <p className="text-xs text-gray-400 mt-1">este mes</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">este mes</p>
             </div>
           </div>
 
           {/* Barra de progreso hacia break-even */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3">
               Progreso hacia el Punto de Equilibrio
-            </h3>
+            </CardTitle>
             {productAnalysis.breakEvenUnits === Infinity ? (
-              <p className="text-sm text-amber-600 font-semibold">
+              <p className="text-sm text-[var(--data-warning)] font-semibold">
                 El precio debe ser mayor al costo para calcular el break-even.
               </p>
             ) : (
@@ -637,8 +635,8 @@ export default function BreakEvenTab() {
                     className={cn(
                       "h-full rounded-full transition-all",
                       productAnalysis.monthlySales >= productAnalysis.breakEvenUnits
-                        ? "bg-emerald-500"
-                        : "bg-amber-500"
+                        ? "bg-[var(--accent-soft)]"
+                        : "bg-[var(--data-warning)]"
                     )}
                     style={{
                       width: `${Math.min(
@@ -647,13 +645,13 @@ export default function BreakEvenTab() {
                       )}%`,
                     }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-gray-700 dark:text-foreground">
+                  <div className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">
                     {productAnalysis.monthlySales >= productAnalysis.breakEvenUnits
                       ? "Superado — ganando dinero"
                       : `${((productAnalysis.monthlySales / productAnalysis.breakEvenUnits) * 100).toFixed(0)}% del break-even`}
                   </div>
                 </div>
-                <div className="flex justify-between text-xs text-gray-400 mt-2">
+                <div className="flex justify-between text-xs text-[var(--text-tertiary)] mt-2">
                   <span>0 und</span>
                   <span>Break-Even: {productAnalysis.breakEvenUnits.toLocaleString()} und</span>
                   <span>Actual: {productAnalysis.monthlySales.toLocaleString()} und</span>

@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { Eye, MousePointer, TrendingUp, DollarSign, Loader2, BarChart2 } from "lucide-react";
+import { Eye, MousePointer, TrendingUp, DollarSign, Loader2, BarChart2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -45,13 +46,13 @@ function KpiCard({
   color: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 flex items-center gap-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl p-4 border border-[var(--rule-base)] flex items-center gap-4">
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", color)}>
         <Icon className="h-5 w-5 text-white" />
       </div>
       <div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{value}</p>
+        <p className="text-xs text-[var(--text-tertiary)]">{label}</p>
+        <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
       </div>
     </div>
   );
@@ -117,9 +118,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-7 w-7 animate-spin text-[#00B4A6]" />
-      </div>
+      <LoadingState />
     );
   }
 
@@ -131,10 +130,10 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
       {/* Header con selector de rango */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{productName}</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Analytics del producto</p>
+          <CardTitle className="font-semibold text-[var(--text-primary)]">{productName}</CardTitle>
+          <p className="text-xs text-[var(--text-tertiary)]">Analytics del producto</p>
         </div>
-        <div className="flex gap-1 rounded-xl border border-gray-200 dark:border-gray-700 p-1">
+        <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] p-1">
           {RANGES.map((r) => (
             <button
               key={r.value}
@@ -143,7 +142,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                 days === r.value
                   ? "bg-[#00B4A6] text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               {r.label}
@@ -154,8 +153,8 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <BarChart2 className="h-12 w-12 text-gray-300 dark:text-gray-700" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+          <BarChart2 className="h-12 w-12 text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
+          <p className="text-sm text-[var(--text-tertiary)] max-w-xs">
             Aún no hay datos. Los analytics empiezan a registrarse cuando alguien visita el producto.
           </p>
         </div>
@@ -173,7 +172,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Clicks totales"
               value={data!.totalClicks.toLocaleString()}
               icon={MousePointer}
-              color="bg-purple-500"
+              color="bg-[var(--text-primary)]"
             />
             <KpiCard
               label="Tasa de conversión"
@@ -185,13 +184,13 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Ingresos"
               value={`S/ ${data!.revenue.toLocaleString()}`}
               icon={DollarSign}
-              color="bg-emerald-500"
+              color="bg-[var(--accent-soft)]"
             />
           </div>
 
           {/* Gráfico de líneas */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+          <div className="bg-[var(--surface-raised)] rounded-xl p-4 border border-[var(--rule-base)]">
+            <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
               Tendencia — últimos {days} días
             </h4>
             <ResponsiveContainer width="100%" height={240}>
@@ -250,12 +249,12 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
 
           {/* Top productos */}
           {data!.topProducts.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Top productos</h4>
+            <div className="bg-[var(--surface-raised)] rounded-xl p-4 border border-[var(--rule-base)]">
+              <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-3">Top productos</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                    <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--rule-base)]">
                       <th className="pb-2 text-left">Producto</th>
                       <th className="pb-2 text-right">Visitas</th>
                       <th className="pb-2 text-right">Ingresos</th>
@@ -264,9 +263,9 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
                   <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                     {data!.topProducts.map((tp) => (
                       <tr key={tp.id}>
-                        <td className="py-2 text-gray-800 dark:text-gray-200">{tp.name}</td>
-                        <td className="py-2 text-right text-gray-600 dark:text-gray-400">{tp.views.toLocaleString()}</td>
-                        <td className="py-2 text-right text-gray-600 dark:text-gray-400">S/ {tp.revenue.toFixed(2)}</td>
+                        <td className="py-2 text-[var(--text-primary)]">{tp.name}</td>
+                        <td className="py-2 text-right text-[var(--text-secondary)]">{tp.views.toLocaleString()}</td>
+                        <td className="py-2 text-right text-[var(--text-secondary)]">S/ {tp.revenue.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

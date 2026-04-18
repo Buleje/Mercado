@@ -20,6 +20,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { categories, slugify } from "@/data/products";
 import { zones, findZone } from "@/data/zones";
 import { ProductsDB } from "@/lib/db/products.db";
+import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
 import {
   generateSoftwareApplicationLD,
   generateItemListLD,
@@ -305,15 +306,18 @@ async function ZoneProductContent({
         {/* Product details */}
         <div className="flex flex-col gap-4">
           {/* Category pill */}
-          {category && (
-            <Link
-              href={`/zona/${zone.slug}/${category.id}`}
-              className="inline-flex items-center gap-1.5 self-start rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs text-slate-500 dark:text-slate-400 hover:text-[#2d6a4f] hover:border-[#2d6a4f]/40 transition-colors"
-            >
-              <span>{category.emoji}</span>
-              {category.label}
-            </Link>
-          )}
+          {category && (() => {
+            const CatIcon = getCatalogCategoryIcon(category.id);
+            return (
+              <Link
+                href={`/zona/${zone.slug}/${category.id}`}
+                className="inline-flex items-center gap-1.5 self-start rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-slate-900 dark:hover:border-slate-400 transition-colors"
+              >
+                <CatIcon className="h-3 w-3" strokeWidth={1.75} />
+                {category.label}
+              </Link>
+            );
+          })()}
 
           {/* H1 */}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-50 leading-tight">
@@ -498,16 +502,19 @@ async function ZoneProductContent({
           <div className="flex flex-wrap gap-2">
             {realCategories
               .filter((c) => c.id !== category.id)
-              .map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/zona/${zone.slug}/${c.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 hover:border-[#2d6a4f]/40 hover:text-[#2d6a4f] transition-colors"
-                >
-                  <span>{c.emoji}</span>
-                  {c.label}
-                </Link>
-              ))}
+              .map((c) => {
+                const CIcon = getCatalogCategoryIcon(c.id);
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/zona/${zone.slug}/${c.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:border-slate-900 dark:hover:border-slate-400 transition-colors"
+                  >
+                    <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    {c.label}
+                  </Link>
+                );
+              })}
           </div>
         </section>
       )}

@@ -20,6 +20,7 @@ import { buildBoleta, buildFactura } from "@/lib/sunat/invoice-builder";
 import { calculateIGV } from "@/lib/sunat";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
+import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 
 // ── Validación de entrada ─────────────────────────────────────────────────────
 
@@ -40,7 +41,12 @@ export async function POST(req: NextRequest) {
   const { tenantId } = auth;
 
   // Parsear body
-  const rawBody = await req.json().catch(() => null);
+  const rawBody = await req.json().catch((err: unknown) => {
+    logger.warn("[SUNAT emit] JSON parse failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  });
   const parsed = EmitSchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
@@ -237,7 +243,12 @@ export async function POST(req: NextRequest) {
       `${type} ${series}-${String(nextNumber).padStart(8, "0")} orden=${orderId} status=${sunatStatus}`,
       invoice.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err: unknown) => {
+      logger.warn("[SUNAT emit] logActivity failed", {
+        invoiceId: invoice.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
 
     // Emit domain event — solo cuando SUNAT aceptó (ADR 007)
     if (sunatStatus === "accepted") {
@@ -250,7 +261,30 @@ export async function POST(req: NextRequest) {
         total:            +igvCalc.total.toFixed(2),
         sunatHash:        nubefactResponse.nubefact_id ?? undefined,
         cdrUrl:           nubefactResponse.enlace_del_pdf ?? undefined,
-      }).catch(() => {});
+      }).catch((err: unknown) => {
+        logger.warn("[SUNAT emit] DomainEvents.facturaEmitida failed", {
+          invoiceId: invoice.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+
+      // ADR-047 billing wire-up: meter SUNAT acceptance for billing
+      try {
+        emitMeteringEvent({
+          source: "sunat.invoice.emitted",
+          tenantId,
+          amount: 1,
+          idempotencyKey: invoice.id,
+          metadata: {
+            documentType: type,
+            series,
+            number: nextNumber,
+            total: +igvCalc.total.toFixed(2),
+          },
+        });
+      } catch {
+        // Metering fire-and-forget — nunca bloquea respuesta al cliente
+      }
     }
 
     return NextResponse.json(

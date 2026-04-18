@@ -20,46 +20,46 @@ export default function SetupStatsCard({ stats, allDone }: SetupStatsCardProps) 
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
+      <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-semibold text-[var(--text-secondary)]">
               Progreso global
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-[var(--text-tertiary)]">
               {stats.done} de {stats.total} completados
             </span>
           </div>
-          <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">{progressPct}%</span>
+          <span className="text-2xl font-bold text-[var(--accent)]">{progressPct}%</span>
         </div>
 
-        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-teal-500 to-teal-600 transition-all duration-500"
+            className="h-full bg-[var(--accent)] transition-all duration-[var(--dur-slow)]"
             style={{ width: `${progressPct}%` }}
           />
         </div>
 
         <div className="grid grid-cols-4 gap-3 mt-4">
           <div className="text-center">
-            <div className="text-xl font-extrabold text-gray-900 dark:text-white">{stats.total}</div>
-            <div className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Total</div>
+            <div className="text-xl font-extrabold text-[var(--text-primary)]">{stats.total}</div>
+            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Total</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-extrabold text-orange-500">{stats.pending}</div>
-            <div className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Pendientes</div>
+            <div className="text-xl font-extrabold text-[var(--data-warning)]">{stats.pending}</div>
+            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Pendientes</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-extrabold text-emerald-500">{stats.done}</div>
-            <div className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Hechos</div>
+            <div className="text-xl font-extrabold text-[var(--data-success)]">{stats.done}</div>
+            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Hechos</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-extrabold text-amber-500">{stats.blocked}</div>
-            <div className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Bloqueados</div>
+            <div className="text-xl font-extrabold text-[var(--data-warning)]">{stats.blocked}</div>
+            <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold tracking-wide">Bloqueados</div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-4 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
           <Clock className="w-3 h-3" />
           <span>
             Tiempo estimado restante: <strong>{stats.pendingMinutes} minutos</strong>
@@ -69,7 +69,7 @@ export default function SetupStatsCard({ stats, allDone }: SetupStatsCardProps) 
       </div>
 
       {allDone && (
-        <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-2xl p-6 flex items-center gap-4">
+        <div className="bg-[var(--accent)] text-white rounded-xl p-6 flex items-center gap-4">
           <Sparkles className="w-10 h-10 shrink-0" />
           <div>
             <h2 className="text-xl font-bold">¡Setup completo!</h2>

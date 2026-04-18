@@ -68,8 +68,8 @@ function CompareModal() {
 
   const rows: { label: string; values: string[]; type?: string }[] = [
     { label: "Precio", values: items.map(p => `S/${p.price.toFixed(2)}`), type: "price" },
-    { label: "Categoría", values: items.map(p => catLabel(p.category)) },
-    { label: "Unidad", values: items.map(p => p.unit) },
+    { label: "Categoría", values: items.map(p => catLabel(p.category ?? "—")) },
+    { label: "Unidad", values: items.map(p => p.unit ?? "—") },
     { label: "Stock", values: items.map(p => p.stock != null ? (p.stock > 0 ? `${p.stock} disponibles` : "Agotado") : "—"), type: "stock" },
     { label: "Calificación", values: items.map(p => p.rating != null && p.rating > 0 ? `${p.rating.toFixed(1)} (${p.reviewCount ?? 0})` : "Sin reseñas"), type: "rating" },
     { label: "Badge", values: items.map(p => p.badge ?? "—") },
@@ -156,7 +156,7 @@ function CompareModal() {
           {items.map(p => (
             <div key={`action-${p.id}`} className="flex justify-center">
               <button
-                onClick={() => { addItem(p as never); showToast(p.name, p.image); }}
+                onClick={() => { addItem(p as never); showToast(p.name, p.image ?? ""); }}
                 aria-label={`Agregar ${p.name} al carrito`}
                 className="flex items-center gap-1.5 bg-primary text-white rounded-xl px-3 py-2 text-xs font-bold hover:bg-primary-dark active:scale-95 transition-all"
               >

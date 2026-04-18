@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 /**
  * QuotaAlertModal — Modal detallado de uso de cuotas
  *
@@ -38,13 +39,13 @@ export interface QuotaAlertModalProps {
 // ─── Colores por semáforo ─────────────────────────────────────────────────────
 
 const BAR_COLORS = {
-  green:  "bg-emerald-500 dark:bg-emerald-400",
+  green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
   yellow: "bg-amber-400   dark:bg-amber-300",
   red:    "bg-red-500     dark:bg-red-400",
 } as const;
 
 const TEXT_COLORS = {
-  green:  "text-emerald-700 dark:text-emerald-300",
+  green:  "text-[var(--data-success)] dark:text-[var(--data-success)]",
   yellow: "text-amber-700   dark:text-amber-300",
   red:    "text-red-700     dark:text-red-400",
 } as const;
@@ -70,15 +71,15 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
   const label = EVENT_LABELS[event];
 
   return (
-    <li className="flex flex-col gap-1.5 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <li className="flex flex-col gap-1.5 py-3 border-b border-[var(--rule-base)] last:border-0">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{label}</span>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
           light === "green"
-            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
             : light === "yellow"
-              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+              ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+              : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
         }`}>
           {STATUS_LABELS[light]}
         </span>
@@ -93,7 +94,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
         aria-label={`${pct}% de cuota utilizada para ${label}`}
       >
         <div
-          className={`h-full rounded-full transition-all duration-500 ${BAR_COLORS[light]}`}
+          className={`h-full rounded-full transition-all duration-[var(--dur-slow)] ${BAR_COLORS[light]}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -102,7 +103,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
         <span className={`text-xs ${TEXT_COLORS[light]}`}>
           {used.toLocaleString("es-PE")} usados
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-[var(--text-tertiary)]">
           {limit === Infinity ? "Sin límite" : `Límite: ${limit.toLocaleString("es-PE")}`}
         </span>
       </div>
@@ -180,20 +181,20 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
         aria-describedby={descId}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       >
-        <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700">
+        <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex-shrink-0">
             <div>
-              <h2
+              <SectionTitle
                 id={titleId}
-                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                className="text-lg font-semibold text-[var(--text-primary)]"
               >
                 Uso de cuota — detalles
-              </h2>
+              </SectionTitle>
               <p
                 id={descId}
-                className="text-sm text-gray-500 dark:text-gray-400 mt-0.5"
+                className="text-sm text-[var(--text-tertiary)] mt-0.5"
               >
                 Plan {PLAN_LABELS[snapshot.plan]} · Período:{" "}
                 {new Date(snapshot.period.from).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
@@ -205,7 +206,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <button
               ref={closeRef}
               onClick={onClose}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
               aria-label="Cerrar modal de detalles de cuota"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -224,10 +225,10 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
-            <div className="flex-1 text-sm text-gray-500 dark:text-gray-400">
+          <div className="px-6 py-4 border-t border-[var(--rule-base)] flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
+            <div className="flex-1 text-sm text-[var(--text-tertiary)]">
               Costo estimado del período:{" "}
-              <strong className="text-gray-900 dark:text-gray-100">
+              <strong className="text-[var(--text-primary)]">
                 USD {snapshot.estimatedCostUsd.toFixed(2)}
               </strong>
             </div>
@@ -235,7 +236,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
               >
                 Cerrar
               </button>
@@ -243,7 +244,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
               {showUpgrade && (
                 <a
                   href={upgradeHref}
-                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-xl bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
                   aria-label="Mejorar plan de facturación"
                 >
                   Mejorar plan

@@ -63,14 +63,14 @@ function HorizontalBar({
   const p = pct(value, total);
   return (
     <div className="flex items-center gap-2 mb-2">
-      <span className="w-28 text-xs text-gray-600 dark:text-gray-300 truncate shrink-0">{label}</span>
-      <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
+      <span className="w-28 text-xs text-[var(--text-secondary)] truncate shrink-0">{label}</span>
+      <div className="flex-1 bg-[var(--surface-sunken)] rounded-full h-6 overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
           style={{ width: `${p}%`, backgroundColor: color }}
         />
       </div>
-      <span className="w-16 text-right text-xs text-gray-500 dark:text-gray-400 shrink-0">
+      <span className="w-16 text-right text-xs text-[var(--text-tertiary)] shrink-0">
         {badge ?? `${p}%`}
       </span>
     </div>
@@ -113,8 +113,8 @@ function _DonutChart({
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: s.color }}
             />
-            <span className="text-gray-600 dark:text-gray-300">{s.label}</span>
-            <span className="text-gray-500 dark:text-gray-400">({s.pct}%)</span>
+            <span className="text-[var(--text-secondary)]">{s.label}</span>
+            <span className="text-[var(--text-tertiary)]">({s.pct}%)</span>
           </div>
         ))}
       </div>
@@ -190,7 +190,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
   return (
     <div className="flex flex-col gap-4">
       {/* Toggle */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-lg p-1">
         {(Object.keys(VIEW_LABELS) as ViewMode[]).map((key) => (
           <button
             key={key}
@@ -198,8 +198,8 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             className={cn(
               "flex-1 text-xs py-1 rounded-md font-medium transition-colors",
               view === key
-                ? "bg-white dark:bg-gray-600 text-[#00B4A6] dark:text-[#2dd4bf] shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                ? "bg-white dark:bg-gray-600 text-[#00B4A6] dark:text-[#2dd4bf] "
+                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
             )}
           >
             {VIEW_LABELS[key]}
@@ -209,7 +209,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
 
       {/* Total */}
       <div className="text-center">
-        <p className="text-xs text-gray-500 dark:text-gray-400">Total del periodo</p>
+        <p className="text-xs text-[var(--text-tertiary)]">Total del periodo</p>
         <p className="text-lg font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(totalRevenue)}</p>
       </div>
 
@@ -217,7 +217,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
       {view === "categoria" && (
         <div>
           {byCategory.length === 0 && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Sin datos en este periodo</p>
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Sin datos en este periodo</p>
           )}
           {byCategory.map(([cat, value], i) => (
             <HorizontalBar
@@ -235,7 +235,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
       {view === "pago" && (
         <div>
           {paymentSlices.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Sin datos en este periodo</p>
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Sin datos en este periodo</p>
           ) : (
             <>
               {/* Donut wrapper: uses an outer div as the "ring" */}
@@ -259,8 +259,8 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
                 {paymentSlices.map((s) => (
                   <div key={s.label} className="flex items-center gap-1 text-xs">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                    <span className="text-gray-600 dark:text-gray-300">{s.label}</span>
-                    <span className="text-gray-500 dark:text-gray-400">({s.pct}%)</span>
+                    <span className="text-[var(--text-secondary)]">{s.label}</span>
+                    <span className="text-[var(--text-tertiary)]">({s.pct}%)</span>
                   </div>
                 ))}
               </div>
@@ -290,7 +290,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
                 title={`${HOUR_LABELS[i]}: ${fmt(val)}`}
               >
                 <div
-                  className="w-full rounded-t transition-all duration-500"
+                  className="w-full rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{
                     height: `${(val / maxHour) * 100}%`,
                     minHeight: val > 0 ? "2px" : "0px",
@@ -303,12 +303,12 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
           </div>
           <div className="flex gap-1 mt-1">
             {HOUR_LABELS.map((h, i) => (
-              <div key={i} className="flex-1 text-center text-[9px] text-gray-400 dark:text-gray-500 leading-none">
+              <div key={i} className="flex-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-none">
                 {i % 2 === 0 ? h : ""}
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+          <p className="text-xs text-[var(--text-tertiary)] text-center mt-2">
             Hora pico:{" "}
             <span className="font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
               {HOUR_LABELS[byHour.indexOf(Math.max(...byHour))]}

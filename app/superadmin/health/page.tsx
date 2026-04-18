@@ -52,9 +52,9 @@ interface AdminHealthData {
 
 function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    ok: "bg-green-400",
-    degraded: "bg-amber-400",
-    error: "bg-red-400",
+    ok: "bg-[var(--data-success)]",
+    degraded: "bg-[var(--data-warning)]",
+    error: "bg-[var(--data-error)]",
     checking: "bg-gray-300 animate-pulse",
   };
   return <span className={`w-2.5 h-2.5 rounded-full ${colors[status] ?? colors.checking}`} />;
@@ -62,9 +62,9 @@ function StatusDot({ status }: { status: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    ok: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    degraded: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    error: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    ok: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
+    degraded: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+    error: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
     checking: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
   };
   const labels: Record<string, string> = {
@@ -242,9 +242,9 @@ export default function SystemHealthPage() {
   }, [autoRefresh, runChecks]);
 
   const overallIcons = {
-    ok: <CheckCircle2 className="w-8 h-8 text-green-500" />,
-    degraded: <AlertTriangle className="w-8 h-8 text-amber-500" />,
-    error: <XCircle className="w-8 h-8 text-red-500" />,
+    ok: <CheckCircle2 className="w-8 h-8 text-[var(--data-success)]" />,
+    degraded: <AlertTriangle className="w-8 h-8 text-[var(--data-warning)]" />,
+    error: <XCircle className="w-8 h-8 text-[var(--data-error)]" />,
     checking: <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />,
   };
   const overallLabels = {
@@ -253,26 +253,28 @@ export default function SystemHealthPage() {
     error: "Problemas detectados",
     checking: "Verificando sistemas...",
   };
+  // Ola 2: tokenized surface — color-mix con var(--data-*) 8% para un soft
+  // background consistente en ambos temas, en lugar de bg-green-950/20 hardcoded.
   const overallColors = {
-    ok: "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20",
-    degraded: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20",
-    error: "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20",
-    checking: "border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950/20",
+    ok: "border-[var(--data-success)] bg-[color-mix(in_oklch,var(--data-success)_8%,transparent)]",
+    degraded: "border-[var(--data-warning)] bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)]",
+    error: "border-[var(--data-error)] bg-[color-mix(in_oklch,var(--data-error)_8%,transparent)]",
+    checking: "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
   };
 
   return (
     <div className="space-y-6">
       {/* Overall Status Banner + Health Score */}
-      <div className={`rounded-2xl border-2 p-6 flex items-center gap-6 ${overallColors[overallStatus]}`}>
+      <div className={`rounded-xl border-2 p-6 flex items-center gap-6 ${overallColors[overallStatus]}`}>
         <SAHealthScore score={healthScore} />
         <div className="flex-1">
           <div className="flex items-center gap-2">
             {overallIcons[overallStatus]}
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-bold text-[var(--text-primary)]">
               {overallLabels[overallStatus]}
             </h2>
           </div>
-          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-4 mt-1 text-sm text-[var(--text-tertiary)]">
             {uptime > 0 && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
@@ -288,14 +290,14 @@ export default function SystemHealthPage() {
           <button
             onClick={() => { runChecks(); setCountdown(AUTO_REFRESH_SECONDS); }}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Verificar
           </button>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${autoRefresh ? "text-teal-600 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-400" : "text-gray-400 bg-gray-100 dark:bg-gray-800"}`}
+            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${autoRefresh ? "text-[var(--accent)] bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] bg-[var(--surface-sunken)]"}`}
           >
             <Timer className="w-3 h-3" />
             {autoRefresh ? `Auto (${countdown}s)` : "Auto-refresh off"}
@@ -304,17 +306,17 @@ export default function SystemHealthPage() {
       </div>
 
       {/* Tabs: System / Tenants */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 max-w-xs">
+      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 max-w-xs">
         <button
           onClick={() => setActiveTab("system")}
-          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "system" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "system" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
         >
           <HeartPulse className="w-4 h-4 inline mr-1.5" />
           Sistema
         </button>
         <button
           onClick={() => setActiveTab("tenants")}
-          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "tenants" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "tenants" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
         >
           <Activity className="w-4 h-4 inline mr-1.5" />
           Tiendas
@@ -325,16 +327,16 @@ export default function SystemHealthPage() {
         <>
           {/* Active Incidents */}
           {incidents.length > 0 && (
-            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
+            <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 Incidentes activos
               </h3>
               {incidents.map(inc => (
-                <div key={inc.id} className="flex items-center gap-3 text-sm text-red-600 dark:text-red-300">
+                <div key={inc.id} className="flex items-center gap-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
                   <XCircle className="w-4 h-4 shrink-0" />
                   <span>{inc.message}</span>
-                  <span className="text-xs text-red-400 ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
+                  <span className="text-xs text-[var(--data-error)] ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
                 </div>
               ))}
             </div>
@@ -344,9 +346,9 @@ export default function SystemHealthPage() {
           {adminMetrics.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {adminMetrics.map(m => (
-                <div key={m.label} className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4">
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{m.label}</p>
-                  <p className={`text-2xl font-bold mt-1 ${m.status === "ok" ? "text-gray-900 dark:text-white" : m.status === "warning" ? "text-amber-500" : "text-red-500"}`}>
+                <div key={m.label} className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-4">
+                  <p className="text-xs text-[var(--text-tertiary)]">{m.label}</p>
+                  <p className={`text-2xl font-bold mt-1 ${m.status === "ok" ? "text-[var(--text-primary)]" : m.status === "warning" ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>
                     {m.value}{m.unit ? <span className="text-sm font-normal ml-1">{m.unit}</span> : null}
                   </p>
                 </div>
@@ -355,15 +357,15 @@ export default function SystemHealthPage() {
           )}
 
           {/* Individual checks */}
-          <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 dark:divide-gray-800">
             {checks.map((check) => (
               <div key={check.name} className="flex items-center gap-4 px-6 py-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)] shrink-0">
                   {check.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{check.name}</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{check.name}</span>
                     <StatusBadge status={check.status} />
                   </div>
                   {check.detail && (
@@ -371,7 +373,7 @@ export default function SystemHealthPage() {
                   )}
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`text-sm font-mono ${check.latency > 1000 ? "text-red-500" : check.latency > 500 ? "text-amber-500" : "text-gray-500 dark:text-gray-400"}`}>
+                  <span className={`text-sm font-mono ${check.latency > 1000 ? "text-[var(--data-error)]" : check.latency > 500 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]"}`}>
                     {check.latency > 0 ? `${check.latency}ms` : "—"}
                   </span>
                 </div>

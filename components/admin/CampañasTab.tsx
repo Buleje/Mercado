@@ -1,9 +1,10 @@
 "use client";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   Megaphone, Plus, Send, Clock, CheckCircle2, XCircle,
   Users, BarChart3, Eye, Trash2, RefreshCw, BookTemplate, ChevronDown, FileDown,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ─── Message template type (from /api/message-templates) ─────────────────────
@@ -87,11 +88,11 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
   borrador: "Borrador", programada: "Programada", activa: "Activa", completada: "Completada", cancelada: "Cancelada",
 };
 const STATUS_COLOR: Record<CampaignStatus, string> = {
-  borrador: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  programada: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  activa: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  completada: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  cancelada: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  borrador: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+  programada: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  activa: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  completada: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };
 const SEGMENT_LABEL: Record<AudienceSegment, string> = {
   todos: "Todos los clientes", vip: "Clientes VIP", inactivos: "Clientes inactivos (+30 días)", cumpleanos: "Cumpleaños este mes", deudores: "Con saldo pendiente",
@@ -100,9 +101,9 @@ const CHANNEL_LABEL: Record<CampaignChannel, string> = {
   whatsapp: "WhatsApp", inapp: "In-App", ambos: "WhatsApp + In-App",
 };
 const CHANNEL_COLOR: Record<CampaignChannel, string> = {
-  whatsapp: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  inapp: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-  ambos: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  whatsapp: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  inapp: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/30 dark:text-[var(--data-info)]",
+  ambos: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -161,32 +162,32 @@ function CreateModal({ onClose, onSave }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Nueva Campaña</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-foreground"><XCircle className="h-5 w-5" /></button>
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Nueva Campaña</CardTitle>
+          <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground"><XCircle className="h-5 w-5" /></button>
         </div>
         <div className="p-6 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Nombre de la campaña</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="ej: Promo de verano" className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+            <label className="block text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-1">Nombre de la campaña</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="ej: Promo de verano" className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
           </div>
           {/* Message + Template picker */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-bold text-gray-700 dark:text-foreground">Mensaje</label>
+              <label className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Mensaje</label>
               {templates.length > 0 && (
                 <div className="relative">
                   <button onClick={() => setShowTemplates(v => !v)} className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors">
                     <BookTemplate className="h-3.5 w-3.5" /> Usar plantilla <ChevronDown className="h-3 w-3" />
                   </button>
                   {showTemplates && (
-                    <div className="absolute right-0 top-7 z-10 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg w-64 max-h-48 overflow-y-auto">
+                    <div className="absolute right-0 top-7 z-10 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-64 max-h-48 overflow-y-auto">
                       {templates.map(t => (
-                        <button key={t.id} onClick={() => applyTemplate(t)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-accent text-xs border-b border-gray-100 dark:border-card-border last:border-0">
-                          <p className="font-bold text-gray-800 dark:text-foreground truncate">{t.name}</p>
-                          <p className="text-gray-500 dark:text-muted truncate mt-0.5">{t.body.slice(0, 60)}…</p>
+                        <button key={t.id} onClick={() => applyTemplate(t)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-accent text-xs border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
+                          <p className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{t.name}</p>
+                          <p className="text-[var(--text-secondary)] dark:text-muted truncate mt-0.5">{t.body.slice(0, 60)}…</p>
                         </button>
                       ))}
                     </div>
@@ -194,13 +195,13 @@ function CreateModal({ onClose, onSave }: ModalProps) {
                 </div>
               )}
             </div>
-            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} placeholder="Escribe el mensaje que recibirán los clientes..." className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground resize-none" />
-            <p className="text-xs text-gray-400 mt-1">{message.length}/1000 caracteres</p>
+            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} placeholder="Escribe el mensaje que recibirán los clientes..." className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground resize-none" />
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">{message.length}/1000 caracteres</p>
           </div>
           {/* Segment + live audience count */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Segmento de audiencia</label>
-            <select value={segment} onChange={e => setSegment(e.target.value as AudienceSegment)} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
+            <label className="block text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-1">Segmento de audiencia</label>
+            <select value={segment} onChange={e => setSegment(e.target.value as AudienceSegment)} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
               {(Object.entries(SEGMENT_LABEL) as [AudienceSegment, string][]).map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
               ))}
@@ -208,20 +209,20 @@ function CreateModal({ onClose, onSave }: ModalProps) {
             <div className="mt-1.5 flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5 text-primary" />
               {audienceLoading ? (
-                <span className="text-xs text-gray-400 dark:text-muted">Calculando…</span>
+                <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">Calculando…</span>
               ) : audienceCount !== null ? (
                 <span className="text-xs font-bold text-primary">{audienceCount.toLocaleString("es-PE")} destinatarios estimados</span>
               ) : (
-                <span className="text-xs text-gray-400 dark:text-muted">Estimado no disponible</span>
+                <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">Estimado no disponible</span>
               )}
             </div>
           </div>
           {/* Channel */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Canal de envío</label>
+            <label className="block text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-1">Canal de envío</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {(["whatsapp", "inapp", "ambos"] as CampaignChannel[]).map(c => (
-                <button key={c} onClick={() => setChannel(c)} className={cn("px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all", channel === c ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted")}>
+                <button key={c} onClick={() => setChannel(c)} className={cn("px-3 py-2 rounded-lg text-xs font-bold border-2 transition-all", channel === c ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted")}>
                   {CHANNEL_LABEL[c]}
                 </button>
               ))}
@@ -232,18 +233,18 @@ function CreateModal({ onClose, onSave }: ModalProps) {
             <button onClick={() => setSchedule(!schedule)} className={cn("w-10 h-5 rounded-full transition-colors", schedule ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
               <span className={cn("block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5", schedule ? "translate-x-5" : "translate-x-0")} />
             </button>
-            <span className="text-sm font-bold text-gray-700 dark:text-foreground">Programar envío</span>
+            <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Programar envío</span>
           </div>
           {schedule && (
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Fecha y hora de envío</label>
-              <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <label className="block text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-1">Fecha y hora de envío</label>
+              <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
             </div>
           )}
         </div>
-        <div className="p-6 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Cancelar</button>
-          <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2">
+        <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Cancelar</button>
+          <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2">
             <Plus className="h-4 w-4" /> Crear campaña
           </button>
         </div>
@@ -450,7 +451,7 @@ export default function CampañasTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl shadow-lg text-sm font-bold flex flex-wrap items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> {toast}
         </div>
       )}
@@ -458,14 +459,14 @@ export default function CampañasTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Megaphone className="h-6 w-6 text-primary" /> Campañas de Marketing
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">WhatsApp, notificaciones y mensajes masivos segmentados</p>
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">WhatsApp, notificaciones y mensajes masivos segmentados</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
-          <button onClick={() => setShowModal(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
+          <button onClick={() => setShowModal(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2">
             <Plus className="h-4 w-4" /> Nueva campaña
           </button>
         </div>
@@ -480,12 +481,12 @@ export default function CampañasTab() {
           { label: "Conversiones", value: kpis.conversions, icon: Users },
           { label: "Ingresos generados", value: fmt(kpis.revenue), icon: BarChart3 },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <k.icon className="h-4 w-4 text-primary" />
-              <p className="text-xs text-gray-500 dark:text-muted font-bold">{k.label}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-bold">{k.label}</p>
             </div>
-            <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{k.value}</p>
+            <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{k.value}</p>
           </div>
         ))}
       </div>
@@ -493,7 +494,7 @@ export default function CampañasTab() {
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         {(["todas", "borrador", "programada", "activa", "completada", "cancelada"] as const).map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 rounded-xl text-xs font-bold border transition-all", statusFilter === s ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
+          <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border transition-all", statusFilter === s ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
             {s === "todas" ? "Todas" : STATUS_LABEL[s as CampaignStatus]}
           </button>
         ))}
@@ -504,53 +505,53 @@ export default function CampañasTab() {
         {loading && (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 animate-pulse">
+              <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/5 mb-2" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/5" />
+                <div className="h-3 bg-[var(--surface-sunken)] rounded w-3/5" />
               </div>
             ))}
           </div>
         )}
         {!loading && filtered.length === 0 && (
-          <div className="text-center py-16 text-gray-400 dark:text-muted">
+          <div className="text-center py-16 text-[var(--text-tertiary)] dark:text-muted">
             <Megaphone className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p className="font-bold">No hay campañas con este filtro</p>
           </div>
         )}
         {!loading && filtered.map(c => (
-          <div key={c.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
+          <div key={c.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm truncate">{c.name}</h3>
+                  <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm truncate">{c.name}</CardTitle>
                   <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLOR[c.status])}>{STATUS_LABEL[c.status]}</span>
                   <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CHANNEL_COLOR[c.channel])}>{CHANNEL_LABEL[c.channel]}</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-muted truncate mb-2">{c.message}</p>
-                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-500 dark:text-muted">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted truncate mb-2">{c.message}</p>
+                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-[var(--text-secondary)] dark:text-muted">
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" />{c.status === "completada" ? `${c.delivered} entregados` : `~${c.totalAudience} destinatarios`}</span>
                   {c.status === "completada" && <>
                     <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{Math.round(c.opened / Math.max(c.delivered, 1) * 100)}% apertura</span>
-                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" />{c.conversions} conv.</span>
-                    {c.revenue > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">{fmt(c.revenue)}</span>}
+                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-[var(--data-success)]" />{c.conversions} conv.</span>
+                    {c.revenue > 0 && <span className="text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">{fmt(c.revenue)}</span>}
                   </>}
                   {c.scheduledAt && c.status === "programada" && (
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-blue-500" />Prog. {fmtDate(c.scheduledAt)}</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-[var(--data-success)]" />Prog. {fmtDate(c.scheduledAt)}</span>
                   )}
                   <span>{fmtDate(c.createdAt)}</span>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs font-bold text-gray-600 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-1">
+                <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-1">
                   <Eye className="h-3.5 w-3.5" /> Ver
                 </button>
                 {(c.status === "borrador" || c.status === "programada") && (
-                  <button onClick={() => handleSend(c.id)} disabled={sending === c.id} className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 flex items-center gap-1 disabled:opacity-60">
+                  <button onClick={() => handleSend(c.id)} disabled={sending === c.id} className="px-3 py-1.5 bg-[var(--accent-soft)] text-white rounded-lg text-xs font-bold hover:bg-[var(--accent-soft)] flex items-center gap-1 disabled:opacity-60">
                     {sending === c.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                     Enviar
                   </button>
                 )}
-                <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                <button onClick={() => handleDelete(c.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -562,10 +563,10 @@ export default function CampañasTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
-              <button onClick={() => setDetail(null)}><XCircle className="h-5 w-5 text-gray-400" /></button>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md">
+            <div className="p-6 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
+              <button onClick={() => setDetail(null)}><XCircle className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="flex gap-2 flex-wrap">
@@ -573,7 +574,7 @@ export default function CampañasTab() {
                 <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CHANNEL_COLOR[detail.channel])}>{CHANNEL_LABEL[detail.channel]}</span>
               </div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
-                <p className="text-sm text-gray-700 dark:text-foreground">{detail.message}</p>
+                <p className="text-sm text-[var(--text-primary)] dark:text-foreground">{detail.message}</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
@@ -585,26 +586,26 @@ export default function CampañasTab() {
                   { label: "Ingresos", value: fmt(detail.revenue) },
                 ].map(r => (
                   <div key={r.label} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
-                    <p className="text-xs text-gray-500 dark:text-muted font-bold mb-0.5">{r.label}</p>
-                    <p className="text-sm font-extrabold text-gray-900 dark:text-foreground">{r.value}</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-bold mb-0.5">{r.label}</p>
+                    <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{r.value}</p>
                   </div>
                 ))}
               </div>
               {/* Metric bars — shown only for completed/active campaigns with data */}
               {detail.totalAudience > 0 && (
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3">
-                  <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Embudo de campaña</p>
+                  <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Embudo de campaña</p>
                   {[
                     { label: "Entregados", value: detail.delivered, base: detail.totalAudience, color: "bg-primary" },
-                    { label: "Abiertos", value: detail.opened, base: detail.totalAudience, color: "bg-emerald-500" },
-                    { label: "Conversiones", value: detail.conversions, base: detail.totalAudience, color: "bg-violet-500" },
+                    { label: "Abiertos", value: detail.opened, base: detail.totalAudience, color: "bg-[var(--accent-soft)]" },
+                    { label: "Conversiones", value: detail.conversions, base: detail.totalAudience, color: "bg-[var(--text-primary)]" },
                   ].map(bar => {
                     const safePct = detail.totalAudience > 0 ? Math.round(bar.value / detail.totalAudience * 100) : 0;
                     return (
                       <div key={bar.label}>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="font-bold text-gray-700 dark:text-foreground">{bar.label}</span>
-                          <span className="text-gray-500 dark:text-muted">{bar.value.toLocaleString("es-PE")} <span className="font-bold text-gray-700 dark:text-foreground">({safePct}%)</span></span>
+                          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{bar.label}</span>
+                          <span className="text-[var(--text-secondary)] dark:text-muted">{bar.value.toLocaleString("es-PE")} <span className="font-bold text-[var(--text-primary)] dark:text-foreground">({safePct}%)</span></span>
                         </div>
                         <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", bar.color)} style={{ width: `${safePct}%` }} />
@@ -614,15 +615,15 @@ export default function CampañasTab() {
                   })}
                 </div>
               )}
-              {detail.scheduledAt && <p className="text-xs text-gray-500 dark:text-muted"><Clock className="h-3 w-3 inline mr-1" />Programado: {fmtDate(detail.scheduledAt)}</p>}
+              {detail.scheduledAt && <p className="text-xs text-[var(--text-secondary)] dark:text-muted"><Clock className="h-3 w-3 inline mr-1" />Programado: {fmtDate(detail.scheduledAt)}</p>}
             </div>
-            <div className="p-6 border-t border-gray-100 dark:border-card-border flex gap-3 flex-wrap">
-              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/10">Eliminar</button>
-              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
+            <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 flex-wrap">
+              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-lg text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/10">Eliminar</button>
+              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
                 <FileDown className="h-4 w-4" /> PDF
               </button>
               {(detail.status === "borrador" || detail.status === "programada") && (
-                <button onClick={() => { handleSend(detail.id); setDetail(null); }} className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center justify-center gap-2">
+                <button onClick={() => { handleSend(detail.id); setDetail(null); }} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center justify-center gap-2">
                   <Send className="h-4 w-4" /> Enviar ahora
                 </button>
               )}

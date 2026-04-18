@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback } from "react";
 import {
   BarChart3,
@@ -15,7 +16,7 @@ import {
   Banknote,
   CreditCard,
   Smartphone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 interface DailyReport {
   date: string;
@@ -59,11 +60,11 @@ export default function DailySummaryPanel() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800/40 rounded-xl animate-pulse" />
+            <div key={i} className="h-24 bg-[var(--surface-sunken)]/40 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -87,18 +88,18 @@ export default function DailySummaryPanel() {
   const currentHour = new Date().getHours();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
           <BarChart3 className="h-5 w-5 text-[#00B4A6]" />
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Resumen del día</h2>
-          <span className="text-xs text-gray-400 ml-1">{data.date}</span>
+          <SectionTitle className="text-base font-bold text-[var(--text-primary)]">Resumen del día</SectionTitle>
+          <span className="text-xs text-[var(--text-tertiary)] ml-1">{data.date}</span>
           {lwSales > 0 && (
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
               weekDelta >= 0
-                ? "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400"
-                : "text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-400"
+                ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                : "text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]"
             }`}>
               {weekDelta >= 0 ? "↑" : "↓"} {Math.abs(weekDelta).toFixed(0)}% vs semana pasada
             </span>
@@ -106,7 +107,7 @@ export default function DailySummaryPanel() {
         </div>
         <button
           onClick={fetchReport}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
         </button>
@@ -118,22 +119,22 @@ export default function DailySummaryPanel() {
           icon={DollarSign}
           label="Ventas hoy"
           value={`S/${data.totalSales.toFixed(2)}`}
-          color="text-emerald-500"
-          bg="bg-emerald-50 dark:bg-emerald-500/10"
+          color="text-[var(--data-success)]"
+          bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
         />
         <KpiCard
           icon={ShoppingCart}
           label="Pedidos"
           value={String(data.totalOrders)}
-          color="text-blue-500"
-          bg="bg-blue-50 dark:bg-blue-500/10"
+          color="text-[var(--data-success)]"
+          bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
         />
         <KpiCard
           icon={TrendingUp}
           label="Ticket promedio"
           value={`S/${data.averageTicket.toFixed(2)}`}
-          color="text-purple-500"
-          bg="bg-purple-50 dark:bg-purple-500/10"
+          color="text-[var(--text-secondary)]"
+          bg="bg-[var(--surface-sunken)] dark:bg-[var(--text-primary)]/10"
         />
         <KpiCard
           icon={Wallet}
@@ -173,13 +174,13 @@ export default function DailySummaryPanel() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Hourly Sales Chart */}
         {hours.length > 0 && (
-          <div className="sm:col-span-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3">
+          <div className="sm:col-span-2 rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
             <div className="flex items-center gap-1.5 mb-2.5">
               <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Ventas por hora</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)]">Ventas por hora</span>
               {lwOrders > 0 && (
-                <span className={`text-[10px] ml-auto font-medium ${
-                  weekOrdersDelta >= 0 ? "text-emerald-500" : "text-red-500"
+                <span className={`text-[length:var(--ts-2xs)] ml-auto font-medium ${
+                  weekOrdersDelta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                 }`}>
                   {weekOrdersDelta >= 0 ? "↑" : "↓"}{Math.abs(weekOrdersDelta).toFixed(0)}% pedidos vs semana pasada
                 </span>
@@ -197,7 +198,7 @@ export default function DailySummaryPanel() {
                     title={`${h}:00 — S/${val.toFixed(2)}`}
                   >
                     <div
-                      className={`w-full rounded-t-sm transition-all duration-300 ${
+                      className={`w-full rounded-t-sm transition-all duration-[var(--dur-base)] ${
                         isCurrent
                           ? "bg-[#00B4A6]"
                           : hasSales
@@ -211,33 +212,33 @@ export default function DailySummaryPanel() {
               })}
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-gray-400">6AM</span>
-              <span className="text-[9px] text-gray-400">12PM</span>
-              <span className="text-[9px] text-gray-400">6PM</span>
-              <span className="text-[9px] text-gray-400">11PM</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">6AM</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">12PM</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">6PM</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">11PM</span>
             </div>
           </div>
         )}
 
         {/* Top Products */}
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
             <Package className="h-4 w-4 text-[#00B4A6]" />
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Top productos</span>
+            <span className="text-xs font-bold text-[var(--text-secondary)]">Top productos</span>
           </div>
           {data.topProducts.length === 0 ? (
-            <p className="text-xs text-gray-400">Sin ventas aún hoy</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Sin ventas aún hoy</p>
           ) : (
             <div className="space-y-1.5">
               {data.topProducts.map((p, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-bold text-gray-400 w-4">{i + 1}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{p.name}</span>
+                    <span className="text-xs font-bold text-[var(--text-tertiary)] w-4">{i + 1}</span>
+                    <span className="text-xs text-[var(--text-secondary)] truncate">{p.name}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-gray-400">{p.quantity}u</span>
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <span className="text-xs text-[var(--text-tertiary)]">{p.quantity}u</span>
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">
                       S/{p.revenue.toFixed(2)}
                     </span>
                   </div>
@@ -248,13 +249,13 @@ export default function DailySummaryPanel() {
         </div>
 
         {/* Payment Methods */}
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <CreditCard className="h-4 w-4 text-purple-500" />
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Métodos de pago</span>
+            <CreditCard className="h-4 w-4 text-[var(--text-secondary)]" />
+            <span className="text-xs font-bold text-[var(--text-secondary)]">Métodos de pago</span>
           </div>
           {paymentEntries.length === 0 ? (
-            <p className="text-xs text-gray-400">Sin pagos aún hoy</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Sin pagos aún hoy</p>
           ) : (
             <div className="space-y-2">
               {paymentEntries.map(([method, amount]) => {
@@ -264,16 +265,16 @@ export default function DailySummaryPanel() {
                   <div key={method}>
                     <div className="flex items-center justify-between mb-0.5">
                       <div className="flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="text-xs capitalize text-gray-600 dark:text-gray-400">{method}</span>
+                        <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                        <span className="text-xs capitalize text-[var(--text-secondary)]">{method}</span>
                       </div>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-xs font-medium text-[var(--text-secondary)]">
                         S/{amount.toFixed(2)}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#00B4A6] transition-all duration-500"
+                        className="h-full rounded-full bg-[#00B4A6] transition-all duration-[var(--dur-slow)]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -304,8 +305,8 @@ function KpiCard({
   return (
     <div className={`rounded-xl ${bg} p-3`}>
       <Icon className={`h-5 w-5 ${color} mb-1`} />
-      <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
+      <p className="text-xs text-[var(--text-secondary)]">{label}</p>
     </div>
   );
 }
@@ -327,13 +328,13 @@ function AlertCard({
     <div
       className={`rounded-xl p-3 border ${
         alert
-          ? "border-red-200 dark:border-red-800/40 bg-red-50/50 dark:bg-red-500/5"
-          : "border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30"
+          ? "border-[var(--data-error)] dark:border-[var(--data-error)]/40 bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/5"
+          : "border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30"
       }`}
     >
       <Icon className={`h-4 w-4 ${color} mb-1`} />
-      <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
+      <p className="text-xs text-[var(--text-secondary)]">{label}</p>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { Play, CheckCircle2, Circle, ChevronRight, Repeat, Package, Zap, Clock, Users, X } from "lucide-react";
+import { Play, CheckCircle2, Circle, ChevronRight, Repeat, Package, Zap, Clock, Users, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface WorkflowStep {
@@ -30,8 +31,8 @@ const TEMPLATES: WorkflowTemplate[] = [
     name: "Recibir Mercadería",
     description: "Proceso completo de ingreso de productos con proveedor",
     icon: Package,
-    color: "text-blue-600",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-[var(--data-success)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
     estimatedTime: "20 min",
     steps: [
       { id: "s1", title: "Revisar orden de compra", description: "Verificar que el pedido coincide con lo acordado con el proveedor", module: "Proveedores" },
@@ -47,8 +48,8 @@ const TEMPLATES: WorkflowTemplate[] = [
     name: "Cierre de Día",
     description: "Cierre de caja, cuadre y revisión de pendientes",
     icon: Clock,
-    color: "text-amber-600",
-    bg: "bg-amber-100 dark:bg-amber-900/30",
+    color: "text-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",
     estimatedTime: "15 min",
     steps: [
       { id: "s1", title: "Revisar ventas del día", description: "Consultar el resumen de ventas por canal y cajero", module: "Ventas" },
@@ -65,8 +66,8 @@ const TEMPLATES: WorkflowTemplate[] = [
     name: "Cambio de Precios",
     description: "Actualización masiva o individual de precios de venta",
     icon: Zap,
-    color: "text-purple-600",
-    bg: "bg-purple-100 dark:bg-purple-900/30",
+    color: "text-[var(--text-secondary)]",
+    bg: "bg-[var(--surface-sunken)]",
     estimatedTime: "30 min",
     steps: [
       { id: "s1", title: "Identificar productos a actualizar", description: "Listar los productos cuyo precio de costo o margen cambió", module: "Inventario" },
@@ -82,8 +83,8 @@ const TEMPLATES: WorkflowTemplate[] = [
     name: "Inventario Físico",
     description: "Recuento completo para sincronizar stock real con el sistema",
     icon: Repeat,
-    color: "text-emerald-600",
-    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+    color: "text-[var(--data-success)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
     estimatedTime: "2–4 hs",
     steps: [
       { id: "s1", title: "Planificar secciones y equipo", description: "Dividir la tienda en zonas y asignar responsables por sección" },
@@ -99,8 +100,8 @@ const TEMPLATES: WorkflowTemplate[] = [
     name: "Incorporar Empleado",
     description: "Alta de usuario, permisos y capacitación en el sistema",
     icon: Users,
-    color: "text-rose-600",
-    bg: "bg-rose-100 dark:bg-rose-900/30",
+    color: "text-[var(--text-secondary)]",
+    bg: "bg-[var(--surface-sunken)]",
     estimatedTime: "1 hora",
     steps: [
       { id: "s1", title: "Crear cuenta en el sistema", description: "Registrar nombre, email y contraseña del nuevo usuario", module: "Usuarios", action: "admin-users" },
@@ -143,29 +144,29 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div>
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Flujos de Trabajo</h2>
-        <p className="text-sm text-gray-500 dark:text-muted">Procesos paso a paso para las tareas más comunes de la tienda</p>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Flujos de Trabajo</SectionTitle>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Procesos paso a paso para las tareas más comunes de la tienda</p>
       </div>
 
       {/* Active flow */}
       {running && (
-        <div className="bg-white dark:bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-card border-2 border-primary/30 rounded-xl overflow-hidden ">
+          <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", running.template.bg)}>
                 <running.template.icon className={cn("h-5 w-5", running.template.color)} />
               </div>
               <div>
-                <p className="font-extrabold text-sm text-gray-900 dark:text-foreground">{running.template.name}</p>
-                <p className="text-xs text-gray-400 dark:text-muted">{doneCount} de {totalSteps} pasos completados</p>
+                <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">{running.template.name}</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{doneCount} de {totalSteps} pasos completados</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="h-2 w-24 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${totalSteps > 0 ? (doneCount / totalSteps) * 100 : 0}%` }} />
+                <div className="h-full bg-primary rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${totalSteps > 0 ? (doneCount / totalSteps) * 100 : 0}%` }} />
               </div>
               <button onClick={() => setRunning(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
-                <X className="h-4 w-4 text-gray-400" />
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
           </div>
@@ -176,20 +177,20 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                 className={cn(
                   "flex items-start gap-3 p-4 rounded-xl border transition-all",
                   step.done
-                    ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30"
-                    : "bg-gray-50 dark:bg-surface border-gray-200 dark:border-card-border"
+                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+                    : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border"
                 )}
               >
-                <button onClick={() => toggleStep(step.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all", step.done ? "border-emerald-500 bg-emerald-500" : "border-gray-300 dark:border-card-border hover:border-emerald-400")}>
+                <button onClick={() => toggleStep(step.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all", step.done ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success)]/30")}>
                   {step.done && <CheckCircle2 className="h-4 w-4 text-white" />}
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-bold text-gray-400 dark:text-muted">Paso {i + 1}</span>
-                    {step.done && <span className="text-[10px] font-bold text-emerald-600">✓ Listo</span>}
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Paso {i + 1}</span>
+                    {step.done && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)]">✓ Listo</span>}
                   </div>
-                  <p className={cn("font-semibold text-sm mt-0.5", step.done ? "text-emerald-700 dark:text-emerald-400 line-through" : "text-gray-900 dark:text-foreground")}>{step.title}</p>
-                  <p className="text-xs text-gray-500 dark:text-muted mt-0.5 leading-relaxed">{step.description}</p>
+                  <p className={cn("font-semibold text-sm mt-0.5", step.done ? "text-[var(--data-success)] dark:text-[var(--data-success)] line-through" : "text-[var(--text-primary)] dark:text-foreground")}>{step.title}</p>
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 leading-relaxed">{step.description}</p>
                   {step.module && onNavigate && !step.done && (
                     <button onClick={() => { onNavigate(step.module!); toggleStep(step.id); }} className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
                       Ir a {step.module} <ChevronRight className="h-3 w-3" />
@@ -200,11 +201,11 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
             ))}
 
             {allDone && (
-              <div className="rounded-2xl bg-emerald-500 text-white p-4 text-center">
+              <div className="rounded-xl bg-[var(--accent-soft)] text-white p-4 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
                 <p className="font-extrabold text-base">¡Flujo completado!</p>
-                <p className="text-emerald-100 text-sm mt-0.5">Todos los pasos de &ldquo;{running.template.name}&rdquo; están listos.</p>
-                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-xl bg-white text-emerald-600 font-bold text-sm hover:bg-emerald-50 transition-colors">
+                <p className="text-[var(--data-success)] text-sm mt-0.5">Todos los pasos de &ldquo;{running.template.name}&rdquo; están listos.</p>
+                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-lg bg-white text-[var(--data-success)] font-bold text-sm hover:bg-[var(--accent-soft)] transition-colors">
                   Cerrar
                 </button>
               </div>
@@ -216,18 +217,18 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
       {/* Templates grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         {TEMPLATES.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3 hover:shadow-md transition-shadow flex flex-col">
+          <div key={t.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3 hover:shadow-sm transition-shadow flex flex-col">
             <div className="flex flex-wrap items-start gap-3">
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
                 <t.icon className={cn("h-5 w-5", t.color)} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-extrabold text-sm text-gray-900 dark:text-foreground leading-tight">{t.name}</p>
-                <p className="text-xs text-gray-400 dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>
+                <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground leading-tight">{t.name}</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-muted">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
               <span className="flex items-center gap-1"><Circle className="h-3 w-3" />{t.steps.length} pasos</span>
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.estimatedTime}</span>
             </div>
@@ -239,7 +240,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
               className={cn(
                 "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors",
                 running?.template.id === t.id
-                  ? "bg-gray-100 dark:bg-surface text-gray-400 cursor-not-allowed"
+                  ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] cursor-not-allowed"
                   : "bg-primary text-white hover:bg-primary/90"
               )}
             >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Zap, X, HelpCircle } from "lucide-react";
+import { Zap, X, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -110,7 +110,7 @@ export default function POSExpressMode({
     return (
       <button
         onClick={() => setEnabled(true)}
-        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 border border-amber-200 dark:border-amber-800/30 hover:bg-amber-50 dark:hover:bg-amber-950/20 px-3 py-2 rounded-xl transition-colors"
+        className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 px-3 py-2 rounded-lg transition-colors"
         title="Modo Express - escaneo rapido por codigo"
       >
         <Zap className="h-4 w-4" /> Express
@@ -119,20 +119,20 @@ export default function POSExpressMode({
   }
 
   return (
-    <div className="bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200 dark:border-amber-800/30 rounded-xl p-3 space-y-2">
+    <div className="bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Zap className="h-4 w-4 text-amber-500" />
-          <span className="text-xs font-bold text-amber-700 dark:text-amber-400 inline-flex items-center gap-1">
+          <Zap className="h-4 w-4 text-[var(--data-warning)]" />
+          <span className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] inline-flex items-center gap-1">
             Modo Express
-            <span className="text-amber-400 dark:text-amber-600 cursor-help" title="Escribe el código del producto + Enter para agregar rápido sin buscar">
+            <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)] cursor-help" title="Escribe el código del producto + Enter para agregar rápido sin buscar">
               <HelpCircle className="h-3.5 w-3.5" />
             </span>
           </span>
         </div>
         <button
           onClick={() => setEnabled(false)}
-          className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+          className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -145,7 +145,7 @@ export default function POSExpressMode({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Codigo + Enter (ej: 003x5 = producto 003, cant. 5)"
-          className="w-full px-3 py-2.5 rounded-lg border border-amber-300 dark:border-amber-700 text-sm font-bold text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-white dark:bg-card text-center"
+          className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-white dark:bg-card text-center"
           autoComplete="off"
         />
       </form>
@@ -155,8 +155,8 @@ export default function POSExpressMode({
           className={cn(
             "text-xs font-semibold text-center px-2 py-1 rounded-lg",
             feedback.startsWith("+")
-              ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400"
-              : "text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400"
+              ? "text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+              : "text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 dark:text-[var(--data-error)]"
           )}
         >
           {feedback}
@@ -169,7 +169,7 @@ export default function POSExpressMode({
             <button
               key={p.id}
               onClick={() => onAddToCart(p.id)}
-              className="shrink-0 px-2 py-1 rounded-lg text-[11px] font-medium bg-white dark:bg-card border border-amber-200 dark:border-amber-800/30 text-gray-700 dark:text-foreground hover:border-primary transition-all whitespace-nowrap flex items-center gap-1"
+              className="shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-medium bg-white dark:bg-card border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 text-[var(--text-primary)] dark:text-foreground hover:border-primary transition-all whitespace-nowrap flex items-center gap-1"
             >
               <span className="truncate max-w-20">{p.name}</span>
               <span className="font-bold text-primary">{fmt(p.price)}</span>

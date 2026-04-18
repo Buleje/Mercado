@@ -59,6 +59,7 @@ const STORE_A = {
   rating:      4.8,
   reviewCount: 120,
   description: "La mejor bodega de Pucallpa",
+  _count:      { products: 34 },
 };
 
 const STORE_B = {
@@ -71,6 +72,7 @@ const STORE_B = {
   rating:      4.2,
   reviewCount: 45,
   description: "Bebidas frescas",
+  _count:      { products: 12 },
 };
 
 function makeReq(url: string): NextRequest {
@@ -96,6 +98,7 @@ describe("GET /api/marketplace/stores", () => {
     expect(body.data).toHaveLength(2);
     expect(body.total).toBe(2);
     expect(body.data[0].slug).toBe("bodega-san-martin");
+    expect(body.data[0].trustScore).toBeGreaterThan(body.data[1].trustScore);
   });
 
   it("lista vacía cuando no hay tiendas publicadas (200)", async () => {
@@ -145,13 +148,13 @@ describe("GET /api/marketplace/stores", () => {
     expect(callArgs.where.name).toMatchObject({ contains: "San Martín", mode: "insensitive" });
   });
 
-  it("respeta el límite personalizado (limit=5)", async () => {
+  it("usa el límite personalizado para rankear antes del recorte final (limit=5)", async () => {
     mockStoreFindMany.mockResolvedValue([STORE_A]);
 
     await GET(makeReq("https://host/api/marketplace/stores?limit=5"));
 
     const callArgs = mockStoreFindMany.mock.calls[0][0];
-    expect(callArgs.take).toBe(5);
+    expect(callArgs.take).toBe(10);
   });
 
   it("aplica límite máximo de 100 cuando se piden más", async () => {
@@ -217,6 +220,11 @@ describe("GET /api/marketplace/stores", () => {
     expect(store).toHaveProperty("zone");
     expect(store).toHaveProperty("rating");
     expect(store).toHaveProperty("reviewCount");
+    expect(store).toHaveProperty("productCount");
+    expect(store).toHaveProperty("trustScore");
+    expect(store).toHaveProperty("trustLevel");
+    expect(store).toHaveProperty("trustLabel");
+    expect(store).toHaveProperty("trustReason");
   });
 
   // ── Sin datos sensibles ─────────────────────────────────────────────────────
@@ -232,5 +240,6 @@ describe("GET /api/marketplace/stores", () => {
     // El select de Prisma no incluye tenantId — no debe llegar al cliente
     // Si alguien accidentalmente lo incluye, este test fallará
     expect(store.tenantId).toBeUndefined();
+    expect(store._count).toBeUndefined();
   });
 });

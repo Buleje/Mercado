@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Printer } from "lucide-react";
+import { Printer } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface TicketItem {
@@ -136,7 +136,7 @@ export default function TicketPrinter({ data, className, variant = "button" }: T
         className={cn("p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors", className)}
         title="Imprimir ticket"
       >
-        <Printer className="h-4 w-4 text-gray-500 dark:text-muted" />
+        <Printer className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
       </button>
     );
   }
@@ -145,7 +145,7 @@ export default function TicketPrinter({ data, className, variant = "button" }: T
     <button
       onClick={handlePrint}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-xs font-bold hover:bg-gray-200 dark:hover:bg-accent transition-colors",
+        "flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-xs font-bold hover:bg-gray-200 dark:hover:bg-accent transition-colors",
         className
       )}
     >

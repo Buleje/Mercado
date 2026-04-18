@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, BellOff, X, Loader2, CheckCircle2 } from "lucide-react";
+import { Bell, BellOff, X, Loader2, CheckCircle2 } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
@@ -89,10 +89,10 @@ export default function PushNotificationBanner() {
           className={cn(
             "relative flex items-center gap-3 rounded-xl border px-4 py-3",
             state === "success"
-              ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/20"
+              ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
               : state === "error"
-              ? "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20"
-              : "border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/20"
+              ? "border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
+              : "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
           )}
         >
           {/* Icono */}
@@ -100,40 +100,40 @@ export default function PushNotificationBanner() {
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
               state === "success"
-                ? "bg-emerald-100 dark:bg-emerald-900/40"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
                 : state === "error"
-                ? "bg-red-100 dark:bg-red-900/40"
-                : "bg-blue-100 dark:bg-blue-900/40"
+                ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40"
+                : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
             )}
           >
             {state === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
             ) : state === "error" ? (
-              <BellOff className="h-4 w-4 text-red-500 dark:text-red-400" />
+              <BellOff className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
             ) : (
-              <Bell className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Bell className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
             )}
           </div>
 
           {/* Texto */}
           <div className="flex-1 min-w-0">
             {state === "success" && (
-              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
                 Notificaciones activadas. Recibirás alertas de vencimiento.
               </p>
             )}
             {state === "error" && (
               <>
-                <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+                <p className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)]">
                   No se pudieron activar las notificaciones
                 </p>
                 {errorMsg && (
-                  <p className="text-[11px] text-red-500 dark:text-red-400 mt-0.5">{errorMsg}</p>
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">{errorMsg}</p>
                 )}
               </>
             )}
             {(state === "unsubscribed" || state === "loading") && (
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
                 Activa notificaciones para recibir alertas de vencimiento
               </p>
             )}
@@ -148,8 +148,8 @@ export default function PushNotificationBanner() {
               className={cn(
                 "min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors shrink-0",
                 state === "error"
-                  ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 border border-red-200 dark:border-red-800/50"
-                  : "bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] dark:hover:bg-[var(--data-error)]/60 border border-[var(--data-error)] dark:border-[var(--data-error)]/50"
+                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               {state === "loading" ? (
@@ -174,7 +174,7 @@ export default function PushNotificationBanner() {
               type="button"
               onClick={() => setDismissed(true)}
               title="Descartar"
-              className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-white/50 dark:hover:bg-white/10 transition-colors shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-white/50 dark:hover:bg-white/10 transition-colors shrink-0"
             >
               <X className="h-3.5 w-3.5" />
             </button>

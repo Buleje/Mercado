@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 cd bodega-san-martin 2>/dev/null || true
 
+# Aumentar heap de Node para que eslint-workers no disparen SIGKILL en bulk
+# commits (>100 archivos staged). Sin esto, lint-staged muere con OOM y
+# forza a usar --no-verify. Default 4GB → 8GB resuelve hasta ~500 archivos
+# simultáneos. Fuente del problema: ADR-075 Sprint A/B/C bulk migrations.
+export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192"
+
 # 1. Lint-staged: ESLint fix on staged .ts/.tsx files
 npx lint-staged || exit 1
 
@@ -26,3 +32,39 @@ npx tsc --noEmit || {
   exit 1
 }
 echo "✅ tsc clean"
+
+# 3. Delta check: block NEW empty .catch() in staged files.
+#    Existing ones are being cleaned up — this gate prevents adding more.
+EMPTY_CATCHES=$(git diff --cached --diff-filter=ACMR -U0 -- '*.ts' '*.tsx' | grep -E '^\+.*\.catch\(\s*(\(\s*\w*\s*\))?\s*=>\s*\{\s*\}\s*\)' || true)
+if [ -n "$EMPTY_CATCHES" ]; then
+  echo ""
+  echo "❌ New empty .catch(() => {}) detected in staged changes:"
+  echo "$EMPTY_CATCHES"
+  echo ""
+  echo "   Use: .catch((err) => logger.error('[ctx] failed', { error: String(err) }))"
+  echo "   Emergency bypass: HUSKY=0 git commit ..."
+  exit 1
+fi
+echo "✅ No new empty .catch()"
+
+# 4. Design tokens gate (ADR-068): block decorative gradients/shadows in admin + store.
+#    Only scans staged files — fast (<2s). Whitelist in scripts/lint-design-tokens.ts.
+#    Emergency bypass: HUSKY=0 git commit ...
+STAGED_UI=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(components/(admin|store)|app/t)/' | grep -E '\.(tsx|ts)$' || true)
+if [ -n "$STAGED_UI" ]; then
+  echo "🎨 Running design-tokens gate (ADR-068)..."
+  npx tsx scripts/lint-design-tokens.ts --staged || {
+    echo ""
+    echo "❌ Design token violations detected (ADR-068 armonia)."
+    echo "   Fix or add to whitelist in scripts/lint-design-tokens.ts."
+    echo "   Emergency bypass: HUSKY=0 git commit ..."
+    exit 1
+  }
+  echo "✅ Design tokens clean"
+
+  # 5. Design-strict preview (ADR-075 Sprint D6): show warnings for DS adoption.
+  #    Non-blocking — purely informational. Cuando el residuo global baje de
+  #    100 warnings (Sprint E+), promoveremos a `|| exit 1`.
+  echo "🎨 Running design-strict preview (ADR-075 Sprint D6 — warnings only)..."
+  npx tsx scripts/lint-design-tokens.ts --staged --design-strict || true
+fi

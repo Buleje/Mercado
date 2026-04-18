@@ -66,7 +66,7 @@ export default function ProductVariantSelector({
                 className={cn(
                   "relative h-8 w-8 rounded-full border-2 transition-all hover:scale-110 active:scale-95",
                   isSelected
-                    ? "border-[#00B4A6] scale-110 shadow-md shadow-[#00B4A6]/30"
+                    ? "border-primary scale-110 shadow-md shadow-[#00B4A6]/30"
                     : "border-gray-300 dark:border-gray-600",
                   isOutOfStock && "opacity-40 cursor-not-allowed"
                 )}
@@ -91,7 +91,7 @@ export default function ProductVariantSelector({
                 className={cn(
                   "relative flex h-11 min-w-11 items-center justify-center rounded-lg border-2 px-2 text-sm font-bold transition-all",
                   isSelected
-                    ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6]"
+                    ? "border-primary bg-[#00B4A6]/10 text-[#00B4A6]"
                     : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/50",
                   isOutOfStock && "opacity-50 cursor-not-allowed line-through"
                 )}
@@ -116,7 +116,7 @@ export default function ProductVariantSelector({
               className={cn(
                 "relative inline-flex items-center gap-1.5 rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all min-h-[44px]",
                 isSelected
-                  ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6]"
+                  ? "border-primary bg-[#00B4A6]/10 text-[#00B4A6]"
                   : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/50",
                 isOutOfStock && "opacity-50 cursor-not-allowed"
               )}

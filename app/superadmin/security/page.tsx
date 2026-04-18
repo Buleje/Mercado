@@ -11,9 +11,9 @@ import {
   RefreshCw,
   Globe,
   Clock,
-  User,
   Ban,
 } from "lucide-react";
+import { StatCard } from "@buleje/design-system";
 
 interface SecurityEvent {
   id: string;
@@ -31,13 +31,17 @@ interface SecurityData {
   period: { days: number; since: string };
 }
 
+// Ola 3 — Iconos del timeline:
+//   Eventos rutinarios (login_success, 2fa_challenge, logout) → gris neutral.
+//   Eventos criticos (login_failed, login_locked, 2fa_failed) → semaforo
+//   porque son senales genuinas que requieren atencion del operador.
 const ACTION_CONFIG: Record<string, { label: string; icon: typeof Shield; color: string; bg: string }> = {
-  login_success: { label: "Login exitoso", icon: ShieldCheck, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-  login_failed: { label: "Login fallido", icon: ShieldAlert, color: "text-red-400", bg: "bg-red-500/10" },
-  login_locked: { label: "IP bloqueada", icon: Ban, color: "text-red-500", bg: "bg-red-600/10" },
-  "2fa_failed": { label: "2FA fallido", icon: Lock, color: "text-orange-400", bg: "bg-orange-500/10" },
-  "2fa_challenge": { label: "2FA enviado", icon: Unlock, color: "text-blue-400", bg: "bg-blue-500/10" },
-  logout: { label: "Cerrar sesión", icon: Clock, color: "text-gray-400", bg: "bg-gray-500/10" },
+  login_success: { label: "Login exitoso", icon: ShieldCheck, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+  login_failed: { label: "Login fallido", icon: ShieldAlert, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error)]/10" },
+  login_locked: { label: "IP bloqueada", icon: Ban, color: "text-[var(--data-error)]", bg: "bg-[var(--data-error)]/10" },
+  "2fa_failed": { label: "2FA fallido", icon: Lock, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning)]/10" },
+  "2fa_challenge": { label: "2FA enviado", icon: Unlock, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+  logout: { label: "Cerrar sesión", icon: Clock, color: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]" },
 };
 
 export default function SecurityDashboardPage() {
@@ -59,21 +63,29 @@ export default function SecurityDashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Ola 3: tasa de exito solo valida cuando hay suficiente volumen de eventos.
+  // Sin datos (totalEvents < umbral), 0% NO es error — es ausencia de datos.
+  const totalLoginEvents = data
+    ? (data.summary.login_success ?? 0) + (data.summary.login_failed ?? 0)
+    : 0;
+  const MIN_EVENTS_FOR_RATE = 10;
   const successRate = data
     ? Math.round(
         ((data.summary.login_success ?? 0) /
-          Math.max((data.summary.login_success ?? 0) + (data.summary.login_failed ?? 0), 1)) *
+          Math.max(totalLoginEvents, 1)) *
           100,
       )
     : 0;
+  const rateEmphasis: "error" | "neutral" =
+    totalLoginEvents >= MIN_EVENTS_FOR_RATE && successRate < 80 ? "error" : "neutral";
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-emerald-500/10">
-            <Shield className="h-6 w-6 text-emerald-400" />
+          <div className="p-2 rounded-xl bg-[var(--data-success)]/10">
+            <Shield className="h-6 w-6 text-[var(--data-success)]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Panel de Seguridad</h1>
@@ -109,54 +121,52 @@ export default function SecurityDashboardPage() {
         </div>
       ) : data ? (
         <>
-          {/* Summary Cards */}
+          {/* Summary Cards — Ola 2: migrados a StatCard DS con iconos neutros.
+              Emphasis semantico SOLO cuando el valor cruza umbral critico. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <SummaryCard
+            <StatCard
               icon={ShieldCheck}
               label="Logins exitosos"
-              value={data.summary.login_success ?? 0}
-              color="text-emerald-400"
-              bg="bg-emerald-500/10"
+              value={(data.summary.login_success ?? 0).toLocaleString("es-PE")}
+              density="default"
             />
-            <SummaryCard
+            <StatCard
               icon={ShieldAlert}
               label="Intentos fallidos"
-              value={data.summary.login_failed ?? 0}
-              color="text-red-400"
-              bg="bg-red-500/10"
-              alert={(data.summary.login_failed ?? 0) > 10}
+              value={(data.summary.login_failed ?? 0).toLocaleString("es-PE")}
+              emphasis={(data.summary.login_failed ?? 0) > 0 ? "warning" : "neutral"}
+              density="default"
             />
-            <SummaryCard
+            <StatCard
               icon={Globe}
               label="IPs únicas"
-              value={data.uniqueIPs}
-              color="text-blue-400"
-              bg="bg-blue-500/10"
+              value={data.uniqueIPs.toLocaleString("es-PE")}
+              density="default"
             />
-            <SummaryCard
+            <StatCard
               icon={Lock}
               label="Tasa de éxito"
               value={`${successRate}%`}
-              color={successRate < 80 ? "text-orange-400" : "text-emerald-400"}
-              bg={successRate < 80 ? "bg-orange-500/10" : "bg-emerald-500/10"}
+              emphasis={rateEmphasis}
+              density="default"
             />
           </div>
 
           {/* Suspicious IPs */}
           {data.suspiciousIPs.length > 0 && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+            <div className="rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/5 p-4">
               <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle className="h-5 w-5 text-red-400" />
-                <h2 className="font-semibold text-red-400">IPs sospechosas</h2>
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
+                <h2 className="font-semibold text-[var(--data-error)]">IPs sospechosas</h2>
               </div>
               <div className="space-y-2">
                 {data.suspiciousIPs.map((ip) => (
                   <div
                     key={ip.ip}
-                    className="flex items-center justify-between rounded-lg bg-red-500/10 px-4 py-2"
+                    className="flex items-center justify-between rounded-lg bg-[var(--data-error)]/10 px-4 py-2"
                   >
-                    <span className="font-mono text-sm text-red-300">{ip.ip}</span>
-                    <span className="text-sm text-red-400 font-medium">
+                    <span className="font-mono text-sm text-[var(--data-error)]">{ip.ip}</span>
+                    <span className="text-sm text-[var(--data-error)] font-medium">
                       {ip.failedAttempts} intentos fallidos
                     </span>
                   </div>
@@ -250,39 +260,10 @@ export default function SecurityDashboardPage() {
   );
 }
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-  bg,
-  alert,
-}: {
-  icon: typeof Shield;
-  label: string;
-  value: number | string;
-  color: string;
-  bg: string;
-  alert?: boolean;
-}) {
-  return (
-    <div className={`rounded-xl border p-4 ${alert ? "border-red-500/40 bg-red-500/5" : "border-gray-800 bg-gray-900/50"}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${bg}`}>
-          <Icon className={`h-5 w-5 ${color}`} />
-        </div>
-        {alert && <AlertTriangle className="h-4 w-4 text-red-400 animate-pulse" />}
-      </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-xs text-gray-400 mt-1">{label}</p>
-    </div>
-  );
-}
-
 function StatusItem({ label, value, detail }: { label: string; value: boolean; detail?: string }) {
   return (
     <div className="flex items-center gap-3 rounded-lg bg-gray-800/40 px-4 py-3">
-      <div className={`h-2.5 w-2.5 rounded-full ${value ? "bg-emerald-400" : "bg-gray-600"}`} />
+      <div className={`h-2.5 w-2.5 rounded-full ${value ? "bg-[var(--data-success)]" : "bg-gray-600"}`} />
       <div>
         <p className="text-sm font-medium text-gray-200">{label}</p>
         {detail && <p className="text-xs text-gray-500">{detail}</p>}

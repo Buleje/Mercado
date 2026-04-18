@@ -1,11 +1,12 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Eye, EyeOff, ChevronUp, ChevronDown, RotateCcw,
   TrendingUp, ShoppingCart, AlertTriangle, CreditCard,
   BarChart2, Package, UserPlus, DollarSign,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -60,29 +61,29 @@ function WidgetContent({ id }: { id: WidgetId }) {
     case "ventas-hoy":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400">S/ 0.00</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Cargando datos…</p>
+          <p className="text-3xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">S/ 0.00</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Cargando datos…</p>
         </div>
       );
     case "pedidos-pendientes":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">0</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">pedidos esperando</p>
+          <p className="text-3xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">0</p>
+          <p className="text-xs text-[var(--text-tertiary)]">pedidos esperando</p>
         </div>
       );
     case "stock-bajo":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400">0</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">productos con stock critico</p>
+          <p className="text-3xl font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">0</p>
+          <p className="text-xs text-[var(--text-tertiary)]">productos con stock critico</p>
         </div>
       );
     case "fiados-pendientes":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">S/ 0.00</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">por cobrar</p>
+          <p className="text-3xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">S/ 0.00</p>
+          <p className="text-xs text-[var(--text-tertiary)]">por cobrar</p>
         </div>
       );
     case "grafico-ventas-semana":
@@ -100,10 +101,10 @@ function WidgetContent({ id }: { id: WidgetId }) {
           ].map(({ day, h }) => (
             <div key={day} className="flex-1 flex flex-col items-center gap-1">
               <div
-                className="w-full rounded-t bg-green-200 dark:bg-green-800"
+                className="w-full rounded-t bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
                 style={{ height: `${h}px` }}
               />
-              <span className="text-[10px] text-gray-400">{day}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{day}</span>
             </div>
           ))}
         </div>
@@ -112,9 +113,9 @@ function WidgetContent({ id }: { id: WidgetId }) {
       return (
         <ul className="space-y-1 text-sm">
           {["Arroz extra", "Aceite 1L", "Azucar 1kg", "Sal gruesa", "Fideos"].map((p, i) => (
-            <li key={p} className="flex justify-between text-gray-700 dark:text-gray-300">
+            <li key={p} className="flex justify-between text-[var(--text-secondary)]">
               <span>{i + 1}. {p}</span>
-              <span className="text-gray-400">—</span>
+              <span className="text-[var(--text-tertiary)]">—</span>
             </li>
           ))}
         </ul>
@@ -122,15 +123,15 @@ function WidgetContent({ id }: { id: WidgetId }) {
     case "clientes-nuevos":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">0</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">esta semana</p>
+          <p className="text-3xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">0</p>
+          <p className="text-xs text-[var(--text-tertiary)]">esta semana</p>
         </div>
       );
     case "margen-diario":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">0%</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">margen promedio hoy</p>
+          <p className="text-3xl font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">0%</p>
+          <p className="text-xs text-[var(--text-tertiary)]">margen promedio hoy</p>
         </div>
       );
     default:
@@ -229,16 +230,16 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
   const visibleWidgets = widgets.filter((w) => w.visible);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Barra de herramientas */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+        <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
           Resumen del dia
-        </h2>
+        </SectionTitle>
         <div className="flex items-center gap-2">
           <button
             onClick={restoreDefault}
-            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
             Restaurar default
@@ -247,8 +248,8 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
             onClick={() => setEditMode((v) => !v)}
             className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
               editMode
-                ? "bg-green-600 text-white hover:bg-green-700"
-                : "border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)]"
+                : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             }`}
           >
             {editMode ? "Listo" : "Personalizar"}
@@ -258,14 +259,14 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
 
       {/* Lista de todos los widgets en modo edicion */}
       {editMode && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
+          <p className="text-xs text-[var(--text-tertiary)] mb-3">
             Usa las flechas para reordenar. Usa el ojo para mostrar u ocultar.
           </p>
           {widgets.map((widget, index) => (
             <div
               key={widget.id}
-              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <div className="flex flex-col gap-0.5">
                 <button
@@ -285,16 +286,16 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
                   <ChevronDown className="h-3 w-3" />
                 </button>
               </div>
-              <span className="text-gray-400 dark:text-gray-500">{widget.icon}</span>
-              <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-[var(--text-tertiary)]">{widget.icon}</span>
+              <span className="flex-1 text-sm font-medium text-[var(--text-secondary)]">
                 {widget.label}
               </span>
               <button
                 onClick={() => toggleVisibility(widget.id)}
                 className={`p-1.5 rounded-lg transition-colors ${
                   widget.visible
-                    ? "text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                    : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 }`}
                 aria-label={widget.visible ? "Ocultar" : "Mostrar"}
               >
@@ -310,11 +311,11 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
         {visibleWidgets.slice(0, 4).map((widget) => (
           <div
             key={widget.id}
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 "
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-500 dark:text-gray-400">{widget.icon}</span>
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <span className="text-[var(--text-tertiary)]">{widget.icon}</span>
+              <span className="text-xs font-medium text-[var(--text-tertiary)]">
                 {widget.label}
               </span>
             </div>
@@ -329,11 +330,11 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
           {visibleWidgets.slice(4).map((widget) => (
             <div
               key={widget.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 "
             >
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-gray-500 dark:text-gray-400">{widget.icon}</span>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <span className="text-[var(--text-tertiary)]">{widget.icon}</span>
+                <span className="text-xs font-medium text-[var(--text-tertiary)]">
                   {widget.label}
                 </span>
               </div>
@@ -344,12 +345,12 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
       )}
 
       {visibleWidgets.length === 0 && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-600">
+        <div className="text-center py-12 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           <EyeOff className="h-8 w-8 mx-auto mb-2" />
           <p className="text-sm">Todos los widgets estan ocultos.</p>
           <button
             onClick={() => setEditMode(true)}
-            className="mt-2 text-green-600 text-sm underline"
+            className="mt-2 text-[var(--data-success)] text-sm underline"
           >
             Personalizar para mostrarlos
           </button>

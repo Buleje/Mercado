@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Loader2, AlertCircle, BarChart3 } from "lucide-react";
+import { Clock, Loader2, AlertCircle, BarChart3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { AnalyticsPeriod } from "@/components/admin/unified/AnalyticsBIModule";
 
@@ -71,17 +72,15 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-      </div>
+      <LoadingState />
     );
   }
 
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-        <AlertCircle className="h-8 w-8 text-red-400" />
-        <p className="text-sm font-bold text-gray-700 dark:text-foreground">Error al cargar datos</p>
+        <AlertCircle className="h-8 w-8 text-[var(--data-error)]" />
+        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Error al cargar datos</p>
         <button onClick={load} className="text-xs text-primary font-bold hover:underline">Reintentar</button>
       </div>
     );
@@ -98,20 +97,20 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
   const isEmpty = byHour.every(h => h.count === 0) && byDay.every(d => d.count === 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" /> Horas Pico de Venta
-        </h3>
+        </CardTitle>
         <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
           <button
             onClick={() => setViewTab("horas")}
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
               viewTab === "horas"
-                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
-                : "text-gray-500 dark:text-muted"
+                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                : "text-[var(--text-secondary)] dark:text-muted"
             )}
           >
             Por hora
@@ -121,8 +120,8 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
               viewTab === "dias"
-                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
-                : "text-gray-500 dark:text-muted"
+                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                : "text-[var(--text-secondary)] dark:text-muted"
             )}
           >
             Por día
@@ -131,7 +130,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-700 dark:text-amber-400 text-xs px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-xs px-3 py-2">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           No se pudo conectar con el endpoint. Mostrando datos vacíos.
         </div>
@@ -139,15 +138,15 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {isEmpty && !error && (
         <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
-          <BarChart3 className="h-8 w-8 text-gray-300 dark:text-muted" />
-          <p className="text-xs text-gray-400 dark:text-muted">Sin datos de venta para este periodo</p>
+          <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Sin datos de venta para este periodo</p>
         </div>
       )}
 
       {/* By Hour Chart */}
       {viewTab === "horas" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider mb-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+          <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted mb-4">
             Ventas por hora del dia (0-23h)
           </p>
           <div className="flex items-end gap-1 sm:gap-1.5" style={{ height: 350 }}>
@@ -165,7 +164,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                   style={{ minWidth: 16 }}
                 >
                   {/* Tooltip */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-bold px-3 py-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 whitespace-nowrap z-10">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-[var(--surface-raised)] text-[var(--text-primary)] text-[length:var(--ts-2xs)] font-bold px-3 py-1.5 rounded-lg border border-[var(--rule-base)] whitespace-nowrap z-10">
                     {h.hour}:00 -- S/ {h.count} ventas
                   </div>
                   {/* Bar */}
@@ -186,7 +185,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                     style={{ height: `${Math.max(pct, 2)}%` }}
                   />
                   {/* Label */}
-                  <span className="text-[10px] font-mono text-gray-400 dark:text-muted mt-1.5 leading-none">
+                  <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] dark:text-muted mt-1.5 leading-none">
                     {h.hour}
                   </span>
                 </div>
@@ -197,7 +196,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
           {byHour.some(h => h.count > 0) && (() => {
             const peak = byHour.reduce((best, h) => h.count > best.count ? h : best, byHour[0]);
             return (
-              <p className="text-xs text-gray-500 dark:text-muted mt-3 text-center">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-3 text-center">
                 Hora pico: <span className="font-bold text-primary">{peak.hour}:00 - {peak.hour}:59</span> con {peak.count} ventas
               </p>
             );
@@ -207,8 +206,8 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Day Chart */}
       {viewTab === "dias" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider mb-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+          <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted mb-4">
             Ventas por dia de la semana
           </p>
           <div className="space-y-3">
@@ -217,7 +216,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
               const isTop = d.count === maxDay && d.count > 0;
               return (
                 <div key={d.day} className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-500 dark:text-muted w-10 text-right shrink-0">
+                  <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-10 text-right shrink-0">
                     {DAY_LABELS[d.day] ?? d.day}
                   </span>
                   <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-7 overflow-hidden">
@@ -229,12 +228,12 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     >
                       {pct > 15 && (
-                        <span className="text-[10px] font-bold text-white">{d.count}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-white">{d.count}</span>
                       )}
                     </div>
                   </div>
                   {pct <= 15 && (
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-muted shrink-0">{d.count}</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted shrink-0">{d.count}</span>
                   )}
                 </div>
               );
@@ -244,7 +243,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
           {byDay.some(d => d.count > 0) && (() => {
             const peak = byDay.reduce((best, d) => d.count > best.count ? d : best, byDay[0]);
             return (
-              <p className="text-xs text-gray-500 dark:text-muted mt-3 text-center">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-3 text-center">
                 Día más activo: <span className="font-bold text-primary capitalize">{peak.day}</span> con {peak.count} ventas
               </p>
             );

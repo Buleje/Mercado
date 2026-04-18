@@ -12,20 +12,20 @@ export function MiniUsageBar({ used, max, label }: MiniUsageBarProps) {
   const color = unlimited
     ? "bg-gray-400 dark:bg-gray-600"
     : pct >= 100
-    ? "bg-red-500"
+    ? "bg-[var(--data-error)]"
     : pct >= 80
-    ? "bg-amber-400"
+    ? "bg-[var(--data-warning)]"
     : "bg-teal-500";
 
   return (
     <div className="space-y-0.5">
-      <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500">
+      <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <span>{label}</span>
-        <span className={pct >= 100 ? "text-red-400" : pct >= 80 ? "text-amber-400" : ""}>
+        <span className={pct >= 100 ? "text-[var(--data-error)]" : pct >= 80 ? "text-[var(--data-warning)]" : ""}>
           {unlimited ? "∞" : `${used}/${max}`}
         </span>
       </div>
-      <div className="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden w-24">
+      <div className="h-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden w-24">
         {!unlimited && (
           <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
         )}

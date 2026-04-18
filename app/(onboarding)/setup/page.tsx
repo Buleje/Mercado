@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -110,7 +111,7 @@ function inputCls(hasError?: boolean) {
     "bg-white dark:bg-gray-800 dark:text-gray-100",
     hasError
       ? "border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-gray-200 dark:border-gray-700 focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6]",
+      : "border-gray-200 dark:border-gray-700 focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]",
   ].join(" ");
 }
 
@@ -155,11 +156,11 @@ function useConfetti() {
         });
       }
 
-      fireConfetti(0.25, { spread: 26, startVelocity: 55, colors: ["#00B4A6", "#f4a261", "#fff"] });
-      fireConfetti(0.2, { spread: 60, colors: ["#00B4A6", "#f4a261"] });
-      fireConfetti(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ["#00B4A6", "#ffffff"] });
+      fireConfetti(0.25, { spread: 26, startVelocity: 55, colors: ["#2563EB", "#f4a261", "#fff"] });
+      fireConfetti(0.2, { spread: 60, colors: ["#2563EB", "#f4a261"] });
+      fireConfetti(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ["#2563EB", "#ffffff"] });
       fireConfetti(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ["#f4a261"] });
-      fireConfetti(0.1, { spread: 120, startVelocity: 45, colors: ["#00B4A6", "#f4a261", "#fff"] });
+      fireConfetti(0.1, { spread: 120, startVelocity: 45, colors: ["#2563EB", "#f4a261", "#fff"] });
     } catch {
       // confetti es decorativo — no bloquear
     }
@@ -495,7 +496,7 @@ export default function SetupPage() {
               animate={{ width: "100%" }}
               transition={{ duration: 2.8 }}
               className="h-full rounded-full"
-              style={{ backgroundColor: "#00B4A6" }}
+              style={{ backgroundColor: "#2563EB" }}
             />
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
@@ -510,7 +511,7 @@ export default function SetupPage() {
             ].map((item) => (
               <div
                 key={item.text}
-                className="flex items-start gap-2 bg-[#e6f7f6] dark:bg-[#00B4A6]/10 rounded-xl p-3 text-left"
+                className="flex items-start gap-2 bg-[#e6f7f6] dark:bg-[#2563EB]/10 rounded-xl p-3 text-left"
               >
                 <span className="text-base">{item.icon}</span>
                 <span className="text-xs text-gray-600 dark:text-gray-400">{item.text}</span>
@@ -532,7 +533,7 @@ export default function SetupPage() {
         <div className="flex items-center gap-2 mb-4">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: "#00B4A6" }}
+            style={{ backgroundColor: "#2563EB" }}
           >
             <span className="text-white text-sm font-bold">B</span>
           </div>
@@ -548,7 +549,7 @@ export default function SetupPage() {
             animate={{ width: `${progressDone}%` }}
             transition={{ duration: 0.4 }}
             className="h-full rounded-full"
-            style={{ backgroundColor: "#00B4A6" }}
+            style={{ backgroundColor: "#2563EB" }}
           />
         </div>
 
@@ -560,7 +561,7 @@ export default function SetupPage() {
               className={[
                 "flex items-center gap-1.5 text-xs font-medium transition-colors",
                 s === currentStep
-                  ? "text-[#00B4A6]"
+                  ? "text-[#2563EB]"
                   : s < currentStep
                     ? "text-gray-400 dark:text-gray-600"
                     : "text-gray-300 dark:text-gray-700",
@@ -570,9 +571,9 @@ export default function SetupPage() {
                 className={[
                   "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
                   s < currentStep
-                    ? "bg-[#00B4A6] text-white"
+                    ? "bg-[#2563EB] text-white"
                     : s === currentStep
-                      ? "bg-[#00B4A6] text-white ring-2 ring-[#00B4A6]/30"
+                      ? "bg-[#2563EB] text-white ring-2 ring-[#2563EB]/30"
                       : "bg-gray-200 dark:bg-gray-700 text-gray-400",
                 ].join(" ")}
               >
@@ -596,7 +597,7 @@ export default function SetupPage() {
         {/* Header de paso */}
         <div
           className="px-6 py-5 flex items-center gap-3"
-          style={{ background: "linear-gradient(135deg, #00B4A6 0%, #007a73 100%)" }}
+          style={{ background: "linear-gradient(135deg, #2563EB 0%, #007a73 100%)" }}
         >
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-2xl shrink-0">
             {STEP_META[currentStep].icon}
@@ -675,7 +676,7 @@ export default function SetupPage() {
             onClick={() => void handleNext()}
             disabled={saving || completingOnboarding}
             className="min-h-[44px] flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60 transition flex items-center justify-center gap-2"
-            style={{ backgroundColor: "#00B4A6" }}
+            style={{ backgroundColor: "#2563EB" }}
           >
             {saving || completingOnboarding ? (
               <>
@@ -716,7 +717,7 @@ export default function SetupPage() {
                 setCashier((p) => ({ ...p, skip: false }));
                 setFieldErrors({});
               }}
-              className="text-xs text-[#00B4A6] hover:underline underline-offset-2 transition"
+              className="text-xs text-[#2563EB] hover:underline underline-offset-2 transition"
             >
               Agregar un cajero ahora
             </button>
@@ -756,12 +757,18 @@ function Step1StoreConfig({
         </label>
         <div className="flex items-center gap-4">
           <div
-            className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#00B4A6] transition shrink-0"
+            className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#2563EB] transition shrink-0"
             onClick={() => logoInputRef.current?.click()}
           >
             {form.logoPreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={form.logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+              <Image
+                src={form.logoPreview}
+                alt="Logo preview"
+                width={64}
+                height={64}
+                unoptimized
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="text-center">
                 <svg className="w-6 h-6 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -774,7 +781,7 @@ function Step1StoreConfig({
             <button
               type="button"
               onClick={() => logoInputRef.current?.click()}
-              className="text-sm text-[#00B4A6] hover:underline font-medium"
+              className="text-sm text-[#2563EB] hover:underline font-medium"
             >
               {form.logoPreview ? "Cambiar logo" : "Subir logo"}
             </button>
@@ -879,12 +886,18 @@ function Step2FirstProduct({
         </label>
         <div className="flex items-center gap-4">
           <div
-            className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#00B4A6] transition shrink-0 bg-gray-50 dark:bg-gray-800"
+            className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#2563EB] transition shrink-0 bg-gray-50 dark:bg-gray-800"
             onClick={() => imageRef.current?.click()}
           >
             {form.imagePreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={form.imagePreview} alt="Producto" className="w-full h-full object-cover" />
+              <Image
+                src={form.imagePreview}
+                alt="Producto"
+                width={64}
+                height={64}
+                unoptimized
+                className="w-full h-full object-cover"
+              />
             ) : (
               <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -895,7 +908,7 @@ function Step2FirstProduct({
             <button
               type="button"
               onClick={() => imageRef.current?.click()}
-              className="text-sm text-[#00B4A6] hover:underline font-medium"
+              className="text-sm text-[#2563EB] hover:underline font-medium"
             >
               {form.imagePreview ? "Cambiar foto" : "Subir foto"}
             </button>
@@ -968,7 +981,7 @@ function Step2FirstProduct({
         </FormFieldSimple>
       </div>
 
-      <div className="bg-[#e6f7f6] dark:bg-[#00B4A6]/10 rounded-xl p-3 text-xs text-[#007a73] dark:text-[#00B4A6]">
+      <div className="bg-[#e6f7f6] dark:bg-[#2563EB]/10 rounded-xl p-3 text-xs text-[#007a73] dark:text-[#2563EB]">
         Puedes agregar todos tus productos despues desde{" "}
         <strong>Admin → Productos</strong>. Tambien puedes importar desde un
         archivo Excel.
@@ -1018,8 +1031,8 @@ function Step3InviteCashier({
               className={[
                 "py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all text-left",
                 form.role === rol
-                  ? "border-[#00B4A6] bg-[#e6f7f6] dark:bg-[#00B4A6]/10 text-[#00B4A6]"
-                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#00B4A6]/40",
+                  ? "border-[#2563EB] bg-[#e6f7f6] dark:bg-[#2563EB]/10 text-[#2563EB]"
+                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#2563EB]/40",
               ].join(" ")}
             >
               <div className="font-semibold capitalize">{rol}</div>

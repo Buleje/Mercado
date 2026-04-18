@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
@@ -11,7 +12,7 @@ import {
   AlertCircle,
   Loader2,
   User,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -79,27 +80,27 @@ const EVENT_CONFIG: Record<
   },
   review: {
     icon: Star,
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-900/20",
-    dot: "bg-amber-400",
+    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    dot: "bg-[var(--data-warning)]",
   },
   complaint: {
     icon: MessageSquare,
-    color: "text-red-600 dark:text-red-400",
-    bg: "bg-red-50 dark:bg-red-900/20",
-    dot: "bg-red-400",
+    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
+    dot: "bg-[var(--data-error)]",
   },
   credit: {
     icon: CreditCard,
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    dot: "bg-blue-400",
+    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    dot: "bg-[var(--accent-soft)]",
   },
   points: {
     icon: Gift,
-    color: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
-    dot: "bg-purple-400",
+    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    bg: "bg-[var(--surface-sunken)]",
+    dot: "bg-[var(--accent-soft)]",
   },
 };
 
@@ -182,7 +183,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
 
   if (!customerPhone) {
     return (
-      <div className="flex items-center justify-center py-12 text-gray-400">
+      <div className="flex items-center justify-center py-12 text-[var(--text-tertiary)]">
         Selecciona un cliente para ver su linea de tiempo.
       </div>
     );
@@ -196,10 +197,10 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
           <User className="h-5 w-5" />
         </div>
         <div>
-          <p className="font-semibold text-gray-900 dark:text-white">
+          <p className="font-semibold text-[var(--text-primary)]">
             {customerName ?? "Cliente"}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-[var(--text-tertiary)]">
             {customerPhone}
           </p>
         </div>
@@ -207,38 +208,38 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-lg font-bold text-[#00B4A6]">
             {fmt(summary.totalSpent)}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Total gastado
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-lg font-bold text-[#00B4A6]">
             {summary.orderCount}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Compras</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Compras</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-lg font-bold text-[#00B4A6]">
             {summary.firstOrderDate
               ? `${daysSince(summary.firstOrderDate)}d`
               : "—"}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Antiguedad
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p
             className="truncate text-sm font-bold text-[#00B4A6]"
             title={summary.topProduct ?? "—"}
           >
             {summary.topProduct ?? "—"}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Producto favorito
           </p>
         </div>
@@ -246,24 +247,22 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
 
       {/* Timeline */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-7 w-7 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-sm text-gray-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-8 text-center dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay eventos registrados para este cliente.
           </p>
         </div>
       ) : (
         <div className="relative">
           {/* Vertical line */}
-          <div className="absolute left-4 top-0 h-full w-0.5 bg-gray-100 dark:bg-gray-800" />
+          <div className="absolute left-4 top-0 h-full w-0.5 bg-[var(--surface-sunken)]" />
 
           <div className="space-y-4 pl-10">
             {events.map((ev) => {
@@ -282,13 +281,13 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
                   </div>
 
                   {/* Card */}
-                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                  <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white">
+                        <p className="font-medium text-[var(--text-primary)]">
                           {ev.title}
                         </p>
-                        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                        <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                           {ev.detail}
                         </p>
                       </div>
@@ -298,7 +297,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
                             {fmt(ev.amount)}
                           </p>
                         )}
-                        <p className="text-xs text-gray-400">{fmtDate(ev.date)}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{fmtDate(ev.date)}</p>
                       </div>
                     </div>
                   </div>

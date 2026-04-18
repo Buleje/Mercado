@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Package, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw } from "lucide-react";
+import { Package, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw } from "@buleje/design-system/icons";
 import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ function StatCard({
 }) {
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-3 sm:p-4 animate-pulse">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-3 sm:p-4 animate-pulse">
         <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded mb-3" />
         <div className="h-8 w-12 bg-gray-200 dark:bg-surface rounded" />
       </div>
@@ -48,13 +49,13 @@ function StatCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-3 sm:p-4"
+      className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-3 sm:p-4"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", bgClass)}>
           <Icon className={cn("h-3.5 w-3.5", colorClass)} />
         </div>
-        <span className="text-[11px] font-medium text-gray-500 dark:text-muted leading-tight">{label}</span>
+        <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</span>
       </div>
       <span className={cn("text-2xl font-bold", colorClass)}>{value.toLocaleString("es-PE")}</span>
     </m.div>
@@ -93,8 +94,8 @@ export default function BatchStatsWidget() {
           label: "Lotes activos",
           value: stats.activeBatches,
           icon: CheckCircle2,
-          colorClass: "text-emerald-600 dark:text-emerald-400",
-          bgClass: "bg-emerald-50 dark:bg-emerald-900/30",
+          colorClass: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+          bgClass: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         },
         {
           label: "Por vencer (7 días)",
@@ -103,11 +104,11 @@ export default function BatchStatsWidget() {
           colorClass:
             stats.expiringWithin7Days > 0
               ? "text-amber-600 dark:text-amber-400"
-              : "text-emerald-600 dark:text-emerald-400",
+              : "text-[var(--data-success)] dark:text-[var(--data-success)]",
           bgClass:
             stats.expiringWithin7Days > 0
-              ? "bg-amber-50 dark:bg-amber-900/30"
-              : "bg-emerald-50 dark:bg-emerald-900/30",
+              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/30"
+              : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         },
         {
           label: "Vencidos con stock",
@@ -116,18 +117,18 @@ export default function BatchStatsWidget() {
           colorClass:
             stats.expiredWithStock > 0
               ? "text-red-600 dark:text-red-400"
-              : "text-emerald-600 dark:text-emerald-400",
+              : "text-[var(--data-success)] dark:text-[var(--data-success)]",
           bgClass:
             stats.expiredWithStock > 0
-              ? "bg-red-50 dark:bg-red-900/30"
-              : "bg-emerald-50 dark:bg-emerald-900/30",
+              ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/30"
+              : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         },
         {
           label: "Total unidades",
           value: stats.totalUnits,
           icon: Package,
-          colorClass: "text-[#00B4A6] dark:text-emerald-400",
-          bgClass: "bg-[#00B4A6]/10 dark:bg-emerald-900/30",
+          colorClass: "text-[#00B4A6] dark:text-[var(--data-success)]",
+          bgClass: "bg-[#00B4A6]/10 dark:bg-[var(--accent-muted)]",
         },
       ]
     : [];
@@ -136,23 +137,23 @@ export default function BatchStatsWidget() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-[#00B4A6]/10 dark:bg-emerald-900/30 flex items-center justify-center">
-            <Package className="h-3.5 w-3.5 text-[#00B4A6] dark:text-emerald-400" />
+          <div className="w-6 h-6 rounded-lg bg-[#00B4A6]/10 dark:bg-[var(--accent-muted)] flex items-center justify-center">
+            <Package className="h-3.5 w-3.5 text-[#00B4A6] dark:text-[var(--data-success)]" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">Lotes de inventario</h3>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Lotes de inventario</CardTitle>
         </div>
         <button
           onClick={fetchStats}
           disabled={loading}
           title="Actualizar"
-          className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-xs text-red-600 dark:text-red-400">
+        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
           {error} —{" "}
           <button onClick={fetchStats} className="underline font-medium">
             Reintentar

@@ -1,10 +1,11 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useId } from "react";
 import {
   Plus, Trash2, Pencil, ClipboardList, Check, X,
   ChevronDown, ChevronUp, Package, AlertTriangle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -99,8 +100,8 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           maxLength={120}
           className={cn(
             "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
-            "placeholder:text-gray-400 dark:placeholder:text-muted",
+            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
         />
@@ -117,8 +118,8 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           onChange={(e) => onChange(index, "qty", e.target.value)}
           className={cn(
             "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
-            "placeholder:text-gray-400 dark:placeholder:text-muted",
+            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
         />
@@ -135,8 +136,8 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           onChange={(e) => onChange(index, "price", e.target.value)}
           className={cn(
             "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
-            "placeholder:text-gray-400 dark:placeholder:text-muted",
+            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
         />
@@ -148,7 +149,7 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
         className={cn(
           "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
           canRemove
-            ? "text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
+            ? "text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 hover:text-[var(--data-error)]"
             : "text-gray-200 dark:text-card-border cursor-not-allowed"
         )}
         title="Quitar fila"
@@ -218,10 +219,10 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Nombre de la plantilla */}
       <div>
-        <label htmlFor={nameId} className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1.5">
+        <label htmlFor={nameId} className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
           Nombre de la plantilla
         </label>
         <input
@@ -234,8 +235,8 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
           autoFocus
           className={cn(
             "w-full px-3 py-2 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
-            "placeholder:text-gray-400 dark:placeholder:text-muted",
+            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
         />
@@ -244,9 +245,9 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
       {/* Cabecera de tabla */}
       <div>
         <div className="grid grid-cols-[1fr_80px_90px_32px] gap-2 mb-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-0.5">Producto</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-0.5">Cant.</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-0.5">Precio</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-0.5">Producto</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-0.5">Cant.</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-0.5">Precio</span>
           <span />
         </div>
 
@@ -279,7 +280,7 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -290,14 +291,14 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
         >
           Cancelar
         </button>
         <button
           type="button"
           onClick={handleSave}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors "
         >
           <Check className="h-4 w-4" />
           {initial ? "Guardar cambios" : "Crear plantilla"}
@@ -326,7 +327,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
   return (
     <div className={cn(
       "rounded-xl border bg-white dark:bg-card overflow-hidden transition-shadow",
-      "border-gray-200 dark:border-card-border shadow-sm hover:shadow-md"
+      "border-[var(--rule-base)] dark:border-card-border  hover:shadow-sm"
     )}>
       {/* Cabecera */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -334,26 +335,26 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
           <ClipboardList className="h-4.5 w-4.5 text-primary" style={{ width: 18, height: 18 }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">{template.name}</p>
-          <p className="text-[11px] text-gray-400 dark:text-muted">
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">{template.name}</p>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
             {template.items.length} {template.items.length === 1 ? "producto" : "productos"}
             {" · "}
             {units} {units === 1 ? "unidad" : "unidades"}
             {" · "}
-            <span className="font-semibold text-gray-600 dark:text-foreground">{fmt(total)}</span>
+            <span className="font-semibold text-[var(--text-secondary)] dark:text-foreground">{fmt(total)}</span>
           </p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => onApply(template)}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-colors "
             title="Usar esta plantilla"
           >
             Usar
           </button>
           <button
             onClick={() => { setExpanded(e => !e); setConfirmDelete(false); }}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors text-gray-400"
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors text-[var(--text-tertiary)]"
             title={expanded ? "Cerrar detalle" : "Ver detalle"}
           >
             {expanded
@@ -366,23 +367,23 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
 
       {/* Detalle expandible */}
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-card-border">
+        <div className="border-t border-[var(--rule-soft)] dark:border-card-border">
           {/* Lista de items */}
           <div className="px-4 py-3 space-y-1.5 bg-gray-50/50 dark:bg-surface/30">
             {template.items.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2 text-sm">
-                <Package className="h-3.5 w-3.5 text-gray-300 shrink-0" />
-                <span className="flex-1 text-gray-700 dark:text-foreground truncate">{item.name}</span>
-                <span className="text-gray-400 dark:text-muted tabular-nums text-xs">x{item.qty}</span>
-                <span className="font-mono text-xs text-gray-600 dark:text-foreground">{fmt(item.price)}</span>
+                <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
+                <span className="flex-1 text-[var(--text-primary)] dark:text-foreground truncate">{item.name}</span>
+                <span className="text-[var(--text-tertiary)] dark:text-muted tabular-nums text-xs">x{item.qty}</span>
+                <span className="font-mono text-xs text-[var(--text-secondary)] dark:text-foreground">{fmt(item.price)}</span>
                 <span className="font-semibold text-xs text-primary tabular-nums">{fmt(item.qty * item.price)}</span>
               </div>
             ))}
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-card-border">
-            <p className="text-[10px] text-gray-400 dark:text-muted">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-card-border">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
               Creada {new Date(template.createdAt).toLocaleDateString("es-PE", {
                 day: "2-digit", month: "short", year: "numeric",
               })}
@@ -390,7 +391,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
             <div className="flex items-center gap-1">
               <button
                 onClick={() => { onEdit(template); setExpanded(false); }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-600 dark:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Editar
@@ -399,13 +400,13 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => onDelete(template.id)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
                   >
                     Confirmar
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
                   >
                     No
                   </button>
@@ -413,7 +414,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Eliminar
@@ -487,15 +488,15 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
       {/* ── Encabezado ── */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-foreground">Plantillas de pedidos</h2>
-          <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
+          <SectionTitle className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">Plantillas de pedidos</SectionTitle>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
             Guarda combos de productos frecuentes y cargalos con un clic.
           </p>
         </div>
         {!formMode && templates.length < MAX_TEMPLATES && (
           <button
             onClick={() => setFormMode({ type: "create" })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors  shrink-0"
           >
             <Plus className="h-4 w-4" />
             Nueva
@@ -506,7 +507,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
       {/* ── Formulario (crear / editar) ── */}
       {formMode && (
         <div className="rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-4 space-y-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
+          <p className="text-xs font-bold text-primary mb-3">
             {isCreating ? "Nueva plantilla" : `Editando: ${editingTemplate?.name}`}
           </p>
           <TemplateForm
@@ -520,18 +521,18 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
       {/* ── Lista de plantillas ── */}
       {templates.length === 0 && !formMode && (
         <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center">
-            <ClipboardList className="h-7 w-7 text-gray-300 dark:text-muted" />
+          <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center">
+            <ClipboardList className="h-7 w-7 text-[var(--text-tertiary)] dark:text-muted" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-500 dark:text-muted">Sin plantillas todavia</p>
-            <p className="text-xs text-gray-400 dark:text-muted mt-1 max-w-xs">
+            <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Sin plantillas todavia</p>
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 max-w-xs">
               Crea una plantilla con los productos que pide siempre el mismo cliente y cargala con un clic.
             </p>
           </div>
           <button
             onClick={() => setFormMode({ type: "create" })}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors "
           >
             <Plus className="h-4 w-4" />
             Crear primera plantilla
@@ -543,7 +544,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
         <div className="space-y-3">
           {/* Feedback de "aplicada" */}
           {appliedId && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-semibold">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-sm font-semibold">
               <Check className="h-4 w-4 shrink-0" />
               Plantilla cargada en el pedido
             </div>
@@ -560,7 +561,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
           ))}
 
           {templates.length >= MAX_TEMPLATES && (
-            <p className="text-xs text-center text-gray-400 dark:text-muted py-2">
+            <p className="text-xs text-center text-[var(--text-tertiary)] dark:text-muted py-2">
               Limite de {MAX_TEMPLATES} plantillas alcanzado. Elimina alguna para crear una nueva.
             </p>
           )}

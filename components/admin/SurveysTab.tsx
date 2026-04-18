@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Star, MessageSquare, TrendingUp } from "lucide-react";
+import { Star, MessageSquare, TrendingUp } from "@buleje/design-system/icons";
 
 type SurveyStats = {
   total: number;
@@ -54,7 +55,7 @@ export default function SurveysTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-bold text-foreground">Encuestas y NPS</h2>
+        <SectionTitle className="text-lg font-bold text-foreground">Encuestas y NPS</SectionTitle>
         <p className="text-sm text-muted">Calificaciones post-entrega de clientes</p>
       </div>
 
@@ -75,7 +76,7 @@ export default function SurveysTab() {
               <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.average}</p>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map(s => (
-                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(stats.average) ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
+                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(stats.average) ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-[var(--text-tertiary)]"}`} />
                 ))}
               </div>
             </div>
@@ -94,7 +95,7 @@ export default function SurveysTab() {
       {/* Distribution chart */}
       {stats && (
         <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Distribución de calificaciones</h3>
+          <CardTitle className="text-sm font-semibold text-foreground mb-3">Distribución de calificaciones</CardTitle>
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map(star => {
               const count = stats.distribution[star] || 0;
@@ -103,11 +104,11 @@ export default function SurveysTab() {
                 <div key={star} className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1 w-12 justify-end">
                     <span className="text-xs font-medium text-foreground">{star}</span>
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
                   </div>
                   <div className="flex-1 h-5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-amber-400 rounded-full transition-all"
+                      className="h-full bg-[var(--data-warning)] rounded-full transition-all"
                       style={{ width: `${(count / maxCount) * 100}%` }}
                     />
                   </div>
@@ -121,7 +122,7 @@ export default function SurveysTab() {
 
       {/* Recent responses */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Respuestas recientes</h3>
+        <CardTitle className="text-sm font-semibold text-foreground mb-3">Respuestas recientes</CardTitle>
         {recent.length === 0 ? (
           <p className="text-sm text-muted text-center py-6">Sin respuestas aún</p>
         ) : (
@@ -132,7 +133,7 @@ export default function SurveysTab() {
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map(s => (
-                        <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
+                        <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-[var(--text-tertiary)]"}`} />
                       ))}
                     </div>
                     <span className="text-xs text-muted">Pedido #{r.orderId.slice(-6)}</span>

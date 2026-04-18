@@ -1,10 +1,12 @@
 ﻿"use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
+
 import { useState, useMemo, useEffect, startTransition } from "react";
 import {
   Timer, Play, Square, Download, X,
   User, CheckCircle, AlertTriangle, BarChart2, RefreshCw, Printer, Info, ExternalLink,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -56,23 +58,23 @@ function ModuleTooltip() {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative inline-block">
-      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} className="text-gray-400 hover:text-primary transition-colors focus:outline-none" aria-label="Ayuda">
+      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none" aria-label="Ayuda">
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-bold text-gray-900 dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Timer className="h-4 w-4 text-primary" /> ¿Qué es Control de Turnos?</p>
-          <p className="text-gray-600 dark:text-muted mb-3">Registra quién trabaja en caja, cuándo entra y sal, y cuánto vendió durante su turno.</p>
-          <p className="font-semibold text-gray-700 dark:text-foreground mb-1">Ejemplo:</p>
-          <p className="text-gray-500 dark:text-muted mb-3">Valentina abre turno a las 8am con S/200 de fondo. Cierra a las 2pm. El sistema muestra: S/850 en ventas, S/600 en efectivo, S/250 digital. Diferencia en caja: <span className="text-emerald-600 font-semibold">Conforme</span>.</p>
-          <div className="space-y-1 border-t border-gray-100 dark:border-card-border pt-2">
-            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">KPIs</span> — ventas y pedidos del día en tiempo real.</p>
-            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Abrir turno</span> — registra cajero, rol y fondo inicial.</p>
-            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Turnos activos</span> — muestra quién está trabajando ahora.</p>
-            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Cerrar turno</span> — ingresa el efectivo contado y genera el arqueo automáticamente.</p>
-            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Historial</span> — todos los turnos pasados con su resumen.</p>
+        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
+          <p className="font-bold text-[var(--text-primary)] dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Timer className="h-4 w-4 text-primary" /> ¿Qué es Control de Turnos?</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Registra quién trabaja en caja, cuándo entra y sal, y cuánto vendió durante su turno.</p>
+          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Ejemplo:</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Valentina abre turno a las 8am con S/200 de fondo. Cierra a las 2pm. El sistema muestra: S/850 en ventas, S/600 en efectivo, S/250 digital. Diferencia en caja: <span className="text-[var(--data-success)] font-semibold">Conforme</span>.</p>
+          <div className="space-y-1 border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">KPIs</span> — ventas y pedidos del día en tiempo real.</p>
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Abrir turno</span> — registra cajero, rol y fondo inicial.</p>
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Turnos activos</span> — muestra quién está trabajando ahora.</p>
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Cerrar turno</span> — ingresa el efectivo contado y genera el arqueo automáticamente.</p>
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Historial</span> — todos los turnos pasados con su resumen.</p>
           </div>
-          <p className="mt-2 text-gray-400 italic">Al cerrar un turno, el resultado aparece en <strong>Arqueo de Caja</strong>.</p>
+          <p className="mt-2 text-[var(--text-tertiary)] italic">Al cerrar un turno, el resultado aparece en <strong>Arqueo de Caja</strong>.</p>
         </div>
       )}
     </div>
@@ -238,24 +240,24 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Timer className="h-6 w-6 text-primary" />
             Control de Turnos
             <ModuleTooltip />
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Apertura, cierre y resumen de ventas por turno y cajero</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Apertura, cierre y resumen de ventas por turno y cajero</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => { setLoadingData(true); loadShiftData(); }} disabled={loadingData} title="Actualizar datos de ventas" className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
+          <button onClick={() => { setLoadingData(true); loadShiftData(); }} disabled={loadingData} title="Actualizar datos de ventas" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
           {onNavigateToArqueo && (
-            <button onClick={onNavigateToArqueo} title="Ver Arqueo de Caja" className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
+            <button onClick={onNavigateToArqueo} title="Ver Arqueo de Caja" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" /> Ver Arqueo
             </button>
           )}
-          <button onClick={() => exportToCSV(closedShifts.map(s => ({ cajero: s.userName, apertura: s.openedAt, cierre: s.closedAt ?? "", duracion: duration(s.openedAt, s.closedAt), ventas_total: s.totalSales, pedidos: s.totalOrders, efectivo: s.cashSales, digital: s.digitalSales, fondo_inicio: s.openingCash, efectivo_contado: s.closingCash ?? 0, esperado: s.expectedCash, diferencia: s.difference ?? 0 })), "historial-turnos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(closedShifts.map(s => ({ cajero: s.userName, apertura: s.openedAt, cierre: s.closedAt ?? "", duracion: duration(s.openedAt, s.closedAt), ventas_total: s.totalSales, pedidos: s.totalOrders, efectivo: s.cashSales, digital: s.digitalSales, fondo_inicio: s.openingCash, efectivo_contado: s.closingCash ?? 0, esperado: s.expectedCash, diferencia: s.difference ?? 0 })), "historial-turnos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowOpenForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowOpenForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Play className="h-4 w-4" /> Abrir turno
           </button>
         </div>
@@ -264,14 +266,14 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-          { label: "Pedidos hoy", value: String(stats.totalOrdersToday), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Turnos activos", value: String(stats.activeCount), icon: Timer, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Diferencia en caja", value: fmt(Math.abs(stats.totalDifference)), icon: stats.totalDifference === 0 ? CheckCircle : AlertTriangle, color: stats.totalDifference === 0 ? "text-emerald-600" : stats.totalDifference > 0 ? "text-blue-600" : "text-red-500", bg: stats.totalDifference === 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
+          { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Pedidos hoy", value: String(stats.totalOrdersToday), icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Turnos activos", value: String(stats.activeCount), icon: Timer, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+          { label: "Diferencia en caja", value: fmt(Math.abs(stats.totalDifference)), icon: stats.totalDifference === 0 ? CheckCircle : AlertTriangle, color: stats.totalDifference === 0 ? "text-[var(--data-success)]" : stats.totalDifference > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]", bg: stats.totalDifference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
         ))}
@@ -279,32 +281,32 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Open shift form */}
       {showOpenForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Play className="h-4 w-4 text-emerald-500" /> Abrir nuevo turno</h3>
-            <button onClick={() => setShowOpenForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Play className="h-4 w-4 text-[var(--data-success)]" /> Abrir nuevo turno</CardTitle>
+            <button onClick={() => setShowOpenForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Nombre del cajero</label>
-              <input type="text" value={openForm.userName} onChange={e => setOpenForm(p => ({ ...p, userName: e.target.value }))} placeholder="Nombre completo" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre del cajero</label>
+              <input type="text" value={openForm.userName} onChange={e => setOpenForm(p => ({ ...p, userName: e.target.value }))} placeholder="Nombre completo" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Rol</label>
-              <select value={openForm.role} onChange={e => setOpenForm(p => ({ ...p, role: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Rol</label>
+              <select value={openForm.role} onChange={e => setOpenForm(p => ({ ...p, role: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
                 <option value="cajero">Cajero</option>
                 <option value="vendedor">Vendedor</option>
                 <option value="administrador">Administrador</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Fondo inicial (S/)</label>
-              <input type="number" value={openForm.openingCash} onChange={e => setOpenForm(p => ({ ...p, openingCash: e.target.value }))} min="0" step="50" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Fondo inicial (S/)</label>
+              <input type="number" value={openForm.openingCash} onChange={e => setOpenForm(p => ({ ...p, openingCash: e.target.value }))} min="0" step="50" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowOpenForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleOpenShift} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Abrir turno</button>
+            <button onClick={() => setShowOpenForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+            <button onClick={handleOpenShift} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-[var(--accent-soft)] text-white font-semibold hover:bg-[var(--accent-soft)]">Abrir turno</button>
           </div>
         </div>
       )}
@@ -312,21 +314,21 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* Close shift form */}
       {showCloseForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCloseForm(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-red-500" /> Cerrar turno</h3>
-              <button onClick={() => setShowCloseForm(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-[var(--data-error)]" /> Cerrar turno</CardTitle>
+              <button onClick={() => setShowCloseForm(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Cajero</span><span className="font-semibold text-gray-700 dark:text-foreground">{showCloseForm.userName}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Turno abierto</span><span className="font-semibold text-gray-700 dark:text-foreground">{fmtDatetime(showCloseForm.openedAt)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Duración</span><span className="font-semibold text-gray-700 dark:text-foreground">{duration(showCloseForm.openedAt)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Ventas</span><span className="font-semibold text-gray-700 dark:text-foreground">{fmt(showCloseForm.totalSales)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-blue-600">{fmt(showCloseForm.expectedCash)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Cajero</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{showCloseForm.userName}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Turno abierto</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtDatetime(showCloseForm.openedAt)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Duración</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{duration(showCloseForm.openedAt)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Ventas</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(showCloseForm.totalSales)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-[var(--data-success)]">{fmt(showCloseForm.expectedCash)}</span></div>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Efectivo contado en caja (S/)</label>
+                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Efectivo contado en caja (S/)</label>
                 <input
                   type="number"
                   value={closeForm.closingCash}
@@ -334,24 +336,24 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                   placeholder="0.00"
                   min="0"
                   step="0.01"
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   autoFocus
                 />
               </div>
               {closeForm.closingCash && (
-                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400" : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400")}>
+                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)]")}>
                   <span>Diferencia:</span>
                   <span>{parseFloat(closeForm.closingCash) >= showCloseForm.expectedCash ? "+" : ""}{fmt(parseFloat(closeForm.closingCash) - showCloseForm.expectedCash)}</span>
                 </div>
               )}
               <div>
-                <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Observaciones</label>
-                <textarea value={closeForm.notes} onChange={e => setCloseForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Ej: Faltó billete de S/50..." className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground resize-none" />
+                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Observaciones</label>
+                <textarea value={closeForm.notes} onChange={e => setCloseForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Ej: Faltó billete de S/50..." className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground resize-none" />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => setShowCloseForm(null)} className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-              <button onClick={handleCloseShift} className="flex-1 py-2.5 text-sm rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600">Cerrar turno</button>
+              <button onClick={() => setShowCloseForm(null)} className="flex-1 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+              <button onClick={handleCloseShift} className="flex-1 py-2.5 text-sm rounded-lg bg-[var(--data-error)] text-white font-semibold hover:bg-[var(--data-error)]">Cerrar turno</button>
             </div>
           </div>
         </div>
@@ -360,7 +362,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* View tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {(["activos", "historial"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {v === "activos" ? `Turnos activos (${activeShifts.length})` : `Historial (${closedShifts.length})`}
           </button>
         ))}
@@ -370,7 +372,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {loadingData && (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 animate-pulse">
+            <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 animate-pulse">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-surface" />
                 <div className="flex-1 space-y-2">
@@ -388,37 +390,37 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Shifts list */}
       {!loadingData && (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {visible.length === 0 && (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-8 text-center text-gray-400 dark:text-muted text-sm">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
             {view === "activos" ? "No hay turnos activos en este momento." : "Sin historial de turnos."}
           </div>
         )}
         {visible.map(sh => {
           const isOpen = sh.status === "abierto";
           return (
-            <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5 transition-all", isOpen ? "border-emerald-300 dark:border-emerald-800 shadow-sm" : "border-gray-200 dark:border-card-border")}>
+            <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 transition-all", isOpen ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 " : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0", isOpen ? "bg-emerald-500" : "bg-gray-400 dark:bg-surface")}>
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0", isOpen ? "bg-[var(--accent-soft)]" : "bg-gray-400 dark:bg-surface")}>
                     <User className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-foreground">{sh.userName}</p>
-                    <p className="text-xs text-gray-500 dark:text-muted capitalize">{sh.role} · {fmtDatetime(sh.openedAt)}</p>
+                    <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{sh.userName}</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted capitalize">{sh.role} · {fmtDatetime(sh.openedAt)}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted")}>
+                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
                     {isOpen ? "Activo" : sh.status === "revisando" ? "Revisando" : `Cerrado — ${duration(sh.openedAt, sh.closedAt)}`}
                   </span>
                   {isOpen && (
-                    <button onClick={() => { setShowCloseForm(sh); setCloseForm({ closingCash: "", notes: "" }); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                    <button onClick={() => { setShowCloseForm(sh); setCloseForm({ closingCash: "", notes: "" }); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] text-xs font-semibold hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/30 transition-colors">
                       <Square className="h-3.5 w-3.5" /> Cerrar
                     </button>
                   )}
                   {!isOpen && (
-                    <button onClick={() => setPrintingShift(sh)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-600 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                    <button onClick={() => setPrintingShift(sh)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] text-xs font-semibold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
                       <Printer className="h-3.5 w-3.5" /> Recibo
                     </button>
                   )}
@@ -433,7 +435,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               </div>
 
               {!isOpen && sh.closingCash !== undefined && (
-                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                   <SCell label="Fondo inicial" value={fmt(sh.openingCash)} />
                   <SCell label="Esperado en caja" value={fmt(sh.expectedCash)} />
                   <SCell label="Contado en caja" value={fmt(sh.closingCash)} />
@@ -441,7 +443,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 </div>
               )}
 
-              {sh.notes && <p className="mt-3 text-xs text-gray-500 dark:text-muted italic border-t border-gray-100 dark:border-card-border pt-2">Obs: {sh.notes}</p>}
+              {sh.notes && <p className="mt-3 text-xs text-[var(--text-secondary)] dark:text-muted italic border-t border-[var(--rule-soft)] dark:border-card-border pt-2">Obs: {sh.notes}</p>}
             </div>
           );
         })}
@@ -450,7 +452,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Cargar más (historial client-side pagination) */}
       {!loadingData && view === "historial" && historialVisible < closedShifts.length && (
-        <button onClick={() => setHistorialVisible(v => v + 10)} className="w-full py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => setHistorialVisible(v => v + 10)} className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           Cargar más — {closedShifts.length - historialVisible} turnos restantes
         </button>
       )}
@@ -458,11 +460,11 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* Print receipt modal */}
       {printingShift && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPrintingShift(null)}>
-          <div id="shift-receipt" className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
-            <div className="text-center border-b border-dashed border-gray-300 dark:border-card-border pb-3">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Buleje</p>
-              <p className="font-extrabold text-gray-900 dark:text-foreground mt-1">Recibo de Turno</p>
-              <p className="text-xs text-gray-500 dark:text-muted">{fmtDatetime(new Date().toISOString())}</p>
+          <div id="shift-receipt" className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
+            <div className="text-center border-b border-dashed border-[var(--rule-base)] dark:border-card-border pb-3">
+              <p className="text-xs font-bold text-[var(--text-tertiary)]">Buleje</p>
+              <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">Recibo de Turno</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDatetime(new Date().toISOString())}</p>
             </div>
             <div className="space-y-1.5 text-sm">
               {[
@@ -473,12 +475,12 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 { label: "Duración", value: duration(printingShift.openedAt, printingShift.closedAt) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between">
-                  <span className="text-gray-500 dark:text-muted">{label}</span>
-                  <span className="font-semibold text-gray-900 dark:text-foreground">{value}</span>
+                  <span className="text-[var(--text-secondary)] dark:text-muted">{label}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{value}</span>
                 </div>
               ))}
             </div>
-            <div className="border-t border-dashed border-gray-300 dark:border-card-border pt-3 space-y-1.5 text-sm">
+            <div className="border-t border-dashed border-[var(--rule-base)] dark:border-card-border pt-3 space-y-1.5 text-sm">
               {[
                 { label: "Ventas totales", value: fmt(printingShift.totalSales) },
                 { label: "Pedidos", value: String(printingShift.totalOrders) },
@@ -492,15 +494,15 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 ] : []),
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between">
-                  <span className="text-gray-500 dark:text-muted">{label}</span>
-                  <span className="font-bold text-gray-900 dark:text-foreground">{value}</span>
+                  <span className="text-[var(--text-secondary)] dark:text-muted">{label}</span>
+                  <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{value}</span>
                 </div>
               ))}
             </div>
-            {printingShift.notes && <p className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 dark:border-card-border pt-2">Obs: {printingShift.notes}</p>}
+            {printingShift.notes && <p className="text-xs text-[var(--text-secondary)] italic border-t border-dashed border-[var(--rule-base)] dark:border-card-border pt-2">Obs: {printingShift.notes}</p>}
             <div className="flex flex-wrap gap-2 pt-2">
-              <button onClick={() => setPrintingShift(null)} className="flex-1 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cerrar</button>
-              <button onClick={() => window.print()} className="flex-1 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 flex items-center justify-center gap-1.5">
+              <button onClick={() => setPrintingShift(null)} className="flex-1 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cerrar</button>
+              <button onClick={() => window.print()} className="flex-1 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 flex items-center justify-center gap-1.5">
                 <Printer className="h-4 w-4" /> Imprimir
               </button>
             </div>
@@ -512,10 +514,10 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 }
 
 function SCell({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  const col = accent === "blue" ? "text-blue-600 dark:text-blue-400" : accent === "violet" ? "text-violet-600 dark:text-violet-400" : accent === "amber" ? "text-amber-600 dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-emerald-600 dark:text-emerald-400" : accent === "red" ? "text-red-500 dark:text-red-400" : "text-gray-700 dark:text-foreground";
+  const col = accent === "blue" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : accent === "violet" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : accent === "amber" ? "text-amber-600 dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : accent === "red" ? "text-red-500 dark:text-red-400" : "text-[var(--text-primary)] dark:text-foreground";
   return (
     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl px-3 py-2.5">
-      <p className="text-xs text-gray-400 dark:text-muted mb-0.5">{label}</p>
+      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">{label}</p>
       <p className={cn("font-extrabold text-base leading-tight", col)}>{value}</p>
     </div>
   );

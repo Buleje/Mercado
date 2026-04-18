@@ -1,7 +1,8 @@
 "use client";
 
+import { PageTitle } from "@buleje/design-system";
 import { useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@buleje/design-system/icons";
 
 export default function AdminError({
   error,
@@ -24,34 +25,34 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-8 shadow-lg text-center">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)] p-4">
+      <div className="w-full max-w-md rounded-xl bg-[var(--surface-raised)] p-8 text-center">
         <div className="mb-4 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/20 dark:text-[var(--data-warning)]">
             <AlertTriangle className="h-7 w-7" />
           </div>
         </div>
-        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+        <PageTitle className="text-xl font-bold text-[var(--text-primary)]">
           Algo salio mal
-        </h1>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        </PageTitle>
+        <p className="mt-2 text-sm text-[var(--text-tertiary)]">
           Hubo un error en el panel de administracion. Intenta recargar la pagina.
         </p>
         {error.digest && (
-          <p className="mt-1 text-xs text-gray-400 font-mono">
+          <p className="mt-1 text-xs text-[var(--text-tertiary)] font-mono">
             Ref: {error.digest}
           </p>
         )}
         <div className="mt-6 flex gap-3 justify-center">
           <button
             onClick={reset}
-            className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+            className="rounded-lg bg-[var(--accent-soft)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--accent-soft)] transition-colors"
           >
             Reintentar
           </button>
           <a
             href="/admin"
-            className="rounded-lg border border-gray-200 px-6 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-[var(--rule-base)] px-6 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
           >
             Ir al inicio
           </a>

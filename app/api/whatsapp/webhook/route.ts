@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
+import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
+
+// ─── Feature flag (ADR-058) ───────────────────────────────────────────────────
+//
+// AI-first routing: el webhook delega al Concierge AI (ADR-046) primero,
+// y cae al motor keyword legacy (conversation-engine.ts) solo si:
+//   - el flag está apagado
+//   - el Concierge lanza una excepción no capturada
+//
+// Default: ON. Se puede apagar con WHATSAPP_AI_FIRST=false (kill switch).
+function isAiFirstEnabled(): boolean {
+  const v = process.env.WHATSAPP_AI_FIRST;
+  if (v === undefined || v === null || v === "") return true;
+  return v.toLowerCase() !== "false" && v !== "0";
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,8 +178,10 @@ export async function POST(req: NextRequest) {
 }
 
 // ─── Procesamiento asíncrono ──────────────────────────────────────────────────
+// Exportado para tests directos (ADR-058) — el POST handler lo dispara
+// fire-and-forget, los tests pueden awaitearlo determinísticamente.
 
-async function processWebhookPayload(rawBody: string): Promise<void> {
+export async function processWebhookPayload(rawBody: string): Promise<void> {
   let body: Record<string, unknown>;
   try {
     body = JSON.parse(rawBody) as Record<string, unknown>;
@@ -194,13 +211,13 @@ async function processWebhookPayload(rawBody: string): Promise<void> {
       const tenantConfig = await resolveTenant(phoneNumberId);
 
       for (const message of value.messages ?? []) {
-        await handleIncomingMessage(message, phoneNumberId, tenantConfig);
+        await handleSingleMessage(message, phoneNumberId, tenantConfig);
       }
     }
   }
 }
 
-async function handleIncomingMessage(
+async function handleSingleMessage(
   message: MetaTextMessage,
   phoneNumberId: string,
   tenantConfig: {
@@ -250,38 +267,74 @@ async function handleIncomingMessage(
     from: senderPhone,
     tenantId: effectiveTenantId,
     text: text.slice(0, 80),
+    aiFirst: isAiFirstEnabled(),
   });
 
-  try {
-    const result = await processMessage(
-      effectiveTenantId,
-      senderPhone,
-      text,
-      { businessName, yapeNumber }
-    );
+  // ── ADR-058: AI-first routing con fallback al engine legacy ───────────────
+  // El Concierge AI (ADR-046) jamás lanza — captura todo internamente y
+  // devuelve un mensaje amigable. Si por alguna razón bizarra lanza, caemos
+  // al motor keyword. Ambos engines son safe individualmente.
+  const aiFirst = isAiFirstEnabled();
 
-    await sendReply(
-      phoneNumberId,
-      effectiveToken,
-      senderPhone,
-      result.reply
-    );
+  let replyText: string | null = null;
+  let pathUsed: "ai-concierge" | "legacy-keyword" = "legacy-keyword";
 
-    logger.info("[whatsapp/webhook] Respuesta enviada", {
-      to: senderPhone,
-      newState: result.newState,
-    });
-  } catch (err) {
-    logger.error("[whatsapp/webhook] Error procesando mensaje de cliente", {
-      error: err,
-      from: senderPhone,
-    });
-    // Intentar enviar mensaje de error al cliente
-    await sendReply(
-      phoneNumberId,
-      effectiveToken,
-      senderPhone,
-      "Ocurrió un error. Por favor escribe *hola* para volver al menú."
-    ).catch(() => {});
+  if (aiFirst) {
+    try {
+      const conciergeResult = await handleConciergeMessage(
+        effectiveTenantId,
+        senderPhone,
+        text
+      );
+      replyText = conciergeResult.reply;
+      pathUsed = "ai-concierge";
+      logger.info("[whatsapp/webhook] Concierge AI manejó el mensaje", {
+        to: senderPhone,
+        state: conciergeResult.state,
+        escalated: conciergeResult.escalated,
+      });
+    } catch (err) {
+      logger.warn(
+        "[whatsapp/webhook] Concierge AI lanzó excepción inesperada — fallback a legacy",
+        {
+          error: err instanceof Error ? err.message : String(err),
+          from: senderPhone,
+        }
+      );
+    }
   }
+
+  if (!replyText) {
+    // Camino legacy: WHATSAPP_AI_FIRST=false o el Concierge crasheó (no debería)
+    try {
+      const result = await processMessage(
+        effectiveTenantId,
+        senderPhone,
+        text,
+        { businessName, yapeNumber }
+      );
+      replyText = result.reply;
+      logger.info("[whatsapp/webhook] Respuesta legacy enviada", {
+        to: senderPhone,
+        newState: result.newState,
+      });
+    } catch (err) {
+      logger.error(
+        "[whatsapp/webhook] Error procesando mensaje (legacy también falló)",
+        { error: err, from: senderPhone }
+      );
+      replyText =
+        "Ocurrió un error. Por favor escribe *hola* para volver al menú.";
+    }
+  }
+
+  await sendReply(phoneNumberId, effectiveToken, senderPhone, replyText).catch(
+    (replyErr) => {
+      logger.warn("[whatsapp/webhook] sendReply falló", {
+        error: replyErr instanceof Error ? replyErr.message : String(replyErr),
+        to: senderPhone,
+        path: pathUsed,
+      });
+    }
+  );
 }

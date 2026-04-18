@@ -226,8 +226,8 @@ export default class ErrorBoundary extends Component<Props, State> {
 
               {/* Development Note */}
               {isDevelopment && (
-                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300">
                     <span className="font-semibold">Modo desarrollo:</span> Los detalles del error son visibles. En producción, solo se mostrará un mensaje genérico.
                   </p>
                 </div>

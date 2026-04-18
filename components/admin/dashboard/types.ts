@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import type { Product } from "@/types/erp";
 
 export type SmartInsight = {

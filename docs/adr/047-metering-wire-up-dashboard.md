@@ -248,3 +248,65 @@ INTERNAL_API_SECRET="int_..."           # Protege hooks internos
 - ADR 045 — SUNAT NubeFact (emite sunat.emitted al bus)
 - ADR 016 — plan maestro (Tier S #8 — 5x ARPU)
 - CLAUDE.md reglas #3 (tenantId), #5 (invalidar cache tras writes), #7 (fire-and-forget alertas), #9 (requireAdmin)
+
+---
+
+## Estado de implementacion (2026-04-17)
+
+**Estado:** IMPLEMENTADO — Sprint 2 Tier S #8 cerrado.
+
+### Hot paths wired al MeteringBus
+
+| Hot path | Archivo | Evento emitido | Idempotency key |
+|---|---|---|---|
+| Recommender hibrido | `app/api/recommender/hybrid/route.ts` | `ai.recommend.call` | `rec:{tenantId}:{productId}:{minuteBucket}` |
+| WhatsApp Concierge | `app/api/whatsapp/concierge/route.ts` | `whatsapp.message.sent` | `wa:{tenantId}:{phone}:{timestamp}` |
+| SUNAT emision aceptada | `app/api/sunat/emit/route.ts` | `sunat.invoice.emitted` | `{invoice.id}` |
+| Daily insights cron | `app/api/cron/daily-summary/route.ts` | `ai.insight.call` | `insight:{tenantId}:{yyyy-mm-dd}` |
+
+**Regla de emision:** todos los hot paths usan patron fire-and-forget sin `await`. Un fallo del bus nunca bloquea la respuesta al usuario (CLAUDE.md regla #7).
+
+### Cron reporte a Stripe
+
+`app/api/cron/meter-to-stripe/route.ts` (nuevo) usa el modelo moderno de Stripe **Billing Meters** (api `stripe.billing.meterEvents.create`), no los ya deprecados `subscription_items.createUsageRecord`.
+
+- Consulta `tenant.stripeCustomerId` y agrega uso mensual via `getMeteredUsage`
+- Mapea `MeteredEvent` a un `event_name` de Stripe meter via env vars `STRIPE_METER_<EVENT>` (8 eventos soportados)
+- Crea meter events con payload `{ stripe_customer_id, value }` y `identifier` por `tenant:event:yyyy-mm`
+- Stripe garantiza unicidad del identifier en ventana 24h → reintentos no duplican facturacion
+- Query param `?dryRun=1` para verificacion en staging sin facturar
+- Si `meterEvents.create` falla para un evento, los demas siguen procesandose
+- Vercel cron sugerido: `"0 3 * * *"` (03:00 UTC, tras rollup de 02:00)
+
+### Tests nuevos (2026-04-17)
+
+- `__tests__/metering-wiring-hot-paths.test.ts` — 3/3 verde (wiring recommender)
+- `__tests__/cron-meter-to-stripe.test.ts` — 8/8 verde (auth, dryRun, idempotencyKey, amount 0, items sin mapear)
+
+**Tests previos que siguen verde:** `metering-wire-up-bus.test.ts` (5/5), `billing-metering.test.ts` (8/8).
+
+### Env vars nuevas requeridas en prod
+
+| Variable | Proposito |
+|---|---|
+| `STRIPE_METER_AI_RECOMMEND` | event_name del Stripe meter para recommender |
+| `STRIPE_METER_AI_CALL` | Idem LLM generico |
+| `STRIPE_METER_AI_INSIGHT` | Idem AI insights |
+| `STRIPE_METER_WHATSAPP_SENT` | Idem WhatsApp outbound |
+| `STRIPE_METER_SUNAT_EMITTED` | Idem SUNAT |
+| `STRIPE_METER_ORDER_CREATED` | Idem pedidos |
+| `STRIPE_METER_SMS_SENT` | Idem SMS |
+| `STRIPE_METER_STORAGE_BLOB` | Idem storage |
+
+Si una env var esta ausente el cron simplemente no reporta ese evento — no falla.
+
+### Acciones manuales pendientes para Brandon
+
+1. Crear 8 Meters en Stripe Dashboard (Billing → Meters → Create) con `customer_mapping.event_payload_key = "stripe_customer_id"` y `value_settings.event_payload_key = "value"`.
+2. Crear un price recurring+metered por meter y asociarlo a la suscripcion del tenant.
+3. Copiar los `event_name` de cada meter a env vars en Vercel (prod + preview).
+4. Agregar cron en `vercel.json`:
+   ```json
+   {"path": "/api/cron/meter-to-stripe", "schedule": "0 3 * * *"}
+   ```
+5. Staging: correr `/api/cron/meter-to-stripe?dryRun=1` con `Authorization: Bearer $CRON_SECRET` para verificar resultados sin facturar.

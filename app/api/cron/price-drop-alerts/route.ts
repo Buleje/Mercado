@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
             title: `🏷️ ¡Bajó de precio! ${topProduct.name}`,
             body: `Ahora a S/ ${topProduct.newPrice.toFixed(2)} (antes S/ ${topProduct.oldPrice.toFixed(2)}) — ${topProduct.pct}% menos. ${data.products.length > 1 ? `Y ${data.products.length - 1} producto(s) más.` : ""}`,
             url: "/tienda",
-          }).catch(() => {});
+          }).catch((err) => logger.error("[cron/price-drop-alerts] push send failed", { error: String(err), phone }));
 
           // WhatsApp if multiple drops or significant discount
           if (topProduct.pct >= 10 || data.products.length > 1) {
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
               recipient: phone,
               message: msg,
               tenantId: tenant.id,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/price-drop-alerts] WhatsApp enqueue failed", { error: String(err), phone, tenantId: tenant.id }));
           }
 
           sent++;

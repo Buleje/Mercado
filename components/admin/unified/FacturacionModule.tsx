@@ -1,15 +1,11 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Receipt, FileCheck, Calculator, CreditCard } from "lucide-react";
+import { Receipt, FileCheck, Calculator, CreditCard } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const InvoicingTab = dynamic(() => import("@/components/admin/InvoicingTab"), { loading: S });
 const EInvoiceTab = dynamic(() => import("@/components/admin/EInvoiceTab"), { loading: S });

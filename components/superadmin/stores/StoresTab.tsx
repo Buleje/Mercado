@@ -19,7 +19,7 @@ const STORE_COLUMNS: SAColumn<StoreRow>[] = [
     label: "Tienda (Tenant)",
     render: (row) => (
       <div>
-        <div className="font-medium text-gray-900 dark:text-white text-sm">{row.tenant.name}</div>
+        <div className="font-medium text-[var(--text-primary)] text-sm">{row.tenant.name}</div>
         <div className="text-xs text-gray-400 font-mono mt-0.5">{row.tenant.slug}</div>
       </div>
     ),
@@ -29,7 +29,7 @@ const STORE_COLUMNS: SAColumn<StoreRow>[] = [
     label: "Store",
     render: (row) => (
       <div>
-        <div className="text-sm text-gray-800 dark:text-gray-200">{row.name}</div>
+        <div className="text-sm text-[var(--text-primary)]">{row.name}</div>
         <div className="text-xs text-gray-400 font-mono mt-0.5">{row.slug}</div>
       </div>
     ),
@@ -64,7 +64,7 @@ const STORE_COLUMNS: SAColumn<StoreRow>[] = [
     key: "category",
     label: "Categoría",
     render: (row) => (
-      <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">{row.category}</span>
+      <span className="text-xs text-[var(--text-secondary)] capitalize">{row.category}</span>
     ),
   },
   {
@@ -72,7 +72,7 @@ const STORE_COLUMNS: SAColumn<StoreRow>[] = [
     label: "Rating",
     sortable: true,
     render: (row) => (
-      <span className="inline-flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 font-semibold">
+      <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold">
         <Star className="w-3.5 h-3.5 fill-current" />
         {row.rating.toFixed(1)}
         <span className="text-gray-400 font-normal text-xs">({row.reviewCount})</span>
@@ -92,7 +92,7 @@ const STORE_COLUMNS: SAColumn<StoreRow>[] = [
     label: "Productos",
     sortable: true,
     render: (row) => (
-      <span className="text-sm text-gray-700 dark:text-gray-300 tabular-nums">
+      <span className="text-sm text-[var(--text-secondary)] tabular-nums">
         {row._count.products}
       </span>
     ),
@@ -183,10 +183,10 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar tienda..."
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
           />
         </div>
-        <div className="flex gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1">
+        <div className="flex gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
           {(["all", "published", "draft"] as const).map((f) => (
             <button
               key={f}
@@ -204,7 +204,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
         <button
           onClick={onRefresh}
           disabled={refreshing || loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           Actualizar
@@ -212,13 +212,13 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
           {error}
         </div>
       )}
       {loading && <TableSkeleton count={6} />}
       {!loading && filtered.length === 0 && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl py-16 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl py-16 text-center">
           <ShoppingBag className="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
           <p className="text-gray-400 text-sm">No hay tiendas</p>
         </div>

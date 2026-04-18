@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Users, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { Users, Banknote, Smartphone, CreditCard } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { PaymentLine, PaymentLineMethod } from "./POSPaymentModal";
 
@@ -67,7 +67,7 @@ export default function POSSplitPayment({
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Users className="h-4 w-4 text-primary" />
-          <span className="text-xs font-bold text-gray-700 dark:text-foreground">
+          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
             Dividir entre cuantas personas?
           </span>
         </div>
@@ -76,7 +76,7 @@ export default function POSSplitPayment({
             <button
               key={n}
               onClick={() => setupSplit(n)}
-              className="flex-1 min-w-16 py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-700 dark:text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
+              className="flex-1 min-w-16 py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
             >
               {n}
             </button>
@@ -87,7 +87,7 @@ export default function POSSplitPayment({
               min="2"
               max="10"
               placeholder="Otro"
-              className="w-full py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-700 dark:text-foreground text-center outline-none focus:border-primary"
+              className="w-full py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground text-center outline-none focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const val = Number((e.target as HTMLInputElement).value);
@@ -103,7 +103,7 @@ export default function POSSplitPayment({
         </div>
         <button
           onClick={onCancel}
-          className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+          className="w-full text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors py-1"
         >
           Cancelar
         </button>
@@ -117,7 +117,7 @@ export default function POSSplitPayment({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
-          <span className="text-xs font-bold text-gray-700 dark:text-foreground">
+          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
             {fmt(total)} &divide; {people} = {fmt(total / people)} por persona
           </span>
         </div>
@@ -126,7 +126,7 @@ export default function POSSplitPayment({
             setPeople(0);
             setPayments([]);
           }}
-          className="text-[11px] text-primary hover:underline font-semibold"
+          className="text-[length:var(--ts-xs)] text-primary hover:underline font-semibold"
         >
           Cambiar
         </button>
@@ -136,9 +136,9 @@ export default function POSSplitPayment({
         {payments.map((line, idx) => (
           <div
             key={idx}
-            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border"
+            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border"
           >
-            <span className="text-xs font-bold text-gray-500 dark:text-muted w-20 shrink-0">
+            <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-20 shrink-0">
               Persona {idx + 1}
             </span>
             <div className="flex gap-1 flex-1">
@@ -147,10 +147,10 @@ export default function POSSplitPayment({
                   key={m.id}
                   onClick={() => updateMethod(idx, m.id)}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[10px] font-bold border transition-colors",
+                    "flex-1 flex items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold border transition-colors",
                     line.method === m.id
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-transparent text-gray-400 dark:text-muted hover:text-gray-600"
+                      : "border-transparent text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
                   )}
                 >
                   <m.icon className="h-3 w-3" />
@@ -158,7 +158,7 @@ export default function POSSplitPayment({
                 </button>
               ))}
             </div>
-            <span className="text-xs font-bold text-gray-900 dark:text-foreground w-16 text-right shrink-0">
+            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-16 text-right shrink-0">
               {fmt(line.amount)}
             </span>
           </div>
@@ -168,7 +168,7 @@ export default function POSSplitPayment({
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+          className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
         >
           Cancelar
         </button>

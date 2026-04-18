@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp,
@@ -9,7 +10,7 @@ import {
   AlertCircle,
   BarChart2,
   HelpCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -32,10 +33,10 @@ const SUGGESTION_CONFIG: Record<
   Suggestion,
   { label: string; badge: string; icon: React.ElementType; kpiColor: string }
 > = {
-  Subir:     { label: "Subir precio",  badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300", icon: TrendingUp,   kpiColor: "text-emerald-600 dark:text-emerald-400" },
-  Bajar:     { label: "Bajar precio",  badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",                 icon: TrendingDown, kpiColor: "text-red-600 dark:text-red-400" },
-  OK:        { label: "Precio OK",     badge: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",                icon: Minus,        kpiColor: "text-gray-500 dark:text-gray-400" },
-  "Sin datos": { label: "Sin datos",   badge: "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600",                icon: HelpCircle,   kpiColor: "text-gray-400" },
+  Subir:     { label: "Subir precio",  badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+  Bajar:     { label: "Bajar precio",  badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 icon: TrendingDown, kpiColor: "text-red-600 dark:text-red-400" },
+  OK:        { label: "Precio OK",     badge: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
+  "Sin datos": { label: "Sin datos",   badge: "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
 };
 
 // ── Barra mini de comparación ──────────────────────────────────────────────
@@ -65,7 +66,7 @@ function PriceBar({
       />
       {/* Mi precio */}
       <div
-        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#00B4A6] dark:bg-[#00B4A6] rounded-full border-2 border-white dark:border-gray-900 shadow"
+        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#00B4A6] dark:bg-[#00B4A6] rounded-full border-2 border-white dark:border-[var(--rule-base)] shadow"
         style={{ left: `${myPct}%`, transform: "translate(-50%, -50%)" }}
         title={`Mi precio: S/${myPrice.toFixed(2)}`}
       />
@@ -85,13 +86,13 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
   const maxVal = Math.max(...allValues) * 1.1;
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
       <div className="flex items-center gap-2 mb-4">
         <BarChart2 className="h-4 w-4 text-[#00B4A6]" />
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
           Mi precio vs promedio (top {withData.length})
-        </h3>
-        <div className="ml-auto flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+        </CardTitle>
+        <div className="ml-auto flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm bg-[#00B4A6]" /> Mi precio
           </span>
@@ -103,7 +104,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
       <div className="space-y-3">
         {withData.map((p) => (
           <div key={p.id} className="space-y-1">
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] truncate max-w-[200px]">
               {p.name}
             </p>
             <div className="flex items-center gap-2">
@@ -113,7 +114,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                   className="h-5 bg-[#00B4A6] rounded-sm transition-all"
                   style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
                 />
-                <span className="text-xs font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                <span className="text-xs font-mono text-[var(--text-secondary)] whitespace-nowrap">
                   S/{p.myPrice.toFixed(2)}
                 </span>
               </div>
@@ -125,7 +126,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                   className="h-5 bg-[#f4a261] rounded-sm transition-all"
                   style={{ width: `${(p.avgPrice! / maxVal) * 100}%` }}
                 />
-                <span className="text-xs font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                <span className="text-xs font-mono text-[var(--text-secondary)] whitespace-nowrap">
                   S/{p.avgPrice!.toFixed(2)}
                 </span>
               </div>
@@ -205,17 +206,17 @@ export default function CompetitivePricingTab() {
       <div className="space-y-4 animate-pulse">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-xl" />
           ))}
         </div>
-        <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+        <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl text-sm text-red-700 dark:text-red-400">
+      <div className="flex items-center gap-2 p-4 bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
         <AlertCircle className="h-4 w-4 shrink-0" />
         {error}
         <button type="button" onClick={load} className="ml-auto text-xs underline font-bold">
@@ -227,7 +228,7 @@ export default function CompetitivePricingTab() {
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-16 text-gray-400 dark:text-gray-600">
+      <div className="text-center py-16 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
         <BarChart2 className="h-10 w-10 mx-auto mb-3 opacity-30" />
         <p className="font-semibold text-sm">Sin productos para analizar</p>
         <p className="text-xs mt-1">Activa productos en el marketplace para ver el análisis</p>
@@ -239,36 +240,36 @@ export default function CompetitivePricingTab() {
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
+          <p className="text-xs font-bold text-[var(--text-tertiary)]">
             Por debajo del mercado
           </p>
-          <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
+          <p className="text-3xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
             {countBelow}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             productos con precio bajo
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
+          <p className="text-xs font-bold text-[var(--text-tertiary)]">
             Por encima del mercado
           </p>
-          <p className="text-3xl font-extrabold text-red-600 dark:text-red-400 mt-1">
+          <p className="text-3xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
             {countAbove}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             productos con precio alto
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
+          <p className="text-xs font-bold text-[var(--text-tertiary)]">
             Oportunidad estimada
           </p>
           <p className="text-3xl font-extrabold text-[#00B4A6] font-mono mt-1">
             S/{opportunityIncome.toFixed(2)}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             ingreso extra si subes precios bajos
           </p>
         </div>
@@ -279,46 +280,46 @@ export default function CompetitivePricingTab() {
 
       {/* Acciones y tabla */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
           Análisis por producto ({products.length})
-        </h3>
+        </CardTitle>
         <button
           type="button"
           onClick={load}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">
                   Producto
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap">
+                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] whitespace-nowrap">
                   Mi precio
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden sm:table-cell">
+                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">
                   Promedio
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">
+                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">
                   Mín
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">
+                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">
                   Máx
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden sm:table-cell">
+                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">
                   Competidores
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">
                   Sugerencia
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">
                   Acción
                 </th>
               </tr>
@@ -333,10 +334,10 @@ export default function CompetitivePricingTab() {
                 return (
                   <tr
                     key={p.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="hover:bg-[var(--surface-sunken)]/50 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-gray-900 dark:text-white leading-tight max-w-[180px] truncate">
+                      <p className="font-semibold text-[var(--text-primary)] leading-tight max-w-[180px] truncate">
                         {p.name}
                       </p>
                       {/* Barra visual mobile */}
@@ -351,10 +352,10 @@ export default function CompetitivePricingTab() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[var(--text-primary)] whitespace-nowrap">
                       S/{p.myPrice.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-600 dark:text-gray-400 hidden sm:table-cell whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
                       {p.avgPrice !== null ? (
                         <div>
                           <span>S/{p.avgPrice.toFixed(2)}</span>
@@ -370,16 +371,16 @@ export default function CompetitivePricingTab() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-300 dark:text-gray-600">—</span>
+                        <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-500 dark:text-gray-400 hidden md:table-cell whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
                       {p.minPrice !== null ? `S/${p.minPrice.toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-500 dark:text-gray-400 hidden md:table-cell whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
                       {p.maxPrice !== null ? `S/${p.maxPrice.toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400 hidden sm:table-cell">
+                    <td className="px-4 py-3 text-center text-[var(--text-secondary)] hidden sm:table-cell">
                       {p.competitorCount}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -414,7 +415,7 @@ export default function CompetitivePricingTab() {
                           Aplicar
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+                        <span className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">—</span>
                       )}
                     </td>
                   </tr>

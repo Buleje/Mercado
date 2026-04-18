@@ -1,47 +1,25 @@
 import type { Metadata } from "next";
-import StoreDetail from "@/components/marketplace/StoreDetail";
-// ChatBubble ya es "use client" — Next.js lo hidrata en el browser
-// automáticamente. No usamos next/dynamic con ssr:false porque no está
-// permitido en Server Components en Next 16.
+import { notFound } from "next/navigation";
 import ChatBubble from "@/components/marketplace/ChatBubble";
+import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
+import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
+import {
+  MOCK_STORE_REVIEWS,
+  MOCK_STORE_RATING_SUMMARY,
+} from "@/lib/mock-store-reviews";
+import type { StoreCategoryChip } from "@/components/marketplace/store-detail/StoreCategories";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-interface StoreApiData {
-  name: string;
-  description?: string;
-  category?: string;
-  zone?: string;
-  logo?: string;
-  banner?: string;
-  rating?: number;
-  reviewCount?: number;
-  slug?: string;
-}
-
-async function fetchStoreData(slug: string): Promise<StoreApiData | null> {
-  try {
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.buleje.pe";
-    const res = await fetch(`${base}/api/marketplace/stores/${slug}`, {
-      next: { revalidate: 60 },
-    });
-    if (res.ok) {
-      const { data } = await res.json();
-      return data;
-    }
-  } catch {
-    // fallback silencioso
-  }
-  return null;
-}
+// ── generateMetadata ───────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const data = await fetchStoreData(slug);
+  const store = await MarketplaceStoresDB.getBySlug(slug);
 
-  if (!data) {
+  if (!store) {
     return {
       title: "Tienda | Marketplace Buleje",
       description: "Descubre esta tienda en el Marketplace de Buleje.",
@@ -49,52 +27,68 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
-  const zone = data.zone ?? "Peru";
+  const zone = store.zone ?? "Peru";
   const desc =
-    data.description ??
-    `Compra en ${data.name}, ${data.category ?? "tienda"} en ${zone}. Delivery rapido. Paga con Yape o efectivo. Marketplace Buleje.`;
+    store.description ??
+    `Compra en ${store.name}, ${store.category} en ${zone}. Delivery rapido. Paga con Yape o efectivo. Marketplace Buleje.`;
 
   return {
-    title: `${data.name} — ${data.category ?? "Tienda"} en ${zone} | Marketplace Buleje`,
+    title: `${store.name} — ${store.category} en ${zone} | Marketplace Buleje`,
     description: desc,
-    alternates: {
-      canonical: storeUrl,
-    },
+    alternates: { canonical: storeUrl },
     openGraph: {
-      title: `${data.name} — Compra con delivery en ${zone}`,
+      title: `${store.name} — Compra con delivery en ${zone}`,
       description: desc,
       url: storeUrl,
       siteName: "Buleje",
       locale: "es_PE",
       type: "website",
-      ...(data.logo
-        ? { images: [{ url: data.logo, width: 400, height: 400, alt: `Logo de ${data.name}` }] }
+      ...(store.logo
+        ? { images: [{ url: store.logo, width: 400, height: 400, alt: `Logo de ${store.name}` }] }
         : {}),
     },
     twitter: {
       card: "summary_large_image",
-      title: `${data.name} | Marketplace Buleje`,
+      title: `${store.name} | Marketplace Buleje`,
       description: desc,
-      ...(data.logo ? { images: [data.logo] } : {}),
+      ...(store.logo ? { images: [store.logo] } : {}),
     },
   };
 }
 
-function StoreJsonLd({ data, slug }: { data: StoreApiData; slug: string }) {
+// ── JSON-LD ────────────────────────────────────────────────────────────────────
+
+function StoreJsonLd({
+  name,
+  description,
+  slug,
+  logo,
+  zone,
+  category,
+  rating,
+  reviewCount,
+}: {
+  name: string;
+  description: string | null;
+  slug: string;
+  logo: string | null;
+  zone: string | null;
+  category: string;
+  rating: number;
+  reviewCount: number;
+}) {
   const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: data.name,
-    description:
-      data.description ??
-      `Tienda ${data.category ?? ""} en ${data.zone ?? "Pucallpa"}, Perú. Delivery rápido.`,
+    name,
+    description: description ?? `Tienda ${category} en ${zone ?? "Pucallpa"}, Perú. Delivery rápido.`,
     url: storeUrl,
-    ...(data.logo && { image: data.logo }),
+    ...(logo && { image: logo }),
     address: {
       "@type": "PostalAddress",
-      addressLocality: data.zone ?? "Pucallpa",
+      addressLocality: zone ?? "Pucallpa",
       addressRegion: "Ucayali",
       addressCountry: "PE",
     },
@@ -103,21 +97,18 @@ function StoreJsonLd({ data, slug }: { data: StoreApiData; slug: string }) {
       latitude: -8.3791,
       longitude: -74.5539,
     },
-    ...(data.rating && {
+    ...(rating > 0 && {
       aggregateRating: {
         "@type": "AggregateRating",
-        ratingValue: data.rating,
-        reviewCount: data.reviewCount ?? 0,
+        ratingValue: rating,
+        reviewCount,
         bestRating: 5,
         worstRating: 1,
       },
     }),
     priceRange: "S/",
     paymentAccepted: "Efectivo, Yape",
-    areaServed: {
-      "@type": "City",
-      name: "Pucallpa",
-    },
+    areaServed: { "@type": "City", name: "Pucallpa" },
   };
 
   return (
@@ -128,21 +119,59 @@ function StoreJsonLd({ data, slug }: { data: StoreApiData; slug: string }) {
   );
 }
 
+// ── Page ───────────────────────────────────────────────────────────────────────
+
 export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
-  const data = await fetchStoreData(slug);
+
+  // 1. Fetch store
+  const store = await MarketplaceStoresDB.getBySlug(slug);
+  if (!store) notFound();
+
+  // 2. Fetch products (limit 100 for initial render)
+  const products = await MarketplaceStoreProductsDB.list({
+    storeId: store.id,
+    limit: 100,
+  });
+
+  // 3. Build categories facet from product list
+  const catCounts = new Map<string, number>();
+  for (const p of products) {
+    const cat = p.productCategory;
+    if (cat) catCounts.set(cat, (catCounts.get(cat) ?? 0) + 1);
+  }
+  const categories: StoreCategoryChip[] = Array.from(catCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
 
   return (
     <>
-      {data && <StoreJsonLd data={data} slug={slug} />}
-      <StoreDetail slug={slug} />
+      <StoreJsonLd
+        name={store.name}
+        description={store.description}
+        slug={slug}
+        logo={store.logo}
+        zone={store.zone}
+        category={store.category}
+        rating={store.rating ?? 0}
+        reviewCount={store.reviewCount}
+      />
+
+      <StoreDetailClient
+        store={store}
+        products={products}
+        categories={categories}
+        reviewSummary={MOCK_STORE_RATING_SUMMARY}
+        reviews={MOCK_STORE_REVIEWS}
+      />
+
       {/*
         ChatBubble del Bloque D2 del Marketplace.
         Se activa con el feature flag marketplace-chat-public en Vercel env.
         Si el flag está off, el endpoint devuelve 503 y el widget muestra
         "Chat temporalmente no disponible". Sin fricción si no está listo.
       */}
-      <ChatBubble storeSlug={slug} storeName={data?.name ?? "Tienda"} />
+      <ChatBubble storeSlug={slug} storeName={store.name} />
     </>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import { CardTitle } from "@buleje/design-system";
+
 import { useState, useEffect } from 'react';
 import {
   BarChart,
@@ -68,7 +70,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   if (error) {
     return (
       <div className="p-4">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       </div>
@@ -77,17 +79,17 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
   if (!data) {
     return (
-      <div className="p-4 text-center text-gray-500 dark:text-muted text-sm">
+      <div className="p-4 text-center text-[var(--text-secondary)] dark:text-muted text-sm">
         Sin datos de ventas para este producto en los ultimos 30 dias
       </div>
     );
   }
 
   const trendIcon = data.trend === 'SUBIENDO' ? '\u2191' : data.trend === 'BAJANDO' ? '\u2193' : '\u2192';
-  const trendColor = data.trend === 'SUBIENDO' ? 'text-green-600' : data.trend === 'BAJANDO' ? 'text-red-600' : 'text-gray-600';
+  const trendColor = data.trend === 'SUBIENDO' ? 'text-[var(--data-success)]' : data.trend === 'BAJANDO' ? "text-[var(--data-error)]" : 'text-[var(--text-secondary)]';
 
-  const stockColor = data.daysOfStock < 3 ? 'text-red-600' : data.daysOfStock < 7 ? 'text-amber-600' : 'text-green-600';
-  const stockBg = data.daysOfStock < 3 ? 'bg-red-50 dark:bg-red-900/20' : data.daysOfStock < 7 ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-green-50 dark:bg-green-900/20';
+  const stockColor = data.daysOfStock < 3 ? "text-[var(--data-error)]" : data.daysOfStock < 7 ? "text-[var(--data-warning)]" : 'text-[var(--data-success)]';
+  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" : 'bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]';
 
   // Format chart data
   const chartData = data.historicalSales.map(s => ({
@@ -96,16 +98,16 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">
+        <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
           Pronostico: {data.product.name}
-        </h3>
+        </CardTitle>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-foreground transition-colors"
+            className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -115,8 +117,8 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
       </div>
 
       {/* Chart */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-muted mb-3">Ventas diarias (ultimos 30 dias)</h4>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+        <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (ultimos 30 dias)</h4>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -154,53 +156,53 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <div className="text-xs text-gray-500 dark:text-muted mb-1">Venta promedio</div>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Venta promedio</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-gray-900 dark:text-foreground">{data.dailyAvg}</span>
-            <span className="text-xs text-gray-500">und/dia</span>
+            <span className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground">{data.dailyAvg}</span>
+            <span className="text-xs text-[var(--text-secondary)]">und/dia</span>
           </div>
           <div className={`text-xs font-medium ${trendColor} mt-1`}>
             {trendIcon} {data.trend}
           </div>
         </div>
 
-        <div className={`rounded-xl border border-gray-200 dark:border-card-border p-4 ${stockBg}`}>
-          <div className="text-xs text-gray-500 dark:text-muted mb-1">Stock alcanza para</div>
+        <div className={`rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ${stockBg}`}>
+          <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Stock alcanza para</div>
           <div className="flex items-baseline gap-2">
             <span className={`text-xl font-bold ${stockColor}`}>
               {data.daysOfStock > 90 ? '90+' : data.daysOfStock}
             </span>
-            <span className="text-xs text-gray-500">dias</span>
+            <span className="text-xs text-[var(--text-secondary)]">dias</span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-[var(--text-secondary)] mt-1">
             Stock actual: {data.product.stock}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <div className="text-xs text-gray-500 dark:text-muted mb-1">Comprar cuando llegues a</div>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Comprar cuando llegues a</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-[#f97316]">{data.reorderPoint}</span>
-            <span className="text-xs text-gray-500">unidades</span>
+            <span className="text-xs text-[var(--text-secondary)]">unidades</span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">Buffer de 1 semana</div>
+          <div className="text-xs text-[var(--text-secondary)] mt-1">Buffer de 1 semana</div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-          <div className="text-xs text-gray-500 dark:text-muted mb-1">Pronostico proximos 7 dias</div>
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Pronostico proximos 7 dias</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-[#00B4A6]">~{data.forecastNext7}</span>
-            <span className="text-xs text-gray-500">unidades</span>
+            <span className="text-xs text-[var(--text-secondary)]">unidades</span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">Semanal: {data.weeklyAvg}</div>
+          <div className="text-xs text-[var(--text-secondary)] mt-1">Semanal: {data.weeklyAvg}</div>
         </div>
       </div>
 
       {/* Seasonal note */}
       {data.seasonalNote && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-          <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4">
+          <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">
             {data.seasonalNote}
           </p>
         </div>

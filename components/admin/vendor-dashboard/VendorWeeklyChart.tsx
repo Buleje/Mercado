@@ -1,8 +1,9 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import type { WeeklyRevenueDay } from "./vendor-dashboard.types";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp } from "@buleje/design-system/icons";
 
 type Props = {
   data: WeeklyRevenueDay[];
@@ -35,8 +36,8 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
-      <p className="font-semibold text-gray-700 dark:text-foreground">{label}</p>
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
+      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{label}</p>
       <p className="text-[#00B4A6] font-bold">{formatSolesTooltip(payload[0].value)}</p>
     </div>
   );
@@ -57,17 +58,17 @@ export function VendorWeeklyChart({ data }: Props) {
   const weekTotal = data.reduce((s, d) => s + d.total, 0);
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-[#00B4A6]" />
           Ingresos — últimos 7 días
-        </h3>
+        </CardTitle>
         <span className="text-sm font-extrabold text-[#00B4A6]">
           S/ {weekTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
         </span>
       </div>
-      <p className="text-xs text-gray-400 dark:text-muted mb-4">Solo pedidos entregados</p>
+      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-4">Solo pedidos entregados</p>
 
       <ResponsiveContainer width="100%" height={140}>
         <BarChart data={chartData} barCategoryGap="30%">
@@ -76,7 +77,7 @@ export function VendorWeeklyChart({ data }: Props) {
             tick={{ fontSize: 11, fill: "currentColor" }}
             axisLine={false}
             tickLine={false}
-            className="text-gray-500 dark:text-muted"
+            className="text-[var(--text-secondary)] dark:text-muted"
           />
           <YAxis hide />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,180,166,0.06)" }} />
@@ -91,7 +92,7 @@ export function VendorWeeklyChart({ data }: Props) {
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="flex gap-4 mt-3 text-xs text-gray-500 dark:text-muted">
+      <div className="flex gap-4 mt-3 text-xs text-[var(--text-secondary)] dark:text-muted">
         <span className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#00B4A6] inline-block" /> Hoy
         </span>
@@ -99,7 +100,7 @@ export function VendorWeeklyChart({ data }: Props) {
           <span className="w-2.5 h-2.5 rounded-sm bg-[#f97316] inline-block" /> Mejor día
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-emerald-100 dark:bg-emerald-900/30 inline-block" /> Otros días
+          <span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] inline-block" /> Otros días
         </span>
       </div>
     </div>

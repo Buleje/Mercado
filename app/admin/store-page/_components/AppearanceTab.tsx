@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, Save, Eye, EyeOff } from "lucide-react";
+import { Loader2, Save, Eye, EyeOff } from "@buleje/design-system/icons";
 
 type Customization = {
   published: boolean;
@@ -30,7 +31,7 @@ const EMPTY: Customization = {
   heroImageUrl: "",
   heroCtaLabel: "",
   heroCtaUrl: "",
-  primaryColor: "#00B4A6",
+  primaryColor: "#2563EB",
   accentColor: "#f4a261",
   aboutTitle: "",
   aboutBody: "",
@@ -135,26 +136,24 @@ export default function AppearanceTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
+      <LoadingState />
     );
   }
 
   return (
     <div className="space-y-8">
       {/* Published toggle */}
-      <section className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <section className="flex items-center justify-between p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div>
           <div className="flex items-center gap-2 font-semibold">
             {data.published ? (
-              <Eye className="w-4 h-4 text-green-600" />
+              <Eye className="w-4 h-4 text-[var(--data-success)]" />
             ) : (
-              <EyeOff className="w-4 h-4 text-gray-500" />
+              <EyeOff className="w-4 h-4 text-[var(--text-secondary)]" />
             )}
             Estado de la página
           </div>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             {data.published
               ? "Tu página es visible al público en /t/[tu-slug]"
               : "Tu página está oculta y devuelve 404"}
@@ -163,7 +162,7 @@ export default function AppearanceTab() {
         <button
           onClick={() => update("published", !data.published)}
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-            data.published ? "bg-teal-600" : "bg-gray-300"
+            data.published ? "bg-[var(--accent-soft)]" : "bg-gray-300"
           }`}
         >
           <span
@@ -237,7 +236,7 @@ export default function AppearanceTab() {
                 type="color"
                 value={data.primaryColor}
                 onChange={(e) => update("primaryColor", e.target.value)}
-                className="h-11 w-16 rounded-lg border border-gray-300 cursor-pointer"
+                className="h-11 w-16 rounded-lg border border-[var(--rule-base)] cursor-pointer"
               />
               <input
                 type="text"
@@ -253,7 +252,7 @@ export default function AppearanceTab() {
                 type="color"
                 value={data.accentColor}
                 onChange={(e) => update("accentColor", e.target.value)}
-                className="h-11 w-16 rounded-lg border border-gray-300 cursor-pointer"
+                className="h-11 w-16 rounded-lg border border-[var(--rule-base)] cursor-pointer"
               />
               <input
                 type="text"
@@ -354,17 +353,17 @@ export default function AppearanceTab() {
       </Card>
 
       {/* Save bar */}
-      <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg">
-        {error && <span className="text-sm text-red-600">{error}</span>}
+      <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
+        {error && <span className="text-sm text-[var(--data-error)]">{error}</span>}
         {saved && (
-          <span className="text-sm text-green-600 font-semibold">
+          <span className="text-sm text-[var(--data-success)] font-semibold">
             Guardado
           </span>
         )}
         <button
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-semibold text-sm transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-semibold text-sm transition-colors"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -404,8 +403,8 @@ export default function AppearanceTab() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-4">
-      <h3 className="font-bold text-lg">{title}</h3>
+    <section className="p-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] space-y-4">
+      <CardTitle className="font-bold text-lg">{title}</CardTitle>
       {children}
     </section>
   );
@@ -414,7 +413,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+      <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
         {label}
       </span>
       {children}

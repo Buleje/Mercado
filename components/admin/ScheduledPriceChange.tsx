@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, Search, Plus, Trash2, Clock, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Calendar, Search, Plus, Trash2, Clock, ChevronDown, ChevronUp, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -76,10 +77,10 @@ function localNowPlus(hours: number) {
 }
 
 const STATUS_STYLES: Record<PriceChangeEvent["status"], { label: string; cls: string }> = {
-  pending:   { label: "Pendiente", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  active:    { label: "Activo",    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  done:      { label: "Finalizado", cls: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
-  cancelled: { label: "Cancelado", cls: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" },
+  pending:   { label: "Pendiente", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" },
+  active:    { label: "Activo",    cls: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  done:      { label: "Finalizado", cls: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
+  cancelled: { label: "Cancelado", cls: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]" },
 };
 
 // ── Add event form ─────────────────────────────────────────────────────────────
@@ -147,13 +148,13 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
 
   return (
     <div className="rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 dark:border-[#00B4A6]/40 p-5 space-y-4">
-      <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Nuevo cambio programado</h4>
+      <h4 className="text-sm font-semibold text-[var(--text-primary)]">Nuevo cambio programado</h4>
 
       {/* Product search */}
       <div className="relative">
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Producto</label>
+        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Producto</label>
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
             value={selected ? selected.name : search}
             onChange={(e) => {
@@ -162,22 +163,22 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             }}
             onFocus={() => search.length >= 2 && setShowDropdown(true)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           {searching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
           )}
         </div>
         {showDropdown && products.length > 0 && !selected && (
-          <div className="absolute z-20 left-0 right-0 mt-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden">
+          <div className="absolute z-20 left-0 right-0 mt-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
             {products.map((p) => (
               <button
                 key={p.id}
                 onClick={() => { setSelected(p); setShowDropdown(false); setSearch(""); setNewPrice(String(p.price)); }}
-                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[var(--surface-sunken)] transition-colors text-left"
               >
-                <span className="text-sm text-gray-800 dark:text-white truncate">{p.name}</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-2">S/ {p.price.toFixed(2)}</span>
+                <span className="text-sm text-[var(--text-primary)] truncate">{p.name}</span>
+                <span className="text-sm text-[var(--text-tertiary)] shrink-0 ml-2">S/ {p.price.toFixed(2)}</span>
               </button>
             ))}
           </div>
@@ -187,28 +188,28 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
       {/* Price inputs */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Precio actual</label>
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Precio actual</label>
           <div className="flex items-center gap-1">
-            <span className="text-sm text-gray-500">S/</span>
+            <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
               readOnly
               value={selected ? selected.price.toFixed(2) : ""}
               placeholder="—"
-              className="w-full px-2 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 focus:outline-none"
+              className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] focus:outline-none"
             />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Precio nuevo
             {priceDiff !== null && (
-              <span className={cn("ml-2 font-semibold", isIncrease ? "text-red-500" : "text-[#00B4A6]")}>
+              <span className={cn("ml-2 font-semibold", isIncrease ? "text-[var(--data-error)]" : "text-[#00B4A6]")}>
                 {isIncrease ? "+" : ""}{priceDiff}%
               </span>
             )}
           </label>
           <div className="flex items-center gap-1">
-            <span className="text-sm text-gray-500">S/</span>
+            <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
               type="number"
               min={0}
@@ -216,7 +217,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
               placeholder="0.00"
-              className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+              className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
             />
           </div>
         </div>
@@ -225,30 +226,30 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
       {/* Date inputs */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Inicia</label>
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Inicia</label>
           <input
             type="datetime-local"
             value={startAt}
             onChange={(e) => setStartAt(e.target.value)}
-            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Termina <span className="text-gray-400">(opcional)</span>
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+            Termina <span className="text-[var(--text-tertiary)]">(opcional)</span>
           </label>
           <input
             type="datetime-local"
             value={endAt}
             onChange={(e) => setEndAt(e.target.value)}
-            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-1">
-        <button onClick={onCancel} className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+        <button onClick={onCancel} className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
           Cancelar
         </button>
         <button
@@ -316,8 +317,8 @@ export default function ScheduledPriceChange() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Cambios de precio programados</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <CardTitle className="text-base font-semibold text-[var(--text-primary)]">Cambios de precio programados</CardTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             {activeEvents.length} cambio{activeEvents.length !== 1 ? "s" : ""} pendiente{activeEvents.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -335,9 +336,9 @@ export default function ScheduledPriceChange() {
 
       {/* Active events */}
       {activeEvents.length === 0 && !showForm && (
-        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-10 text-center">
-          <Calendar size={28} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-          <p className="text-sm text-gray-400 dark:text-gray-500">No hay cambios programados</p>
+        <div className="rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center">
+          <Calendar size={28} className="mx-auto text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-2" />
+          <p className="text-sm text-[var(--text-tertiary)]">No hay cambios programados</p>
         </div>
       )}
 
@@ -351,7 +352,7 @@ export default function ScheduledPriceChange() {
           return (
             <div
               key={event.id}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3"
+              className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -359,21 +360,21 @@ export default function ScheduledPriceChange() {
                     <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", cls)}>
                       {label}
                     </span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                    <span className="text-sm font-medium text-[var(--text-primary)] truncate">
                       {event.productName}
                     </span>
-                    <span className={cn("text-xs font-semibold", isIncrease ? "text-red-500" : "text-[#00B4A6]")}>
+                    <span className={cn("text-xs font-semibold", isIncrease ? "text-[var(--data-error)]" : "text-[#00B4A6]")}>
                       {isIncrease ? "sube" : "baja"} {Math.abs(parseFloat(diff))}%
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-[var(--text-tertiary)]">
                       <span className="line-through">S/ {event.currentPrice.toFixed(2)}</span>
-                      <span className="mx-1 text-gray-400">→</span>
-                      <span className="font-semibold text-gray-800 dark:text-white">S/ {event.newPrice.toFixed(2)}</span>
+                      <span className="mx-1 text-[var(--text-tertiary)]">→</span>
+                      <span className="font-semibold text-[var(--text-primary)]">S/ {event.newPrice.toFixed(2)}</span>
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                    <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
                       <Clock size={11} />
                       {fmtDateTime(event.startAt)}
                       {event.endAt && ` – ${fmtDateTime(event.endAt)}`}
@@ -385,14 +386,14 @@ export default function ScheduledPriceChange() {
                   {status === "pending" && (
                     <button
                       onClick={() => handleCancel(event.id)}
-                      className="text-xs text-gray-400 hover:text-amber-500 px-2 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+                      className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-warning)] px-2 py-1 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors"
                     >
                       Cancelar
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(event.id)}
-                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 rounded-lg transition-colors"
                     aria-label="Eliminar"
                   >
                     <Trash2 size={13} />
@@ -409,7 +410,7 @@ export default function ScheduledPriceChange() {
         <div>
           <button
             onClick={() => setShowDone((v) => !v)}
-            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
           >
             {showDone ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             {showDone ? "Ocultar" : "Ver"} historial ({pastEvents.length})
@@ -422,14 +423,14 @@ export default function ScheduledPriceChange() {
                 return (
                   <div
                     key={event.id}
-                    className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-4 py-3 opacity-70"
+                    className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/50 px-4 py-3 opacity-70"
                   >
                     <div className="flex items-center gap-2">
                       <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", cls)}>
                         {label}
                       </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{event.productName}</span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                      <span className="text-sm text-[var(--text-secondary)] truncate">{event.productName}</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">
                         S/ {event.currentPrice.toFixed(2)} → S/ {event.newPrice.toFixed(2)}
                       </span>
                     </div>

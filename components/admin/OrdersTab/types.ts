@@ -35,11 +35,11 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<OrderStatus, string> = {
-  pendiente: "bg-amber-100 text-amber-700",
-  confirmado: "bg-blue-100 text-blue-700",
-  en_camino: "bg-purple-100 text-purple-700",
-  entregado: "bg-emerald-100 text-emerald-700",
-  cancelado: "bg-red-100 text-red-500",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+  confirmado: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+  en_camino: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+  entregado: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error)]",
 };
 
 // Valid order status transitions — mirrors server-side VALID_TRANSITIONS

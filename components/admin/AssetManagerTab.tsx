@@ -1,9 +1,11 @@
 ﻿"use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
+
 import { useState, useMemo } from "react";
 import {
   Boxes, Download, Search, Plus, X, Eye, Wrench,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -48,9 +50,9 @@ function calcDepreciation(cost: number, lifeYears: number, acqDate: string): { a
 }
 
 const STATUS_META: Record<AssetStatus, { label: string; color: string; bg: string }> = {
-  activo:         { label: "Activo",          color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  mantenimiento:  { label: "En mantenimiento", color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  "dado-de-baja": { label: "Dado de baja",   color: "text-red-700 dark:text-red-400",         bg: "bg-red-100 dark:bg-red-900/30" },
+  activo:         { label: "Activo",          color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  mantenimiento:  { label: "En mantenimiento", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30" },
+  "dado-de-baja": { label: "Dado de baja",   color: "text-[var(--data-error)] dark:text-[var(--data-error)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30" },
 };
 
 const CATEGORY_META: Record<AssetCategory, { label: string }> = {
@@ -132,16 +134,16 @@ export default function AssetManagerTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Boxes className="h-6 w-6 text-primary" /> Gestión de Activos Fijos
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Equipos, mobiliario, depreciación y mantenimiento</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Equipos, mobiliario, depreciación y mantenimiento</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Registrar activo
           </button>
-          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: a.dep.accumulated.toFixed(2), valor_libros: a.dep.bookValue.toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: a.dep.accumulated.toFixed(2), valor_libros: a.dep.bookValue.toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -150,15 +152,15 @@ export default function AssetManagerTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         {[
-          { label: "Total activos", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-          { label: "Activos operativos", value: String(stats.activos), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Costo adquisición", value: fmt(stats.totalCost), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
-          { label: "Depreciación acum.", value: fmt(stats.totalDep), color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
-          { label: "Valor en libros", value: fmt(stats.totalBook), color: "text-cyan-600", bg: "bg-cyan-50 dark:bg-cyan-950/30" },
-          { label: "Mant. próximo (<30d)", value: String(stats.needMaint), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
+          { label: "Total activos", value: String(stats.total), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Activos operativos", value: String(stats.activos), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Costo adquisición", value: fmt(stats.totalCost), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+          { label: "Depreciación acum.", value: fmt(stats.totalDep), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+          { label: "Valor en libros", value: fmt(stats.totalBook), color: "text-[var(--data-info)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+          { label: "Mant. próximo (<30d)", value: String(stats.needMaint), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
         ))}
@@ -166,34 +168,34 @@ export default function AssetManagerTab() {
 
       {/* Alert */}
       {stats.needMaint > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
-          <Wrench className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4 flex flex-wrap items-start gap-3">
+          <Wrench className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Mantenimientos próximos</p>
-            <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">{stats.needMaint} activo(s) requieren mantenimiento en los próximos 30 días.</p>
+            <p className="font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">Mantenimientos próximos</p>
+            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">{stats.needMaint} activo(s) requieren mantenimiento en los próximos 30 días.</p>
           </div>
         </div>
       )}
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground">Nuevo activo fijo</h3>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Nuevo activo fijo</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nombre del activo *" className="col-span-full sm:col-span-2 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} placeholder="Código *" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as AssetCategory }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nombre del activo *" className="col-span-full sm:col-span-2 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} placeholder="Código *" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as AssetCategory }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
               {(Object.keys(CATEGORY_META) as AssetCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
             </select>
-            <input type="date" value={form.acquisitionDate} onChange={e => setForm(p => ({ ...p, acquisitionDate: e.target.value }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" title="Fecha adquisición" />
-            <input type="number" value={form.acquisitionCost} onChange={e => setForm(p => ({ ...p, acquisitionCost: e.target.value }))} placeholder="Costo (S/)" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input type="number" value={form.usefulLifeYears} onChange={e => setForm(p => ({ ...p, usefulLifeYears: e.target.value }))} placeholder="Vida útil (años)" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="Ubicación" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input value={form.responsible} onChange={e => setForm(p => ({ ...p, responsible: e.target.value }))} placeholder="Responsable" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input type="date" value={form.acquisitionDate} onChange={e => setForm(p => ({ ...p, acquisitionDate: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" title="Fecha adquisición" />
+            <input type="number" value={form.acquisitionCost} onChange={e => setForm(p => ({ ...p, acquisitionCost: e.target.value }))} placeholder="Costo (S/)" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <input type="number" value={form.usefulLifeYears} onChange={e => setForm(p => ({ ...p, usefulLifeYears: e.target.value }))} placeholder="Vida útil (años)" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="Ubicación" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <input value={form.responsible} onChange={e => setForm(p => ({ ...p, responsible: e.target.value }))} placeholder="Responsable" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
-            <button onClick={addAsset} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Registrar</button>
+            <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={addAsset} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90">Registrar</button>
           </div>
         </div>
       )}
@@ -201,69 +203,69 @@ export default function AssetManagerTab() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, código, ubicación..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, código, ubicación..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as AssetStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as AssetStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as AssetStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value as AssetCategory | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value as AssetCategory | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todas las categorías</option>
           {(Object.keys(CATEGORY_META) as AssetCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Código</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Activo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Costo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Val. libros</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">% Dep.</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Ubicación</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Código</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Activo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Costo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Val. libros</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">% Dep.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Ubicación</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">Sin activos.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Sin activos.</td></tr>}
               {filtered.map(a => {
                 const st = STATUS_META[a.status];
                 return (
                   <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono font-bold text-gray-500">{a.code}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{a.name}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{CATEGORY_META[a.category].label}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono font-bold text-[var(--text-secondary)]">{a.code}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{a.name}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{CATEGORY_META[a.category].label}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{fmt(a.acquisitionCost)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-cyan-600">{fmt(a.dep.bookValue)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(a.acquisitionCost)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-info)]">{fmt(a.dep.bookValue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <div className="flex items-center gap-1.5 justify-center">
                         <div className="w-12 bg-gray-200 dark:bg-surface rounded-full h-2 overflow-hidden">
-                          <div className={cn("h-full rounded-full", a.dep.pctDepreciated >= 90 ? "bg-red-500" : a.dep.pctDepreciated >= 50 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(100, a.dep.pctDepreciated)}%` }} />
+                          <div className={cn("h-full rounded-full", a.dep.pctDepreciated >= 90 ? "bg-[var(--data-error)]" : a.dep.pctDepreciated >= 50 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(100, a.dep.pctDepreciated)}%` }} />
                         </div>
-                        <span className="text-xs text-gray-500">{a.dep.pctDepreciated.toFixed(0)}%</span>
+                        <span className="text-xs text-[var(--text-secondary)]">{a.dep.pctDepreciated.toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{a.location}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{a.location}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(a)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDetail(a)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="border-t-2 border-gray-300 dark:border-card-border bg-gray-50 dark:bg-surface/50">
+            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface/50">
               <tr className="font-extrabold">
-                <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-gray-500">Totales</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{fmt(stats.totalCost)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-cyan-600">{fmt(stats.totalBook)}</td>
+                <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">Totales</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(stats.totalCost)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-info)]">{fmt(stats.totalBook)}</td>
                 <td colSpan={3} />
               </tr>
             </tfoot>
@@ -276,10 +278,10 @@ export default function AssetManagerTab() {
         const dep = calcDepreciation(detail.acquisitionCost, detail.usefulLifeYears, detail.acquisitionDate);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del activo</h3>
-                <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle del activo</CardTitle>
+                <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
               </div>
               <div className="space-y-2 text-sm">
                 {[
@@ -294,8 +296,8 @@ export default function AssetManagerTab() {
                   ["Notas", detail.notes || "—"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
-                    <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
-                    <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
+                    <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
                   </div>
                 ))}
               </div>

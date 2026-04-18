@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Mic, MicOff, Volume2, X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { LoadingState } from "@buleje/design-system";
+import { Mic, MicOff, Volume2, X, CheckCircle, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Speech Recognition shim types ────────────────────────────────────────────
@@ -223,7 +224,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
   if (supported === false) {
     return (
-      <div className={cn("flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400", className)}>
+      <div className={cn("flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]", className)}>
         <MicOff className="h-4 w-4 shrink-0" />
         <span>Tu navegador no soporta voz</span>
       </div>
@@ -241,7 +242,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
           "border focus:outline-none focus:ring-2 focus:ring-primary/40",
           voiceState === "listening"
             ? "bg-primary text-white border-primary animate-pulse"
-            : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:border-primary"
+            : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:border-primary"
         )}
         aria-label="Venta por voz"
       >
@@ -251,14 +252,14 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
       {/* Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
             <div className="flex items-center gap-2">
               <Volume2 className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Venta por voz</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Venta por voz</span>
             </div>
-            <button type="button" onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <button type="button" onClick={() => setIsOpen(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)]">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -274,19 +275,19 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
                 className={cn(
                   "w-20 h-20 rounded-full flex items-center justify-center transition-all focus:outline-none focus:ring-4",
                   voiceState === "listening"
-                    ? "bg-primary text-white shadow-lg shadow-primary/40 animate-pulse focus:ring-primary/30"
+                    ? "bg-primary text-white animate-pulse focus:ring-primary/30"
                     : voiceState === "processing"
-                    ? "bg-amber-400 text-white cursor-not-allowed"
+                    ? "bg-[var(--data-warning)] text-white cursor-not-allowed"
                     : voiceState === "success"
-                    ? "bg-emerald-500 text-white focus:ring-emerald-300"
+                    ? "bg-[var(--accent-soft)] text-white focus:ring-[var(--data-success)]/40"
                     : voiceState === "error"
-                    ? "bg-red-500 text-white focus:ring-red-300"
+                    ? "bg-[var(--data-error)] text-white focus:ring-[var(--data-error)]"
                     : "bg-primary/10 text-primary hover:bg-primary hover:text-white focus:ring-primary/30"
                 )}
                 aria-label={voiceState === "listening" ? "Detener" : "Hablar"}
               >
                 {voiceState === "processing" ? (
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <LoadingState variant="inline" size="md" />
                 ) : voiceState === "success" ? (
                   <CheckCircle className="h-8 w-8" />
                 ) : voiceState === "error" ? (
@@ -299,7 +300,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
               </button>
 
               <div className="text-center">
-                <p className="text-xs font-medium text-gray-500 dark:text-muted">
+                <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-muted">
                   {statusMsg || (voiceState === "idle" ? "Presiona para hablar" : "")}
                 </p>
                 {voiceState === "listening" && (
@@ -318,22 +319,22 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
             {/* Transcript */}
             {transcript && (
-              <div className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-card-border">
-                <p className="text-xs text-gray-500 dark:text-muted mb-0.5">Escuche:</p>
-                <p className="text-sm text-gray-800 dark:text-foreground italic">&ldquo;{transcript}&rdquo;</p>
+              <div className="px-3 py-2 rounded-xl bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-card-border">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-0.5">Escuche:</p>
+                <p className="text-sm text-[var(--text-primary)] dark:text-foreground italic">&ldquo;{transcript}&rdquo;</p>
               </div>
             )}
 
             {/* Last action */}
             {lastAction && voiceState === "success" && (
-              <div className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{lastAction}</p>
+              <div className="px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+                <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">{lastAction}</p>
               </div>
             )}
 
             {/* Commands hint */}
             <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">Ejemplos de comandos</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Ejemplos de comandos</p>
               {[
                 '"2 kilos de arroz"',
                 '"agregar aceite"',
@@ -342,7 +343,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
               ].map((ex) => (
                 <div key={ex} className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0" />
-                  <p className="text-xs text-gray-500 dark:text-muted">{ex}</p>
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ex}</p>
                 </div>
               ))}
             </div>

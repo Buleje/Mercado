@@ -134,7 +134,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
           onFocus={() => { if (results.length > 0) setOpen(true); }}
           onKeyDown={handleKeyDown}
           placeholder="Buscar productos..."
-          className="w-full pl-9 pr-16 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
+          className="w-full pl-9 pr-16 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
           {query && (
@@ -165,7 +165,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
 
       {/* Results dropdown */}
       {open && (query.length >= 2) && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -186,7 +186,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors",
                   i === selected && "bg-primary/5",
-                  i < results.length - 1 && "border-b border-gray-100 dark:border-card-border"
+                  i < results.length - 1 && "border-b border-[var(--rule-soft)] dark:border-card-border"
                 )}
               >
                 {product.image ? (
@@ -199,13 +199,13 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">{product.name}</p>
                   {product.category && (
-                    <p className="text-[10px] text-gray-400 dark:text-muted">{product.category}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{product.category}</p>
                   )}
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-extrabold text-primary">{fmt(product.price)}</p>
                   {product.stock != null && product.stock <= 5 && (
-                    <p className="text-[10px] text-amber-600 font-bold">Quedan {product.stock}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-amber-600 font-bold">Quedan {product.stock}</p>
                   )}
                 </div>
               </button>

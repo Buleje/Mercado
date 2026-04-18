@@ -17,6 +17,7 @@ export type FeatureFlag =
   | "rolling-releases"             // Canary deployments on Vercel
   | "redis-cache"                  // Use Redis-backed cache
   | "oauth-google"                 // Google OAuth login for customers
+  | "oauth-facebook"               // Facebook OAuth login for customers
   | "cursor-pagination"            // Cursor-based pagination
   | "ai-assistant-v2"              // Next-gen AI assistant
   | "marketplace-v2"               // Enhanced marketplace features
@@ -42,6 +43,7 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "rolling-releases": false,
   "redis-cache": false,
   "oauth-google": false,
+  "oauth-facebook": false,
   "cursor-pagination": false,
   "ai-assistant-v2": false,
   "marketplace-v2": false,

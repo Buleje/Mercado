@@ -1,4 +1,5 @@
 "use client";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
@@ -10,7 +11,7 @@ import {
   Package,
   CheckSquare,
   Square,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -123,10 +124,10 @@ export default function PickListGenerator() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Generador de Pick List
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Lista de productos a recoger para pedidos confirmados
           </p>
         </div>
@@ -134,7 +135,7 @@ export default function PickListGenerator() {
           <button
             onClick={fetchOrders}
             disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar
@@ -153,45 +154,43 @@ export default function PickListGenerator() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 print:hidden">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-2xl font-bold text-[#00B4A6]">
             {loading ? "—" : orders.length}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Pedidos confirmados
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-2xl font-bold text-[#00B4A6]">{totalCount}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Productos a recoger
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-emerald-600">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <p className="text-2xl font-bold text-[var(--data-success)]">
             {checkedCount}/{totalCount}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Recogidos</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Recogidos</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3 dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         </div>
       ) : !generated ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
-          <Package className="h-12 w-12 text-gray-300 dark:text-gray-700" />
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-8 text-center dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <Package className="h-12 w-12 text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
           <div>
-            <p className="font-medium text-gray-700 dark:text-gray-300">
+            <p className="font-medium text-[var(--text-secondary)]">
               {orders.length} pedidos confirmados listos
             </p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[var(--text-tertiary)]">
               Genera la pick list para ver que productos recoger
             </p>
           </div>
@@ -206,25 +205,25 @@ export default function PickListGenerator() {
       ) : (
         <>
           {/* Progress bar */}
-          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900 print:hidden">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900 print:hidden">
             <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700 dark:text-gray-300">
+              <span className="font-medium text-[var(--text-secondary)]">
                 Progreso de recogida
               </span>
               <span
                 className={cn(
                   "font-semibold",
-                  allDone ? "text-emerald-600" : "text-[#00B4A6]"
+                  allDone ? "text-[var(--data-success)]" : "text-[#00B4A6]"
                 )}
               >
                 {checkedCount}/{totalCount}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
               <div
                 className={cn(
-                  "h-full transition-all duration-300",
-                  allDone ? "bg-emerald-500" : "bg-[#00B4A6]"
+                  "h-full transition-all duration-[var(--dur-base)]",
+                  allDone ? "bg-[var(--accent-soft)]" : "bg-[#00B4A6]"
                 )}
                 style={{
                   width: `${totalCount > 0 ? (checkedCount / totalCount) * 100 : 0}%`,
@@ -232,18 +231,18 @@ export default function PickListGenerator() {
               />
             </div>
             {allDone && (
-              <p className="mt-2 text-center text-sm font-semibold text-emerald-600">
+              <p className="mt-2 text-center text-sm font-semibold text-[var(--data-success)]">
                 Lista completa — todos los productos recogidos
               </p>
             )}
           </div>
 
           {/* Pick list */}
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
             {/* Print header */}
-            <div className="hidden border-b border-gray-100 p-4 print:block">
+            <div className="hidden border-b border-[var(--rule-soft)] p-4 print:block">
               <p className="text-lg font-bold">Buleje — Pick List</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--text-secondary)]">
                 {new Date().toLocaleString("es-PE")} · {orders.length} pedidos
                 · {totalCount} productos
               </p>
@@ -255,7 +254,7 @@ export default function PickListGenerator() {
                   key={item.productName}
                   className={cn(
                     "flex items-start gap-3 p-4 transition",
-                    item.checked && "bg-emerald-50/50 dark:bg-emerald-900/5"
+                    item.checked && "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]"
                   )}
                 >
                   <button
@@ -263,9 +262,9 @@ export default function PickListGenerator() {
                     className="mt-0.5 shrink-0 print:hidden"
                   >
                     {item.checked ? (
-                      <CheckSquare className="h-5 w-5 text-emerald-500" />
+                      <CheckSquare className="h-5 w-5 text-[var(--data-success)]" />
                     ) : (
-                      <Square className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+                      <Square className="h-5 w-5 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
                     )}
                   </button>
                   {/* Print checkbox */}
@@ -274,13 +273,13 @@ export default function PickListGenerator() {
                   <div className="min-w-0 flex-1">
                     <p
                       className={cn(
-                        "font-medium text-gray-900 dark:text-white",
-                        item.checked && "line-through text-gray-400"
+                        "font-medium text-[var(--text-primary)]",
+                        item.checked && "line-through text-[var(--text-tertiary)]"
                       )}
                     >
                       {item.productName}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       Pedidos: {item.orderRefs.join(", ")}
                     </p>
                   </div>
@@ -288,7 +287,7 @@ export default function PickListGenerator() {
                     <span className="text-lg font-bold text-[#00B4A6]">
                       {item.totalQty}
                     </span>
-                    <span className="ml-1 text-sm text-gray-500">
+                    <span className="ml-1 text-sm text-[var(--text-secondary)]">
                       {item.unit}
                     </span>
                   </div>

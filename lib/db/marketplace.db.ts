@@ -681,7 +681,13 @@ export const MarketplaceOrdersDB = {
     const priceMap = new Map(storeProducts.map((sp) => [sp.id, toNumOrZero(sp.retailPrice)]));
 
     const orderItems = params.items.map((item) => {
-      const unitPrice = priceMap.get(item.storeProductId) ?? item.retailPrice;
+      // Defense-in-depth: la guarda anterior (line 675) ya garantiza que cada
+      // storeProductId existe en priceMap. Si el fallback se dispara, es un
+      // bug — lanzamos para evitar aceptar precios cliente-side.
+      const unitPrice = priceMap.get(item.storeProductId);
+      if (unitPrice === undefined) {
+        throw new Error(`Precio server-side no disponible para storeProductId=${item.storeProductId}`);
+      }
       return {
         productId: item.productId,
         name:      item.name,

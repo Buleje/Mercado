@@ -20,7 +20,7 @@
  * la barra no se renderiza para evitar mostrar links rotos.
  */
 
-import { ExternalLink, Home, Store as StoreIcon } from "lucide-react";
+import { ExternalLink, Home, Store as StoreIcon } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 interface AdminTenantBarProps {
@@ -39,7 +39,7 @@ export function AdminTenantBar({ tenantSlug, tenantName }: AdminTenantBarProps) 
 
   return (
     <div
-      className="bg-primary/5 dark:bg-primary/10 border-b border-primary/20 dark:border-primary/30 px-4 sm:px-6 py-1.5 flex items-center justify-between gap-3 text-sm sticky top-0 z-50"
+      className="bg-primary/5 dark:bg-primary/10 border-b border-primary/20 dark:border-primary/30 px-4 sm:px-6 py-1 flex items-center justify-between gap-3 text-xs"
       role="banner"
       aria-label="Barra de tenant activo"
     >

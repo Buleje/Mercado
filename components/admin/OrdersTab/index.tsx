@@ -1,7 +1,8 @@
 "use client";
 
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer } from "lucide-react";
+import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useOrdersData } from "./hooks/useOrdersData";
@@ -136,8 +137,8 @@ export default function OrdersTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">Pedidos</h2>
-          <p className="text-sm text-gray-500 dark:text-muted">
+          <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Pedidos</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
             {activeOrders.length} activos · S/{total.toFixed(2)} total
           </p>
         </div>
@@ -148,7 +149,7 @@ export default function OrdersTab() {
               "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
               filterByDelivery
                 ? "text-white bg-primary"
-                : "text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200"
+                : "text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200"
             )}
           >
             <Bike className="h-4 w-4" />
@@ -156,7 +157,7 @@ export default function OrdersTab() {
           </button>
           <button
             onClick={() => setShowAdvancedFilters(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors relative"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors relative"
           >
             <SlidersHorizontal className="h-4 w-4" />
             Filtros avanzados
@@ -168,19 +169,19 @@ export default function OrdersTab() {
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             <Printer className="h-4 w-4" />
             Imprimir
           </button>
           <button
             onClick={() => setShowArchive(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             <FileText className="h-4 w-4" />
             Cancelados y Entregados
             {archivedOrders.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-gray-300 text-gray-700 dark:text-foreground text-xs font-bold">
+              <span className="px-1.5 py-0.5 rounded-full bg-gray-300 text-[var(--text-primary)] dark:text-foreground text-xs font-bold">
                 {archivedOrders.length}
               </span>
             )}
@@ -190,13 +191,13 @@ export default function OrdersTab() {
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 rounded-xl p-4">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">Filtrar por delivery:</p>
+            <p className="text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">Filtrar por delivery:</p>
             <select
               value={selectedDriverFilter}
               onChange={e => setSelectedDriverFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-blue-300 dark:border-blue-700 text-sm font-semibold text-blue-700 dark:text-blue-300 bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-1.5 rounded-lg border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-sm font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] bg-white dark:bg-card outline-none focus:border-primary"
             >
               <option value="">Todos los deliverys</option>
               {Array.from(new Set(
@@ -210,14 +211,14 @@ export default function OrdersTab() {
             {selectedDriverFilter && (
               <button
                 onClick={() => setSelectedDriverFilter("")}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
+                className="text-xs font-semibold text-[var(--data-success)] hover:text-[var(--data-success)] underline"
               >
                 Limpiar
               </button>
             )}
           </div>
           {selectedDriverFilter && (
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-2">
               Mostrando {activeOrders.length} pedido{activeOrders.length !== 1 ? "s" : ""} de {selectedDriverFilter}
             </p>
           )}
@@ -226,12 +227,12 @@ export default function OrdersTab() {
 
       {/* Error banner */}
       {loadError && (
-        <div className="mb-3 flex items-center gap-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        <div className="mb-3 flex items-center gap-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl px-4 py-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="flex-1">{loadError}</span>
           <button
             onClick={() => { setLoadError(null); void load(); }}
-            className="text-xs font-bold text-red-600 hover:text-red-800 underline"
+            className="text-xs font-bold text-[var(--data-error)] hover:text-[var(--data-error)] underline"
           >
             Reintentar
           </button>
@@ -259,8 +260,8 @@ export default function OrdersTab() {
 
       {/* Print-only summary */}
       <div className="hidden print:block print-orders-summary">
-        <h1 className="text-lg font-bold mb-1">Resumen de pedidos activos</h1>
-        <p className="text-xs text-gray-500 mb-4">
+        <PageTitle className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
+        <p className="text-xs text-[var(--text-secondary)] mb-4">
           {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · S/{total.toFixed(2)} total
         </p>
         <table className="w-full text-xs border-collapse">
@@ -276,7 +277,7 @@ export default function OrdersTab() {
           </thead>
           <tbody>
             {activeOrders.map(o => (
-              <tr key={o.id} className="border-b border-gray-300">
+              <tr key={o.id} className="border-b border-[var(--rule-base)]">
                 <td className="py-1.5 pr-2 font-mono">{o.id.slice(-6)}</td>
                 <td className="py-1.5 pr-2">{o.customer.name}</td>
                 <td className="py-1.5 pr-2">{o.customer.phone || "—"}</td>

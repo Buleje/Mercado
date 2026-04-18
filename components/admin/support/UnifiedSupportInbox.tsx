@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { MessageCircle, Star, Inbox, CheckCircle2, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { MessageCircle, Star, Inbox, CheckCircle2, Loader2, AlertCircle, RefreshCw } from "@buleje/design-system/icons";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { SupportInboxItem } from "@/app/api/admin/support/inbox/route";
 
@@ -22,12 +22,12 @@ const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; colo
   whatsapp: {
     label: "WhatsApp",
     icon: <MessageCircle className="w-3.5 h-3.5" />,
-    color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   },
   review: {
     label: "Reseña",
     icon: <Star className="w-3.5 h-3.5" />,
-    color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
   },
 };
 
@@ -101,7 +101,7 @@ export function UnifiedSupportInbox() {
   // ── Estados ──────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400 dark:text-muted gap-2">
+      <div className="flex items-center justify-center py-20 text-[var(--text-tertiary)] dark:text-muted gap-2">
         <Loader2 className="w-5 h-5 animate-spin" />
         <span className="text-sm">Cargando bandeja de soporte…</span>
       </div>
@@ -111,7 +111,7 @@ export function UnifiedSupportInbox() {
   if (error) {
     return (
       <EmptyState
-        icon={<AlertCircle className="text-red-400" />}
+        icon={<AlertCircle className="text-[var(--data-error)]" />}
         title="Error al cargar la bandeja"
         description="No se pudo conectar con el servidor. Intenta nuevamente."
           actions={[{ label: "Reintentar", onClick: () => { void loadInbox(); }, variant: "primary" }]}
@@ -120,7 +120,7 @@ export function UnifiedSupportInbox() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Filtros de fuente */}
       <div className="flex flex-wrap items-center gap-2">
         {(["all", "whatsapp", "review"] as SourceFilter[]).map((f) => (
@@ -131,7 +131,7 @@ export function UnifiedSupportInbox() {
               "min-h-[44px] px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors border",
               sourceFilter === f
                 ? "bg-primary text-white border-primary"
-                : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary",
+                : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-primary",
             ].join(" ")}
           >
             {f === "all" ? "Todos" : SOURCE_LABELS[f]?.label}
@@ -139,12 +139,12 @@ export function UnifiedSupportInbox() {
         ))}
         <button
           onClick={() => { void loadInbox(); }}
-          className="min-h-[44px] ml-auto p-2 rounded-xl border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="min-h-[44px] ml-auto p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
           aria-label="Actualizar bandeja"
         >
-          <RefreshCw className="w-4 h-4 text-gray-400" />
+          <RefreshCw className="w-4 h-4 text-[var(--text-tertiary)]" />
         </button>
-        <span className="text-xs text-gray-400 dark:text-muted">
+        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
           {pending.length} pendiente{pending.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -160,9 +160,9 @@ export function UnifiedSupportInbox() {
 
       {/* Tabla */}
       {filtered.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden bg-white dark:bg-card">
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden bg-white dark:bg-card">
           {/* Header */}
-          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-gray-50 dark:bg-surface px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted">
+          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-gray-50 dark:bg-surface px-4 py-2.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">
             <span>Fuente</span>
             <span>Cliente</span>
             <span>Mensaje</span>
@@ -185,7 +185,7 @@ export function UnifiedSupportInbox() {
                   <span
                     className={[
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
-                      src?.color ?? "bg-gray-100 text-gray-600",
+                      src?.color ?? "bg-gray-100 text-[var(--text-secondary)]",
                     ].join(" ")}
                   >
                     {src?.icon}
@@ -193,17 +193,17 @@ export function UnifiedSupportInbox() {
                   </span>
 
                   {/* Cliente */}
-                  <span className="text-sm font-medium text-gray-800 dark:text-foreground truncate">
+                  <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">
                     {item.customer}
                   </span>
 
                   {/* Mensaje */}
-                  <p className="text-sm text-gray-600 dark:text-muted line-clamp-2 break-words">
-                    {item.message || <span className="italic text-gray-300">Sin mensaje</span>}
+                  <p className="text-sm text-[var(--text-secondary)] dark:text-muted line-clamp-2 break-words">
+                    {item.message || <span className="italic text-[var(--text-tertiary)]">Sin mensaje</span>}
                   </p>
 
                   {/* Recibido */}
-                  <span className="text-xs text-gray-400 dark:text-muted whitespace-nowrap">
+                  <span className="text-xs text-[var(--text-tertiary)] dark:text-muted whitespace-nowrap">
                     {formatRelative(item.receivedAt)}
                   </span>
 
@@ -212,7 +212,7 @@ export function UnifiedSupportInbox() {
                     className={[
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
                       item.status === "resolved"
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                         : "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
                     ].join(" ")}
                   >
@@ -224,7 +224,7 @@ export function UnifiedSupportInbox() {
                     <button
                       onClick={() => handleMarkResolved(item.id)}
                       disabled={isResolving}
-                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isResolving ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -234,7 +234,7 @@ export function UnifiedSupportInbox() {
                       Resolver
                     </button>
                   ) : (
-                    <span className="text-xs text-gray-300 dark:text-muted px-3 py-1.5">—</span>
+                    <span className="text-xs text-[var(--text-tertiary)] dark:text-muted px-3 py-1.5">—</span>
                   )}
                 </div>
               );

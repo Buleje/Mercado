@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { AlertTriangle, CheckCircle, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -40,24 +40,24 @@ const LEVEL_CONFIG: Record<AlertLevel, {
   label: string;
 }> = {
   ok: {
-    bar: "bg-emerald-500 dark:bg-emerald-400",
-    bg: "bg-emerald-50 dark:bg-emerald-900/20",
-    border: "border-emerald-200 dark:border-emerald-700",
-    text: "text-emerald-800 dark:text-emerald-300",
+    bar: "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
+    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",
     label: "Presupuesto bajo control",
   },
   warning: {
-    bar: "bg-amber-500 dark:bg-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-900/20",
-    border: "border-amber-200 dark:border-amber-700",
-    text: "text-amber-800 dark:text-amber-300",
+    bar: "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+    border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]",
+    text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
     label: "Atencion: presupuesto al 70%",
   },
   danger: {
     bar: "bg-red-500 dark:bg-red-400",
-    bg: "bg-red-50 dark:bg-red-900/20",
-    border: "border-red-200 dark:border-red-700",
-    text: "text-red-800 dark:text-red-300",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
+    border: "border-[var(--data-error)] dark:border-[var(--data-error)]",
+    text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
     label: "Alerta: presupuesto superado el 90%",
   },
 };
@@ -108,13 +108,13 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {level === "ok" ? (
-            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
           ) : (
             <AlertTriangle className={cn(
               "h-4 w-4",
               level === "danger"
-                ? "text-red-600 dark:text-red-400"
-                : "text-amber-600 dark:text-amber-400"
+                ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
             )} />
           )}
           <span className={cn("text-xs font-semibold", cfg.text)}>
@@ -134,21 +134,21 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
       {/* Contenido */}
       {loading ? (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
         </div>
       ) : error ? (
-        <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
+        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
       ) : (
         <div className="space-y-3">
           {/* Montos */}
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Gastado</p>
+              <p className="text-xs text-[var(--text-tertiary)]">Gastado</p>
               <p className={cn("text-lg font-bold", cfg.text)}>{fmt(spent)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Disponible</p>
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{fmt(remaining)}</p>
+              <p className="text-xs text-[var(--text-tertiary)]">Disponible</p>
+              <p className="text-sm font-semibold text-[var(--text-secondary)]">{fmt(remaining)}</p>
             </div>
           </div>
 
@@ -156,13 +156,13 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
           <div>
             <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
               <div
-                className={cn("h-full rounded-full transition-all duration-500", cfg.bar)}
+                className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", cfg.bar)}
                 style={{ width: `${pct}%` }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-gray-400">{pct.toFixed(0)}% usado</span>
-              <span className="text-[10px] text-gray-400">Presupuesto: {fmt(monthlyBudget)}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{pct.toFixed(0)}% usado</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Presupuesto: {fmt(monthlyBudget)}</span>
             </div>
           </div>
 
@@ -175,7 +175,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
             )}>
               <p className={cn("text-xs font-medium", cfg.text)}>{cfg.label}</p>
               {level === "danger" && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
                   Exceso: {fmt(Math.max(spent - monthlyBudget, 0))}
                 </p>
               )}
@@ -184,8 +184,8 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
 
           {/* Desglose por categoria si existe */}
           {summary?.byCategory && Object.keys(summary.byCategory).length > 0 && (
-            <div className="pt-1 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+            <div className="pt-1 border-t border-[var(--rule-base)]">
+              <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] mb-1.5">
                 Por categoria
               </p>
               <ul className="space-y-1">
@@ -194,10 +194,10 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
                   .slice(0, 4)
                   .map(([cat, amount]) => (
                     <li key={cat} className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-600 dark:text-gray-400 capitalize truncate max-w-[60%]">
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] capitalize truncate max-w-[60%]">
                         {cat}
                       </span>
-                      <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-secondary)]">
                         {fmt(amount)}
                       </span>
                     </li>

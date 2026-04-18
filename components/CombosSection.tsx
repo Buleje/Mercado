@@ -225,8 +225,11 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
   );
 }
 
-export default function CombosSection() {
-  const { products: liveProducts, categories, isLoading } = useStoreProducts();
+export default function CombosSection({ serverProducts, showEmpty = false, emptyVariant = "admin" }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public" }) {
+  const hook = useStoreProducts();
+  const liveProducts = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const { categories } = hook;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const [settingsTemplates, setSettingsTemplates] = useState<ComboTemplate[] | null>(null);
 
   // Load settings combo templates from admin configuration
@@ -247,8 +250,8 @@ export default function CombosSection() {
     [liveProducts, settingsTemplates]
   );
 
-  // No render while loading or if no combos — prevents blank gaps
-  if (isLoading || liveProducts.length === 0 || combos.length === 0) return <SectionPlaceholder title="Combos" hint="Crea combos desde Admin → Productos & Precios" cols={4} />;
+  if (isLoading) return <SectionPlaceholder title="Combos" hint="Cargando..." cols={4} />;
+  if (liveProducts.length === 0 || combos.length === 0) return showEmpty ? <SectionPlaceholder title="Combos" hint="Crea combos desde Mi Tienda en el panel admin" cols={4} variant={emptyVariant} publicTitle="Combos ahorro" /> : null;
 
   return (
     <section className="py-16 sm:py-20 bg-white dark:bg-background">

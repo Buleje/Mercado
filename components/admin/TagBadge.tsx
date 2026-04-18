@@ -1,17 +1,17 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export const TAG_COLORS = {
-  teal:    { bg: "bg-teal-100 dark:bg-teal-900/40",    text: "text-teal-700 dark:text-teal-300",    dot: "bg-teal-500" },
-  blue:    { bg: "bg-blue-100 dark:bg-blue-900/40",    text: "text-blue-700 dark:text-blue-300",    dot: "bg-blue-500" },
-  violet:  { bg: "bg-violet-100 dark:bg-violet-900/40",text: "text-violet-700 dark:text-violet-300",dot: "bg-violet-500" },
-  amber:   { bg: "bg-amber-100 dark:bg-amber-900/40",  text: "text-amber-700 dark:text-amber-300",  dot: "bg-amber-500" },
-  rose:    { bg: "bg-rose-100 dark:bg-rose-900/40",    text: "text-rose-700 dark:text-rose-300",    dot: "bg-rose-500" },
-  emerald: { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" },
-  orange:  { bg: "bg-orange-100 dark:bg-orange-900/40",text: "text-orange-700 dark:text-orange-300",dot: "bg-orange-500" },
-  gray:    { bg: "bg-gray-100 dark:bg-gray-700/60",    text: "text-gray-600 dark:text-gray-300",    dot: "bg-gray-400" },
+  teal:    { bg: "bg-teal-100 dark:bg-teal-900/40",    text: "text-[var(--accent)]",    dot: "bg-teal-500" },
+  blue:    { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success)] dark:text-[var(--data-success)]",    dot: "bg-[var(--accent-soft)]" },
+  violet:  { bg: "bg-[var(--surface-sunken)]",text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",dot: "bg-[var(--text-primary)]" },
+  amber:   { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40",  text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  dot: "bg-[var(--data-warning)]" },
+  rose:    { bg: "bg-[var(--surface-sunken)]",    text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",    dot: "bg-[var(--text-primary)]" },
+  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]", dot: "bg-[var(--accent-soft)]" },
+  orange:  { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40",text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",dot: "bg-[var(--data-warning)]" },
+  gray:    { bg: "bg-[var(--surface-sunken)]/60",    text: "text-[var(--text-secondary)]",    dot: "bg-gray-400" },
 } as const;
 
 export type TagColor = keyof typeof TAG_COLORS;
@@ -34,7 +34,7 @@ export default function TagBadge({ tag, onRemove, size = "md", className }: TagB
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full font-medium transition-colors",
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        size === "sm" ? "px-2 py-0.5 text-[length:var(--ts-2xs)]" : "px-2.5 py-1 text-xs",
         colors.bg,
         colors.text,
         className,

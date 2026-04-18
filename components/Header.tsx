@@ -5,7 +5,10 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList } from "lucide-react";
+  Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
+  Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/contexts/cart-context";
@@ -15,6 +18,7 @@ import { useTheme } from "@/contexts/theme-context";
 import type { Product } from "@/data/products";
 import { cn } from "@/lib/utils";
 import { dispatchAppEvent, onAppEvent } from "@/lib/events";
+import { BulejeMark } from "@/components/ui-system/illustrations";
 
 /** Safe text highlight — no dangerouslySetInnerHTML */
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -32,39 +36,63 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
-const categoryMenuItems = [
-  { id: "frutas-verduras", label: "Frutas y Verduras", emoji: "🥬", icon: Leaf,
+interface CategoryItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  desc: string;
+  subs: string[];
+  iconBg: string;
+  iconColor: string;
+}
+
+const categoryMenuItems: CategoryItem[] = [
+  { id: "frutas-verduras", label: "Frutas y Verduras", icon: Leaf,
     desc: "Productos frescos del día",
     subs: ["Frutas", "Verduras", "Tubérculos", "Hierbas"],
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconColor: "text-emerald-700 dark:text-emerald-400" },
-  { id: "abarrotes", label: "Abarrotes", emoji: "🏪", icon: Package,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "abarrotes", label: "Abarrotes", icon: Package,
     desc: "Arroz, fideos, aceite y más",
     subs: ["Arroz", "Aceite", "Azúcar", "Fideos", "Enlatados"],
-    iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-700 dark:text-amber-400" },
-  { id: "carnes", label: "Carnes", emoji: "🥩", icon: Beef,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "carnes", label: "Carnes", icon: Beef,
     desc: "Carnes frescas de calidad",
     subs: ["Pollo", "Res", "Cerdo", "Pescado"],
-    iconBg: "bg-red-100 dark:bg-red-900/40", iconColor: "text-red-600 dark:text-red-400" },
-  { id: "lacteos", label: "Lácteos", emoji: "🧀", icon: Milk,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "lacteos", label: "Lácteos", icon: Milk,
     desc: "Leche, queso, yogurt",
     subs: ["Leche", "Queso", "Yogurt", "Mantequilla"],
-    iconBg: "bg-sky-100 dark:bg-sky-900/40", iconColor: "text-sky-600 dark:text-sky-400" },
-  { id: "bebidas", label: "Bebidas", emoji: "🥤", icon: GlassWater,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "bebidas", label: "Bebidas", icon: GlassWater,
     desc: "Agua, gaseosas, jugos",
     subs: ["Gaseosas", "Agua", "Jugos", "Cervezas"],
-    iconBg: "bg-blue-100 dark:bg-blue-900/40", iconColor: "text-blue-600 dark:text-blue-400" },
-  { id: "limpieza", label: "Limpieza", emoji: "🧹", icon: Sparkles,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "limpieza", label: "Limpieza", icon: Sparkles,
     desc: "Todo para tu hogar limpio",
     subs: ["Detergente", "Jabón", "Lejía", "Desinfectante"],
-    iconBg: "bg-violet-100 dark:bg-violet-900/40", iconColor: "text-violet-600 dark:text-violet-400" },
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
 ];
 
-const inicioMenuItems = [
-  { id: "inicio-top", label: "Página Principal", emoji: "🏠", href: "/", desc: "Volver al inicio" },
-  { id: "beneficios", label: "Beneficios", emoji: "⚡", href: "#beneficios", desc: "¿Por qué elegirnos?" },
-  { id: "como-funciona", label: "Cómo Funciona", emoji: "🔄", href: "#como-funciona", desc: "Pasos para pedir" },
-  { id: "reseñas", label: "Reseñas", emoji: "⭐", href: "#reseñas", desc: "Lo que dicen nuestros clientes" },
-  { id: "contacto", label: "Contacto", emoji: "📞", href: "#contacto", desc: "Escríbenos" },
+interface InicioItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  href: string;
+  desc: string;
+}
+
+const inicioMenuItems: InicioItem[] = [
+  { id: "inicio-top", label: "Página Principal", icon: Home, href: "/", desc: "Volver al inicio" },
+  { id: "beneficios", label: "Beneficios", icon: Zap, href: "#beneficios", desc: "¿Por qué elegirnos?" },
+  { id: "como-funciona", label: "Cómo Funciona", icon: RotateCw, href: "#como-funciona", desc: "Pasos para pedir" },
+  { id: "reseñas", label: "Reseñas", icon: Star, href: "#reseñas", desc: "Lo que dicen nuestros clientes" },
+  { id: "contacto", label: "Contacto", icon: Phone, href: "#contacto", desc: "Escríbenos" },
 ];
 
 export default function Header() {
@@ -507,6 +535,24 @@ export default function Header() {
     scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
   );
 
+  // Helper: resuelve active state basado en el pathname actual.
+  // /tienda + /tienda/* → "tienda"; /recetas → "recetas"; etc.
+  const isNavActive = (id: string): boolean => {
+    if (!pathname) return false;
+    if (id === "tienda") return pathname.startsWith("/tienda");
+    if (id === "ofertas") return pathname.startsWith("/tienda") && pathname.includes("ofertas");
+    if (id === "recetas") return pathname.startsWith("/recetas");
+    if (id === "marketplace") return pathname.startsWith("/marketplace");
+    if (id === "historial") return pathname.startsWith("/cuenta/historial");
+    if (id === "inicio") return pathname === "/";
+    return false;
+  };
+
+  const activeNavCls = cn(
+    "after:content-[''] after:absolute after:left-4 after:right-4 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-[var(--accent)]",
+    scrolled ? "text-[var(--accent)]" : "text-white",
+  );
+
   const renderDesktopNavItem = (id: string) => {
     switch (id) {
       case "inicio":
@@ -541,22 +587,25 @@ export default function Header() {
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Navegación</p>
               </div>
               <div className="grid grid-cols-2 gap-1 p-2.5">
-                {inicioMenuItems.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setActiveDropdown(null)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-primary/15 hover:bg-primary/5 group"
-                  >
-                    <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 text-lg shrink-0 group-hover:bg-primary/10">
-                      {item.emoji}
-                    </span>
-                    <div>
-                      <p className="font-bold text-sm text-foreground group-hover:text-primary">{item.label}</p>
-                      <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
-                    </div>
-                  </a>
-                ))}
+                {inicioMenuItems.map((item) => {
+                  const IIcon = item.icon;
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={() => setActiveDropdown(null)}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 group"
+                    >
+                      <span className="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 shrink-0 group-hover:bg-gray-100 dark:group-hover:bg-gray-800">
+                        <IIcon className="h-4 w-4" strokeWidth={1.5} />
+                      </span>
+                      <div>
+                        <p className="font-extrabold tracking-tight text-sm text-foreground group-hover:text-primary">{item.label}</p>
+                        <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
               {/* Sección categorías */}
               <div className="px-4 py-3 border-t border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
@@ -566,22 +615,25 @@ export default function Header() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1 p-2.5">
-                {filteredCategories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href="/tienda"
-                    onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-transparent hover:shadow-sm hover:border-gray-200 hover:bg-gray-50 group"
-                  >
-                    <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-xl shrink-0 group-hover:scale-110", cat.iconBg)}>
-                      {cat.emoji}
-                    </span>
-                    <div>
-                      <p className="font-bold text-xs text-foreground group-hover:text-primary">{cat.label}</p>
-                      <p className="text-[10px] text-muted mt-0.5">{cat.desc}</p>
-                    </div>
-                  </Link>
-                ))}
+                {filteredCategories.map((cat) => {
+                  const CIcon = cat.icon;
+                  return (
+                    <Link
+                      key={cat.id}
+                      href="/tienda"
+                      onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-900 group"
+                    >
+                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-lg shrink-0", cat.iconBg, cat.iconColor)}>
+                        <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                      </span>
+                      <div>
+                        <p className="font-extrabold tracking-tight text-xs text-foreground group-hover:text-primary">{cat.label}</p>
+                        <p className="text-[10px] text-muted mt-0.5">{cat.desc}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
               <div className="px-3 py-2.5 bg-linear-to-r from-primary/5 to-primary/5 border-t border-gray-100">
                 <Link href="/tienda" onClick={() => setActiveDropdown(null)}
@@ -593,25 +645,51 @@ export default function Header() {
           </div>
         );
       case "tienda":
-        return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
+        // Re-label "Tienda" → "Comprar" — verbo CTA directo (no sustantivo pasivo).
+        return (
+          <Link key="tienda" href="/tienda" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("tienda") && activeNavCls)}>
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} /> Comprar
+          </Link>
+        );
+      case "explorar":
+        // Hub de descubrimiento estilo Amazon homepage adaptado a Buleje.
+        return (
+          <Link key="explorar" href="/marketplace/explorar" className={cn(navLinkCls, "flex items-center gap-1.5 relative")}>
+            <Compass className="h-4 w-4" strokeWidth={1.75} /> Explorar
+          </Link>
+        );
+      case "ofertas":
+        // Captura price-sensitive shoppers — ancla a seccion ofertas o query.
+        return (
+          <Link key="ofertas" href="/tienda?category=ofertas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("ofertas") && activeNavCls)}>
+            <Tag className="h-4 w-4" strokeWidth={1.75} /> Ofertas
+          </Link>
+        );
+      case "a-domicilio":
+        // Confianza en entrega — ancla a cobertura/footer o pagina dedicada.
+        return (
+          <Link key="a-domicilio" href="/#a-domicilio" className={cn(navLinkCls, "flex items-center gap-1.5 relative")}>
+            <MapPin className="h-4 w-4" strokeWidth={1.75} /> A domicilio
+          </Link>
+        );
       case "categorias":
         return null;
       case "recetas":
         return (
-          <Link key="recetas" href="/recetas" className={cn(navLinkCls, "flex items-center gap-1.5")}>
-            <ChefHat className="h-4 w-4" /> Recetas
+          <Link key="recetas" href="/recetas" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("recetas") && activeNavCls)}>
+            <ChefHat className="h-4 w-4" strokeWidth={1.75} /> Recetas
           </Link>
         );
       case "marketplace":
         return (
-          <Link key="marketplace" href="/marketplace" className={cn(navLinkCls, "flex items-center gap-1.5")}>
-            <Globe className="h-4 w-4" /> Marketplace
+          <Link key="marketplace" href="/marketplace" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("marketplace") && activeNavCls)}>
+            <Globe className="h-4 w-4" strokeWidth={1.75} /> Marketplace
           </Link>
         );
       case "historial":
         return (
-          <Link key="historial" href="/cuenta/historial" className={cn(navLinkCls, "flex items-center gap-1.5")}>
-            <History className="h-4 w-4" /> Historial
+          <Link key="historial" href="/cuenta/historial" className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("historial") && activeNavCls)}>
+            <History className="h-4 w-4" strokeWidth={1.75} /> Historial
           </Link>
         );
       default:
@@ -638,37 +716,45 @@ export default function Header() {
             {mobileInicioOpen && (
               <div className="overflow-hidden">
                 <div className="mx-4 my-2 space-y-1">
-                  {inicioMenuItems.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-primary/25 hover:bg-primary/5"
-                    >
-                      <span className="text-xl">{item.emoji}</span>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{item.label}</p>
-                        <p className="text-xs text-muted">{item.desc}</p>
-                      </div>
-                    </a>
-                  ))}
+                  {inicioMenuItems.map((item) => {
+                    const IIcon = item.icon;
+                    return (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500"
+                      >
+                        <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 shrink-0">
+                          <IIcon className="h-4 w-4" strokeWidth={1.5} />
+                        </span>
+                        <div>
+                          <p className="text-sm font-extrabold tracking-tight text-foreground">{item.label}</p>
+                          <p className="text-xs text-muted">{item.desc}</p>
+                        </div>
+                      </a>
+                    );
+                  })}
                   {/* Categorías dentro del menú inicio mobile */}
-                  <div className="pt-2 border-t border-gray-100">
-                    <p className="px-1 pb-2 text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
+                  <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+                    <p className="px-1 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Categorías</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {filteredCategories.map((cat) => (
-                        <Link
-                          key={cat.id}
-                          href="/tienda"
-                          onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); handleCategoryClick(cat.id); }}
-                          className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 hover:border-primary/20 hover:bg-primary/5"
-                        >
-                          <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg text-lg shrink-0", cat.iconBg)}>
-                            {cat.emoji}
-                          </span>
-                          <span className="text-xs font-bold text-foreground">{cat.label}</span>
-                        </Link>
-                      ))}
+                      {filteredCategories.map((cat) => {
+                        const CIcon = cat.icon;
+                        return (
+                          <Link
+                            key={cat.id}
+                            href="/tienda"
+                            onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); handleCategoryClick(cat.id); }}
+                            className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500"
+                          >
+                            <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg shrink-0", cat.iconBg, cat.iconColor)}>
+                              <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                            </span>
+                            <span className="text-xs font-extrabold tracking-tight text-foreground">{cat.label}</span>
+                          </Link>
+                        );
+                      })}
                     </div>
                     <Link
                       href="/tienda"
@@ -684,25 +770,48 @@ export default function Header() {
           </div>
         );
       case "tienda":
-        return <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cls}>Tienda</Link>;
+        // Label "Comprar" + icon ShoppingBag en mobile drawer.
+        return (
+          <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <ShoppingBag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Comprar
+          </Link>
+        );
+      case "explorar":
+        return (
+          <Link key="explorar" href="/marketplace/explorar" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Compass className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Explorar
+          </Link>
+        );
+      case "ofertas":
+        return (
+          <Link key="ofertas" href="/tienda?category=ofertas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Tag className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Ofertas
+          </Link>
+        );
+      case "a-domicilio":
+        return (
+          <Link key="a-domicilio" href="/#a-domicilio" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <MapPin className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> A domicilio
+          </Link>
+        );
       case "categorias":
         return null;
       case "recetas":
         return (
           <Link key="recetas" href="/recetas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <ChefHat className="h-4 w-4 text-[#f97316]" /> Recetas
+            <ChefHat className="h-4 w-4 text-secondary" /> Recetas
           </Link>
         );
       case "marketplace":
         return (
           <Link key="marketplace" href="/marketplace" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <Globe className="h-4 w-4 text-teal-500" /> Marketplace
+            <Globe className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Marketplace
           </Link>
         );
       case "historial":
         return (
           <Link key="historial" href="/cuenta/historial" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <History className="h-4 w-4 text-pink-500" /> Historial
+            <History className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} /> Historial
           </Link>
         );
       default:
@@ -724,10 +833,10 @@ export default function Header() {
           ? "background 0.4s ease, box-shadow 0.4s ease, top 0.35s cubic-bezier(0.4,0,0.2,1)"
           : "background 0.4s ease, top 0.35s cubic-bezier(0.4,0,0.2,1)",
         ...(scrolled ? {} : {
-          background: "rgba(30,27,75,0.65)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(45,106,79,0.18)",
+          background: "rgba(6,10,13,0.72)",
+          backdropFilter: "blur(14px) saturate(140%)",
+          WebkitBackdropFilter: "blur(14px) saturate(140%)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }),
       }}
     >
@@ -737,34 +846,27 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <div
-              className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, #00B4A6 0%, #009690 50%, #007A72 100%)",
-                boxShadow: "0 4px 12px rgba(0, 180, 166, 0.35)"
-              }}
+              className={cn(
+                "flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg overflow-hidden transition-colors",
+                scrolled
+                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                  : "bg-white/10 text-white border border-white/15",
+              )}
             >
               {storeTheme?.logo ? (
-                <Image src={storeTheme.logo} alt={storeTheme.name || businessName || "logo"} width={44} height={44} className="h-full w-full object-cover" />
+                <Image src={storeTheme.logo} alt={storeTheme.name || businessName || "logo"} width={40} height={40} className="h-full w-full object-cover" />
               ) : (
-                <Store className="h-5 w-5 sm:h-6 sm:w-6" />
+                <BulejeMark size={22} strokeWidth={1.75} />
               )}
             </div>
             <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1.5">
+                {/* Logo name sin badge "v1 Beta" — aura profesional, confianza B2C */}
                 <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
                   scrolled ? "text-primary-dark" : "text-white")}>
                   {storeTheme?.name || businessName || "Mi Bodega"}
                 </span>
-                <span className={cn(
-                  "inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold leading-none tracking-wide border",
-                  scrolled
-                    ? "bg-amber-500/15 text-amber-700 border-amber-500/25 dark:bg-amber-400/15 dark:text-amber-400 dark:border-amber-400/25"
-                    : "bg-amber-400/25 text-amber-200 border-amber-400/35"
-                )}>
-                  v1 Beta
-                </span>
               </div>
-
             </div>
           </Link>
 
@@ -862,16 +964,21 @@ export default function Header() {
                       <div className="px-4 pt-3 pb-3 border-t border-gray-100 dark:border-card-border first:border-t-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Categorías</p>
                         <div className="grid grid-cols-2 gap-1.5">
-                          {filteredCategories.slice(0, 8).map(cat => (
-                            <button
-                              key={cat.id}
-                              onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
-                              className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-foreground hover:bg-primary/8 hover:text-primary transition-colors text-left"
-                            >
-                              <span className="text-2xl leading-none">{cat.emoji}</span>
-                              <span className="truncate text-sm font-bold">{cat.label}</span>
-                            </button>
-                          ))}
+                          {filteredCategories.slice(0, 8).map(cat => {
+                            const CIcon = cat.icon;
+                            return (
+                              <button
+                                key={cat.id}
+                                onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
+                                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-left"
+                              >
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 shrink-0">
+                                  <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                                </span>
+                                <span className="truncate text-sm font-extrabold tracking-tight">{cat.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -879,7 +986,7 @@ export default function Header() {
                       {trendingProducts.length > 0 && (
                         <div className="px-4 pt-2 pb-3 border-t border-gray-100 dark:border-card-border">
                           <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3 flex items-center gap-1.5">
-                            <Flame className="h-4 w-4 text-orange-500" /> Populares ahora
+                            <Flame className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} /> Populares ahora
                           </p>
                           <div className="space-y-1">
                             {trendingProducts.slice(0, 3).map(p => (
@@ -1218,32 +1325,35 @@ export default function Header() {
           </button>
 
           <div ref={categoryStripRef} className="scrollbar-hide flex gap-2 overflow-x-auto px-8 lg:justify-center lg:px-0">
-            {filteredCategories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => handleCategoryClick(cat.id)}
-                className={cn(
-                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
-                  scrolled
-                    ? "bg-primary/8 text-primary hover:bg-primary/15 border border-primary/15"
-                    : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
-                )}
-              >
-                <span className="text-xl leading-none">{cat.emoji}</span>
-                {cat.label}
-              </button>
-            ))}
+            {filteredCategories.map(cat => {
+              const CIcon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategoryClick(cat.id)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
+                    scrolled
+                      ? "bg-white text-foreground hover:bg-gray-50 border border-gray-200"
+                      : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
+                  )}
+                >
+                  <CIcon className="h-4 w-4" strokeWidth={1.75} />
+                  {cat.label}
+                </button>
+              );
+            })}
             <Link
               href="/tienda"
               onClick={() => {}}
               className={cn(
-                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
+                "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                 scrolled
-                  ? "bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
                   : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
               )}
             >
-              <span className="text-xl leading-none">🔍</span>
+              <Search className="h-3.5 w-3.5" strokeWidth={1.75} />
               Ver todos
             </Link>
           </div>
@@ -1467,15 +1577,19 @@ export default function Header() {
                   <p className="text-sm font-bold text-foreground">No encontramos &ldquo;{searchQuery.trim()}&rdquo;</p>
                   <p className="text-xs text-muted mt-1">Prueba con otro término o explora nuestras categorías</p>
                   <div className="flex flex-wrap gap-2 justify-center mt-3">
-                    {filteredCategories.slice(0, 4).map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-gray-200 dark:border-card-border text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
-                      >
-                        <span>{cat.emoji}</span> {cat.label}
-                      </button>
-                    ))}
+                    {filteredCategories.slice(0, 4).map(cat => {
+                      const CIcon = cat.icon;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-gray-200 dark:border-card-border text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                          {cat.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1502,7 +1616,7 @@ export default function Header() {
               {searchQuery.length === 0 && trendingProducts.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
-                    <Flame className="h-3 w-3 text-orange-500" /> Productos populares ahora
+                    <Flame className="h-3 w-3 text-[var(--accent)]" strokeWidth={1.75} /> Productos populares ahora
                   </p>
                   <div className="space-y-1">
                     {trendingProducts.map(p => (
@@ -1518,7 +1632,7 @@ export default function Header() {
                           <span className="font-semibold text-xs block truncate">{p.name}</span>
                           <span className="text-[10px] text-muted">S/{p.price.toFixed(2)}</span>
                         </div>
-                        <Flame className="h-3 w-3 text-orange-400 shrink-0" />
+                        <Flame className="h-3 w-3 text-[var(--accent)] shrink-0" strokeWidth={1.75} />
                       </button>
                     ))}
                   </div>
@@ -1530,16 +1644,19 @@ export default function Header() {
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Categorías populares</p>
                   <div className="flex flex-wrap gap-2">
-                    {filteredCategories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
-                      >
-                        <span>{cat.emoji}</span>
-                        {cat.label}
-                      </button>
-                    ))}
+                    {filteredCategories.map((cat) => {
+                      const CIcon = cat.icon;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <CIcon className="h-4 w-4" strokeWidth={1.75} />
+                          {cat.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1549,8 +1666,8 @@ export default function Header() {
       )}
       {/* Voice ordering confirmation toast */}
       {voiceResult && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold animate-bounce">
-          ✅ {voiceResult.qty}x {voiceResult.product} agregado al carrito
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[var(--accent)] text-white px-5 py-3 rounded-xl shadow-[var(--shadow-md)] text-sm font-semibold">
+          {voiceResult.qty}x {voiceResult.product} agregado al carrito
         </div>
       )}
     </header>

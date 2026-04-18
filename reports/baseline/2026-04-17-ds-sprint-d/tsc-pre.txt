@@ -1,0 +1,2 @@
+.next/dev/types/validator.ts(260,46): error TS1005: '?' expected.
+.next/dev/types/validator.ts(265,1): error TS1128: Declaration or statement expected.

@@ -48,7 +48,7 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; icon: React.ElementType; step: number }
 > = {
   assigned:  { label: "Asignado",  color: "text-amber-600 dark:text-amber-400",   icon: Clock,        step: 1 },
-  picked_up: { label: "Recogido",  color: "text-blue-600 dark:text-blue-400",     icon: Package,      step: 2 },
+  picked_up: { label: "Recogido",  color: "text-emerald-600 dark:text-emerald-400",     icon: Package,      step: 2 },
   en_camino: { label: "En camino", color: "text-[#00B4A6] dark:text-teal-400",    icon: Navigation,   step: 3 },
   delivered: { label: "Entregado", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle, step: 4 },
 };

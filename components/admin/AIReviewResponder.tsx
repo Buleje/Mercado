@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Star, Send, Edit3, RotateCcw } from "lucide-react";
+import { Star, Send, Edit3, RotateCcw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ function StarDisplay({ rating }: { rating: number }) {
           className={cn(
             "h-4 w-4",
             i < rating
-              ? "fill-yellow-400 text-yellow-400"
+              ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
               : "fill-muted text-muted-foreground"
           )}
         />
@@ -103,8 +103,8 @@ export default function AIReviewResponder({
 
   const sentimentLabel =
     rating >= 4
-      ? { text: "Resena positiva", className: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" }
-      : { text: "Resena critica", className: "text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800" };
+      ? { text: "Resena positiva", className: "text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" }
+      : { text: "Resena critica", className: "text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-orange-950/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]" };
 
   return (
     <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
@@ -154,8 +154,8 @@ export default function AIReviewResponder({
 
       {/* Sent confirmation */}
       {sent && (
-        <div className="rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 px-3 py-2">
-          <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+        <div className="rounded-md bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 px-3 py-2">
+          <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
             Respuesta enviada correctamente.
           </p>
         </div>

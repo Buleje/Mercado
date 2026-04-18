@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   STATUS_COLORS,
@@ -37,7 +37,7 @@ export function ThreadsList({
             onClick={() => onStatusFilterChange(s)}
             aria-pressed={statusFilter === s}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition",
+              "rounded-lg px-3 py-1 text-xs font-medium transition",
               statusFilter === s
                 ? "bg-[#00B4A6] text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
@@ -100,14 +100,14 @@ export function ThreadsList({
                         </span>
                       </div>
                       {lastMsg && (
-                        <span className="flex-shrink-0 text-[10px] text-slate-500">
+                        <span className="flex-shrink-0 text-[length:var(--ts-2xs)] text-slate-500">
                           {lastMsg}
                         </span>
                       )}
                     </div>
 
                     {thread.subject && (
-                      <div className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="mt-0.5 truncate text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400">
                         {thread.subject}
                       </div>
                     )}
@@ -122,7 +122,7 @@ export function ThreadsList({
                         </span>
                         {unread > 0 && (
                           <span
-                            className="flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white"
+                            className="flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-[var(--data-error)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-white"
                             aria-label={`${unread} mensajes sin leer`}
                           >
                             {unread > 99 ? "99+" : unread}
@@ -132,7 +132,7 @@ export function ThreadsList({
                     )}
 
                     {thread.customerPhone && (
-                      <div className="mt-1 text-[10px] text-slate-400">
+                      <div className="mt-1 text-[length:var(--ts-2xs)] text-slate-400">
                         {thread.customerPhone}
                       </div>
                     )}

@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { getOrSet } from "@/lib/cache";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Order as POrder,
@@ -18,6 +19,7 @@ import { DomainEvents } from "@/lib/domain-events";
 import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { checkAndIssueCoupons } from "@/lib/coupons/auto-coupon-triggers";
+import { logger } from "@/lib/logger";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -116,7 +118,7 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
 export const OrdersDB = {
   async getAll(tenantId: string): Promise<DbOrder[]> {
     const where: Record<string, unknown> = { tenantId };
-    return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
+    return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" }, take: 1000 })).map(mapOrder);
   },
 
   /**
@@ -235,6 +237,7 @@ export const OrdersDB = {
       where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
+      take: 1000,
     })).map(mapOrder);
   },
   async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
@@ -323,7 +326,7 @@ export const OrdersDB = {
     });
     // Persist idempotency key via raw SQL (field added in migration 20260316; types update after prisma generate)
     if (order.idempotencyKey) {
-      await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch(() => {});
+      await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch((err) => logger.error("[orders.db] persist idempotencyKey failed", { error: String(err), orderId: row.id }));
     }
     // Emit domain event — fire-and-forget, never breaks the happy path (see ADR 007)
     DomainEvents.ventaCompletada(tenantId, {
@@ -335,7 +338,7 @@ export const OrdersDB = {
       paymentMethod: order.paymentMethod ?? "efectivo",
       hadCoupon:     Boolean(order.appliedCouponCode),
       isDelivery:    Boolean(order.customer.location),
-    }).catch(() => {});
+    }).catch((err) => logger.error("[orders.db] DomainEvents.ventaCompletada failed", { error: String(err), orderId: row.id }));
 
     // Notify tenant owner via WhatsApp — fire-and-forget (Mejora #1)
     findTenantByIdOrSlug(tenantId)
@@ -348,7 +351,7 @@ export const OrdersDB = {
           ownerPhone: tenant.ownerPhone,
         });
       })
-      .catch(() => {});
+      .catch((err) => logger.error("[orders.db] notifyOwnerNewOrder failed", { error: String(err), orderId: row.id }));
 
     // Auto-coupon triggers — fire-and-forget (Mejora #6)
     const mappedOrder = mapOrder(row);
@@ -393,7 +396,7 @@ export const OrdersDB = {
 
     customerForCoupons
       .then((customer) => checkAndIssueCoupons(mappedOrder, customer, tenantId))
-      .catch(() => {});
+      .catch((err) => logger.error("[orders.db] checkAndIssueCoupons failed", { error: String(err), orderId: row.id }));
 
     return mappedOrder;
   },
@@ -428,7 +431,7 @@ export const OrdersDB = {
    * Uses deleteMany (does not throw on zero matches) instead of delete.
    */
   async delete(tenantId: string, id: string): Promise<void> {
-    await prisma.order.deleteMany({ where: { id, tenantId } }).catch(() => {});
+    await prisma.order.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[orders.db] delete order failed", { error: String(err), orderId: id, tenantId }));
   },
 
   /**
@@ -497,6 +500,57 @@ export const OrdersDB = {
       take: limit,
     });
     return rows.map(mapOrder);
+  },
+
+  /**
+   * Devuelve el último pedido marketplace de un cliente (por teléfono),
+   * junto con el storeSlug derivado del tenantId.
+   * Cachea 60s por teléfono para evitar queries repetidas en reorders.
+   */
+  async getLastByCustomer(phone: string): Promise<{
+    items: Array<{
+      productId: number;
+      name: string;
+      quantity: number;
+      price: number;
+      unit: string;
+      storeSlug: string;
+    }>;
+  } | null> {
+    const normalized = normalizePhone(phone);
+    const cacheKey = `orders:last-by-customer:${normalized}`;
+
+    return getOrSet(cacheKey, 60, async () => {
+      const order = await prisma.order.findFirst({
+        where: {
+          customerPhone: normalized,
+          source: "marketplace",
+          deletedAt: null,
+        },
+        include: { items: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!order) return null;
+
+      // Derive storeSlug from tenantId via Store table
+      const store = await prisma.store.findFirst({
+        where: { tenantId: order.tenantId },
+        select: { slug: true },
+      });
+      const storeSlug = store?.slug ?? order.tenantId;
+
+      return {
+        items: order.items.map((i) => ({
+          productId: i.productId ?? 0,
+          name:      i.name,
+          quantity:  i.quantity,
+          price:     toNumOrZero(i.price),
+          unit:      i.unit,
+          storeSlug,
+        })),
+      };
+    });
   },
 
   /**

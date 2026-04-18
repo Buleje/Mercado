@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MapPin,
@@ -11,7 +12,7 @@ import {
   TrendingUp,
   Eye,
   EyeOff,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -309,10 +310,10 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Header + controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Mapa Geografico de Clientes
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)]">
             Ubicacion real de clientes con coordenadas GPS
           </p>
         </div>
@@ -324,8 +325,8 @@ export default function CustomerGeoMap({ className }: Props) {
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               showStats
-                ? "bg-[#00B4A6] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
             )}
           >
             {showStats ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -333,14 +334,14 @@ export default function CustomerGeoMap({ className }: Props) {
           </button>
 
           {/* View mode toggle */}
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex rounded-lg border border-[var(--rule-base)]">
             <button
               onClick={() => setViewMode("markers")}
               className={cn(
                 "flex items-center gap-1.5 rounded-l-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "markers"
-                  ? "bg-[#00B4A6] text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                  ? "bg-primary text-white"
+                  : "bg-white text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
               <MapPin className="h-3.5 w-3.5" />
@@ -351,8 +352,8 @@ export default function CustomerGeoMap({ className }: Props) {
               className={cn(
                 "flex items-center gap-1.5 rounded-r-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "heat"
-                  ? "bg-[#00B4A6] text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                  ? "bg-primary text-white"
+                  : "bg-white text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
               <Flame className="h-3.5 w-3.5" />
@@ -365,50 +366,50 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Stats panel */}
       {showStats && !loading && totalCustomers > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-[#00B4A6]" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Con GPS</span>
+              <Users className="h-4 w-4 text-primary" />
+              <span className="text-xs text-[var(--text-secondary)]">Con GPS</span>
             </div>
-            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+            <p className="mt-1 text-xl font-bold text-[var(--text-primary)]">
               {totalCustomers}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-[#f97316]" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Total gastado</span>
+              <DollarSign className="h-4 w-4 text-secondary" />
+              <span className="text-xs text-[var(--text-secondary)]">Total gastado</span>
             </div>
-            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+            <p className="mt-1 text-xl font-bold text-[var(--text-primary)]">
               {formatSoles(totalSpent)}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Top zona</span>
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="text-xs text-[var(--text-secondary)]">Top zona</span>
             </div>
-            <p className="mt-1 truncate text-sm font-bold text-gray-900 dark:text-white">
+            <p className="mt-1 truncate text-sm font-bold text-[var(--text-primary)]">
               {topZones[0]?.[0] ?? "---"}
             </p>
-            <p className="text-xs text-gray-500">{topZones[0]?.[1]?.count ?? 0} clientes</p>
+            <p className="text-xs text-[var(--text-secondary)]">{topZones[0]?.[1]?.count ?? 0} clientes</p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[#6b7280]" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Por nivel</span>
+              <MapPin className="h-4 w-4 text-[var(--text-secondary)]" />
+              <span className="text-xs text-[var(--text-secondary)]">Por nivel</span>
             </div>
             <div className="mt-1 flex items-center gap-2 text-xs">
               <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#00B4A6]" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" />
                 {tierCounts.high}
               </span>
               <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#f97316]" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-secondary" />
                 {tierCounts.medium}
               </span>
               <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#6b7280]" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-500" />
                 {tierCounts.low}
               </span>
             </div>
@@ -418,25 +419,25 @@ export default function CustomerGeoMap({ className }: Props) {
 
       {/* Top zones breakdown */}
       {showStats && !loading && topZones.length > 1 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+          <CardTitle className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
             Top 5 zonas
-          </h3>
+          </CardTitle>
           <div className="space-y-2">
             {topZones.map(([zone, data]) => {
               const pct = totalCustomers > 0 ? Math.round((data.count / totalCustomers) * 100) : 0;
               return (
                 <div key={zone} className="flex items-center gap-3">
-                  <span className="w-32 truncate text-xs text-gray-600 dark:text-gray-400">
+                  <span className="w-32 truncate text-xs text-[var(--text-secondary)]">
                     {zone}
                   </span>
-                  <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-gray-100">
                     <div
-                      className="h-full rounded-full bg-[#00B4A6] transition-all duration-500"
+                      className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     />
                   </div>
-                  <span className="w-20 text-right text-xs text-gray-500">
+                  <span className="w-20 text-right text-xs text-[var(--text-secondary)]">
                     {data.count} ({pct}%)
                   </span>
                 </div>
@@ -448,66 +449,66 @@ export default function CustomerGeoMap({ className }: Props) {
 
       {/* Map container */}
       {loading ? (
-        <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900" style={{ height: 480 }}>
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
+        <div className="relative rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" style={{ height: 480 }}>
+          <LoadingState variant="overlay" message="" />
         </div>
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-8 dark:border-red-900/30 dark:bg-red-900/10">
-          <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-8">
+          <AlertCircle className="h-5 w-5 shrink-0 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)]">{error}</p>
         </div>
       ) : totalCustomers === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-16 dark:border-gray-700 dark:bg-gray-900">
-          <MapPin className="h-10 w-10 text-gray-300 dark:text-gray-600" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-16">
+          <MapPin className="h-10 w-10 text-[var(--text-tertiary)]" />
+          <p className="text-sm text-[var(--text-secondary)]">
             No hay clientes con coordenadas GPS registradas.
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Agrega lat/lng a tus clientes para verlos en el mapa.
           </p>
         </div>
       ) : (
         <div
           ref={containerRef}
-          className="rounded-xl border border-gray-200 shadow-sm dark:border-gray-700"
+          className="rounded-xl border border-[var(--rule-base)] "
           style={{ height: 480, width: "100%" }}
         />
       )}
 
       {/* Legend */}
       {!loading && !error && totalCustomers > 0 && viewMode === "markers" && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs dark:border-gray-700 dark:bg-gray-900">
-          <span className="font-medium text-gray-500 dark:text-gray-400">Leyenda:</span>
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-2.5 text-xs">
+          <span className="font-medium text-[var(--text-secondary)]">Leyenda:</span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full bg-[#00B4A6]" />
+            <span className="inline-block h-3 w-3 rounded-full bg-primary" />
             Oro+ (S/1500+)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full bg-[#f97316]" />
+            <span className="inline-block h-3 w-3 rounded-full bg-secondary" />
             Plata (S/500-1499)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full bg-[#6b7280]" />
+            <span className="inline-block h-3 w-3 rounded-full bg-gray-500" />
             Bronce (&lt;S/500)
           </span>
         </div>
       )}
 
       {!loading && !error && totalCustomers > 0 && viewMode === "heat" && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs dark:border-gray-700 dark:bg-gray-900">
-          <span className="font-medium text-gray-500 dark:text-gray-400">Intensidad:</span>
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-2.5 text-xs">
+          <span className="font-medium text-[var(--text-secondary)]">Intensidad:</span>
           <div className="flex items-center gap-1">
-            <span className="text-gray-400">Bajo</span>
+            <span className="text-[var(--text-tertiary)]">Bajo</span>
             <div className="flex h-3 w-32 overflow-hidden rounded-full">
-              <div className="flex-1 bg-[#00B4A6]" />
-              <div className="flex-1 bg-[#33C4B8]" />
+              <div className="flex-1 bg-primary" />
+              <div className="flex-1 bg-primary-light" />
               <div className="flex-1 bg-[#2dd4bf]" />
-              <div className="flex-1 bg-[#f97316]" />
+              <div className="flex-1 bg-secondary" />
               <div className="flex-1 bg-[#e63946]" />
             </div>
-            <span className="text-gray-400">Alto</span>
+            <span className="text-[var(--text-tertiary)]">Alto</span>
           </div>
-          <span className="text-gray-400">= Total gastado por cliente</span>
+          <span className="text-[var(--text-tertiary)]">= Total gastado por cliente</span>
         </div>
       )}
     </div>

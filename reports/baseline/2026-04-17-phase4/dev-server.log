@@ -1,0 +1,23 @@
+
+> buleje@0.1.1 dev
+> next dev --turbopack
+
+⚠ Port 3000 is in use by process 15100, using available port 3001 instead.
+▲ Next.js 16.2.3 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.0.100:3001
+- Environments: .env.local, .env
+✓ Ready in 2.3s
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          15100
+- Dir:          C:\dev\bodega-san-martin\bodega-san-martin
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 15100 /F to stop it.
+[?25h

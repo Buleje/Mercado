@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       auth.username,
       undefined,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[totp/enroll] logActivity failed", { error: String(err) }));
 
     return NextResponse.json({ secret, otpauthUrl });
   } catch (err) {

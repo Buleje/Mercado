@@ -130,7 +130,7 @@ export async function POST(
       `Producto #${parsed.data.productId} agregado a tienda "${store.name}" a S/${parsed.data.retailPrice}`,
       store.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/stores/[slug]/store-products] operation failed", { error: String(err) }));
 
     logger.info("[marketplace/store-products] POST", { traceId, slug, productId: parsed.data.productId });
     return NextResponse.json({ data: storeProduct }, { status: 201 });
@@ -173,7 +173,7 @@ export async function DELETE(
       `Producto #${parsed.data.productId} desactivado de tienda "${store.name}"`,
       store.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/stores/[slug]/store-products] operation failed", { error: String(err) }));
 
     logger.info("[marketplace/store-products] DELETE", { traceId, slug, productId: parsed.data.productId });
     return NextResponse.json({ success: true });

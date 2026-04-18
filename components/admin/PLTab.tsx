@@ -1,11 +1,12 @@
 "use client";
 
+import { LoadingState, PageTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp, TrendingDown, DollarSign, Loader2, RefreshCw,
   ChevronDown, ChevronUp, Download, BarChart2,
   ArrowUpRight, ArrowDownRight, Minus,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -48,9 +49,9 @@ function buildMonthLabel(year: number, month: number) {
 }
 
 function deltaColor(val: number) {
-  if (val > 0) return "text-emerald-600 dark:text-emerald-400";
+  if (val > 0) return "text-[var(--data-success)] dark:text-[var(--data-success)]";
   if (val < 0) return "text-red-500 dark:text-red-400";
-  return "text-gray-400 dark:text-muted";
+  return "text-[var(--text-tertiary)] dark:text-muted";
 }
 function deltaIcon(val: number) {
   if (val > 0) return <ArrowUpRight className="h-3.5 w-3.5" />;
@@ -184,73 +185,71 @@ export default function PLTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" />
             Ganancias y Pérdidas del Mes
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Cuánto entró, cuánto salió y cuánto quedó de ganancia</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Cuánto entró, cuánto salió y cuánto quedó de ganancia</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={month}
             onChange={e => setMonth(Number(e.target.value))}
-            className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <LoadingState />
       ) : summary ? (
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-              { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
-              { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${summary.netMargin.toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-emerald-600" : "text-red-600", bg: summary.netProfit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
+              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+              { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
+              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${summary.netMargin.toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]", bg: summary.netProfit >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
             ].map(({ label, value, delta, sub, icon: Icon, color, bg }) => (
-              <div key={label} className={cn("rounded-2xl p-4", bg, "border border-transparent")}>
+              <div key={label} className={cn("rounded-xl p-4", bg, "border border-transparent")}>
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", bg)}>
                   <Icon className={cn("h-5 w-5", color)} />
                 </div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
+                <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
                 <p className={cn("text-xl font-extrabold", color)}>{fmt(value)}</p>
                 {delta !== undefined && (
                   <span className={cn("text-xs font-bold flex items-center gap-0.5 mt-1", deltaColor(delta))}>
                     {deltaIcon(delta)} {pct(delta)} vs mes anterior
                   </span>
                 )}
-                {sub && <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{sub}</p>}
+                {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
               </div>
             ))}
           </div>
 
           {/* P&L Statement Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-              <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+              <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">
                 Ganancias y Pérdidas — {summary.period}
-              </h2>
-              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600")}>
+              </SectionTitle>
+              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-[var(--data-error-100)] text-[var(--data-error)]")}>
                 {summary.netProfit >= 0 ? "GANANDO" : "PERDIENDO"}
               </span>
             </div>
@@ -264,26 +263,26 @@ export default function PLTab() {
               <div>
                 <button
                   onClick={() => setExpandExpenses(v => !v)}
-                  className="w-full flex items-center justify-between px-3 sm:px-6 py-3 text-sm text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                  className="w-full flex items-center justify-between px-3 sm:px-6 py-3 text-sm text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                 >
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-gray-400">−</span>
+                    <span className="text-[var(--text-tertiary)]">−</span>
                     <span className="font-semibold">Gastos Operativos</span>
-                    <span className="text-xs text-gray-400 dark:text-muted">({Object.keys(summary.expenses).length} categorías)</span>
+                    <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">({Object.keys(summary.expenses).length} categorías)</span>
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-amber-600">{fmt(summary.totalExpenses)}</span>
+                    <span className="font-bold text-[var(--data-warning)]">{fmt(summary.totalExpenses)}</span>
                     {expandExpenses ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
                 </button>
                 {expandExpenses && (
                   <div className="bg-gray-50 dark:bg-surface/50">
                     {Object.entries(summary.expenses).length === 0 ? (
-                      <p className="px-10 py-3 text-xs text-gray-400 dark:text-muted italic">Sin gastos registrados en este período</p>
+                      <p className="px-10 py-3 text-xs text-[var(--text-tertiary)] dark:text-muted italic">Sin gastos registrados en este período</p>
                     ) : Object.entries(summary.expenses).map(([cat, val]) => (
-                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-gray-100 dark:border-card-border last:border-0">
-                        <span className="text-gray-500 dark:text-muted capitalize">{cat}</span>
-                        <span className="font-semibold text-gray-700 dark:text-foreground">{fmt(val)}</span>
+                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
+                        <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{cat}</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(val)}</span>
                       </div>
                     ))}
                   </div>
@@ -295,40 +294,40 @@ export default function PLTab() {
           </div>
 
           {/* Trend Chart (last 6 months) */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-            <h2 className="font-bold text-gray-900 dark:text-foreground text-sm mb-4 flex flex-wrap items-center gap-2">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
+            <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm mb-4 flex flex-wrap items-center gap-2">
               <BarChart2 className="h-4 w-4 text-primary" />
               Tendencia últimos 6 meses
-            </h2>
+            </SectionTitle>
             <div className="flex flex-wrap items-end gap-3 h-40">
               {months.map((m, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
                   <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
                     {/* Revenue bar */}
                     <div
-                      className="w-full rounded-t-md bg-blue-400/60 dark:bg-blue-500/40 transition-all"
+                      className="w-full rounded-t-md bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] transition-all"
                       style={{ height: `${(m.revenue / maxRevenue) * 100}px` }}
                       title={`Ingresos: ${fmt(m.revenue)}`}
                     />
                     {/* Net profit overlay */}
                     <div
-                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-emerald-500" : "bg-red-500")}
+                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")}
                       style={{ height: `${(Math.abs(m.netProfit) / maxRevenue) * 100}px`, marginTop: "2px" }}
                       title={`Utilidad neta: ${fmt(m.netProfit)}`}
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400 dark:text-muted truncate w-full text-center">{m.label}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate w-full text-center">{m.label}</span>
                 </div>
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-blue-400/60" /> Ingresos</span>
-              <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-emerald-500" /> Utilidad neta</span>
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Ingresos</span>
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Utilidad neta</span>
             </div>
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
           Sin datos para el período seleccionado.
         </div>
       )}
@@ -351,23 +350,23 @@ function PLRow({
   large?: boolean;
 }) {
   const valueColor =
-    highlight === "blue" ? "text-blue-600 dark:text-blue-400" :
-    highlight === "green" ? "text-emerald-600 dark:text-emerald-400" :
-    highlight === "red" ? "text-red-500 dark:text-red-400" :
-    value < 0 ? "text-red-500 dark:text-red-400" : "text-gray-800 dark:text-foreground";
+    highlight === "blue" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+    highlight === "green" ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+    highlight === "red" ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
+    value < 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground";
 
   return (
     <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-gray-50/70 dark:bg-surface/30")}>
       <div>
-        <p className={cn("text-sm text-gray-700 dark:text-foreground", bold && "font-bold", large && "text-base")}>{label}</p>
-        {sub && <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{sub}</p>}
+        <p className={cn("text-sm text-[var(--text-primary)] dark:text-foreground", bold && "font-bold", large && "text-base")}>{label}</p>
+        {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
       </div>
       <div className="text-right">
         <p className={cn("font-semibold", valueColor, bold && "font-extrabold", large && "text-lg")}>
           {fmt(Math.abs(value))}
         </p>
         {showPct && pctOf && pctOf > 0 && (
-          <p className="text-xs text-gray-400 dark:text-muted">{((Math.abs(value) / pctOf) * 100).toFixed(1)}% de ventas</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{((Math.abs(value) / pctOf) * 100).toFixed(1)}% de ventas</p>
         )}
       </div>
     </div>

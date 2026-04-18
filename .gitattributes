@@ -1,0 +1,36 @@
+# Normaliza line endings entre Windows/macOS/Linux.
+# Elimina warnings "LF will be replaced by CRLF" en commits.
+
+# Auto-detect y forzar LF en todos los text files.
+* text=auto eol=lf
+
+# Binarios explícitos.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+
+# Shell scripts y husky hooks: LF obligatorio.
+*.sh text eol=lf
+.husky/* text eol=lf
+
+# Config files: LF.
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf

@@ -67,7 +67,25 @@ MCPs: exa+firecrawl+context7 (research), github (historico),
 ecc_memory (persistencia), playwright (e2e), vercel (deploy)
 ```
 
-**Reglas:** oleadas de 3 max paralelo. NO esperar "si" de Brandon. SIEMPRE la opcion mas grande.
+**Reglas (ADR-061 turbo):**
+- Oleadas de **6 agentes paralelos por default** (8 en turbo-parallel). `isolation: "worktree"` OBLIGATORIO si >=3 frentes tocan dominios distintos.
+- **Batch-first:** todo Read/Glob/Grep/Bash independiente VA en 1 solo mensaje. Jamas 2 tool calls secuenciales si pueden ir en paralelo.
+- **Agent dispatch en bloque:** si detectas 3+ sub-tareas independientes, lanza los 3 Agent() en el MISMO mensaje (multi tool_use blocks). No esperes el primero.
+- NO esperar "si" de Brandon. SIEMPRE la opcion mas grande.
+
+### Ejemplo turbo obligatorio (FASE 4)
+
+```
+[MISMO mensaje, 4 Agent calls + 3 reads]:
+  Agent(subagent_type: database, isolation: worktree, run_in_background: true, prompt: [DB layer])
+  Agent(subagent_type: backend, isolation: worktree, run_in_background: true, prompt: [API routes])
+  Agent(subagent_type: frontend, isolation: worktree, run_in_background: true, prompt: [UI components])
+  Agent(subagent_type: tester, isolation: worktree, run_in_background: true, prompt: [tests])
+  Read(ROADMAP) + Read(session-state) + Read(ADR anterior)
+
+→ 4 agentes trabajan en worktrees aislados mientras Claude lee contexto.
+→ Tiempo real: max(agent_time) + sync_merge, NO sum(agent_time).
+```
 
 ## FASE 5 — Loop continuo post-task
 
@@ -96,7 +114,7 @@ Criterios mejora valida (≥3/5): 5+ archivos, 2+ agencias, impacto medible, int
 - **Español** para Brandon, ingles para codigo
 - **Feynman** — palabras simples, tablas, emojis con proposito
 - **Nivel 3** jerarquia (Orquestador → Agencias → Empleados)
-- **Nivel 4** paralelizacion (>=3 agents, >=4 reads simultaneos)
+- **Nivel 4 TURBO** paralelizacion (>=6 agents worktree, >=6 reads simultaneos, ADR-061)
 - **Nunca AskUserQuestion** — tabla Si/No/Despues
 - **Self-heal** antes de escalar (3 intentos)
 - **Post-task** siempre tablas de cierre

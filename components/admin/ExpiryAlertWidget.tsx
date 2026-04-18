@@ -1,10 +1,12 @@
+"use client";
+
+import { SectionTitle } from "@buleje/design-system";
  
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RefreshCw, Tag, RotateCcw, Package } from "lucide-react";
+import { AlertTriangle, RefreshCw, Tag, RotateCcw, Package } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -38,8 +40,8 @@ function getLevel(days: number): ExpiryLevel | null {
 
 const LEVEL_STYLES: Record<ExpiryLevel, { badge: string; row: string; label: string }> = {
   critical: {
-    badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    row: "bg-red-50/50 dark:bg-red-950/10 border-red-200 dark:border-red-800",
+    badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
+    row: "bg-[var(--data-error-50)]/50 dark:bg-red-950/10 border-[var(--data-error)] dark:border-[var(--data-error)]",
     label: "Vence pronto",
   },
   warning: {
@@ -49,7 +51,7 @@ const LEVEL_STYLES: Record<ExpiryLevel, { badge: string; row: string; label: str
   },
   soon: {
     badge: "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]",
-    row: "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800",
+    row: "bg-[var(--surface-raised)] border-[var(--rule-base)]",
     label: "Proximas 2 semanas",
   },
 };
@@ -123,26 +125,26 @@ export default function ExpiryAlertWidget() {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+      <div className="p-5 border-b border-[var(--rule-base)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/30">
-                <Package className="w-5 h-5 text-red-500" />
+              <div className="p-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30">
+                <Package className="w-5 h-5 text-[var(--data-error)]" />
               </div>
               {counts.critical > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--data-error)] text-white text-xs rounded-full flex items-center justify-center font-bold">
                   {counts.critical}
                 </span>
               )}
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 dark:text-white">
+              <SectionTitle className="font-bold text-[var(--text-primary)]">
                 Alertas de vencimiento
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              </SectionTitle>
+              <p className="text-xs text-[var(--text-tertiary)]">
                 {tagged.length} lote{tagged.length !== 1 ? "s" : ""} proximos a vencer
               </p>
             </div>
@@ -150,11 +152,11 @@ export default function ExpiryAlertWidget() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
             aria-label="Actualizar"
           >
             <RefreshCw
-              className={cn("w-5 h-5 text-gray-500", loading && "animate-spin")}
+              className={cn("w-5 h-5 text-[var(--text-secondary)]", loading && "animate-spin")}
             />
           </button>
         </div>
@@ -163,7 +165,7 @@ export default function ExpiryAlertWidget() {
         {!loading && (
           <div className="flex gap-2 mt-3 flex-wrap">
             {counts.critical > 0 && (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)] text-xs font-bold">
                 <AlertTriangle className="w-3 h-3" />
                 {counts.critical} critico{counts.critical !== 1 ? "s" : ""}
               </span>
@@ -187,13 +189,13 @@ export default function ExpiryAlertWidget() {
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="p-4 flex gap-4 animate-pulse">
-              <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded" />
-              <div className="w-16 h-5 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="flex-1 h-5 bg-[var(--surface-sunken)] rounded" />
+              <div className="w-16 h-5 bg-[var(--surface-sunken)] rounded" />
             </div>
           ))
         ) : tagged.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-[var(--text-tertiary)]">
               No hay lotes proximos a vencer en los proximos 15 dias.
             </p>
           </div>
@@ -215,10 +217,10 @@ export default function ExpiryAlertWidget() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                    <p className="font-semibold text-[var(--text-primary)] text-sm truncate">
                       {item.productName}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                       Lote: {item.batchCode} — {item.quantity} {item.unit ?? "u"} —{" "}
                       Vence: {new Date(item.expiryDate + "T00:00:00").toLocaleDateString("es-PE")}
                     </p>
@@ -246,7 +248,7 @@ export default function ExpiryAlertWidget() {
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                       action === "sale"
                         ? "bg-[#f97316] text-white border-[#f97316]"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#f97316] hover:text-[#f97316]"
+                        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[#f97316] hover:text-[#f97316]"
                     )}
                   >
                     <Tag className="w-3 h-3" />
@@ -257,8 +259,8 @@ export default function ExpiryAlertWidget() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                       action === "return"
-                        ? "bg-gray-700 text-white border-gray-700 dark:bg-gray-300 dark:text-gray-900 dark:border-gray-300"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        ? "bg-gray-700 text-white border-gray-700 dark:bg-gray-300 dark:text-[var(--text-primary)] dark:border-gray-300"
+                        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-500 hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
                     )}
                   >
                     <RotateCcw className="w-3 h-3" />

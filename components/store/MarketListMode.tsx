@@ -170,23 +170,23 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center">
               <FileText className="h-5 w-5 text-[#00B4A6]" />
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Lista de mercado</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Escribe tu lista como si fuera un mensaje</p>
+              <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Lista de mercado</h2>
+              <p className="text-xs text-[var(--text-tertiary)]">Escribe tu lista como si fuera un mensaje</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="h-9 w-9 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             <X className="h-4 w-4 text-gray-500" />
           </button>
@@ -200,7 +200,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder={"2 kg arroz\n1 leche gloria\naceite 1 litro\n3 tomates\nfideos\njugo de naranja"}
-              className="w-full h-40 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
+              className="w-full h-40 p-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
               autoFocus
             />
             <p className="text-xs text-gray-400 mt-1.5">Escribe un producto por linea. Puedes poner cantidad y unidad.</p>
@@ -209,7 +209,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
           {/* Results */}
           {results.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[var(--text-secondary)] flex items-center gap-2">
                 Resultados
                 {isSearching && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4A6]" />}
               </h3>
@@ -225,7 +225,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                       r.status === "found" && "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20",
                       r.status === "multiple" && "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/20",
                       r.status === "not_found" && "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20",
-                      r.status === "searching" && "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 animate-pulse",
+                      r.status === "searching" && "border-[var(--rule-base)] bg-[var(--surface-sunken)] animate-pulse",
                     )}
                   >
                     {r.status === "searching" ? (
@@ -237,7 +237,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                       <div className="flex items-center gap-3">
                         <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                             {r.selected.name}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -259,7 +259,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                             <button
                               key={m.id}
                               onClick={() => selectProduct(idx, m)}
-                              className="px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                              className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-amber-300 dark:border-amber-700 text-xs font-medium text-[var(--text-secondary)] hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                             >
                               {m.name} · S/{m.price.toFixed(2)}
                             </button>
@@ -283,7 +283,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         {foundItems.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 p-5">
+          <div className="border-t border-[var(--rule-base)] p-5">
             <button
               onClick={handleAddAll}
               className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"

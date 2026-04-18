@@ -1,5 +1,7 @@
 'use client';
 
+import { CardTitle } from "@buleje/design-system";
+
 import { useState, useEffect, useCallback } from 'react';
 import Image from "next/image";
 import dynamic from 'next/dynamic';
@@ -191,9 +193,9 @@ export default function ConteoFisicoWizard() {
   const selected = items[selectedIdx] ?? null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] text-[var(--data-error)] px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
@@ -201,19 +203,19 @@ export default function ConteoFisicoWizard() {
       {/* ═══ PASO 1: Iniciar Conteo ═══ */}
       {paso === 1 && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Nuevo Conteo Fisico</h3>
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6">
+            <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-4">Nuevo Conteo Fisico</CardTitle>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-2">Tipo de conteo</label>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Tipo de conteo</label>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setTipo('completo')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'completo'
-                        ? 'border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6]'
-                        : 'border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-gray-300'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300'
                     }`}
                   >
                     Completo
@@ -222,8 +224,8 @@ export default function ConteoFisicoWizard() {
                     onClick={() => setTipo('categoria')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'categoria'
-                        ? 'border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6]'
-                        : 'border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-gray-300'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300'
                     }`}
                   >
                     Por categoria
@@ -233,13 +235,13 @@ export default function ConteoFisicoWizard() {
 
               {tipo === 'categoria' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-1">Categoria</label>
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Categoria</label>
                   <input
                     type="text"
                     value={categoria}
                     onChange={e => setCategoria(e.target.value)}
                     placeholder="Ej: Abarrotes, Bebidas..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-sm"
+                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg bg-white text-[var(--text-primary)] text-sm"
                   />
                 </div>
               )}
@@ -247,7 +249,7 @@ export default function ConteoFisicoWizard() {
               <button
                 onClick={iniciarConteo}
                 disabled={loading || (tipo === 'categoria' && !categoria.trim())}
-                className="w-full py-3 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
+                className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Creando...' : 'Iniciar Conteo'}
               </button>
@@ -256,26 +258,26 @@ export default function ConteoFisicoWizard() {
 
           {/* Existing conteos */}
           {conteos.filter(c => c.status !== 'CERRADO').length > 0 && (
-            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6">
-              <h4 className="text-sm font-bold text-gray-700 dark:text-muted mb-3">Conteos en progreso</h4>
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6">
+              <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Conteos en progreso</h4>
               <div className="space-y-2">
                 {conteos.filter(c => c.status !== 'CERRADO').map(c => (
                   <button
                     key={c.id}
                     onClick={() => reanudarConteo(c.id)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-card-hover transition-colors text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 transition-colors text-left"
                   >
                     <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-foreground capitalize">{c.tipo}</span>
-                      <span className="text-xs text-gray-500 dark:text-muted ml-2">
+                      <span className="text-sm font-medium text-[var(--text-primary)] capitalize">{c.tipo}</span>
+                      <span className="text-xs text-[var(--text-secondary)] ml-2">
                         {new Date(c.fechaInicio).toLocaleDateString('es-PE')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning)] px-2 py-1 rounded-full">
                         {c.status}
                       </span>
-                      <span className="text-xs text-gray-500">{c._count.items} items</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{c._count.items} items</span>
                     </div>
                   </button>
                 ))}
@@ -287,32 +289,32 @@ export default function ConteoFisicoWizard() {
 
       {/* ═══ PASO 2: Contar Productos ═══ */}
       {paso === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Progress bar */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-muted">Progreso</span>
-              <span className="text-sm font-bold text-[#00B4A6]">{contados}/{totalItems} ({pctContado}%)</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">Progreso</span>
+              <span className="text-sm font-bold text-primary">{contados}/{totalItems} ({pctContado}%)</span>
             </div>
-            <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div className="h-full bg-[#00B4A6] rounded-full transition-all" style={{ width: `${pctContado}%` }} />
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pctContado}%` }} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* LEFT: Search + list */}
-            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-sm"
+                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg bg-white text-[var(--text-primary)] text-sm"
                 />
                 <button
                   onClick={() => setShowScanner(true)}
-                  className="px-3 py-2 bg-[#00B4A6] text-white rounded-lg hover:bg-[#009690] transition-colors"
+                  className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                   title="Escanear codigo"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -330,19 +332,19 @@ export default function ConteoFisicoWizard() {
                       onClick={() => { setSelectedIdx(realIdx); setInputValue(''); }}
                       className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-sm transition-colors ${
                         realIdx === selectedIdx
-                          ? 'bg-[#00B4A6]/10 border border-[#00B4A6]/30'
-                          : 'hover:bg-gray-50 dark:hover:bg-card-hover'
+                          ? 'bg-primary/10 border border-primary/30'
+                          : 'hover:bg-gray-50'
                       }`}
                     >
-                      <span className="text-gray-900 dark:text-foreground truncate flex-1">
+                      <span className="text-[var(--text-primary)] truncate flex-1">
                         {item.product?.name ?? `Producto #${item.productId}`}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
                         item.stockContado !== null
                           ? item.diferencia === 0
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                            ? 'bg-[var(--accent-soft)] text-[var(--data-success)]'
+                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                          : 'bg-gray-100 text-[var(--text-secondary)]'
                       }`}>
                         {item.stockContado !== null
                           ? item.diferencia === 0 ? 'OK' : `${item.diferencia! > 0 ? '+' : ''}${item.diferencia}`
@@ -355,31 +357,31 @@ export default function ConteoFisicoWizard() {
             </div>
 
             {/* RIGHT: Selected product detail */}
-            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               {selected ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {selected.product?.image && (
-                    <div className="relative w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
+                    <div className="relative w-20 h-20 rounded-lg bg-gray-100 overflow-hidden mx-auto">
                       <Image src={selected.product.image} alt={selected.product.name} fill className="object-cover" sizes="80px" />
                     </div>
                   )}
                   <div className="text-center">
-                    <h4 className="font-bold text-gray-900 dark:text-foreground">
+                    <h4 className="font-bold text-[var(--text-primary)]">
                       {selected.product?.name ?? `Producto #${selected.productId}`}
                     </h4>
                     {selected.product?.barcode && (
-                      <p className="text-xs text-gray-500 dark:text-muted mt-1">Codigo: {selected.product.barcode}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">Codigo: {selected.product.barcode}</p>
                     )}
-                    <p className="text-xs text-gray-500 dark:text-muted">{selected.product?.category}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{selected.product?.category}</p>
                   </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
-                    <span className="text-sm text-gray-600 dark:text-muted">Stock sistema:</span>
-                    <span className="text-2xl font-bold text-gray-900 dark:text-foreground ml-2">{selected.stockSistema}</span>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <span className="text-sm text-[var(--text-secondary)]">Stock sistema:</span>
+                    <span className="text-2xl font-bold text-[var(--text-primary)] ml-2">{selected.stockSistema}</span>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-1">Contado:</label>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Contado:</label>
                     <input
                       type="number"
                       value={inputValue}
@@ -387,7 +389,7 @@ export default function ConteoFisicoWizard() {
                       onKeyDown={e => { if (e.key === 'Enter') guardarConteo(); }}
                       min={0}
                       placeholder="Ingresa cantidad..."
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-card-border rounded-xl bg-white dark:bg-card text-gray-900 dark:text-foreground text-2xl text-center font-bold focus:border-[#00B4A6] focus:outline-none"
+                      className="w-full px-4 py-3 border-2 border-[var(--rule-base)] rounded-lg bg-white text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
                       autoFocus
                     />
                   </div>
@@ -397,9 +399,9 @@ export default function ConteoFisicoWizard() {
                     <div className="text-center">
                       {(() => {
                         const diff = parseInt(inputValue) - selected.stockSistema;
-                        if (diff === 0) return <span className="text-green-600 font-bold text-lg">Igual</span>;
+                        if (diff === 0) return <span className="text-[var(--data-success)] font-bold text-lg">Igual</span>;
                         return (
-                          <span className={`font-bold text-lg ${diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`font-bold text-lg ${diff > 0 ? 'text-[var(--data-success)]' : "text-[var(--data-error)]"}`}>
                             {diff > 0 ? '+' : ''}{diff}
                           </span>
                         );
@@ -410,13 +412,13 @@ export default function ConteoFisicoWizard() {
                   <button
                     onClick={guardarConteo}
                     disabled={loading || !inputValue || isNaN(parseInt(inputValue))}
-                    className="w-full py-3 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
+                    className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
                   >
                     {loading ? 'Guardando...' : 'Guardar y siguiente'}
                   </button>
                 </div>
               ) : (
-                <div className="text-center text-gray-500 dark:text-muted py-12">
+                <div className="text-center text-[var(--text-secondary)] py-12">
                   Selecciona un producto de la lista
                 </div>
               )}
@@ -426,7 +428,7 @@ export default function ConteoFisicoWizard() {
           <div className="flex gap-2">
             <button
               onClick={() => setPaso(3)}
-              className="px-4 py-2 bg-[#f97316] text-white rounded-lg font-medium hover:bg-[#e8964f] transition-colors"
+              className="px-4 py-2 bg-secondary text-white rounded-lg font-medium hover:bg-secondary/90 transition-colors"
             >
               Revisar diferencias ({itemsConDiferencia.length})
             </button>
@@ -436,40 +438,40 @@ export default function ConteoFisicoWizard() {
 
       {/* ═══ PASO 3: Revisar Diferencias ═══ */}
       {paso === 3 && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Diferencias encontradas</h3>
-              <span className="text-sm text-gray-500 dark:text-muted">
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Diferencias encontradas</CardTitle>
+              <span className="text-sm text-[var(--text-secondary)]">
                 {itemsConDiferencia.length} productos con diferencia
               </span>
             </div>
 
             {itemsConDiferencia.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-muted">
+              <div className="text-center py-8 text-[var(--text-secondary)]">
                 No se encontraron diferencias. Todo coincide.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-card-border">
-                      <th className="text-left py-2 px-2 text-gray-600 dark:text-muted font-medium">Producto</th>
-                      <th className="text-center py-2 px-2 text-gray-600 dark:text-muted font-medium">Sistema</th>
-                      <th className="text-center py-2 px-2 text-gray-600 dark:text-muted font-medium">Contado</th>
-                      <th className="text-center py-2 px-2 text-gray-600 dark:text-muted font-medium">Diferencia</th>
-                      <th className="text-center py-2 px-2 text-gray-600 dark:text-muted font-medium">Ajustar</th>
+                    <tr className="border-b border-[var(--rule-base)]">
+                      <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Producto</th>
+                      <th className="text-center py-2 px-2 text-[var(--text-secondary)] font-medium">Sistema</th>
+                      <th className="text-center py-2 px-2 text-[var(--text-secondary)] font-medium">Contado</th>
+                      <th className="text-center py-2 px-2 text-[var(--text-secondary)] font-medium">Diferencia</th>
+                      <th className="text-center py-2 px-2 text-[var(--text-secondary)] font-medium">Ajustar</th>
                     </tr>
                   </thead>
                   <tbody>
                     {itemsConDiferencia.map(item => (
-                      <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800">
-                        <td className="py-2 px-2 text-gray-900 dark:text-foreground">
+                      <tr key={item.id} className="border-b border-[var(--rule-soft)]">
+                        <td className="py-2 px-2 text-[var(--text-primary)]">
                           {item.product?.name ?? `#${item.productId}`}
                         </td>
-                        <td className="py-2 px-2 text-center text-gray-600 dark:text-muted">{item.stockSistema}</td>
-                        <td className="py-2 px-2 text-center font-medium text-gray-900 dark:text-foreground">{item.stockContado}</td>
-                        <td className={`py-2 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <td className="py-2 px-2 text-center text-[var(--text-secondary)]">{item.stockSistema}</td>
+                        <td className="py-2 px-2 text-center font-medium text-[var(--text-primary)]">{item.stockContado}</td>
+                        <td className={`py-2 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? 'text-[var(--data-success)]' : "text-[var(--data-error)]"}`}>
                           {(item.diferencia ?? 0) > 0 ? '+' : ''}{item.diferencia}
                         </td>
                         <td className="py-2 px-2 text-center">
@@ -477,7 +479,7 @@ export default function ConteoFisicoWizard() {
                             type="checkbox"
                             checked={item.ajustado}
                             onChange={() => toggleAjustado(item.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
+                            className="w-4 h-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                           />
                         </td>
                       </tr>
@@ -491,14 +493,14 @@ export default function ConteoFisicoWizard() {
           <div className="flex gap-2">
             <button
               onClick={() => setPaso(2)}
-              className="px-4 py-2 border border-gray-300 dark:border-card-border text-gray-700 dark:text-muted rounded-lg hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
+              className="px-4 py-2 border border-[var(--rule-base)] text-[var(--text-primary)] rounded-lg hover:bg-gray-50 transition-colors"
             >
               Volver a contar
             </button>
             <button
               onClick={cerrarConteo}
               disabled={loading}
-              className="flex-1 py-2 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
+              className="flex-1 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {loading ? 'Cerrando...' : `Aplicar ${itemsConDiferencia.filter(i => i.ajustado).length} ajustes y cerrar`}
             </button>
@@ -508,37 +510,37 @@ export default function ConteoFisicoWizard() {
 
       {/* ═══ PASO 4: Resumen Final ═══ */}
       {paso === 4 && resumen && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 text-center space-y-6">
-          <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 text-center space-y-6">
+          <div className="w-16 h-16 mx-auto bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-[var(--data-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 dark:text-foreground">Conteo Cerrado</h3>
+          <CardTitle className="text-xl font-bold text-[var(--text-primary)]">Conteo Cerrado</CardTitle>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900 dark:text-foreground">{resumen.contados}</div>
-              <div className="text-xs text-gray-500 dark:text-muted">Productos contados</div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">{resumen.contados}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Productos contados</div>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900 dark:text-foreground">{resumen.totalItems}</div>
-              <div className="text-xs text-gray-500 dark:text-muted">Total items</div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">{resumen.totalItems}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Total items</div>
             </div>
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
-              <div className="text-2xl font-bold text-amber-600">{resumen.conDiferencia}</div>
-              <div className="text-xs text-gray-500 dark:text-muted">Con diferencia</div>
+            <div className="bg-[var(--data-warning-50)] rounded-lg p-4">
+              <div className="text-2xl font-bold text-[var(--data-warning)]">{resumen.conDiferencia}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Con diferencia</div>
             </div>
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-600">{resumen.ajustados}</div>
-              <div className="text-xs text-gray-500 dark:text-muted">Ajustes aplicados</div>
+            <div className="bg-[var(--accent-soft)] rounded-lg p-4">
+              <div className="text-2xl font-bold text-[var(--data-success)]">{resumen.ajustados}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Ajustes aplicados</div>
             </div>
           </div>
 
           <button
             onClick={() => { setPaso(1); setConteo(null); setItems([]); setResumen(null); }}
-            className="px-6 py-3 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] transition-colors"
+            className="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors"
           >
             Nuevo conteo
           </button>

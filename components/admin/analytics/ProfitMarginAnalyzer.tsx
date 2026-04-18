@@ -32,10 +32,10 @@ function fmtPct(n: number) {
 }
 
 const QUADRANT_META = {
-  star:     { label: "Alto volumen + Alto margen",  color: "#00B4A6", bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300" },
-  cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-800 dark:text-amber-300" },
-  question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",    text: "text-blue-800 dark:text-blue-300" },
-  dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",      text: "text-red-800 dark:text-red-300" },
+  star:     { label: "Alto volumen + Alto margen",  color: "#00B4A6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+  cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30",  text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+  question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+  dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",      text: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
 };
 
 // ── Scatter Point ──────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ function ScatterPoint({
 
   return (
     <div
-      className="absolute w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 cursor-pointer transition-transform duration-150"
+      className="absolute w-3 h-3 rounded-full border-2 border-white dark:border-[var(--rule-base)] cursor-pointer transition-transform duration-[var(--dur-fast)]"
       style={{
         left: `${x}%`,
         bottom: `${y}%`,
@@ -68,7 +68,7 @@ function ScatterPoint({
       title={name}
     >
       {hover && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap z-20 pointer-events-none">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-900 dark:bg-gray-700 text-white text-[length:var(--ts-2xs)] rounded px-1.5 py-0.5 whitespace-nowrap z-20 pointer-events-none">
           {name}
         </div>
       )}
@@ -150,12 +150,12 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
       {/* Summary row */}
       <div className="flex gap-2">
         <div className="flex-1 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Margen prom. ponderado</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Margen prom. ponderado</p>
           <p className="text-base font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmtPct(avgWeightedMargin)}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Productos analizados</p>
-          <p className="text-base font-bold text-gray-800 dark:text-foreground">{items.length}</p>
+        <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
+          <p className="text-xs text-[var(--text-tertiary)]">Productos analizados</p>
+          <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{items.length}</p>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
         {(Object.entries(QUADRANT_META) as [ProductMargin["quadrant"], typeof QUADRANT_META[keyof typeof QUADRANT_META]][]).map(([q, meta]) => (
           <div
             key={q}
-            className={cn("flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium border", meta.bg, meta.text)}
+            className={cn("flex items-center gap-1.5 rounded px-2 py-1 text-[length:var(--ts-2xs)] font-medium border", meta.bg, meta.text)}
             style={{ borderColor: meta.color + "60" }}
           >
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
@@ -174,17 +174,17 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
       </div>
 
       {/* Scatter plot */}
-      <div className="relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+      <div className="relative border border-[var(--rule-base)] rounded-lg overflow-hidden bg-[var(--surface-sunken)]/50">
         {/* Axis labels */}
-        <div className="absolute top-1 right-2 text-[9px] text-gray-400 dark:text-gray-500">Margen %</div>
-        <div className="absolute bottom-1 right-2 text-[9px] text-gray-400 dark:text-gray-500">Volumen →</div>
+        <div className="absolute top-1 right-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Margen %</div>
+        <div className="absolute bottom-1 right-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Volumen →</div>
         {/* Quadrant dividers */}
         <div className="absolute inset-0 flex">
-          <div className="flex-1 border-r border-dashed border-gray-300 dark:border-gray-600" />
+          <div className="flex-1 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="flex-1" />
         </div>
         <div className="absolute inset-0 flex flex-col">
-          <div className="flex-1 border-b border-dashed border-gray-300 dark:border-gray-600" />
+          <div className="flex-1 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="flex-1" />
         </div>
         {/* Points */}
@@ -204,14 +204,14 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
       {/* Top lists */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">Top 5</span>
+          <span className="text-xs text-[var(--text-secondary)] font-medium">Top 5</span>
           <button
             onClick={() => setShowTop("best")}
             className={cn(
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "best"
                 ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                : "text-[var(--text-secondary)] border-[var(--rule-base)]"
             )}
           >
             Mejores
@@ -221,8 +221,8 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
             className={cn(
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "worst"
-                ? "bg-red-600 text-white border-red-600"
-                : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                ? "bg-[var(--data-error)] text-white border-[var(--data-error)]"
+                : "text-[var(--text-secondary)] border-[var(--rule-base)]"
             )}
           >
             Peores
@@ -232,12 +232,12 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
           {sorted.slice(0, 5).map((p, i) => (
             <div
               key={p.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)]"
             >
-              <span className="w-4 text-xs font-bold text-gray-400 dark:text-gray-500">{i + 1}</span>
+              <span className="w-4 text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-800 dark:text-foreground truncate">{p.name}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">{p.category}</p>
+                <p className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.category}</p>
               </div>
               <div className="text-right shrink-0">
                 <p
@@ -246,18 +246,18 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
                     p.margin >= 30
                       ? "text-[#00B4A6] dark:text-[#2dd4bf]"
                       : p.margin >= 15
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-red-600 dark:text-red-400"
+                      ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                      : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                   )}
                 >
                   {fmtPct(p.margin)}
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">{fmt(p.price)}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmt(p.price)}</p>
               </div>
             </div>
           ))}
           {sorted.length === 0 && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Sin productos con precio configurado</p>
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Sin productos con precio configurado</p>
           )}
         </div>
       </div>

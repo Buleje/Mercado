@@ -323,7 +323,13 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     }
   }, [state.items]);
 
-  // Sync cart to server when customer is identified (debounced)
+  // Sync cart to server when customer is identified (debounced).
+  //
+  // `/api/cart/[phone]` require un HMAC token firmado server-side (RED-009)
+  // que devuelve 404 anti-oracle si falta. El token se guarda en localStorage
+  // bajo `cart-token` cuando el flujo server-side identifica al cliente.
+  // Si no existe token, el sync es opt-in: NO disparamos el fetch para evitar
+  // 404 constantes en console + consumo inutil de red.
   useEffect(() => {
     if (!hydratedRef.current) return;
     const s = slugRef.current;
@@ -336,8 +342,15 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     })();
     if (!phone || phone.length < 6 || state.items.length === 0) return;
 
+    // Gate anti-404: sin token HMAC, el endpoint devuelve 404 por diseno.
+    const token = (() => {
+      try { return localStorage.getItem(sk(s, "cart-token")); }
+      catch { return null; }
+    })();
+    if (!token) return;
+
     const timeout = setTimeout(() => {
-      fetch(`/api/cart/${encodeURIComponent(phone)}`, {
+      fetch(`/api/cart/${encodeURIComponent(phone)}?token=${encodeURIComponent(token)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: state.items }),
@@ -347,7 +360,9 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     return () => clearTimeout(timeout);
   }, [state.items]);
 
-  // On mount: if customer is identified, try to restore from server if local is empty
+  // On mount: si el customer esta identificado Y tenemos cart-token, intenta
+  // restaurar desde servidor cuando el carrito local esta vacio. Sin token,
+  // saltamos el fetch (mismo criterio que el sync de arriba).
   useEffect(() => {
     const s = slugRef.current;
     const phone = (() => {
@@ -363,7 +378,14 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     const localItems = localCart ? JSON.parse(localCart) : [];
     if (Array.isArray(localItems) && localItems.length > 0) return; // local has items, skip
 
-    fetch(`/api/cart/${encodeURIComponent(phone)}`)
+    // Gate anti-404: sin token HMAC, el endpoint devuelve 404 por diseno.
+    const token = (() => {
+      try { return localStorage.getItem(sk(s, "cart-token")); }
+      catch { return null; }
+    })();
+    if (!token) return;
+
+    fetch(`/api/cart/${encodeURIComponent(phone)}?token=${encodeURIComponent(token)}`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data.items) && data.items.length > 0) {

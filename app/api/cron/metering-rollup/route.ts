@@ -102,7 +102,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
               event: event as MeteredEvent,
               checkResult,
               adminEmail: settings?.businessEmail ?? undefined,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/metering-rollup] quota alert notify failed", { error: String(err), tenantId, event }));
           }
         }
 

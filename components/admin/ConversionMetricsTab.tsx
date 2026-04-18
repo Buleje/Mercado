@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp,
@@ -12,7 +13,7 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 
 type Stats = {
@@ -96,36 +97,36 @@ export default function ConversionMetricsTab() {
           label: "Ingresos hoy",
           value: `S/ ${fmt(stats.todayRevenue)}`,
           icon: DollarSign,
-          color: "text-green-400",
-          bg: "bg-green-500/10",
+          color: "text-[var(--data-success)]",
+          bg: "bg-[var(--accent-soft)]",
         },
         {
           label: "Pedidos semana",
           value: String(stats.weeklyOrders),
           icon: ShoppingCart,
-          color: "text-blue-400",
-          bg: "bg-blue-500/10",
+          color: "text-[var(--data-success)]",
+          bg: "bg-[var(--accent-soft)]",
         },
         {
           label: "Clientes totales",
           value: String(stats.totalCustomers),
           icon: Users,
-          color: "text-purple-400",
-          bg: "bg-purple-500/10",
+          color: "text-[var(--text-tertiary)]",
+          bg: "bg-[var(--text-primary)]/10",
         },
         {
           label: "Pedidos pendientes",
           value: String(stats.pendingOrders),
           icon: Package,
-          color: "text-amber-400",
-          bg: "bg-amber-500/10",
+          color: "text-[var(--data-warning)]",
+          bg: "bg-[var(--data-warning)]/10",
         },
         {
           label: "Stock bajo",
           value: String(stats.lowStock),
           icon: Eye,
-          color: stats.lowStock > 5 ? "text-red-400" : "text-gray-400",
-          bg: stats.lowStock > 5 ? "bg-red-500/10" : "bg-gray-500/10",
+          color: stats.lowStock > 5 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]",
+          bg: stats.lowStock > 5 ? "bg-[var(--data-error)]/10" : "bg-gray-500/10",
         },
       ]
     : [];
@@ -135,12 +136,12 @@ export default function ConversionMetricsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-400" />
+          <SectionTitle className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-[var(--data-success)]" />
             Métricas de Conversión
-          </h2>
+          </SectionTitle>
           {lastRefresh && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
               Actualizado: {lastRefresh.toLocaleTimeString("es-PE")}
             </p>
           )}
@@ -148,7 +149,7 @@ export default function ConversionMetricsTab() {
         <button
           onClick={fetchAll}
           disabled={loading}
-          className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition disabled:opacity-50"
+          className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-[var(--text-tertiary)] hover:bg-white/10 transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           Refrescar
@@ -156,14 +157,14 @@ export default function ConversionMetricsTab() {
       </div>
 
       {fetchError && (
-        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
+        <div className="flex items-center gap-2 bg-[var(--data-error)]/10 border border-[var(--data-error)]/20 rounded-xl p-3 text-sm text-[var(--data-error)]">
           <span>{fetchError}</span>
           <button onClick={fetchAll} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
         </div>
       )}
 
       {loading && !stats ? (
-        <div className="text-center py-20 text-gray-500">Cargando métricas...</div>
+        <div className="text-center py-20 text-[var(--text-secondary)]">Cargando métricas...</div>
       ) : (
         <>
           {/* KPI Cards */}
@@ -176,24 +177,24 @@ export default function ConversionMetricsTab() {
                   </div>
                 </div>
                 <p className="text-base sm:text-xl font-bold text-white">{c.value}</p>
-                <p className="text-xs text-gray-500">{c.label}</p>
+                <p className="text-xs text-[var(--text-secondary)]">{c.label}</p>
               </div>
             ))}
           </div>
 
           {/* ABC Classification */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-amber-400" />
+            <CardTitle className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[var(--data-warning)]" />
               Clasificación ABC (Top 20 productos por ingreso)
-            </h3>
+            </CardTitle>
             {abc.length === 0 ? (
-              <p className="text-gray-500 text-sm">Sin datos de clasificación ABC</p>
+              <p className="text-[var(--text-secondary)] text-sm">Sin datos de clasificación ABC</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-gray-400 text-left">
+                    <tr className="border-b border-white/10 text-[var(--text-tertiary)] text-left">
                       <th className="pb-2">Producto</th>
                       <th className="pb-2 text-right">Ingreso</th>
                       <th className="pb-2 text-right">% Acum.</th>
@@ -204,20 +205,20 @@ export default function ConversionMetricsTab() {
                     {abc.map((p) => (
                       <tr key={p.productId} className="border-b border-white/5">
                         <td className="py-1.5 text-white">{p.name}</td>
-                        <td className="py-1.5 text-right text-gray-300">
+                        <td className="py-1.5 text-right text-[var(--text-tertiary)]">
                           S/ {fmt(p.revenue)}
                         </td>
-                        <td className="py-1.5 text-right text-gray-400">
+                        <td className="py-1.5 text-right text-[var(--text-tertiary)]">
                           {(p.cumulative * 100).toFixed(1)}%
                         </td>
                         <td className="py-1.5 text-center">
                           <span
                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                               p.classification === "A"
-                                ? "bg-green-500/20 text-green-300"
+                                ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
                                 : p.classification === "B"
-                                  ? "bg-amber-500/20 text-amber-300"
-                                  : "bg-red-500/20 text-red-300"
+                                  ? "bg-[var(--data-warning)]/20 text-[var(--data-warning)]"
+                                  : "bg-[var(--data-error)]/20 text-[var(--data-error)]"
                             }`}
                           >
                             {p.classification}
@@ -233,17 +234,17 @@ export default function ConversionMetricsTab() {
 
           {/* Margins */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-              <DollarSign className="w-4 h-4 text-green-400" />
+            <CardTitle className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
+              <DollarSign className="w-4 h-4 text-[var(--data-success)]" />
               Márgenes de Ganancia (Top 20)
-            </h3>
+            </CardTitle>
             {margins.length === 0 ? (
-              <p className="text-gray-500 text-sm">Sin datos de márgenes</p>
+              <p className="text-[var(--text-secondary)] text-sm">Sin datos de márgenes</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-gray-400 text-left">
+                    <tr className="border-b border-white/10 text-[var(--text-tertiary)] text-left">
                       <th className="pb-2">Producto</th>
                       <th className="pb-2">Categoría</th>
                       <th className="pb-2 text-right">Ingreso</th>
@@ -255,16 +256,16 @@ export default function ConversionMetricsTab() {
                     {margins.map((m) => (
                       <tr key={m.productId} className="border-b border-white/5">
                         <td className="py-1.5 text-white">{m.name}</td>
-                        <td className="py-1.5 text-gray-400">{m.category}</td>
-                        <td className="py-1.5 text-right text-gray-300">
+                        <td className="py-1.5 text-[var(--text-tertiary)]">{m.category}</td>
+                        <td className="py-1.5 text-right text-[var(--text-tertiary)]">
                           S/ {fmt(m.revenue)}
                         </td>
-                        <td className="py-1.5 text-right text-gray-400">
+                        <td className="py-1.5 text-right text-[var(--text-tertiary)]">
                           S/ {fmt(m.cost)}
                         </td>
                         <td className="py-1.5 text-right">
                           <span
-                            className={`inline-flex items-center gap-1 ${m.marginPercent >= 30 ? "text-green-400" : m.marginPercent >= 15 ? "text-amber-400" : "text-red-400"}`}
+                            className={`inline-flex items-center gap-1 ${m.marginPercent >= 30 ? "text-[var(--data-success)]" : m.marginPercent >= 15 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}
                           >
                             {m.marginPercent >= 30 ? (
                               <ArrowUpRight className="w-3 h-3" />
@@ -284,12 +285,12 @@ export default function ConversionMetricsTab() {
 
           {/* Customer Segments */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" />
+            <CardTitle className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
+              <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
               Segmentos de Clientes
-            </h3>
+            </CardTitle>
             {segments.length === 0 ? (
-              <p className="text-gray-500 text-sm">Sin datos de segmentación</p>
+              <p className="text-[var(--text-secondary)] text-sm">Sin datos de segmentación</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {segments.map((s) => (
@@ -305,7 +306,7 @@ export default function ConversionMetricsTab() {
                       <span className="text-sm font-medium text-white">{s.segment}</span>
                     </div>
                     <p className="text-lg font-bold text-white">{s.count}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       S/ {fmt(s.revenue)} en ingresos
                     </p>
                   </div>

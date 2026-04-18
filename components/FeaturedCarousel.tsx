@@ -3,20 +3,36 @@
 import { useRef, useMemo } from "react";
 import Image from "next/image";
 import { Star, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
-import { cn } from "@/lib/utils";
+import SectionPlaceholder from "@/components/SectionPlaceholder";
 
-export default function FeaturedCarousel() {
-  const { products, isLoading } = useStoreProducts();
+// Map string badges del backend → intent canónico del DS.
+const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
+  Popular: "popular",
+  Oferta: "offer",
+  Fresco: "fresh",
+  Nuevo: "new",
+  Premium: "premium",
+};
+
+export default function FeaturedCarousel({ serverProducts, showEmpty = false, emptyVariant = "admin", strictAdminOnly = false }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public"; strictAdminOnly?: boolean }) {
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
   const lastClickRef = useRef(0);
 
   const featured = useMemo(() => {
-    // First try products with badges (Popular/Oferta)
     const badged = products.filter(p => p.badge === "Popular" || p.badge === "Oferta").slice(0, 6);
+
+    // Regla estricta: solo consideramos productos explicitamente marcados
+    // por admin (badge Popular/Oferta). Sin badge = seccion vacia.
+    if (strictAdminOnly) return badged;
+
     if (badged.length >= 3) return badged;
 
     // Fallback: auto-select from inventory — prefer in-stock products with images
@@ -35,10 +51,11 @@ export default function FeaturedCarousel() {
     // Merge badged (keep them first) with auto-selected
     const autoSelected = scored.map(s => s.product).filter(p => !badged.some(b => b.id === p.id));
     return [...badged, ...autoSelected].slice(0, 6);
-  }, [products]);
+  }, [products, strictAdminOnly]);
 
   // No mostrar el carrusel mientras carga o si el tenant no tiene productos destacados
-  if (isLoading || featured.length === 0) return null;
+  if (isLoading) return null;
+  if (featured.length === 0) return showEmpty ? <SectionPlaceholder title="Productos Destacados" hint="Los productos con badge Popular u Oferta apareceran aqui" cols={6} variant={emptyVariant} publicTitle="Productos destacados" /> : null;
 
   return (
     <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, rgba(0,180,166,0.05), transparent)" }}>
@@ -57,19 +74,16 @@ export default function FeaturedCarousel() {
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-8 w-8" /></div>
                 )}
-                {product.badge && (
-                  <span className={cn(
-                    "absolute top-1.5 left-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white",
-                    product.badge === "Oferta" ? "bg-red-500" : product.badge === "Popular" ? "bg-secondary" : "bg-primary"
-                  )}>
-                    {product.badge}
-                  </span>
+                {product.badge && BADGE_INTENT[product.badge] && (
+                  <div className="absolute top-1.5 left-1.5">
+                    <ProductBadge intent={BADGE_INTENT[product.badge]}>{product.badge}</ProductBadge>
+                  </div>
                 )}
               </div>
               <div className="p-2">
                 <h3 className="font-medium text-foreground text-xs leading-tight line-clamp-2 mb-1.5">{product.name}</h3>
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
+                  <ProductPrice price={product.price} size="sm" />
                   {(() => {
                     const qty = items.find(i => i.id === product.id)?.quantity ?? 0;
                     return qty > 0 ? (

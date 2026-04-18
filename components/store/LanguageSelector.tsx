@@ -1,6 +1,7 @@
+"use client";
+
  
 /* eslint-disable react-hooks/set-state-in-effect */
-"use client";
 
 import {
   useState,
@@ -151,18 +152,18 @@ export default function LanguageSelector({ className, compact = false }: Languag
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm",
+        "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4 shadow-sm",
         className
       )}
     >
       <div className="flex items-center gap-2 mb-3">
         <Globe className="w-4 h-4 text-[#00B4A6]" />
-        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+        <h3 className="font-semibold text-[var(--text-primary)] text-sm">
           Idioma / Simi
         </h3>
       </div>
 
-      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="flex rounded-xl overflow-hidden border border-[var(--rule-base)]">
         {options.map((opt) => (
           <button
             key={opt.value}
@@ -171,7 +172,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
               "flex-1 py-2.5 text-sm font-semibold transition-colors",
               lang === opt.value
                 ? "bg-[#00B4A6] text-white"
-                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-gray-700"
             )}
           >
             {opt.native} — {opt.label}
@@ -185,10 +186,10 @@ export default function LanguageSelector({ className, compact = false }: Languag
           .map(([key, value]) => (
             <div
               key={key}
-              className="flex items-center justify-between gap-1 px-2 py-1 rounded-lg bg-gray-50 dark:bg-gray-800"
+              className="flex items-center justify-between gap-1 px-2 py-1 rounded-lg bg-[var(--surface-sunken)]"
             >
-              <span className="text-xs text-gray-400 dark:text-gray-500 capitalize">{key}</span>
-              <span className="text-xs font-semibold text-gray-900 dark:text-white">{value}</span>
+              <span className="text-xs text-[var(--text-tertiary)] capitalize">{key}</span>
+              <span className="text-xs font-semibold text-[var(--text-primary)]">{value}</span>
             </div>
           ))}
       </div>

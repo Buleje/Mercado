@@ -128,7 +128,7 @@ export default function CierrePaso2Resumen({
 
         {/* Card 3: CAJA FINAL */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
             Caja final
           </p>
           <div className="space-y-2">

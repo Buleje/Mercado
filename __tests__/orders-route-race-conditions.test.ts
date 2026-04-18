@@ -44,6 +44,7 @@ vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppNotification: vi.fn(async () => {}),
   getWhatsAppLink: vi.fn(() => "https://wa.me/fake"),
   sendWhatsAppText: vi.fn(async () => {}),
+  sendWhatsAppQueued: vi.fn(async () => ({ queued: true })),
 }));
 
 vi.mock("@/lib/receipt-whatsapp", () => ({
@@ -171,10 +172,41 @@ vi.mock("@/lib/prisma", () => {
   return { prisma: prismaMock };
 });
 
+// ─── Mock: @/lib/tenant — prismaForTenant returns the same mock client ───────
+// The route calls prismaForTenant(tenantId).model.method(...). We intercept at
+// the tenant layer so mockTransaction / mockExecuteRaw (overridden per-test in
+// beforeEach) are the same handles the route actually calls. Critical for
+// RED-005/RED-006 race-condition assertions.
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: vi.fn(() => ({
+    order: {
+      findFirst: mockOrderFindFirst,
+      count:     mockOrderCount,
+    },
+    tenant: {
+      findFirst:  mockTenantFindFirst,
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+    product: {
+      findMany: mockProductFindMany,
+    },
+    customer: {
+      findUnique: mockCustomerFindUnique,
+    },
+    customerNotification: {
+      create: mockCustomerNotifCreate,
+    },
+    $executeRaw: mockExecuteRaw,
+    $transaction: mockTransaction,
+  })),
+}));
+
 // ─── Import handler AFTER all mocks are set ─────────────────────────────────
 import { POST } from "@/app/api/orders/route";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+const defaultCtx = { params: Promise.resolve({}) };
+
 function makePostReq(
   body: unknown,
   headers: Record<string, string> = {},
@@ -248,7 +280,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(409);
     const body = await res.json();
     expect(body.error).toBe("insufficient_stock");
@@ -271,7 +303,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(201);
     expect(mockOrdersAdd).toHaveBeenCalledTimes(1);
   });
@@ -293,7 +325,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(201);
     expect(mockOrdersAdd).toHaveBeenCalledTimes(1);
     // No stock guard fired (no executeRaw inside the txn for this item, no
@@ -334,7 +366,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(409);
     const body = await res.json();
     expect(body.error).toBe("coupon_exhausted");
@@ -369,7 +401,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(201);
     expect(mockOrdersAdd).toHaveBeenCalledTimes(1);
     // The lookup MUST be tenant-scoped (RED-007 enforced at the call site).
@@ -418,7 +450,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { "x-tenant-id": TENANT_B }, // tenant B trying to steal tenant A's coupon
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     // Order still creates — but at full price (no discount applied).
     expect(res.status).toBe(201);
     const body = await res.json();

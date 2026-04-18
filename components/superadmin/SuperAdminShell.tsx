@@ -23,11 +23,12 @@ import {
   Clock,
   Gauge,
   HeartPulse,
-  Package,
   Wrench,
   Map as MapIcon,
   Cable,
+  FileCheck,
 } from "lucide-react";
+import { BulejeMark } from "@/components/ui-system/illustrations";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,9 +50,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
   { label: "Roadmap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"         },
-  { label: "Proyecto",        icon: <Package         className="w-5 h-5 shrink-0" />, href: "/superadmin/project-intel"   },
-  { label: "Integraciones",   icon: <Cable           className="w-5 h-5 shrink-0" />, href: "/superadmin/integraciones"   },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
+  { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
@@ -65,9 +65,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
   "/superadmin/control-center":  "Centro de Control",
   "/superadmin/roadmap":         "Roadmap",
-  "/superadmin/project-intel":   "Panorama del Proyecto",
-  "/superadmin/integraciones":   "Integraciones y funciones",
   "/superadmin/tenants":         "Tiendas",
+  "/superadmin/vendor-applications": "Aplicaciones de vendedores",
   "/superadmin/stores":          "Marketplace",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
@@ -112,10 +111,13 @@ function useTheme() {
 
 function ImpersonationBanner({ slug, onClear }: { slug: string; onClear: () => void }) {
   return (
-    <div className="fixed top-0 inset-x-0 z-50 bg-amber-500 text-white text-xs font-semibold flex items-center justify-center gap-3 py-2 px-4">
+    <div
+      role="alert"
+      className="fixed top-0 inset-x-0 z-50 bg-[var(--data-warning)] text-[var(--text-inverse)] text-xs font-semibold flex items-center justify-center gap-3 py-2 px-4"
+    >
       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
       Estás viendo como:{" "}
-      <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded">{slug}</span>
+      <span className="font-mono bg-black/20 px-1.5 py-0.5 rounded">{slug}</span>
       <button type="button" onClick={onClear} className="ml-2 underline hover:no-underline">
         Salir
       </button>
@@ -205,7 +207,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     (pathname.startsWith("/superadmin/tenants/") ? "Tienda" : "SuperAdmin");
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex bg-[var(--surface-canvas)]">
       {/* Global Command Palette (Ctrl+K / Cmd+K) */}
       <CommandPalette
         onToggleTheme={toggle}
@@ -230,8 +232,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       <aside
         className={[
           "fixed top-0 left-0 h-full z-40 flex flex-col",
-          "bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800",
-          "transition-all duration-200",
+          "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]",
+          "transition-all duration-[var(--dur-base)]",
           // Desktop width
           collapsed ? "w-16" : "w-60",
           // Mobile: hidden by default, shown when mobileOpen
@@ -243,19 +245,19 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         {/* Logo */}
         <div
           className={[
-            "flex items-center gap-3 px-4 py-5 border-b border-gray-100 dark:border-gray-800 shrink-0",
+            "flex items-center gap-3 px-4 py-5 border-b border-[var(--rule-base)] shrink-0",
             collapsed ? "justify-center" : "",
           ].join(" ")}
         >
-          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+            <BulejeMark size={20} strokeWidth={1.75} />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <div className="text-sm font-bold text-gray-900 dark:text-white leading-none">
+              <div className="text-sm font-bold text-[var(--text-primary)] leading-none">
                 Buleje
               </div>
-              <div className="text-[10px] font-medium text-teal-600 dark:text-teal-400 uppercase tracking-widest mt-0.5">
+              <div className="text-[length:var(--ts-2xs)] font-medium text-[var(--accent)] uppercase tracking-widest mt-0.5">
                 Platform
               </div>
             </div>
@@ -277,8 +279,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   collapsed ? "justify-center" : "",
                   active
-                    ? "bg-teal-600/20 text-teal-600 dark:text-teal-400"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                 ].join(" ")}
                 title={collapsed ? item.label : undefined}
               >
@@ -295,8 +297,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             type="button"
             onClick={() => setCollapsed((v) => !v)}
             className={[
-              "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs text-gray-400 dark:text-gray-500",
-              "hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+              "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs text-[var(--text-tertiary)]",
+              "hover:bg-[var(--surface-sunken)] transition-colors",
               collapsed ? "justify-center" : "",
             ].join(" ")}
           >
@@ -317,21 +319,21 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         <aside
           className={[
             "fixed top-0 left-0 h-full z-40 flex flex-col w-60 md:hidden",
-            "bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800",
+            "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]",
             impersonating ? "pt-8" : "",
           ].join(" ")}
         >
           {/* Logo */}
-          <div className="flex items-center justify-between px-4 py-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <div className="flex items-center justify-between px-4 py-5 border-b border-[var(--rule-base)] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+                <BulejeMark size={20} strokeWidth={1.75} />
               </div>
               <div>
-                <div className="text-sm font-bold text-gray-900 dark:text-white leading-none">
+                <div className="text-sm font-bold text-[var(--text-primary)] leading-none">
                   Buleje
                 </div>
-                <div className="text-[10px] font-medium text-teal-600 dark:text-teal-400 uppercase tracking-widest mt-0.5">
+                <div className="text-[length:var(--ts-2xs)] font-medium text-[var(--accent)] uppercase tracking-widest mt-0.5">
                   Platform
                 </div>
               </div>
@@ -339,7 +341,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -359,8 +361,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   className={[
                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     active
-                      ? "bg-teal-600/20 text-teal-600 dark:text-teal-400"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
+                      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                   ].join(" ")}
                 >
                   {item.icon}
@@ -375,25 +377,25 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       {/* ── Main area ─────────────────────────────────────────────────────────── */}
       <div
         className={[
-          "flex-1 flex flex-col min-w-0 transition-all duration-200",
+          "flex-1 flex flex-col min-w-0 transition-all duration-[var(--dur-base)]",
           // Offset for sidebar on desktop
           collapsed ? "md:ml-16" : "md:ml-60",
           impersonating ? "pt-8" : "",
         ].join(" ")}
       >
         {/* Header */}
-        <header className="sticky top-0 z-20 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shrink-0">
+        <header className="sticky top-0 z-20 bg-[var(--surface-canvas)] border-b border-[var(--rule-base)] shrink-0">
           <div className="flex items-center justify-between px-4 sm:px-6 h-14 gap-4">
             {/* Left: hamburger (mobile) + page title */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="md:hidden p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+              <h1 className="text-base font-semibold text-[var(--text-primary)] truncate">
                 {pageTitle}
               </h1>
             </div>
@@ -401,8 +403,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             {/* Right: username + theme toggle + logout */}
             <div className="flex items-center gap-2 shrink-0">
               {/* Username badge */}
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-sunken)] text-xs font-medium text-[var(--text-secondary)]">
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
                 <span className="truncate max-w-[120px]">{username}</span>
               </div>
 
@@ -410,21 +412,21 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               <button
                 type="button"
                 onClick={toggle}
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 title={dark ? "Modo claro" : "Modo oscuro"}
               >
                 {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
-              {/* Logout */}
+              {/* Logout — neutral outline; danger semantic solo en hover (Ola 2) */}
               <button
                 type="button"
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--data-error)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
                 title="Cerrar sesión"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Salir</span>
               </button>
             </div>
@@ -438,17 +440,17 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       {/* Session Expired Modal */}
       {sessionExpired && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
-              <Clock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-w-sm w-full p-6 shadow-[var(--shadow-xl)] text-center">
+            <div className="mx-auto w-14 h-14 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mb-4">
+              <Clock className="w-7 h-7 text-[var(--data-warning)]" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Sesión expirada</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+            <h2 className="text-lg font-bold text-[var(--text-primary)] mb-2">Sesión expirada</h2>
+            <p className="text-sm text-[var(--text-tertiary)] mb-5">
               Tu sesión ha expirado por seguridad. Inicia sesión de nuevo para continuar.
             </p>
             <button
               onClick={() => router.push("/superadmin/login")}
-              className="w-full px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
+              className="w-full px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:brightness-110 transition-colors"
             >
               Iniciar sesión
             </button>

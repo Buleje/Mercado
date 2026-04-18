@@ -1,25 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { OrdersDB, CouponsDB, PromotionsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { sendOrderNotification } from "@/lib/mailer";
-import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { prisma } from "@/lib/prisma";
+import { prismaForTenant } from "@/lib/tenant";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 import { resolveTenantSlug } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
-import { logger } from "@/lib/logger";
 import { getOrSet } from "@/lib/cache";
 import { createDefaultDiscountEngine } from "@/lib/pricing/discount-strategies";
 import type { OrderContext } from "@/lib/pricing/discount-strategies";
+import { withApiHandler } from "@/lib/api-handler";
 
 const OrderItemSchema = z.object({
   id: z.number(),
@@ -54,85 +56,80 @@ const OrderPostSchema = z.object({
   deuda: z.boolean().optional(),
 });
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("orders-list", async (req) => {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "GENEROUS", "orders-get");
   if (rl) return rl;
 
-  try {
-    const { searchParams } = new URL(req.url);
-    const statusFilter = searchParams.get("status");      // e.g. "pendiente"
-    const limitParam   = searchParams.get("limit");       // default: all
-    const pageParam    = searchParams.get("page");        // offset pagination page
-    const cursorParam  = searchParams.get("cursor");      // cursor-based pagination
-    const sinceParam   = searchParams.get("since");       // ISO date string
-    const phoneParam   = searchParams.get("phone");       // filter by customer phone
+  const { searchParams } = new URL(req.url);
+  const statusFilter = searchParams.get("status");      // e.g. "pendiente"
+  const limitParam   = searchParams.get("limit");       // default: all
+  const pageParam    = searchParams.get("page");        // offset pagination page
+  const cursorParam  = searchParams.get("cursor");      // cursor-based pagination
+  const sinceParam   = searchParams.get("since");       // ISO date string
+  const phoneParam   = searchParams.get("phone");       // filter by customer phone
 
-    // ── Cursor-based pagination (preferred — DB-level, scales to large datasets) ──
-    if (cursorParam !== null || (limitParam && !pageParam)) {
-      const limit = limitParam
-        ? Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 200)
-        : 50;
-      const { orders, nextCursor, total } = await withDbRetry(() =>
-        OrdersDB.getPage({
-          cursor: cursorParam ?? undefined,
-          limit,
-          status: statusFilter ?? undefined,
-          since:  sinceParam  ?? undefined,
-          phone:  phoneParam  ?? undefined,
-          tenantId: auth.tenantId,
-        })
-      );
-      return NextResponse.json(orders, {
-        headers: {
-          "X-Total-Count":  String(total),
-          "X-Limit":        String(limit),
-          "X-Next-Cursor":  nextCursor ?? "",
-        },
-      });
-    }
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // ── Legacy: offset pagination (kept for backward compatibility) ───────────
-    // Filters are pushed to the DB query (not in-memory) via getAllFiltered()
-    let orders = await withDbRetry(() =>
-      OrdersDB.getAllFiltered({
-        status:  statusFilter  ?? undefined,
-        since:   sinceParam    ?? undefined,
-        phone:   phoneParam    ?? undefined,
+  // ── Cursor-based pagination (preferred — DB-level, scales to large datasets) ──
+  if (cursorParam !== null || (limitParam && !pageParam)) {
+    const limit = limitParam
+      ? Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 200)
+      : 50;
+    const { orders, nextCursor, total } = await withDbRetry(() =>
+      OrdersDB.getPage({
+        cursor: cursorParam ?? undefined,
+        limit,
+        status: statusFilter ?? undefined,
+        since:  sinceParam  ?? undefined,
+        phone:  phoneParam  ?? undefined,
         tenantId: auth.tenantId,
       })
     );
+    return NextResponse.json(orders, {
+      headers: {
+        "X-Total-Count":  String(total),
+        "X-Limit":        String(limit),
+        "X-Next-Cursor":  nextCursor ?? "",
+      },
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
-    const total = orders.length;
+  // ── Legacy: offset pagination (kept for backward compatibility) ───────────
+  // Filters are pushed to the DB query (not in-memory) via getAllFiltered()
+  let orders = await withDbRetry(() =>
+    OrdersDB.getAllFiltered({
+      status:  statusFilter  ?? undefined,
+      since:   sinceParam    ?? undefined,
+      phone:   phoneParam    ?? undefined,
+      tenantId: auth.tenantId,
+    })
+  );
 
-    if (limitParam) {
-      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
-      const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
-      const start = (page - 1) * limit;
-      orders = orders.slice(start, start + limit);
+  const total = orders.length;
 
-      return NextResponse.json(orders, {
-        headers: {
-          "X-Total-Count": String(total),
-          "X-Page": String(page),
-          "X-Limit": String(limit),
-          "X-Total-Pages": String(Math.ceil(total / limit)),
-        },
-      });
-    }
+  if (limitParam) {
+    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
+    const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
+    const start = (page - 1) * limit;
+    orders = orders.slice(start, start + limit);
 
     return NextResponse.json(orders, {
-      headers: { "X-Total-Count": String(orders.length) },
+      headers: {
+        "X-Total-Count": String(total),
+        "X-Page": String(page),
+        "X-Limit": String(limit),
+        "X-Total-Pages": String(Math.ceil(total / limit)),
+      },
     });
-  } catch (e) {
-    logger.error("[orders] GET error", { err: e instanceof Error ? e.message : String(e), requestId: req.headers.get("x-request-id") ?? undefined });
-    return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-}
 
-export async function POST(req: NextRequest) {
+  return NextResponse.json(orders, {
+    headers: { "X-Total-Count": String(orders.length) },
+  });
+});
+
+export const POST = withApiHandler("orders-create", async (req) => {
   // Rate limit: 5 orders per IP per 15 minutes (STRICT preset)
   const rateLimitResponse = applyRateLimit(req, "STRICT", "orders");
   if (rateLimitResponse) {
@@ -149,9 +146,9 @@ export async function POST(req: NextRequest) {
   // HOTFIX-004: scoped by tenantId — two tenants can use the same key safely.
   const idempotencyKey = req.headers.get("x-idempotency-key")?.slice(0, 128) || undefined;
   if (idempotencyKey) {
-    const existing = await prisma.order.findFirst({
+    const existing = await prismaForTenant(tenantId).order.findFirst({
       where: { idempotencyKey, tenantId },
-    }).catch(() => null);
+    }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
     if (existing) {
       // Duplicate request — return the already-created order with 200
       return NextResponse.json(existing, { status: 200 });
@@ -160,7 +157,7 @@ export async function POST(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Fetch tenant plan and enforce maxOrdersPerMonth
-  const tenantRow = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] }, select: { plan: true } });
+  const tenantRow = await prismaForTenant(tenantId).tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] }, select: { plan: true } });
   const limits = getPlanLimits(tenantRow?.plan ?? "free");
   if (!withinLimit(0, limits.maxOrdersPerMonth)) {
     // maxOrdersPerMonth === 0 means fully blocked (shouldn't happen in real configs)
@@ -173,7 +170,7 @@ export async function POST(req: NextRequest) {
     const monthCount = await getOrSet(
       `orders:count:${tenantId}:${monthStart.getTime()}`,
       300,
-      async () => await prisma.order.count({ where: { tenantId, createdAt: { gte: monthStart } } })
+      async () => await prismaForTenant(tenantId).order.count({ where: { tenantId, createdAt: { gte: monthStart } } })
     );
     if (!withinLimit(monthCount, limits.maxOrdersPerMonth)) {
       return NextResponse.json(
@@ -184,16 +181,15 @@ export async function POST(req: NextRequest) {
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
-  try {
-    const raw = await req.json();
-    const parsed = OrderPostSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 }
-      );
-    }
-    const body = parsed.data;
+  const raw = await req.json();
+  const parsed = OrderPostSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+      { status: 400 }
+    );
+  }
+  const body = parsed.data;
 
     // ── HOTFIX-001: Server-authoritative pricing ────────────────────────────
     // NEVER trust body.items[i].price — attacker can send price=0.01 and have
@@ -208,7 +204,7 @@ export async function POST(req: NextRequest) {
     // below skips unlimited (stock IS NULL) products without false-rejecting.
     const stockMap = new Map<number, number | null>();
     if (productIds.length > 0) {
-      const products = await prisma.product.findMany({
+      const products = await prismaForTenant(tenantId).product.findMany({
         where: { tenantId, id: { in: productIds } },
         select: { id: true, price: true, costPrice: true, stock: true },
       });
@@ -291,7 +287,7 @@ export async function POST(req: NextRequest) {
     let isFirstPurchase = true;
 
     if (customerPhone) {
-      customerTotalPurchases = await prisma.order.count({
+      customerTotalPurchases = await prismaForTenant(tenantId).order.count({
         where: { tenantId, customerPhone },
       }).catch(() => 0);
       isFirstPurchase = customerTotalPurchases === 0;
@@ -312,6 +308,27 @@ export async function POST(req: NextRequest) {
     }
 
     const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount - engineDiscount);
+
+    // Telemetria de fraud attempts: si el cliente envia un total que no cuadra
+    // con el recomputo del servidor (> 1 centavo de diferencia), registrar warn
+    // con request_id para Sentry. NO rechazamos — HOTFIX-001 ya persiste el
+    // total del servidor. Esto solo agrega observabilidad.
+    const clientTotal = typeof body.total === "number" ? body.total : null;
+    if (clientTotal !== null && Math.abs(clientTotal - computedTotal) > 0.01) {
+      const fraudContext = {
+        clientTotal,
+        computedTotal,
+        delta: Math.round((clientTotal - computedTotal) * 100) / 100,
+        tenantId,
+        requestId: req.headers.get("x-request-id") ?? undefined,
+      };
+      logger.warn("[orders/create] client/server total mismatch", fraudContext);
+      Sentry.captureMessage("Fraud attempt: order total mismatch", {
+        level: "warning",
+        tags: { fraud_attempt: "true", tenant: tenantId },
+        extra: fraudContext,
+      });
+    }
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     const now = new Date().toISOString();
@@ -370,7 +387,7 @@ export async function POST(req: NextRequest) {
     // Either every guard wins or every write rolls back.
     const NOW_FOR_TXN = new Date();
     try {
-      await prisma.$transaction(async (tx) => {
+      await prismaForTenant(tenantId).$transaction(async (tx) => {
         // Stock: one conditional UPDATE per item, only for products with
         // finite stock. Items with stock=null are unlimited and skipped.
         for (const item of body.items) {
@@ -452,7 +469,7 @@ export async function POST(req: NextRequest) {
       // Best-effort, fire-and-forget per CLAUDE.md #7.
       (async () => {
         try {
-          await prisma.$transaction(async (tx) => {
+          await prismaForTenant(tenantId).$transaction(async (tx) => {
             for (const item of body.items) {
               if (item.id <= 0) continue;
               if (stockMap.get(item.id) == null) continue;
@@ -474,7 +491,7 @@ export async function POST(req: NextRequest) {
             }
           });
         } catch { /* swallow — log path is best-effort */ }
-      })().catch(() => {});
+      })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       throw addErr;
     }
 
@@ -482,7 +499,7 @@ export async function POST(req: NextRequest) {
     //    earliest-expiring Batch rows). Fire-and-forget per CLAUDE.md #7.
     for (const item of body.items) {
       if (item.id > 0) {
-        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch(() => {});
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch((err) => logger.error("[orders] inventory FEFO decrement failed", { error: String(err), tenantId }));
       }
     }
     // Fire-and-forget email notification (never blocks the response)
@@ -495,15 +512,15 @@ export async function POST(req: NextRequest) {
       paymentMethod: saved.paymentMethod,
       items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
       tenantId,
-    }).catch(() => {});
+    }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
 
     // Auto-send WhatsApp order received notification (fire-and-forget)
     if (saved.customer.phone) {
       // Check customer notification preferences
-      const custPrefs = await prisma.customer.findUnique({
+      const custPrefs = await prismaForTenant(tenantId).customer.findUnique({
         where: { phone: saved.customer.phone },
         select: { notifOrderUpdates: true },
-      }).catch(() => null);
+      }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
       const wantsOrderNotifs = custPrefs?.notifOrderUpdates !== false;
 
       const orderInfo = {
@@ -522,10 +539,10 @@ export async function POST(req: NextRequest) {
         });
 
         // Enviar recibo por WhatsApp solo si el cliente tiene alertasWhatsapp activo
-        const custWa = await prisma.customer.findUnique({
+        const custWa = await prismaForTenant(tenantId).customer.findUnique({
           where: { phone: saved.customer.phone },
           select: { alertasWhatsapp: true },
-        }).catch(() => null);
+        }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
         if (custWa?.alertasWhatsapp !== false) {
           sendReceiptByWhatsApp(
             {
@@ -537,7 +554,7 @@ export async function POST(req: NextRequest) {
             },
             saved.customer.phone,
             saved.customer.name,
-          ).catch(() => {});
+          ).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
         }
 
         // Push notification for new order
@@ -545,12 +562,12 @@ export async function POST(req: NextRequest) {
           title: "📋 ¡Pedido recibido!",
           body: `Tu pedido de S/${saved.total.toFixed(2)} fue recibido. Te avisamos cuando sea confirmado.`,
           url: `/pedido/${saved.id}`,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       }
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId).catch(() => {});
+    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
 
     // Notify connected admin clients in real-time (fire-and-forget)
     emitAdminSSE("new_order", {
@@ -563,7 +580,7 @@ export async function POST(req: NextRequest) {
     // ── Notify store OWNER/VENDOR via WhatsApp + Push (fire-and-forget) ────
     (async () => {
       try {
-        const tenant = await prisma.tenant.findUnique({
+        const tenant = await prismaForTenant(tenantId).tenant.findUnique({
           where: { slug: tenantId },
           select: { ownerPhone: true, name: true },
         });
@@ -577,12 +594,12 @@ export async function POST(req: NextRequest) {
           `💰 Total: S/${saved.total.toFixed(2)}\n` +
           `💳 Pago: ${saved.paymentMethod === "yape" ? "Yape" : saved.paymentMethod === "efectivo" ? "Efectivo" : saved.paymentMethod ?? "—"}\n\n` +
           `Revisa tu panel de administración para confirmar el pedido.`;
-        sendWhatsAppText(ownerPhone, vendorMsg).catch(() => {});
+        sendWhatsAppQueued(ownerPhone, vendorMsg, { tenantId, context: "order-vendor-notify" }).catch(() => {});
         sendPushToPhone(ownerPhone, {
           title: `🔔 Nuevo pedido — S/${saved.total.toFixed(2)}`,
           body: `${saved.customer.name} hizo un pedido: ${itemsSummary}${moreItems}`,
           url: `/admin?tab=pedidos`,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       } catch { /* non-critical — never block the response */ }
     })();
     // ───────────────────────────────────────────────────────────────────────
@@ -616,9 +633,9 @@ export async function POST(req: NextRequest) {
               title: `🎁 ¡Premio de fidelidad!`,
               body: `Tienes un ${discountPct}% de descuento — usa el código ${code} en tu próximo pedido.`,
               url: "/",
-            }).catch(() => {});
+            }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
             // Log coupon creation
-            logActivity("crear", "cupon", `Cupón de fidelidad ${code} (${discountPct}%) generado automáticamente para ${saved.customer.name} — pedido #${orderCount}`, code).catch(() => {});
+            logActivity("crear", "cupon", `Cupón de fidelidad ${code} (${discountPct}%) generado automáticamente para ${saved.customer.name} — pedido #${orderCount}`, code).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
           }
         } catch { /* non-critical — never block the response */ }
       })();
@@ -626,7 +643,7 @@ export async function POST(req: NextRequest) {
 
     // Log customer notification for inbox
     if (saved.customer.phone) {
-      prisma.customerNotification.create({
+      prismaForTenant(tenantId).customerNotification.create({
         data: {
           tenantId,
           customerPhone: saved.customer.phone,
@@ -635,12 +652,8 @@ export async function POST(req: NextRequest) {
           body: `Tu pedido #${saved.id.slice(-6)} por S/${saved.total.toFixed(2)} fue recibido. Te avisaremos cuando sea confirmado.`,
           link: `/pedido/${saved.id}`,
         },
-      }).catch(() => {});
+      }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
     }
 
     return NextResponse.json(saved, { status: 201 });
-  } catch (e) {
-    logger.error("[orders] POST error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Database error" }, { status: 503 });
-  }
-}
+});

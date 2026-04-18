@@ -1,0 +1,243 @@
+"use client";
+
+import { memo } from "react";
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
+import {
+  CHART_GRID_STROKE,
+  CHART_AXIS_COLOR,
+  CHART_FONT,
+  CHART_PALETTE,
+} from "./palette";
+import { ChartTooltip } from "./ChartTooltip";
+import { cn } from "@/lib/utils";
+
+/**
+ * BulejeComposedChart — compound chart (Bar + Line + Area) con dual-axis.
+ *
+ * Uso: consolidar 3 métricas correlacionadas en 1 chart en vez de 3 separados.
+ * Patron research 2026: max 3 series, dual-axis solo si unidades diferentes,
+ * bar siempre zero-based.
+ *
+ * @example
+ * <BulejeComposedChart
+ *   data={last30Days}
+ *   xKey="date"
+ *   bars={[{ key: "ventas", label: "Ventas (S/)", color: "primary", yAxis: "left" }]}
+ *   lines={[{ key: "ticket", label: "Ticket prom. (S/)", color: "accent", yAxis: "right" }]}
+ *   areas={[{ key: "clientes", label: "Clientes únicos", color: "tertiary", yAxis: "right", opacity: 0.15 }]}
+ *   leftAxisFormat={(v) => `S/${v}`}
+ *   rightAxisFormat={(v) => v.toString()}
+ *   height={320}
+ * />
+ */
+
+type ColorKey = "primary" | "secondary" | "tertiary" | "quaternary" | "accent" | "info" | "amber" | "purple";
+
+interface SeriesConfig {
+  key: string;
+  label: string;
+  color?: ColorKey;
+  yAxis?: "left" | "right";
+  /** Para Area: opacity del fill. Default 0.15 */
+  opacity?: number;
+}
+
+interface Props {
+  data: Array<Record<string, string | number>>;
+  xKey: string;
+  /** Bars zero-based (buenas para contar) */
+  bars?: SeriesConfig[];
+  /** Lines para tendencias (mejor con medias móviles, ticket promedio) */
+  lines?: SeriesConfig[];
+  /** Areas para volumen acumulado o ranges */
+  areas?: SeriesConfig[];
+  height?: number;
+  leftAxisFormat?: (value: number) => string;
+  rightAxisFormat?: (value: number) => string;
+  /** Tooltip value formatter — default toLocaleString es-PE */
+  tooltipFormat?: (value: number | string, name?: string) => string;
+  showLegend?: boolean;
+  showGrid?: boolean;
+  /** Cuando hay <3 puntos, muestra mensaje en vez de chart (evitar malinterpretación) */
+  minDataPoints?: number;
+  className?: string;
+}
+
+function resolveColor(key?: ColorKey): string {
+  if (!key) return CHART_PALETTE.primary;
+  return CHART_PALETTE[key] ?? CHART_PALETTE.primary;
+}
+
+export const BulejeComposedChart = memo(function BulejeComposedChart({
+  data,
+  xKey,
+  bars = [],
+  lines = [],
+  areas = [],
+  height = 280,
+  leftAxisFormat,
+  rightAxisFormat,
+  tooltipFormat,
+  showLegend = true,
+  showGrid = true,
+  minDataPoints = 2,
+  className,
+}: Props) {
+  const hasRightAxis = [...bars, ...lines, ...areas].some((s) => s.yAxis === "right");
+
+  if (data.length < minDataPoints) {
+    return (
+      <div
+        className={cn(
+          "rounded-xl border border-dashed border-[var(--rule-base)] flex flex-col items-center justify-center text-center p-8",
+          className,
+        )}
+        style={{ height }}
+      >
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+          Datos insuficientes
+        </p>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Se necesitan {minDataPoints}+ puntos de datos para mostrar esta correlación.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <ResponsiveContainer width="100%" height={height}>
+        <ComposedChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
+          {showGrid && (
+            <CartesianGrid
+              stroke={CHART_GRID_STROKE}
+              strokeDasharray="0"
+              vertical={false}
+            />
+          )}
+          <XAxis
+            dataKey={xKey}
+            stroke={CHART_AXIS_COLOR}
+            fontSize={CHART_FONT.axisSize}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: CHART_AXIS_COLOR }}
+          />
+          <YAxis
+            yAxisId="left"
+            stroke={CHART_AXIS_COLOR}
+            fontSize={CHART_FONT.axisSize}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: CHART_AXIS_COLOR }}
+            tickFormatter={leftAxisFormat}
+            // Bars always zero-based per research rule
+            domain={[0, "auto"]}
+          />
+          {hasRightAxis && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke={CHART_AXIS_COLOR}
+              fontSize={CHART_FONT.axisSize}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: CHART_AXIS_COLOR }}
+              tickFormatter={rightAxisFormat}
+            />
+          )}
+          <Tooltip
+            content={<ChartTooltip format={tooltipFormat} />}
+            cursor={{ fill: "var(--rule-soft)", opacity: 0.5 }}
+          />
+          {showLegend && (
+            <Legend
+              wrapperStyle={{
+                paddingTop: 12,
+                fontSize: CHART_FONT.labelSize,
+                fontFamily: CHART_FONT.family,
+              }}
+              iconType="circle"
+              iconSize={8}
+            />
+          )}
+
+          {/* Areas primero (van al fondo) */}
+          {areas.map((series) => {
+            const color = resolveColor(series.color);
+            const gradientId = `area-${series.key}-gradient`;
+            return (
+              <g key={`area-${series.key}`}>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={series.opacity ?? 0.15} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey={series.key}
+                  name={series.label}
+                  stroke="none"
+                  fill={`url(#${gradientId})`}
+                  yAxisId={series.yAxis ?? "left"}
+                  isAnimationActive={true}
+                  animationDuration={700}
+                />
+              </g>
+            );
+          })}
+
+          {/* Bars en medio */}
+          {bars.map((series) => {
+            const color = resolveColor(series.color);
+            return (
+              <Bar
+                key={`bar-${series.key}`}
+                dataKey={series.key}
+                name={series.label}
+                fill={color}
+                yAxisId={series.yAxis ?? "left"}
+                radius={[3, 3, 0, 0]}
+                isAnimationActive={true}
+                animationDuration={600}
+                maxBarSize={40}
+              />
+            );
+          })}
+
+          {/* Lines encima (más visible) */}
+          {lines.map((series) => {
+            const color = resolveColor(series.color);
+            return (
+              <Line
+                key={`line-${series.key}`}
+                type="monotone"
+                dataKey={series.key}
+                name={series.label}
+                stroke={color}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: color }}
+                yAxisId={series.yAxis ?? "left"}
+                isAnimationActive={true}
+                animationDuration={800}
+              />
+            );
+          })}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ShoppingCart, Package, DollarSign, UserPlus, AlertTriangle, Loader2 } from "lucide-react";
+import { ShoppingCart, Package, DollarSign, UserPlus, AlertTriangle, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface ActivityEntry {
@@ -14,12 +14,12 @@ interface ActivityEntry {
 }
 
 const ICON_MAP: Record<string, { icon: typeof ShoppingCart; color: string; bg: string }> = {
-  sale:     { icon: ShoppingCart,   color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-  order:    { icon: ShoppingCart,   color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-900/20" },
-  product:  { icon: Package,        color: "text-violet-600",  bg: "bg-violet-50 dark:bg-violet-900/20" },
-  payment:  { icon: DollarSign,     color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-900/20" },
+  sale:     { icon: ShoppingCart,   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  order:    { icon: ShoppingCart,   color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  product:  { icon: Package,        color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
+  payment:  { icon: DollarSign,     color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
   customer: { icon: UserPlus,       color: "text-primary",     bg: "bg-primary/10" },
-  fiado:    { icon: DollarSign,     color: "text-orange-600",  bg: "bg-orange-50 dark:bg-orange-900/20" },
+  fiado:    { icon: DollarSign,     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20" },
 };
 
 function getIcon(entry: ActivityEntry) {
@@ -27,7 +27,7 @@ function getIcon(entry: ActivityEntry) {
   for (const [k, v] of Object.entries(ICON_MAP)) {
     if (key.includes(k)) return v;
   }
-  return { icon: AlertTriangle, color: "text-gray-500", bg: "bg-gray-100 dark:bg-surface" };
+  return { icon: AlertTriangle, color: "text-[var(--text-secondary)]", bg: "bg-gray-100 dark:bg-surface" };
 }
 
 function timeAgo(iso: string): string {
@@ -81,22 +81,22 @@ export default function ActivityFeed() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-3">
         <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10">
           <ShoppingCart className="w-3.5 h-3.5 text-primary" />
         </div>
-        <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">
           Actividad reciente
         </span>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="text-xs text-gray-400 dark:text-zinc-500 py-4 text-center">
+        <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 py-4 text-center">
           Sin actividad reciente
         </p>
       ) : (
@@ -113,16 +113,16 @@ export default function ActivityFeed() {
                   <Icon className={cn("w-3.5 h-3.5", iconCfg.color)} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-700 dark:text-zinc-300 leading-snug">
+                  <p className="text-xs font-medium text-[var(--text-primary)] dark:text-zinc-300 leading-snug">
                     {entry.action}
                   </p>
                   {entry.details && (
-                    <p className="text-[10px] text-gray-400 dark:text-zinc-500 truncate mt-0.5">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 truncate mt-0.5">
                       {entry.details}
                     </p>
                   )}
                 </div>
-                <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0 mt-0.5">
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-0.5">
                   {timeAgo(entry.createdAt)}
                 </span>
               </div>

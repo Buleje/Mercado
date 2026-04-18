@@ -55,10 +55,10 @@ const SEVERITY_STYLES = {
     badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   },
   info: {
-    border: "border-l-blue-400",
-    icon: "text-blue-500",
-    bg: "bg-blue-50/50 dark:bg-blue-950/10",
-    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    border: "border-l-emerald-400",
+    icon: "text-emerald-500",
+    bg: "bg-emerald-50/50 dark:bg-emerald-950/10",
+    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   },
 };
 
@@ -253,7 +253,7 @@ export default function NotificationHub({
             title: `${stats.pendingOrders} pedidos pendientes`,
             description: "Tienes pedidos que necesitan atención",
             timestamp: Date.now(),
-            action: { label: "Ver pedidos", moduleId: "ventas-caja", tabId: "pedidos" },
+            action: { label: "Ver pedidos", moduleId: "pedidos", tabId: "pedidos" },
           });
         }
         if (stats?.overduePayables > 0) {

@@ -1,9 +1,10 @@
 "use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import {
   TrendingUp, Download, Search, Eye, X, ArrowUpRight, ArrowDownRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -84,12 +85,12 @@ export default function ProfitabilityTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" /> Cuánto Gano por Producto
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Mira cuánto ganas con cada producto y categoría</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Mira cuánto ganas con cada producto y categoría</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: l.marginPct.toFixed(1) + "%" })), "ganancias-producto")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: l.marginPct.toFixed(1) + "%" })), "ganancias-producto")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Descargar
         </button>
       </div>
@@ -97,34 +98,34 @@ export default function ProfitabilityTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-          { label: "Costo de venta", value: fmt(totals.cogs), color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
-          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "% Margen", value: pct(totals.marginPct), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
-          { label: "Uds. vendidas", value: totals.units.toLocaleString("es-PE"), color: "text-pink-600", bg: "bg-pink-50 dark:bg-pink-950/30" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Costo de venta", value: fmt(totals.cogs), color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
+          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "% Margen", value: pct(totals.marginPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+          { label: "Uds. vendidas", value: totals.units.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* Category bar chart */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Ganancia por categoría</h3>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4">Ganancia por categoría</CardTitle>
         <div className="space-y-3">
           {catSummary.map(([cat, data]) => {
             const pctFill = maxCatMargin > 0 ? (data.margin / maxCatMargin) * 100 : 0;
             const mPct = data.revenue > 0 ? (data.margin / data.revenue) * 100 : 0;
             return (
               <div key={cat} className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-semibold text-gray-600 dark:text-muted w-20 truncate">{cat}</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-20 truncate">{cat}</span>
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all" style={{ width: `${pctFill}%` }} />
+                  <div className="h-full rounded-full bg-[var(--data-success)] transition-all" style={{ width: `${pctFill}%` }} />
                 </div>
-                <span className="text-xs font-bold text-gray-700 dark:text-foreground w-24 text-right">{fmt(data.margin)}</span>
-                <span className="text-xs font-semibold text-emerald-600 w-12 text-right">{pct(mPct)}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-24 text-right">{fmt(data.margin)}</span>
+                <span className="text-xs font-semibold text-[var(--data-success)] w-12 text-right">{pct(mPct)}</span>
               </div>
             );
           })}
@@ -134,14 +135,14 @@ export default function ProfitabilityTab() {
       {/* Filters & sort */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="marginPct">Mayor % margen</option>
           <option value="grossMargin">Mayor margen bruto</option>
           <option value="revenue">Mayor ingreso</option>
@@ -150,53 +151,53 @@ export default function ProfitabilityTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">#</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Uds.</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Ingresos</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Costo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Margen</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">%</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">#</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Uds.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Ingresos</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Costo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Margen</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">%</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">Sin datos.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Sin datos.</td></tr>}
               {filtered.map((l, i) => (
                 <tr key={l.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-400">{i + 1}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{l.product}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{l.category}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-600 dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{fmt(l.revenue)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500">{fmt(l.cogs)}</td>
-                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.grossMargin)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)]">{i + 1}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{l.product}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(l.revenue)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(l.cogs)}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{fmt(l.grossMargin)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                    <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-emerald-600" : l.marginPct >= 25 ? "text-amber-600" : "text-red-500")}>
+                    <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success)]" : l.marginPct >= 25 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
                       {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                       {pct(l.marginPct)}
                     </span>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="border-t-2 border-gray-300 dark:border-card-border bg-gray-50 dark:bg-surface/50">
+            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface/50">
               <tr className="font-extrabold">
-                <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-gray-500">Totales</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{totals.units.toLocaleString("es-PE")}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{fmt(totals.revenue)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500">{fmt(totals.cogs)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-emerald-600">{fmt(totals.grossMargin)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-emerald-600">{pct(totals.marginPct)}</td>
+                <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">Totales</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{totals.units.toLocaleString("es-PE")}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(totals.revenue)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(totals.cogs)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success)]">{fmt(totals.grossMargin)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success)]">{pct(totals.marginPct)}</td>
                 <td />
               </tr>
             </tfoot>
@@ -207,10 +208,10 @@ export default function ProfitabilityTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle de producto</h3>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle de producto</CardTitle>
+              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
               {[
@@ -220,8 +221,8 @@ export default function ProfitabilityTab() {
                 ["Margen bruto", fmt(detail.grossMargin)], ["% Margen", pct(detail.marginPct)],
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
-                  <span className="text-gray-500 dark:text-muted">{k}</span>
-                  <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
+                  <span className="text-[var(--text-secondary)] dark:text-muted">{k}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
                 </div>
               ))}
             </div>

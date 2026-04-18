@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import { Unlock, Check, X, ArrowRight } from "lucide-react";
+import { Unlock, Check, X, ArrowRight } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 // ── Beneficios por modulo Pro ──────────────────────────────────────────────────
@@ -155,7 +156,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 24 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
+          className="relative w-full max-w-md rounded-3xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Gradiente de fondo */}
@@ -188,20 +189,20 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
               initial={{ scale: 0.5, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.1, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-5 shadow-lg"
+              className="w-20 h-20 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-5"
             >
               <Unlock className="h-10 w-10 text-white" strokeWidth={1.5} />
             </m.div>
 
             {/* Badge Plan Pro */}
-            <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-widest mb-3">
+            <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold mb-3">
               Plan Pro
             </span>
 
             {/* Titulo */}
-            <h2 className="text-white text-2xl font-extrabold leading-tight mb-2">
+            <SectionTitle className="text-white text-2xl font-extrabold leading-tight mb-2">
               Desbloquea {displayName}
-            </h2>
+            </SectionTitle>
 
             {/* Subtitulo */}
             <p className="text-white/80 text-sm mb-6">
@@ -229,7 +230,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
             {/* Boton principal */}
             <Link
               href="/pricing"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[#00B4A6] font-bold text-base shadow-lg hover:shadow-xl hover:bg-white/95 active:scale-[0.98] transition-all mb-3"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white text-[#00B4A6] font-bold text-base hover:shadow-xl hover:bg-white/95 active:scale-[0.98] transition-all mb-3"
             >
               Ver planes
               <ArrowRight className="h-4 w-4" />
@@ -238,7 +239,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
             {/* Boton secundario */}
             <button
               onClick={onDismiss}
-              className="w-full px-6 py-3 rounded-2xl text-white/80 text-sm font-medium hover:text-white hover:bg-white/10 active:scale-[0.98] transition-all"
+              className="w-full px-6 py-3 rounded-xl text-white/80 text-sm font-medium hover:text-white hover:bg-white/10 active:scale-[0.98] transition-all"
             >
               Seguir con Plan Basico
             </button>

@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ChevronLeft, ChevronRight, AlertTriangle, RefreshCw, DollarSign } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertTriangle, RefreshCw, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ function buildCalendarDays(year: number, month: number, payablesByDay: Map<strin
 
 function _statusDot(status: Payable["status"]) {
   return status === "paid"
-    ? "bg-emerald-500"
+    ? "bg-[var(--accent-soft)]"
     : status === "overdue"
     ? "bg-red-500"
     : "bg-amber-400";
@@ -121,7 +122,7 @@ function _statusDot(status: Payable["status"]) {
 
 function statusBadge(status: Payable["status"]) {
   return status === "paid"
-    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+    ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
     : status === "overdue"
     ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
     : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
@@ -235,15 +236,15 @@ export default function PaymentCalendar() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Calendario de pagos</h3>
+          <CardTitle className="text-base font-semibold text-[var(--text-primary)]">Calendario de pagos</CardTitle>
           {isDemo && (
-            <span className="text-xs text-amber-600 dark:text-amber-400">Modo demo — datos simulados</span>
+            <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">Modo demo — datos simulados</span>
           )}
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
           aria-label="Actualizar"
         >
           <RefreshCw size={15} className={cn(loading && "animate-spin")} />
@@ -252,13 +253,13 @@ export default function PaymentCalendar() {
 
       {/* Alert: upcoming payments */}
       {upcomingAlerts.length > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700">
-          <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 border border-[var(--data-warning)] dark:border-[var(--data-warning)]">
+          <AlertTriangle size={16} className="text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            <p className="text-sm font-medium text-[var(--data-warning)] dark:text-[var(--data-warning)]">
               {upcomingAlerts.length} pago{upcomingAlerts.length !== 1 ? "s" : ""} en los proximos 3 dias
             </p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
               {upcomingAlerts.map((p) => p.supplierName).join(", ")}
             </p>
           </div>
@@ -268,15 +269,15 @@ export default function PaymentCalendar() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Esta semana", amount: thisWeekTotal, color: "text-[#00B4A6] dark:text-emerald-400" },
-          { label: "Proxima semana", amount: nextWeekTotal, color: "text-blue-600 dark:text-blue-400" },
-          { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-red-500" : "text-gray-400 dark:text-gray-500" },
+          { label: "Esta semana", amount: thisWeekTotal, color: "text-[#00B4A6] dark:text-[var(--data-success)]" },
+          { label: "Proxima semana", amount: nextWeekTotal, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+          { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]" },
         ].map(({ label, amount, color }) => (
           <div
             key={label}
-            className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-3"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3"
           >
-            <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">{label}</p>
             <p className={cn("text-base font-bold mt-0.5 tabular-nums", color)}>
               {fmtSoles(amount)}
             </p>
@@ -285,22 +286,22 @@ export default function PaymentCalendar() {
       </div>
 
       {/* Calendar */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         {/* Month nav */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
           <button
             onClick={prevMonth}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors"
             aria-label="Mes anterior"
           >
             <ChevronLeft size={16} />
           </button>
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)]">
             {MONTHS_ES[month]} {year}
           </h4>
           <button
             onClick={nextMonth}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors"
             aria-label="Mes siguiente"
           >
             <ChevronRight size={16} />
@@ -308,9 +309,9 @@ export default function PaymentCalendar() {
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
+        <div className="grid grid-cols-7 border-b border-[var(--rule-base)]">
           {DAYS_ES.map((d) => (
-            <div key={d} className="py-2 text-center text-xs font-medium text-gray-400 dark:text-gray-500">
+            <div key={d} className="py-2 text-center text-xs font-medium text-[var(--text-tertiary)]">
               {d}
             </div>
           ))}
@@ -319,7 +320,7 @@ export default function PaymentCalendar() {
         {/* Day cells */}
         {loading ? (
           <div className="py-16 flex items-center justify-center">
-            <RefreshCw size={20} className="animate-spin text-gray-300 dark:text-gray-600" />
+            <RefreshCw size={20} className="animate-spin text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
           </div>
         ) : (
           <div className="grid grid-cols-7">
@@ -335,11 +336,11 @@ export default function PaymentCalendar() {
                   key={i}
                   onClick={() => setSelectedDay(day.payables.length > 0 ? (isSelected ? null : day) : null)}
                   className={cn(
-                    "relative min-h-[64px] p-1.5 text-left border-b border-r border-gray-100 dark:border-gray-800 transition-colors",
+                    "relative min-h-[64px] p-1.5 text-left border-b border-r border-[var(--rule-base)] transition-colors",
                     !day.isCurrentMonth && "opacity-35",
                     day.isToday && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10",
                     isSelected && "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20",
-                    day.payables.length > 0 && "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    day.payables.length > 0 && "cursor-pointer hover:bg-[var(--surface-sunken)]/50"
                   )}
                 >
                   <span
@@ -347,7 +348,7 @@ export default function PaymentCalendar() {
                       "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full",
                       day.isToday
                         ? "bg-[#00B4A6] text-white"
-                        : "text-gray-700 dark:text-gray-300"
+                        : "text-[var(--text-secondary)]"
                     )}
                   >
                     {day.date.getDate()}
@@ -357,14 +358,14 @@ export default function PaymentCalendar() {
                   {day.payables.length > 0 && (
                     <div className="mt-1">
                       <div className="flex items-center gap-0.5 mb-0.5">
-                        {hasOverdue && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
-                        {hasPending && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                        {hasPaid && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                        {hasOverdue && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error)]" />}
+                        {hasPending && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-warning)]" />}
+                        {hasPaid && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)]" />}
                       </div>
                       <span
                         className={cn(
-                          "text-[10px] font-semibold tabular-nums",
-                          hasOverdue ? "text-red-500" : hasPending ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                          "text-[length:var(--ts-2xs)] font-semibold tabular-nums",
+                          hasOverdue ? "text-[var(--data-error)]" : hasPending ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]"
                         )}
                       >
                         {fmtSoles(totalDay)}
@@ -380,15 +381,15 @@ export default function PaymentCalendar() {
 
       {/* Selected day detail */}
       {selectedDay && selectedDay.payables.length > 0 && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign size={15} className="text-[#00B4A6]" />
-              <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+              <h4 className="text-sm font-semibold text-[var(--text-primary)]">
                 Pagos del {selectedDay.date.toLocaleDateString("es-PE", { day: "2-digit", month: "long" })}
               </h4>
             </div>
-            <span className="text-sm font-bold text-gray-800 dark:text-white">
+            <span className="text-sm font-bold text-[var(--text-primary)]">
               {fmtSoles(selectedDay.payables.reduce((s, p) => s + p.amount, 0))}
             </span>
           </div>
@@ -396,16 +397,16 @@ export default function PaymentCalendar() {
             {selectedDay.payables.map((p) => (
               <div key={p.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{p.supplierName}</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)] truncate">{p.supplierName}</p>
                   {p.description && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{p.description}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{p.description}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", statusBadge(p.status))}>
                     {statusLabel(p.status)}
                   </span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-white tabular-nums">
+                  <span className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">
                     {fmtSoles(p.amount)}
                   </span>
                 </div>
@@ -416,11 +417,11 @@ export default function PaymentCalendar() {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
+      <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
         {[
-          { color: "bg-emerald-500", label: "Pagado" },
-          { color: "bg-red-500",     label: "Vencido" },
-          { color: "bg-amber-400",   label: "Proximo" },
+          { color: "bg-[var(--accent-soft)]", label: "Pagado" },
+          { color: "bg-[var(--data-error)]",     label: "Vencido" },
+          { color: "bg-[var(--data-warning)]",   label: "Proximo" },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <span className={cn("w-2 h-2 rounded-full", color)} />

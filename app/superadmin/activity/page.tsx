@@ -75,13 +75,13 @@ export default function ActivityPage() {
     new Date(d).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" });
 
   const inputCls =
-    "bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40";
-  const selectCls = `appearance-none ${inputCls} pr-8 text-gray-700 dark:text-gray-300 cursor-pointer`;
+    "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+  const selectCls = `appearance-none ${inputCls} pr-8 text-[var(--text-secondary)] cursor-pointer`;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Log de actividad</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Log de actividad</h1>
         <p className="text-gray-500 text-sm mt-1">
           {pagination.total} registros — se actualiza automáticamente cada 30 s
         </p>
@@ -137,7 +137,7 @@ export default function ActivityPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
           {error}
           <button
             type="button"
@@ -150,7 +150,7 @@ export default function ActivityPage() {
       )}
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
         {loading ? (
           <div className="flex items-center justify-center gap-3 py-20 text-gray-400">
             <Loader2 className="w-5 h-5 animate-spin" /> Cargando actividad…
@@ -164,7 +164,7 @@ export default function ActivityPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+                <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider">
                   <th className="text-left px-5 py-3">Fecha</th>
                   <th className="text-left px-4 py-3">Usuario</th>
                   <th className="text-left px-4 py-3">Acción</th>
@@ -182,15 +182,15 @@ export default function ActivityPage() {
                     <td className="px-5 py-3 text-xs text-gray-400 whitespace-nowrap">
                       {fmtDate(log.createdAt)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                       {log.user}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-50 dark:bg-teal-900/30 text-[var(--accent)]">
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                       <span>{log.entity}</span>
                       {log.entityId && (
                         <span className="ml-1 font-mono text-gray-400 truncate max-w-24 inline-block align-bottom">
@@ -219,7 +219,7 @@ export default function ActivityPage() {
             type="button"
             onClick={() => void loadActivity(pagination.page - 1)}
             disabled={pagination.page <= 1 || loading}
-            className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             ← Anterior
           </button>
@@ -230,7 +230,7 @@ export default function ActivityPage() {
             type="button"
             onClick={() => void loadActivity(pagination.page + 1)}
             disabled={pagination.page >= pagination.pages || loading}
-            className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             Siguiente →
           </button>

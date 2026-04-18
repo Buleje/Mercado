@@ -1,7 +1,8 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from "react";
-import { AlertTriangle, TrendingUp, Search, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
+import { AlertTriangle, TrendingUp, Search, Loader2, RefreshCw, ShieldAlert } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -117,19 +118,19 @@ export default function MoneyLeakDetector() {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-[#00B4A6]" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Detector de Fugas de Dinero
-          </h2>
+          </SectionTitle>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           Actualizar
@@ -138,13 +139,13 @@ export default function MoneyLeakDetector() {
 
       {/* Resumen de alertas */}
       {!loading && leakCount > 0 && (
-        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-red-800 dark:text-red-300 text-sm">
+            <p className="font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
               {leakCount} {leakCount === 1 ? "categoria con fuga detectada" : "categorias con fuga detectadas"}
             </p>
-            <p className="text-sm text-red-700 dark:text-red-400 mt-0.5">
+            <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
               Gasto extra este mes:{" "}
               <span className="font-bold">{fmt(totalLeaks)}</span> por encima del promedio.
             </p>
@@ -153,7 +154,7 @@ export default function MoneyLeakDetector() {
       )}
 
       {!loading && leakCount === 0 && !error && (
-        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3 text-sm text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-2">
           <Search className="w-4 h-4" />
           Sin fugas detectadas — los gastos estan dentro del rango normal.
         </div>
@@ -161,7 +162,7 @@ export default function MoneyLeakDetector() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -169,7 +170,7 @@ export default function MoneyLeakDetector() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-10 text-gray-400 dark:text-gray-500">
+        <div className="flex items-center justify-center py-10 text-[var(--text-tertiary)]">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           Analizando gastos de los ultimos 3 meses...
         </div>
@@ -193,44 +194,44 @@ export default function MoneyLeakDetector() {
                 className={cn(
                   "rounded-xl border p-4",
                   cat.isLeak
-                    ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/5"
-                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    ? "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/5"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
                 )}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium text-sm text-[var(--text-primary)]">
                         {cat.category}
                       </span>
                       {cat.isLeak && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 px-2 py-0.5 rounded-full">
                           <TrendingUp className="w-3 h-3" />
                           +{cat.pctChange.toFixed(0)}%
                         </span>
                       )}
                       {!cat.isLeak && cat.pctChange > 0 && (
-                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                        <span className="text-xs text-[var(--text-tertiary)]">
                           +{cat.pctChange.toFixed(0)}%
                         </span>
                       )}
                       {cat.pctChange <= 0 && (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
                           {cat.pctChange.toFixed(0)}%
                         </span>
                       )}
                     </div>
                     {cat.isLeak && (
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                      <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-0.5">
                         {cat.category}: {fmt(cat.thisMonth)} (+{fmt(cat.diff)} vs promedio). Investiga.
                       </p>
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
                       {fmt(cat.thisMonth)}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       Prom: {fmt(cat.prevAvg)}
                     </p>
                   </div>
@@ -239,26 +240,26 @@ export default function MoneyLeakDetector() {
                 {/* Barras comparativas */}
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">
+                    <span className="text-xs text-[var(--text-tertiary)] w-16 shrink-0">
                       Este mes
                     </span>
-                    <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                    <div className="flex-1 h-3 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
                         className={cn(
-                          "h-full rounded-full transition-all duration-500",
-                          cat.isLeak ? "bg-red-500 dark:bg-red-600" : "bg-[#00B4A6] dark:bg-[#2dd4bf]"
+                          "h-full rounded-full transition-all duration-[var(--dur-slow)]",
+                          cat.isLeak ? "bg-[var(--data-error)] dark:bg-[var(--data-error)]" : "bg-[#00B4A6] dark:bg-[#2dd4bf]"
                         )}
                         style={{ width: `${barCurrent}%` }}
                       />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">
+                    <span className="text-xs text-[var(--text-tertiary)] w-16 shrink-0">
                       Promedio
                     </span>
-                    <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                    <div className="flex-1 h-3 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-500"
+                        className="h-full rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-[var(--dur-slow)]"
                         style={{ width: `${barAvg}%` }}
                       />
                     </div>

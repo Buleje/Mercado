@@ -20,7 +20,7 @@ export default function TableSkeleton({ rows = 5, cols = 4, className }: Props) 
       {Array.from({ length: rows }).map((_, r) => (
         <div key={r} className="flex gap-4">
           {Array.from({ length: cols }).map((_, c) => (
-            <div key={c} className={cn("h-3 bg-gray-100 dark:bg-gray-800 rounded", c === 0 ? "flex-[2]" : "flex-1")} />
+            <div key={c} className={cn("h-3 bg-[var(--surface-sunken)] rounded", c === 0 ? "flex-[2]" : "flex-1")} />
           ))}
         </div>
       ))}

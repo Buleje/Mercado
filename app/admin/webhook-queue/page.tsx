@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle } from "@buleje/design-system";
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,7 +11,7 @@ import {
   Clock,
   RotateCcw,
   ChevronLeft,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 interface QueueItem {
   id: string;
@@ -34,20 +35,20 @@ function fmt(dateStr: string | null) {
 function StatusBadge({ item }: { item: QueueItem }) {
   if (item.processedAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--data-success)]">
         <CheckCircle2 size={12} /> Procesado
       </span>
     );
   }
   if (item.attempts >= 6) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-medium text-[var(--data-error)]">
         <AlertTriangle size={12} /> Abandonado
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-medium text-[var(--data-warning)]">
       <Clock size={12} /> Pendiente ({item.attempts}/6)
     </span>
   );
@@ -115,25 +116,25 @@ export default function WebhookQueuePage() {
   const processed = items.filter((i) => !!i.processedAt);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-8">
+    <div className="min-h-screen bg-[var(--surface-canvas)] p-4 sm:p-8">
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <button
           onClick={() => router.push("/admin")}
-          className="rounded-lg p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+          className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
           aria-label="Volver al admin"
         >
           <ChevronLeft size={20} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Cola de Webhooks Stripe</h1>
-          <p className="text-sm text-gray-500">Eventos fallidos pendientes de reintento</p>
+          <PageTitle className="text-xl font-bold text-[var(--text-primary)]">Cola de Webhooks Stripe</PageTitle>
+          <p className="text-sm text-[var(--text-secondary)]">Eventos fallidos pendientes de reintento</p>
         </div>
         <div className="ml-auto flex gap-2">
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-gray-100 disabled:opacity-50 dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-[var(--text-tertiary)] transition-colors"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Actualizar
@@ -141,7 +142,7 @@ export default function WebhookQueuePage() {
           <button
             onClick={triggerReplay}
             disabled={replayLoading || pending.length === 0}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--data-info)] px-3 py-2 text-sm font-medium text-white hover:bg-[var(--data-info)] disabled:opacity-50 transition-colors"
           >
             <RotateCcw size={14} className={replayLoading ? "animate-spin" : ""} />
             Ejecutar replay ({pending.length})
@@ -151,7 +152,7 @@ export default function WebhookQueuePage() {
 
       {/* Replay result banner */}
       {replayResult && (
-        <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-300">
+        <div className="mb-4 rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success)]/30 p-3 text-sm text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:border-[var(--data-success)]/30 dark:text-[var(--data-success)]">
           Replay completado — <strong>{replayResult.replayed} procesados</strong>,{" "}
           {replayResult.failed} fallidos
         </div>
@@ -159,7 +160,7 @@ export default function WebhookQueuePage() {
 
       {/* Error banner */}
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 dark:bg-red-950 dark:border-red-800 dark:text-red-300">
+        <div className="mb-4 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error)] p-3 text-sm text-[var(--data-error)] dark:bg-red-950 dark:border-[var(--data-error)] dark:text-[var(--data-error)]">
           {error}
         </div>
       )}
@@ -173,9 +174,9 @@ export default function WebhookQueuePage() {
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+            className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900"
           >
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">{label}</p>
             <p
               className={`mt-1 text-2xl font-bold text-${color}-600 dark:text-${color}-400`}
             >
@@ -187,25 +188,25 @@ export default function WebhookQueuePage() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-12 text-gray-400">
+        <div className="flex justify-center py-12 text-[var(--text-tertiary)]">
           <RefreshCw size={24} className="animate-spin" />
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 py-16 text-center">
-          <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500" />
-          <p className="text-sm text-gray-500">No hay eventos en la cola</p>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 py-16 text-center">
+          <CheckCircle2 size={32} className="mx-auto mb-2 text-[var(--data-success)]" />
+          <p className="text-sm text-[var(--text-secondary)]">No hay eventos en la cola</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800/60">
+              <thead className="bg-[var(--surface-sunken)]/60">
                 <tr>
                   {["Estado", "Tipo de evento", "Intentos", "Próximo retry", "Creado", "Último error", ""].map(
                     (h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-tertiary)]"
                       >
                         {h}
                       </th>
@@ -215,23 +216,23 @@ export default function WebhookQueuePage() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                  <tr key={item.id} className="hover:bg-[var(--surface-sunken)]/40">
                     <td className="px-4 py-3">
                       <StatusBadge item={item} />
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                       {item.eventType}
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-3 text-center text-[var(--text-secondary)]">
                       {item.attempts}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                      {item.processedAt ? <span className="text-green-600">{fmt(item.processedAt)}</span> : fmt(item.nextRetryAt)}
+                    <td className="px-4 py-3 text-[var(--text-tertiary)]">
+                      {item.processedAt ? <span className="text-[var(--data-success)]">{fmt(item.processedAt)}</span> : fmt(item.nextRetryAt)}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    <td className="px-4 py-3 text-[var(--text-tertiary)]">
                       {fmt(item.createdAt)}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3 text-xs text-red-500">
+                    <td className="max-w-xs truncate px-4 py-3 text-xs text-[var(--data-error)]">
                       {item.lastError ?? "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -239,7 +240,7 @@ export default function WebhookQueuePage() {
                         <button
                           onClick={() => dismissItem(item.id)}
                           disabled={deletingId === item.id}
-                          className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                          className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] disabled:opacity-50 transition-colors"
                           aria-label="Descartar evento"
                           title="Descartar evento de la cola"
                         >

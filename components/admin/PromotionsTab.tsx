@@ -7,10 +7,11 @@ import {
   Plus, Trash2, X, Check, Search, Loader2, AlertTriangle,
   MessageCircle, ExternalLink, Send, Calendar, TrendingUp,
   Percent, Users, User, Phone, Target, Play, Pause, Clock,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
+import { CardTitle, LoadingState, PrimaryButton, SectionTitle } from "@buleje/design-system";
 
 function formatDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -21,15 +22,15 @@ function safeMdToHtml(md: string): string {
   return md.split("\n").map(line => {
     const safe = escapeHtml(line);
     const rich = safe
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900 dark:text-foreground">$1</strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-[var(--text-primary)] dark:text-foreground">$1</strong>')
       .replace(/\*(.+?)\*/g, "<em>$1</em>");
-    if (line.startsWith("### ")) return `<h3 class="text-sm font-bold text-gray-800 dark:text-foreground mt-3 mb-0.5">${rich.slice(4)}</h3>`;
-    if (line.startsWith("## ")) return `<h2 class="text-base font-bold text-gray-900 dark:text-foreground mt-4 mb-1 pb-1 border-b border-gray-100 dark:border-card-border">${rich.slice(3)}</h2>`;
-    if (line.startsWith("# ")) return `<h1 class="text-lg font-extrabold text-gray-900 dark:text-foreground mt-4 mb-2">${rich.slice(2)}</h1>`;
-    if (/^[-*] /.test(line)) return `<li class="ml-5 list-disc text-gray-700 dark:text-foreground leading-relaxed text-sm">${rich.slice(2)}</li>`;
-    if (/^\d+\. /.test(line)) return `<li class="ml-5 list-decimal text-gray-700 dark:text-foreground leading-relaxed text-sm">${rich.replace(/^\d+\.\s/, "")}</li>`;
+    if (line.startsWith("### ")) return `<h3 class="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mt-3 mb-0.5">${rich.slice(4)}</h3>`;
+    if (line.startsWith("## ")) return `<h2 class="text-base font-bold text-[var(--text-primary)] dark:text-foreground mt-4 mb-1 pb-1 border-b border-[var(--rule-soft)] dark:border-card-border">${rich.slice(3)}</h2>`;
+    if (line.startsWith("# ")) return `<h1 class="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mt-4 mb-2">${rich.slice(2)}</h1>`;
+    if (/^[-*] /.test(line)) return `<li class="ml-5 list-disc text-[var(--text-primary)] dark:text-foreground leading-relaxed text-sm">${rich.slice(2)}</li>`;
+    if (/^\d+\. /.test(line)) return `<li class="ml-5 list-decimal text-[var(--text-primary)] dark:text-foreground leading-relaxed text-sm">${rich.replace(/^\d+\.\s/, "")}</li>`;
     if (line === "") return '<div class="h-2"></div>';
-    return `<p class="text-gray-700 dark:text-foreground leading-relaxed text-sm">${rich}</p>`;
+    return `<p class="text-[var(--text-primary)] dark:text-foreground leading-relaxed text-sm">${rich}</p>`;
   }).join("");
 }
 
@@ -428,28 +429,28 @@ export default function PromotionsTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* ── Mejora 13: Resumen de rendimiento ────────────────────────────── */}
       {promos.length > 0 && (
-        <div className="bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-3 sm:p-6">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600" />
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-[var(--data-success)]" />
             Rendimiento de Promociones
-          </h3>
+          </CardTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Activas</p>
-              <p className="text-lg font-extrabold text-emerald-600">{active.length}</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Activas</p>
+              <p className="text-lg font-extrabold text-[var(--data-success)]">{active.length}</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Total usos est.</p>
-              <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{promoMetrics.reduce((s, p) => s + p.estimatedUses, 0)}</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Total usos est.</p>
+              <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{promoMetrics.reduce((s, p) => s + p.estimatedUses, 0)}</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Revenue est.</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Revenue est.</p>
               <p className="text-lg font-extrabold text-primary">S/{promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0).toFixed(0)}</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Mas popular</p>
-              <p className="text-sm font-extrabold text-gray-900 dark:text-foreground truncate">{topPromo?.name || "-"}</p>
-              <p className="text-[10px] text-gray-400">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Mas popular</p>
+              <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground truncate">{topPromo?.name || "-"}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
             </div>
           </div>
           {/* Badges de rendimiento inline por promo */}
@@ -457,8 +458,8 @@ export default function PromotionsTab() {
             {promoMetrics.slice(0, 6).map(p => (
               <span key={p.id} className={cn(
                 "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
-                p.estimatedUses > 10 ? "bg-emerald-100 text-emerald-700" :
-                p.estimatedUses < 3 ? "bg-gray-100 text-gray-500" : "bg-amber-100 text-amber-700"
+                p.estimatedUses > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" :
+                p.estimatedUses < 3 ? "bg-gray-100 text-[var(--text-secondary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
               )}>
                 {p.estimatedUses > 10 ? "🔥" : p.estimatedUses < 3 ? "💤" : "📊"} {p.name}: ~{p.estimatedUses} usos
               </span>
@@ -468,27 +469,28 @@ export default function PromotionsTab() {
       )}
 
       {/* ── Campañas Programadas ───────────────────────────────────────────── */}
-      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-3 sm:p-6">
+      <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div>
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Campañas Programadas</h3>
-              <p className="text-xs text-gray-500 dark:text-muted">Automatiza tus campañas de marketing</p>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Campañas Programadas</CardTitle>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Automatiza tus campañas de marketing</p>
             </div>
           </div>
-          <button
+          <PrimaryButton
             onClick={openCreateCampaign}
-            className="flex flex-wrap items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:brightness-110 transition shadow-sm"
+            size="md"
+            leftIcon={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4" /> Nueva Campaña
-          </button>
+            Nueva Campaña
+          </PrimaryButton>
         </div>
 
         {campaigns.length === 0 ? (
-          <div className="text-center py-8 text-gray-400 dark:text-muted">
+          <div className="text-center py-8 text-[var(--text-tertiary)] dark:text-muted">
             <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No hay campañas programadas</p>
           </div>
@@ -496,33 +498,33 @@ export default function PromotionsTab() {
           <div className="space-y-2">
             {campaigns.map(c => {
               const statusConfig = {
-                scheduled: { label: "Programada", color: "bg-gray-100 text-gray-700", icon: Clock },
-                active: { label: "Activa", color: "bg-green-100 text-green-700", icon: Play },
-                completed: { label: "Finalizada", color: "bg-blue-100 text-blue-700", icon: Check },
-                paused: { label: "Pausada", color: "bg-amber-100 text-amber-700", icon: Pause },
+                scheduled: { label: "Programada", color: "bg-gray-100 text-[var(--text-primary)]", icon: Clock },
+                active: { label: "Activa", color: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: Play },
+                completed: { label: "Finalizada", color: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: Check },
+                paused: { label: "Pausada", color: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", icon: Pause },
               };
               const config = statusConfig[c.status];
               const StatusIcon = config.icon;
 
               return (
-                <div key={c.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+                <div key={c.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <div className="flex flex-wrap items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-bold text-gray-900 dark:text-foreground">{c.name}</span>
+                        <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{c.name}</span>
                         <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", config.color)}>
                           <StatusIcon className="h-3 w-3" /> {config.label}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)]">
                           <Target className="h-3 w-3" /> {c.targetSegment.charAt(0).toUpperCase() + c.targetSegment.slice(1)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-muted mb-2">{c.description || "Sin descripción"}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-400 dark:text-muted">
+                      <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-2">{c.description || "Sin descripción"}</p>
+                      <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
                         <span>Inicio: {new Date(c.startDate).toLocaleString("es-PE")}</span>
                         {c.endDate && <span>Fin: {new Date(c.endDate).toLocaleString("es-PE")}</span>}
-                        {c.discountCode && <span className="font-mono font-bold text-emerald-600">Código: {c.discountCode}</span>}
-                        {c.autoSend && <span className="text-green-600">📤 Auto-envío</span>}
+                        {c.discountCode && <span className="font-mono font-bold text-[var(--data-success)]">Código: {c.discountCode}</span>}
+                        {c.autoSend && <span className="text-[var(--data-success)]">📤 Auto-envío</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -530,7 +532,7 @@ export default function PromotionsTab() {
                         <>
                           <button
                             onClick={() => sendCampaignNow(c)}
-                            className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-green-500 hover:bg-green-50 transition-colors"
+                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                             title="Enviar ahora"
                           >
                             <Send className="h-4 w-4" />
@@ -538,7 +540,7 @@ export default function PromotionsTab() {
                           <button
                             onClick={() => toggleCampaignStatus(c.id)}
                             className={cn("p-1.5 rounded-lg transition-colors",
-                              c.status === "paused" ? "text-green-500 hover:bg-green-50" : "text-amber-500 hover:bg-amber-50"
+                              c.status === "paused" ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "text-[var(--data-warning)] hover:bg-[var(--data-warning-50)]"
                             )}
                             title={c.status === "paused" ? "Reanudar" : "Pausar"}
                           >
@@ -548,14 +550,14 @@ export default function PromotionsTab() {
                       )}
                       <button
                         onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                         title="Editar"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => deleteCampaign(c.id)}
-                        className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -572,26 +574,26 @@ export default function PromotionsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Promociones</h2>
-          <p className="text-sm text-gray-500 dark:text-muted">{active.length} activas · {inactive.length} inactivas</p>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Promociones</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{active.length} activas · {inactive.length} inactivas</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white hover:brightness-110 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all "
             style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
           >
             <MessageCircle className="h-4 w-4" /> Sugerencias IA
           </button>
           <button
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-[var(--data-warning)] hover:bg-[var(--data-warning)] transition-colors "
           >
             <Calendar className="h-4 w-4" /> Plantillas
           </button>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors "
           >
             <Plus className="h-4 w-4" /> Nueva
           </button>
@@ -599,19 +601,19 @@ export default function PromotionsTab() {
       </div>
 
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
+        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">Cargando…</div>
       ) : promos.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
           No hay promociones. Crea una o pide sugerencias a la IA.
         </div>
       ) : (
         <div className="space-y-3">
           {promos.map(p => (
-            <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
+            <div key={p.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
               <div className="flex">
                 {/* Accent strip */}
                 <div className={cn("w-1.5 shrink-0",
-                  p.active ? (p.discountPercent > 0 ? "bg-red-400" : "bg-emerald-400") : "bg-gray-200"
+                  p.active ? (p.discountPercent > 0 ? "bg-[var(--data-error)]" : "bg-[var(--accent-soft)]") : "bg-gray-200"
                 )} />
                 <div className="flex-1">
                   <div
@@ -627,26 +629,26 @@ export default function PromotionsTab() {
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-gray-900 dark:text-foreground">{p.name}</span>
+                          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
                           <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 dark:bg-accent text-gray-500 dark:text-muted"
+                            p.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                           )}>
                             {p.active ? "Activa" : "Inactiva"}
                           </span>
                           {p.discountPercent > 0 && (
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]">
                               {p.discountPercent}% OFF
                             </span>
                           )}
                           <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.targetType === "all" ? "bg-blue-100 text-blue-700" :
-                            p.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
+                            p.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" :
+                            p.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
                           )}>
                             {p.targetType === "all" ? "Todos" : p.targetType === "group" ? "Grupo" : "Individual"}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-muted mt-0.5 line-clamp-2">{p.description}</p>
-                        <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{p.description}</p>
+                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
                           Creada: {formatDate(p.createdAt)}
                           {p.expiresAt && <> · Expira: {formatDate(p.expiresAt)}</>}
                         </p>
@@ -655,28 +657,28 @@ export default function PromotionsTab() {
                       <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => openSendModal(p)}
-                          className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-green-500 hover:bg-green-50 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                           title="Enviar por WhatsApp"
                         >
                           <Send className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(p)}
-                          className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                           title="Editar"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => toggleActive(p)}
-                          className={cn("p-1.5 rounded-lg transition-colors", p.active ? "text-emerald-500 hover:bg-emerald-50" : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}
+                          className={cn("p-1.5 rounded-lg transition-colors", p.active ? "text-[var(--data-success)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}
                           title={p.active ? "Desactivar" : "Activar"}
                         >
                           <Check className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -694,44 +696,44 @@ export default function PromotionsTab() {
       {/* ── Create/Edit Modal ─────────────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Nombre *</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
                 <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
               </div>
               {/* Description */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descripción</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
               </div>
               {/* Discount + Min purchase */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descuento %</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descuento %</label>
                   <input type="number" min={0} max={100} value={form.discountPercent} onChange={e => setForm(f => ({ ...f, discountPercent: Number(e.target.value) }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Compra mín. (S/)</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Compra mín. (S/)</label>
                   <input type="number" min={0} step={0.01} value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Opcional" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="Opcional" />
                 </div>
               </div>
               {/* Image URL */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">URL de imagen</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">URL de imagen</label>
                 <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="https://..." />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="https://..." />
                 {form.imageUrl && (
                   <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
                     <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
@@ -740,14 +742,14 @@ export default function PromotionsTab() {
               </div>
               {/* WhatsApp message */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mensaje WhatsApp</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mensaje WhatsApp</label>
                 <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none"
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none"
                   placeholder="🎉 *Promoción especial*&#10;&#10;Aprovecha el descuento…" />
               </div>
               {/* Target type */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Público objetivo</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Público objetivo</label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {[
                     { v: "all", l: "Todos", icon: Users },
@@ -757,7 +759,7 @@ export default function PromotionsTab() {
                     <button key={v} type="button"
                       onClick={() => setForm(f => ({ ...f, targetType: v }))}
                       className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all",
-                        form.targetType === v ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
+                        form.targetType === v ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                       )}>
                       <Icon className="h-4 w-4" /> {l}
                     </button>
@@ -767,13 +769,13 @@ export default function PromotionsTab() {
               {/* Customer selection for group/individual */}
               {form.targetType !== "all" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Seleccionar clientes</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar clientes</label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
                     <input type="text" placeholder="Buscar cliente…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                   </div>
-                  <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 dark:border-card-border divide-y divide-gray-100">
+                  <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border divide-y divide-gray-100">
                     {filteredFormCustomers.map(c => (
                       <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer text-sm">
                         <input type="checkbox" checked={selectedPhones.has(c.phone)}
@@ -784,9 +786,9 @@ export default function PromotionsTab() {
                               return next;
                             });
                           }}
-                          className="rounded border-gray-300 text-primary focus:ring-primary" />
-                        <span className="font-medium text-gray-900 dark:text-foreground">{c.name}</span>
-                        <span className="text-xs text-gray-400 dark:text-muted font-mono">{c.phone}</span>
+                          className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
+                        <span className="font-medium text-[var(--text-primary)] dark:text-foreground">{c.name}</span>
+                        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{c.phone}</span>
                       </label>
                     ))}
                   </div>
@@ -797,15 +799,15 @@ export default function PromotionsTab() {
               )}
               {/* Expiry */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha de expiración</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha de expiración</label>
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3 shrink-0">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
                 {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear promoción"}
               </button>
             </div>
@@ -816,10 +818,10 @@ export default function PromotionsTab() {
       {/* ── Promo Detail Modal ────────────────────────────────────────────── */}
       {detailPromo && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setDetailPromo(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{detailPromo.name}</h3>
-              <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">{detailPromo.name}</CardTitle>
+              <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -831,43 +833,43 @@ export default function PromotionsTab() {
               )}
               <div className="flex flex-wrap gap-2">
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 dark:bg-accent text-gray-500 dark:text-muted"
+                  detailPromo.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                 )}>{detailPromo.active ? "Activa" : "Inactiva"}</span>
                 {detailPromo.discountPercent > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]">
                     <Percent className="h-3 w-3" /> {detailPromo.discountPercent}% OFF
                   </span>
                 )}
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.targetType === "all" ? "bg-blue-100 text-blue-700" : detailPromo.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
+                  detailPromo.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Descripción</p>
-                  <p className="text-sm text-gray-700 dark:text-foreground mt-1">{detailPromo.description}</p>
+                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Descripción</p>
+                  <p className="text-sm text-[var(--text-primary)] dark:text-foreground mt-1">{detailPromo.description}</p>
                 </div>
               )}
               {detailPromo.minPurchase && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Compra mínima</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground mt-1">S/{detailPromo.minPurchase}</p>
+                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Compra mínima</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mt-1">S/{detailPromo.minPurchase}</p>
                 </div>
               )}
               {detailPromo.message && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Mensaje WhatsApp</p>
-                  <div className="bg-green-50 rounded-xl p-3 mt-1 text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap border border-green-100">{detailPromo.message}</div>
+                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Mensaje WhatsApp</p>
+                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap border border-[var(--data-success)]/30">{detailPromo.message}</div>
                 </div>
               )}
               {detailPromo.targetPhones && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Clientes objetivo</p>
+                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Clientes objetivo</p>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {detailPromo.targetPhones.split(",").filter(Boolean).map(ph => {
                       const cust = customers.find(c => c.phone === ph);
                       return (
-                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-gray-100 dark:bg-accent text-gray-700 dark:text-foreground font-medium">
+                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-gray-100 dark:bg-accent text-[var(--text-primary)] dark:text-foreground font-medium">
                           <Phone className="h-3 w-3" /> {cust ? cust.name : ph}
                         </span>
                       );
@@ -875,22 +877,22 @@ export default function PromotionsTab() {
                   </div>
                 </div>
               )}
-              <div className="flex flex-wrap gap-3 text-xs text-gray-400 dark:text-muted">
+              <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
                 <span>ID: {detailPromo.id}</span>
                 <span>Creada: {formatDate(detailPromo.createdAt)}</span>
                 {detailPromo.expiresAt && <span>Expira: {formatDate(detailPromo.expiresAt)}</span>}
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
-                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors"
+                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors"
               >
                 <Send className="h-4 w-4" /> Enviar por WhatsApp
               </button>
               <button
                 onClick={() => { setDetailPromo(null); openEdit(detailPromo); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
               >
                 Editar
               </button>
@@ -902,34 +904,34 @@ export default function PromotionsTab() {
       {/* ── WhatsApp Send Modal ───────────────────────────────────────────── */}
       {sendPromo && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setSendPromo(null)}>
-          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Enviar por WhatsApp</h3>
-                <p className="text-xs text-gray-500 dark:text-muted">{sendPromo.name}</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Enviar por WhatsApp</CardTitle>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{sendPromo.name}</p>
               </div>
-              <button onClick={() => setSendPromo(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setSendPromo(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             {/* Message preview */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0">
-              <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-1">Vista previa del mensaje</p>
-              <div className="bg-green-50 rounded-xl p-3 text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap border border-green-100 max-h-24 overflow-y-auto">
+            <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+              <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Vista previa del mensaje</p>
+              <div className="bg-[var(--accent-soft)] rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap border border-[var(--data-success)]/30 max-h-24 overflow-y-auto">
                 {sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`}
               </div>
             </div>
             {/* Customer selection */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0 flex flex-wrap items-center gap-2">
+            <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0 flex flex-wrap items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
                 <input type="text" placeholder="Buscar cliente…" value={sendSearch} onChange={e => setSendSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
               </div>
               <button onClick={() => setSendPhones(new Set(customers.map(c => c.phone)))}
                 className="text-xs font-semibold text-primary hover:underline whitespace-nowrap">Todos</button>
               <button onClick={() => setSendPhones(new Set())}
-                className="text-xs font-semibold text-gray-400 dark:text-muted hover:underline whitespace-nowrap">Ninguno</button>
+                className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted hover:underline whitespace-nowrap">Ninguno</button>
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
               {filteredSendCustomers.map(c => {
@@ -944,17 +946,17 @@ export default function PromotionsTab() {
                           return next;
                         });
                       }}
-                      className="rounded border-gray-300 text-primary focus:ring-primary" />
+                      className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{c.name}</p>
-                      <p className="text-xs text-gray-400 dark:text-muted font-mono">{c.phone}</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{c.phone}</p>
                     </div>
                     <button
                       onClick={() => {
                         const msg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`;
                         sendWhatsApp(c.phone, msg);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1"
                     >
                       <Send className="h-3 w-3" /> Enviar
                     </button>
@@ -962,12 +964,12 @@ export default function PromotionsTab() {
                 );
               })}
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border shrink-0">
-              <p className="text-xs text-gray-500 dark:text-muted mb-3">{sendPhones.size} cliente{sendPhones.size !== 1 ? "s" : ""} seleccionado{sendPhones.size !== 1 ? "s" : ""}. Cada envío abrirá WhatsApp Web/App.</p>
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">{sendPhones.size} cliente{sendPhones.size !== 1 ? "s" : ""} seleccionado{sendPhones.size !== 1 ? "s" : ""}. Cada envío abrirá WhatsApp Web/App.</p>
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>
@@ -979,28 +981,25 @@ export default function PromotionsTab() {
       {/* ── AI Suggestions Modal ──────────────────────────────────────────── */}
       {showAiModal && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowAiModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
                   <MessageCircle className="h-4 w-4 text-white" />
                 </div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Sugerencias IA</h3>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Sugerencias IA</CardTitle>
               </div>
-              <button onClick={() => setShowAiModal(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowAiModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4">
               {loadingAi ? (
-                <div className="h-40 flex flex-col items-center justify-center text-gray-400 dark:text-muted">
-                  <Loader2 className="h-6 w-6 animate-spin mb-3" />
-                  <p className="text-sm font-semibold">Analizando datos de clientes y ventas…</p>
-                </div>
+                <LoadingState message="Analizando datos de clientes y ventas..." />
               ) : aiSuggestions ? (
                 <div className="space-y-0.5" dangerouslySetInnerHTML={{ __html: safeMdToHtml(aiSuggestions) }} />
               ) : (
-                <p className="text-sm text-gray-400 dark:text-muted text-center py-10">No hay sugerencias disponibles.</p>
+                <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-10">No hay sugerencias disponibles.</p>
               )}
             </div>
           </div>
@@ -1010,19 +1009,19 @@ export default function PromotionsTab() {
       {/* ── Delete Confirmation ───────────────────────────────────────────── */}
       {confirmDeleteId && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+              <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
               </div>
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">¿Eliminar promoción?</h3>
-                <p className="text-sm text-gray-500 dark:text-muted">Esta acción no se puede deshacer.</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">¿Eliminar promoción?</CardTitle>
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">Sí, eliminar</button>
+              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors">Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -1031,13 +1030,13 @@ export default function PromotionsTab() {
       {/* ── Campaign Templates Modal ── */}
       {showTemplates && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplates(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b dark:border-card-border shrink-0">
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Plantillas de Campaña</h3>
-                <p className="text-xs text-gray-500 dark:text-muted">Selecciona una plantilla y personalízala</p>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Plantillas de Campaña</CardTitle>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
               </div>
-              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1046,13 +1045,13 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning)]/10 hover:border-[var(--data-warning)] dark:hover:border-[var(--data-warning)] transition-all text-left"
                 >
                   <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-foreground">{tpl.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-muted">{tpl.description}</p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{tpl.name}</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{tpl.description}</p>
+                    <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
                   </div>
                 </button>
               ))}
@@ -1064,31 +1063,31 @@ export default function PromotionsTab() {
       {/* ── Campaign Form Modal ───────────────────────────────────────────── */}
       {showCampaignForm && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowCampaignForm(false)}>
-          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</h3>
-              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
+              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Nombre de campaña *</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre de campaña *</label>
                 <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
               </div>
               {/* Description */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descripción</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
                 <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
               </div>
               {/* Target Segment */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Segmento objetivo *</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Segmento objetivo *</label>
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
                   <option value="all">Todos</option>
                   <option value="champions">Champions</option>
                   <option value="loyal">Loyal</option>
@@ -1101,46 +1100,51 @@ export default function PromotionsTab() {
               {/* Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora inicio *</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha/hora inicio *</label>
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora fin</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha/hora fin</label>
                   <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
                 </div>
               </div>
               {/* Message Template */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mensaje con placeholders</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mensaje con placeholders</label>
                 <textarea value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none font-mono"
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none font-mono"
                   placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
-                <p className="text-xs text-gray-400 dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
               </div>
               {/* Discount Code */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Código de descuento</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Código de descuento</label>
                 <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
               </div>
               {/* Auto-send toggle */}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
                 <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}
-                  className="rounded border-gray-300 text-primary focus:ring-primary" />
-                <label htmlFor="autoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
+                  className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
+                <label htmlFor="autoSend" className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground cursor-pointer flex-1">
                   Enviar automáticamente al inicio de la campaña
-                  <span className="block text-xs text-gray-400 dark:text-muted font-normal">Las notificaciones se enviarán por WhatsApp al segmento seleccionado</span>
+                  <span className="block text-xs text-[var(--text-tertiary)] dark:text-muted font-normal">Las notificaciones se enviarán por WhatsApp al segmento seleccionado</span>
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowCampaignForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={saveCampaign} disabled={savingCampaign || !campaignForm.name.trim() || !campaignForm.startDate}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:brightness-110 transition disabled:opacity-50">
-                {savingCampaign ? "Guardando…" : editingCampaignId ? "Guardar cambios" : "Crear campaña"}
-              </button>
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3 shrink-0">
+              <PrimaryButton variant="secondary" onClick={() => setShowCampaignForm(false)} className="flex-1">Cancelar</PrimaryButton>
+              <PrimaryButton
+                variant="primary"
+                onClick={saveCampaign}
+                disabled={!campaignForm.name.trim() || !campaignForm.startDate}
+                loading={savingCampaign}
+                className="flex-1"
+              >
+                {savingCampaign ? "Guardando" : editingCampaignId ? "Guardar cambios" : "Crear campaña"}
+              </PrimaryButton>
             </div>
           </div>
         </div>

@@ -28,8 +28,13 @@ import {
   ArrowUpDown,
   Gauge,
   Search,
+  Repeat,
+  Gift,
+  HeartHandshake,
+  Radio,
+  Store as StoreIcon,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import ModuleTooltip, { useModuleTooltip } from "@/components/admin/ModuleTooltip";
@@ -60,12 +65,12 @@ const GROUP_ICONS: Record<ModuleGroup, LucideIcon> = {
 };
 
 const GROUP_COLORS: Record<ModuleGroup, { icon: string; bg: string; border: string }> = {
-  operaciones: { icon: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", border: "border-blue-200 dark:border-blue-800/40" },
-  gestion:     { icon: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800/40" },
-  finanzas:    { icon: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/40" },
-  documentos:  { icon: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-900/20", border: "border-purple-200 dark:border-purple-800/40" },
-  inteligencia:{ icon: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-900/20", border: "border-pink-200 dark:border-pink-800/40" },
-  config:      { icon: "text-gray-500", bg: "bg-gray-100 dark:bg-gray-800/50", border: "border-gray-200 dark:border-gray-700/50" },
+  operaciones: { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  gestion:     { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  finanzas:    { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  documentos:  { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  inteligencia:{ icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  config:      { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
 };
 
 const GROUP_ORDER: ModuleGroup[] = ["operaciones", "gestion", "finanzas", "documentos", "inteligencia"];
@@ -102,19 +107,7 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "alertas", label: "Alertas" },
     ],
   },
-  {
-    id: "ventas-caja",
-    label: "Ventas & Caja",
-    icon: ShoppingCart,
-    group: "operaciones",
-    tabs: [
-      { id: "pos", label: "Punto de venta" },
-      { id: "caja-registradora", label: "Caja" },
-      { id: "arqueo", label: "Arqueo de caja" },
-      { id: "pedidos", label: "Pedidos" },
-      { id: "cuentas-cobrar", label: "Me deben (fiao)" },
-    ],
-  },
+  // ventas-caja removido — funcionalidad cubierta por pedidos + fiados
   {
     id: "inventario",
     label: "Inventario",
@@ -213,6 +206,44 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
     group: "operaciones",
     tabs: [
       { id: "turnos", label: "Turnos" },
+    ],
+  },
+  // ── ENRICH-5: Marketplace/venta visible ──────────────────────────────
+  // Módulos bridge desde el marketplace (Bodega al Mes, Gift Cards, Socio, Lives).
+  {
+    id: "subscriptions",
+    label: "Bodega al Mes",
+    icon: Repeat,
+    group: "operaciones",
+    tabs: [
+      { id: "subscriptions", label: "Suscripciones" },
+    ],
+  },
+  {
+    id: "gift-cards-admin",
+    label: "Gift Cards",
+    icon: Gift,
+    group: "operaciones",
+    tabs: [
+      { id: "gift-cards-admin", label: "Gift Cards" },
+    ],
+  },
+  {
+    id: "socio-members",
+    label: "Socio Buleje",
+    icon: HeartHandshake,
+    group: "operaciones",
+    tabs: [
+      { id: "socio-members", label: "Miembros" },
+    ],
+  },
+  {
+    id: "lives-admin",
+    label: "En Vivo",
+    icon: Radio,
+    group: "operaciones",
+    tabs: [
+      { id: "lives-admin", label: "Transmisiones" },
     ],
   },
   // ── Documentos ──
@@ -357,15 +388,15 @@ function ModuleItem({
         onClick={handleClick}
         title={collapsed ? module.label : undefined}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-[var(--dur-base)] group relative",
           isActive
-            ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
-            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+            : "text-[var(--text-secondary)] hover:bg-gray-100"
         )}
       >
         {/* Active indicator bar */}
         {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#00B4A6] rounded-r-full" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--accent)] rounded-r-full" />
         )}
 
         <Icon
@@ -373,8 +404,8 @@ function ModuleItem({
             "shrink-0 transition-colors",
             collapsed ? "h-5 w-5" : "h-4.5 w-4.5",
             isActive
-              ? "text-[#00B4A6] dark:text-emerald-400"
-              : "text-gray-500 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+              ? "text-[var(--accent)]"
+              : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
           )}
         />
 
@@ -389,11 +420,11 @@ function ModuleItem({
             {/* Mejora 19: Badge de pendientes para documentos */}
             {badgeCount != null && badgeCount > 0 && (
               <span className={cn(
-                "ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-[10px] font-bold leading-none",
-                module.id === "pedidos" ? "bg-red-500 text-white" :
-                module.id === "inventario" ? "bg-amber-500 text-white" :
-                module.id === "fiados" ? "bg-orange-500 text-white" :
-                module.id === "compras" ? "bg-blue-500 text-white" :
+                "ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold leading-none",
+                module.id === "pedidos" ? "bg-[var(--data-error)] text-white" :
+                module.id === "inventario" ? "bg-[var(--data-warning)] text-white" :
+                module.id === "fiados" ? "bg-[var(--data-warning)] text-white" :
+                module.id === "compras" ? "bg-[var(--accent)] text-white" :
                 "bg-gray-500 text-white"
               )}>
                 {badgeCount > 99 ? "99+" : badgeCount}
@@ -407,8 +438,8 @@ function ModuleItem({
                   className={cn(
                     "p-0.5 rounded transition-colors",
                     canMoveUp
-                      ? "text-gray-500 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10"
-                      : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                      ? "text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                      : "text-[var(--text-tertiary)] cursor-not-allowed"
                   )}
                   title="Subir"
                 >
@@ -420,8 +451,8 @@ function ModuleItem({
                   className={cn(
                     "p-0.5 rounded transition-colors",
                     canMoveDown
-                      ? "text-gray-500 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10"
-                      : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                      ? "text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                      : "text-[var(--text-tertiary)] cursor-not-allowed"
                   )}
                   title="Bajar"
                 >
@@ -434,7 +465,7 @@ function ModuleItem({
                 animate={{ rotate: isActive ? 90 : 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
               </m.div>
             )}
           </>
@@ -453,7 +484,7 @@ function ModuleItem({
               transition={{ duration: 0.22, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="ml-6 mt-0.5 mb-1 border-l border-gray-200 dark:border-white/10 pl-3 space-y-0.5">
+              <div className="ml-6 mt-0.5 mb-1 border-l border-[var(--rule-base)] pl-3 space-y-0.5">
                 {module.tabs.map((tab) => {
                   const isTabActive = activeTab === tab.id;
                   return (
@@ -461,18 +492,18 @@ function ModuleItem({
                       key={tab.id}
                       onClick={() => onTabChange(tab.id)}
                       className={cn(
-                        "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-150",
+                        "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-[var(--dur-fast)]",
                         isTabActive
-                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 font-semibold"
-                          : "text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                          ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-100"
                       )}
                     >
                       <span
                         className={cn(
                           "shrink-0 h-1.5 w-1.5 rounded-full",
                           isTabActive
-                            ? "bg-[#00B4A6] dark:bg-emerald-400"
-                            : "bg-gray-300 dark:bg-gray-600"
+                            ? "bg-[var(--accent)]"
+                            : "bg-gray-300"
                         )}
                       />
                       <span className="truncate" title={tab.label}>{tab.label}</span>
@@ -519,18 +550,18 @@ function FlyoutPanel({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
-      transition={{ duration: 0.16 }}
-      className="fixed z-300 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden"
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed z-300 bg-white border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-md)] overflow-hidden"
       style={{ left: sidebarWidth + 8, top, width: 240 }}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
     >
       {/* Cabecera de categoría */}
-      <div className={cn("px-3 py-2.5 flex items-center gap-2.5 border-b border-gray-100 dark:border-white/5", col.bg)}>
+      <div className={cn("px-3 py-2.5 flex items-center gap-2.5 border-b border-[var(--rule-soft)]", col.bg)}>
         <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center", col.bg, col.border, "border")}>
           <Icon className={cn("h-3.5 w-3.5", col.icon)} />
         </div>
-        <span className={cn("text-[10px] font-bold uppercase tracking-widest", col.icon)}>
+        <span className={cn("text-[length:var(--ts-2xs)] font-bold", col.icon)}>
           {GROUP_LABELS[category]}
         </span>
       </div>
@@ -547,18 +578,18 @@ function FlyoutPanel({
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all",
                 isActive
-                  ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 font-semibold"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+                  ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
+                  : "text-[var(--text-secondary)] hover:bg-gray-100"
               )}
             >
               <Ic className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-left text-xs truncate">{mod.label}</span>
               {badge > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-500 text-white min-w-4 text-center">
+                <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error)] text-white min-w-4 text-center">
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
-              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#00B4A6] dark:bg-emerald-400 shrink-0" />}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0" />}
             </button>
           );
         })}
@@ -577,6 +608,7 @@ interface CategorySectionProps {
   onHoverStart: (top: number) => void;
   onHoverEnd: () => void;
   isCollapsed: boolean;
+  isMobile: boolean;
   activeModule: string;
   activeTab: string;
   onModuleChange: (id: string) => void;
@@ -590,10 +622,16 @@ interface CategorySectionProps {
 
 function CategorySection({
   group, modules, isOpen, onToggle, onHoverStart, onHoverEnd,
-  isCollapsed, activeModule, activeTab,
+  isCollapsed, isMobile, activeModule, activeTab,
   onModuleChange, onTabChange, badges,
   editMode, moduleIndexMap, totalModules, onMoveModule,
 }: CategorySectionProps) {
+  // Regla: el menu de categoria NUNCA se expande verticalmente en desktop —
+  // usa el FlyoutPanel lateral (position: fixed, renderizado fuera del arbol del
+  // sidebar para no ser recortado por overflow). En mobile no hay hover, asi que
+  // mantenemos el acordeon tradicional como fallback accesible.
+  const allowAccordion = isMobile;
+  const accordionOpen = allowAccordion && isOpen;
   const col = GROUP_COLORS[group];
   const Icon = GROUP_ICONS[group];
   const isAnyActive = modules.some(m => m.id === activeModule);
@@ -611,22 +649,23 @@ function CategorySection({
         onMouseLeave={onHoverEnd}
       >
         <button
-          onClick={onToggle}
+          onClick={allowAccordion ? onToggle : undefined}
           className={cn(
             "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group",
+            allowAccordion ? "cursor-pointer" : "cursor-default",
             isAnyActive
-              ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
-              : "hover:bg-gray-50 dark:hover:bg-white/5"
+              ? "bg-[var(--accent)]/10"
+              : "hover:bg-gray-50"
           )}
         >
           {/* Icono de categoría con color */}
           <div className={cn(
             "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
-            isOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100 dark:bg-white/5"
+            accordionOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100"
           )}>
             <Icon className={cn(
               "h-3.5 w-3.5 transition-colors",
-              isOpen || isAnyActive ? col.icon : "text-gray-400 dark:text-gray-500 group-hover:" + col.icon
+              accordionOpen || isAnyActive ? col.icon : "text-[var(--text-tertiary)] group-hover:" + col.icon
             )} />
           </div>
 
@@ -634,22 +673,22 @@ function CategorySection({
             <>
               <div className="flex-1 text-left min-w-0">
                 <span className={cn(
-                  "text-xs font-bold uppercase tracking-wide block",
+                  "text-xs font-bold block",
                   isAnyActive
-                    ? "text-[#00B4A6] dark:text-emerald-400"
-                    : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    ? "text-[var(--accent)]"
+                    : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
                 )}>
                   {GROUP_LABELS[group]}
                 </span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500">
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                   {modules.length} módulo{modules.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              {/* Chevron rotado cuando está abierto */}
-              <m.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+              {/* Chevron: rotado cuando el acordeon está abierto (solo mobile) */}
+              <m.div animate={{ rotate: accordionOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronRight className={cn(
                   "h-3.5 w-3.5 shrink-0 transition-colors",
-                  isOpen || isAnyActive ? col.icon : "text-gray-300 dark:text-gray-600"
+                  accordionOpen || isAnyActive ? col.icon : "text-[var(--text-tertiary)]"
                 )} />
               </m.div>
             </>
@@ -657,10 +696,10 @@ function CategorySection({
         </button>
       </div>
 
-      {/* Acordeón: módulos se despliegan hacia abajo al hacer clic */}
-      {!isCollapsed && (
+      {/* Acordeón: solo en mobile (desktop usa flyout en hover) */}
+      {!isCollapsed && allowAccordion && (
         <AnimatePresence initial={false}>
-          {isOpen && (
+          {accordionOpen && (
             <m.div
               key={`cat-${group}`}
               initial={{ height: 0, opacity: 0 }}
@@ -720,12 +759,10 @@ export default function AdminSidebar({
   const [editMode, setEditMode] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Categorías abiertas (acordeón)
-  const [openCategories, setOpenCategories] = useState<Set<ModuleGroup>>(() => {
-    // Abrir la categoría que contiene el módulo activo al iniciar
-    const found = BASIC_SIDEBAR_MODULES.find(m => m.id === activeModule);
-    return new Set(found?.group ? [found.group] : ["operaciones"]);
-  });
+  // Categorías abiertas (acordeón) — SOLO MOBILE.
+  // Desktop usa flyout lateral exclusivo (no expand vertical). La categoría
+  // activa se resalta pero NO despliega sub-items hacia abajo.
+  const [openCategories, setOpenCategories] = useState<Set<ModuleGroup>>(() => new Set());
 
   // Flyout lateral
   const [flyout, setFlyout] = useState<{ category: ModuleGroup; top: number } | null>(null);
@@ -904,21 +941,21 @@ export default function AdminSidebar({
     return (
       <div
         className={cn(
-          "flex flex-col h-full bg-white dark:bg-card border-r border-gray-200 dark:border-card-border",
-          "transition-all duration-300",
+          "flex flex-col h-full bg-white border-r border-[var(--rule-base)]",
+          "transition-all duration-[var(--dur-base)]",
           isMobile ? "w-72" : isCollapsed ? "w-16" : "w-70"
         )}
       >
         {/* Header: toggle + logo */}
         <div
           className={cn(
-            "flex items-center h-16 px-3 border-b border-gray-200 dark:border-card-border shrink-0",
+            "flex items-center h-16 px-3 border-b border-[var(--rule-base)] shrink-0",
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
           <button
             onClick={isMobile ? () => setMobileOpen(false) : onToggleCollapse}
-            className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0"
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-gray-100 transition-colors shrink-0"
             aria-label="Toggle sidebar"
           >
             {isMobile ? (
@@ -936,14 +973,14 @@ export default function AdminSidebar({
               transition={{ duration: 0.18 }}
               className="flex items-center gap-2 min-w-0"
             >
-              <div className="h-7 w-7 rounded-lg bg-[#00B4A6] flex items-center justify-center shrink-0">
+              <div className="h-7 w-7 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0">
                 <span className="text-white text-xs font-bold">B</span>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white truncate leading-tight">
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">
                   Buleje
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate leading-tight">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate leading-tight">
                   Panel Admin
                 </p>
               </div>
@@ -954,7 +991,7 @@ export default function AdminSidebar({
         {/* User info */}
         <div
           className={cn(
-            "flex items-center px-3 py-3 border-b border-gray-100 dark:border-white/5 shrink-0",
+            "flex items-center px-3 py-3 border-b border-[var(--rule-soft)] shrink-0",
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -967,10 +1004,10 @@ export default function AdminSidebar({
               animate={{ opacity: 1 }}
               className="min-w-0"
             >
-              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+              <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
                 Administrador
               </p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
                 Admin General
               </p>
             </m.div>
@@ -1003,8 +1040,8 @@ export default function AdminSidebar({
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
-                  ? "bg-[#00B4A6] text-white"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-card-border"
+                  ? "bg-[var(--accent)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-gray-100 border border-[var(--rule-base)]"
               )}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -1017,19 +1054,19 @@ export default function AdminSidebar({
         {!isCollapsed && (
           <div className="px-3 pb-1 shrink-0">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] pointer-events-none" />
               <input
                 type="search"
                 placeholder="Buscar módulo..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-[#00B4A6] focus:border-[#00B4A6] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
+                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-[var(--rule-base)] bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)]"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
                   aria-label="Limpiar búsqueda"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1039,12 +1076,12 @@ export default function AdminSidebar({
         )}
 
         {/* Navigation con categorías */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
+        <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin scrollbar-thumb-gray-200">
           {searchResults !== null ? (
             /* Resultados de búsqueda */
             <div className="space-y-0.5">
               {searchResults.length === 0 ? (
-                <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-6">
+                <p className="text-xs text-[var(--text-tertiary)] text-center py-6">
                   Sin resultados para &ldquo;{search}&rdquo;
                 </p>
               ) : (
@@ -1106,17 +1143,16 @@ export default function AdminSidebar({
                   >
                     <button
                       id={`cat-icon-${group}`}
-                      onClick={() => toggleCategory(group)}
                       title={GROUP_LABELS[group]}
                       className={cn(
-                        "w-full flex items-center justify-center p-2 rounded-xl transition-all",
+                        "w-full flex items-center justify-center p-2 rounded-xl transition-all cursor-default",
                         isAnyActive
-                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
-                          : "hover:bg-gray-100 dark:hover:bg-white/5"
+                          ? "bg-[var(--accent)]/10"
+                          : "hover:bg-gray-100"
                       )}
                     >
-                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100 dark:bg-white/5")}>
-                        <Icon className={cn("h-3.5 w-3.5", isAnyActive ? col.icon : "text-gray-400")} />
+                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100")}>
+                        <Icon className={cn("h-3.5 w-3.5", isAnyActive ? col.icon : "text-[var(--text-tertiary)]")} />
                       </div>
                     </button>
                   </div>
@@ -1139,6 +1175,7 @@ export default function AdminSidebar({
                     onHoverStart={(top) => openFlyout(group, top)}
                     onHoverEnd={closeFlyoutDelayed}
                     isCollapsed={false}
+                    isMobile={isMobile}
                     activeModule={activeModule}
                     activeTab={activeTab}
                     onModuleChange={handleModuleChange}
@@ -1156,7 +1193,29 @@ export default function AdminSidebar({
         </nav>
 
         {/* Config + Logout al fondo */}
-        <div className="shrink-0 border-t border-gray-200 dark:border-card-border">
+        <div className="shrink-0 border-t border-[var(--rule-base)]">
+          {/* Bridge: Ver experiencia cliente (ENRICH-5) */}
+          <div className="px-2 pt-2">
+            <a
+              href="/marketplace"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl",
+                "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+                "hover:text-[var(--accent)] transition-all duration-200 group",
+                isCollapsed ? "justify-center" : ""
+              )}
+              title={isCollapsed ? "Ver experiencia cliente" : undefined}
+            >
+              <StoreIcon className="h-4.5 w-4.5 shrink-0" />
+              {!isCollapsed && (
+                <span className="text-sm font-medium flex-1">Ver como cliente</span>
+              )}
+              {!isCollapsed && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />}
+            </a>
+          </div>
+
           {/* Separador config */}
           <div className="px-2 pt-2">
             <ModuleItem
@@ -1174,8 +1233,8 @@ export default function AdminSidebar({
             <button
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl",
-                "text-gray-500 dark:text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/10",
-                "hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 group",
+                "text-[var(--text-secondary)] hover:bg-[var(--data-error-50)]",
+                "hover:text-[var(--data-error)] transition-all duration-[var(--dur-base)] group",
                 isCollapsed ? "justify-center" : ""
               )}
               title={isCollapsed ? "Cerrar sesion" : undefined}
@@ -1194,7 +1253,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* ── Desktop sidebar ── */}
-      <div className="hidden md:flex h-full shrink-0">
+      <div className="hidden md:flex h-full shrink-0" data-sidebar="">
         <m.div
           animate={{ width: collapsed ? 64 : 280 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
@@ -1210,8 +1269,8 @@ export default function AdminSidebar({
         onClick={() => setMobileOpen(true)}
         className={cn(
           "md:hidden fixed top-4 left-4 z-40 p-2.5 rounded-xl",
-          "bg-white dark:bg-card shadow-lg border border-gray-200 dark:border-card-border",
-          "text-gray-700 dark:text-gray-300 active:scale-95 transition-transform"
+          "bg-white border border-[var(--rule-base)]",
+          "text-[var(--text-primary)] active:scale-95 transition-transform"
         )}
         aria-label="Abrir menu"
       >
@@ -1238,7 +1297,8 @@ export default function AdminSidebar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="md:hidden fixed inset-y-0 left-0 z-50 h-full shadow-2xl"
+              className="md:hidden fixed inset-y-0 left-0 z-50 h-full"
+              data-sidebar=""
             >
               {sidebarContent(true)}
             </m.div>

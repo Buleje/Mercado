@@ -47,15 +47,15 @@ type HealthResponse = {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const OVERALL_STATUS = {
-  healthy:  { icon: CheckCircle,    color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", label: "Sistema Saludable" },
-  warning:  { icon: AlertTriangle,  color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200",   label: "Advertencias Detectadas" },
-  critical: { icon: XCircle,        color: "text-red-600",     bg: "bg-red-50",     border: "border-red-200",     label: "Problemas Críticos" },
+  healthy:  { icon: CheckCircle,    color: "text-[var(--data-success)]", bg: "bg-[var(--data-success-50)]", border: "border-[var(--data-success)]", label: "Sistema Saludable" },
+  warning:  { icon: AlertTriangle,  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)]",   border: "border-[var(--data-warning)]",   label: "Advertencias Detectadas" },
+  critical: { icon: XCircle,        color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)]",     border: "border-[var(--data-error)]",     label: "Problemas Críticos" },
 };
 
 const TENANT_STATUS = {
-  healthy:  { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50" },
-  warning:  { dot: "bg-amber-500",   text: "text-amber-700",   bg: "bg-amber-50" },
-  critical: { dot: "bg-red-500",     text: "text-red-700",     bg: "bg-red-50" },
+  healthy:  { dot: "bg-[var(--data-success)]", text: "text-[var(--data-success)]", bg: "bg-[var(--data-success-50)]" },
+  warning:  { dot: "bg-[var(--data-warning)]",   text: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)]" },
+  critical: { dot: "bg-[var(--data-error)]",     text: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)]" },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -71,8 +71,8 @@ function fmtDate(iso: string) {
 function Skeleton() {
   return (
     <div className="space-y-6 animate-pulse p-6">
-      <div className="h-24 bg-gray-100 rounded-2xl" />
-      <div className="h-40 bg-gray-100 rounded-2xl" />
+      <div className="h-24 bg-gray-100 rounded-xl" />
+      <div className="h-40 bg-gray-100 rounded-xl" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-48 bg-gray-100 rounded-xl" />
@@ -118,13 +118,13 @@ export default function TenantMonitorPanel() {
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-center">
-        <XCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
-        <p className="font-bold text-red-700">Error al cargar monitoreo</p>
-        <p className="text-sm text-red-500 mt-1">{error}</p>
+      <div className="rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)] p-6 text-center">
+        <XCircle className="h-10 w-10 text-[var(--data-error)] mx-auto mb-3" />
+        <p className="font-bold text-[var(--data-error)]">Error al cargar monitoreo</p>
+        <p className="text-sm text-[var(--data-error)] mt-1">{error}</p>
         <button
           onClick={() => void load()}
-          className="mt-4 px-5 py-2 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+          className="mt-4 px-5 py-2 rounded-xl text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
         >
           Reintentar
         </button>
@@ -140,7 +140,7 @@ export default function TenantMonitorPanel() {
   return (
     <div className="space-y-6">
       {/* ── Overall Status Banner ── */}
-      <div className={`rounded-2xl ${statusCfg.bg} border ${statusCfg.border} p-5`}>
+      <div className={`rounded-xl ${statusCfg.bg} border ${statusCfg.border} p-5`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <StatusIcon className={`h-8 w-8 ${statusCfg.color}`} />
@@ -154,7 +154,7 @@ export default function TenantMonitorPanel() {
           <button
             onClick={() => void load(true)}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-[var(--rule-base)] hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             Actualizar
@@ -163,9 +163,9 @@ export default function TenantMonitorPanel() {
       </div>
 
       {/* ── Global Isolation Tests ── */}
-      <div className="rounded-2xl bg-white border border-gray-200 p-5">
+      <div className="rounded-xl bg-white border border-[var(--rule-base)] p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-5 w-5 text-teal-600" />
+          <Shield className="h-5 w-5 text-[var(--accent)]" />
           <h3 className="text-base font-bold text-gray-900">Pruebas de Aislamiento Global</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -174,15 +174,15 @@ export default function TenantMonitorPanel() {
               key={i}
               className={`rounded-xl border p-3 ${
                 test.passed
-                  ? "bg-emerald-50 border-emerald-200"
-                  : "bg-red-50 border-red-200"
+                  ? "bg-[var(--data-success-50)] border-[var(--data-success)]"
+                  : "bg-[var(--data-error-50)] border-[var(--data-error)]"
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
                 {test.passed ? (
-                  <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-red-600 shrink-0" />
+                  <XCircle className="h-4 w-4 text-[var(--data-error)] shrink-0" />
                 )}
                 <span className="text-sm font-semibold text-gray-900">{test.name}</span>
               </div>
@@ -244,9 +244,9 @@ export default function TenantMonitorPanel() {
 
 const STAT_COLORS: Record<string, string> = {
   teal: "text-teal-600 bg-teal-50",
-  blue: "text-blue-600 bg-blue-50",
-  purple: "text-purple-600 bg-purple-50",
-  orange: "text-orange-600 bg-orange-50",
+  blue: "text-[var(--data-success)] bg-[var(--data-success-50)]",
+  purple: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
+  orange: "text-[var(--data-warning)] bg-[var(--data-warning-50)]",
 };
 
 function StatCard({
@@ -264,7 +264,7 @@ function StatCard({
 }) {
   const c = STAT_COLORS[color] ?? STAT_COLORS.teal;
   return (
-    <div className="rounded-xl bg-white border border-gray-200 p-4">
+    <div className="rounded-xl bg-white border border-[var(--rule-base)] p-4">
       <div className={`inline-flex p-2 rounded-lg ${c} mb-2`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -279,7 +279,7 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
   const cfg = TENANT_STATUS[tenant.status];
 
   return (
-    <div className="rounded-xl bg-white border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div className="rounded-xl bg-white border border-[var(--rule-base)] p-4 hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -295,20 +295,20 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="text-center">
           <p className="text-lg font-bold text-gray-900">{tenant.stats.products}</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wide">Productos</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase tracking-wide">Productos</p>
         </div>
         <div className="text-center">
           <p className="text-lg font-bold text-gray-900">{tenant.stats.orders}</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wide">Pedidos</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase tracking-wide">Pedidos</p>
         </div>
         <div className="text-center">
           <p className="text-lg font-bold text-gray-900">{tenant.stats.customers}</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wide">Clientes</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase tracking-wide">Clientes</p>
         </div>
       </div>
 
       {/* Activity */}
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-3 pb-3 border-b border-gray-100">
+      <div className="flex items-center justify-between text-xs text-gray-500 mb-3 pb-3 border-b border-[var(--rule-soft)]">
         <span>Pedidos 24h: <strong className="text-gray-700">{tenant.stats.ordersLast24h}</strong></span>
         <span className="text-gray-400">slug: {tenant.slug}</span>
       </div>
@@ -318,9 +318,9 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
         {tenant.checks.map((check, i) => (
           <div key={i} className="flex items-center gap-1.5">
             {check.passed ? (
-              <CheckCircle className="h-3 w-3 text-emerald-500 shrink-0" />
+              <CheckCircle className="h-3 w-3 text-[var(--data-success)] shrink-0" />
             ) : (
-              <XCircle className="h-3 w-3 text-red-500 shrink-0" />
+              <XCircle className="h-3 w-3 text-[var(--data-error)] shrink-0" />
             )}
             <span className="text-xs text-gray-600 truncate">{check.detail}</span>
           </div>

@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { RefreshCw, Settings, Check, X, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { RefreshCw, Settings, Check, X, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -175,7 +176,7 @@ function GaugeArc({ pct }: { pct: number }) {
         strokeLinecap="round"
         strokeDasharray={`${dash} ${half}`}
         className={cn(
-          clamped >= 100 ? "stroke-[#00B4A6]" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-amber-400" : "stroke-red-400"
+          clamped >= 100 ? "stroke-[#00B4A6]" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-[var(--data-warning)]" : "stroke-[var(--data-error)]"
         )}
       />
     </svg>
@@ -223,21 +224,21 @@ function KpiCard({
   }, [editing]);
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 space-y-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{def.label}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{def.description}</p>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">{def.label}</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{def.description}</p>
         </div>
         {/* Trend */}
         <div className={cn(
           "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
           trend > 0
-            ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
             : trend < 0
-            ? "bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400"
-            : "bg-gray-50 text-gray-400 dark:bg-gray-800"
+            ? "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]"
+            : "bg-gray-50 text-[var(--text-tertiary)] dark:bg-gray-800"
         )}>
           {trend > 0 ? <TrendingUp className="h-3 w-3" /> : trend < 0 ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
           {trendPct !== 0 ? `${Math.abs(trendPct).toFixed(0)}%` : "—"}
@@ -247,10 +248,10 @@ function KpiCard({
       {/* Gauge + value */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <p className="text-2xl font-bold text-[var(--text-primary)]">
             {fmtValue(value.current, def.unit)}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             {Math.round(pct)}% de la meta
           </p>
         </div>
@@ -259,11 +260,11 @@ function KpiCard({
 
       {/* Progress bar */}
       <div className="space-y-1">
-        <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+        <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700",
-              pct >= 100 ? "bg-[#00B4A6]" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-amber-400" : "bg-red-400"
+              "h-full rounded-full transition-all duration-[var(--dur-slower)]",
+              pct >= 100 ? "bg-[#00B4A6]" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
             )}
             style={{ width: `${Math.min(pct, 100)}%` }}
           />
@@ -272,7 +273,7 @@ function KpiCard({
 
       {/* Goal editor */}
       <div className="flex items-center gap-2 pt-1">
-        <span className="text-xs text-gray-400 dark:text-gray-500">{def.goalLabel}:</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{def.goalLabel}:</span>
         {editing ? (
           <div className="flex items-center gap-1 flex-1">
             <input
@@ -281,15 +282,15 @@ function KpiCard({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
-              className="flex-1 rounded border border-[#00B4A6] px-2 py-0.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none"
+              className="flex-1 rounded border border-[#00B4A6] px-2 py-0.5 text-xs text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none"
             />
             <button onClick={save} className="text-[#00B4A6]"><Check className="h-3.5 w-3.5" /></button>
-            <button onClick={() => setEditing(false)} className="text-gray-400"><X className="h-3.5 w-3.5" /></button>
+            <button onClick={() => setEditing(false)} className="text-[var(--text-tertiary)]"><X className="h-3.5 w-3.5" /></button>
           </div>
         ) : (
           <button
             onClick={() => { setDraft(String(goal)); setEditing(true); }}
-            className="text-xs font-medium text-[#00B4A6] dark:text-green-400 hover:underline"
+            className="text-xs font-medium text-[#00B4A6] dark:text-[var(--data-success)] hover:underline"
           >
             {fmtValue(goal, def.unit)}
           </button>
@@ -346,24 +347,24 @@ export default function ConfigurableKPIDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Dashboard de KPIs
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)] flex items-center gap-1">
             <Settings className="h-3.5 w-3.5" />
             Haz clic en cualquier meta para editarla — se guarda automaticamente
           </p>
         </div>
         <div className="flex items-center gap-3">
           {lastUpdated && (
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-xs text-[var(--text-tertiary)]">
               Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+            className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar
@@ -392,7 +393,7 @@ export default function ConfigurableKPIDashboard() {
       </div>
 
       {/* Auto-refresh notice */}
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-[var(--text-tertiary)]">
         Los KPIs se actualizan automaticamente cada 5 minutos. Las metas se guardan en este navegador.
       </p>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { Download, CheckCircle, AlertTriangle, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "buleje-last-backup-date";
@@ -75,9 +75,9 @@ export default function BackupExportButton() {
     <div className="space-y-3">
       {/* Alerta si hace 7+ días sin backup */}
       {showAlert && status === "idle" && (
-        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-700 dark:text-amber-300">
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
+          <AlertTriangle className="w-4 h-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0 mt-0.5" />
+          <p className="text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
             Hace{" "}
             <span className="font-bold">{diasSinBackup} {diasSinBackup === 1 ? "día" : "días"}</span>{" "}
             que no haces backup. Se recomienda hacerlo al menos cada semana.
@@ -92,9 +92,9 @@ export default function BackupExportButton() {
         className={cn(
           "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
           status === "done"
-            ? "bg-emerald-600 text-white"
+            ? "bg-[var(--accent-soft)] text-white"
             : status === "error"
-              ? "bg-red-600 text-white"
+              ? "bg-[var(--data-error)] text-white"
               : status === "downloading"
                 ? "bg-gray-400 text-white cursor-not-allowed"
                 : "bg-[#00B4A6] hover:bg-[#009690] text-white dark:bg-[#00B4A6] dark:hover:bg-[#1f4d38]"
@@ -116,12 +116,12 @@ export default function BackupExportButton() {
 
       {/* Error detalle */}
       {status === "error" && errorMsg && (
-        <p className="text-xs text-red-600 dark:text-red-400">{errorMsg}</p>
+        <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{errorMsg}</p>
       )}
 
       {/* Fecha último backup */}
       {lastBackup && status !== "error" && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
           <Clock className="w-3 h-3 shrink-0" />
           <span>
             Último backup:{" "}
@@ -140,7 +140,7 @@ export default function BackupExportButton() {
       )}
 
       {!lastBackup && (
-        <p className="text-xs text-gray-400 dark:text-gray-500">
+        <p className="text-xs text-[var(--text-tertiary)]">
           Nunca se ha descargado un backup en este dispositivo.
         </p>
       )}

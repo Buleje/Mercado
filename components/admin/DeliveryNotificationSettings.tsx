@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
 
 interface NotifConfig {
@@ -88,12 +89,12 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
   ];
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 space-y-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
       <div>
-        <h3 className="font-semibold text-gray-900 dark:text-white text-base">
+        <CardTitle className="font-semibold text-[var(--text-primary)] text-base">
           Notificaciones — {partner.name}
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        </CardTitle>
+        <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
           Configura que alertas recibe este repartidor
         </p>
       </div>
@@ -112,7 +113,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
                 className="sr-only"
               />
               <div
-                className={`w-10 h-6 rounded-full transition-colors duration-200 ${
+                className={`w-10 h-6 rounded-full transition-colors duration-[var(--dur-base)] ${
                   config[opt.key]
                     ? "bg-[#00B4A6]"
                     : "bg-gray-300 dark:bg-gray-600"
@@ -120,17 +121,17 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
                 onClick={() => toggle(opt.key)}
               >
                 <div
-                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-[var(--dur-base)] ${
                     config[opt.key] ? "translate-x-5" : "translate-x-1"
                   }`}
                 />
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              <p className="text-sm font-medium text-[var(--text-primary)]">
                 {opt.label}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-[var(--text-tertiary)]">
                 {opt.description}
               </p>
             </div>
@@ -139,13 +140,13 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
 
       {saved && (
-        <p className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2">
+        <p className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2">
           Configuracion guardada correctamente
         </p>
       )}

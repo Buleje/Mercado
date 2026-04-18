@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Activity } from "lucide-react";
+import { Activity } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface Metrics {
@@ -15,10 +15,10 @@ function getGrade(
   thresholds: [number, number]
 ): { label: string; color: string; bg: string } {
   if (value <= thresholds[0])
-    return { label: "Bueno", color: "text-emerald-600", bg: "stroke-emerald-500" };
+    return { label: "Bueno", color: "text-[var(--data-success)]", bg: "stroke-[var(--data-success)]" };
   if (value <= thresholds[1])
-    return { label: "Regular", color: "text-amber-600", bg: "stroke-amber-500" };
-  return { label: "Pobre", color: "text-red-600", bg: "stroke-red-500" };
+    return { label: "Regular", color: "text-[var(--data-warning)]", bg: "stroke-[var(--data-warning)]" };
+  return { label: "Pobre", color: "text-[var(--data-error)]", bg: "stroke-[var(--data-error)]" };
 }
 
 function CircularGauge({
@@ -67,16 +67,16 @@ function CircularGauge({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-sm font-bold text-gray-900 dark:text-zinc-100 tabular-nums">
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100 tabular-nums">
             {value > 0 ? (value < 1 ? value.toFixed(3) : value < 100 ? value.toFixed(0) : value.toFixed(0)) : "-"}
           </span>
-          <span className="text-[8px] text-gray-400 uppercase">{unit}</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase">{unit}</span>
         </div>
       </div>
-      <span className="text-[10px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wide">
+      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-zinc-400">
         {label}
       </span>
-      <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", grade.color, grade.color.replace("text-", "bg-").replace("-600", "-50"), "dark:" + grade.color.replace("text-", "bg-").replace("-600", "-900/20"))}>
+      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", grade.color, grade.color.replace("text-", "bg-").replace("-600", "-50"), "dark:" + grade.color.replace("text-", "bg-").replace("-600", "-900/20"))}>
         {grade.label}
       </span>
     </div>
@@ -133,10 +133,10 @@ export default function WebVitalsWidget() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-4">
         <Activity className="w-4 h-4 text-primary" />
-        <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">
           Core Web Vitals
         </span>
       </div>
@@ -162,7 +162,7 @@ export default function WebVitalsWidget() {
         />
       </div>
 
-      <p className="text-[10px] text-gray-400 dark:text-zinc-500 text-center mt-3">
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 text-center mt-3">
         Datos de tu navegador actual
       </p>
     </div>

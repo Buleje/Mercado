@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { CheckCircle, Circle, ClipboardList, PartyPopper } from "lucide-react";
+import { CheckCircle, Circle, ClipboardList, PartyPopper } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_ITEMS = [
@@ -75,8 +76,8 @@ export function OpeningChecklist({ className }: { className?: string }) {
   if (!mounted) {
     // Evitar hydration mismatch — render skeleton hasta montar
     return (
-      <div className={cn("rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 p-4", className)}>
-        <div className="h-40 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+      <div className={cn("rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 p-4", className)}>
+        <div className="h-40 animate-pulse rounded-lg bg-[var(--surface-sunken)]" />
       </div>
     );
   }
@@ -84,9 +85,9 @@ export function OpeningChecklist({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-white dark:bg-gray-900",
-        "border-gray-200 dark:border-gray-700",
-        "p-4 shadow-sm",
+        "rounded-xl border bg-[var(--surface-raised)]",
+        "border-[var(--rule-base)]",
+        "p-4 ",
         className
       )}
       role="region"
@@ -95,19 +96,19 @@ export function OpeningChecklist({ className }: { className?: string }) {
       {/* Encabezado */}
       <div className="mb-3 flex items-center gap-2">
         <ClipboardList className="h-5 w-5 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+        <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">
           Apertura del dia
-        </h2>
-        <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+        </SectionTitle>
+        <span className="ml-auto text-sm text-[var(--text-tertiary)]">
           {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" })}
         </span>
       </div>
 
       {/* Barra de progreso */}
       <div className="mb-4">
-        <div className="mb-1 flex items-baseline justify-between text-xs text-gray-600 dark:text-gray-400">
+        <div className="mb-1 flex items-baseline justify-between text-xs text-[var(--text-secondary)]">
           <span>
-            <span className="font-semibold text-gray-900 dark:text-white">{done}</span> de {total} completados
+            <span className="font-semibold text-[var(--text-primary)]">{done}</span> de {total} completados
           </span>
           <span className="font-semibold text-[#00B4A6] dark:text-[#3a8a65]">{pct}%</span>
         </div>
@@ -121,7 +122,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
         >
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-500",
+              "h-full rounded-full transition-all duration-[var(--dur-slow)]",
               allDone ? "bg-[#f97316]" : "bg-[#00B4A6]"
             )}
             style={{ width: `${pct}%` }}
@@ -138,10 +139,10 @@ export function OpeningChecklist({ className }: { className?: string }) {
               onClick={() => toggle(index)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm",
-                "transition-colors duration-150",
+                "transition-colors duration-[var(--dur-fast)]",
                 item.done
                   ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
-                  : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700",
+                  : "bg-gray-50 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-700",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
               )}
               aria-pressed={item.done}
@@ -149,14 +150,14 @@ export function OpeningChecklist({ className }: { className?: string }) {
               {item.done ? (
                 <CheckCircle className="h-4 w-4 flex-shrink-0 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
               ) : (
-                <Circle className="h-4 w-4 flex-shrink-0 text-gray-400" aria-hidden="true" />
+                <Circle className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
               )}
               <span
                 className={cn(
                   "flex-1",
                   item.done
-                    ? "text-gray-500 line-through dark:text-gray-500"
-                    : "text-gray-700 dark:text-gray-200"
+                    ? "text-[var(--text-secondary)] line-through dark:text-[var(--text-secondary)]"
+                    : "text-[var(--text-secondary)]"
                 )}
               >
                 {item.label}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { timingSafeCompare } from "@/lib/timing-safe";
+import { withCronAuth } from "@/lib/cron-auth";
 import { logger } from "@/lib/logger";
 import { enqueueNotification } from "@/lib/queue";
 
@@ -10,14 +10,7 @@ import { enqueueNotification } from "@/lib/queue";
  * Cron diario. Para cada cliente nuevo (registrado en las últimas 24h)
  * que NO tiene pedidos, genera un cupón de bienvenida del 10%.
  */
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("first-purchase-coupon", async (req) => {
   try {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -99,7 +92,7 @@ export async function GET(req: NextRequest) {
           message: whatsappMsg,
           tenantId,
           metadata: { purpose: "first-purchase-coupon" },
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/first-purchase-coupon] WhatsApp enqueue failed", { error: String(err), phone: customer.phone, tenantId }));
 
         logger.info("[cron/first-purchase-coupon] Cupón creado", {
           tenantId,
@@ -120,4 +113,4 @@ export async function GET(req: NextRequest) {
     logger.error("[cron/first-purchase-coupon] Error", { error: message });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
-}
+});

@@ -32,7 +32,7 @@ export default function PriceSparkline({ productId }: { productId: number }) {
   }, [productId]);
 
   if (data.length < 2) {
-    return <span className="text-gray-300 dark:text-muted text-xs">—</span>;
+    return <span className="text-[var(--text-tertiary)] dark:text-muted text-xs">—</span>;
   }
 
   return (

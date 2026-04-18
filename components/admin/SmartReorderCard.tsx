@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState, useCallback } from "react";
-import { ShoppingBag, Loader2, CheckSquare, Square, AlertTriangle } from "lucide-react";
+import { ShoppingBag, Loader2, CheckSquare, Square, AlertTriangle } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import { calculateReorderSuggestions, type ReorderSuggestion } from "@/lib/smart-reorder";
 
@@ -116,9 +117,9 @@ export default function SmartReorderCard({ className }: Props) {
   }, [suggestions, selected]);
 
   const urgencyStyle: Record<ReorderSuggestion["urgency"], string> = {
-    critico: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
-    pronto: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400",
-    planificar: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400",
+    critico: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]",
+    pronto: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/40 dark:text-[var(--data-warning)]",
+    planificar: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   };
 
   const urgencyLabel: Record<ReorderSuggestion["urgency"], string> = {
@@ -135,15 +136,15 @@ export default function SmartReorderCard({ className }: Props) {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5",
+      "bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5",
       className,
     )}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+        <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
           Sugerencias de compra inteligente
-        </h3>
+        </CardTitle>
         {!loading && suggestions.length > 0 && (
-          <span className="text-[10px] font-semibold text-gray-400 dark:text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted">
             {suggestions.length} producto{suggestions.length > 1 ? "s" : ""}
           </span>
         )}
@@ -151,27 +152,25 @@ export default function SmartReorderCard({ className }: Props) {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       )}
 
       {/* Error */}
       {!loading && error && (
         <div className="flex flex-col items-center py-6 gap-2 text-center">
-          <AlertTriangle className="w-6 h-6 text-orange-400" />
-          <p className="text-sm text-gray-400 dark:text-muted">No se pudo calcular las sugerencias.</p>
+          <AlertTriangle className="w-6 h-6 text-[var(--data-warning)]" />
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">No se pudo calcular las sugerencias.</p>
         </div>
       )}
 
       {/* Empty */}
       {!loading && !error && suggestions.length === 0 && (
         <div className="flex flex-col items-center py-8 gap-2 text-center">
-          <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
-            <ShoppingBag className="w-5 h-5 text-emerald-500" />
+          <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+            <ShoppingBag className="w-5 h-5 text-[var(--data-success)]" />
           </div>
-          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Stock al dia</p>
-          <p className="text-xs text-gray-400 dark:text-muted">
+          <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Stock al dia</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
             No hay productos que necesiten reposicion pronto.
           </p>
         </div>
@@ -181,7 +180,7 @@ export default function SmartReorderCard({ className }: Props) {
       {!loading && !error && visibleSuggestions.length > 0 && (
         <div className="space-y-3">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide px-1">
+          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-1">
             <span>Producto</span>
             <span className="text-right">Stock</span>
             <span className="text-right">Dias</span>
@@ -200,7 +199,7 @@ export default function SmartReorderCard({ className }: Props) {
                   "w-full flex sm:grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 items-start sm:items-center p-3 rounded-xl border transition-colors text-left",
                   isSelected
                     ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10"
-                    : "border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card",
+                    : "border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card",
                 )}
               >
                 {/* Checkbox + nombre */}
@@ -208,15 +207,15 @@ export default function SmartReorderCard({ className }: Props) {
                   <div className="shrink-0 mt-0.5">
                     {isSelected
                       ? <CheckSquare className="w-4 h-4 text-[#00B4A6]" />
-                      : <Square className="w-4 h-4 text-gray-300 dark:text-muted" />
+                      : <Square className="w-4 h-4 text-[var(--text-tertiary)] dark:text-muted" />
                     }
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                       {s.productName}
                     </p>
                     {/* Mobile: info en línea */}
-                    <div className="sm:hidden flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-gray-500 dark:text-muted">
+                    <div className="sm:hidden flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
                       <span>Stock: {s.currentStock}</span>
                       <span>Dias: {s.daysUntilEmpty >= 999 ? "—" : s.daysUntilEmpty}</span>
                       <span>Pedir: {s.suggestedQuantity} und</span>
@@ -226,26 +225,26 @@ export default function SmartReorderCard({ className }: Props) {
                 </div>
 
                 {/* Desktop cells */}
-                <span className="hidden sm:block text-xs font-semibold text-gray-600 dark:text-muted text-right">
+                <span className="hidden sm:block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted text-right">
                   {s.currentStock}
                 </span>
                 <span className={cn(
                   "hidden sm:block text-xs font-bold text-right",
-                  s.daysUntilEmpty < 3 ? "text-red-600 dark:text-red-400" :
-                  s.daysUntilEmpty < 7 ? "text-yellow-600 dark:text-yellow-400" :
-                  "text-gray-600 dark:text-muted",
+                  s.daysUntilEmpty < 3 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" :
+                  s.daysUntilEmpty < 7 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+                  "text-[var(--text-secondary)] dark:text-muted",
                 )}>
                   {s.daysUntilEmpty >= 999 ? "—" : s.daysUntilEmpty}
                 </span>
-                <span className="hidden sm:block text-xs font-semibold text-gray-700 dark:text-foreground text-right">
+                <span className="hidden sm:block text-xs font-semibold text-[var(--text-primary)] dark:text-foreground text-right">
                   {s.suggestedQuantity} und
                 </span>
-                <span className="hidden sm:block text-xs font-bold text-gray-700 dark:text-foreground text-right">
+                <span className="hidden sm:block text-xs font-bold text-[var(--text-primary)] dark:text-foreground text-right">
                   {formatCurrency(s.estimatedCost)}
                 </span>
                 <div className="hidden sm:flex justify-center">
                   <span className={cn(
-                    "text-[9px] font-bold px-1.5 py-0.5 rounded-full",
+                    "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
                     urgencyStyle[s.urgency],
                   )}>
                     {urgencyLabel[s.urgency]}
@@ -256,12 +255,12 @@ export default function SmartReorderCard({ className }: Props) {
           })}
 
           {/* Footer: total + botón */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-card-border">
+          <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
             <div>
               {selected.size > 0 && (
-                <p className="text-xs text-gray-500 dark:text-muted">
-                  <span className="font-bold text-gray-800 dark:text-foreground">{selected.size}</span> producto{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""} —{" "}
-                  <span className="font-bold text-[#00B4A6] dark:text-emerald-400">{formatCurrency(totalSelected)}</span>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
+                  <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{selected.size}</span> producto{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""} —{" "}
+                  <span className="font-bold text-[#00B4A6] dark:text-[var(--data-success)]">{formatCurrency(totalSelected)}</span>
                 </p>
               )}
             </div>
@@ -271,9 +270,9 @@ export default function SmartReorderCard({ className }: Props) {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors min-w-[44px] min-h-[44px] justify-center",
                 created
-                  ? "bg-emerald-500 text-white"
+                  ? "bg-[var(--accent-soft)] text-white"
                   : selected.size === 0
-                    ? "bg-gray-100 dark:bg-surface text-gray-400 dark:text-muted cursor-not-allowed"
+                    ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
                     : "bg-[#00B4A6] hover:bg-[#009690] text-white",
               )}
             >

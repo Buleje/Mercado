@@ -6,7 +6,7 @@ const GeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
-  preload: false,
+  preload: true,
 });
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
@@ -17,9 +17,13 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import InstallPrompt from "@/components/InstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ToastContainer";
+import { Toaster as SonnerToaster } from "sonner";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { LocaleProvider } from "@/contexts/locale-context";
+import { CurrencyProvider } from "@/contexts/currency-context";
 import CommandPalette from "@/components/CommandPalette";
 import ClientEffects from "@/components/ui/ClientEffects";
+import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -216,7 +220,11 @@ export default async function RootLayout({
       </head>
       <body className={`antialiased ${GeistSans.className}`}>
         <ThemeProvider>
+        <LocaleProvider>
+        <CurrencyProvider>
         <ErrorBoundary>
+        {/* Smooth scroll global (desktop only, respeta reduced-motion) */}
+        <SmoothScrollProvider />
         {/* Global interactive UX layer */}
         <ClientEffects />
         {/* Skip to content — accesibilidad */}
@@ -231,9 +239,24 @@ export default async function RootLayout({
         <CommandPalette />
         {children}
         <ToastContainer position="bottom-right" />
+        <SonnerToaster
+          richColors
+          closeButton
+          position="bottom-right"
+          duration={3800}
+          toastOptions={{
+            classNames: {
+              toast: "rounded-xl border border-gray-200 dark:border-gray-800",
+              title: "text-sm font-bold",
+              description: "text-xs text-gray-500 dark:text-gray-400",
+            },
+          }}
+        />
         <SpeedInsights />
         <Analytics />
         </ErrorBoundary>
+        </CurrencyProvider>
+        </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,12 +1,13 @@
 "use client";
 
+import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
   Package, FlaskConical, Layers,
   BookOpen, BarChart3, ChefHat,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,7 @@ import type { RecetaCostBreakdown } from "@/lib/types/recetas";
 
 // ── Recetas Dashboard ─────────────────────────────────────────────────────────
 
-const RECETAS_DASH_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#2dd4bf"];
+const RECETAS_DASH_COLORS = ["#2563EB", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#2dd4bf"];
 
 function RecetasDashboard() {
   const [data, setData] = useState<{ recetas: Array<Record<string, unknown>>; lotes: Array<Record<string, unknown>> } | null>(null);
@@ -37,9 +38,9 @@ function RecetasDashboard() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}
         </div>
-        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-xl" />
       </div>
     );
   }
@@ -103,14 +104,14 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#00B4A6]" },
-          { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-[#f97316]" },
-          { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-purple-500" },
-          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-blue-500" },
+          { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
+          { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-secondary" },
+          { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-[var(--rule-base)]0" },
+          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success)]/30" },
         ].map(k => (
-          <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm", k.border)}>
-            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
-            <p className="text-2xl font-mono font-bold mt-1 text-gray-900 dark:text-white">{k.value}</p>
+          <div key={k.label} className={cn("bg-white rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-medium">{k.label}</p>
+            <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
           </div>
         ))}
       </div>
@@ -118,8 +119,8 @@ function RecetasDashboard() {
 
       {/* Lotes producidos por semana */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Lotes producidos por semana</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Lotes producidos por semana</CardTitle>
         {weeklyData.some(d => d.lotes > 0) ? (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={weeklyData}>
@@ -127,7 +128,7 @@ function RecetasDashboard() {
               <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
               <Tooltip formatter={((v: number) => [`${v} lotes`, "Produccion"]) as any} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-              <Bar dataKey="lotes" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="lotes" fill="#2563EB" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -139,8 +140,8 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PieChart: recetas por categoria */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Recetas por tipo</h3>
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Recetas por tipo</CardTitle>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -156,15 +157,15 @@ function RecetasDashboard() {
         </div>
 
         {/* Top 5 recetas mas producidas */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Top 5 recetas mas producidas</h3>
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas mas producidas</CardTitle>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
               {top5Recetas.map((r, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full bg-[#00B4A6] text-white text-[10px] flex items-center justify-center font-bold shrink-0">{i + 1}</span>
-                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{r.nombre}</span>
-                  <span className="text-sm font-bold font-mono text-gray-900 dark:text-white">{r.count}</span>
+                  <span className="w-5 h-5 rounded-full bg-[#2563EB] text-white text-[length:var(--ts-2xs)] flex items-center justify-center font-bold shrink-0">{i + 1}</span>
+                  <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{r.nombre}</span>
+                  <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{r.count}</span>
                 </div>
               ))}
             </div>
@@ -184,9 +185,9 @@ const RecetarioAdminTab = React.lazy(() => import("@/components/admin/recetas/Re
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres actividad</p>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
+      <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
+      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos apareceran cuando registres actividad</p>
     </div>
   );
 }
@@ -484,24 +485,24 @@ export default function RecetasModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#2563EB] text-white flex items-center justify-center  shrink-0">
             <FlaskConical className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <PageTitle className="text-xl font-bold text-[var(--text-primary)]">
               Recetas
               {/* Mejora 20 (R3): Badge de estado */}
               {!loading && recetas.length > 0 && (
-                <span className="ml-2 text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full align-middle">{recetas.filter(r => r.activa).length} recetas</span>
+                <span className="ml-2 text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2 py-0.5 rounded-full align-middle">{recetas.filter(r => r.activa).length} recetas</span>
               )}
-            </h1>
-            <p className="text-sm text-gray-500">Producción interna con control de costos</p>
+            </PageTitle>
+            <p className="text-sm text-[var(--text-secondary)]">Producción interna con control de costos</p>
           </div>
         </div>
         {activeTab === "recetas" && (
           <button
             onClick={() => { setShowNew(true); addIngrediente(); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors shrink-0"
           >
             <Plus className="h-4 w-4" />
             Nueva Receta
@@ -510,7 +511,7 @@ export default function RecetasModule() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-card-border -mx-1 px-1 overflow-x-auto">
+      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">
         {(["dashboard", "recetas", "produccion", "recetario"] as const).map(t => (
           <button
             key={t}
@@ -518,8 +519,8 @@ export default function RecetasModule() {
             className={cn(
               "shrink-0 px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
               activeTab === t
-                ? "border-[#00B4A6] text-[#00B4A6] dark:text-emerald-400"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                ? "border-[#2563EB] text-[#2563EB]"
+                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
             {t === "dashboard" ? <><BarChart3 className="h-3.5 w-3.5" /> Dashboard</> : t === "recetas" ? "Recetas" : t === "produccion" ? "Produccion" : <><BookOpen className="h-3.5 w-3.5" /> Recetario Web</>}
@@ -534,14 +535,12 @@ export default function RecetasModule() {
       {activeTab === "recetas" && (
         <>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-            </div>
+            <LoadingState />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <AlertTriangle className="h-8 w-8 text-red-400" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              <button onClick={fetchRecetas} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
+              <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+              <p className="text-sm text-[var(--data-error)]">{error}</p>
+              <button onClick={fetchRecetas} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : recetas.length === 0 ? (
             <EmptyState
@@ -575,20 +574,20 @@ export default function RecetasModule() {
                 {/* Mejora 6: Barra de busqueda y filtros */}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                     <input
                       type="text"
                       placeholder="Buscar receta..."
                       value={recetaSearch}
                       onChange={e => setRecetaSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                   <div className="flex gap-1">
                     {(["todas", "activas", "inactivas"] as const).map(f => (
                       <button key={f} onClick={() => setRecetaFilter(f)} className={cn(
                         "shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
-                        recetaFilter === f ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10"
+                        recetaFilter === f ? "bg-[#2563EB] text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
                       )}>
                         {f.charAt(0).toUpperCase() + f.slice(1)}
                       </button>
@@ -597,7 +596,7 @@ export default function RecetasModule() {
                   <select
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
-                    className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                   >
                     <option value="nombre">Nombre A-Z</option>
                     <option value="costo-asc">Costo menor</option>
@@ -608,8 +607,8 @@ export default function RecetasModule() {
 
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-2">
-                    <Search className="h-8 w-8 text-gray-300 dark:text-gray-600" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No se encontraron recetas con &apos;{recetaSearchDebounced}&apos;</p>
+                    <Search className="h-8 w-8 text-[var(--text-tertiary)]" />
+                    <p className="text-sm text-[var(--text-secondary)]">No se encontraron recetas con &apos;{recetaSearchDebounced}&apos;</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -624,12 +623,12 @@ export default function RecetasModule() {
                         <div
                           key={r.id}
                           className={cn(
-                            "relative text-left bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all group",
+                            "relative text-left bg-white border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-lg hover:scale-[1.01] transition-all group",
                             !r.activa && "opacity-60"
                           )}
                         >
                           {!r.activa && (
-                            <span className="absolute top-2 right-2 text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Inactiva</span>
+                            <span className="absolute top-2 right-2 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-[var(--text-secondary)]">Inactiva</span>
                           )}
                           <div className="text-center mb-3">
                             <span className="text-4xl">
@@ -641,23 +640,23 @@ export default function RecetasModule() {
                                "\uD83C\uDF73"}
                             </span>
                           </div>
-                          <p className="font-bold text-gray-900 dark:text-white text-center truncate group-hover:text-[#00B4A6] transition-colors">{r.nombre}</p>
+                          <p className="font-bold text-[var(--text-primary)] text-center truncate group-hover:text-[#2563EB] transition-colors">{r.nombre}</p>
                           <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 rounded-full px-2 py-0.5">
+                            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] bg-gray-100 rounded-full px-2 py-0.5">
                               <Package className="h-3 w-3" /> {r.ingredientes.length} ing.
                             </span>
                           </div>
-                          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/5 space-y-1">
+                          <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] space-y-1">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">Costo:</span>
-                              <span className="text-sm font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(r.costoTotal)}</span>
+                              <span className="text-xs text-[var(--text-secondary)]">Costo:</span>
+                              <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{formatCurrency(r.costoTotal)}</span>
                             </div>
                             {margen !== null && (
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Margen:</span>
+                                <span className="text-xs text-[var(--text-secondary)]">Margen:</span>
                                 <span className={cn(
                                   "text-xs font-bold",
-                                  margen >= 20 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                                  margen >= 20 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                                 )}>
                                   {margen}% {margen >= 20 ? "\u2713" : ""}
                                 </span>
@@ -675,26 +674,26 @@ export default function RecetasModule() {
                             return (
                               <div className="mt-2 text-center">
                                 <span className={cn(
-                                  "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full",
-                                  faltan === 0 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                                    : faltan < total ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                  "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
+                                  faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                                    : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                                    : "bg-[var(--data-error-100)] text-[var(--data-error)]"
                                 )}>
                                   {faltan === 0 ? `\u2713 ${disponibles}/${total} disponibles` : `\u26A0 ${faltan} faltan`}
                                 </span>
                               </div>
                             );
                           })()}
-                          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/5 flex gap-2">
+                          <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); setSelected(r); setShowProducir(true); setProducirCantidad(""); setProducirNotas(""); }}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors"
                             >
                               Producir
                             </button>
                             <button
                               onClick={() => openDetail(r)}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/20 transition-colors"
                             >
                               Ver detalle
                             </button>
@@ -717,7 +716,7 @@ export default function RecetasModule() {
 
       {/* ── Tab: Recetario Web ─────────────────────────────────────────────────── */}
       {activeTab === "recetario" && (
-        <React.Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" /></div>}>
+        <React.Suspense fallback={<LoadingState />}>
           <RecetarioAdminTab />
         </React.Suspense>
       )}
@@ -740,38 +739,38 @@ export default function RecetasModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{selected.nombre}</h3>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                    <X className="h-5 w-5 text-gray-500" />
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 {selected.descripcion && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{selected.descripcion}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{selected.descripcion}</p>
                 )}
 
                 {/* ── Análisis de costo (contract RecetaCostBreakdown) ─────── */}
                 {costLoading && (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#00B4A6]" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Cargando análisis de costo...</span>
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#2563EB]" />
+                    <span className="text-xs text-[var(--text-secondary)]">Cargando análisis de costo...</span>
                   </div>
                 )}
                 {costData && (
-                  <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 space-y-3">
+                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Análisis de costo</p>
+                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-success)]">Análisis de costo</p>
                       <span className={cn(
                         "text-xs font-bold px-2 py-0.5 rounded-lg",
                         costData.margenPorcentaje >= 30
-                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
                           : costData.margenPorcentaje >= 10
-                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                            : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
                       )}>
                         Margen: {costData.margenPorcentaje.toFixed(1)}%
                       </span>
@@ -779,46 +778,46 @@ export default function RecetasModule() {
 
                     {/* Desglose por componente */}
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-white/60 dark:bg-white/5 rounded-lg p-2">
-                        <p className="text-[10px] uppercase text-gray-500">Ingredientes</p>
-                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoIngredientes)}</p>
+                      <div className="bg-white/60 rounded-lg p-2">
+                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-secondary)]">Ingredientes</p>
+                        <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIngredientes)}</p>
                       </div>
-                      <div className="bg-white/60 dark:bg-white/5 rounded-lg p-2">
-                        <p className="text-[10px] uppercase text-gray-500">Mano de obra</p>
-                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoManoObra)}</p>
+                      <div className="bg-white/60 rounded-lg p-2">
+                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-secondary)]">Mano de obra</p>
+                        <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoManoObra)}</p>
                       </div>
-                      <div className="bg-white/60 dark:bg-white/5 rounded-lg p-2">
-                        <p className="text-[10px] uppercase text-gray-500">Indirectos</p>
-                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoIndirectos)}</p>
+                      <div className="bg-white/60 rounded-lg p-2">
+                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-secondary)]">Indirectos</p>
+                        <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIndirectos)}</p>
                       </div>
-                      <div className="bg-white dark:bg-white/10 rounded-lg p-2 border border-emerald-300 dark:border-emerald-700">
-                        <p className="text-[10px] uppercase text-emerald-700 dark:text-emerald-400">Total unitario</p>
-                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoTotalUnitario)}</p>
+                      <div className="bg-white rounded-lg p-2 border border-[var(--data-success)]/30">
+                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--data-success)]">Total unitario</p>
+                        <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoTotalUnitario)}</p>
                       </div>
                     </div>
 
                     {/* Precio venta + margen bruto */}
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-emerald-200 dark:border-emerald-800">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        Precio venta: <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(costData.precioVenta)}</span>
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-[var(--data-success)]/30">
+                      <span className="text-[var(--text-secondary)]">
+                        Precio venta: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(costData.precioVenta)}</span>
                       </span>
-                      <span className="text-gray-600 dark:text-gray-400">
+                      <span className="text-[var(--text-secondary)]">
                         Margen bruto: <span className={cn(
                           "font-bold",
-                          costData.margenBruto >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                          costData.margenBruto >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]",
                         )}>{formatCurrency(costData.margenBruto)}</span>
                       </span>
                     </div>
 
                     {costData.ingredientes.length > 0 && (
-                      <div className="space-y-1.5 pt-2 border-t border-emerald-200 dark:border-emerald-800">
-                        <p className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Desglose de ingredientes</p>
+                      <div className="space-y-1.5 pt-2 border-t border-[var(--data-success)]/30">
+                        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-secondary)]">Desglose de ingredientes</p>
                         {costData.ingredientes.map((ing, i) => (
                           <div key={i} className="flex items-center justify-between text-xs">
-                            <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">
+                            <span className="text-[var(--text-primary)] truncate flex-1 mr-2">
                               {ing.nombre} ({ing.cantidad} {ing.unidad} x {formatCurrency(ing.costoUnitario)})
                             </span>
-                            <span className="font-bold font-mono text-gray-900 dark:text-white shrink-0">
+                            <span className="font-bold font-mono text-[var(--text-primary)] shrink-0">
                               {formatCurrency(ing.costoLinea)}
                             </span>
                           </div>
@@ -838,34 +837,34 @@ export default function RecetasModule() {
                   return (
                     <>
                       {/* Cost summary */}
-                      <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
+                      <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                         <div className="flex items-center justify-between">
-                          <p className="text-[10px] uppercase font-bold text-gray-400">Costo total estimado</p>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(selected.costoTotal)}</p>
+                          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Costo total estimado</p>
+                          <p className="text-xl font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
                         </div>
                         {prodFinal && (
-                          <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-1">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Producto final: <span className="font-bold text-gray-700 dark:text-gray-300">{prodFinal.name}</span>
+                          <div className="pt-2 border-t border-[var(--rule-base)] space-y-1">
+                            <p className="text-xs text-[var(--text-secondary)]">
+                              Producto final: <span className="font-bold text-[var(--text-primary)]">{prodFinal.name}</span>
                             </p>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-[var(--text-secondary)]">
                                 Costo: <span className="font-bold">{formatCurrency(selected.costoTotal)}</span>
                               </span>
-                              <span className="text-xs text-gray-400">&rarr;</span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-[var(--text-tertiary)]">&rarr;</span>
+                              <span className="text-xs text-[var(--text-secondary)]">
                                 Venta: <span className="font-bold">{formatCurrency(precioVenta)}</span>
                               </span>
                               {margen !== null && (
                                 <>
-                                  <span className="text-xs text-gray-400">&rarr;</span>
+                                  <span className="text-xs text-[var(--text-tertiary)]">&rarr;</span>
                                   <span className={cn(
                                     "text-xs font-bold px-2 py-0.5 rounded-lg",
                                     margen >= 30
-                                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                                      ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
                                       : margen >= 10
-                                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                        ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                                        : "bg-[var(--data-error-100)] text-[var(--data-error)]"
                                   )}>
                                     Margen: {margen}%
                                   </span>
@@ -873,7 +872,7 @@ export default function RecetasModule() {
                               )}
                             </div>
                             {margen !== null && margen < 10 && (
-                              <p className="text-[11px] font-bold text-red-600 dark:text-red-400 mt-1">
+                              <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-error)] mt-1">
                                 Margen muy bajo &mdash; revisa tus precios
                               </p>
                             )}
@@ -883,9 +882,9 @@ export default function RecetasModule() {
 
                       {/* Ingredientes with cost column */}
                       <div>
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Ingredientes</h4>
+                        <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Ingredientes</h4>
                         {selected.ingredientes.length === 0 ? (
-                          <p className="text-sm text-gray-400">Sin ingredientes</p>
+                          <p className="text-sm text-[var(--text-tertiary)]">Sin ingredientes</p>
                         ) : (
                           <div className="space-y-2">
                             {selected.ingredientes.map(ing => {
@@ -893,28 +892,28 @@ export default function RecetasModule() {
                               const costoUnit = prod?.costPrice ?? prod?.price ?? 0;
                               const costoLinea = costoUnit * ing.cantidad;
                               return (
-                                <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-                                  <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                  <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                                    <Package className="h-4 w-4 text-[var(--data-success)]" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                                       {prod?.name ?? `Producto #${ing.productoId}`}
                                     </p>
-                                    <p className="text-[10px] text-gray-400">
+                                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                                       {ing.cantidad} {ing.unidad} x {formatCurrency(costoUnit)}
                                     </p>
                                   </div>
-                                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300 shrink-0">
+                                  <p className="text-sm font-bold text-[var(--text-primary)] shrink-0">
                                     {formatCurrency(costoLinea)}
                                   </p>
                                 </div>
                               );
                             })}
                             {/* Total row */}
-                            <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-white/10 rounded-xl">
-                              <p className="text-xs font-bold text-gray-600 dark:text-gray-400">Total ingredientes</p>
-                              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(selected.costoTotal)}</p>
+                            <div className="flex items-center justify-between p-3 bg-gray-100 rounded-xl">
+                              <p className="text-xs font-bold text-[var(--text-secondary)]">Total ingredientes</p>
+                              <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
                             </div>
                           </div>
                         )}
@@ -923,7 +922,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -958,14 +957,14 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="w-full max-w-xl bg-white border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <div className="sticky top-0 z-10 bg-white border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
-                  </h3>
-                  <button onClick={resetNew} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <X className="h-5 w-5 text-gray-500" />
+                  </CardTitle>
+                  <button onClick={resetNew} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -973,7 +972,7 @@ export default function RecetasModule() {
                 {/* Steps indicator */}
                 <div className="flex gap-2">
                   {[1, 2, 3].map(s => (
-                    <div key={s} className={cn("flex-1 h-1.5 rounded-full", step >= s ? "bg-[#00B4A6]" : "bg-gray-200 dark:bg-white/10")} />
+                    <div key={s} className={cn("flex-1 h-1.5 rounded-full", step >= s ? "bg-[#2563EB]" : "bg-gray-200")} />
                   ))}
                 </div>
 
@@ -981,33 +980,33 @@ export default function RecetasModule() {
                 {step === 1 && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nombre de la receta</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de la receta</label>
                       <input
                         type="text"
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Ej: Pan de yuca"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Descripción (opcional)</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción (opcional)</label>
                       <textarea
                         value={newDesc}
                         onChange={e => setNewDesc(e.target.value)}
                         placeholder="Proceso de preparación..."
                         rows={2}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">ID Producto final (opcional)</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">ID Producto final (opcional)</label>
                       <input
                         type="number"
                         value={newProductoId}
                         onChange={e => setNewProductoId(e.target.value)}
                         placeholder="ID del producto resultante"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1017,53 +1016,53 @@ export default function RecetasModule() {
                 {step === 2 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">Ingredientes</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)]">Ingredientes</p>
                       <button
                         onClick={addIngrediente}
-                        className="text-xs font-bold text-[#00B4A6] hover:underline"
+                        className="text-xs font-bold text-[#2563EB] hover:underline"
                       >
                         + Agregar
                       </button>
                     </div>
                     {newIngredientes.length === 0 && (
-                      <p className="text-xs text-gray-400 text-center py-4">Agrega ingredientes con el botón de arriba</p>
+                      <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Agrega ingredientes con el botón de arriba</p>
                     )}
                     {newIngredientes.map((ing, i) => (
-                      <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+                      <div key={i} className="flex gap-2 items-end bg-gray-50 rounded-xl p-3">
                         <div className="flex-1">
-                          <label className="block text-[10px] font-bold text-gray-400 mb-0.5">ID Producto</label>
+                          <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">ID Producto</label>
                           <input
                             type="number"
                             value={ing.productoId}
                             onChange={e => updateIngrediente(i, "productoId", e.target.value)}
                             placeholder="ID"
-                            className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <div className="w-20">
-                          <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Cantidad</label>
+                          <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
                           <input
                             type="number"
                             step="0.01"
                             value={ing.cantidad}
                             onChange={e => updateIngrediente(i, "cantidad", e.target.value)}
                             placeholder="0"
-                            className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <div className="w-20">
-                          <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Unidad</label>
+                          <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
                           <input
                             type="text"
                             value={ing.unidad}
                             onChange={e => updateIngrediente(i, "unidad", e.target.value)}
                             placeholder="kg"
-                            className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <button
                           onClick={() => removeIngrediente(i)}
-                          className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1075,31 +1074,31 @@ export default function RecetasModule() {
                 {/* Step 3: Resumen */}
                 {step === 3 && (
                   <div className="space-y-3">
-                    <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{newName || "Sin nombre"}</p>
-                      {newDesc && <p className="text-xs text-gray-500">{newDesc}</p>}
-                      <p className="text-xs text-gray-400">{newIngredientes.length} ingredientes</p>
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                      <p className="text-sm font-bold text-[var(--text-primary)]">{newName || "Sin nombre"}</p>
+                      {newDesc && <p className="text-xs text-[var(--text-secondary)]">{newDesc}</p>}
+                      <p className="text-xs text-[var(--text-tertiary)]">{newIngredientes.length} ingredientes</p>
                     </div>
                   </div>
                 )}
 
                 {createError && (
-                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{createError}</p>
+                  <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>
                 )}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   {step > 1 ? (
                     <button
                       onClick={() => setStep(s => s - 1)}
-                      className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       Anterior
                     </button>
                   ) : (
                     <button
                       onClick={resetNew}
-                      className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       Cancelar
                     </button>
@@ -1107,7 +1106,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 py-2 text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] rounded-lg shadow-sm transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg  transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1115,7 +1114,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 rounded-lg shadow-sm transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-lg  transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1148,22 +1147,22 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Producir Lote</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Receta: <span className="font-bold text-gray-900 dark:text-white">{selected.nombre}</span>
+              <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Receta: <span className="font-bold text-[var(--text-primary)]">{selected.nombre}</span>
                 </p>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Cantidad a producir</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cantidad a producir</label>
                     <input
                       type="number"
                       min="1"
                       value={producirCantidad}
                       onChange={e => setProducirCantidad(e.target.value)}
                       placeholder="Ej: 10"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1178,26 +1177,26 @@ export default function RecetasModule() {
                     const margen = precioVenta > 0 ? Math.round(((precioVenta - costoUnitario) / precioVenta) * 100) : null;
 
                     return (
-                      <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-3 space-y-1.5">
-                        <p className="text-[10px] uppercase font-bold text-[#00B4A6] dark:text-emerald-400">Estimacion de costos</p>
-                        <div className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
+                      <div className="bg-[#2563EB]/5 border border-[#2563EB]/20 rounded-xl p-3 space-y-1.5">
+                        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[#2563EB]">Estimacion de costos</p>
+                        <div className="flex justify-between text-xs text-[var(--text-primary)]">
                           <span>Costo por lote ({qty} uds):</span>
                           <span className="font-bold">{formatCurrency(costoLote)}</span>
                         </div>
-                        <div className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
+                        <div className="flex justify-between text-xs text-[var(--text-primary)]">
                           <span>Costo por unidad:</span>
                           <span className="font-bold">{formatCurrency(costoUnitario)}</span>
                         </div>
                         {margen !== null && (
-                          <div className="flex justify-between text-xs text-gray-700 dark:text-gray-300 pt-1 border-t border-[#00B4A6]/10">
+                          <div className="flex justify-between text-xs text-[var(--text-primary)] pt-1 border-t border-[#2563EB]/10">
                             <span>Si vendes a {formatCurrency(precioVenta)}:</span>
                             <span className={cn(
                               "font-bold",
                               margen >= 30
-                                ? "text-emerald-600 dark:text-emerald-400"
+                                ? "text-[var(--data-success)]"
                                 : margen >= 10
-                                  ? "text-amber-600 dark:text-amber-400"
-                                  : "text-red-600 dark:text-red-400"
+                                  ? "text-[var(--data-warning)]"
+                                  : "text-[var(--data-error)]"
                             )}>
                               margen de {margen}%
                             </span>
@@ -1229,19 +1228,19 @@ export default function RecetasModule() {
 
                     if (todosDisponibles) {
                       return (
-                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-center">
-                          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Todos los ingredientes disponibles</p>
+                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-3 text-center">
+                          <p className="text-xs font-bold text-[var(--data-success)]">Todos los ingredientes disponibles</p>
                         </div>
                       );
                     }
 
                     return (
-                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-red-700 dark:text-red-400">
+                      <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-[var(--data-error)]">
                           {faltantes.length} ingrediente{faltantes.length !== 1 ? "s" : ""} insuficiente{faltantes.length !== 1 ? "s" : ""} — no se puede producir
                         </p>
                         {faltantes.map((f, i) => (
-                          <p key={i} className="text-xs text-red-600 dark:text-red-400">
+                          <p key={i} className="text-xs text-[var(--data-error)]">
                             Insuficiente: necesitas {f.necesario} {f.unidad} de {f.nombre}, tienes {f.disponible}
                           </p>
                         ))}
@@ -1250,32 +1249,32 @@ export default function RecetasModule() {
                   })()}
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Notas (opcional)</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
                     <input
                       type="text"
                       value={producirNotas}
                       onChange={e => setProducirNotas(e.target.value)}
                       placeholder="Observaciones..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
 
                 {producirError && (
-                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{producirError}</p>
+                  <p className="text-xs text-[var(--data-error)] font-semibold">{producirError}</p>
                 )}
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowProducir(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir
@@ -1360,36 +1359,34 @@ function ProduccionTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-      </div>
+      <LoadingState />
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Mejora M6: KPIs de produccion */}
       {lotes.length > 0 && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400">Lotes este mes</p>
-              <p className="text-lg font-extrabold text-gray-900 dark:text-white">{lotesEsteMes.length}</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
+              <p className="text-lg font-extrabold text-[var(--text-primary)]">{lotesEsteMes.length}</p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400">Costo promedio</p>
-              <p className="text-lg font-extrabold text-gray-900 dark:text-white">{formatCurrency(costoPromedio)}</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Costo promedio</p>
+              <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(costoPromedio)}</p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400">Unidades producidas</p>
-              <p className="text-lg font-extrabold text-[#00B4A6]">{unidadesProducidas}</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Unidades producidas</p>
+              <p className="text-lg font-extrabold text-[#2563EB]">{unidadesProducidas}</p>
             </div>
           </div>
 
           {/* Grafica semanal */}
           {chartData.some(d => d.lotes > 0) && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
-              <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1.5">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" /> Produccion semanal (ultimas 4 semanas)
               </h4>
               <ResponsiveContainer width="100%" height={180}>
@@ -1402,7 +1399,7 @@ function ProduccionTab() {
                     const n = String(name);
                     return [n === "lotes" ? `${v} lotes` : `S/${v.toFixed(2)}`, n === "lotes" ? "Lotes" : "Costo total"];
                   }} />
-                  <Bar dataKey="lotes" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="lotes" fill="#2563EB" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1410,45 +1407,45 @@ function ProduccionTab() {
         </>
       )}
 
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
         {lotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <Layers className="h-8 w-8 text-gray-300 dark:text-gray-600" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">Aun no has registrado lotes de produccion</p>
-            <p className="text-xs text-gray-400">Selecciona una receta y usa &quot;Producir Lote&quot; para crear uno</p>
+            <Layers className="h-8 w-8 text-[var(--text-tertiary)]" />
+            <p className="text-sm text-[var(--text-secondary)]">Aun no has registrado lotes de produccion</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Selecciona una receta y usa &quot;Producir Lote&quot; para crear uno</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-white/5 text-left">
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Receta</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Cantidad</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Costo Real</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Fecha</th>
+                  <tr className="border-b border-[var(--rule-soft)] text-left">
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Cantidad</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo Real</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.map(l => (
-                    <tr key={l.id} className="border-b border-gray-50 dark:border-white/5">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{l.receta?.nombre ?? l.recetaId}</td>
-                      <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{l.cantidad}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">{formatCurrency(l.costoReal)}</td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{formatDate(l.producidoEn)}</td>
+                    <tr key={l.id} className="border-b border-gray-50">
+                      <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{l.receta?.nombre ?? l.recetaId}</td>
+                      <td className="px-4 py-3 text-right text-[var(--text-primary)]">{l.cantidad}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(l.costoReal)}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] text-xs">{formatDate(l.producidoEn)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
-                <p className="text-xs text-gray-500">{lotes.length} lotes — Pag. {page}/{totalPages}</p>
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
+                <p className="text-xs text-[var(--text-secondary)]">{lotes.length} lotes — Pag. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30">
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30">
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>

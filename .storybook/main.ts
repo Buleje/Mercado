@@ -1,10 +1,12 @@
 import type { StorybookConfig } from "@storybook/react-webpack5";
 import path from "path";
+import webpack from "webpack";
 
 const config: StorybookConfig = {
   stories: [
     "../stories/**/*.stories.@(ts|tsx)",
     "../components/**/*.stories.@(ts|tsx)",
+    "../packages/design-system/src/**/*.stories.@(ts|tsx)",
   ],
   addons: [
     "@storybook/addon-essentials",
@@ -43,6 +45,49 @@ const config: StorybookConfig = {
       "next/font/google": path.resolve(__dirname, "./mocks/next-font.ts"),
       "server-only": path.resolve(__dirname, "./mocks/server-only.ts"),
     };
+
+    // Webpack 5 no incluye polyfills de Node core por default.
+    // Deshabilitamos todo modulo Node core que alguna dep transitive pida —
+    // Storybook es frontend puro, no necesita net/fs/pg/etc.
+    webpackConfig.resolve.fallback = {
+      ...(webpackConfig.resolve.fallback ?? {}),
+      zlib: false,
+      crypto: false,
+      stream: false,
+      fs: false,
+      path: false,
+      os: false,
+      net: false,
+      tls: false,
+      dns: false,
+      http: false,
+      https: false,
+      url: false,
+      util: false,
+      assert: false,
+      buffer: false,
+      child_process: false,
+      async_hooks: false,
+      perf_hooks: false,
+      querystring: false,
+      events: false,
+      // pg (postgres) y otras deps server — alias a falso
+      pg: false,
+      "pg-native": false,
+    };
+
+    // Ignorar imports con prefijo `node:` (Node.js scheme) que webpack no maneja.
+    // Afecta deps transitives como postgres/prisma/etc que usan node:fs, node:crypto, etc.
+    webpackConfig.plugins = webpackConfig.plugins ?? [];
+    webpackConfig.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^node:/,
+      }),
+      // Ignorar @prisma/client/runtime en bundle de Storybook (server-only).
+      new webpack.IgnorePlugin({
+        resourceRegExp: /@prisma\/client\/runtime/,
+      }),
+    );
 
     // TypeScript/TSX con Babel
     webpackConfig.module.rules = webpackConfig.module.rules ?? [];

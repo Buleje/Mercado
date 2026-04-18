@@ -5,10 +5,10 @@ import { X, ChevronRight, Sparkles } from "lucide-react";
 import { useSettings } from "@/contexts/settings-context";
 
 const FALLBACK_MESSAGES = [
-  { text: "🚚 Delivery gratis en compras desde S/50", link: "#productos", highlight: "S/50" },
-  { text: "🎉 Nuevos productos cada semana — ¡Descúbrelos!", link: "#productos", highlight: "cada semana" },
-  { text: "💳 Paga con Yape o efectivo contra entrega", link: "#productos", highlight: "Yape" },
-  { text: "⭐ 4.8/5 — Los mejores precios de tu zona", link: "#testimonios", highlight: "4.8/5" },
+  { text: "Delivery gratis en compras desde S/50", link: "#productos", highlight: "S/50" },
+  { text: "Nuevos productos cada semana — descubrilos", link: "#productos", highlight: "cada semana" },
+  { text: "Pagá con Yape o efectivo contra entrega", link: "#productos", highlight: "Yape" },
+  { text: "4.8 / 5 — los mejores precios de tu zona", link: "#testimonios", highlight: "4.8/5" },
 ];
 
 const ROTATE_MS = 5000;
@@ -43,29 +43,31 @@ function FirstPurchaseBanner() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 text-white text-center shadow-lg"
-      style={{
-        background: "linear-gradient(90deg, #f97316, #e76f51)",
-        zIndex: 61,
-        padding: "10px 16px",
-      }}
+      className="fixed top-0 left-0 right-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-center border-b border-[var(--text-primary)]"
+      style={{ zIndex: 61, padding: "8px 16px" }}
     >
       <div className="relative mx-auto max-w-7xl flex items-center justify-center gap-3 flex-wrap">
-        <span className="text-sm font-bold tracking-wide">
-          🎉 Primera compra: 10% de descuento con codigo <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded">BIENVENIDO</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] hidden sm:inline">
+          Nuevo cliente
+        </span>
+        <span className="h-3.5 w-px bg-white/20 shrink-0 hidden sm:inline-block" />
+        <span className="text-[13px] font-medium text-[var(--surface-canvas)]">
+          Primera compra con <strong className="font-semibold">10% de descuento</strong>
+          <span className="mx-2 text-white/40">·</span>
+          Código <code className="font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] tracking-wider">BIENVENIDO</code>
         </span>
         <button
           onClick={handleCopy}
-          className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-bold transition-colors"
+          className="px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/10 text-[11px] font-semibold transition-colors"
         >
-          {copied ? "✓ Copiado" : "Copiar codigo"}
+          {copied ? "Copiado" : "Copiar"}
         </button>
         <button
           onClick={handleClose}
-          className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-white/20 transition-colors"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full hover:bg-white/10 transition-colors flex items-center justify-center text-white/60 hover:text-white"
           aria-label="Cerrar"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
       </div>
     </div>
@@ -98,20 +100,14 @@ export default function AnnouncementBar() {
     <FirstPurchaseBanner />
     <div
       id="announcement-bar"
-      className="fixed top-0 left-0 right-0 h-11 text-white text-center overflow-hidden shadow-lg"
-      style={{
-        background: "linear-gradient(90deg, #009690, #00B4A6, #009690)",
-        zIndex: 60,
-      }}
+      className="fixed top-0 left-0 right-0 h-10 bg-gray-900 text-white text-center overflow-hidden border-b border-gray-900"
+      style={{ zIndex: 60 }}
     >
-      {/* Shimmer effect */}
-      <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite]" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)" }} aria-hidden="true" />
-
-      <div className="relative h-full mx-auto max-w-7xl px-6 flex items-center justify-center gap-2.5">
-        <Sparkles className="h-4 w-4 shrink-0 hidden sm:block text-secondary animate-[pop_2s_ease-in-out_infinite]" />
+      <div className="relative h-full mx-auto max-w-7xl px-6 flex items-center justify-center gap-3">
+        <Sparkles className="h-3.5 w-3.5 shrink-0 hidden sm:block text-white/50" strokeWidth={1.75} />
         <a
           href={msg.link}
-          className="hover:underline transition-colors flex items-center gap-1.5 font-bold text-sm tracking-wide"
+          className="transition-colors flex items-center gap-1.5 text-xs font-semibold hover:text-white/80"
           onClick={(e) => {
             e.preventDefault();
             const id = msg.link.replace("#", "");
@@ -121,9 +117,8 @@ export default function AnnouncementBar() {
           <span key={idx} className="animate-[fadeUp_0.3s_ease-out]">
             {msg.text}
           </span>
-          <ChevronRight className="h-4 w-4 shrink-0 animate-[nudgeX_1.5s_ease-in-out_infinite]" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
         </a>
-        <Sparkles className="h-4 w-4 shrink-0 hidden sm:block text-secondary animate-[pop_2s_ease-in-out_infinite_0.5s]" />
       </div>
     </div>
     </>

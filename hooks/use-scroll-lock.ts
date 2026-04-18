@@ -1,21 +1,6 @@
-import { useEffect } from "react";
-
-// Global counter so multiple overlays stacking don't fight each other
-let lockCount = 0;
-
-export function useScrollLock(active: boolean) {
-  useEffect(() => {
-    if (!active) return;
-    lockCount++;
-    if (lockCount === 1) {
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      lockCount = Math.max(0, lockCount - 1);
-      if (lockCount === 0) {
-        document.body.style.overflow = "";
-      }
-    };
-  }, [active]);
-}
-
+/**
+ * Compat layer — useScrollLock migro a @buleje/design-system (ADR-069 fase 3).
+ * Este re-export mantiene compatibility con los 16 consumidores existentes.
+ * Migracion gradual: si tocas un archivo que lo importa, cambia a @buleje/design-system.
+ */
+export { useScrollLock } from "@buleje/design-system";

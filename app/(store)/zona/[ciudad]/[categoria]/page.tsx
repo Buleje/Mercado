@@ -19,6 +19,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { categories, slugify } from "@/data/products";
 import { zones, findZone, getZoneFAQs } from "@/data/zones";
 import { ProductsDB } from "@/lib/db/products.db";
+import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
 import {
   generateItemListLD,
   generateFAQPageLD,
@@ -201,8 +202,8 @@ async function CategoryZoneContent({
         <div className="inline-block rounded-full bg-emerald-50 px-3 py-0.5 text-xs font-medium text-emerald-700 mb-2">
           Buleje ERP
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-          {cat.emoji} {cat.label} en {zone.name}
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          {cat.label} en {zone.name}
         </h1>
         <p className="mt-2 text-slate-600">
           {products.length > 0
@@ -259,16 +260,19 @@ async function CategoryZoneContent({
         <div className="flex flex-wrap gap-2">
           {realCategories
             .filter((c) => c.id !== cat.id)
-            .map((c) => (
-              <Link
-                key={c.id}
-                href={`/zona/${zone.slug}/${c.id}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
-              >
-                <span>{c.emoji}</span>
-                {c.label}
-              </Link>
-            ))}
+            .map((c) => {
+              const CIcon = getCatalogCategoryIcon(c.id);
+              return (
+                <Link
+                  key={c.id}
+                  href={`/zona/${zone.slug}/${c.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-900 transition-colors"
+                >
+                  <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {c.label}
+                </Link>
+              );
+            })}
         </div>
       </section>
 

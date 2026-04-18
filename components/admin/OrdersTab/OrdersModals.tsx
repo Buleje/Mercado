@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { CardTitle } from "@buleje/design-system";
+import { AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { REJECTION_TEMPLATES } from "./types";
 
@@ -18,28 +19,28 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
       onClick={onCancel}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-6"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+          <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
           </div>
           <div>
-            <h3 className="font-extrabold text-gray-900 dark:text-foreground">¿Eliminar pedido?</h3>
-            <p className="text-sm text-gray-500 dark:text-muted">Esta acción no se puede deshacer.</p>
+            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">¿Eliminar pedido?</CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
           </div>
         </div>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
           >
             Sí, eliminar
           </button>
@@ -64,12 +65,12 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
       onClick={onCancel}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground">Rechazar pedido</h3>
-          <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Selecciona un motivo o escribe uno personalizado</p>
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Rechazar pedido</CardTitle>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Selecciona un motivo o escribe uno personalizado</p>
         </div>
         <div className="p-5 space-y-3">
           <div className="grid grid-cols-1 gap-1.5">
@@ -80,8 +81,8 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
                 className={cn(
                   "text-left px-3 py-2 rounded-lg text-sm border transition-colors",
                   rejectReason === t
-                    ? "border-red-400 bg-red-50 text-red-700 font-semibold"
-                    : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                    ? "border-[var(--data-error)] bg-[var(--data-error-50)] text-[var(--data-error)] font-semibold"
+                    : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >
                 {t}
@@ -92,19 +93,19 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
             value={rejectReason}
             onChange={e => onReasonChange(e.target.value)}
             placeholder="O escribe un motivo personalizado..."
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-red-400"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-error)]"
           />
           <div className="flex gap-2 pt-1">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             >
               Cancelar
             </button>
             <button
               onClick={onConfirm}
               disabled={!rejectReason.trim()}
-              className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-lg bg-[var(--data-error)] text-white text-sm font-bold hover:bg-[var(--data-error)] transition-colors disabled:opacity-50"
             >
               Rechazar pedido
             </button>

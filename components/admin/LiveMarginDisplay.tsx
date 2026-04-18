@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { TrendingUp, ChevronDown, ChevronUp, DollarSign } from "lucide-react";
+import { TrendingUp, ChevronDown, ChevronUp, DollarSign } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,19 +42,19 @@ function getLevel(marginPct: number): MarginLevel {
 
 const LEVEL_STYLES: Record<MarginLevel, { bar: string; text: string; badge: string }> = {
   good: {
-    bar: "bg-[#00B4A6]",
-    text: "text-[#00B4A6] dark:text-[#2dd4bf]",
-    badge: "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]",
+    bar: "bg-primary",
+    text: "text-primary",
+    badge: "bg-primary/10 text-primary",
   },
   warning: {
-    bar: "bg-[#f97316]",
-    text: "text-[#f97316]",
-    badge: "bg-[#f97316]/10 text-[#f97316]",
+    bar: "bg-secondary",
+    text: "text-secondary",
+    badge: "bg-secondary/10 text-secondary",
   },
   danger: {
-    bar: "bg-red-500",
-    text: "text-red-500",
-    badge: "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
+    bar: "bg-[var(--data-error)]",
+    text: "text-[var(--data-error)]",
+    badge: "bg-[var(--data-error-50)] text-[var(--data-error)]",
   },
 };
 
@@ -73,17 +73,17 @@ function ProductRow({ item }: ProductRowProps) {
   const styles = LEVEL_STYLES[level];
 
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+        <p className="text-sm font-medium text-[var(--text-primary)] truncate">
           {item.name}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-[var(--text-tertiary)]">
           {item.qty} x {fmt(item.price)} — costo {fmt(item.cost)}
         </p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-24 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+        <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden">
           <div
             className={cn("h-full rounded-full transition-all", styles.bar)}
             style={{ width: `${Math.min(100, marginPct)}%` }}
@@ -126,46 +126,46 @@ export default function LiveMarginDisplay({ items }: Props) {
   return (
     <div
       className={cn(
-        "rounded-2xl border-2 overflow-hidden transition-colors shadow-sm",
+        "rounded-xl border-2 overflow-hidden transition-colors ",
         level === "good"
-          ? "border-[#00B4A6]/30"
+          ? "border-primary/30"
           : level === "warning"
-            ? "border-[#f97316]/30"
-            : "border-red-300 dark:border-red-800"
+            ? "border-secondary/30"
+            : "border-[var(--data-error)]"
       )}
     >
       {/* Summary bar */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div
             className={cn(
               "p-2 rounded-xl",
               level === "good"
-                ? "bg-[#00B4A6]/10"
+                ? "bg-primary/10"
                 : level === "warning"
-                  ? "bg-[#f97316]/10"
-                  : "bg-red-50 dark:bg-red-950/30"
+                  ? "bg-secondary/10"
+                  : "bg-[var(--data-error-50)]"
             )}
           >
             <TrendingUp
               className={cn(
                 "w-5 h-5",
                 level === "good"
-                  ? "text-[#00B4A6]"
+                  ? "text-primary"
                   : level === "warning"
-                    ? "text-[#f97316]"
-                    : "text-red-500"
+                    ? "text-secondary"
+                    : "text-[var(--data-error)]"
               )}
             />
           </div>
           <div className="text-left">
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">
+            <p className="text-xs text-[var(--text-secondary)] font-semibold">
               Margen total
             </p>
-            <p className={cn("text-xl font-black", styles.text)}>
+            <p className={cn("text-xl font-extrabold", styles.text)}>
               {fmt(totals.margin)}{" "}
               <span className="text-base font-bold">({totals.marginPct}%)</span>
             </p>
@@ -173,39 +173,39 @@ export default function LiveMarginDisplay({ items }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-xs text-gray-400">Ingreso</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            <p className="text-xs text-[var(--text-tertiary)]">Ingreso</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               {fmt(totals.revenue)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-400">Costo</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            <p className="text-xs text-[var(--text-tertiary)]">Costo</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               {fmt(totals.cost)}
             </p>
           </div>
           {expanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-[var(--text-tertiary)]" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-[var(--text-tertiary)]" />
           )}
         </div>
       </button>
 
       {/* Progress bar */}
-      <div className="h-2 w-full bg-gray-100 dark:bg-gray-800">
+      <div className="h-2 w-full bg-gray-100">
         <div
-          className={cn("h-full transition-all duration-500", styles.bar)}
+          className={cn("h-full transition-all duration-[var(--dur-slow)]", styles.bar)}
           style={{ width: `${Math.min(100, totals.marginPct)}%` }}
         />
       </div>
 
       {/* Breakdown */}
       {expanded && items.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 px-5 py-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="bg-white px-5 py-3 border-t border-[var(--rule-soft)]">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+            <DollarSign className="w-4 h-4 text-[var(--text-tertiary)]" />
+            <p className="text-xs font-semibold text-[var(--text-secondary)]">
               Desglose por producto
             </p>
           </div>
@@ -216,8 +216,8 @@ export default function LiveMarginDisplay({ items }: Props) {
       )}
 
       {expanded && items.length === 0 && (
-        <div className="bg-white dark:bg-gray-900 px-5 py-6 text-center">
-          <p className="text-sm text-gray-400">
+        <div className="bg-white px-5 py-6 text-center">
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay items en esta venta
           </p>
         </div>

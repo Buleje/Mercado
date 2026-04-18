@@ -10,7 +10,7 @@ import {
   ChevronUp,
   Tag,
   Truck,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,20 +43,20 @@ const SUGGESTION_CONFIG: Record<
 > = {
   revisar: {
     label: "Revisar",
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-900/20",
+    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
     icon: AlertTriangle,
   },
   ofertar: {
     label: "Considere ofertar",
-    color: "text-orange-600 dark:text-orange-400",
-    bg: "bg-orange-50 dark:bg-orange-900/20",
+    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+    bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
     icon: Tag,
   },
   devolver: {
     label: "Considere devolver al proveedor",
-    color: "text-red-600 dark:text-red-400",
-    bg: "bg-red-50 dark:bg-red-900/20",
+    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
     icon: Truck,
   },
 };
@@ -132,7 +132,7 @@ export default function StaleProductAlert() {
   );
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
       {/* Header */}
       <div
         onClick={() => setExpanded((v) => !v)}
@@ -142,12 +142,12 @@ export default function StaleProductAlert() {
         className="flex w-full items-center justify-between px-5 py-4 text-left cursor-pointer"
       >
         <div className="flex items-center gap-3">
-          <TrendingDown className="h-5 w-5 text-orange-500" />
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          <TrendingDown className="h-5 w-5 text-[var(--data-warning)]" />
+          <span className="text-sm font-semibold text-[var(--text-primary)]">
             Productos sin movimiento
           </span>
           {staleProducts.length > 0 && (
-            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+            <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]">
               {staleProducts.length}
             </span>
           )}
@@ -159,32 +159,32 @@ export default function StaleProductAlert() {
               loadProducts();
             }}
             disabled={loading}
-            className="rounded-md p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)]"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           {expanded ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
+            <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />
           )}
         </div>
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-gray-700">
+        <div className="border-t border-[var(--rule-base)]">
           {/* Summary cards */}
           {!loading && staleProducts.length > 0 && (
-            <div className="grid grid-cols-3 gap-px border-b border-gray-100 bg-gray-100 dark:border-gray-700 dark:bg-gray-700">
+            <div className="grid grid-cols-3 gap-px border-b border-[var(--rule-soft)] bg-gray-100 dark:border-[var(--rule-base)] dark:bg-gray-700">
               {(["revisar", "ofertar", "devolver"] as const).map((key) => {
                 const cfg = SUGGESTION_CONFIG[key];
                 return (
                   <div
                     key={key}
-                    className="flex flex-col items-center py-3 bg-white dark:bg-gray-900"
+                    className="flex flex-col items-center py-3 bg-[var(--surface-raised)]"
                   >
                     <span className={cn("text-xl font-bold", cfg.color)}>{counts[key]}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{cfg.label}</span>
+                    <span className="text-xs text-[var(--text-tertiary)]">{cfg.label}</span>
                   </div>
                 );
               })}
@@ -194,17 +194,17 @@ export default function StaleProductAlert() {
           {/* Loading / error / empty */}
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
-              <span className="ml-2 text-sm text-gray-400">Cargando...</span>
+              <RefreshCw className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
+              <span className="ml-2 text-sm text-[var(--text-tertiary)]">Cargando...</span>
             </div>
           )}
           {!loading && error && (
-            <div className="p-4 text-center text-sm text-red-600 dark:text-red-400">{error}</div>
+            <div className="p-4 text-center text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</div>
           )}
           {!loading && !error && staleProducts.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Package className="mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <Package className="mb-2 h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
+              <p className="text-sm text-[var(--text-tertiary)]">
                 Todos los productos tienen movimiento reciente.
               </p>
             </div>
@@ -213,8 +213,8 @@ export default function StaleProductAlert() {
           {!loading && staleProducts.length > 0 && (
             <>
               {/* Sort controls */}
-              <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-2 dark:border-gray-700">
-                <span className="text-xs text-gray-400">Ordenar por:</span>
+              <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-2 dark:border-[var(--rule-base)]">
+                <span className="text-xs text-[var(--text-tertiary)]">Ordenar por:</span>
                 {(["days", "stock", "value"] as const).map((s) => (
                   <button
                     key={s}
@@ -223,14 +223,14 @@ export default function StaleProductAlert() {
                       "rounded-md px-2 py-0.5 text-xs transition",
                       sortBy === s
                         ? "bg-[#00B4A6] text-white"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
                     )}
                   >
                     {s === "days" ? "Días sin venta" : s === "stock" ? "Stock" : "Valor"}
                   </button>
                 ))}
-                <span className="ml-auto text-xs text-gray-400">
-                  Valor total: <strong className="text-red-600">{fmt(totalValueStale)}</strong>
+                <span className="ml-auto text-xs text-[var(--text-tertiary)]">
+                  Valor total: <strong className="text-[var(--data-error)]">{fmt(totalValueStale)}</strong>
                 </span>
               </div>
 
@@ -251,10 +251,10 @@ export default function StaleProductAlert() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                        <p className="truncate text-sm font-medium text-[var(--text-primary)]">
                           {p.name}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-[var(--text-tertiary)]">
                           {p.category} · Stock: {p.stock} {p.unit} · {fmt(p.stock * p.price)}
                         </p>
                       </div>
@@ -264,10 +264,10 @@ export default function StaleProductAlert() {
                           className={cn(
                             "text-sm font-bold",
                             p.daysSinceLastSale >= 60
-                              ? "text-red-600 dark:text-red-400"
+                              ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
                               : p.daysSinceLastSale >= 30
-                              ? "text-orange-600 dark:text-orange-400"
-                              : "text-amber-600 dark:text-amber-400"
+                              ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                              : "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                           )}
                         >
                           {p.daysSinceLastSale >= 999 ? "Sin ventas" : `${p.daysSinceLastSale}d`}

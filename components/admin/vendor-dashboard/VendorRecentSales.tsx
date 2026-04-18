@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import type { VendorOrder } from "./vendor-dashboard.types";
-import { Receipt } from "lucide-react";
+import { Receipt, ShoppingCart } from "@buleje/design-system/icons";
 
 type Props = {
   sales: VendorOrder[];
@@ -20,15 +21,20 @@ function paymentLabel(method?: string): string {
 export function VendorRecentSales({ sales }: Props) {
   if (sales.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
           <Receipt className="h-5 w-5 text-[#00B4A6]" />
           Ventas recientes de hoy
-        </h3>
+        </CardTitle>
         <div className="text-center py-8">
-          <span className="text-3xl">🛒</span>
-          <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
-            Todavía no hay ventas registradas hoy.
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-2">
+            <ShoppingCart className="h-5 w-5" strokeWidth={1.5} />
+          </div>
+          <p className="mt-2 text-sm font-semibold text-[var(--text-secondary)]">
+            Sin ventas hoy
+          </p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+            Aún no registraste ninguna venta hoy
           </p>
         </div>
       </div>
@@ -36,28 +42,28 @@ export function VendorRecentSales({ sales }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
-      <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
         <Receipt className="h-5 w-5 text-[#00B4A6]" />
         Ventas recientes de hoy
-      </h3>
+      </CardTitle>
 
       <ul className="divide-y divide-gray-100 dark:divide-card-border">
         {sales.map((sale) => (
           <li key={sale.id} className="py-3 flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-gray-900 dark:text-foreground truncate">
+                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
                   {sale.customer.name}
                 </span>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span className="text-xs text-[var(--text-tertiary)] shrink-0">
                   {formatHour(sale.createdAt)}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-muted mt-0.5 truncate">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">
                 {sale.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
               </p>
-              <span className="text-xs text-gray-400">{paymentLabel(sale.paymentMethod)}</span>
+              <span className="text-xs text-[var(--text-tertiary)]">{paymentLabel(sale.paymentMethod)}</span>
             </div>
             <div className="shrink-0">
               <p className="font-bold text-sm text-[#00B4A6]">

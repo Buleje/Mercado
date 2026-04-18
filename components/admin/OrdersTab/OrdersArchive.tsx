@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { X, Search, MapPin, Trash2 } from "lucide-react";
+import { X, Search, MapPin, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { formatDate } from "@/lib/admin-helpers";
@@ -40,30 +41,30 @@ export function OrdersArchive({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Cancelados y Entregados</h3>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Cancelados y Entregados</CardTitle>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0 flex flex-col sm:flex-row gap-2">
+        <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0 flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
             <input
               type="text"
               placeholder="Buscar cliente o teléfono…"
               value={archiveSearch}
               onChange={e => setArchiveSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border outline-none focus:border-primary"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
             />
           </div>
           <input
@@ -71,33 +72,33 @@ export function OrdersArchive({
             value={archiveDateFrom}
             onChange={e => setArchiveDateFrom(e.target.value)}
             title="Desde"
-            className="text-sm rounded-lg border border-gray-200 dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-600 dark:text-muted"
+            className="text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
           <input
             type="date"
             value={archiveDateTo}
             onChange={e => setArchiveDateTo(e.target.value)}
             title="Hasta"
-            className="text-sm rounded-lg border border-gray-200 dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-600 dark:text-muted"
+            className="text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
         </div>
 
         <div className="overflow-y-auto flex-1 p-5">
           {filteredArchive.length === 0 ? (
-            <div className="h-32 flex items-center justify-center text-gray-400 dark:text-muted text-sm">
+            <div className="h-32 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted text-sm">
               No se encontraron pedidos
             </div>
           ) : (
             <>
               {/* Desktop table */}
-              <div className="hidden sm:block rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div className="hidden sm:block rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+                  <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                     <tr>
-                      <th className="text-left px-4 py-2.5 font-semibold text-gray-600 dark:text-muted">Cliente</th>
-                      <th className="text-left px-4 py-2.5 font-semibold text-gray-600 dark:text-muted">Estado</th>
-                      <th className="text-left px-4 py-2.5 font-semibold text-gray-600 dark:text-muted">Total</th>
-                      <th className="text-left px-4 py-2.5 font-semibold text-gray-600 dark:text-muted">Fecha</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Estado</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Total</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                       <th className="px-4 py-2.5" />
                     </tr>
                   </thead>
@@ -109,9 +110,9 @@ export function OrdersArchive({
                         onClick={() => { onSelectOrder(o); onClose(); }}
                       >
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-gray-900 dark:text-foreground">{o.customer.name}</p>
+                          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</p>
                           {o.customer.phone && (
-                            <p className="text-xs text-gray-400 dark:text-muted font-mono">{o.customer.phone}</p>
+                            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</p>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -120,21 +121,21 @@ export function OrdersArchive({
                           </span>
                         </td>
                         <td className="px-4 py-3 font-semibold text-primary">S/{o.total.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-muted">{formatDate(o.createdAt)}</td>
+                        <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted">{formatDate(o.createdAt)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                             <a
                               href={googleMapsUrl(o.customer.location)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                               title="Ver en Maps"
                             >
                               <MapPin className="h-4 w-4" />
                             </a>
                             <button
                               onClick={() => onDeleteOrder(o.id)}
-                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
                               title="Eliminar"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -152,17 +153,17 @@ export function OrdersArchive({
                 {filteredArchive.map(o => (
                   <div
                     key={o.id}
-                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                    className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                     onClick={() => { onSelectOrder(o); onClose(); }}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 dark:text-foreground">{o.customer.name}</p>
+                        <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</p>
                         {o.customer.phone && (
-                          <p className="text-xs text-gray-400 dark:text-muted font-mono">{o.customer.phone}</p>
+                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</p>
                         )}
-                        <p className="text-sm text-gray-500 dark:text-muted mt-0.5 truncate">{o.customer.location}</p>
-                        <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{formatDate(o.createdAt)}</p>
+                        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">{o.customer.location}</p>
+                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{formatDate(o.createdAt)}</p>
                       </div>
                       <div className="shrink-0 text-right">
                         <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
@@ -171,18 +172,18 @@ export function OrdersArchive({
                         <p className="text-sm font-bold text-primary mt-1">S/{o.total.toFixed(2)}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-card-border" onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border" onClick={e => e.stopPropagation()}>
                       <a
                         href={googleMapsUrl(o.customer.location)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors"
                       >
                         <MapPin className="h-4 w-4" /> Maps
                       </a>
                       <button
                         onClick={() => onDeleteOrder(o.id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
                       >
                         <Trash2 className="h-4 w-4" /> Eliminar
                       </button>

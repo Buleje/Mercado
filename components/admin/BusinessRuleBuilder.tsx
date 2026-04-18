@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ToggleLeft, ToggleRight, ChevronRight, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, ToggleLeft, ToggleRight, ChevronRight, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,10 +59,10 @@ const ACTION_SUMMARY: Record<ActionType, (v: string) => string> = {
 };
 
 const ACTION_COLOR: Record<ActionType, string> = {
-  create_alert:   "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  send_whatsapp:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  create_order:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  apply_discount: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  create_alert:   "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  send_whatsapp:  "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  create_order:   "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  apply_discount: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const STORAGE_KEY = "buleje_business_rules";
@@ -151,8 +152,8 @@ export default function BusinessRuleBuilder() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Constructor de Reglas</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Constructor de Reglas</SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Automatiza acciones segun condiciones del negocio ({rules.length}/{MAX_RULES})
           </p>
         </div>
@@ -162,7 +163,7 @@ export default function BusinessRuleBuilder() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             atLimit || showForm
-              ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600 cursor-not-allowed"
+              ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)] cursor-not-allowed"
               : "bg-[#00B4A6] text-white hover:bg-[#245a41]"
           )}
         >
@@ -172,7 +173,7 @@ export default function BusinessRuleBuilder() {
       </div>
 
       {atLimit && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           Limite de {MAX_RULES} reglas alcanzado. Elimina una para agregar otra.
         </div>
@@ -180,17 +181,17 @@ export default function BusinessRuleBuilder() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm space-y-5">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Nueva regla automatica</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-5">
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">Nueva regla automatica</p>
 
           {/* Condition row */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">SI...</p>
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">SI...</p>
             <div className="flex flex-wrap gap-3">
               <select
                 value={form.conditionType}
                 onChange={e => setForm(f => ({ ...f, conditionType: e.target.value as ConditionType, conditionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
               >
                 {CONDITION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -204,25 +205,25 @@ export default function BusinessRuleBuilder() {
                     onChange={e => setForm(f => ({ ...f, conditionValue: e.target.value }))}
                     placeholder={conditionMeta.placeholder}
                     className={cn(
-                      "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-                      errors.conditionValue ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+                      "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+                      errors.conditionValue ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
                     )}
                   />
-                  <span className="text-xs text-gray-400 whitespace-nowrap">{conditionMeta.unit}</span>
+                  <span className="text-xs text-[var(--text-tertiary)] whitespace-nowrap">{conditionMeta.unit}</span>
                 </div>
-                {errors.conditionValue && <p className="text-xs text-red-500">{errors.conditionValue}</p>}
+                {errors.conditionValue && <p className="text-xs text-[var(--data-error)]">{errors.conditionValue}</p>}
               </div>
             </div>
           </div>
 
           {/* Action row */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">ENTONCES...</p>
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">ENTONCES...</p>
             <div className="flex flex-wrap gap-3">
               <select
                 value={form.actionType}
                 onChange={e => setForm(f => ({ ...f, actionType: e.target.value as ActionType, actionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
               >
                 {ACTION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -235,11 +236,11 @@ export default function BusinessRuleBuilder() {
                   onChange={e => setForm(f => ({ ...f, actionValue: e.target.value }))}
                   placeholder={actionMeta.valuePlaceholder}
                   className={cn(
-                    "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-                    errors.actionValue ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+                    "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+                    errors.actionValue ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 />
-                {errors.actionValue && <p className="text-xs text-red-500">{errors.actionValue}</p>}
+                {errors.actionValue && <p className="text-xs text-[var(--data-error)]">{errors.actionValue}</p>}
               </div>
             </div>
           </div>
@@ -247,13 +248,13 @@ export default function BusinessRuleBuilder() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => { setShowForm(false); setErrors({}); }}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleAdd}
-              className="px-4 py-2 rounded-xl text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
             >
               Guardar regla
             </button>
@@ -263,7 +264,7 @@ export default function BusinessRuleBuilder() {
 
       {/* Rules list */}
       {rules.length === 0 && !showForm && (
-        <div className="text-center py-16 text-gray-400 dark:text-gray-600">
+        <div className="text-center py-16 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           <p className="text-sm">Sin reglas configuradas.</p>
           <p className="text-xs mt-1">Crea la primera para automatizar acciones.</p>
         </div>
@@ -274,26 +275,26 @@ export default function BusinessRuleBuilder() {
           <div
             key={rule.id}
             className={cn(
-              "bg-white dark:bg-card border rounded-2xl p-4 shadow-sm transition-opacity",
-              rule.enabled ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border/50 opacity-60"
+              "bg-white dark:bg-card border rounded-xl p-4  transition-opacity",
+              rule.enabled ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-60"
             )}
           >
             <div className="flex flex-wrap items-center gap-3">
               {/* Condition */}
               <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-                <span className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium">
+                <span className="px-2.5 py-1 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-medium">
                   SI
                 </span>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-sm text-[var(--text-secondary)]">
                   {CONDITION_SUMMARY[rule.condition.type](rule.condition.value)}
                 </span>
               </div>
 
-              <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+              <ChevronRight className="w-4 h-4 text-[var(--text-tertiary)] shrink-0" />
 
               {/* Action */}
               <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-                <span className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium">
+                <span className="px-2.5 py-1 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-medium">
                   ENTONCES
                 </span>
                 <span className={cn("px-2.5 py-1 rounded-lg text-xs font-medium", ACTION_COLOR[rule.action.type])}>
@@ -306,7 +307,7 @@ export default function BusinessRuleBuilder() {
                 <button
                   onClick={() => handleToggle(rule.id)}
                   title={rule.enabled ? "Desactivar" : "Activar"}
-                  className="text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#4a9e78] transition-colors"
+                  className="text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[#4a9e78] transition-colors"
                 >
                   {rule.enabled
                     ? <ToggleRight className="w-5 h-5 text-[#00B4A6] dark:text-[#4a9e78]" />
@@ -316,14 +317,14 @@ export default function BusinessRuleBuilder() {
                 <button
                   onClick={() => handleDelete(rule.id)}
                   title="Eliminar"
-                  className="text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:hover:text-[var(--data-error)] transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <p className="text-xs text-gray-400 dark:text-gray-600 mt-2">
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mt-2">
               Creada {new Date(rule.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
               {!rule.enabled && " — Inactiva"}
             </p>

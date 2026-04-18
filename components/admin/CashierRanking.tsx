@@ -1,8 +1,9 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { RefreshCw, TrendingUp, ShoppingCart, DollarSign, Users } from "lucide-react";
+import { RefreshCw, TrendingUp, ShoppingCart, DollarSign, Users } from "@buleje/design-system/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,28 +83,28 @@ function groupSalesByCashier(sales: Sale[]): CashierStats[] {
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-md flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="primer lugar">&#x1F451;</span>
       </div>
     );
   }
   if (rank === 2) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-gray-300 to-gray-400 flex items-center justify-center shadow flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--text-tertiary)] flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="segundo lugar">&#x1F948;</span>
       </div>
     );
   }
   if (rank === 3) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-amber-600 to-amber-800 flex items-center justify-center shadow flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="tercer lugar">&#x1F949;</span>
       </div>
     );
   }
   return (
-    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-      <span className="text-sm font-bold text-gray-500 dark:text-gray-400">{rank}</span>
+    <div className="w-10 h-10 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center flex-shrink-0">
+      <span className="text-sm font-bold text-[var(--text-tertiary)]">{rank}</span>
     </div>
   );
 }
@@ -124,15 +125,15 @@ function RankRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-4 p-4 rounded-xl border transition-all duration-500",
+        "flex items-center gap-4 p-4 rounded-xl border transition-all duration-[var(--dur-slow)]",
         isAnimating && "animate-pulse",
         cashier.rank === 1
-          ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700"
+          ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 dark:border-[var(--data-warning)]"
           : cashier.rank === 2
-          ? "border-gray-300 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-600"
+          ? "border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 dark:border-gray-600"
           : cashier.rank === 3
-          ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700"
-          : "border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+          ? "border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 dark:border-[var(--data-warning)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
       )}
     >
       <RankBadge rank={cashier.rank} />
@@ -142,22 +143,22 @@ function RankRow({
         <div className="flex items-center gap-2">
           <p className={cn(
             "font-semibold truncate",
-            isTop3 ? "text-gray-900 dark:text-gray-100" : "text-gray-700 dark:text-gray-300"
+            isTop3 ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
           )}>
             {cashier.displayName}
           </p>
           {movedUp && (
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium flex-shrink-0">
+            <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-medium flex-shrink-0">
               &#9650; subi
             </span>
           )}
           {movedDown && (
-            <span className="text-xs text-red-500 dark:text-red-400 font-medium flex-shrink-0">
+            <span className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-medium flex-shrink-0">
               &#9660; bajo
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+        <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
           {cashier.salesCount} venta{cashier.salesCount !== 1 ? "s" : ""} &bull; ticket prom. {fmt(cashier.avgTicket)}
         </p>
       </div>
@@ -167,12 +168,12 @@ function RankRow({
         <p className={cn(
           "font-bold text-lg",
           cashier.rank === 1
-            ? "text-yellow-700 dark:text-yellow-400"
-            : "text-[#00B4A6] dark:text-green-400"
+            ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+            : "text-[#00B4A6] dark:text-[var(--data-success)]"
         )}>
           {fmt(cashier.totalRevenue)}
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">total vendido</p>
+        <p className="text-xs text-[var(--text-tertiary)]">total vendido</p>
       </div>
     </div>
   );
@@ -247,16 +248,16 @@ export default function CashierRanking() {
   const totalIngresos = ranking.reduce((s, c) => s + c.totalRevenue, 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-[#00B4A6] dark:text-green-400" />
+          <Users className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Ranking del dia
-            </h2>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-tertiary)]">
               {lastUpdated
                 ? `Actualizado ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
                 : "Cargando..."}
@@ -269,7 +270,7 @@ export default function CashierRanking() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#00B4A6] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+            "text-[#00B4A6] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -287,13 +288,13 @@ export default function CashierRanking() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-center"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center"
           >
-            <div className="flex justify-center text-[#00B4A6] dark:text-green-400 mb-1">
+            <div className="flex justify-center text-[#00B4A6] dark:text-[var(--data-success)] mb-1">
               {stat.icon}
             </div>
-            <p className="font-bold text-lg text-gray-900 dark:text-gray-100">{stat.value}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{stat.label}</p>
+            <p className="font-bold text-lg text-[var(--text-primary)]">{stat.value}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -304,24 +305,24 @@ export default function CashierRanking() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-20 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
+              className="h-20 rounded-xl bg-[var(--surface-sunken)] animate-pulse"
             />
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-center">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-4 text-center">
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
           <button
             onClick={fetchRanking}
-            className="mt-2 text-xs text-red-500 dark:text-red-400 underline"
+            className="mt-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)] underline"
           >
             Reintentar
           </button>
         </div>
       ) : ranking.length === 0 ? (
-        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
-          <TrendingUp className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-          <p className="text-sm text-gray-400 dark:text-gray-500">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+          <TrendingUp className="w-8 h-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay ventas registradas hoy
           </p>
         </div>
@@ -338,7 +339,7 @@ export default function CashierRanking() {
       )}
 
       {/* Footer auto-refresh info */}
-      <p className="text-xs text-center text-gray-400 dark:text-gray-600">
+      <p className="text-xs text-center text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
         Se actualiza automaticamente cada 2 minutos
       </p>
     </div>

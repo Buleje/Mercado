@@ -1,6 +1,7 @@
 "use client";
+import { PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Shield, TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Users } from "lucide-react";
+import { Shield, TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -100,7 +101,7 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
 }> = {
   EXCELENTE: {
     label: "Excelente",
-    badge: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
+    badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
     bar: "#00B4A6",
     icon: CheckCircle,
   },
@@ -112,19 +113,19 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
   },
   REGULAR: {
     label: "Regular",
-    badge: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
     bar: "#f97316",
     icon: AlertTriangle,
   },
   RIESGOSO: {
     label: "Riesgoso",
-    badge: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400",
+    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
     bar: "#ea580c",
     icon: AlertTriangle,
   },
   BLOQUEADO: {
     label: "Bloqueado",
-    badge: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
     bar: "#e63946",
     icon: XCircle,
   },
@@ -146,13 +147,13 @@ function ScoreBar({ score, level }: { score: number; level: ScoreLevel }) {
   const color = LEVEL_CONFIG[level].bar;
   return (
     <div className="flex items-center gap-2 w-full">
-      <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
           style={{ width: `${score}%`, backgroundColor: color }}
         />
       </div>
-      <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-200 w-8 text-right shrink-0">
+      <span className="text-xs font-mono font-bold text-[var(--text-secondary)] w-8 text-right shrink-0">
         {score}
       </span>
     </div>
@@ -267,18 +268,18 @@ export default function ScoringCrediticioTab() {
     <div className="space-y-5 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#00B4A6" }}>
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[#00B4A6]" style={{ backgroundColor: "#00B4A6" }}>
           <Shield className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Scoring Crediticio</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Evaluación de riesgo para créditos y fiados</p>
+          <PageTitle className="text-xl font-bold text-[var(--text-primary)]">Scoring Crediticio</PageTitle>
+          <p className="text-xs text-[var(--text-tertiary)]">Evaluación de riesgo para créditos y fiados</p>
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Error al cargar datos: {error}</span>
         </div>
@@ -298,7 +299,7 @@ export default function ScoringCrediticioTab() {
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 isActive
                   ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-[#00B4A6] text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
+                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
             >
               {lvl === "TODOS" ? "Todos" : LEVEL_CONFIG[lvl].label}
@@ -310,13 +311,13 @@ export default function ScoringCrediticioTab() {
 
       {/* Búsqueda */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-10 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+          className="w-full pl-9 pr-4 h-10 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
         />
       </div>
 
@@ -329,27 +330,27 @@ export default function ScoringCrediticioTab() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
-          <Users className="h-10 w-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+          <Users className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
             {search ? "No hay clientes que coincidan" : "No hay clientes registrados"}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
             {search ? "Intenta con otro nombre" : "Los clientes aparecerán aquí una vez que realicen compras"}
           </p>
         </div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+          <div className="hidden sm:block bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Cliente</th>
-                  <th className="text-center px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Nivel</th>
-                  <th className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Score</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Fiado actual</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Límite recom.</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Pago a tiempo</th>
+                <tr className="border-b border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-800/30">
+                  <th className="text-left px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Cliente</th>
+                  <th className="text-center px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Nivel</th>
+                  <th className="px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Score</th>
+                  <th className="text-right px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Fiado actual</th>
+                  <th className="text-right px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Límite recom.</th>
+                  <th className="text-right px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Pago a tiempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,13 +361,13 @@ export default function ScoringCrediticioTab() {
                     <tr
                       key={c.customerId}
                       className={cn(
-                        "border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors",
+                        "border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors",
                       )}
                     >
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-800 dark:text-white truncate max-w-[160px]">{c.customerName}</p>
+                        <p className="font-medium text-[var(--text-primary)] truncate max-w-[160px]">{c.customerName}</p>
                         {c.fiadosOverdue > 0 && (
-                          <p className="text-xs text-red-500 dark:text-red-400">{c.fiadosOverdue} fiado{c.fiadosOverdue > 1 ? "s" : ""} vencido{c.fiadosOverdue > 1 ? "s" : ""}</p>
+                          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{c.fiadosOverdue} fiado{c.fiadosOverdue > 1 ? "s" : ""} vencido{c.fiadosOverdue > 1 ? "s" : ""}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -378,32 +379,32 @@ export default function ScoringCrediticioTab() {
                       <td className="px-4 py-3 min-w-[140px]">
                         <ScoreBar score={c.score} level={c.level} />
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-200">
+                      <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)]">
                         {c.fiadoActual > 0 ? (
-                          <span className={c.fiadoActual > c.limiteRecomendado ? "text-red-600 dark:text-red-400 font-semibold" : ""}>
+                          <span className={c.fiadoActual > c.limiteRecomendado ? "text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold" : ""}>
                             {fmt(c.fiadoActual)}
                           </span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-[var(--text-tertiary)]">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-200">
+                      <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)]">
                         {c.limiteRecomendado > 0 ? fmt(c.limiteRecomendado) : (
-                          <span className="text-red-500 font-semibold">Sin crédito</span>
+                          <span className="text-[var(--data-error)] font-semibold">Sin crédito</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {c.fiadosTotal > 0 ? (
                           <span className={cn(
                             "font-mono text-xs font-semibold",
-                            c.payRate >= 80 ? "text-emerald-600 dark:text-emerald-400" :
-                            c.payRate >= 50 ? "text-amber-600 dark:text-amber-400" :
-                            "text-red-600 dark:text-red-400",
+                            c.payRate >= 80 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+                            c.payRate >= 50 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+                            "text-[var(--data-error)] dark:text-[var(--data-error)]",
                           )}>
                             {c.payRate}%
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-xs">Sin historial</span>
+                          <span className="text-[var(--text-tertiary)] text-xs">Sin historial</span>
                         )}
                       </td>
                     </tr>
@@ -421,13 +422,13 @@ export default function ScoringCrediticioTab() {
               return (
                 <div
                   key={c.customerId}
-                  className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 shadow-sm"
+                  className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 "
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-800 dark:text-white truncate">{c.customerName}</p>
+                      <p className="font-semibold text-[var(--text-primary)] truncate">{c.customerName}</p>
                       {c.fiadosOverdue > 0 && (
-                        <p className="text-xs text-red-500 mt-0.5">{c.fiadosOverdue} fiado(s) vencido(s)</p>
+                        <p className="text-xs text-[var(--data-error)] mt-0.5">{c.fiadosOverdue} fiado(s) vencido(s)</p>
                       )}
                     </div>
                     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ml-2", cfg.badge)}>
@@ -438,28 +439,28 @@ export default function ScoringCrediticioTab() {
                   <ScoreBar score={c.score} level={c.level} />
                   <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
                     <div>
-                      <p className="text-gray-400">Fiado actual</p>
-                      <p className="font-mono font-semibold text-gray-700 dark:text-gray-200 mt-0.5">
+                      <p className="text-[var(--text-tertiary)]">Fiado actual</p>
+                      <p className="font-mono font-semibold text-[var(--text-secondary)] mt-0.5">
                         {c.fiadoActual > 0 ? fmt(c.fiadoActual) : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Límite</p>
+                      <p className="text-[var(--text-tertiary)]">Límite</p>
                       <p className={cn(
                         "font-mono font-semibold mt-0.5",
-                        c.limiteRecomendado > 0 ? "text-gray-700 dark:text-gray-200" : "text-red-500",
+                        c.limiteRecomendado > 0 ? "text-[var(--text-secondary)]" : "text-[var(--data-error)]",
                       )}>
                         {c.limiteRecomendado > 0 ? fmt(c.limiteRecomendado) : "Sin crédito"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Pago</p>
+                      <p className="text-[var(--text-tertiary)]">Pago</p>
                       <p className={cn(
                         "font-mono font-semibold mt-0.5",
-                        c.fiadosTotal === 0 ? "text-gray-400" :
-                        c.payRate >= 80 ? "text-emerald-600 dark:text-emerald-400" :
-                        c.payRate >= 50 ? "text-amber-600 dark:text-amber-400" :
-                        "text-red-600 dark:text-red-400",
+                        c.fiadosTotal === 0 ? "text-[var(--text-tertiary)]" :
+                        c.payRate >= 80 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" :
+                        c.payRate >= 50 ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" :
+                        "text-[var(--data-error)] dark:text-[var(--data-error)]",
                       )}>
                         {c.fiadosTotal > 0 ? `${c.payRate}%` : "—"}
                       </p>
@@ -470,7 +471,7 @@ export default function ScoringCrediticioTab() {
             })}
           </div>
 
-          <p className="text-xs text-center text-gray-400 dark:text-gray-600 pt-1">
+          <p className="text-xs text-center text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] pt-1">
             Mostrando {filtered.length} de {scoredCustomers.length} clientes
           </p>
         </>

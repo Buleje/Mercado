@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, TrendingUp, Clock, CheckCircle2, DollarSign } from "lucide-react";
+import { AlertTriangle, TrendingUp, Clock, CheckCircle2, DollarSign } from "@buleje/design-system/icons";
 
 type ScorecardData = {
   score: number | null;
@@ -24,25 +24,25 @@ interface SupplierScorecardProps {
 }
 
 const GRADE_COLORS: Record<string, string> = {
-  A: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  B: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  C: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  D: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  A: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  B: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  C: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
+  D: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };
 
 function MetricBar({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
-  const color = value > 70 ? "bg-emerald-500" : value > 55 ? "bg-amber-500" : "bg-red-500";
+  const color = value > 70 ? "bg-[var(--accent-soft)]" : value > 55 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="flex items-center gap-1 text-gray-600 dark:text-muted font-medium">
+        <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted font-medium">
           <Icon className="h-3 w-3" /> {label}
         </span>
-        <span className="font-bold text-gray-900 dark:text-foreground">{value}%</span>
+        <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{value}%</span>
       </div>
       <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", color)}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         />
       </div>
@@ -52,7 +52,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3">
+    <div className="animate-pulse bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3">
         <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
         <div className="space-y-2 flex-1">
@@ -91,12 +91,12 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
 
   if (data.insufficient) {
     return (
-      <div className="bg-gray-50 dark:bg-accent/50 border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
-        <AlertTriangle className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-        <p className="text-sm text-gray-500 dark:text-muted">
+      <div className="bg-gray-50 dark:bg-accent/50 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+        <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
           Sin historial suficiente para evaluar (min. 3 OC)
         </p>
-        <p className="text-xs text-gray-400 dark:text-muted mt-1">
+        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
           Actualmente: {data.totalOC} orden{data.totalOC !== 1 ? "es" : ""}
         </p>
       </div>
@@ -104,11 +104,11 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
   }
 
   const score = data.score ?? 0;
-  const scoreColor = score > 70 ? "text-emerald-600" : score > 55 ? "text-amber-600" : "text-red-600";
-  const ringColor = score > 70 ? "stroke-emerald-500" : score > 55 ? "stroke-amber-500" : "stroke-red-500";
+  const scoreColor = score > 70 ? "text-[var(--data-success)]" : score > 55 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]";
+  const ringColor = score > 70 ? "stroke-[var(--data-success)]" : score > 55 ? "stroke-[var(--data-warning)]" : "stroke-[var(--data-error)]";
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-4">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-4">
       {/* Score + Grade */}
       <div className="flex items-center gap-4">
         {/* Circular score */}
@@ -137,16 +137,16 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
               {data.grade}
             </span>
             {score > 70 ? (
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <span className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] flex items-center gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Proveedor confiable
               </span>
             ) : score <= 55 ? (
-              <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1">
+              <span className="text-xs font-semibold text-[var(--data-error)] dark:text-[var(--data-error)] flex items-center gap-1">
                 <AlertTriangle className="h-3.5 w-3.5" /> Revisa condiciones
               </span>
             ) : null}
           </div>
-          <p className="text-xs text-gray-500 dark:text-muted mt-1">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">
             Basado en {data.totalOC} ordenes de compra
           </p>
         </div>

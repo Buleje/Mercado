@@ -1,6 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import {
   Store,
   DollarSign,
@@ -13,7 +15,7 @@ import {
   ExternalLink,
   AlertCircle,
   BarChart3,
-  MapPin } from "lucide-react";
+  MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Leaflet solo en cliente (sin SSR) ────────────────────────────────────────
@@ -65,14 +67,14 @@ function StarRating({ value }: { value: number }) {
           className={cn(
             "h-3 w-3",
             i < full
-              ? "fill-amber-400 text-amber-400"
+              ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
               : half && i === full
-              ? "fill-amber-200 text-amber-400"
-              : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-gray-700"
+              ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+              : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-[var(--text-primary)]"
           )}
         />
       ))}
-      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">{value.toFixed(1)}</span>
+      <span className="ml-1 text-xs text-[var(--text-tertiary)]">{value.toFixed(1)}</span>
     </span>
   );
 }
@@ -108,7 +110,7 @@ function SalesBarChart({ stores }: { stores: StoreRow[] }) {
 
   if (top5.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 py-10 text-gray-400 dark:text-gray-600">
+      <div className="flex flex-col items-center justify-center gap-2 py-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
         <BarChart3 className="h-8 w-8" />
         <p className="text-sm">Sin datos de ventas</p>
       </div>
@@ -121,16 +123,16 @@ function SalesBarChart({ stores }: { stores: StoreRow[] }) {
         const pct = Math.max((store.sales / max) * 100, 2);
         return (
           <div key={store.id} className="flex items-center gap-3">
-            <span className="w-28 truncate text-xs text-gray-600 dark:text-gray-400 sm:w-36">
+            <span className="w-28 truncate text-xs text-[var(--text-secondary)] sm:w-36">
               {store.name}
             </span>
-            <div className="relative h-5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <div className="relative h-5 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
               <div
-                className="h-full rounded-full bg-[#00B4A6] transition-all duration-700"
+                className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slower)]"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="w-24 text-right font-mono text-xs font-bold text-gray-900 dark:text-white">
+            <span className="w-24 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
               {formatSoles(store.sales)}
             </span>
           </div>
@@ -179,7 +181,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
         const icon = L.divIcon({
           className: "store-map-marker",
           html: `<div style="
-            background:#00B4A6;color:white;
+            background:var(--color-primary);color:white;
             width:34px;height:34px;border-radius:50%;
             display:flex;align-items:center;justify-content:center;
             font-size:14px;border:2px solid white;
@@ -194,7 +196,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
             <div style="min-width:140px;">
               <p style="font-weight:700;margin:0 0 4px;">${store.name}</p>
               <p style="margin:0 0 2px;font-size:12px;color:#555;">${store.zone ?? "Sin zona"}</p>
-              <p style="margin:0;font-size:12px;font-weight:600;color:#00B4A6;">
+              <p style="margin:0;font-size:12px;font-weight:600;color:var(--color-primary);">
                 Ventas: ${formatSoles(store.sales)}
               </p>
             </div>
@@ -228,7 +230,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
   return (
     <div
       ref={containerRef}
-      className="rounded-xl border border-gray-200 dark:border-gray-700"
+      className="rounded-xl border border-[var(--rule-base)]"
       style={{ height: 280, width: "100%" }}
     />
   );
@@ -329,8 +331,8 @@ export default function MultiStoreDashboard() {
     return (
       <th
         className={cn(
-          "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-gray-500 hover:text-[#00B4A6] dark:text-gray-400",
-          active && "text-[#00B4A6] dark:text-teal-400",
+          "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-[var(--text-secondary)] hover:text-primary dark:text-[var(--text-tertiary)]",
+          active && "text-primary dark:text-[var(--data-success)]",
           cx
         )}
         onClick={() => handleSort(sortK)}
@@ -352,17 +354,17 @@ export default function MultiStoreDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
+          <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
             Todas mis tiendas
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-xs text-[var(--text-tertiary)]">
             Visión consolidada de {stores.length} tienda{stores.length !== 1 ? "s" : ""}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Selector de período */}
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex rounded-lg border border-[var(--rule-base)]">
             {(Object.entries(PERIOD_LABELS) as [PeriodKey, string][]).map(([key, label]) => (
               <button
                 key={key}
@@ -371,8 +373,8 @@ export default function MultiStoreDashboard() {
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-lg last:rounded-r-lg",
                   period === key
-                    ? "bg-[#00B4A6] text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                    ? "bg-primary text-white"
+                    : "bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
                 )}
               >
                 {label}
@@ -383,7 +385,7 @@ export default function MultiStoreDashboard() {
           <button
             type="button"
             onClick={() => fetchStores(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-[#00B4A6] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:text-primary dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-[var(--text-tertiary)]"
             title="Actualizar"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
@@ -393,7 +395,7 @@ export default function MultiStoreDashboard() {
 
       {/* Error state */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-400">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error)] dark:border-[var(--data-error)]/30 dark:bg-[var(--data-error)]/10 dark:text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -402,18 +404,18 @@ export default function MultiStoreDashboard() {
       {/* KPIs globales */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-[#00B4A6]" },
-          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-blue-600 dark:text-blue-400" },
-          { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-amber-600 dark:text-amber-400" },
-          { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-amber-500" },
+          { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-primary" },
+          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+          { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+          { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-[var(--data-warning)]" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
-            className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+            className="rounded-xl border border-[var(--rule-base)] bg-white p-3  dark:border-[var(--rule-base)] dark:bg-gray-900"
           >
             <div className="flex items-center gap-2">
               <Icon className={cn("h-4 w-4", color)} />
-              <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
+              <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
             </div>
             <p className={cn("mt-1.5 font-mono text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -422,9 +424,9 @@ export default function MultiStoreDashboard() {
 
       {/* Empty state */}
       {stores.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-900">
-          <Store className="h-10 w-10 text-gray-300 dark:text-gray-600" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-white py-16 dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <Store className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay tiendas registradas en el marketplace.
           </p>
         </div>
@@ -448,8 +450,8 @@ export default function MultiStoreDashboard() {
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors",
                   viewTab === id
-                    ? "bg-white text-[#00B4A6] shadow-sm dark:bg-gray-900"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    ? "bg-white text-primary  dark:bg-gray-900"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -460,15 +462,15 @@ export default function MultiStoreDashboard() {
 
           {/* ── Vista: Tabla comparativa ────────────────────────────── */}
           {viewTab === "tabla" && (
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                      <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 dark:text-gray-400">
+                    <tr className="border-b border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
+                      <th className="px-3 py-2.5 text-left text-xs font-bold text-[var(--text-tertiary)]">
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 hover:text-[#00B4A6]"
+                          className="inline-flex items-center gap-1 hover:text-primary"
                           onClick={() => handleSort("name")}
                         >
                           Tienda
@@ -479,7 +481,7 @@ export default function MultiStoreDashboard() {
                       <SortTh label="Pedidos" sortK="orders" />
                       <SortTh label="Rating" sortK="rating" />
                       <SortTh label="Stock bajo" sortK="lowStockCount" />
-                      <th className="px-3 py-2.5 text-center text-xs font-bold text-gray-500 dark:text-gray-400">
+                      <th className="px-3 py-2.5 text-center text-xs font-bold text-[var(--text-tertiary)]">
                         Status
                       </th>
                     </tr>
@@ -488,18 +490,19 @@ export default function MultiStoreDashboard() {
                     {sorted.map((store) => (
                       <tr
                         key={store.id}
-                        className="group transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                        className="group transition-colors hover:bg-[var(--surface-sunken)]/40"
                       >
                         {/* Nombre + logo */}
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#00B4A6]/10 text-sm dark:bg-[#00B4A6]/20">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm dark:bg-primary/20">
                               {store.logo ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
+                                <Image
                                   src={store.logo}
                                   alt={store.name}
-                                  className="h-9 w-9 rounded-lg object-cover"
+                                  width={36}
+                                  height={36}
+                                  className="rounded-lg object-cover"
                                 />
                               ) : (
                                 "🏪"
@@ -510,12 +513,12 @@ export default function MultiStoreDashboard() {
                                 href={`/marketplace/${store.slug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 truncate font-semibold text-gray-900 hover:text-[#00B4A6] dark:text-white"
+                                className="flex items-center gap-1 truncate font-semibold text-[var(--text-primary)] hover:text-primary dark:text-white"
                               >
                                 {store.name}
                                 <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100" />
                               </a>
-                              <p className="truncate text-xs text-gray-400 dark:text-gray-500">
+                              <p className="truncate text-xs text-[var(--text-tertiary)]">
                                 {store.category} · {store.zone ?? "Sin zona"}
                               </p>
                             </div>
@@ -523,12 +526,12 @@ export default function MultiStoreDashboard() {
                         </td>
 
                         {/* Ventas */}
-                        <td className="px-3 py-3 text-right font-mono text-sm font-bold text-gray-900 dark:text-white">
+                        <td className="px-3 py-3 text-right font-mono text-sm font-bold text-[var(--text-primary)]">
                           {formatSoles(store.sales)}
                         </td>
 
                         {/* Pedidos */}
-                        <td className="px-3 py-3 text-right font-mono text-sm text-gray-700 dark:text-gray-300">
+                        <td className="px-3 py-3 text-right font-mono text-sm text-[var(--text-secondary)]">
                           {store.orders}
                         </td>
 
@@ -540,12 +543,12 @@ export default function MultiStoreDashboard() {
                         {/* Stock bajo */}
                         <td className="px-3 py-3 text-right">
                           {store.lowStockCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-xs font-bold text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]">
                               <AlertTriangle className="h-3 w-3" />
                               {store.lowStockCount}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400 dark:text-gray-600">—</span>
+                            <span className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">—</span>
                           )}
                         </td>
 
@@ -555,8 +558,8 @@ export default function MultiStoreDashboard() {
                             className={cn(
                               "inline-block rounded-full px-2 py-0.5 text-xs font-bold",
                               store.isPublished
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                                : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                             )}
                           >
                             {store.isPublished ? "Activa" : "Inactiva"}
@@ -572,12 +575,12 @@ export default function MultiStoreDashboard() {
 
           {/* ── Vista: Gráfico de barras ────────────────────────────── */}
           {viewTab === "grafico" && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
               <div className="mb-4 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
-                <h3 className="text-sm font-bold text-gray-800 dark:text-white">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
                   Top 5 tiendas por ventas
-                </h3>
+                </CardTitle>
               </div>
               <SalesBarChart stores={stores} />
             </div>
@@ -585,13 +588,13 @@ export default function MultiStoreDashboard() {
 
           {/* ── Vista: Mapa ─────────────────────────────────────────── */}
           {viewTab === "mapa" && (
-            <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
               <div className="mb-3 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-[#00B4A6]" />
-                <h3 className="text-sm font-bold text-gray-800 dark:text-white">
+                <MapPin className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
                   Ubicación de tiendas
-                </h3>
-                <span className="ml-auto text-xs text-gray-400 dark:text-gray-600">
+                </CardTitle>
+                <span className="ml-auto text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
                   Posiciones aproximadas en Pucallpa
                 </span>
               </div>
@@ -602,8 +605,8 @@ export default function MultiStoreDashboard() {
       )}
 
       {/* Nota de plan */}
-      <div className="flex items-start gap-2 rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 p-3 text-xs text-gray-600 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10 dark:text-gray-400">
-        <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#00B4A6]" />
+      <div className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-[var(--text-secondary)] dark:border-primary/30 dark:bg-primary/10 dark:text-[var(--text-tertiary)]">
+        <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
         <p>
           Vista disponible para planes <strong>Business</strong> y{" "}
           <strong>Enterprise</strong>. Las métricas de ventas y pedidos se actualizan en

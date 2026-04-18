@@ -1,7 +1,8 @@
 "use client";
 
+import { PageTitle } from "@buleje/design-system";
 import { useMemo, useState } from "react";
-import { MessageCircle, AlertCircle, XCircle } from "lucide-react";
+import { MessageCircle, AlertCircle, XCircle } from "@buleje/design-system/icons";
 import { ThreadsList } from "./ThreadsList";
 import { ConversationView } from "./ConversationView";
 import { MessageComposer } from "./MessageComposer";
@@ -62,10 +63,10 @@ export default function ChatTab() {
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
+          <PageTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
             <MessageCircle className="h-6 w-6 text-[#00B4A6]" />
             Chat con clientes
-          </h1>
+          </PageTitle>
           <p className="text-xs text-slate-500">
             Bloque D2 del Marketplace · polling 5-8s · los clientes reciben respuesta automática
             por WhatsApp cuando estás ausente
@@ -77,12 +78,12 @@ export default function ChatTab() {
             {threads.length} hilos
           </span>
           {totalUnread > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 font-semibold text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error)] px-3 py-1 font-semibold text-white">
               {totalUnread} sin leer
             </span>
           )}
           {threadsError && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 font-semibold text-red-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-3 py-1 font-semibold text-[var(--data-error)]">
               <AlertCircle className="h-3.5 w-3.5" />
               error
             </span>
@@ -113,12 +114,12 @@ export default function ChatTab() {
                   <span className="text-sm font-semibold text-slate-900 dark:text-white">
                     {selectedThread.customerName}
                   </span>
-                  <span className="text-[10px] uppercase text-slate-400">
+                  <span className="text-[length:var(--ts-2xs)] uppercase text-slate-400">
                     {STATUS_LABELS[selectedThread.status]}
                   </span>
                 </div>
                 {selectedThread.customerPhone && (
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[length:var(--ts-xs)] text-slate-500">
                     <a
                       href={`tel:${selectedThread.customerPhone}`}
                       className="underline underline-offset-2 hover:text-[#00B4A6]"
@@ -132,7 +133,7 @@ export default function ChatTab() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                  className="inline-flex items-center gap-1 rounded-md border border-[var(--data-error)] px-2.5 py-1 text-xs font-semibold text-[var(--data-error)] transition hover:bg-[var(--data-error-50)]"
                 >
                   <XCircle className="h-3.5 w-3.5" />
                   Cerrar

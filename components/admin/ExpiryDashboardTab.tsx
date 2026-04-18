@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   AlertTriangle,
@@ -15,7 +16,7 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV, formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
@@ -183,8 +184,8 @@ export default function ExpiryDashboardTab() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <RefreshCw className="h-8 w-8 animate-spin text-emerald-600 dark:text-emerald-400" />
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <RefreshCw className="h-8 w-8 animate-spin text-[var(--data-success)] dark:text-[var(--data-success)]" />
+        <p className="text-[var(--text-tertiary)] text-sm">
           Cargando datos de vencimiento...
         </p>
       </div>
@@ -194,11 +195,11 @@ export default function ExpiryDashboardTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <AlertCircle className="h-10 w-10 text-red-500" />
-        <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
+        <AlertCircle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">{error}</p>
         <button
           onClick={fetchData}
-          className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          className="px-4 py-2 text-sm bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] transition-colors"
         >
           Reintentar
         </button>
@@ -217,24 +218,24 @@ export default function ExpiryDashboardTab() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-base sm:text-xl font-bold text-[var(--text-primary)]">
             Control de Vencimientos
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Lotes vencidos y por vencer — acciones de liquidación y baja
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <Download className="h-4 w-4" />
             Exportar CSV
           </button>
           <button
             onClick={fetchData}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             Actualizar
@@ -273,8 +274,8 @@ export default function ExpiryDashboardTab() {
         />
         <KPICard
           icon={<DollarSign className="h-5 w-5" />}
-          iconBg="bg-blue-100 dark:bg-blue-900/40"
-          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+          iconColor="text-[var(--data-success)] dark:text-[var(--data-success)]"
           label="Valor en riesgo"
           value={formatCurrency(summary.valorTotalRiesgo)}
         />
@@ -282,44 +283,44 @@ export default function ExpiryDashboardTab() {
 
       {/* ── Value breakdown mini-bar ───────────────────────────────────────── */}
       {summary.valorTotalRiesgo > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
+          <p className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Desglose del valor en riesgo
           </p>
-          <div className="flex h-4 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+          <div className="flex h-4 rounded-full overflow-hidden bg-[var(--surface-sunken)]">
             {summary.valorExpired > 0 && (
               <div
-                className="bg-red-500 dark:bg-red-600 transition-all"
+                className="bg-[var(--data-error)] dark:bg-[var(--data-error)] transition-all"
                 style={{ width: `${(summary.valorExpired / summary.valorTotalRiesgo) * 100}%` }}
                 title={`Vencidos: ${formatCurrency(summary.valorExpired)}`}
               />
             )}
             {summary.valorWeek > 0 && (
               <div
-                className="bg-orange-400 dark:bg-orange-500 transition-all"
+                className="bg-[var(--data-warning)] dark:bg-[var(--data-warning)] transition-all"
                 style={{ width: `${(summary.valorWeek / summary.valorTotalRiesgo) * 100}%` }}
                 title={`Esta semana: ${formatCurrency(summary.valorWeek)}`}
               />
             )}
             {summary.valorMonth > 0 && (
               <div
-                className="bg-amber-300 dark:bg-amber-500 transition-all"
+                className="bg-[var(--data-warning)] dark:bg-[var(--data-warning)] transition-all"
                 style={{ width: `${(summary.valorMonth / summary.valorTotalRiesgo) * 100}%` }}
                 title={`Este mes: ${formatCurrency(summary.valorMonth)}`}
               />
             )}
           </div>
-          <div className="flex flex-wrap gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap gap-4 mt-2 text-xs text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error)]" />
               Vencidos: {formatCurrency(summary.valorExpired)}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-orange-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" />
               7 días: {formatCurrency(summary.valorWeek)}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" />
               30 días: {formatCurrency(summary.valorMonth)}
             </span>
           </div>
@@ -333,9 +334,9 @@ export default function ExpiryDashboardTab() {
           placeholder="Buscar por producto, lote o categoría..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2.5 pl-10 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-colors"
+          className="w-full px-4 py-2.5 pl-10 text-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40 transition-colors"
         />
-        <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
       </div>
 
       {/* ── Section: Vencidos ──────────────────────────────────────────────── */}
@@ -382,13 +383,13 @@ export default function ExpiryDashboardTab() {
       {/* ── Empty state ───────────────────────────────────────────────────── */}
       {summary.totalAtRisk === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="h-14 w-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-4">
-            <CalendarClock className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+          <div className="h-14 w-14 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mb-4">
+            <CalendarClock className="h-7 w-7 text-[var(--data-success)] dark:text-[var(--data-success)]" />
           </div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">
             No hay lotes vencidos ni por vencer
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
             Todos los lotes tienen fechas de vencimiento mayores a 30 días
           </p>
         </div>
@@ -417,15 +418,15 @@ function KPICard({
   alertColor?: "amber" | "red" | "orange";
 }) {
   const ringColors: Record<string, string> = {
-    amber: "ring-amber-300 dark:ring-amber-600",
-    red: "ring-red-300 dark:ring-red-600",
-    orange: "ring-orange-300 dark:ring-orange-600",
+    amber: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
+    red: "ring-[var(--data-error)] dark:ring-[var(--data-error)]",
+    orange: "ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
   };
 
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3 transition-shadow",
+        "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 flex flex-col gap-3 transition-shadow",
         alert && `ring-2 ${ringColors[alertColor] || ringColors.amber}`,
       )}
     >
@@ -438,10 +439,10 @@ function KPICard({
         <span className={iconColor}>{icon}</span>
       </div>
       <div>
-        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+        <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] leading-tight">
           {value}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+        <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
           {label}
         </p>
       </div>
@@ -472,24 +473,24 @@ function BatchSection({
 }) {
   const colorMap = {
     red: {
-      bg: "bg-red-50 dark:bg-red-900/20",
-      border: "border-red-200 dark:border-red-800/50",
-      text: "text-red-700 dark:text-red-400",
-      badge: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
+      bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20",
+      border: "border-[var(--data-error)] dark:border-[var(--data-error)]/50",
+      text: "text-[var(--data-error)] dark:text-[var(--data-error)]",
+      badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)]",
       headerBg: "hover:bg-red-50/50 dark:hover:bg-red-900/10",
     },
     orange: {
-      bg: "bg-orange-50 dark:bg-orange-900/20",
-      border: "border-orange-200 dark:border-orange-800/50",
-      text: "text-orange-700 dark:text-orange-400",
-      badge: "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
+      bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+      border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/50",
+      text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+      badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
       headerBg: "hover:bg-orange-50/50 dark:hover:bg-orange-900/10",
     },
     amber: {
-      bg: "bg-amber-50 dark:bg-amber-900/20",
-      border: "border-amber-200 dark:border-amber-800/50",
-      text: "text-amber-700 dark:text-amber-400",
-      badge: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+      bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20",
+      border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/50",
+      text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+      badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
       headerBg: "hover:bg-amber-50/50 dark:hover:bg-amber-900/10",
     },
   };
@@ -503,7 +504,7 @@ function BatchSection({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-800 rounded-xl border overflow-hidden",
+        "bg-[var(--surface-raised)] rounded-xl border overflow-hidden",
         c.border,
       )}
     >
@@ -519,7 +520,7 @@ function BatchSection({
           <span className={c.text}>{icon}</span>
           <div className="text-left">
             <span className={cn("font-semibold text-sm", c.text)}>{title}</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 hidden sm:inline">
+            <span className="text-xs text-[var(--text-tertiary)] ml-2 hidden sm:inline">
               {subtitle}
             </span>
           </div>
@@ -533,13 +534,13 @@ function BatchSection({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block">
+          <span className="text-xs font-medium text-[var(--text-tertiary)] hidden sm:block">
             {formatCurrency(totalValor)}
           </span>
           {expanded ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
+            <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />
           )}
         </div>
       </button>
@@ -549,26 +550,26 @@ function BatchSection({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
-              <tr className="border-t border-b border-gray-100 dark:border-gray-700">
-                <th className="text-left py-2.5 px-4 font-medium text-gray-500 dark:text-gray-400">
+              <tr className="border-t border-b border-[var(--rule-base)]">
+                <th className="text-left py-2.5 px-4 font-medium text-[var(--text-tertiary)]">
                   Producto
                 </th>
-                <th className="text-left py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
+                <th className="text-left py-2.5 px-3 font-medium text-[var(--text-tertiary)]">
                   Lote
                 </th>
-                <th className="text-left py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
+                <th className="text-left py-2.5 px-3 font-medium text-[var(--text-tertiary)]">
                   Vencimiento
                 </th>
-                <th className="text-right py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
+                <th className="text-right py-2.5 px-3 font-medium text-[var(--text-tertiary)]">
                   Cantidad
                 </th>
-                <th className="text-center py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
+                <th className="text-center py-2.5 px-3 font-medium text-[var(--text-tertiary)]">
                   Estado
                 </th>
-                <th className="text-right py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
+                <th className="text-right py-2.5 px-3 font-medium text-[var(--text-tertiary)]">
                   Valor
                 </th>
-                <th className="text-center py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
+                <th className="text-center py-2.5 px-3 font-medium text-[var(--text-tertiary)]">
                   Acciones
                 </th>
               </tr>
@@ -581,28 +582,28 @@ function BatchSection({
                 >
                   <td className="py-2.5 px-4">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">
+                      <p className="font-medium text-[var(--text-primary)] text-sm">
                         {batch.productName}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                      <p className="text-xs text-[var(--text-tertiary)]">
                         {batch.productCategory}
                         {batch.warehouseName && ` · ${batch.warehouseName}`}
                       </p>
                     </div>
                   </td>
-                  <td className="py-2.5 px-3 text-gray-600 dark:text-gray-300 font-mono text-xs">
+                  <td className="py-2.5 px-3 text-[var(--text-secondary)] font-mono text-xs">
                     {batch.lote}
                   </td>
-                  <td className="py-2.5 px-3 text-gray-600 dark:text-gray-300 text-xs">
+                  <td className="py-2.5 px-3 text-[var(--text-secondary)] text-xs">
                     {formatDate(batch.expiryDate)}
                   </td>
-                  <td className="py-2.5 px-3 text-right text-gray-900 dark:text-white tabular-nums">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-primary)] tabular-nums">
                     {batch.quantity} {batch.unit}
                   </td>
                   <td className="py-2.5 px-3 text-center">
                     <ExpiryBadge days={batch.daysUntilExpiry} />
                   </td>
-                  <td className="py-2.5 px-3 text-right text-gray-900 dark:text-white tabular-nums text-xs">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-primary)] tabular-nums text-xs">
                     {formatCurrency(batch.valorRiesgo)}
                   </td>
                   <td className="py-2.5 px-3">
@@ -611,7 +612,7 @@ function BatchSection({
                         onClick={() => onAction(batch.id, "liquidar")}
                         disabled={actionLoading === batch.id}
                         title="Liquidar (marcar para descuento)"
-                        className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors disabled:opacity-50"
+                        className="p-1.5 rounded-lg text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning)]/30 transition-colors disabled:opacity-50"
                       >
                         <Tag className="h-4 w-4" />
                       </button>
@@ -619,7 +620,7 @@ function BatchSection({
                         onClick={() => onAction(batch.id, "baja")}
                         disabled={actionLoading === batch.id}
                         title="Dar de baja (registrar como pérdida)"
-                        className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                        className="p-1.5 rounded-lg text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error)]/30 transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -629,10 +630,10 @@ function BatchSection({
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-200 dark:border-gray-600">
+              <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600">
                 <td
                   colSpan={5}
-                  className="py-2.5 px-4 text-right font-semibold text-gray-600 dark:text-gray-300 text-sm"
+                  className="py-2.5 px-4 text-right font-semibold text-[var(--text-secondary)] text-sm"
                 >
                   Total valor en riesgo:
                 </td>
@@ -657,7 +658,7 @@ function BatchSection({
 function ExpiryBadge({ days }: { days: number }) {
   if (days < 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
         <XCircle className="h-3 w-3" />
         {daysLabel(days)}
       </span>
@@ -665,7 +666,7 @@ function ExpiryBadge({ days }: { days: number }) {
   }
   if (days === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] rounded-full">
         <AlertCircle className="h-3 w-3" />
         Vence hoy
       </span>
@@ -673,14 +674,14 @@ function ExpiryBadge({ days }: { days: number }) {
   }
   if (days <= 7) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full">
         <AlertTriangle className="h-3 w-3" />
         {days}d
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] rounded-full">
       <Clock className="h-3 w-3" />
       {days}d
     </span>

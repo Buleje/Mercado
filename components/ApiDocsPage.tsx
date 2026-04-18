@@ -182,7 +182,7 @@ const CATEGORIES: Category[] = [
 // ── Colores por método HTTP ───────────────────────────────────────────────────
 
 const METHOD_COLORS: Record<HttpMethod, string> = {
-  GET:    "bg-blue-100  text-blue-700  dark:bg-blue-900/40  dark:text-blue-300",
+  GET:    "bg-emerald-100  text-emerald-700  dark:bg-emerald-900/40  dark:text-emerald-300",
   POST:   "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
   PATCH:  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
   DELETE: "bg-red-100   text-red-700   dark:bg-red-900/40   dark:text-red-300",
@@ -284,7 +284,7 @@ function EndpointPanel({ endpoint }: { endpoint: ApiEndpoint }) {
                         <td className="py-1.5 pr-3 font-mono text-green-700 dark:text-green-400">
                           {p.name}
                         </td>
-                        <td className="py-1.5 pr-3 text-blue-600 dark:text-blue-400 font-mono">
+                        <td className="py-1.5 pr-3 text-emerald-600 dark:text-emerald-400 font-mono">
                           {p.type}
                         </td>
                         <td className="py-1.5 pr-3">

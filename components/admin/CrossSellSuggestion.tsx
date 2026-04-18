@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ShoppingBasket, X, Plus, TrendingUp, Loader2 } from "lucide-react";
+import { ShoppingBasket, X, Plus, TrendingUp, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -160,7 +160,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
     <div
       ref={containerRef}
       className={cn(
-        "overflow-hidden transition-all duration-300",
+        "overflow-hidden transition-all duration-[var(--dur-base)]",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         className
       )}
@@ -175,39 +175,39 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
         }
       `}</style>
 
-      <div className="rounded-2xl border border-secondary/40 bg-secondary/5 dark:bg-secondary/10 p-3">
+      <div className="rounded-xl border border-secondary/40 bg-secondary/5 dark:bg-secondary/10 p-3">
         {/* Header */}
         <div className="flex items-center gap-2 mb-2.5">
           <div className="flex items-center gap-1.5">
             <TrendingUp className="h-3.5 w-3.5 text-secondary" />
-            <span className="text-xs font-semibold text-gray-700 dark:text-foreground">
+            <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">
               Clientes que compran esto tambien llevan:
             </span>
           </div>
-          {loading && <Loader2 className="h-3 w-3 animate-spin text-gray-400 ml-auto" />}
+          {loading && <Loader2 className="h-3 w-3 animate-spin text-[var(--text-tertiary)] ml-auto" />}
         </div>
 
         {/* Suggestions */}
         <div className="space-y-2">
           {loading && visibleSuggestions.length === 0 ? (
             <div className="flex items-center justify-center py-3">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
             </div>
           ) : (
             visibleSuggestions.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-gray-100 dark:border-card-border shadow-sm"
+                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border "
               >
                 <ShoppingBasket className="h-4 w-4 text-secondary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 dark:text-foreground truncate">{product.name}</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">{product.name}</p>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-primary font-semibold">
                       S/ {product.price?.toFixed(2) ?? "—"}
                     </span>
                     {product.reason && (
-                      <span className="text-xs text-gray-400 dark:text-muted truncate">{product.reason}</span>
+                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted truncate">{product.reason}</span>
                     )}
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
                   <button
                     type="button"
                     onClick={() => handleDismiss(product.id)}
-                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none"
+                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors focus:outline-none"
                     aria-label="Ignorar sugerencia"
                   >
                     <X className="h-3.5 w-3.5" />

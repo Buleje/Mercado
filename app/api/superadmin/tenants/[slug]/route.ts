@@ -61,7 +61,7 @@ export async function PATCH(
         user: `superadmin:${session.username}`,
         tenantId: slug,
       },
-    }).catch(() => {});
+    }).catch((err) => logger.error("[superadmin/tenants/[slug]] operation failed", { error: String(err) }));
 
     logger.info("[SuperAdmin] Tenant updated", { username: session.username, slug, updates });
     return NextResponse.json({ tenant });

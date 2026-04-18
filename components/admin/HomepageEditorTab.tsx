@@ -1,12 +1,13 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   Loader2, Save, Check, RotateCcw, Eye,
   Layout, Sparkles, BarChart3, ShoppingBag,
   ChevronDown, ChevronUp,
   AlignLeft, Megaphone, Clock, HelpCircle, Heart, MessageSquare,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { type HomepageContent, DEFAULT_HOMEPAGE } from "@/lib/homepage-content";
 
@@ -42,7 +43,7 @@ function SectionEditor({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hover:shadow-sm transition-shadow">
       <button
         onClick={onToggle}
         className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group"
@@ -51,8 +52,8 @@ function SectionEditor({
           {section.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-gray-900 dark:text-foreground text-sm">{section.title}</p>
-          <p className="text-xs text-gray-500 dark:text-muted">{section.description}</p>
+          <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{section.title}</p>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{section.description}</p>
         </div>
         <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center group-hover:bg-primary/8 transition-colors shrink-0">
           {expanded ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
@@ -60,13 +61,13 @@ function SectionEditor({
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-4 pt-4">
+        <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-4 pt-4">
           {section.fields.map((field) => {
             const value = content[field.key];
             if (field.type === "toggle") {
               return (
                 <div key={field.key} className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700 dark:text-foreground">{field.label}</label>
+                  <label className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground">{field.label}</label>
                   <button
                     type="button"
                     onClick={() => onChange(field.key, !value)}
@@ -82,14 +83,14 @@ function SectionEditor({
             }
             return (
               <div key={field.key}>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1.5">{field.label}</label>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">{field.label}</label>
                 {field.type === "textarea" ? (
                   <textarea
                     value={String(value)}
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                   />
                 ) : (
                   <input
@@ -97,7 +98,7 @@ function SectionEditor({
                     value={String(value)}
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 )}
               </div>
@@ -172,8 +173,8 @@ export default function HomepageEditorTab() {
   const SECTIONS: SectionConfig[] = [
     {
       id: "hero",
-      icon: <Layout className="h-6 w-6 text-indigo-500" />,
-      bgColor: "bg-indigo-50 dark:bg-indigo-900/20",
+      icon: <Layout className="h-6 w-6 text-[var(--text-secondary)]" />,
+      bgColor: "bg-[var(--surface-sunken)]",
       title: "Hero / Portada",
       description: "Título principal, subtítulo y botones de acción",
       fields: [
@@ -191,8 +192,8 @@ export default function HomepageEditorTab() {
     },
     {
       id: "announcement",
-      icon: <Megaphone className="h-6 w-6 text-pink-500" />,
-      bgColor: "bg-pink-50 dark:bg-pink-900/20",
+      icon: <Megaphone className="h-6 w-6 text-[var(--text-secondary)]" />,
+      bgColor: "bg-[var(--surface-sunken)]",
       title: "Barra de Anuncios",
       description: "Mensajes rotativos en la barra superior",
       fields: [
@@ -201,21 +202,21 @@ export default function HomepageEditorTab() {
     },
     {
       id: "countdown",
-      icon: <Clock className="h-6 w-6 text-red-500" />,
+      icon: <Clock className="h-6 w-6 text-[var(--data-error)]" />,
       bgColor: "bg-red-50 dark:bg-red-900/20",
       title: "Banner Countdown",
       description: "Banner de ofertas del día con cuenta regresiva",
       fields: [
         { key: "countdownEnabled", label: "Mostrar countdown", type: "toggle" },
-        { key: "countdownTitle", label: "Título", type: "text", placeholder: "🔥 OFERTAS DEL DÍA" },
+        { key: "countdownTitle", label: "Título", type: "text", placeholder: "Ofertas del día" },
         { key: "countdownSubtitle", label: "Subtítulo", type: "text", placeholder: "¡Aprovecha antes de la medianoche!" },
         { key: "countdownCtaText", label: "Texto botón", type: "text", placeholder: "Ver ofertas" },
       ],
     },
     {
       id: "stats",
-      icon: <BarChart3 className="h-6 w-6 text-emerald-500" />,
-      bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
+      icon: <BarChart3 className="h-6 w-6 text-[var(--data-success)]" />,
+      bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       title: "Nuestros Números",
       description: "Estadísticas que se muestran debajo del hero",
       fields: [
@@ -227,7 +228,7 @@ export default function HomepageEditorTab() {
     },
     {
       id: "products",
-      icon: <ShoppingBag className="h-6 w-6 text-orange-500" />,
+      icon: <ShoppingBag className="h-6 w-6 text-[var(--data-warning)]" />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       title: "Productos Destacados",
       description: "Sección de productos destacados en la landing",
@@ -241,8 +242,8 @@ export default function HomepageEditorTab() {
     },
     {
       id: "footer",
-      icon: <AlignLeft className="h-6 w-6 text-violet-500" />,
-      bgColor: "bg-violet-50 dark:bg-violet-900/20",
+      icon: <AlignLeft className="h-6 w-6 text-[var(--text-secondary)]" />,
+      bgColor: "bg-[var(--surface-sunken)]",
       title: "Footer / Pie de Página",
       description: "Descripción, redes sociales y datos del pie de página",
       fields: [
@@ -284,7 +285,7 @@ export default function HomepageEditorTab() {
 
   if (loading) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">
+      <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">
         <Loader2 className="h-5 w-5 animate-spin mr-2" /> Cargando contenido…
       </div>
     );
@@ -295,11 +296,11 @@ export default function HomepageEditorTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Layout className="h-5 w-5 text-primary" />
             Editor de Página de Inicio
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             Personaliza el contenido de cada sección de la landing page
           </p>
         </div>
@@ -308,14 +309,14 @@ export default function HomepageEditorTab() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             <Eye className="h-3.5 w-3.5" /> Vista previa
           </a>
           <button
             onClick={handleReset}
             disabled={!hasChanges}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restaurar
           </button>
@@ -323,9 +324,9 @@ export default function HomepageEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
               saved
-                ? "bg-emerald-500"
+                ? "bg-[var(--accent-soft)]"
                 : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
@@ -342,9 +343,9 @@ export default function HomepageEditorTab() {
       </div>
 
       {/* Info banner */}
-      <div className="flex flex-wrap items-start gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 rounded-2xl px-2 sm:px-4 py-2 sm:py-3">
-        <Sparkles className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+      <div className="flex flex-wrap items-start gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+        <Sparkles className="h-4 w-4 text-[var(--data-success)] mt-0.5 shrink-0" />
+        <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] leading-relaxed">
           Los cambios se guardan en la configuración del sistema. Haz clic en <strong>Guardar cambios</strong> y luego refresca la página de inicio para ver los cambios aplicados.
         </p>
       </div>
@@ -363,26 +364,26 @@ export default function HomepageEditorTab() {
         ))}
 
         {/* FAQ Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("faq")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-900/20">
-              <HelpCircle className="h-6 w-6 text-amber-500" />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20">
+              <HelpCircle className="h-6 w-6 text-[var(--data-warning)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-gray-900 dark:text-foreground text-sm">Preguntas Frecuentes (FAQ)</p>
-              <p className="text-xs text-gray-500 dark:text-muted">{content.faqItems.length} preguntas configuradas</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Preguntas Frecuentes (FAQ)</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.faqItems.length} preguntas configuradas</p>
             </div>
             <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center">
               {expandedSections.has("faq") ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
             </div>
           </button>
           {expandedSections.has("faq") && (
-            <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.faqItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                  <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
+                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Eliminar</button>
                 </div>
               ))}
               <button onClick={() => handleListAdd("faqItems")} className="text-xs font-bold text-primary hover:text-primary-dark">+ Agregar pregunta</button>
@@ -391,26 +392,26 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Benefits Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-green-50 dark:bg-green-900/20">
-              <Heart className="h-6 w-6 text-green-500" />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+              <Heart className="h-6 w-6 text-[var(--data-success)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-gray-900 dark:text-foreground text-sm">Beneficios</p>
-              <p className="text-xs text-gray-500 dark:text-muted">{content.benefitItems.length} beneficios configurados</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Beneficios</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.benefitItems.length} beneficios configurados</p>
             </div>
             <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center">
               {expandedSections.has("benefits") ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
             </div>
           </button>
           {expandedSections.has("benefits") && (
-            <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.benefitItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                  <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
+                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Eliminar</button>
                 </div>
               ))}
               <button onClick={() => handleListAdd("benefitItems")} className="text-xs font-bold text-primary hover:text-primary-dark">+ Agregar beneficio</button>
@@ -419,34 +420,34 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Testimonials Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("testimonials")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-cyan-50 dark:bg-cyan-900/20">
-              <MessageSquare className="h-6 w-6 text-cyan-500" />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-info-50)] dark:bg-[var(--data-info)]/20">
+              <MessageSquare className="h-6 w-6 text-[var(--data-info)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-gray-900 dark:text-foreground text-sm">Testimonios</p>
-              <p className="text-xs text-gray-500 dark:text-muted">{content.testimonialItems.length} testimonios configurados</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Testimonios</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.testimonialItems.length} testimonios configurados</p>
             </div>
             <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center">
               {expandedSections.has("testimonials") ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
             </div>
           </button>
           {expandedSections.has("testimonials") && (
-            <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.testimonialItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
-                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-xs text-muted">Rating:</label>
-                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
-                      {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} ⭐</option>)}
+                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
+                      {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
                     </select>
-                    <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-red-500 hover:text-red-700">Eliminar</button>
+                    <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-[var(--data-error)] hover:text-[var(--data-error)]">Eliminar</button>
                   </div>
                 </div>
               ))}

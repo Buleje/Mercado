@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronRight, LayoutDashboard } from "lucide-react";
+import { ChevronRight, LayoutDashboard } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   BASIC_SIDEBAR_MODULES,
@@ -66,8 +66,8 @@ export default function Breadcrumbs({
         onClick={onNavigateHome}
         className={cn(
           "flex items-center gap-1 shrink-0",
-          "text-gray-400 dark:text-gray-500 hover:text-[#00B4A6] dark:hover:text-emerald-400",
-          "transition-colors duration-150 rounded px-1 py-0.5"
+          "text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[var(--data-success)]",
+          "transition-colors duration-[var(--dur-fast)] rounded px-1 py-0.5"
         )}
         aria-label="Volver al panel principal"
       >
@@ -76,15 +76,15 @@ export default function Breadcrumbs({
       </button>
 
       {/* Separador 1 */}
-      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
+      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
 
       {/* Nivel 2: Modulo */}
       {showTab ? (
         <button
           onClick={onNavigateModule}
           className={cn(
-            "text-gray-500 dark:text-gray-400 hover:text-[#00B4A6] dark:hover:text-emerald-400",
-            "transition-colors duration-150 text-xs rounded px-1 py-0.5 truncate max-w-[120px] sm:max-w-none"
+            "text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[var(--data-success)]",
+            "transition-colors duration-[var(--dur-fast)] text-xs rounded px-1 py-0.5 truncate max-w-[120px] sm:max-w-none"
           )}
         >
           {moduleName}
@@ -92,7 +92,7 @@ export default function Breadcrumbs({
       ) : (
         <span
           className={cn(
-            "text-gray-800 dark:text-gray-200 font-semibold text-xs",
+            "text-[var(--text-primary)] font-semibold text-xs",
             "truncate max-w-[160px] sm:max-w-none px-1"
           )}
         >
@@ -103,10 +103,10 @@ export default function Breadcrumbs({
       {/* Nivel 3: Tab actual */}
       {showTab && (
         <>
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
           <span
             className={cn(
-              "text-gray-800 dark:text-gray-200 font-semibold text-xs",
+              "text-[var(--text-primary)] font-semibold text-xs",
               "truncate max-w-[120px] sm:max-w-[200px] px-1"
             )}
           >

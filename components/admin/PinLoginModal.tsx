@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Lock, X, AlertTriangle } from "lucide-react";
+import { Lock, X, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -245,7 +246,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
         className={cn(
-          "relative w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 p-8",
+          "relative w-full max-w-sm rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-8",
           shake && "animate-shake"
         )}
         style={
@@ -270,7 +271,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
             aria-label="Cerrar"
           >
             <X size={18} />
@@ -282,18 +283,18 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
           <div className="w-14 h-14 rounded-full bg-[#00B4A6]/10 flex items-center justify-center">
             <Lock size={26} className="text-[#00B4A6]" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white text-center">{title}</h2>
+          <SectionTitle className="text-xl font-semibold text-[var(--text-primary)] text-center">{title}</SectionTitle>
         </div>
 
         {/* Locked state */}
         {isLocked ? (
           <div className="flex flex-col items-center gap-3 py-4">
-            <AlertTriangle size={32} className="text-red-500" />
-            <p className="text-red-600 dark:text-red-400 font-medium text-center">Cuenta bloqueada temporalmente</p>
-            <div className="text-3xl font-mono font-bold text-gray-800 dark:text-gray-200">
+            <AlertTriangle size={32} className="text-[var(--data-error)]" />
+            <p className="text-[var(--data-error)] dark:text-[var(--data-error)] font-medium text-center">Cuenta bloqueada temporalmente</p>
+            <div className="text-3xl font-mono font-bold text-[var(--text-primary)]">
               {fmtSeconds(remainingMs)}
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            <p className="text-sm text-[var(--text-tertiary)] text-center">
               Podras intentar de nuevo cuando el tiempo expire
             </p>
           </div>
@@ -313,11 +314,11 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   disabled={loading}
                   className={cn(
-                    "w-14 h-14 rounded-xl border-2 text-center text-2xl font-bold outline-none transition-all duration-150",
-                    "bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white",
+                    "w-14 h-14 rounded-xl border-2 text-center text-2xl font-bold outline-none transition-all duration-[var(--dur-fast)]",
+                    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                     digit
                       ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                      : "border-gray-300 dark:border-gray-600",
+                      : "border-[var(--rule-base)] dark:border-gray-600",
                     "focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "disabled:opacity-60"
                   )}
@@ -333,7 +334,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     key={i}
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      i < attemptsLeft ? "bg-amber-400" : "bg-gray-200 dark:bg-gray-700"
+                      i < attemptsLeft ? "bg-[var(--data-warning)]" : "bg-gray-200 dark:bg-gray-700"
                     )}
                   />
                 ))}
@@ -342,7 +343,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
 
             {/* Error message */}
             {errorMsg && (
-              <p className="text-center text-sm text-red-500 dark:text-red-400 mt-2 mb-0">{errorMsg}</p>
+              <p className="text-center text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mt-2 mb-0">{errorMsg}</p>
             )}
 
             {/* Numeric keypad */}
@@ -353,12 +354,12 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                   onClick={() => handleNumPad(key)}
                   disabled={loading || key === ""}
                   className={cn(
-                    "h-14 rounded-xl text-lg font-semibold transition-all duration-100 select-none",
+                    "h-14 rounded-xl text-lg font-semibold transition-all duration-[var(--dur-fast)] select-none",
                     key === ""
                       ? "invisible"
                       : key === "⌫"
-                      ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-[#00B4A6]/10 hover:text-[#00B4A6] dark:hover:bg-[#00B4A6]/20 active:scale-95",
+                      ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:bg-[#00B4A6]/10 hover:text-[#00B4A6] dark:hover:bg-[#00B4A6]/20 active:scale-95",
                     "disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >
@@ -372,7 +373,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
               onClick={submitPin}
               disabled={digits.some((d) => !d) || loading}
               className={cn(
-                "mt-4 w-full h-12 rounded-xl font-semibold text-white transition-all duration-150",
+                "mt-4 w-full h-12 rounded-lg font-semibold text-white transition-all duration-[var(--dur-fast)]",
                 "bg-[#00B4A6] hover:bg-[#235c42] active:scale-[0.98]",
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}

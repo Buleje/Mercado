@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   MessageSquare,
@@ -10,7 +11,7 @@ import {
   Search,
   ChevronDown,
   Loader2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -207,12 +208,12 @@ export default function MassMessageSender({
   return (
     <div className="flex flex-col gap-6">
       {/* Segment selector */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
         <div className="mb-3 flex items-center gap-2">
-          <Filter className="h-4 w-4 text-[#00B4A6]" />
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          <Filter className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
             Segmento de clientes
-          </h3>
+          </CardTitle>
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -230,8 +231,8 @@ export default function MassMessageSender({
                   className={cn(
                     "rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
                     segment === s
-                      ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                      : "border-gray-200 text-gray-600 hover:border-[#00B4A6]/40 dark:border-gray-600 dark:text-gray-300",
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/40",
                   )}
                 >
                   {label}
@@ -242,26 +243,25 @@ export default function MassMessageSender({
 
         {/* Search within segment */}
         <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar en el segmento..."
             className={cn(
-              "w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm",
-              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
-              "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+              "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm",
+              "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
             )}
           />
         </div>
 
         <div className="mt-2 flex items-center gap-2">
-          <Users className="h-4 w-4 text-gray-400" />
+          <Users className="h-4 w-4 text-[var(--text-tertiary)]" />
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
           ) : (
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-[#00B4A6]">{filtered.length}</strong> destinatario
+            <span className="text-sm text-[var(--text-secondary)]">
+              <strong className="text-primary">{filtered.length}</strong> destinatario
               {filtered.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -270,12 +270,12 @@ export default function MassMessageSender({
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Template editor */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <div className="mb-3 flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-[#00B4A6]" />
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Mensaje
-            </h3>
+            </CardTitle>
           </div>
 
           {/* Preset templates */}
@@ -287,8 +287,8 @@ export default function MassMessageSender({
                 className={cn(
                   "rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize transition",
                   selectedTemplateKey === key
-                    ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                    : "border-gray-200 text-gray-500 hover:border-[#00B4A6]/40 dark:border-gray-600"
+                    ? "border-primary bg-primary text-white"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/40",
                 )}
               >
                 {key}
@@ -301,21 +301,20 @@ export default function MassMessageSender({
             onChange={(e) => setTemplate(e.target.value)}
             rows={5}
             className={cn(
-              "w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm leading-relaxed",
-              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
-              "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500",
+              "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 p-3 text-sm leading-relaxed",
+              "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
               "resize-none"
             )}
           />
 
           {/* Variable chips */}
           <div className="mt-2 flex flex-wrap gap-1 text-xs">
-            <span className="text-gray-400">Variables:</span>
+            <span className="text-[var(--text-tertiary)]">Variables:</span>
             {["{nombre}", "{ultimaCompra}", "{deuda}"].map((v) => (
               <button
                 key={v}
                 onClick={() => setTemplate((t) => `${t} ${v}`)}
-                className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[var(--text-secondary)] hover:bg-gray-200"
               >
                 {v}
               </button>
@@ -324,11 +323,11 @@ export default function MassMessageSender({
         </div>
 
         {/* Preview */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Vista previa
-            </h3>
+            </CardTitle>
             {filtered.length > 0 && (
               <div className="relative">
                 <select
@@ -338,7 +337,7 @@ export default function MassMessageSender({
                       filtered.find((c) => c.id === Number(e.target.value)) ?? null
                     )
                   }
-                  className="appearance-none rounded-lg border border-gray-200 bg-gray-50 py-1 pl-2 pr-6 text-xs text-gray-700 focus:border-[#00B4A6] focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  className="appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-1 pl-2 pr-6 text-xs text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 >
                   {filtered.slice(0, 10).map((c, idx) => (
                     <option key={c.id ?? idx} value={c.id}>
@@ -346,43 +345,44 @@ export default function MassMessageSender({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-[var(--text-tertiary)]" />
               </div>
             )}
           </div>
 
           {/* WhatsApp-style bubble */}
-          <div className="rounded-xl bg-[#e8f5e9] p-4 dark:bg-[#007A72]">
-            <div className="inline-block max-w-[85%] rounded-2xl rounded-tl-none bg-white px-4 py-3 shadow-sm dark:bg-gray-800">
-              <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-100">
+          {/* TODO(#1): non-standard — #e8f5e9 is WhatsApp chat bg, no token equivalent */}
+          <div className="rounded-xl bg-[#e8f5e9] p-4">
+            <div className="inline-block max-w-[85%] rounded-xl rounded-tl-none bg-white px-4 py-3">
+              <p className="text-sm leading-relaxed text-[var(--text-primary)]">
                 {previewCustomer ? previewText : template}
               </p>
-              <p className="mt-1 text-right text-[10px] text-gray-400">
+              <p className="mt-1 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                 {new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
           </div>
 
           {previewCustomer && (
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-[var(--text-tertiary)]">
               Para: {previewCustomer.name}
               {previewCustomer.phone ? ` · ${previewCustomer.phone}` : " · sin número"}
             </p>
           )}
 
           {/* Character count */}
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">
             {template.length} caracteres
             {template.length > 160 && (
-              <span className="ml-1 text-amber-600">(SMS multipart)</span>
+              <span className="ml-1 text-[var(--data-warning)]">(SMS multipart)</span>
             )}
           </p>
         </div>
       </div>
 
       {/* Action */}
-      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <p className="text-sm text-[var(--text-secondary)]">
           Se generara una lista con <strong>{filtered.length}</strong> destinatario
           {filtered.length !== 1 ? "s" : ""} para copiar y usar en WhatsApp o SMS.
           No se realiza ningun envio automatico.
@@ -392,8 +392,9 @@ export default function MassMessageSender({
             onClick={generateList}
             disabled={filtered.length === 0 || !template.trim()}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition",
-              copied ? "bg-green-600" : "bg-[#00B4A6] hover:bg-[#245a40]",
+              "flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition",
+              // TODO(#1): non-standard — hover:#245a40 is a dark forest green, no token equivalent
+              copied ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-[#245a40]",
               "disabled:opacity-40"
             )}
           >
@@ -413,7 +414,7 @@ export default function MassMessageSender({
           <button
             onClick={() => setShowWaLinks(!showWaLinks)}
             disabled={filtered.length === 0 || !template.trim()}
-            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-40"
+            className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition disabled:opacity-40"
           >
             <MessageSquare className="h-4 w-4" />
             Links WhatsApp
@@ -423,12 +424,12 @@ export default function MassMessageSender({
 
       {/* Mejora 8 nueva: WhatsApp links list */}
       {showWaLinks && filtered.length > 0 && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-950/20">
-          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)] p-5">
+          <CardTitle className="text-sm font-bold text-[var(--data-success)] mb-3 flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Links de WhatsApp ({filtered.length} clientes)
-          </h3>
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-3">
+          </CardTitle>
+          <p className="text-xs text-[var(--data-success)] mb-3">
             Haz click en cada link para abrir WhatsApp con el mensaje personalizado.
           </p>
           <div className="space-y-1.5 max-h-60 overflow-y-auto">
@@ -444,11 +445,11 @@ export default function MassMessageSender({
                     href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-colors"
+                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[var(--data-success)]/30 hover:border-[var(--data-success)]/30 transition-colors"
                   >
-                    <span className="font-bold text-gray-900 dark:text-white truncate">{c.name}</span>
-                    <span className="text-gray-400 text-xs">{c.phone}</span>
-                    <span className="ml-auto text-emerald-600 text-xs font-bold">Abrir</span>
+                    <span className="font-bold text-[var(--text-primary)] truncate">{c.name}</span>
+                    <span className="text-[var(--text-tertiary)] text-xs">{c.phone}</span>
+                    <span className="ml-auto text-[var(--data-success)] text-xs font-bold">Abrir</span>
                   </a>
                 </div>
               );

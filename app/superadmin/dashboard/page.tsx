@@ -7,7 +7,7 @@ import {
   Building2, TrendingUp, CheckCircle2, ShoppingBag, Package, Users,
   BarChart3, Activity, Loader2, RefreshCw,
 } from "lucide-react";
-import { SAStatCard } from "@/components/superadmin/_shared/SAStatCard";
+import { StatCard } from "@buleje/design-system";
 import { CardGridSkeleton, ChartSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
@@ -70,14 +70,14 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">Resumen ejecutivo de la plataforma.</p>
         </div>
         <button
           type="button"
           onClick={() => void loadData()}
           disabled={loading}
-          className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors disabled:opacity-50"
+          className="p-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-tertiary)] transition-colors disabled:opacity-50"
           title="Actualizar"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
           {error}
           <button
             type="button"
@@ -98,52 +98,46 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI cards — 3x2 grid */}
+      {/* KPI cards — 3x2 grid (Ola 1: StatCard DS, sin border-top semaforo) */}
       {loading ? (
         <CardGridSkeleton count={6} />
       ) : data ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <SAStatCard
-            icon={<Building2 className="w-4 h-4" />}
+          <StatCard
+            icon={Building2}
             label="Total Tenants"
             value={data.overview.totalTenants}
-            sub={`${data.growth.tenantsThisMonth} nuevos este mes`}
-            accent="linear-gradient(90deg,#00B4A6,#2dd4bf)"
-            trend={data.growth.tenantGrowthPct}
+            subValue={`${data.growth.tenantsThisMonth} nuevos este mes`}
+            delta={data.growth.tenantGrowthPct}
           />
-          <SAStatCard
-            icon={<TrendingUp className="w-4 h-4 text-green-500" />}
+          <StatCard
+            icon={TrendingUp}
             label="MRR"
             value={fmtMRR(data.overview.mrr)}
-            sub={`ARR: ${fmtMRR(data.overview.arr)}`}
-            accent="#22c55e"
+            subValue={`ARR: ${fmtMRR(data.overview.arr)}`}
           />
-          <SAStatCard
-            icon={<CheckCircle2 className="w-4 h-4 text-teal-500" />}
+          <StatCard
+            icon={CheckCircle2}
             label="Tenants activos"
             value={data.overview.activeTenants}
-            sub={`${data.overview.payingTenants} de pago`}
-            accent="#2dd4bf"
+            subValue={`${data.overview.payingTenants} de pago`}
           />
-          <SAStatCard
-            icon={<ShoppingBag className="w-4 h-4 text-violet-500" />}
+          <StatCard
+            icon={ShoppingBag}
             label="Total pedidos"
             value={data.totals.totalOrders.toLocaleString("es-PE")}
-            sub={`${data.growth.ordersThisMonth} este mes`}
-            accent="#7c3aed"
-            trend={data.growth.orderGrowthPct}
+            subValue={`${data.growth.ordersThisMonth} este mes`}
+            delta={data.growth.orderGrowthPct}
           />
-          <SAStatCard
-            icon={<Package className="w-4 h-4 text-amber-500" />}
+          <StatCard
+            icon={Package}
             label="Total productos"
             value={data.totals.totalProducts.toLocaleString("es-PE")}
-            accent="#f59e0b"
           />
-          <SAStatCard
-            icon={<Users className="w-4 h-4 text-blue-500" />}
+          <StatCard
+            icon={Users}
             label="Usuarios admin"
             value={data.totals.totalAdminUsers.toLocaleString("es-PE")}
-            accent="#3b82f6"
           />
         </div>
       ) : null}
@@ -158,14 +152,14 @@ export default function DashboardPage() {
       {/* Tenant Health Monitor */}
       {!loading && (
         <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Monitoreo de Tiendas</h2>
+          <h2 className="text-base font-bold text-[var(--text-primary)] mb-3">Monitoreo de Tiendas</h2>
           <TenantMonitorPanel />
         </div>
       )}
 
       {/* Quick actions */}
       <div>
-        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Acceso rápido</h2>
+        <h2 className="text-base font-bold text-[var(--text-primary)] mb-3">Acceso rápido</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
@@ -176,13 +170,13 @@ export default function DashboardPage() {
             },
             {
               href: "/superadmin/analytics",
-              icon: <BarChart3 className="w-6 h-6 text-violet-500" />,
+              icon: <BarChart3 className="w-6 h-6 text-[var(--text-secondary)]" />,
               label: "Analytics",
               desc: "Métricas de crecimiento, MRR, comisiones y riesgo",
             },
             {
               href: "/superadmin/activity",
-              icon: <Activity className="w-6 h-6 text-blue-500" />,
+              icon: <Activity className="w-6 h-6 text-[var(--data-success)]" />,
               label: "Log de actividad",
               desc: "Auditoría completa de acciones en la plataforma",
             },
@@ -190,11 +184,11 @@ export default function DashboardPage() {
             <Link
               key={href}
               href={href}
-              className="group flex items-start gap-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm dark:shadow-none hover:border-teal-300 dark:hover:border-teal-700 transition-colors"
+              className="group flex items-start gap-4 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 shadow-sm dark:shadow-none hover:border-teal-300 dark:hover:border-teal-700 transition-colors"
             >
               <div className="shrink-0 mt-0.5">{icon}</div>
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                <div className="font-semibold text-[var(--text-primary)] group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                   {label}
                 </div>
                 <div className="text-gray-400 text-xs mt-1">{desc}</div>

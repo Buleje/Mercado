@@ -1,21 +1,35 @@
 "use client";
 
-import { Bot, CheckCircle2, ExternalLink, TrendingUp } from "lucide-react";
+import { Bot, CheckCircle2, ExternalLink, TrendingUp, CheckCheck, AlertTriangle, XCircle, MinusCircle } from "lucide-react";
+import { StatCard } from "@buleje/design-system";
 import { calcScore, type ScoreSnapshot } from "@/lib/superadmin/setup-types";
 
 interface ScoreDashboardProps {
   scores: ScoreSnapshot[];
 }
 
+/**
+ * Ola 3 — Migrado a StatCard del DS:
+ *  - 4 tiles (APLICADAS / PARCIALES / FALTAN / N/A) usan `<StatCard density="default" />`.
+ *  - Iconos neutros `text-[var(--text-secondary)]` gris — sin color saturado.
+ *  - Emphasis semantico SOLO en el valor cuando N > 0:
+ *      APLICADAS  → success (teal)  cuando N > 0
+ *      PARCIALES  → warning (amber) cuando N > 0
+ *      FALTAN     → error   (red)   cuando N > 0
+ *      N/A        → siempre neutral (no es error, es decision consciente)
+ *  - Cuando N === 0 → emphasis neutral (gris).
+ *  - Sin border-top decorativo — el container card ya lo provee.
+ *  - Emojis removidos de los labels (minimalismo holded-style).
+ */
 export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
   return (
-    <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
+    <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-        <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+        <TrendingUp className="w-4 h-4 text-[var(--text-secondary)]" />
+        <h2 className="text-sm font-bold text-[var(--text-primary)]">
           Score de Buenas Prácticas
         </h2>
-        <span className="text-[10px] text-gray-400 uppercase tracking-wide ml-auto">
+        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wide ml-auto">
           Actualizado 2026-04-06
         </span>
       </div>
@@ -28,52 +42,64 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
             <div
               key={score.label}
               id={isAgentIA ? "practicas-agentes-ia" : "practicas-2026"}
-              className="border border-gray-100 dark:border-gray-900 rounded-xl p-4"
+              className="border border-[var(--rule-base)] rounded-xl p-4"
             >
               <div className="flex items-center gap-2 mb-3">
                 {isAgentIA ? (
-                  <Bot className="w-4 h-4 text-purple-500" />
+                  <Bot className="w-4 h-4 text-[var(--text-secondary)]" />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4 text-teal-500" />
+                  <CheckCircle2 className="w-4 h-4 text-[var(--text-secondary)]" />
                 )}
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">
                   {score.label}
                 </span>
               </div>
 
-              {/* Buckets */}
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                <div className="text-center">
-                  <div className="text-lg font-extrabold text-emerald-500">{score.applied}</div>
-                  <div className="text-[9px] text-gray-400 uppercase tracking-wide">✅ Aplicadas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-extrabold text-amber-500">{score.partial}</div>
-                  <div className="text-[9px] text-gray-400 uppercase tracking-wide">⚠️ Parciales</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-extrabold text-red-500">{score.missing}</div>
-                  <div className="text-[9px] text-gray-400 uppercase tracking-wide">❌ Faltan</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-extrabold text-gray-400">{score.na}</div>
-                  <div className="text-[9px] text-gray-400 uppercase tracking-wide">➖ N/A</div>
-                </div>
+              {/* Buckets — StatCard DS semaforo condicional (Ola 3) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <StatCard
+                  icon={CheckCheck}
+                  label="Aplicadas"
+                  value={score.applied}
+                  emphasis={score.applied > 0 ? "success" : "neutral"}
+                  density="default"
+                />
+                <StatCard
+                  icon={AlertTriangle}
+                  label="Parciales"
+                  value={score.partial}
+                  emphasis={score.partial > 0 ? "warning" : "neutral"}
+                  density="default"
+                />
+                <StatCard
+                  icon={XCircle}
+                  label="Faltan"
+                  value={score.missing}
+                  emphasis={score.missing > 0 ? "error" : "neutral"}
+                  density="default"
+                />
+                <StatCard
+                  icon={MinusCircle}
+                  label="N/A"
+                  value={score.na}
+                  emphasis="neutral"
+                  density="default"
+                />
               </div>
 
               {/* Score sólido */}
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    Score sólido (✅ + ⚠️×0.5)
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    Score sólido (aplicadas + parciales×0.5)
                   </span>
-                  <span className="text-xs font-bold text-teal-600 dark:text-teal-400">
+                  <span className="text-xs font-bold text-[var(--accent)]">
                     {c.solidPct}%
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-teal-500 to-emerald-500"
+                    className="h-full bg-[var(--accent)]"
                     style={{ width: `${c.solidPct}%` }}
                   />
                 </div>
@@ -82,16 +108,16 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
               {/* Score perfecto */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    Score perfecto (solo ✅)
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    Score perfecto (solo aplicadas)
                   </span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-xs font-bold text-[var(--data-success)]">
                     {c.perfectPct}%
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                    className="h-full bg-[var(--accent)]"
                     style={{ width: `${c.perfectPct}%` }}
                   />
                 </div>
@@ -100,7 +126,7 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
               {score.link && (
                 <a
                   href={score.link.url}
-                  className="inline-flex items-center gap-1 text-[10px] text-teal-600 dark:text-teal-400 hover:underline mt-3"
+                  className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--accent)] hover:underline mt-3"
                 >
                   {score.link.label}
                   <ExternalLink className="w-2.5 h-2.5" />
@@ -111,8 +137,8 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
         })}
       </div>
 
-      <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-3 leading-relaxed">
-        <strong>Techo realista del Excel 2026:</strong> 87.5% sólido / 77% perfecto (las 3 ❌ y 4 ➖ son decisiones conscientes de NO aplicar — Scrum, Service Mesh, Sharding, Monorepo, Factory DI, Hexagonal completa, Terraform).
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 leading-relaxed">
+        <strong>Techo realista del Excel 2026:</strong> 87.5% sólido / 77% perfecto (las 3 faltantes y 4 N/A son decisiones conscientes de NO aplicar — Scrum, Service Mesh, Sharding, Monorepo, Factory DI, Hexagonal completa, Terraform).
         <br />
         <strong>Path al máximo Excel Agentes IA:</strong> faltan RAG vectorial, structured output JSON, modelo mixto (router LLM), temperaturas diferenciadas por agente, LangSmith/Helicone, LlamaGuard.
       </p>

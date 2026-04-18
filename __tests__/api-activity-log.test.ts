@@ -21,6 +21,18 @@ const { mockFindMany, mockCreate, mockDeleteMany } = vi.hoisted(() => ({
   mockDeleteMany: vi.fn(),
 }));
 
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: () => ({
+    activityLog: {
+      findMany: mockFindMany,
+      create: mockCreate,
+      deleteMany: mockDeleteMany,
+    },
+  }),
+}));
+
+// Route uses prisma direct from @/lib/prisma (CLAUDE.md Rule 1 violation,
+// tracked as tech debt). Mock so tests don't hit a real DB.
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     activityLog: {

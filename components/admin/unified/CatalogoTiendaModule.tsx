@@ -1,14 +1,24 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
-  Tag, BarChart3, Package, PackageCheck, PackageX,
+  Tag, Package, PackageCheck, PackageX,
   DollarSign, TrendingUp, Layers, ImageOff, Calculator, AlertTriangle,
-  Camera, Eye, RefreshCw, FileDown, Maximize2, X as XIcon,
-} from "lucide-react";
+  Camera, Eye, Maximize2, X as XIcon,
+} from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import FavStar from "@/components/admin/shared/FavStar";
+import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
+import DashboardSkeleton from "@/components/admin/shared/DashboardSkeleton";
+import KpiCard from "@/components/admin/shared/KPICard";
+import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
+import ExportButton from "@/components/admin/shared/ExportButton";
+import PeriodSelector from "@/components/admin/shared/PeriodSelector";
+import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
+import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 import { cn } from "@/lib/utils";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -19,13 +29,8 @@ import {
 import type { TooltipContentProps } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
-const ProductsAdminTab   = dynamic(() => import("@/components/admin/ProductsAdminTab"),   { loading: S });
 const CategoriesEditorTab = dynamic(() => import("@/components/admin/CategoriesEditorTab"), { loading: S });
 const PromotionsTab      = dynamic(() => import("@/components/admin/PromotionsTab"),      { loading: S });
 const CouponsTab         = dynamic(() => import("@/components/admin/CouponsTab"),         { loading: S });
@@ -34,8 +39,6 @@ const PriceHistoryTab    = dynamic(() => import("@/components/admin/PriceHistory
 const MODULE_ID = "catalogo-tienda";
 
 const TABS: AdminTab[] = [
-  { id: "dashboard",         label: "Dashboard",         icon: BarChart3 },
-  { id: "productos",         label: "Catálogo",          icon: Tag },
   { id: "categorias",        label: "Categorías",        icon: Tag },
   { id: "promociones",       label: "Ofertas",           icon: Tag },
   { id: "cupones",           label: "Cupones",           icon: Tag },
@@ -44,18 +47,18 @@ const TABS: AdminTab[] = [
 
 // ── Colores y tooltip compartidos ──────────────────────────────────────────
 
-const CHART_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
+const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
 
 type LocalChartTooltipProps = Partial<TooltipContentProps<ValueType, NameType>>;
 
 function ChartTooltip({ active, payload, label }: LocalChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-gray-900 mb-1">{String(label ?? "")}</p>
+    <div className="min-w-40 bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1">{String(label ?? "")}</p>
       {payload.map((p, i) => (
         <p key={i} className="text-xs flex justify-between gap-4">
-          <span className="text-gray-500">{String(p.name ?? (typeof p.dataKey === "string" || typeof p.dataKey === "number" ? p.dataKey : ""))}</span>
+          <span className="text-[var(--text-secondary)]">{String(p.name ?? (typeof p.dataKey === "string" || typeof p.dataKey === "number" ? p.dataKey : ""))}</span>
           <span className="font-mono font-medium" style={{ color: p.color }}>
             {typeof p.value === 'number' ? (p.value > 100 ? `S/ ${p.value.toLocaleString()}` : p.value.toFixed(1)) : String(p.value ?? "")}
           </span>
@@ -67,22 +70,7 @@ function ChartTooltip({ active, payload, label }: LocalChartTooltipProps) {
 
 // ── Dashboard de Productos ──────────────────────────────────────────────────
 
-// Mejora 5: Favoritos Catalogo
-function useCatFavCharts(key: string) {
-  const [favs, setFavs] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem(`fav-charts-${key}`) || "[]"); } catch { return []; }
-  });
-  const toggle = (id: string) => setFavs(prev => {
-    const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-    localStorage.setItem(`fav-charts-${key}`, JSON.stringify(next));
-    return next;
-  });
-  return { favs, toggle, isFav: (id: string) => favs.includes(id) };
-}
-function CatFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useCatFavCharts> }) {
-  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}</button>;
-}
+
 
 // ── Tipo de producto (desde /api/products) ─────────────────────────────────
 interface ProductRecord {
@@ -112,26 +100,23 @@ function ProductsDashboard() {
   // Mejora 1: Period selector
   const [period, setPeriod] = useState<"today" | "7d" | "30d" | "month">("30d");
   // Mejora 3: Auto-refresh
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [minAgo, setMinAgo] = useState(0);
   // Mock KPI deltas — lazy-init so Math.random runs once per mount (React Compiler purity rule)
   const [kpiMockChanges] = useState<number[]>(() =>
     Array.from({ length: 8 }, () => Math.round((Math.random() - 0.3) * 30))
   );
   // Mejora 5: Favoritos
-  const catFavs = useCatFavCharts("catalogo");
+  const catFavs = useFavoriteCharts("catalogo");
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     fetch("/api/products")
       .then((r) => (r.ok ? r.json() : []))
-      .then((d) => { setProducts(Array.isArray(d) ? d : d.products || []); setLastRefresh(new Date()); })
+      .then((d) => { setProducts(Array.isArray(d) ? d : d.products || []); })
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    const id = setInterval(() => setMinAgo(Math.floor((Date.now() - lastRefresh.getTime()) / 60000)), 60000);
-    return () => clearInterval(id);
-  }, [lastRefresh]);
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const autoRefresh = useAutoRefresh({ intervalSeconds: 300, onRefresh: fetchData });
 
   // Helper: extrae nombre de categoria (string o objeto)
   const categoryName = (p: ProductRecord): string => {
@@ -245,41 +230,24 @@ function ProductsDashboard() {
   /* ── Estado stock (gauge) ── */
   const stockGauge = useMemo(() => {
     return [
-      { name: "Con stock", value: kpis.conStock - kpis.stockBajo, fill: "#00B4A6" },
+      { name: "Con stock", value: kpis.conStock - kpis.stockBajo, fill: "var(--color-primary)" },
       { name: "Stock bajo", value: kpis.stockBajo, fill: "#f97316" },
       { name: "Sin stock", value: kpis.sinStock, fill: "#e63946" },
     ].filter((s) => s.value > 0);
   }, [kpis]);
 
   /* ── Loading skeleton ── */
-  if (loading) return (
-    <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-24 bg-gray-200 rounded-2xl" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-72 bg-gray-200 rounded-2xl" />
-        <div className="h-72 bg-gray-200 rounded-2xl" />
-      </div>
-      <div className="h-64 bg-gray-200 rounded-2xl" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-72 bg-gray-200 rounded-2xl" />
-        <div className="h-72 bg-gray-200 rounded-2xl" />
-      </div>
-    </div>
-  );
+  if (loading) return <DashboardSkeleton kpis={8} />;
 
   const kpiCards = [
-    { label: "Total SKUs", value: kpis.total, icon: Package, color: "#00B4A6", borderColor: "border-l-[#00B4A6]", bad: false },
-    { label: "Con stock", value: kpis.conStock, icon: PackageCheck, color: "#457b9d", borderColor: "border-l-[#457b9d]", bad: false },
-    { label: "Sin stock", value: kpis.sinStock, icon: PackageX, color: "#e63946", borderColor: "border-l-[#e63946]", bad: kpis.sinStock > 0 },
-    { label: "Precio prom.", value: `S/ ${kpis.precioAvg.toFixed(1)}`, icon: DollarSign, color: "#9b5de5", borderColor: "border-l-[#9b5de5]", bad: false },
-    { label: "Margen prom.", value: `${kpis.margenAvg.toFixed(1)}%`, icon: TrendingUp, color: "#f97316", borderColor: "border-l-[#f97316]", bad: kpis.margenAvg < 15 },
-    { label: "Categorias", value: kpis.cats, icon: Layers, color: "#2dd4bf", borderColor: "border-l-[#2dd4bf]", bad: false },
-    { label: "Sin imagen", value: kpis.sinImagen, icon: ImageOff, color: "#e63946", borderColor: "border-l-orange-500", bad: kpis.sinImagen > 0 },
-    { label: "Sin costo", value: kpis.sinCosto, icon: Calculator, color: "#6b705c", borderColor: "border-l-gray-400", bad: kpis.sinCosto > 0 },
+    { label: "Total SKUs", value: kpis.total, icon: Package, color: "var(--color-primary)", alert: false },
+    { label: "Con stock", value: kpis.conStock, icon: PackageCheck, color: "#457b9d", alert: false },
+    { label: "Sin stock", value: kpis.sinStock, icon: PackageX, color: "#e63946", alert: kpis.sinStock > 0 },
+    { label: "Precio prom.", value: `S/ ${kpis.precioAvg.toFixed(1)}`, icon: DollarSign, color: "#9b5de5", alert: false },
+    { label: "Margen prom.", value: `${kpis.margenAvg.toFixed(1)}%`, icon: TrendingUp, color: "#f97316", alert: kpis.margenAvg < 15 },
+    { label: "Categorias", value: kpis.cats, icon: Layers, color: "#2dd4bf", alert: false },
+    { label: "Sin imagen", value: kpis.sinImagen, icon: ImageOff, color: "#e63946", alert: kpis.sinImagen > 0 },
+    { label: "Sin costo", value: kpis.sinCosto, icon: Calculator, color: "#6b705c", alert: kpis.sinCosto > 0 },
   ];
 
   return (
@@ -287,68 +255,44 @@ function ProductsDashboard() {
 
       {/* === Controls: Period + Refresh + Export === */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1.5">
-          {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
-          ))}
-        </div>
+        <PeriodSelector value={period} onChange={setPeriod} />
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span>Actualizado hace {minAgo} min</span>
-            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors"><RefreshCw className="h-3 w-3" /></button>
-          </div>
-          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
+          <AutoRefreshControl secondsLeft={autoRefresh.secondsLeft} paused={autoRefresh.paused} isActive={autoRefresh.isActive} onTogglePause={autoRefresh.togglePause} onRefreshNow={autoRefresh.refreshNow} />
+          <ExportButton />
         </div>
       </div>
 
       {/* === SECCION 1: KPIs Premium === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {kpiCards.map((k, i) => {
-          const Icon = k.icon;
-          const change = kpiMockChanges[i] ?? 0;
-          return (
-            <div key={i} className={cn("bg-white rounded-2xl shadow-sm p-4 border-l-[3px] border border-gray-100", k.borderColor)}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
-                  <div className="flex items-center gap-1">
-                    <p className={cn("text-2xl font-mono font-bold mt-1", k.bad ? "text-red-600" : "text-gray-900")}>{k.value}</p>
-                    <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
-                  </div>
-                </div>
-                <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${k.color}15` }}>
-                  <Icon className="h-4.5 w-4.5" style={{ color: k.color }} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {kpiCards.map((k, i) => (
+          <KpiCard key={i} label={k.label} value={k.value} icon={k.icon} color={k.color} change={kpiMockChanges[i] ?? 0} alert={k.alert} />
+        ))}
       </div>
 
       {/* === SECCION 2: Distribucion (RadialBarChart + PieChart inventario) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4"><CatFavStar id="distribucion-cat" favs={catFavs} /><h3 className="text-sm font-bold text-gray-900">Distribucion por categoria</h3></div>
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+          <div className="flex items-center gap-2 mb-4"><FavStar id="distribucion-cat" favs={catFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Distribucion por categoria</CardTitle></div>
           <ResponsiveContainer width="100%" height={280}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={radialData} startAngle={180} endAngle={-180}>
               <RadialBar dataKey="value" background={{ fill: "rgba(0,0,0,0.05)" }} cornerRadius={6} />
-              <Legend iconSize={10} formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
+              <Legend iconSize={10} formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
               <Tooltip content={<ChartTooltip />} />
             </RadialBarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900">Valor del inventario por categoria</h3>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Valor del inventario por categoria</CardTitle>
             <div className="flex items-center gap-2">
               {pieFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
                   {pieFilter}
-                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
+                  <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -367,7 +311,7 @@ function ProductsDashboard() {
               <text x="50%" y="48%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-lg font-bold font-mono">
                 S/ {totalInventoryValue.toLocaleString()}
               </text>
-              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[10px]">
+              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
                 Total inv.
               </text>
             </PieChart>
@@ -376,8 +320,8 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 3: Histograma de precios === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Rango de precios</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Rango de precios</CardTitle>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={priceHistogram}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
@@ -389,9 +333,9 @@ function ProductsDashboard() {
               const rawVal = payload[0]?.value;
               const val = typeof rawVal === "number" ? rawVal : 0;
               return (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
-                  <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
-                  <p className="text-xs text-gray-500 mt-1">{val} productos ({((val / total) * 100).toFixed(0)}%)</p>
+                <div className="bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+                  <p className="text-xs font-semibold text-[var(--text-primary)]">{String(label ?? "")}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{val} productos ({((val / total) * 100).toFixed(0)}%)</p>
                 </div>
               );
             }} />
@@ -405,8 +349,8 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 4: Top 10 por valor en stock (ComposedChart) === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Top 10 productos por valor en stock</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 10 productos por valor en stock</CardTitle>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={top10Stock} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
@@ -414,16 +358,16 @@ function ProductsDashboard() {
             <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 10 }} className="fill-gray-600" />
             <Tooltip content={<ChartTooltip />} />
             <Legend />
-            <Bar dataKey="valor" fill="#00B4A6" radius={[0, 6, 6, 0]} name="Valor stock (S/)" barSize={16} />
+            <Bar dataKey="valor" fill="var(--color-primary)" radius={[0, 6, 6, 0]} name="Valor stock (S/)" barSize={16} />
             <Line dataKey="margen" stroke="#f97316" strokeWidth={2} dot={{ r: 4, fill: "#f97316" }} name="Margen %" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
       {/* === SECCION 5: Scatter de margenes === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 mb-1">Analisis de margenes</h3>
-        <p className="text-[10px] text-gray-400 mb-4">Precio venta vs margen % — tamano = stock</p>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Analisis de margenes</CardTitle>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Precio venta vs margen % — tamano = stock</p>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
@@ -439,12 +383,12 @@ function ProductsDashboard() {
               if (!d) return null;
               const margen = d.margen ?? 0;
               return (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3 min-w-[180px]">
-                  <p className="text-xs font-bold text-gray-900 mb-1">{d.name}</p>
-                  <p className="text-xs text-gray-500">Precio: <span className="font-mono font-medium text-gray-800">S/ {d.precio?.toFixed(2)}</span></p>
-                  <p className="text-xs text-gray-500">Costo: <span className="font-mono font-medium text-gray-800">S/ {d.costo?.toFixed(2)}</span></p>
-                  <p className="text-xs text-gray-500">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-green-600" : margen >= 10 ? "text-amber-600" : "text-red-600")}>{margen}%</span></p>
-                  <p className="text-xs text-gray-500">Stock: <span className="font-mono font-medium text-gray-800">{d.stock}</span></p>
+                <div className="min-w-45 bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+                  <p className="text-xs font-bold text-[var(--text-primary)] mb-1">{d.name}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Precio: <span className="font-mono font-medium text-[var(--text-primary)]">S/ {d.precio?.toFixed(2)}</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Costo: <span className="font-mono font-medium text-[var(--text-primary)]">S/ {d.costo?.toFixed(2)}</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-[var(--data-success)]" : margen >= 10 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>{margen}%</span></p>
+                  <p className="text-xs text-[var(--text-secondary)]">Stock: <span className="font-mono font-medium text-[var(--text-primary)]">{d.stock}</span></p>
                 </div>
               );
             }} />
@@ -452,22 +396,22 @@ function ProductsDashboard() {
               const p = props as { cx?: number; cy?: number; payload?: { margen?: number; stock?: number } };
               const { cx = 0, cy = 0, payload } = p;
               const m = payload?.margen ?? 0;
-              const color = m >= 25 ? "#00B4A6" : m >= 10 ? "#f97316" : "#e63946";
+              const color = m >= 25 ? "var(--color-primary)" : m >= 10 ? "#f97316" : "#e63946";
               const r = Math.min(Math.max((payload?.stock || 1) * 0.4, 4), 14);
               return <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={0.7} stroke={color} strokeWidth={1.5} />;
             }} />
           </ScatterChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-3 justify-center">
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#00B4A6]" /> {">"}25% margen</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
         </div>
       </div>
 
       {/* === SECCION 6: Estado de stock (Gauge donut) === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Productos por estado de stock</h3>
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Productos por estado de stock</CardTitle>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie data={stockGauge} innerRadius={55} outerRadius={80} startAngle={180} endAngle={0} dataKey="value" paddingAngle={2}>
@@ -476,11 +420,11 @@ function ProductsDashboard() {
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
             <text x="50%" y="70%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-2xl font-bold font-mono">
               {kpis.total}
             </text>
-            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[10px]">
+            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
               total
             </text>
           </PieChart>
@@ -490,42 +434,42 @@ function ProductsDashboard() {
       {/* === SECCION 7: Alertas del catalogo === */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {kpis.sinImagen > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <Camera className="h-5 w-5 text-amber-600" />
+          <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-4 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--data-warning-100)] flex items-center justify-center shrink-0">
+              <Camera className="h-5 w-5 text-[var(--data-warning)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-800">{kpis.sinImagen} sin imagen</p>
-              <p className="text-xs text-amber-600 mt-0.5">Productos sin foto se venden menos</p>
-              <button className="mt-2 text-[10px] font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors">
+              <p className="text-sm font-bold text-[var(--data-warning)]">{kpis.sinImagen} sin imagen</p>
+              <p className="text-xs text-[var(--data-warning)] mt-0.5">Productos sin foto se venden menos</p>
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] bg-[var(--data-warning-100)] px-3 py-1 rounded-full hover:bg-[var(--data-warning)] transition-colors">
                 Completar
               </button>
             </div>
           </div>
         )}
         {kpis.sinCosto > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+          <div className="bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl p-4 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5 text-[var(--data-error)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-red-800">{kpis.sinCosto} sin costo</p>
-              <p className="text-xs text-red-600 mt-0.5">Sin costo no se calcula el margen</p>
-              <button className="mt-2 text-[10px] font-semibold text-red-700 bg-red-100 px-3 py-1 rounded-full hover:bg-red-200 transition-colors">
+              <p className="text-sm font-bold text-[var(--data-error)]">{kpis.sinCosto} sin costo</p>
+              <p className="text-xs text-[var(--data-error)] mt-0.5">Sin costo no se calcula el margen</p>
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error)] bg-[var(--data-error-100)] px-3 py-1 rounded-full hover:bg-[var(--data-error)] transition-colors">
                 Agregar costos
               </button>
             </div>
           </div>
         )}
         {kpis.sinStock > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex items-start gap-3">
+          <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-              <Eye className="h-5 w-5 text-gray-600" />
+              <Eye className="h-5 w-5 text-[var(--text-secondary)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-800">{kpis.sinStock} sin stock</p>
-              <p className="text-xs text-gray-500 mt-0.5">Estos productos no se muestran en la tienda</p>
-              <button className="mt-2 text-[10px] font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+              <p className="text-sm font-bold text-[var(--text-primary)]">{kpis.sinStock} sin stock</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Estos productos no se muestran en la tienda</p>
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
                 Ver productos
               </button>
             </div>
@@ -535,12 +479,7 @@ function ProductsDashboard() {
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
-        <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Valor del inventario por categoria</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
-          </div>
-          <div style={{ height: 500 }}>
+        <ChartExpandModal title="Valor del inventario por categoria" onClose={() => setExpandedChart(null)}>
             <ResponsiveContainer width="100%" height={500}>
               <PieChart>
                 <Pie data={inventoryByCat.slice(0, 8)} innerRadius={100} outerRadius={200} dataKey="value" paddingAngle={2} label>
@@ -550,12 +489,13 @@ function ProductsDashboard() {
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+        </ChartExpandModal>
       )}
     </div>
   );
 }
+
+void ProductsDashboard;
 
 // ── Componente principal ────────────────────────────────────────────────────
 
@@ -566,8 +506,8 @@ export default function CatalogoTiendaModule() {
   return (
     <div className="space-y-4">
       <AdminModuleHeader
-        title="Productos & Precios"
-        description="Catálogo, categorías, promociones y precios"
+        title="Promociones y Ofertas"
+        description="Categorías, promociones, cupones y precios"
         icon={Tag}
       />
 
@@ -580,8 +520,6 @@ export default function CatalogoTiendaModule() {
         moduleId={MODULE_ID}
       >
         {/* Tab content */}
-        {sub === "dashboard" && <ProductsDashboard />}
-        {sub === "productos" && <ProductsAdminTab />}
         {sub === "categorias" && <CategoriesEditorTab />}
         {sub === "promociones" && <PromotionsTab />}
         {sub === "cupones" && <CouponsTab />}
@@ -590,3 +528,4 @@ export default function CatalogoTiendaModule() {
     </div>
   );
 }
+

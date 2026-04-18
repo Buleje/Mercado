@@ -1,0 +1,2531 @@
+
+components/admin/ABCAnalysisTab.tsx
+  [WARN ] line 93:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AccountsReceivableTab.tsx
+  [WARN ] line 41:28 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 44:26 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 408:137 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/AchievementBadges.tsx
+  [WARN ] line 47:21 — ds-no-decorative-color-admin
+          match: text-yellow-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 48:15 — ds-no-inline-alert-pattern
+          match: bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+
+components/admin/ActivityLogTab.tsx
+  [WARN ] line 36:25 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/AdminUsersTab.tsx
+  [WARN ] line 237:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AdvancedReturnsTab.tsx
+  [WARN ] line 163:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AgentsDashboardTab.tsx
+  [WARN ] line 593:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 673:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ai-center/HITLApprovalsBanner.tsx
+  [WARN ] line 263:18 — ds-no-decorative-color-admin
+          match: bg-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ai-center/sections/AccionesSection.tsx
+  [WARN ] line 226:16 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 227:18 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 232:16 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 233:18 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ai-center/sections/AnalisisSection.tsx
+  [WARN ] line 93:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ai-center/sections/FiadosSection.tsx
+  [WARN ] line 100:11 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 101:13 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 107:11 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 108:13 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/AIFloatingButton.tsx
+  [WARN ] line 52:74 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 52:91 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/AlertsCenterTab.tsx
+  [WARN ] line 120:12 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 122:17 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 128:12 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 130:17 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/analytics/CashFlowWaterfall.tsx
+  [WARN ] line 261:61 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 265:61 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#ef4444
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 269:61 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#3b82f6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 261:61 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 265:61 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#ef4444
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 269:61 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#3b82f6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/analytics/CustomerLifetimeValue.tsx
+  [WARN ] line 221:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/analytics/CustomReportBuilder.tsx
+  [WARN ] line 541:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/analytics/FiadoAnalyticsPanel.tsx
+  [WARN ] line 424:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/analytics/RFMSegmentationPanel.tsx
+  [WARN ] line 196:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/analytics/SalesTrendChart.tsx
+  [WARN ] line 316:28 — ds-no-style-color-inline
+          match: style={{ fontSize: 11, color: "#6b7280
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 316:28 — ds-no-style-inline-any-color
+          match: style={{ fontSize: 11, color: "#6b7280
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/analytics/TrendForecaster.tsx
+  [WARN ] line 158:61 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 162:72 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 158:61 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 162:72 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/AnomalyDetectionTab.tsx
+  [WARN ] line 30:24 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 31:24 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 32:24 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ApprovalWorkflow.tsx
+  [WARN ] line 105:30 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 106:32 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/AssetManagerTab.tsx
+  [WARN ] line 222:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AuditTrailModule.tsx
+  [WARN ] line 54:49 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 115:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AutoAlertEngineTab.tsx
+  [WARN ] line 169:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AutoReorderTab.tsx
+  [WARN ] line 289:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 370:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/AutoSegmentsTab.tsx
+  [WARN ] line 25:70 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 25:85 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 25:152 — ds-no-decorative-color-admin
+          match: bg-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/BankReconciliationTab.tsx
+  [WARN ] line 159:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BarcodeScanner.tsx
+  [WARN ] line 162:15 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/BasketAnalysisTab.tsx
+  [WARN ] line 198:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BatchesTab.tsx
+  [WARN ] line 437:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BCGMatrixTab.tsx
+  [WARN ] line 126:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/billing/QuotaAlertBanner.tsx
+  [WARN ] line 72:14 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 82:14 — ds-no-inline-alert-pattern
+          match: bg-red-100    hover:bg-red-200    text-red-800    dark:bg-red-800/40    dark:hover:bg-red-800/60    dark:text-red-200    border border-red-300
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+
+components/admin/billing/QuotaAlertModal.tsx
+  [WARN ] line 43:12 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 44:12 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 49:12 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 50:12 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/BranchesTab.tsx
+  [WARN ] line 162:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BudgetAlertWidget.tsx
+  [WARN ] line 50:11 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 57:11 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/BudgetTab.tsx
+  [WARN ] line 223:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BudgetVsRealTab.tsx
+  [WARN ] line 149:36 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 149:64 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 150:21 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 150:47 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 153:37 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 153:65 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 154:21 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 154:47 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 692:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BulkInvoiceGenerator.tsx
+  [WARN ] line 346:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BulkPriceUpdater.tsx
+  [WARN ] line 349:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 395:11 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/BusinessIntelligenceTab.tsx
+  [WARN ] line 164:39 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 164:62 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 163:38 — ds-no-inline-alert-pattern
+          match: bg-red-50 dark:bg-red-950/30 border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 163:115 — ds-no-inline-alert-pattern
+          match: bg-amber-50 dark:bg-amber-950/30 border-amber-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 136:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/BusinessRuleBuilder.tsx
+  [WARN ] line 62:33 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/CampañasTab.tsx
+  [WARN ] line 95:26 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 105:22 — ds-no-decorative-color-admin
+          match: text-sky-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/CashAuditTab.tsx
+  [WARN ] line 181:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 221:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 398:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CashFlowTab.tsx
+  [WARN ] line 308:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 341:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CashRegisterTab.tsx
+  [WARN ] line 85:12 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 799:62 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1173:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 494:67 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/CatalogPDFGenerator.tsx
+  [WARN ] line 242:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ChangelogModule.tsx
+  [WARN ] line 180:89 — ds-no-decorative-color-admin
+          match: bg-indigo-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ChangelogPanel.tsx
+  [WARN ] line 57:12 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 67:12 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ChatTab/types.ts
+  [WARN ] line 58:13 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/CheckManagementTab.tsx
+  [WARN ] line 313:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ChurnPrediction.tsx
+  [WARN ] line 67:11 — ds-no-decorative-color-admin
+          match: bg-red-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 73:11 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/CLVAnalyticsTab.tsx
+  [WARN ] line 90:116 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 250:59 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 250:113 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 189:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 232:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ColasTab.tsx
+  [WARN ] line 107:37 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 126:24 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 197:9 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/CollectionCenterTab.tsx
+  [WARN ] line 306:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ComisionesTab.tsx
+  [WARN ] line 416:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CommissionCalculator.tsx
+  [WARN ] line 301:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ComparativeReportsTab.tsx
+  [WARN ] line 246:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CompetitivePricingTab.tsx
+  [WARN ] line 37:210 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 298:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CompetitorPriceTracker.tsx
+  [WARN ] line 365:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/compras/OCRecepcionModal.tsx
+  [WARN ] line 158:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 221:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/compras/PuntoDeCompraTab.tsx
+  [WARN ] line 1208:33 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1451:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/compras/SupplierPriceComparison.tsx
+  [WARN ] line 147:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 285:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/compras/SupplierScorecard.tsx
+  [WARN ] line 29:20 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 30:18 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 34:72 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 34:89 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 107:80 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 107:99 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ContratosModule.tsx
+  [WARN ] line 626:50 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 627:43 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2148:57 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2148:88 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1542:23 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ConversionMetricsTab.tsx
+  [WARN ] line 195:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 245:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CostCenterTab.tsx
+  [WARN ] line 241:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CotizacionesModule.tsx
+  [WARN ] line 880:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1034:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CreditScoreCard.tsx
+  [WARN ] line 152:94 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 152:113 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 234:13 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 241:13 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/CRMTab.tsx
+  [WARN ] line 808:83 — ds-no-decorative-color-admin
+          match: text-yellow-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 809:105 — ds-no-decorative-color-admin
+          match: text-yellow-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 810:108 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 375:182 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 375:182 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 652:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 931:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/Customer360Tab.tsx
+  [WARN ] line 1021:31 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1023:30 — ds-no-decorative-color-admin
+          match: text-cyan-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 306:38 — ds-no-style-color-inline
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 353:36 — ds-no-style-color-inline
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 828:45 — ds-no-style-color-inline
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 853:68 — ds-no-style-color-inline
+          match: style={{ height, backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 306:38 — ds-no-style-inline-any-color
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 353:36 — ds-no-style-inline-any-color
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 828:45 — ds-no-style-inline-any-color
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 853:68 — ds-no-style-inline-any-color
+          match: style={{ height, backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 1161:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CustomerGeoMap.tsx
+  [WARN ] line 453:11 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/CustomerImporter.tsx
+  [WARN ] line 234:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 300:11 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/CustomerRetentionChart.tsx
+  [WARN ] line 112:22 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 217:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CustomerSegmentationTab.tsx
+  [WARN ] line 10:273 — ds-no-decorative-color-admin
+          match: bg-yellow-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 11:274 — ds-no-decorative-color-admin
+          match: bg-sky-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 13:277 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 18:13 — ds-no-decorative-color-admin
+          match: bg-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 20:13 — ds-no-decorative-color-admin
+          match: bg-yellow-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 21:13 — ds-no-decorative-color-admin
+          match: bg-cyan-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 263:185 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 263:202 — ds-no-decorative-color-admin
+          match: bg-red-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 264:143 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 264:160 — ds-no-decorative-color-admin
+          match: bg-red-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 265:143 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 265:160 — ds-no-decorative-color-admin
+          match: bg-red-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 190:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/CustomKPITab.tsx
+  [WARN ] line 37:29 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 38:28 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 156:63 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 156:175 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DailyGoalTracker.tsx
+  [WARN ] line 242:10 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DailySummaryPanel.tsx
+  [WARN ] line 143:18 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 155:18 — ds-no-decorative-color-admin
+          match: text-orange-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 162:18 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/dashboard/BatchStatsWidget.tsx
+  [WARN ] line 106:18 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 119:18 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/dashboard/DashboardClientesSection.tsx
+  [WARN ] line 45:113 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 45:147 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 101:96 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 102:85 — ds-no-decorative-color-admin
+          match: text-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 245:138 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 245:165 — ds-no-decorative-color-admin
+          match: bg-red-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 228:21 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/dashboard/DashboardComprasCajaSection.tsx
+  [WARN ] line 101:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/dashboard/DashboardInventarioSection.tsx
+  [WARN ] line 32:113 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 32:147 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 56:90 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 57:134 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 58:116 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/dashboard/DashboardProductosSection.tsx
+  [WARN ] line 55:115 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/dashboard/DashboardVentasSection.tsx
+  [WARN ] line 58:30 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 58:59 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 62:113 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 62:147 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 100:98 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 617:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/DashboardIATab.tsx
+  [WARN ] line 403:34 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 403:56 — ds-no-decorative-color-admin
+          match: bg-orange-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 452:89 — ds-no-decorative-color-admin
+          match: bg-orange-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 452:107 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 453:128 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 453:169 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 779:8 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 781:10 — ds-no-decorative-color-admin
+          match: text-yellow-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DashboardKpis.tsx
+  [WARN ] line 108:9 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/DashboardTab.tsx
+  [WARN ] line 1424:33 — ds-no-decorative-color-admin
+          match: bg-indigo-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1819:48 — ds-no-decorative-color-admin
+          match: bg-indigo-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2390:149 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2390:166 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2395:86 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2397:94 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2977:80 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 2978:24 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DeclaracionInventarioModule.tsx
+  [WARN ] line 400:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 475:21 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 532:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/DeliveryRoutesTab.tsx
+  [WARN ] line 220:329 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 220:410 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DeliveryTab/types.ts
+  [WARN ] line 93:15 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DeliveryZoneManager.tsx
+  [WARN ] line 395:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/DevolucionesProveedorModule.tsx
+  [WARN ] line 47:28 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/DocumentManagerTab.tsx
+  [WARN ] line 312:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/DocumentosEmitidosTab.tsx
+  [WARN ] line 289:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/DynamicReorderTab.tsx
+  [WARN ] line 139:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/EInvoiceTab.tsx
+  [WARN ] line 342:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/EmployeePerformanceChart.tsx
+  [WARN ] line 426:24 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/EstadoCuentaModal.tsx
+  [WARN ] line 244:21 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ExcelProductImporter.tsx
+  [WARN ] line 473:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 559:11 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/ExpiryAlertsDashboard.tsx
+  [WARN ] line 362:21 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 374:21 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 386:21 — ds-no-decorative-color-admin
+          match: text-yellow-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 120:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ExpiryDashboardTab.tsx
+  [WARN ] line 251:22 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 260:22 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 269:22 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 551:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/fiados/CobranzaInteligente.tsx
+  [WARN ] line 437:37 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 529:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/FiadosModule.tsx
+  [WARN ] line 211:9 — ds-no-decorative-color-admin
+          match: text-yellow-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 212:9 — ds-no-decorative-color-admin
+          match: text-yellow-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 213:9 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 214:9 — ds-no-decorative-color-admin
+          match: text-orange-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 215:9 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1344:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/finance/CashflowRollingTable.tsx
+  [WARN ] line 239:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/finanzas/PresupuestoMensualTab.tsx
+  [WARN ] line 44:33 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 45:32 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 46:32 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/FleetManagementTab.tsx
+  [WARN ] line 284:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ForecastCard.tsx
+  [WARN ] line 50:27 — ds-no-decorative-color-admin
+          match: text-yellow-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 60:36 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/forecasting/ForecastingDashboard.tsx
+  [WARN ] line 604:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/GiftCardManager.tsx
+  [WARN ] line 269:26 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 120:9 — ds-no-style-color-inline
+          match: style={{ background: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 122:9 — ds-no-style-color-inline
+          match: style={{ background: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+
+components/admin/GoalTrackerTab.tsx
+  [WARN ] line 18:45 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 18:118 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 19:413 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/GuiasRemisionModule.tsx
+  [WARN ] line 879:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/HeatMapTab.tsx
+  [WARN ] line 13:29 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 14:29 — ds-no-decorative-color-admin
+          match: bg-orange-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 15:29 — ds-no-decorative-color-admin
+          match: bg-yellow-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 165:72 — ds-no-decorative-color-admin
+          match: bg-yellow-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 165:89 — ds-no-decorative-color-admin
+          match: bg-orange-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 165:106 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/HistorialCierresTab.tsx
+  [WARN ] line 130:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/HRTab.tsx
+  [WARN ] line 84:46 — ds-no-decorative-color-admin
+          match: bg-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 84:88 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 84:160 — ds-no-decorative-color-admin
+          match: bg-sky-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 84:189 — ds-no-decorative-color-admin
+          match: bg-orange-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 337:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ImageUpload.tsx
+  [WARN ] line 132:15 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+  [WARN ] line 153:13 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/ImportCSVTab.tsx
+  [WARN ] line 201:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 252:11 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-7 w-7 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/ImportExportTab.tsx
+  [WARN ] line 292:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 248:19 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/inicio/CajaDashboard.tsx
+  [WARN ] line 255:72 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 256:77 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 257:71 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inicio/ClientesCharts.tsx
+  [WARN ] line 147:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/inicio/ClientesDashboard.tsx
+  [WARN ] line 325:72 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 326:77 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 327:71 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inicio/ComprasDashboard.tsx
+  [WARN ] line 221:72 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 222:77 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 223:71 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inicio/InicioDashboard.tsx
+  [WARN ] line 445:75 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 446:69 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 511:10 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inicio/InventarioDashboard.tsx
+  [WARN ] line 268:72 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 269:77 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 270:71 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inicio/ProductosDashboard.tsx
+  [WARN ] line 278:72 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 279:77 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 280:71 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inicio/VentasDashboard.tsx
+  [WARN ] line 310:72 — ds-no-decorative-color-admin
+          match: text-cyan-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 311:77 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 312:71 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/InsuranceTab.tsx
+  [WARN ] line 158:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 196:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/inventario/BulkPriceEditor.tsx
+  [WARN ] line 74:30 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 75:30 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 230:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/inventario/ConteoFisicoWizard.tsx
+  [WARN ] line 456:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/inventario/DemandForecast.tsx
+  [WARN ] line 89:109 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 91:46 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 91:86 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/inventario/ExpandedStockModal.tsx
+  [WARN ] line 148:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/inventario/SimpleMovementsTab.tsx
+  [WARN ] line 207:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/inventario/StockAlertsDashboard.tsx
+  [WARN ] line 143:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 190:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 246:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 298:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/InventoryMetricsTab.tsx
+  [WARN ] line 306:22 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 316:22 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 336:22 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 452:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/InventoryTab.tsx
+  [WARN ] line 770:25 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1474:144 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1475:157 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1250:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/InvoiceEmitter.tsx
+  [WARN ] line 566:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/InvoiceHistory.tsx
+  [WARN ] line 56:18 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 58:20 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 56:8 — ds-no-inline-alert-pattern
+          match: bg-red-50 text-red-700 border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 58:8 — ds-no-inline-alert-pattern
+          match: bg-amber-50 text-amber-700 border-amber-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 221:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/InvoicingTab.tsx
+  [WARN ] line 49:25 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 54:29 — ds-no-decorative-color-admin
+          match: text-sky-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 56:31 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 355:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/KardexModal.tsx
+  [WARN ] line 194:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/KardexTab.tsx
+  [WARN ] line 380:131 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 412:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/KioskMode.tsx
+  [WARN ] line 243:17 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/KioskPOS.tsx
+  [WARN ] line 552:24 — ds-no-decorative-color-admin
+          match: bg-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 380:17 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-10 w-10 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+  [WARN ] line 578:19 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/layout/AdminSubSidebar.tsx
+  [WARN ] line 61:9 — ds-no-heading-with-design-class
+          match: <h2 className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] dark:text-foreground truncate flex-1"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/LiquidityForecastTab.tsx
+  [WARN ] line 374:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 437:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/LiveMarginDisplay.tsx
+  [WARN ] line 55:11 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/LoanCalculator.tsx
+  [WARN ] line 304:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/LoyaltyMetricsTab.tsx
+  [WARN ] line 29:12 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 31:9 — ds-no-decorative-color-admin
+          match: bg-yellow-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 32:14 — ds-no-decorative-color-admin
+          match: bg-sky-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 185:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/LoyaltyTab.tsx
+  [WARN ] line 12:12 — ds-no-decorative-color-admin
+          match: bg-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 14:9 — ds-no-decorative-color-admin
+          match: bg-yellow-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 15:14 — ds-no-decorative-color-admin
+          match: bg-cyan-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 159:37 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 160:13 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/MarginDashboardTab.tsx
+  [WARN ] line 14:55 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 14:74 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 18:74 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 18:91 — ds-no-decorative-color-admin
+          match: bg-red-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 193:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/MarketingAutomationTab.tsx
+  [WARN ] line 139:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/marketplace/BulkPriceEditorTab.tsx
+  [WARN ] line 378:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/marketplace/ProductAnalyticsPanel.tsx
+  [WARN ] line 255:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/MonthProjectionCard.tsx
+  [WARN ] line 125:18 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/MultiStoreDashboard.tsx
+  [WARN ] line 467:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/NightModeToggle.tsx
+  [WARN ] line 126:18 — ds-no-decorative-color-admin
+          match: bg-indigo-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/NotasCreditoModule.tsx
+  [WARN ] line 1173:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/OrdersTab/index.tsx
+  [WARN ] line 267:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/OrdersTab/OrdersArchive.tsx
+  [WARN ] line 95:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/OrdersTab/types.ts
+  [WARN ] line 38:28 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 42:26 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/PaymentCalendar.tsx
+  [WARN ] line 119:8 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 120:8 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 127:19 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 128:21 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/PayrollTab.tsx
+  [WARN ] line 240:87 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 241:112 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 242:124 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 160:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PhysicalCountTab.tsx
+  [WARN ] line 288:52 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 419:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 529:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 659:25 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PhysicalInventoryTab.tsx
+  [WARN ] line 253:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PlanTab.tsx
+  [WARN ] line 62:50 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 69:16 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 658:55 — ds-no-style-color-inline
+          match: style={{ color: "#009ee3
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 658:55 — ds-no-style-inline-any-color
+          match: style={{ color: "#009ee3
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/PLTab.tsx
+  [WARN ] line 53:24 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 355:28 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 356:18 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/pos/InvoiceScannerModal.tsx
+  [WARN ] line 409:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 361:15 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 text-primary animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/pos/OCPrintPreviewModal.tsx
+  [WARN ] line 177:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/pos/PuntoCompraView.tsx
+  [WARN ] line 831:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/POSView.tsx
+  [WARN ] line 566:112 — ds-no-style-color-inline
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 771:52 — ds-no-style-color-inline
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 566:112 — ds-no-style-inline-any-color
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 771:52 — ds-no-style-inline-any-color
+          match: style={{ color: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 1536:9 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/PredictiveAnalyticsTab.tsx
+  [WARN ] line 183:159 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 203:85 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/PrestamosModule.tsx
+  [WARN ] line 1166:99 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1166:149 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1244:52 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1244:81 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1247:240 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1693:269 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1693:361 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1166:139 — ds-no-inline-alert-pattern
+          match: bg-red-50 text-red-700 border border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 1212:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1531:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1820:29 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PriceBenchmarkTab.tsx
+  [WARN ] line 150:53 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 150:86 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 131:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PriceHistoryTab.tsx
+  [WARN ] line 179:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PriceSuggestionBadge.tsx
+  [WARN ] line 76:83 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 76:8 — ds-no-inline-alert-pattern
+          match: bg-amber-50 dark:bg-amber-950/20 border-amber-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+
+components/admin/ProductsAdminTab.tsx
+  [WARN ] line 336:19 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/ProfitabilityCalculator.tsx
+  [WARN ] line 364:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ProfitabilityTab.tsx
+  [WARN ] line 156:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PromocionesModule.tsx
+  [WARN ] line 42:45 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 43:47 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/PromotionsTab.tsx
+  [WARN ] line 999:19 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/PurchaseApprovalTab.tsx
+  [WARN ] line 57:13 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 58:15 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 141:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/PurchaseOrdersTab.tsx
+  [WARN ] line 30:28 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 33:26 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/PurchasePlanningTab.tsx
+  [WARN ] line 140:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/QualityControlTab.tsx
+  [WARN ] line 197:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/QuickChargeMode.tsx
+  [WARN ] line 304:13 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-6 w-6 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/QuickNotesTab.tsx
+  [WARN ] line 31:12 — ds-no-decorative-color-admin
+          match: bg-yellow-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 32:10 — ds-no-decorative-color-admin
+          match: bg-pink-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 32:68 — ds-no-decorative-color-admin
+          match: bg-orange-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ReceivingTab.tsx
+  [WARN ] line 211:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 306:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/recetas/RecetarioAdminTab.tsx
+  [WARN ] line 295:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/RecetasModule.tsx
+  [WARN ] line 1420:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ReferidosTiendasTab.tsx
+  [WARN ] line 186:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ReferralProgramTab.tsx
+  [WARN ] line 114:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ReferralTab.tsx
+  [WARN ] line 154:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ReporteMensualTab.tsx
+  [WARN ] line 66:46 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 66:13 — ds-no-inline-alert-pattern
+          match: bg-red-50   dark:bg-red-900/20   text-red-700   dark:text-red-400   border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+
+components/admin/RFQTab.tsx
+  [WARN ] line 138:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 184:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/RolePermissionsTab.tsx
+  [WARN ] line 181:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SalesForecastTab.tsx
+  [WARN ] line 137:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 185:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SalesHeatmap.tsx
+  [WARN ] line 182:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SalesOrdersTab.tsx
+  [WARN ] line 1565:97 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1566:95 — ds-no-decorative-color-admin
+          match: text-cyan-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1568:95 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1569:242 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 685:43 — ds-no-style-color-inline
+          match: style={{ color: "#f59e0b
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 685:43 — ds-no-style-inline-any-color
+          match: style={{ color: "#f59e0b
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 781:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SalesWidgetPreview.tsx
+  [WARN ] line 104:68 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 104:82 — ds-no-decorative-color-admin
+          match: bg-yellow-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ScenarioSimulatorTab.tsx
+  [WARN ] line 182:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ScoringCrediticioTab.tsx
+  [WARN ] line 271:102 — ds-no-style-color-inline
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 271:102 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "#00B4A6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 345:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SeasonalityTab.tsx
+  [WARN ] line 40:12 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 41:11 — ds-no-decorative-color-admin
+          match: text-orange-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 148:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SecurityLogsTab.tsx
+  [WARN ] line 19:25 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/shared/AdminModal.tsx
+  [WARN ] line 73:23 — ds-no-heading-with-design-class
+          match: <h2 className="text-sm font-bold text-[var(--text-primary)]"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/AdminModuleHeader.tsx
+  [WARN ] line 47:9 — ds-no-heading-with-design-class
+          match: <h1 className="text-xl font-bold text-[var(--text-primary)] truncate"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/AdminSectionHeader.tsx
+  [WARN ] line 56:13 — ds-no-heading-with-design-class
+          match: <h2 className="text-xl font-bold text-[var(--text-primary)] truncate"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/AdminTable.tsx
+  [WARN ] line 47:7 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/shared/BusinessOverviewHero.tsx
+  [WARN ] line 53:88 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 56:80 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 81:13 — ds-no-heading-with-design-class
+          match: <h2 className="text-xl font-extrabold text-[var(--text-primary)] dark:text-zinc-100 mt-1"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+  [WARN ] line 122:13 — ds-no-heading-with-design-class
+          match: <h3 className="text-lg font-extrabold text-[var(--text-primary)] dark:text-zinc-100 mt-1"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/ChartExpandModal.tsx
+  [WARN ] line 16:9 — ds-no-heading-with-design-class
+          match: <h2 className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/EmptyState.tsx
+  [WARN ] line 132:7 — ds-no-heading-with-design-class
+          match: <h3 className="text-lg font-semibold text-[var(--text-secondary)] mt-4"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/FinancialDashboard.tsx
+  [WARN ] line 518:22 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 544:13 — ds-no-heading-with-design-class
+          match: <h3 className="text-sm font-bold text-[var(--text-primary)]"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+  [WARN ] line 576:13 — ds-no-heading-with-design-class
+          match: <h3 className="text-sm font-bold text-[var(--text-primary)]"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/HoldedKPI.tsx
+  [WARN ] line 23:9 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 24:11 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 27:12 — ds-no-decorative-color-admin
+          match: bg-orange-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 64:13 — ds-no-heading-with-design-class
+          match: <h3 className="text-sm font-semibold text-[var(--text-primary)]"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/ModuleLayout.tsx
+  [WARN ] line 115:11 — ds-no-heading-with-design-class
+          match: <h1 className="text-xl font-bold text-[var(--text-primary)] truncate"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/NotificationCenter.tsx
+  [WARN ] line 207:17 — ds-no-heading-with-design-class
+          match: <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/OnboardingWizard.tsx
+  [WARN ] line 133:11 — ds-no-heading-with-design-class
+          match: <h3 className="font-bold text-foreground"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/RevenueChart.tsx
+  [WARN ] line 40:11 — ds-no-heading-with-design-class
+          match: <h2 className="text-sm font-semibold text-[var(--text-primary)]"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/SidebarConfigurator.tsx
+  [WARN ] line 257:9 — ds-no-heading-with-design-class
+          match: <h2 className="text-[length:var(--ts-sm)] font-bold text-white leading-tight"
+          Usa <PageTitle/SectionTitle/CardTitle> del DS (ADR-075) en lugar de <h1/h2/h3> con clases de diseño.
+
+components/admin/shared/typography.ts
+  [WARN ] line 34:10 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 37:10 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 61:12 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 68:52 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 69:55 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ShiftClockWidget.tsx
+  [WARN ] line 229:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ShiftControlTab.tsx
+  [WARN ] line 272:280 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 517:207 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 517:265 — ds-no-decorative-color-admin
+          match: text-sky-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 517:403 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/ShippingCostsTab.tsx
+  [WARN ] line 246:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 292:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/ShrinkageTab.tsx
+  [WARN ] line 178:98 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 179:95 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 205:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/smart-dashboard/ClientesSubTab.tsx
+  [WARN ] line 278:148 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 279:162 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 280:155 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 278:119 — ds-no-inline-alert-pattern
+          match: bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 279:129 — ds-no-inline-alert-pattern
+          match: bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 227:48 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 251:117 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 331:144 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/smart-dashboard/ResumenSubTab.tsx
+  [WARN ] line 729:146 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 730:160 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 731:153 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 475:47 — ds-no-style-color-inline
+          match: style={{ color: "#8b5cf6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 524:42 — ds-no-style-color-inline
+          match: style={{ color: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 559:50 — ds-no-style-color-inline
+          match: style={{ color: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 729:117 — ds-no-inline-alert-pattern
+          match: bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 730:127 — ds-no-inline-alert-pattern
+          match: bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 458:46 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 475:47 — ds-no-style-inline-any-color
+          match: style={{ color: "#8b5cf6
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 492:47 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 524:42 — ds-no-style-inline-any-color
+          match: style={{ color: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 559:50 — ds-no-style-inline-any-color
+          match: style={{ color: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 678:46 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 702:115 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/smart-dashboard/VentasSubTab.tsx
+  [WARN ] line 326:49 — ds-no-style-color-inline
+          match: style={{ color: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 295:49 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 326:49 — ds-no-style-inline-any-color
+          match: style={{ color: "#f97316
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/SmartDashboardTab.tsx
+  [WARN ] line 863:395 — ds-no-decorative-color-admin
+          match: text-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 863:455 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 864:275 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1112:144 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/SmartPurchaseAdvisor.tsx
+  [WARN ] line 77:14 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/SmartReorderCard.tsx
+  [WARN ] line 120:26 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 121:28 — ds-no-decorative-color-admin
+          match: text-yellow-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/SocialPostGenerator.tsx
+  [WARN ] line 43:20 — ds-no-decorative-color-admin
+          match: text-orange-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/StockPrediction.tsx
+  [WARN ] line 20:25 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 21:25 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 22:26 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 146:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/StockPredictionWidget.tsx
+  [WARN ] line 71:77 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 73:89 — ds-no-decorative-color-admin
+          match: text-yellow-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 71:13 — ds-no-inline-alert-pattern
+          match: bg-red-50 dark:bg-red-950/20 border-red-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+  [WARN ] line 73:13 — ds-no-inline-alert-pattern
+          match: bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200
+          Usa <InfoAlert/WarningAlert/ErrorAlert/SuccessAlert> del DS (ADR-075) en lugar del patron bg-{color}-50 + border-{color}-200 inline.
+
+components/admin/StoreCustomizer.tsx
+  [WARN ] line 659:9 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/SupplierComparator.tsx
+  [WARN ] line 89:22 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 90:20 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 307:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SupplierPaymentsTab.tsx
+  [WARN ] line 128:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SupplierPortalTab.tsx
+  [WARN ] line 151:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 175:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SupplierPriceComparator.tsx
+  [WARN ] line 204:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SupplierQualityTab.tsx
+  [WARN ] line 41:55 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 41:74 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 48:11 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 49:10 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 50:15 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 129:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/support/UnifiedSupportInbox.tsx
+  [WARN ] line 216:42 — ds-no-decorative-color-admin
+          match: text-orange-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/SupportTicketsTab.tsx
+  [WARN ] line 172:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/SupportWidget.tsx
+  [WARN ] line 31:25 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 32:21 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/SystemHealthTab.tsx
+  [WARN ] line 188:44 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 189:44 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/TaxTab.tsx
+  [WARN ] line 228:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/TeamTab.tsx
+  [WARN ] line 48:29 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/TesoreriaModule.tsx
+  [WARN ] line 1110:19 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/TicketPreview.tsx
+  [WARN ] line 272:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/TreasuryDashboard.tsx
+  [WARN ] line 86:55 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 87:60 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 409:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 461:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/TreasuryTab.tsx
+  [WARN ] line 274:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/TurnosModule.tsx
+  [WARN ] line 1328:53 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1330:57 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 575:21 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 934:21 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1054:17 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/TVDashboard.tsx
+  [WARN ] line 154:12 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/unified/AnalyticsBIModule.tsx
+  [WARN ] line 336:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/unified/ComprasModule.tsx
+  [WARN ] line 474:33 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 476:37 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 478:47 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 478:73 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 568:25 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/unified/DeliveryPartnersModule.tsx
+  [WARN ] line 384:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 585:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 769:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 937:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/unified/FinanzasModule.tsx
+  [WARN ] line 1118:79 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1118:98 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1121:67 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1125:35 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 1428:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/unified/InventarioAlmacenesModule.tsx
+  [WARN ] line 760:25 — ds-no-decorative-color-admin
+          match: text-amber-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 923:87 — ds-no-style-inline-any-color
+          match: style={{ color: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 930:248 — ds-no-style-inline-any-color
+          match: style={{ backgroundColor: "var(--color-primary)
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+components/admin/unified/MarketplaceModule.tsx
+  [WARN ] line 984:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1090:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 1284:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/unified/MetasLogrosModule.tsx
+  [WARN ] line 151:73 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 151:90 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/unified/MeteringCard/MeteringCard.client.tsx
+  [WARN ] line 76:12 — ds-no-decorative-color-admin
+          match: bg-amber-400
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 77:12 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 82:12 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 83:12 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 169:29 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/unified/SugerenciasIAModule.tsx
+  [WARN ] line 365:9 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/vendor-dashboard/VendorLowStockList.tsx
+  [WARN ] line 14:38 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 15:37 — ds-no-decorative-color-admin
+          match: text-red-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 16:24 — ds-no-decorative-color-admin
+          match: text-yellow-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/VisitantesTab.tsx
+  [WARN ] line 112:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/VoiceCommandPOS.tsx
+  [WARN ] line 289:19 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+components/admin/WarehouseLocationTab.tsx
+  [WARN ] line 217:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/WarehouseTab.tsx
+  [WARN ] line 696:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/WarehouseTransferTab.tsx
+  [WARN ] line 196:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/WeatherDemandPredictor.tsx
+  [WARN ] line 97:21 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/WebhooksConfigTab.tsx
+  [WARN ] line 28:29 — ds-no-decorative-color-admin
+          match: text-red-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/WeeklyCashFlowTable.tsx
+  [WARN ] line 288:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+components/admin/WeeklyGoalCard.tsx
+  [WARN ] line 58:10 — ds-no-decorative-color-admin
+          match: bg-amber-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 59:10 — ds-no-decorative-color-admin
+          match: bg-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+components/admin/wholesale/VolumePricingEditor.tsx
+  [WARN ] line 161:11 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+app/admin/admin-types.ts
+  [WARN ] line 185:28 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 189:26 — ds-no-decorative-color-admin
+          match: text-red-500
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+app/admin/cron-dead-letters/page.tsx
+  [WARN ] line 221:15 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+  [WARN ] line 328:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+app/admin/kiosk/page.tsx
+  [WARN ] line 18:9 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-10 w-10 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+app/admin/login/page.tsx
+  [WARN ] line 129:9 — ds-no-style-color-inline
+          match: style={{ background: "rgb
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 135:39 — ds-no-style-color-inline
+          match: style={{ color: "rgb
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 440:19 — ds-no-style-color-inline
+          match: style={{ background: "rgb
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 462:23 — ds-no-style-color-inline
+          match: style={{ color: "rgb
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*, --data-*) en lugar de style inline con literales (ADR-075).
+  [WARN ] line 446:19 — ds-no-style-inline-any-color
+          match: style={{ fontSize: "1
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 779:15 — ds-no-style-inline-any-color
+          match: style={{ fontSize: "0
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+  [WARN ] line 786:15 — ds-no-style-inline-any-color
+          match: style={{ fontSize: "0
+          Usa className con tokens CSS (--text-*, --surface-*, --rule-*) o primitives del DS (ADR-075) — evitar style inline estático.
+
+app/admin/page.tsx
+  [WARN ] line 200:9 — ds-no-raw-loader-block-in-admin
+          match: <Loader2 className="h-8 w-8 animate-spin
+          Usa <LoadingState> del DS (ADR-075) en lugar de <Loader2 animate-spin> a nivel bloque — unifica spinner y copy.
+
+app/admin/store-page/_components/AnalyticsTab.tsx
+  [WARN ] line 183:26 — ds-no-decorative-color-admin
+          match: text-amber-700
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+app/admin/webhook-queue/page.tsx
+  [WARN ] line 145:61 — ds-no-decorative-color-admin
+          match: bg-indigo-600
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+  [WARN ] line 202:13 — ds-no-raw-table-in-admin
+          match: <table className=
+          Considera migrar a <DataTable> del DS (ADR-075) para tablas con estilo consistente. Si es un caso legítimo (cabeceras custom, spans), ignora esta regla.
+
+---
+Total: 0 errors, 660 warnings, 274 files

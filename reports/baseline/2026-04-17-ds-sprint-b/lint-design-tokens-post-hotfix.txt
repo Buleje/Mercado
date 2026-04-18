@@ -1,0 +1,4 @@
+          Usa --data-{success,warning,error,info} o <IconBadge intent=...>/StatCard emphasis=... del DS (ADR-075).
+
+---
+Total: 0 errors, 3395 warnings, 491 files

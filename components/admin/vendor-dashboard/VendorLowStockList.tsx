@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import type { VendorLowStockProduct } from "./vendor-dashboard.types";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Package } from "@buleje/design-system/icons";
 import Image from "next/image";
 
 type Props = {
@@ -9,7 +10,7 @@ type Props = {
 };
 
 function urgencyColor(stock: number | undefined): string {
-  if (stock === undefined || stock === null) return "bg-gray-100 text-gray-600";
+  if (stock === undefined || stock === null) return "bg-gray-100 text-[var(--text-secondary)]";
   if (stock <= 0) return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
   if (stock <= 2) return "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400";
   return "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400";
@@ -18,14 +19,14 @@ function urgencyColor(stock: number | undefined): string {
 export function VendorLowStockList({ products }: Props) {
   if (products.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-yellow-500" />
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-warning)]" />
           Stock bajo
-        </h3>
+        </CardTitle>
         <div className="text-center py-8">
-          <span className="text-3xl">📦</span>
-          <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
+          <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-50)] flex items-center justify-center"><Package className="h-5 w-5 text-[var(--data-warning)]" /></div>
+          <p className="mt-2 text-sm font-medium text-[var(--text-secondary)] dark:text-muted">
             Todo tu stock está en buen nivel.
           </p>
         </div>
@@ -34,19 +35,19 @@ export function VendorLowStockList({ products }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
-      <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
-        <AlertTriangle className="h-5 w-5 text-yellow-500" />
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+        <AlertTriangle className="h-5 w-5 text-[var(--data-warning)]" />
         Stock bajo
-        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-400 text-white text-xs font-bold">
+        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning)] text-white text-xs font-bold">
           {products.length}
         </span>
-      </h3>
+      </CardTitle>
 
       <ul className="divide-y divide-gray-100 dark:divide-card-border">
         {products.map((p) => (
           <li key={p.id} className="py-3 flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-[var(--surface-sunken)] shrink-0">
               {p.image ? (
                 <Image
                   src={p.image}
@@ -56,17 +57,17 @@ export function VendorLowStockList({ products }: Props) {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)] text-xs">
                   —
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
+              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                 {p.name}
               </p>
-              <p className="text-xs text-gray-500 dark:text-muted">{p.category}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{p.category}</p>
             </div>
 
             <div className="shrink-0 text-right">
@@ -74,7 +75,7 @@ export function VendorLowStockList({ products }: Props) {
                 {p.stock ?? 0} {p.unit}
               </span>
               {p.stockMin !== undefined && p.stockMin !== null && (
-                <p className="text-xs text-gray-400 mt-0.5">mín: {p.stockMin}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">mín: {p.stockMin}</p>
               )}
             </div>
           </li>

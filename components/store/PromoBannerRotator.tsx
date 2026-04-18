@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Truck, Smartphone, Star, CreditCard, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Banner Data ─────────────────────────────────────────────────────────────
@@ -24,7 +24,17 @@ export interface PromoBanner {
   ctaLink?: string;
   bgColor: string; // Tailwind gradient or solid color class
   textColor?: string;
-  emoji?: string;
+  icon?: LucideIcon;
+}
+
+/** Renderer explicito de iconos por banner.id — cumple react-hooks/static-components. */
+function BannerIcon({ id }: { id: string }) {
+  const common = { className: "h-4 w-4 shrink-0", strokeWidth: 1.75, "aria-hidden": true } as const;
+  if (id === "envio-gratis") return <Truck {...common} />;
+  if (id === "yape-descuento") return <Smartphone {...common} />;
+  if (id === "puntos-lealtad") return <Star {...common} />;
+  if (id === "fiado-digital") return <CreditCard {...common} />;
+  return null;
 }
 
 const DEFAULT_BANNERS: PromoBanner[] = [
@@ -34,8 +44,8 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Delivery rapido a toda la zona",
     ctaText: "Comprar ahora",
     ctaLink: "/tienda",
-    bgColor: "bg-gradient-to-r from-emerald-600 to-emerald-500",
-    emoji: "🚚",
+    bgColor: "bg-[var(--accent)]",
+    icon: Truck,
   },
   {
     id: "yape-descuento",
@@ -43,8 +53,8 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Valido en todas tus compras",
     ctaText: "Ver productos",
     ctaLink: "/tienda",
-    bgColor: "bg-gradient-to-r from-purple-600 to-purple-500",
-    emoji: "📱",
+    bgColor: "bg-[var(--accent)]",
+    icon: Smartphone,
   },
   {
     id: "puntos-lealtad",
@@ -52,8 +62,8 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Acumula y canjea por productos gratis",
     ctaText: "Mis puntos",
     ctaLink: "/puntos",
-    bgColor: "bg-gradient-to-r from-amber-500 to-orange-500",
-    emoji: "⭐",
+    bgColor: "bg-[var(--brand-ink)]",
+    icon: Star,
   },
   {
     id: "fiado-digital",
@@ -61,8 +71,8 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Sin intereses en 2 cuotas",
     ctaText: "Saber mas",
     ctaLink: "/mi-credito",
-    bgColor: "bg-gradient-to-r from-blue-600 to-indigo-600",
-    emoji: "💳",
+    bgColor: "bg-[var(--brand-ink)]",
+    icon: CreditCard,
   },
 ];
 
@@ -121,7 +131,7 @@ export default function PromoBannerRotator({
     >
       <div
         className={cn(
-          "relative py-3 sm:py-4 px-4 sm:px-6 transition-all duration-500 ease-in-out",
+          "relative py-3 sm:py-4 px-4 sm:px-6 transition-all duration-[var(--dur-slow)] ease-in-out",
           banner.bgColor,
           banner.textColor ?? "text-white",
         )}
@@ -140,9 +150,9 @@ export default function PromoBannerRotator({
 
           {/* Content */}
           <div className="flex-1 text-center min-w-0">
-            <p className="text-sm sm:text-base font-bold truncate">
-              {banner.emoji && <span className="mr-1.5">{banner.emoji}</span>}
-              {banner.title}
+            <p className="inline-flex items-center gap-2 text-sm sm:text-base font-bold truncate">
+              <BannerIcon id={banner.id} />
+              <span className="truncate">{banner.title}</span>
             </p>
             {banner.subtitle && (
               <p className="text-xs sm:text-sm opacity-90 mt-0.5 truncate">
@@ -181,7 +191,7 @@ export default function PromoBannerRotator({
                 key={b.id}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
+                  "h-1.5 rounded-full transition-all duration-[var(--dur-base)]",
                   idx === currentIndex
                     ? "w-4 bg-white"
                     : "w-1.5 bg-white/40 hover:bg-white/60",

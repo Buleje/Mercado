@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Brain, Loader2, TrendingUp, ShoppingCart, Calendar, AlertTriangle, Package, ClipboardList } from "lucide-react";
+import { Brain, Loader2, TrendingUp, ShoppingCart, Calendar, AlertTriangle, Package, ClipboardList } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import type { Product, Sale } from "@/types/erp";
 
@@ -153,33 +154,33 @@ export default function DemandPredictionTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Brain className="h-6 w-6 text-primary" />Predicción de Demanda (IA)</h2>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Brain className="h-6 w-6 text-primary" />Predicción de Demanda (IA)</SectionTitle>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm">
+          <select value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
             <option value="7">Próximos 7 días</option>
             <option value="14">Próximos 14 días</option>
             <option value="30">Próximos 30 días</option>
           </select>
-          <button onClick={analyze} disabled={loading} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+          <button onClick={analyze} disabled={loading} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}Analizar
           </button>
         </div>
       </div>
 
-      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-sm text-red-600">{error}</div>}
+      {error && <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl p-4 text-sm text-[var(--data-error)]">{error}</div>}
 
       {/* Stock Alerts Section */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-extrabold text-lg text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Package className="h-5 w-5 text-orange-500" />
+          <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+            <Package className="h-5 w-5 text-[var(--data-warning)]" />
             Alertas de Stock
-          </h3>
+          </CardTitle>
           {stockAlerts.filter(a => a.daysUntilStockout < 7).length > 0 && (
             <button
               onClick={generateBulkPurchaseOrders}
               disabled={generatingBulk}
-              className="flex flex-wrap items-center gap-2 bg-orange-500 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-orange-600 transition disabled:opacity-50"
+              className="flex flex-wrap items-center gap-2 bg-[var(--data-warning)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--data-warning)] transition disabled:opacity-50"
             >
               {generatingBulk ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -192,12 +193,9 @@ export default function DemandPredictionTab() {
         </div>
 
         {loadingAlerts ? (
-          <div className="flex items-center justify-center py-8 text-gray-400 dark:text-muted">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2 text-sm">Calculando alertas...</span>
-          </div>
+          <LoadingState message="Calculando alertas..." />
         ) : stockAlerts.length === 0 ? (
-          <div className="text-center py-8 text-gray-400 dark:text-muted">
+          <div className="text-center py-8 text-[var(--text-tertiary)] dark:text-muted">
             <Package className="h-10 w-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm font-bold">No hay alertas de stock en este momento</p>
             <p className="text-xs mt-1">Todos los productos tienen stock suficiente</p>
@@ -214,29 +212,29 @@ export default function DemandPredictionTab() {
                   key={alert.product.id}
                   className={`flex items-center gap-3 p-3 rounded-xl border ${
                     isUrgent
-                      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                      ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
                       : isWarning
-                      ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-                      : "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
+                      ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border-[var(--data-warning)] dark:border-[var(--data-warning)]"
+                      : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
                   }`}
                 >
                   {(isUrgent || isWarning) && (
                     <AlertTriangle
                       className={`h-5 w-5 shrink-0 ${
-                        isUrgent ? "text-red-600" : "text-amber-600"
+                        isUrgent ? "text-[var(--data-error)]" : "text-[var(--data-warning)]"
                       }`}
                     />
                   )}
                   
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-900 dark:text-foreground truncate">
+                    <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
                       {alert.product.name}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-gray-600 dark:text-muted">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-[var(--text-secondary)] dark:text-muted">
                       <span>Stock: <strong>{alert.product.stock}</strong> {alert.product.unit}</span>
                       <span>Promedio diario: <strong>{alert.dailyAvg.toFixed(1)}</strong></span>
                       <span className={`font-extrabold ${
-                        isUrgent ? "text-red-600" : isWarning ? "text-amber-600" : "text-emerald-600"
+                        isUrgent ? "text-[var(--data-error)]" : isWarning ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
                       }`}>
                         ~{Math.floor(alert.daysUntilStockout)} días restantes
                       </span>
@@ -265,18 +263,18 @@ export default function DemandPredictionTab() {
       </div>
 
       {/* AI Prediction Section */}
-      <div className="bg-linear-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border border-primary/20 rounded-2xl p-3 sm:p-6">
-        <h3 className="font-extrabold text-lg text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4">
+      <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+        <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-4">
           <Brain className="h-5 w-5 text-primary" />
           Predicción con Inteligencia Artificial
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-muted mb-4">
+        </CardTitle>
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-4">
           Utiliza IA para analizar patrones de venta y predecir demanda futura
         </p>
       </div>
 
       {!prediction && !loading && !error && (
-        <div className="text-center py-12 text-gray-400 dark:text-muted">
+        <div className="text-center py-12 text-[var(--text-tertiary)] dark:text-muted">
           <Brain className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="font-bold">Haz clic en &ldquo;Analizar&rdquo; para generar predicciones</p>
           <p className="text-sm mt-1">La IA analizará las ventas recientes para predecir la demanda futura</p>
@@ -285,19 +283,19 @@ export default function DemandPredictionTab() {
 
       {prediction && (
         <div className="space-y-3 sm:space-y-6">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-            <p className="text-sm text-gray-700 dark:text-foreground leading-relaxed">{prediction.summary}</p>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
+            <p className="text-sm text-[var(--text-primary)] dark:text-foreground leading-relaxed">{prediction.summary}</p>
           </div>
 
           {prediction.prediction?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-              <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><TrendingUp className="h-4 w-4 text-primary" />Demanda Estimada</h3>
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><TrendingUp className="h-4 w-4 text-primary" />Demanda Estimada</CardTitle>
               <div className="space-y-2">
                 {prediction.prediction.map((p, i) => (
                   <div key={i} className="flex flex-wrap items-center gap-3 text-sm">
                     <span className="flex-1 truncate font-medium">{p.productName}</span>
                     <span className="font-extrabold text-primary">{p.estimatedDemand} uds</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-emerald-100 text-emerald-700" : p.confidence === "media" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>{p.confidence}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-gray-100 text-[var(--text-secondary)]"}`}>{p.confidence}</span>
                   </div>
                 ))}
               </div>
@@ -305,8 +303,8 @@ export default function DemandPredictionTab() {
           )}
 
           {prediction.peakDays?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-              <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" />Días Pico</h3>
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" />Días Pico</CardTitle>
               <div className="flex flex-wrap gap-2">
                 {prediction.peakDays.map((d, i) => (
                   <span key={i} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold">{d}</span>
@@ -316,11 +314,11 @@ export default function DemandPredictionTab() {
           )}
 
           {prediction.purchaseSuggestions?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-              <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><ShoppingCart className="h-4 w-4 text-primary" />Sugerencias de Compra</h3>
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><ShoppingCart className="h-4 w-4 text-primary" />Sugerencias de Compra</CardTitle>
               <ul className="space-y-1">
                 {prediction.purchaseSuggestions.map((s, i) => (
-                  <li key={i} className="text-sm text-gray-600 dark:text-muted flex flex-wrap items-start gap-2">
+                  <li key={i} className="text-sm text-[var(--text-secondary)] dark:text-muted flex flex-wrap items-start gap-2">
                     <span className="text-primary mt-0.5">•</span>{s}
                   </li>
                 ))}

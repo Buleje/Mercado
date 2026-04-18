@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { History, Users, Package, Loader2, ChevronRight, RefreshCw } from "lucide-react";
+import { History, Users, Package, Loader2, ChevronRight, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -64,28 +64,28 @@ interface PopularPanelProps {
 
 function PopularPanel({ products, loading, onAdd, onClose }: PopularPanelProps) {
   return (
-    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl w-72 overflow-hidden">
-      <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-72 overflow-hidden">
+      <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">
           Top 5 productos
         </span>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-foreground text-xs transition-colors"
+          className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground text-xs transition-colors"
         >
           cerrar
         </button>
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center gap-2 py-6 text-gray-400 dark:text-muted text-sm">
+        <div className="flex items-center justify-center gap-2 py-6 text-[var(--text-tertiary)] dark:text-muted text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           Cargando...
         </div>
       )}
 
       {!loading && products.length === 0 && (
-        <div className="py-6 text-center text-sm text-gray-400 dark:text-muted">
+        <div className="py-6 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">
           Sin datos disponibles
         </div>
       )}
@@ -102,18 +102,18 @@ function PopularPanel({ products, loading, onAdd, onClose }: PopularPanelProps) 
                   <Package className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{p.name}</p>
-                  <p className="text-xs text-gray-400 dark:text-muted">
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
                     {fmt(p.price)}
                     {p.unit ? ` / ${p.unit}` : ""}
                     {p.stock !== undefined && (
-                      <span className={cn("ml-2", p.stock <= 0 ? "text-red-500" : "text-gray-400")}>
+                      <span className={cn("ml-2", p.stock <= 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
                         stock: {p.stock}
                       </span>
                     )}
                   </p>
                 </div>
-                <ChevronRight className="h-3.5 w-3.5 text-gray-300 shrink-0" />
+                <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
               </button>
             </li>
           ))}
@@ -134,28 +134,28 @@ interface CustomerPanelProps {
 
 function CustomerPanel({ customers, loading, onSelect, onClose }: CustomerPanelProps) {
   return (
-    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl w-64 overflow-hidden">
-      <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-64 overflow-hidden">
+      <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">
           Clientes frecuentes
         </span>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-foreground text-xs transition-colors"
+          className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground text-xs transition-colors"
         >
           cerrar
         </button>
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center gap-2 py-6 text-gray-400 dark:text-muted text-sm">
+        <div className="flex items-center justify-center gap-2 py-6 text-[var(--text-tertiary)] dark:text-muted text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           Cargando...
         </div>
       )}
 
       {!loading && customers.length === 0 && (
-        <div className="py-6 text-center text-sm text-gray-400 dark:text-muted">
+        <div className="py-6 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">
           Sin clientes frecuentes
         </div>
       )}
@@ -168,13 +168,13 @@ function CustomerPanel({ customers, loading, onSelect, onClose }: CustomerPanelP
                 onClick={() => { onSelect(c); onClose(); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-surface text-left transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0 text-violet-600 dark:text-violet-400 font-bold text-sm">
+                <div className="w-8 h-8 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center shrink-0 text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold text-sm">
                   {c.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{c.name}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
                   {c.totalOrders !== undefined && (
-                    <p className="text-xs text-gray-400 dark:text-muted">{c.totalOrders} pedidos</p>
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{c.totalOrders} pedidos</p>
                   )}
                 </div>
               </button>
@@ -354,25 +354,25 @@ export default function QuickActionsBar({
     >
       {/* ── Botón: Ultima venta ── */}
       <div className="relative">
-        <div className="flex items-stretch rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-white dark:bg-card shadow-sm">
+        <div className="flex items-stretch rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card ">
           <button
             onClick={handleRepeatSale}
             disabled={lastSaleLoading || !lastSale || !onRepeatSale || repeatLoading}
             className={cn(
               "flex items-center gap-2 px-3 py-2 text-sm font-semibold transition-colors",
               lastSale && onRepeatSale
-                ? "text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
-                : "text-gray-300 dark:text-muted cursor-not-allowed"
+                ? "text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+                : "text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
             )}
             title={lastSale ? `Repetir: ${fmt(lastSale.total)}` : "Sin venta reciente"}
           >
             {(lastSaleLoading || repeatLoading)
-              ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              : <History className="h-4 w-4 text-amber-500 shrink-0" />
+              ? <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
+              : <History className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
             }
             <span className="hidden sm:inline">Ultima venta</span>
             {lastSale && !lastSaleLoading && (
-              <span className="text-[11px] font-mono text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-md">
+              <span className="text-[length:var(--ts-xs)] font-mono text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-1.5 py-0.5 rounded-md">
                 {fmt(lastSale.total)}
               </span>
             )}
@@ -380,10 +380,10 @@ export default function QuickActionsBar({
           <button
             onClick={handleRefreshLastSale}
             disabled={lastSaleLoading}
-            className="border-l border-gray-200 dark:border-card-border px-2 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="border-l border-[var(--rule-base)] dark:border-card-border px-2 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
             title="Actualizar"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5 text-gray-400", lastSaleLoading && "animate-spin")} />
+            <RefreshCw className={cn("h-3.5 w-3.5 text-[var(--text-tertiary)]", lastSaleLoading && "animate-spin")} />
           </button>
         </div>
       </div>
@@ -393,13 +393,13 @@ export default function QuickActionsBar({
         <button
           onClick={toggleCustomers}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors shadow-sm",
+            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ",
             activePanel === "customers"
-              ? "bg-violet-50 dark:bg-violet-900/20 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300"
-              : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+              ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
+              : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
-          <Users className="h-4 w-4 text-violet-500 shrink-0" />
+          <Users className="h-4 w-4 text-[var(--text-secondary)] shrink-0" />
           <span className="hidden sm:inline">Cliente frecuente</span>
         </button>
 
@@ -418,10 +418,10 @@ export default function QuickActionsBar({
         <button
           onClick={toggleProducts}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors shadow-sm",
+            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ",
             activePanel === "products"
               ? "bg-primary/10 dark:bg-primary/20 border-primary/40 dark:border-primary/40 text-primary"
-              : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+              : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
           <Package className="h-4 w-4 text-primary shrink-0" />

@@ -1,6 +1,7 @@
 "use client";
- 
 
+
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef } from "react";
 import {
   ChevronLeft,
@@ -9,7 +10,7 @@ import {
   X,
   CalendarDays,
   List,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -28,26 +29,26 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   {
     value: "oferta",
     label: "Oferta",
-    color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    dot: "bg-orange-400",
+    color: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",
+    dot: "bg-[var(--data-warning)]",
   },
   {
     value: "receta",
     label: "Receta",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    dot: "bg-blue-400",
+    color: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+    dot: "bg-[var(--accent-soft)]",
   },
   {
     value: "post",
     label: "Post",
-    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    dot: "bg-purple-400",
+    color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+    dot: "bg-[var(--accent-soft)]",
   },
   {
     value: "evento",
     label: "Evento",
-    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    dot: "bg-emerald-400",
+    color: "bg-[var(--accent-soft)] text-[var(--data-success)]",
+    dot: "bg-[var(--accent-soft)]",
   },
 ];
 
@@ -180,10 +181,10 @@ export default function ContentCalendar() {
         className={cn(
           "min-h-[80px] rounded-lg border p-1.5 transition",
           isCurrentMonth
-            ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
-            : "border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/30",
-          dragOver === ymd && "border-[#00B4A6] bg-[#00B4A6]/5",
-          "cursor-pointer hover:border-[#00B4A6]/40"
+            ? "border-[var(--rule-base)] bg-white"
+            : "border-[var(--rule-soft)] bg-gray-50/50",
+          dragOver === ymd && "border-primary bg-primary/5",
+          "cursor-pointer hover:border-primary/40"
         )}
         onDragOver={(e) => { e.preventDefault(); setDragOver(ymd); }}
         onDragLeave={() => setDragOver(null)}
@@ -199,10 +200,10 @@ export default function ContentCalendar() {
           className={cn(
             "mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
             isToday
-              ? "bg-[#00B4A6] text-white"
+              ? "bg-primary text-white"
               : isCurrentMonth
-              ? "text-gray-700 dark:text-gray-300"
-              : "text-gray-300 dark:text-gray-600"
+              ? "text-[var(--text-primary)]"
+              : "text-[var(--text-tertiary)]"
           )}
         >
           {day.getDate()}
@@ -234,7 +235,7 @@ export default function ContentCalendar() {
             </div>
           ))}
           {dayEntries.length > 3 && (
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-[var(--text-tertiary)]">
               +{dayEntries.length - 3} mas
             </p>
           )}
@@ -244,14 +245,14 @@ export default function ContentCalendar() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Calendario de Contenido
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)]">
             Planifica posts, ofertas y eventos del mes
           </p>
         </div>
@@ -261,8 +262,8 @@ export default function ContentCalendar() {
             className={cn(
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "month"
-                ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                ? "border-primary bg-primary text-white"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50"
             )}
           >
             <CalendarDays className="h-3.5 w-3.5" />
@@ -273,16 +274,17 @@ export default function ContentCalendar() {
             className={cn(
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "week"
-                ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                ? "border-primary bg-primary text-white"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50"
             )}
           >
             <List className="h-3.5 w-3.5" />
             Semana
           </button>
+          {/* TODO(#1): non-standard — hover:#e08c4a is a custom warm hover, no token equivalent */}
           <button
             onClick={() => { setShowForm(true); setForm((f) => ({ ...f, date: toYMD(today) })); }}
-            className="flex items-center gap-1.5 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#e08c4a]"
+            className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#e08c4a]"
           >
             <Plus className="h-3.5 w-3.5" />
             Agregar
@@ -304,20 +306,20 @@ export default function ContentCalendar() {
       {view === "month" && (
         <>
           <div className="flex items-center justify-between">
-            <button onClick={prevMonth} className="rounded-lg border border-gray-200 p-1.5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-              <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <button onClick={prevMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-gray-50">
+              <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
-            <span className="font-semibold text-gray-900 dark:text-white">
+            <span className="font-semibold text-[var(--text-primary)]">
               {MONTH_NAMES[month]} {year}
             </span>
-            <button onClick={nextMonth} className="rounded-lg border border-gray-200 p-1.5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <button onClick={nextMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-gray-50">
+              <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </div>
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-1">
             {DAYS_OF_WEEK.map((d) => (
-              <div key={d} className="py-1 text-center text-xs font-semibold text-gray-400">
+              <div key={d} className="py-1 text-center text-xs font-semibold text-[var(--text-tertiary)]">
                 {d}
               </div>
             ))}
@@ -342,15 +344,15 @@ export default function ContentCalendar() {
             return (
               <div
                 key={ymd}
-                className="min-h-[120px] rounded-xl border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900"
+                className="min-h-[120px] rounded-xl border border-[var(--rule-base)] bg-white p-2"
               >
                 <div className={cn(
                   "mb-2 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
-                  isToday ? "bg-[#00B4A6] text-white" : "text-gray-700 dark:text-gray-300"
+                  isToday ? "bg-primary text-white" : "text-[var(--text-primary)]"
                 )}>
                   {day.getDate()}
                 </div>
-                <p className="mb-2 text-xs text-gray-400">
+                <p className="mb-2 text-xs text-[var(--text-tertiary)]">
                   {DAYS_OF_WEEK[day.getDay()]}
                 </p>
                 {dayEntries.map((e) => (
@@ -367,35 +369,35 @@ export default function ContentCalendar() {
       {/* Add entry form */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl dark:bg-gray-900">
-            <div className="flex items-center justify-between border-b border-gray-100 p-5 dark:border-gray-800">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+          <div className="w-full max-w-md rounded-xl bg-white">
+            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] p-5">
+              <CardTitle className="font-semibold text-[var(--text-primary)]">
                 Nueva entrada
-              </h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              </CardTitle>
+              <button onClick={() => setShowForm(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="space-y-4 p-5">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                   Fecha
                 </label>
                 <input
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                   Tipo
                 </label>
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as EntryType }))}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {ENTRY_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -403,18 +405,18 @@ export default function ContentCalendar() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                   Titulo
                 </label>
                 <input
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="Ej: Oferta arroz 5kg"
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                   Notas
                 </label>
                 <textarea
@@ -422,21 +424,21 @@ export default function ContentCalendar() {
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={2}
                   placeholder="Detalles adicionales..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
-            <div className="flex gap-3 border-t border-gray-100 p-5 dark:border-gray-800">
+            <div className="flex gap-3 border-t border-[var(--rule-soft)] p-5">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 rounded-lg border border-gray-200 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+                className="flex-1 rounded-lg border border-[var(--rule-base)] py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={addEntry}
                 disabled={!form.title.trim()}
-                className="flex-1 rounded-lg bg-[#00B4A6] py-2 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
+                className="flex-1 rounded-lg bg-primary py-2 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50"
               >
                 Guardar
               </button>

@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { Download, Loader2, CheckCircle, Package, Users, ShoppingCart, BarChart2, FileText, Archive } from "lucide-react";
+import { Download, Loader2, CheckCircle, Package, Users, ShoppingCart, BarChart2, FileText, Archive } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -208,10 +209,10 @@ export default function FullExporter() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Exportar datos del negocio
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Descarga tus datos en formato CSV con codificacion UTF-8
           </p>
         </div>
@@ -222,7 +223,7 @@ export default function FullExporter() {
           className={cn(
             "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors",
             bulkStatus === "loading"
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800"
+              ? "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               : "bg-[#00B4A6] text-white hover:bg-[#235c43]"
           )}
         >
@@ -245,22 +246,22 @@ export default function FullExporter() {
           return (
             <div
               key={mod.id}
-              className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5"
+              className="flex items-center justify-between rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
             >
               <div className="flex items-start gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#00B4A6]/10">
                   <Icon className="h-5 w-5 text-[#00B4A6]" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{mod.label}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{mod.description}</p>
+                  <p className="font-medium text-[var(--text-primary)]">{mod.label}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{mod.description}</p>
                   {st.status === "done" && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
                       {st.count} registros exportados
                     </p>
                   )}
                   {st.status === "error" && (
-                    <p className="text-xs text-red-500 mt-1">Error al exportar</p>
+                    <p className="text-xs text-[var(--data-error)] mt-1">Error al exportar</p>
                   )}
                 </div>
               </div>
@@ -272,18 +273,18 @@ export default function FullExporter() {
                 className={cn(
                   "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
                   st.status === "loading"
-                    ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                    ? "bg-[var(--surface-sunken)] cursor-not-allowed"
                     : st.status === "done"
-                    ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
-                    : "bg-gray-50 dark:bg-gray-800 hover:bg-[#00B4A6]/10"
+                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                    : "bg-[var(--surface-sunken)] hover:bg-[#00B4A6]/10"
                 )}
               >
                 {st.status === "loading" ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
                 ) : st.status === "done" ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-[var(--data-success)]" />
                 ) : (
-                  <Download className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <Download className="h-4 w-4 text-[var(--text-tertiary)]" />
                 )}
               </button>
             </div>
@@ -291,7 +292,7 @@ export default function FullExporter() {
         })}
       </div>
 
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-[var(--text-tertiary)]">
         Los archivos CSV incluyen BOM UTF-8 para compatibilidad con Excel. Abre con: Datos &rarr; Desde texto/CSV en Excel.
       </p>
     </div>

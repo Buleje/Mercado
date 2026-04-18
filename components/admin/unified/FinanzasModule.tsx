@@ -1,4 +1,5 @@
 "use client";
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { m } from "@/components/admin/providers";
@@ -10,25 +11,26 @@ import {
 import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon, Target,
   FileBarChart, Waves, Calculator,
-  History, DollarSign,
-  BarChart3, Percent, Truck, CreditCard, RefreshCw, FileDown, AlertTriangle, Maximize2, X as XIcon,
-  Sparkles,
-} from "lucide-react";
+  DollarSign, Wallet,
+  BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
+  Sparkles, Landmark,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { ChartTooltip } from "@/lib/chart-tooltip";
 import { formatSolesShort } from "@/lib/chart-helpers";
 import { Suspense } from "react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
+import FavStar from "@/components/admin/shared/FavStar";
+import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
+import EmptyState from "@/components/admin/shared/EmptyState";
+import ExportButton from "@/components/admin/shared/ExportButton";
+import PeriodSelector from "@/components/admin/shared/PeriodSelector";
+import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
 const ExpensesTab = dynamic(() => import("@/components/admin/ExpensesTab"), { loading: S });
@@ -56,6 +58,7 @@ const BusinessIntelligenceTab = dynamic(() => import("@/components/admin/Busines
 const CustomKPITab = dynamic(() => import("@/components/admin/CustomKPITab"), { loading: S });
 const CompetitorPriceTracker = dynamic(() => import("@/components/admin/CompetitorPriceTracker"), { loading: S });
 // DocumentosEmitidosTab → movido a categoría Documentos (no es finanzas)
+const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: S });
 
 const MODULE_ID = "plata";
 
@@ -66,11 +69,9 @@ const TABS = [
   { id: "rentabilidad" as const,     label: "Rentabilidad",             icon: PieChartIcon },
   { id: "presupuesto" as const,      label: "Presupuesto",              icon: Target       },
   { id: "flujo-caja" as const,       label: "Flujo de Caja",            icon: Waves        },
-  { id: "reporte-mensual" as const,  label: "Reporte Mensual PDF",      icon: FileBarChart },
-  { id: "reportes" as const,         label: "Reportes y Exportación",   icon: FileBarChart },
-  { id: "historial-cierres" as const, label: "Historial Cierres",       icon: History      },
-  { id: "comparativo" as const,      label: "Comparativo",              icon: BarChart3    },
+  { id: "reportes" as const,         label: "Reportes",                 icon: FileBarChart },
   { id: "inteligencia" as const,     label: "Inteligencia",             icon: Sparkles     },
+  { id: "tesoreria" as const,        label: "Tesorería",                icon: Landmark     },
 ];
 
 // ── Mejora 11: Semáforo de salud financiera ──────────────────────────────────
@@ -124,15 +125,15 @@ function HealthSemaphore() {
 
   if (loading || !score) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-20 w-20 rounded-full bg-gray-200 mx-auto" />
       </div>
     );
   }
 
-  const color = score.total > 70 ? "#22c55e" : score.total >= 40 ? "#f59e0b" : "#ef4444";
+  const color = score.total > 70 ? "#00B4A6" : score.total >= 40 ? "#f59e0b" : "#ef4444";
   const label = score.total > 70 ? "Saludable" : score.total >= 40 ? "Precaucion" : "Critico";
-  const bgRing = score.total > 70 ? "ring-green-200" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
+  const bgRing = score.total > 70 ? "ring-[var(--data-success)]/40" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
 
   const factors = [
     { label: "Margen", pts: score.margenPts, max: 33, detail: `${score.margen.toFixed(1)}%` },
@@ -141,28 +142,28 @@ function HealthSemaphore() {
   ];
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Circulo grande */}
         <div className={`w-20 h-20 rounded-full flex items-center justify-center ring-4 ${bgRing} shrink-0`} style={{ backgroundColor: `${color}20` }}>
           <div className="text-center">
             <span className="text-2xl font-extrabold" style={{ color }}>{score.total}</span>
-            <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color }}>{label}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold" style={{ color }}>{label}</p>
           </div>
         </div>
         {/* Mini barras */}
         <div className="flex-1 w-full space-y-2">
-          <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Salud Financiera</p>
+          <p className="text-xs font-bold text-[var(--text-secondary)]">Salud Financiera</p>
           {factors.map(f => (
             <div key={f.label} className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-gray-500 w-14">{f.label}</span>
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] w-14">{f.label}</span>
               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "#22c55e" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
+                  className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
+                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "#00B4A6" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-gray-500 w-10 text-right">{f.detail}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] w-10 text-right">{f.detail}</span>
             </div>
           ))}
         </div>
@@ -219,7 +220,7 @@ function ComparativoMensual() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-75 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -230,8 +231,8 @@ function ComparativoMensual() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Comparativo Mensual</p>
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+      <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Comparativo Mensual</p>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -246,7 +247,7 @@ function ComparativoMensual() {
             labelFormatter={(label: unknown) => `${String(label)} 2026`}
           />
           <Legend formatter={(value: unknown) => { const v = String(value); return v === "ingresos" ? "Ingresos" : v === "gastos" ? "Gastos" : "Utilidad"; }} />
-          <Bar dataKey="ingresos" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="ingresos" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
           <Bar dataKey="gastos" fill="#e63946" radius={[4, 4, 0, 0]} />
           <Bar dataKey="utilidad" fill="#457b9d" radius={[4, 4, 0, 0]} />
           {/* Mejora 14: Linea de punto de equilibrio (promedio gastos) */}
@@ -294,7 +295,7 @@ function PuntoEquilibrio() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-16 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -307,16 +308,16 @@ function PuntoEquilibrio() {
   const pct = Math.min((data.ventasHoy / data.gastoDiario) * 100, 150);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Punto de Equilibrio Diario</p>
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+      <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Punto de Equilibrio Diario</p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
           <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
               style={{
                 width: `${Math.min(pct, 100)}%`,
-                backgroundColor: cubierto ? "#22c55e" : "#ef4444",
+                backgroundColor: cubierto ? "#00B4A6" : "#ef4444",
               }}
             />
             {/* Linea de punto de equilibrio */}
@@ -325,20 +326,20 @@ function PuntoEquilibrio() {
               style={{ left: `${Math.min(100 / (pct > 100 ? pct / 100 : 1), 100)}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1.5 text-[10px] text-gray-500">
+          <div className="flex justify-between mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
             <span>S/0</span>
-            <span className="font-bold text-gray-700">Meta: S/{data.gastoDiario}</span>
+            <span className="font-bold text-[var(--text-primary)]">Meta: S/{data.gastoDiario}</span>
             <span>S/{Math.round(data.gastoDiario * 1.5)}</span>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-lg font-extrabold" style={{ color: cubierto ? "#22c55e" : "#ef4444" }}>
+          <p className="text-lg font-extrabold" style={{ color: cubierto ? "#00B4A6" : "#ef4444" }}>
             S/{data.ventasHoy}
           </p>
-          <p className="text-[10px] text-gray-500">vendido hoy</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">vendido hoy</p>
         </div>
       </div>
-      <p className={`text-xs font-bold mt-2 ${cubierto ? "text-emerald-600" : "text-red-600"}`}>
+      <p className={`text-xs font-bold mt-2 ${cubierto ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
         {cubierto
           ? `Hoy ya cubriste los gastos (+S/${diferencia} de ganancia)`
           : `Faltan S/${diferencia} para cubrir gastos del dia`}
@@ -350,8 +351,8 @@ function PuntoEquilibrio() {
 // ── Mejora 15: Desglose de gastos con donut ──────────────────────────────────
 
 const EXPENSE_COLORS: Record<string, string> = {
-  "Mercaderia": "#00B4A6",
-  "mercaderia": "#00B4A6",
+  "Mercaderia": "var(--color-primary)",
+  "mercaderia": "var(--color-primary)",
   "Alquiler": "#f97316",
   "alquiler": "#f97316",
   "Servicios": "#457b9d",
@@ -419,7 +420,7 @@ function GastosDonut() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-55 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -437,8 +438,8 @@ function GastosDonut() {
   const getColor = (category: string) => EXPENSE_COLORS[category] ?? EXPENSE_COLORS[category.toLowerCase()] ?? "#6b7280";
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Gastos del Mes por Categoria</p>
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+      <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
           <ResponsiveContainer width="100%" height="100%">
@@ -464,8 +465,8 @@ function GastosDonut() {
           {/* Center label */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
-              <p className="text-xs text-gray-400">Total</p>
-              <p className={cn("text-sm font-extrabold", total === 0 ? "text-gray-300" : "text-gray-900")}>{formatCurrency(total, { decimals: 0 })}</p>
+              <p className="text-xs text-[var(--text-tertiary)]">Total</p>
+              <p className={cn("text-sm font-extrabold", total === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>{formatCurrency(total, { decimals: 0 })}</p>
             </div>
           </div>
         </div>
@@ -478,17 +479,17 @@ function GastosDonut() {
             return (
               <div key={g.name || i} className="flex items-center gap-2 text-xs">
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getColor(g.name) }} />
-                <span className="flex-1 text-gray-700 font-semibold truncate">{g.name}</span>
+                <span className="flex-1 text-[var(--text-primary)] font-semibold truncate">{g.name}</span>
                 {isUnusual && (
                   <span
-                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[9px] font-bold"
+                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-[length:var(--ts-2xs)] font-bold"
                     title={`Este gasto es ${pctOver}% mayor al promedio de S/${Math.round(avg)} en ${g.name}`}
                   >
                     Gasto inusual
                   </span>
                 )}
-                <span className="text-gray-500">{formatCurrency(g.value, { decimals: 0 })}</span>
-                <span className="text-gray-400 w-8 text-right">{g.pct}%</span>
+                <span className="text-[var(--text-secondary)]">{formatCurrency(g.value, { decimals: 0 })}</span>
+                <span className="text-[var(--text-tertiary)] w-8 text-right">{g.pct}%</span>
               </div>
             );
           })}
@@ -529,7 +530,7 @@ function ProyeccionCierreMes() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -543,42 +544,42 @@ function ProyeccionCierreMes() {
   const mesNombre = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp className="h-4 w-4 text-purple-500" />
-        <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+        <TrendingUp className="h-4 w-4 text-[var(--text-secondary)]" />
+        <p className="text-xs font-bold text-[var(--text-secondary)]">
           Proyeccion {mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)}
         </p>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Ventas proy.</p>
-          <p className={cn("text-base font-extrabold", ventasProyectadas === 0 ? "text-gray-300" : "text-primary")}>{formatCurrency(ventasProyectadas, { decimals: 0 })}</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Ventas proy.</p>
+          <p className={cn("text-base font-extrabold", ventasProyectadas === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(ventasProyectadas, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Gastos proy.</p>
-          <p className={cn("text-base font-extrabold", gastosProyectados === 0 ? "text-gray-300" : "text-red-500")}>{formatCurrency(gastosProyectados, { decimals: 0 })}</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Gastos proy.</p>
+          <p className={cn("text-base font-extrabold", gastosProyectados === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error)]")}>{formatCurrency(gastosProyectados, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Utilidad est.</p>
-          <p className={cn("text-base font-extrabold", utilidadProyectada === 0 ? "text-gray-300" : utilidadProyectada >= 0 ? "text-emerald-600" : "text-red-600")}>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Utilidad est.</p>
+          <p className={cn("text-base font-extrabold", utilidadProyectada === 0 ? "text-[var(--text-tertiary)]" : utilidadProyectada >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
             {utilidadProyectada >= 0 ? "+" : ""}{formatCurrency(Math.abs(utilidadProyectada), { decimals: 0 })}
           </p>
         </div>
       </div>
       {/* Progress bar */}
       <div className="space-y-1.5">
-        <div className="flex justify-between text-[10px] text-gray-500">
+        <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
           <span>Dia {data.diasTranscurridos} de {data.diasTotales}</span>
           <span>{Math.round(progreso)}% del mes</span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-700 bg-primary"
+            className="h-full rounded-full transition-all duration-[var(--dur-slower)] bg-primary"
             style={{ width: `${progreso}%` }}
           />
         </div>
-        <p className="text-[10px] text-gray-400 text-center">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center">
           Ventas actuales: {formatCurrency(Math.round(data.ventasMes), { decimals: 0 })} de {formatCurrency(ventasProyectadas, { decimals: 0 })} proyectados
         </p>
       </div>
@@ -609,7 +610,7 @@ function ResumenFiscal() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -621,39 +622,39 @@ function ResumenFiscal() {
   const mesActual = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
-        <Calculator className="h-4 w-4 text-amber-500" />
-        <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+        <Calculator className="h-4 w-4 text-[var(--data-warning)]" />
+        <p className="text-xs font-bold text-[var(--text-secondary)]">
           Resumen Fiscal — {mesActual.charAt(0).toUpperCase() + mesActual.slice(1)}
         </p>
       </div>
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Ventas gravadas</span>
-          <span className="font-bold text-gray-900">{formatCurrency(Math.round(data.ventas), { decimals: 0 })}</span>
+          <span className="text-[var(--text-secondary)]">Ventas gravadas</span>
+          <span className="font-bold text-[var(--text-primary)]">{formatCurrency(Math.round(data.ventas), { decimals: 0 })}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">IGV cobrado (18%)</span>
-          <span className="font-bold text-gray-900">{formatCurrency(Math.round(igvCobrado), { decimals: 0 })}</span>
+          <span className="text-[var(--text-secondary)]">IGV cobrado (18%)</span>
+          <span className="font-bold text-[var(--text-primary)]">{formatCurrency(Math.round(igvCobrado), { decimals: 0 })}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Compras deducibles</span>
-          <span className="font-bold text-gray-900">{formatCurrency(Math.round(data.compras), { decimals: 0 })}</span>
+          <span className="text-[var(--text-secondary)]">Compras deducibles</span>
+          <span className="font-bold text-[var(--text-primary)]">{formatCurrency(Math.round(data.compras), { decimals: 0 })}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">IGV pagado</span>
-          <span className="font-bold text-gray-900">{formatCurrency(Math.round(igvPagado), { decimals: 0 })}</span>
+          <span className="text-[var(--text-secondary)]">IGV pagado</span>
+          <span className="font-bold text-[var(--text-primary)]">{formatCurrency(Math.round(igvPagado), { decimals: 0 })}</span>
         </div>
-        <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between text-sm">
-          <span className="font-bold text-gray-800">IGV a pagar</span>
-          <span className={`font-extrabold ${igvNeto > 0 ? "text-red-600" : "text-emerald-600"}`}>
+        <div className="border-t border-[var(--rule-base)] pt-2 mt-2 flex justify-between text-sm">
+          <span className="font-bold text-[var(--text-primary)]">IGV a pagar</span>
+          <span className={`font-extrabold ${igvNeto > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]"}`}>
             {igvNeto > 0 ? "" : "-"}{formatCurrency(Math.abs(Math.round(igvNeto)), { decimals: 0 })}
             {igvNeto <= 0 && <span className="text-xs font-normal ml-1">(crédito fiscal)</span>}
           </span>
         </div>
       </div>
-      <p className="text-[10px] text-gray-400 mt-3 italic">
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 italic">
         Referencia aproximada — consulte con su contador
       </p>
     </div>
@@ -698,18 +699,18 @@ function generarReporteBancario() {
       const proyeccion = Math.round(avgIngresosMensual * 1.05);
 
       const tablaRows = meses.map(m =>
-        `<tr><td style="padding:8px;border:1px solid #ddd">${m.mes}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${m.ingresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${m.gastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:${m.utilidad >= 0 ? "#00B4A6" : "#e63946"}">S/${m.utilidad.toLocaleString("es-PE")}</td></tr>`
+        `<tr><td style="padding:8px;border:1px solid #ddd">${m.mes}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${m.ingresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${m.gastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:${m.utilidad >= 0 ? "var(--color-primary)" : "#e63946"}">S/${m.utilidad.toLocaleString("es-PE")}</td></tr>`
       ).join("");
 
       // Barras simples CSS
       const maxVal = Math.max(...meses.map(m => m.ingresos), 1);
       const barrasHtml = meses.map(m =>
-        `<div style="display:flex;align-items:end;gap:4px;flex:1;flex-direction:column;text-align:center"><div style="background:#00B4A6;width:30px;height:${Math.round((m.ingresos / maxVal) * 120)}px;border-radius:4px 4px 0 0"></div><div style="font-size:10px;color:#666">${m.mes.split(" ")[0].slice(0, 3)}</div></div>`
+        `<div style="display:flex;align-items:end;gap:4px;flex:1;flex-direction:column;text-align:center"><div style="background:var(--color-primary);width:30px;height:${Math.round((m.ingresos / maxVal) * 120)}px;border-radius:4px 4px 0 0"></div><div style="font-size:10px;color:#666">${m.mes.split(" ")[0].slice(0, 3)}</div></div>`
       ).join("");
 
       const fecha = now.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
 
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Financiero - Buleje</title><style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#333;font-size:14px}h1{color:#00B4A6;border-bottom:3px solid #00B4A6;padding-bottom:10px;font-size:22px}h2{color:#333;margin-top:30px;font-size:16px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#f8f9fa;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}td{padding:8px;font-size:13px}.kpi{display:inline-block;background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:15px 20px;margin:5px;text-align:center;min-width:150px}.kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}.kpi-value{font-size:20px;font-weight:bold;color:#00B4A6;margin-top:4px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center}@media print{body{padding:20px}}</style></head><body><h1>REPORTE FINANCIERO &mdash; Buleje</h1><p style="color:#666;font-size:12px">Per&iacute;odo: &uacute;ltimos 6 meses &middot; Generado el ${fecha}</p><h2>1. Datos del Negocio</h2><table><tr><td style="padding:8px;border:1px solid #ddd;width:200px;font-weight:bold">Razon Social</td><td style="padding:8px;border:1px solid #ddd">Buleje</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Ubicacion</td><td style="padding:8px;border:1px solid #ddd">Pucallpa, Ucayali, Peru</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Giro</td><td style="padding:8px;border:1px solid #ddd">Comercio minorista - Abarrotes</td></tr></table><h2>2. Resumen de Ingresos</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Gastos</th><th style="text-align:right">Utilidad</th></tr></thead><tbody>${tablaRows}<tr style="background:#f0f0f0;font-weight:bold"><td style="padding:8px;border:1px solid #ddd">TOTAL</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalIngresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalGastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:${totalUtilidad >= 0 ? "#00B4A6" : "#e63946"}">S/${totalUtilidad.toLocaleString("es-PE")}</td></tr></tbody></table><h2>3. Tendencia de Ingresos</h2><div style="display:flex;align-items:end;gap:8px;height:140px;padding:10px;background:#fafafa;border:1px solid #eee;border-radius:8px">${barrasHtml}</div><h2>4. Indicadores Clave</h2><div style="display:flex;flex-wrap:wrap;gap:5px"><div class="kpi"><div class="kpi-label">Margen de utilidad</div><div class="kpi-value">${margen}%</div></div><div class="kpi"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${clientesActivos}</div></div><div class="kpi"><div class="kpi-label">Ingreso prom./mes</div><div class="kpi-value">S/${Math.round(avgIngresosMensual).toLocaleString("es-PE")}</div></div></div><h2>5. Proyeccion</h2><p>Basado en la tendencia de los ultimos 6 meses, el ingreso estimado para el proximo mes es: <strong style="color:#00B4A6;font-size:18px">S/${proyeccion.toLocaleString("es-PE")}</strong></p><div class="footer">Generado el ${fecha} &mdash; Buleje &middot; Este reporte es de caracter informativo</div></body></html>`;
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Financiero - Buleje</title><style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#333;font-size:14px}h1{color:var(--color-primary);border-bottom:3px solid var(--color-primary);padding-bottom:10px;font-size:22px}h2{color:#333;margin-top:30px;font-size:16px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#f8f9fa;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}td{padding:8px;font-size:13px}.kpi{display:inline-block;background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:15px 20px;margin:5px;text-align:center;min-width:150px}.kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}.kpi-value{font-size:20px;font-weight:bold;color:var(--color-primary);margin-top:4px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center}@media print{body{padding:20px}}</style></head><body><h1>REPORTE FINANCIERO &mdash; Buleje</h1><p style="color:#666;font-size:12px">Per&iacute;odo: &uacute;ltimos 6 meses &middot; Generado el ${fecha}</p><h2>1. Datos del Negocio</h2><table><tr><td style="padding:8px;border:1px solid #ddd;width:200px;font-weight:bold">Razon Social</td><td style="padding:8px;border:1px solid #ddd">Buleje</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Ubicacion</td><td style="padding:8px;border:1px solid #ddd">Pucallpa, Ucayali, Peru</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Giro</td><td style="padding:8px;border:1px solid #ddd">Comercio minorista - Abarrotes</td></tr></table><h2>2. Resumen de Ingresos</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Gastos</th><th style="text-align:right">Utilidad</th></tr></thead><tbody>${tablaRows}<tr style="background:#f0f0f0;font-weight:bold"><td style="padding:8px;border:1px solid #ddd">TOTAL</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalIngresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalGastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:${totalUtilidad >= 0 ? "var(--color-primary)" : "#e63946"}">S/${totalUtilidad.toLocaleString("es-PE")}</td></tr></tbody></table><h2>3. Tendencia de Ingresos</h2><div style="display:flex;align-items:end;gap:8px;height:140px;padding:10px;background:#fafafa;border:1px solid #eee;border-radius:8px">${barrasHtml}</div><h2>4. Indicadores Clave</h2><div style="display:flex;flex-wrap:wrap;gap:5px"><div class="kpi"><div class="kpi-label">Margen de utilidad</div><div class="kpi-value">${margen}%</div></div><div class="kpi"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${clientesActivos}</div></div><div class="kpi"><div class="kpi-label">Ingreso prom./mes</div><div class="kpi-value">S/${Math.round(avgIngresosMensual).toLocaleString("es-PE")}</div></div></div><h2>5. Proyeccion</h2><p>Basado en la tendencia de los ultimos 6 meses, el ingreso estimado para el proximo mes es: <strong style="color:var(--color-primary);font-size:18px">S/${proyeccion.toLocaleString("es-PE")}</strong></p><div class="footer">Generado el ${fecha} &mdash; Buleje &middot; Este reporte es de caracter informativo</div></body></html>`;
 
       const w = window.open("", "_blank");
       if (w) {
@@ -724,27 +725,27 @@ function generarReporteBancario() {
 
 // ── Dashboard de Finanzas (Premium) ──────────────────────────────────────────
 
-const DASHBOARD_EXPENSE_COLORS = ["#00B4A6", "#457b9d", "#f97316", "#9b5de5", "#06b6d4", "#6b7280"];
+const DASHBOARD_EXPENSE_COLORS = ["var(--color-primary)", "#457b9d", "#f97316", "#9b5de5", "#06b6d4", "#6b7280"];
 const PAYMENT_METHOD_COLORS: Record<string, string> = {
-  efectivo: "#22c55e", EFECTIVO: "#22c55e", Efectivo: "#22c55e",
+  efectivo: "#00B4A6", EFECTIVO: "#00B4A6", Efectivo: "#00B4A6",
   yape: "#7c3aed", YAPE: "#7c3aed", Yape: "#7c3aed",
   plin: "#06b6d4", PLIN: "#06b6d4", Plin: "#06b6d4",
   tarjeta: "#3b82f6", TARJETA: "#3b82f6", Tarjeta: "#3b82f6",
   fiado: "#f59e0b", FIADO: "#f59e0b", Fiado: "#f59e0b",
   transferencia: "#8b5cf6", TRANSFERENCIA: "#8b5cf6", Transferencia: "#8b5cf6",
 };
-const PM_FALLBACK_COLORS = ["#22c55e", "#7c3aed", "#06b6d4", "#3b82f6", "#f59e0b", "#8b5cf6", "#e63946"];
+const PM_FALLBACK_COLORS = ["#00B4A6", "#7c3aed", "#06b6d4", "#3b82f6", "#f59e0b", "#8b5cf6", "#e63946"];
 
 type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string; bg: string };
 const KPI_DEFS: KpiDef[] = [
-  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "#22c55e", bg: "bg-emerald-50" },
-  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-red-50" },
-  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-blue-50" },
-  { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-purple-50" },
-  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#f97316", bg: "bg-orange-50" },
-  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#f59e0b", bg: "bg-amber-50" },
-  { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-rose-50" },
-  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "#00B4A6", bg: "bg-teal-50" },
+  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "#00B4A6", bg: "bg-[var(--accent-soft)]" },
+  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-[var(--data-error-50)]" },
+  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-[var(--accent-soft)]" },
+  { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-[var(--surface-sunken)]" },
+  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#f97316", bg: "bg-[var(--data-warning-50)]" },
+  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#f59e0b", bg: "bg-[var(--data-warning-50)]" },
+  { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-[var(--surface-sunken)]" },
+  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-[var(--accent-soft)]" },
 ];
 
 /* Semicircular gauge built from PieChart */
@@ -757,8 +758,8 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
     { name: "empty", value: empty },
   ];
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
-      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
+      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">{label}</p>
       <div className="relative w-35 h-20">
         <ResponsiveContainer width="100%" height={80}>
           <PieChart>
@@ -786,55 +787,14 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
   );
 }
 
-// ── Empty state for charts (Mejora 10) ───────────────────────────────────────
-function FinanzasEmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mb-3">
-        <BarChart3 className="h-6 w-6 text-gray-400 dark:text-muted" />
-      </div>
-      <p className="text-sm font-medium text-gray-500 dark:text-muted">{message}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
-    </div>
-  );
+
+
+// Flat wrapper (animations removed for professional style)
+function StaggerItem({ children }: { children: React.ReactNode; index?: number }) {
+  return <div>{children}</div>;
 }
 
-// Mejora 11: Stagger animation wrapper
-function StaggerItem({ children, index }: { children: React.ReactNode; index: number }) {
-  return (
-    <m.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-    >
-      {children}
-    </m.div>
-  );
-}
 
-// Mejora 5: Favoritos hook para Finanzas
-function useFinanzasFavCharts(storageKey: string) {
-  const [favs, setFavs] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
-  });
-  const toggle = useCallback((id: string) => {
-    setFavs(prev => {
-      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      return next;
-    });
-  }, [storageKey]);
-  const isFav = useCallback((id: string) => favs.includes(id), [favs]);
-  return { favs, toggle, isFav };
-}
-function FinanzasFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useFinanzasFavCharts> }) {
-  return (
-    <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm" title={favs.isFav(id) ? "Quitar de favoritos" : "Agregar a favoritos"}>
-      {favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}
-    </button>
-  );
-}
 
 function FinanzasDashboard() {
   const [kpis, setKpis] = useState<Record<string, number>>({});
@@ -865,7 +825,7 @@ function FinanzasDashboard() {
     Array.from({ length: KPI_DEFS.length }, () => Math.round((Math.random() - 0.3) * 30))
   );
   // Mejora 5: Favoritos
-  const finFavs = useFinanzasFavCharts("fav-charts-finanzas");
+  const finFavs = useFavoriteCharts("finanzas");
 
   useEffect(() => {
     Promise.allSettled([
@@ -1034,9 +994,9 @@ function FinanzasDashboard() {
   // Mejora 6: Alertas inteligentes — ALL hooks MUST be before any early return
   const alertas = useMemo(() => {
     const a: Array<{ msg: string; color: string }> = [];
-    if ((kpis.fiados ?? 0) > 0) a.push({ msg: `${formatCurrency(kpis.fiados ?? 0, { decimals: 0 })} en fiados pendientes`, color: "bg-amber-100 text-amber-700" });
-    if ((kpis.utilidad ?? 0) < 0) a.push({ msg: "Balance negativo este mes", color: "bg-red-100 text-red-700" });
-    if (topPayables.some(p => p.vencido)) a.push({ msg: `${topPayables.filter(p => p.vencido).length} pagos vencidos a proveedores`, color: "bg-red-100 text-red-700" });
+    if ((kpis.fiados ?? 0) > 0) a.push({ msg: `${formatCurrency(kpis.fiados ?? 0, { decimals: 0 })} en fiados pendientes`, color: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" });
+    if ((kpis.utilidad ?? 0) < 0) a.push({ msg: "Balance negativo este mes", color: "bg-[var(--data-error-100)] text-[var(--data-error)]" });
+    if (topPayables.some(p => p.vencido)) a.push({ msg: `${topPayables.filter(p => p.vencido).length} pagos vencidos a proveedores`, color: "bg-[var(--data-error-100)] text-[var(--data-error)]" });
     return a;
   }, [kpis, topPayables]);
 
@@ -1046,7 +1006,7 @@ function FinanzasDashboard() {
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-2xl p-4">
+            <div key={i} className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-full bg-gray-200" />
                 <div className="flex-1 space-y-2">
@@ -1057,19 +1017,19 @@ function FinanzasDashboard() {
             </div>
           ))}
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
           <div className="h-4 bg-gray-200 rounded w-48 mb-4" />
           <div className="h-80 bg-gray-100 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
           <div className="h-70 bg-gray-100 rounded-xl" />
         </div>
       </div>
@@ -1099,10 +1059,10 @@ function FinanzasDashboard() {
   if (Object.values(kpis).every(v => v === 0) && monthlyData.every(m => m.ingresos === 0 && m.gastos === 0)) {
     return (
       <div className="text-center py-16">
-        <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
-          <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
+        <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
         </div>
-        <h3 className="text-lg font-semibold text-foreground">Sin datos financieros</h3>
+        <CardTitle className="text-lg font-semibold text-foreground">Sin datos financieros</CardTitle>
         <p className="text-sm text-muted mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
       </div>
     );
@@ -1114,21 +1074,15 @@ function FinanzasDashboard() {
       {/* ════════ CONTROLES: Periodo + Refresh + Export ════════ */}
       <StaggerItem index={0}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1.5">
-          {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
-          ))}
-        </div>
+        <PeriodSelector value={period} onChange={setPeriod} />
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
             <span>Actualizado hace {minAgo} min</span>
             <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Actualizar datos">
               <RefreshCw className="h-3 w-3" />
             </button>
           </div>
-          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors" title="Exportar PDF">
-            <FileDown className="h-3 w-3" /> Exportar
-          </button>
+          <ExportButton />
         </div>
       </div>
       </StaggerItem>
@@ -1154,21 +1108,21 @@ function FinanzasDashboard() {
           const val = kpis[def.key] ?? 0;
           let display: string;
           let subtexto = "";
-          let valColor = "text-gray-900";
+          let valColor = "text-[var(--text-primary)]";
           // Mejora 7: Comparativo mock (lazy-initialized for React Compiler purity)
           const change = kpiMockChanges[kpiIdx] ?? 0;
 
           if (def.key === "margen") {
             display = `${val}%`;
             subtexto = val > 25 ? "Excelente" : val >= 15 ? "Aceptable" : "Bajo";
-            valColor = val > 25 ? "text-emerald-600" : val >= 15 ? "text-amber-600" : "text-red-600";
+            valColor = val > 25 ? "text-[var(--data-success)]" : val >= 15 ? "text-amber-600" : "text-red-600";
           } else if (def.key === "utilidad") {
             display = `${val >= 0 ? "+" : "-"}${formatCurrency(Math.abs(val), { decimals: 0 })}`;
-            valColor = val >= 0 ? "text-emerald-600" : "text-red-600";
+            valColor = val >= 0 ? "text-[var(--data-success)]" : "text-red-600";
           } else if (def.key === "igv") {
             display = formatCurrency(Math.abs(val), { decimals: 0 });
             subtexto = val > 0 ? "A pagar" : "Credito fiscal";
-            valColor = val > 0 ? "text-red-600" : "text-emerald-600";
+            valColor = val > 0 ? "text-red-600" : "text-[var(--data-success)]";
           } else if (def.key === "puntoEq") {
             display = formatCurrency(val, { decimals: 0 });
             subtexto = "por dia";
@@ -1177,27 +1131,27 @@ function FinanzasDashboard() {
           }
 
           // Zero-value gray styling
-          if (val === 0 && def.key !== "margen") valColor = "text-gray-300";
+          if (val === 0 && def.key !== "margen") valColor = "text-[var(--text-tertiary)]";
 
           // Mejora 8: Sparkline data for first 3 KPIs (Ingresos, Gastos, Utilidad)
           const sparkData = kpiIdx < 3 ? [{ v: val * 0.7 }, { v: val * 0.85 }, { v: val * 0.75 }, { v: val * 0.9 }, { v: val * 0.82 }, { v: val * 0.95 }, { v: val }] : null;
 
           return (
-            <div key={def.key} className="bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div key={def.key} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${def.bg}`}>
                   <Icon className="h-5 w-5" style={{ color: def.color }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider truncate">{def.label}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] truncate">{def.label}</p>
                   <div className="flex items-center gap-2">
                     <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
-                    <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>
+                    <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
                       {change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%
                     </span>
                   </div>
                   {subtexto && (
-                    <p className="text-[10px] text-gray-400 font-medium">{subtexto}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">{subtexto}</p>
                   )}
                   {sparkData && (
                     <div className="h-8 w-20 mt-1">
@@ -1219,24 +1173,24 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 2: Ingresos vs Gastos vs Utilidad (ComposedChart) ════════ */}
       <StaggerItem index={1}>
       {monthlyData.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <FinanzasFavStar id="ingresos-vs-gastos" favs={finFavs} />
+              <FavStar id="ingresos-vs-gastos" favs={finFavs} />
               <div className="h-2 w-2 rounded-full bg-primary" />
-              <p className="text-sm font-bold text-gray-700">Ingresos vs Gastos vs Utilidad</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos vs Gastos vs Utilidad</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 font-medium">Ultimos 6 meses</span>
-              <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Ultimos 6 meses</span>
+              <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={monthlyData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="gradIngresos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#00B4A6" stopOpacity={0.7} />
+                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.7} />
                 </linearGradient>
                 <linearGradient id="gradGastos" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#e63946" stopOpacity={0.9} />
@@ -1267,11 +1221,11 @@ function FinanzasDashboard() {
       <StaggerItem index={2}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut izquierda: Gastos por categoria */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
-            <FinanzasFavStar id="gastos-categoria" favs={finFavs} />
+            <FavStar id="gastos-categoria" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-[#e63946]" />
-            <p className="text-sm font-bold text-gray-700">Gastos por Categoria</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoria</p>
             <div className="flex-1" />
             {gastosPieFilter && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
@@ -1279,7 +1233,7 @@ function FinanzasDashboard() {
                 <button onClick={() => setGastosPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
               </span>
             )}
-            <button onClick={() => setExpandedChart("gastos-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+            <button onClick={() => setExpandedChart("gastos-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
           </div>
           {expensesByCategory.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -1297,8 +1251,8 @@ function FinanzasDashboard() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
-                    <p className="text-[9px] text-gray-400 font-medium uppercase">Total gastos</p>
-                    <p className={cn("text-base font-extrabold", totalExpenses === 0 ? "text-gray-300" : "text-gray-900")}>{formatCurrency(totalExpenses, { decimals: 0 })}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium uppercase">Total gastos</p>
+                    <p className={cn("text-base font-extrabold", totalExpenses === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>{formatCurrency(totalExpenses, { decimals: 0 })}</p>
                   </div>
                 </div>
               </div>
@@ -1306,23 +1260,23 @@ function FinanzasDashboard() {
                 {expensesByCategory.filter(g => g.name).map((g, i) => (
                   <div key={g.name || i} className="flex items-center gap-2 text-xs">
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: DASHBOARD_EXPENSE_COLORS[i % DASHBOARD_EXPENSE_COLORS.length] }} />
-                    <span className="flex-1 text-gray-700 font-semibold truncate">{g.name}</span>
-                    <span className="text-gray-500 font-mono">{formatCurrency(g.value, { decimals: 0 })}</span>
-                    <span className="text-gray-400 w-9 text-right font-bold">{totalExpenses > 0 ? Math.round((g.value / totalExpenses) * 100) : 0}%</span>
+                    <span className="flex-1 text-[var(--text-primary)] font-semibold truncate">{g.name}</span>
+                    <span className="text-[var(--text-secondary)] font-mono">{formatCurrency(g.value, { decimals: 0 })}</span>
+                    <span className="text-[var(--text-tertiary)] w-9 text-right font-bold">{totalExpenses > 0 ? Math.round((g.value / totalExpenses) * 100) : 0}%</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <FinanzasEmptyChart message="Sin gastos registrados este mes" />
+            <EmptyState icon={BarChart3} title="Sin gastos registrados este mes" description="Los datos apareceran cuando registres ventas" />
           )}
         </div>
 
         {/* Donut derecha: Metodos de pago */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-2 w-2 rounded-full bg-[#22c55e]" />
-            <p className="text-sm font-bold text-gray-700">Ingresos por Metodo de Pago</p>
+            <div className="h-2 w-2 rounded-full bg-[#00B4A6]" />
+            <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por Metodo de Pago</p>
           </div>
           {paymentMethods.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -1339,8 +1293,8 @@ function FinanzasDashboard() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
-                    <p className="text-[9px] text-gray-400 font-medium uppercase">Total ingresos</p>
-                    <p className={cn("text-base font-extrabold", totalIncome === 0 ? "text-gray-300" : "text-gray-900")}>{formatCurrency(totalIncome, { decimals: 0 })}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium uppercase">Total ingresos</p>
+                    <p className={cn("text-base font-extrabold", totalIncome === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>{formatCurrency(totalIncome, { decimals: 0 })}</p>
                   </div>
                 </div>
               </div>
@@ -1348,15 +1302,15 @@ function FinanzasDashboard() {
                 {paymentMethods.filter(g => g.name).map((g, i) => (
                   <div key={g.name || i} className="flex items-center gap-2 text-xs">
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: PAYMENT_METHOD_COLORS[g.name] ?? PM_FALLBACK_COLORS[i % PM_FALLBACK_COLORS.length] }} />
-                    <span className="flex-1 text-gray-700 font-semibold truncate">{g.name}</span>
-                    <span className="text-gray-500 font-mono">{formatCurrency(g.value, { decimals: 0 })}</span>
-                    <span className="text-gray-400 w-9 text-right font-bold">{totalIncome > 0 ? Math.round((g.value / totalIncome) * 100) : 0}%</span>
+                    <span className="flex-1 text-[var(--text-primary)] font-semibold truncate">{g.name}</span>
+                    <span className="text-[var(--text-secondary)] font-mono">{formatCurrency(g.value, { decimals: 0 })}</span>
+                    <span className="text-[var(--text-tertiary)] w-9 text-right font-bold">{totalIncome > 0 ? Math.round((g.value / totalIncome) * 100) : 0}%</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <FinanzasEmptyChart message="Sin ventas registradas este mes" />
+            <EmptyState icon={BarChart3} title="Sin ventas registradas este mes" description="Los datos apareceran cuando registres ventas" />
           )}
         </div>
       </div>
@@ -1365,32 +1319,32 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 4: Flujo de Caja Diario (AreaChart) ════════ */}
       <StaggerItem index={3}>
       {cashFlow.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <FinanzasFavStar id="flujo-caja" favs={finFavs} />
+              <FavStar id="flujo-caja" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-primary" />
-              <p className="text-sm font-bold text-gray-700">Flujo de Caja</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Flujo de Caja</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 font-medium">Ultimos 30 dias</span>
-              <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Ultimos 30 dias</span>
+              <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={cashFlow} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="gradCashIngresos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradCashGastos" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
                   <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradCashBalance" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#00B4A6" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="" vertical={false} />
@@ -1398,9 +1352,9 @@ function FinanzasDashboard() {
               <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} tickFormatter={formatSolesShort} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
               <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" label={{ value: "S/0", position: "left", fill: "#9ca3af", fontSize: 10 }} />
-              <Area type="monotone" dataKey="ingresos" stroke="#22c55e" fill="url(#gradCashIngresos)" strokeWidth={1.5} />
+              <Area type="monotone" dataKey="ingresos" stroke="#00B4A6" fill="url(#gradCashIngresos)" strokeWidth={1.5} />
               <Area type="monotone" dataKey="gastos" stroke="#ef4444" fill="url(#gradCashGastos)" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="balance" stroke="#00B4A6" fill="url(#gradCashBalance)" strokeWidth={2.5} dot={false} />
+              <Area type="monotone" dataKey="balance" stroke="var(--color-primary)" fill="url(#gradCashBalance)" strokeWidth={2.5} dot={false} />
               <Legend
                 formatter={(value: unknown) => { const v = String(value); const l: Record<string, string> = { ingresos: "Ingresos", gastos: "Gastos", balance: "Balance" }; return l[v] ?? v; }}
                 iconType="circle"
@@ -1415,45 +1369,45 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 5: Proyeccion del Mes ════════ */}
       <StaggerItem index={4}>
       {projection && (
-        <div className="bg-linear-to-br from-primary/5 via-white to-secondary/5 border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <p className="text-sm font-bold text-gray-700">Proyeccion {mesCapitalized}</p>
+            <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" strokeWidth={1.75} />
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ventas proyectadas</p>
-              <p className={cn("text-lg sm:text-xl font-extrabold", projVentas === 0 ? "text-gray-300" : "text-primary")}>{formatCurrency(projVentas, { decimals: 0 })}</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1">Ventas proyectadas</p>
+              <p className={cn("text-lg sm:text-xl font-extrabold", projVentas === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(projVentas, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Gastos proyectados</p>
-              <p className={cn("text-lg sm:text-xl font-extrabold", projGastos === 0 ? "text-gray-300" : "text-red-500")}>{formatCurrency(projGastos, { decimals: 0 })}</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1">Gastos proyectados</p>
+              <p className={cn("text-lg sm:text-xl font-extrabold", projGastos === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error)]")}>{formatCurrency(projGastos, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Utilidad estimada</p>
-              <p className={cn("text-lg sm:text-xl font-extrabold", projUtilidad === 0 ? "text-gray-300" : projUtilidad >= 0 ? "text-emerald-600" : "text-red-600")}>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1">Utilidad estimada</p>
+              <p className={cn("text-lg sm:text-xl font-extrabold", projUtilidad === 0 ? "text-[var(--text-tertiary)]" : projUtilidad >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                 {projUtilidad >= 0 ? "+" : ""}{formatCurrency(Math.abs(projUtilidad), { decimals: 0 })}
               </p>
             </div>
           </div>
           {/* Progress bar */}
           <div className="space-y-2">
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-[var(--text-secondary)]">
               <span className="font-medium">Dia {projection.diasTranscurridos} de {projection.diasTotales}</span>
               <span className="font-bold">{Math.round(projProgreso)}% del mes</span>
             </div>
             <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
                 style={{
                   width: `${projProgreso}%`,
-                  backgroundColor: projPctTarget > 70 ? "#22c55e" : projPctTarget >= 40 ? "#f59e0b" : "#ef4444",
+                  backgroundColor: projPctTarget > 70 ? "#00B4A6" : projPctTarget >= 40 ? "#f59e0b" : "#ef4444",
                 }}
               />
             </div>
-            <p className="text-xs text-gray-500 text-center">
-              Ventas actuales: <span className="font-bold text-gray-700">{formatCurrency(Math.round(projection.ventasMes), { decimals: 0 })}</span> de {formatCurrency(projVentas, { decimals: 0 })} proyectados
-              <span className={`ml-2 font-bold ${projPctTarget > 70 ? "text-emerald-600" : projPctTarget >= 40 ? "text-amber-600" : "text-red-600"}`}>
+            <p className="text-xs text-[var(--text-secondary)] text-center">
+              Ventas actuales: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(Math.round(projection.ventasMes), { decimals: 0 })}</span> de {formatCurrency(projVentas, { decimals: 0 })} proyectados
+              <span className={`ml-2 font-bold ${projPctTarget > 70 ? "text-[var(--data-success)]" : projPctTarget >= 40 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"}`}>
                 ({projPctTarget}%)
               </span>
             </p>
@@ -1465,41 +1419,41 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 6: Resumen Fiscal Mejorado ════════ */}
       <StaggerItem index={5}>
       {fiscal && (
-        <div className="bg-white border-2 border-secondary/40 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border-2 border-secondary/40 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Calculator className="h-5 w-5 text-secondary" />
-            <p className="text-sm font-bold text-gray-700">Resumen Fiscal — {mesCapitalized}</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Resumen Fiscal — {mesCapitalized}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Concepto</th>
-                  <th className="text-right py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Monto</th>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th className="text-left py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Concepto</th>
+                  <th className="text-right py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Monto</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr>
-                  <td className="py-2.5 text-gray-600">Ventas gravadas</td>
-                  <td className="py-2.5 text-right font-bold font-mono text-gray-900">{formatCurrency(Math.round(fiscal.ventas), { decimals: 0 })}</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">Ventas gravadas</td>
+                  <td className="py-2.5 text-right font-bold font-mono text-[var(--text-primary)]">{formatCurrency(Math.round(fiscal.ventas), { decimals: 0 })}</td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 text-gray-600">IGV cobrado (18%)</td>
-                  <td className="py-2.5 text-right font-bold font-mono text-gray-900">{formatCurrency(Math.round(fiscIgvCobrado), { decimals: 0 })}</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">IGV cobrado (18%)</td>
+                  <td className="py-2.5 text-right font-bold font-mono text-[var(--text-primary)]">{formatCurrency(Math.round(fiscIgvCobrado), { decimals: 0 })}</td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 text-gray-600">Compras deducibles</td>
-                  <td className="py-2.5 text-right font-bold font-mono text-gray-900">{formatCurrency(Math.round(fiscal.compras), { decimals: 0 })}</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">Compras deducibles</td>
+                  <td className="py-2.5 text-right font-bold font-mono text-[var(--text-primary)]">{formatCurrency(Math.round(fiscal.compras), { decimals: 0 })}</td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 text-gray-600">IGV pagado</td>
-                  <td className="py-2.5 text-right font-bold font-mono text-gray-900">{formatCurrency(Math.round(fiscIgvPagado), { decimals: 0 })}</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">IGV pagado</td>
+                  <td className="py-2.5 text-right font-bold font-mono text-[var(--text-primary)]">{formatCurrency(Math.round(fiscIgvPagado), { decimals: 0 })}</td>
                 </tr>
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-300">
-                  <td className="pt-3 pb-1 font-bold text-gray-800">IGV a pagar</td>
-                  <td className={`pt-3 pb-1 text-right font-extrabold font-mono text-lg ${fiscIgvNeto > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                <tr className="border-t-2 border-[var(--rule-base)]">
+                  <td className="pt-3 pb-1 font-bold text-[var(--text-primary)]">IGV a pagar</td>
+                  <td className={`pt-3 pb-1 text-right font-extrabold font-mono text-lg ${fiscIgvNeto > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]"}`}>
                     {fiscIgvNeto > 0 ? "" : "-"}{formatCurrency(Math.abs(Math.round(fiscIgvNeto)), { decimals: 0 })}
                     {fiscIgvNeto <= 0 && <span className="text-xs font-normal ml-1.5">(credito fiscal)</span>}
                   </td>
@@ -1507,7 +1461,7 @@ function FinanzasDashboard() {
               </tfoot>
             </table>
           </div>
-          <p className="text-[10px] text-gray-400 mt-3 italic">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 italic">
             Referencia aproximada — consulte con su contador
           </p>
         </div>
@@ -1519,12 +1473,12 @@ function FinanzasDashboard() {
       {healthScore && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
-            <p className="text-sm font-bold text-gray-700">
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
+            <p className="text-sm font-bold text-[var(--text-primary)]">
               Indicadores de Salud Financiera
               <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "#22c55e20" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
-                color: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "#00B4A620" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
+                color: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
               }}>
                 {healthScore.total}/100 — {healthScore.total > 70 ? "Saludable" : healthScore.total >= 40 ? "Precaucion" : "Critico"}
               </span>
@@ -1536,21 +1490,21 @@ function FinanzasDashboard() {
               max={100}
               label="Margen de utilidad"
               unit="%"
-              color={healthScore.margen > 25 ? "#22c55e" : healthScore.margen >= 15 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.margen > 25 ? "#00B4A6" : healthScore.margen >= 15 ? "#f59e0b" : "#ef4444"}
             />
             <GaugeChart
               value={healthScore.liquidez}
               max={4}
               label="Liquidez"
               unit="x"
-              color={healthScore.liquidez > 2 ? "#22c55e" : healthScore.liquidez >= 1 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.liquidez > 2 ? "#00B4A6" : healthScore.liquidez >= 1 ? "#f59e0b" : "#ef4444"}
             />
             <GaugeChart
               value={healthScore.deudaRatio}
               max={100}
               label="Endeudamiento"
               unit="%"
-              color={healthScore.deudaRatio < 10 ? "#22c55e" : healthScore.deudaRatio <= 30 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.deudaRatio < 10 ? "#00B4A6" : healthScore.deudaRatio <= 30 ? "#f59e0b" : "#ef4444"}
             />
           </div>
         </div>
@@ -1561,10 +1515,10 @@ function FinanzasDashboard() {
       <StaggerItem index={7}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Debo a proveedores */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Truck className="h-4 w-4 text-secondary" />
-            <p className="text-sm font-bold text-gray-700">Debo a proveedores</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Debo a proveedores</p>
           </div>
           {topPayables.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(topPayables.length * 44, 120)}>
@@ -1585,23 +1539,23 @@ function FinanzasDashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="text-center py-6">
-              <Truck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">Sin deudas a proveedores</p>
+              <Truck className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--text-tertiary)]">Sin deudas a proveedores</p>
             </div>
           )}
           {topPayables.some(p => p.vencido) && (
-            <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
-              <div className="w-2 h-2 rounded-full bg-red-500" /> Vencido
+            <div className="flex items-center gap-2 mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              <div className="w-2 h-2 rounded-full bg-[var(--data-error)]" /> Vencido
               <div className="w-2 h-2 rounded-full bg-secondary ml-2" /> Al dia
             </div>
           )}
         </div>
 
         {/* Me deben (fiados) */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-4 w-4 text-amber-500" />
-            <p className="text-sm font-bold text-gray-700">Me deben (fiados)</p>
+            <CreditCard className="h-4 w-4 text-[var(--data-warning)]" />
+            <p className="text-sm font-bold text-[var(--text-primary)]">Me deben (fiados)</p>
           </div>
           {topFiados.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(topFiados.length * 44, 120)}>
@@ -1622,14 +1576,14 @@ function FinanzasDashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="text-center py-6">
-              <CreditCard className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">Sin fiados pendientes</p>
+              <CreditCard className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--text-tertiary)]">Sin fiados pendientes</p>
             </div>
           )}
           {topFiados.some(f => f.vencido) && (
-            <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
-              <div className="w-2 h-2 rounded-full bg-red-500" /> Vencido
-              <div className="w-2 h-2 rounded-full bg-amber-500 ml-2" /> Al dia
+            <div className="flex items-center gap-2 mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              <div className="w-2 h-2 rounded-full bg-[var(--data-error)]" /> Vencido
+              <div className="w-2 h-2 rounded-full bg-[var(--data-warning)] ml-2" /> Al dia
             </div>
           )}
         </div>
@@ -1639,13 +1593,13 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 9: Mejora 19 — Salud del Negocio (gauge 0-100) ════════ */}
       {healthScore && (
         <StaggerItem index={8}>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
-              <p className="text-sm font-bold text-gray-700">Salud del Negocio</p>
+              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
+              <p className="text-sm font-bold text-[var(--text-primary)]">Salud del Negocio</p>
               <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "#22c55e20" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
-                color: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "#00B4A620" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
+                color: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
               }}>
                 {healthScore.total}/100
               </span>
@@ -1659,13 +1613,13 @@ function FinanzasDashboard() {
                       data={[{ name: "score", value: healthScore.total }, { name: "empty", value: 100 - healthScore.total }]}
                       cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={50} outerRadius={70} dataKey="value" stroke="none"
                     >
-                      <Cell fill={healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444"} />
+                      <Cell fill={healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444"} />
                       <Cell fill="#e5e7eb" className="" />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }}>
+                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "#00B4A6" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }}>
                     {healthScore.total}
                   </span>
                 </div>
@@ -1680,13 +1634,13 @@ function FinanzasDashboard() {
                 ].map(f => (
                   <div key={f.label}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-gray-600">{f.label}</span>
-                      <span className="text-xs font-bold text-gray-500">{f.detail}</span>
+                      <span className="text-xs font-semibold text-[var(--text-secondary)]">{f.label}</span>
+                      <span className="text-xs font-bold text-[var(--text-secondary)]">{f.detail}</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "#22c55e" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
+                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "#00B4A6" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
                     </div>
-                    <p className="text-[9px] text-gray-400 mt-0.5">{f.desc}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{f.desc}</p>
                   </div>
                 ))}
               </div>
@@ -1697,15 +1651,15 @@ function FinanzasDashboard() {
 
       {/* ════════ SECCION 10: Mejora 20 — Comparativo entre meses ════════ */}
       <StaggerItem index={9}>
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p className="text-sm font-bold text-gray-700">Comparar Meses</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
             <div className="flex items-center gap-2">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
-              <span className="text-xs text-gray-400">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+              <span className="text-xs text-[var(--text-tertiary)]">vs</span>
+              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
@@ -1713,7 +1667,7 @@ function FinanzasDashboard() {
           {(() => {
             const d1 = monthlyData.find(m => m.mes === cmpMonth1);
             const d2 = monthlyData.find(m => m.mes === cmpMonth2);
-            if (!d1 || !d2) return <FinanzasEmptyChart message="Selecciona meses con datos" />;
+            if (!d1 || !d2) return <EmptyState icon={BarChart3} title="Selecciona meses con datos" description="Los datos apareceran cuando registres ventas" />;
             const diffIngresos = d1.ingresos > 0 ? Math.round(((d2.ingresos - d1.ingresos) / d1.ingresos) * 100) : 0;
             const diffGastos = d1.gastos > 0 ? Math.round(((d2.gastos - d1.gastos) / d1.gastos) * 100) : 0;
             const compareData = [
@@ -1725,12 +1679,12 @@ function FinanzasDashboard() {
               <>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
-                    <p className="text-[10px] text-gray-400 uppercase font-bold">Ventas</p>
-                    <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-emerald-600" : "text-red-600")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">Ventas</p>
+                    <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
                   </div>
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
-                    <p className="text-[10px] text-gray-400 uppercase font-bold">Gastos</p>
-                    <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-emerald-600" : "text-red-600")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">Gastos</p>
+                    <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
                   </div>
                 </div>
                 <ResponsiveContainer width="100%" height={220}>
@@ -1740,7 +1694,7 @@ function FinanzasDashboard() {
                     <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 11 }} />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend />
-                    <Bar dataKey={cmpMonth1} fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={cmpMonth1} fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
                     <Bar dataKey={cmpMonth2} fill="#f97316" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1752,12 +1706,7 @@ function FinanzasDashboard() {
 
       {/* ════════ Expand Chart Modals ════════ */}
       {expandedChart && (
-        <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">{expandedChart === "ingresos-gastos" ? "Ingresos vs Gastos vs Utilidad" : expandedChart === "flujo-caja" ? "Flujo de Caja" : expandedChart === "gastos-cat" ? "Gastos por Categoria" : expandedChart}</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
-          </div>
-          <div style={{ height: 500 }}>
+        <ChartExpandModal title={expandedChart === "ingresos-gastos" ? "Ingresos vs Gastos vs Utilidad" : expandedChart === "flujo-caja" ? "Flujo de Caja" : expandedChart === "gastos-cat" ? "Gastos por Categoria" : expandedChart} onClose={() => setExpandedChart(null)}>
             {expandedChart === "ingresos-gastos" && monthlyData.length > 0 && (
               <ResponsiveContainer width="100%" height={500}>
                 <ComposedChart data={monthlyData}>
@@ -1766,7 +1715,7 @@ function FinanzasDashboard() {
                   <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
                   <Tooltip content={<ChartTooltip />} />
                   <Legend />
-                  <Bar dataKey="ingresos" fill="#00B4A6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="ingresos" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="gastos" fill="#e63946" radius={[6, 6, 0, 0]} />
                   <Line type="monotone" dataKey="utilidad" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5, fill: "#3b82f6" }} />
                 </ComposedChart>
@@ -1779,9 +1728,9 @@ function FinanzasDashboard() {
                   <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="ingresos" stroke="#22c55e" fill="#22c55e20" strokeWidth={2} />
+                  <Area type="monotone" dataKey="ingresos" stroke="#00B4A6" fill="#00B4A620" strokeWidth={2} />
                   <Area type="monotone" dataKey="gastos" stroke="#ef4444" fill="#ef444420" strokeWidth={2} />
-                  <Area type="monotone" dataKey="balance" stroke="#00B4A6" fill="#00B4A630" strokeWidth={3} />
+                  <Area type="monotone" dataKey="balance" stroke="var(--color-primary)" fill="var(--color-primary)30" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -1798,8 +1747,7 @@ function FinanzasDashboard() {
                 </PieChart>
               </ResponsiveContainer>
             )}
-          </div>
-        </div>
+        </ChartExpandModal>
       )}
 
     </div>
@@ -1830,14 +1778,14 @@ function IntelligenceKPIStrip() {
     { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: "text-primary" },
     { label: "Ventas/mes", value: formatCurrency(kpis.ventasMes, { decimals: 0 }), color: "text-primary" },
     { label: "Ticket prom.", value: formatCurrency(kpis.ticketPromedio, { decimals: 0 }), color: "text-secondary" },
-    { label: "Productos", value: String(kpis.productos), color: "text-gray-700" },
+    { label: "Productos", value: String(kpis.productos), color: "text-[var(--text-primary)]" },
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(c => (
-        <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm text-center">
-          <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{c.label}</p>
+        <div key={c.label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3  text-center">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-semibold">{c.label}</p>
           <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
         </div>
       ))}
@@ -1863,12 +1811,16 @@ export default function FinanzasModule() {
   });
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <AdminModuleHeader
-        title="Finanzas"
-        description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros"
-        icon={DollarSign}
-      />
+    <div className="space-y-6">
+      {/* Header — ADR-074 Phase 3 */}
+      <div>
+        <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas</p>
+        <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <Wallet className="h-5 w-5 currentColor" />
+          Mi Plata
+        </PageTitle>
+        <p className="text-sm text-[var(--text-secondary)] mt-1">Pérdidas y ganancias, gastos, flujo de caja y reportes financieros</p>
+      </div>
       <div className="flex items-center justify-end gap-2 flex-wrap">
         {sub === "dashboard" && (
           <AutoRefreshControl
@@ -1881,7 +1833,7 @@ export default function FinanzasModule() {
         )}
         <button
           onClick={generarReporteBancario}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
         >
           Reporte Bancario
         </button>
@@ -1894,7 +1846,7 @@ export default function FinanzasModule() {
         moduleId="finanzas"
       >
       {sub === "dashboard" && (
-        <div className="space-y-4" key={refreshKey}>
+        <div className="space-y-6" key={refreshKey}>
           <FinanzasDashboard />
           {/* Resumen automático integrado en dashboard */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1907,20 +1859,20 @@ export default function FinanzasModule() {
         </div>
       )}
       {sub === "pl" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <PLTab />
           <ComparativoMensual />
         </div>
       )}
       {sub === "gastos" && <ExpensesTab />}
       {sub === "rentabilidad" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <ProfitabilityTab />
           <BreakEvenDashboard />
         </div>
       )}
       {sub === "presupuesto" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <BudgetVsRealTab />
           <PresupuestoMensualTab />
         </div>
@@ -1929,8 +1881,8 @@ export default function FinanzasModule() {
         <div className="space-y-6">
           {/* Nuevo — diferenciador #1 vs Loyverse/Alegra/Vendemás */}
           <CashflowRollingTable />
-          <div className="pt-4 border-t border-gray-200 dark:border-white/10">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+          <div className="pt-4 border-t border-[var(--rule-base)] dark:border-white/10">
+            <p className="text-xs font-bold text-[var(--text-tertiary)] mb-3">
               Proyección legacy (30 días)
             </p>
             <div className="space-y-4 opacity-90">
@@ -1940,32 +1892,41 @@ export default function FinanzasModule() {
           </div>
         </div>
       )}
-      {sub === "reporte-mensual" && <ReporteMensualTab />}
       {sub === "reportes" && (
-        <div className="space-y-4">
-          <ReportsTab />
-          <ImportExportTab />
+        <div className="space-y-6">
+          <ReporteMensualTab />
+          <div className="border-t border-[var(--rule-base)] dark:border-white/10 pt-6">
+            <ReportsTab />
+            <div className="mt-4"><ImportExportTab /></div>
+          </div>
+          <div className="border-t border-[var(--rule-base)] dark:border-white/10 pt-6">
+            <HistorialCierresTab />
+          </div>
         </div>
       )}
-      {sub === "historial-cierres" && <HistorialCierresTab />}
-      {sub === "comparativo" && <ComparativeReportsTab />}
       {sub === "inteligencia" && (
         <Suspense fallback={<S />}>
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <ComparativeReportsTab />
             <IntelligenceKPIStrip />
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Análisis de Negocio</h3>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Análisis de Negocio</CardTitle>
               <BusinessIntelligenceTab />
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-gray-700 mb-3">KPIs Personalizados</h3>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">KPIs Personalizados</CardTitle>
               <CustomKPITab />
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Precios del Mercado</h3>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Precios del Mercado</CardTitle>
               <CompetitorPriceTracker />
             </div>
           </div>
+        </Suspense>
+      )}
+      {sub === "tesoreria" && (
+        <Suspense fallback={<S />}>
+          <TreasuryDashboard />
         </Suspense>
       )}
       </AdminTabBar>

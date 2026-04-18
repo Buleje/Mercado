@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Power, PowerOff } from "lucide-react";
+import { Loader2, Plus, Trash2, Power, PowerOff } from "@buleje/design-system/icons";
 
 type Promotion = {
   id: string;
@@ -98,12 +99,12 @@ export default function PromotionsTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold">Promociones de la página individual</h3>
+        <CardTitle className="font-bold">Promociones de la página individual</CardTitle>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white font-semibold text-sm"
         >
           <Plus className="w-4 h-4" />
           Nueva promoción
@@ -111,10 +112,10 @@ export default function PromotionsTab() {
       </div>
 
       {showForm && (
-        <section className="p-5 rounded-xl border-2 border-teal-500 bg-teal-50 dark:bg-teal-900/10 space-y-4">
+        <section className="p-5 rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Título
               </span>
               <input
@@ -122,12 +123,12 @@ export default function PromotionsTab() {
                 maxLength={200}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
                 placeholder="Oferta del mes"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Tipo de descuento
               </span>
               <select
@@ -138,7 +139,7 @@ export default function PromotionsTab() {
                     discountType: e.target.value as Promotion["discountType"],
                   })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="amount">Monto fijo (S/)</option>
@@ -146,7 +147,7 @@ export default function PromotionsTab() {
               </select>
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Valor del descuento
               </span>
               <input
@@ -157,11 +158,11 @@ export default function PromotionsTab() {
                 onChange={(e) =>
                   setForm({ ...form, discountValue: Number(e.target.value) })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-mono"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Banner (URL)
               </span>
               <input
@@ -170,11 +171,11 @@ export default function PromotionsTab() {
                 onChange={(e) =>
                   setForm({ ...form, bannerImageUrl: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Inicio (opcional)
               </span>
               <input
@@ -188,11 +189,11 @@ export default function PromotionsTab() {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Fin (opcional)
               </span>
               <input
@@ -206,12 +207,12 @@ export default function PromotionsTab() {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
               />
             </label>
           </div>
           <label className="block">
-            <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+            <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
               Descripción
             </span>
             <textarea
@@ -221,21 +222,21 @@ export default function PromotionsTab() {
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
             />
           </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-[var(--data-error)]">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold"
+              className="px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-semibold"
             >
               Cancelar
             </button>
             <button
               onClick={create}
               disabled={saving || !form.title.trim()}
-              className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-semibold text-sm"
+              className="px-4 py-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-semibold text-sm"
             >
               {saving ? "Creando…" : "Crear promoción"}
             </button>
@@ -244,11 +245,9 @@ export default function PromotionsTab() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-        </div>
+        <LoadingState />
       ) : list.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 text-sm">
+        <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
           Sin promociones activas. Creá la primera con el botón arriba.
         </div>
       ) : (
@@ -256,27 +255,27 @@ export default function PromotionsTab() {
           {list.map((p) => (
             <div
               key={p.id}
-              className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center gap-4 flex-wrap"
+              className="p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center gap-4 flex-wrap"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-bold">{p.title}</p>
                   {p.active ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
                       Activa
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-600">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-200 text-[var(--text-secondary)]">
                       Pausada
                     </span>
                   )}
                 </div>
                 {p.description && (
-                  <p className="text-sm text-gray-500 truncate">
+                  <p className="text-sm text-[var(--text-secondary)] truncate">
                     {p.description}
                   </p>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">
                   {p.discountType === "percent"
                     ? `${p.discountValue}% OFF`
                     : p.discountType === "amount"
@@ -291,8 +290,8 @@ export default function PromotionsTab() {
                 title={p.active ? "Pausar" : "Activar"}
                 className={`p-2 rounded-lg ${
                   p.active
-                    ? "bg-green-100 text-green-600"
-                    : "bg-gray-100 text-gray-500"
+                    ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                    : "bg-gray-100 text-[var(--text-secondary)]"
                 }`}
               >
                 {p.active ? (
@@ -303,7 +302,7 @@ export default function PromotionsTab() {
               </button>
               <button
                 onClick={() => remove(p.id)}
-                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
+                className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)]"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

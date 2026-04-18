@@ -1,7 +1,9 @@
 "use client";
 
 // SVG circle health score (0–100)
-// Color: >=70 green, 40–69 yellow, <40 red
+// Ola 2: tokenizado a design-system — teal brand (data-success) en >=70,
+// amber (data-warning) en 40–69, rojo (data-error) en <40.
+// Antes: #22c55e / #f59e0b / #ef4444 hardcoded.
 
 interface SAHealthScoreProps {
   score: number;
@@ -13,8 +15,18 @@ export default function SAHealthScore({ score }: SAHealthScoreProps) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
 
-  const color =
-    clamped >= 70 ? "#22c55e" : clamped >= 40 ? "#f59e0b" : "#ef4444";
+  const strokeVar =
+    clamped >= 70
+      ? "var(--data-success)"
+      : clamped >= 40
+        ? "var(--data-warning)"
+        : "var(--data-error)";
+  const textColor =
+    clamped >= 70
+      ? "text-[var(--data-success)]"
+      : clamped >= 40
+        ? "text-[var(--data-warning)]"
+        : "text-[var(--data-error)]";
 
   return (
     <div className="inline-flex flex-col items-center gap-1">
@@ -27,7 +39,7 @@ export default function SAHealthScore({ score }: SAHealthScoreProps) {
           fill="none"
           stroke="currentColor"
           strokeWidth="8"
-          className="text-gray-200 dark:text-gray-700"
+          className="text-[var(--rule-base)]"
         />
         {/* Progress */}
         <circle
@@ -35,7 +47,7 @@ export default function SAHealthScore({ score }: SAHealthScoreProps) {
           cy="40"
           r={radius}
           fill="none"
-          stroke={color}
+          stroke={strokeVar}
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -45,7 +57,7 @@ export default function SAHealthScore({ score }: SAHealthScoreProps) {
       </svg>
       {/* Number in center (absolute, rotation-corrected) */}
       <div className="-mt-[68px] flex items-center justify-center w-20 h-20 pointer-events-none">
-        <span className="text-xl font-bold text-gray-900 dark:text-white">{clamped}</span>
+        <span className={`text-xl font-bold tabular-nums ${textColor}`}>{clamped}</span>
       </div>
     </div>
   );

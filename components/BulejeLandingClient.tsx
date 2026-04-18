@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { Store, Menu, X } from "lucide-react";
 
 // ── Mobile hamburger nav for landing ──
 function MobileNav() {
@@ -37,8 +38,9 @@ function MobileNav() {
       {/* Fixed header on mobile */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#060e08]/90 backdrop-blur-lg border-b border-white/10 lg:hidden">
         <div className="flex items-center justify-between px-4 h-14">
-          <Link href="/" className="text-lg font-extrabold text-white">
-            🏪 Buleje
+          <Link href="/" className="flex items-center gap-2 text-lg font-extrabold text-white">
+            <Store className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            Buleje
           </Link>
           <button
             onClick={() => setOpen((v) => !v)}
@@ -47,13 +49,9 @@ function MobileNav() {
             aria-expanded={open}
           >
             {open ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
+              <X className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Menu className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             )}
           </button>
         </div>
@@ -85,7 +83,7 @@ function MobileNav() {
             className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
             aria-label="Cerrar menu"
           >
-            ✕
+            <X className="h-4 w-4" strokeWidth={1.75} aria-hidden />
           </button>
         </div>
         <nav className="p-4 space-y-1">
@@ -115,16 +113,25 @@ function MobileNav() {
 }
 
 // ── Scroll reveal animations ──
+// Mantiene el contenido visible por default (SSR-safe, a prueba de JS lento,
+// screenshots y lectores de pantalla). Solo aplica la animacion de entrada
+// cuando el observer realmente ve la sección entrar al viewport. Usa
+// `will-animate` como flag opt-in, no `opacity:0` global.
 function ScrollRevealStyles() {
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Respetar prefers-reduced-motion
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+
     const style = document.createElement("style");
     style.textContent = `
-      .scroll-reveal {
+      .will-animate {
         opacity: 0;
         transform: translateY(24px);
         transition: opacity 0.6s ease-out, transform 0.6s ease-out;
       }
-      .scroll-reveal.visible {
+      .will-animate.visible {
         opacity: 1;
         transform: translateY(0);
       }
@@ -140,16 +147,20 @@ function ScrollRevealStyles() {
           }
         });
       },
-      { rootMargin: "0px 0px -60px 0px", threshold: 0.1 }
+      { rootMargin: "0px 0px -60px 0px", threshold: 0.01 }
     );
 
-    // Observe all sections in main
     const main = document.getElementById("main-content");
     if (main) {
       const sections = main.querySelectorAll(":scope > section");
       sections.forEach((s) => {
-        s.classList.add("scroll-reveal");
-        observer.observe(s);
+        const rect = s.getBoundingClientRect();
+        // Solo animar secciones que estan fuera del viewport inicial;
+        // las que ya estan visibles se dejan renderizadas sin animacion.
+        if (rect.top > window.innerHeight) {
+          s.classList.add("will-animate");
+          observer.observe(s);
+        }
       });
     }
 
@@ -163,11 +174,13 @@ function ScrollRevealStyles() {
 }
 
 // ── Combined client component ──
+// ScrollRevealStyles eliminado: dejaba secciones con opacity:0 visibles solo
+// tras IntersectionObserver, y rompía en screenshots/SSR/JS lento. Las
+// secciones ya tienen diseño editorial propio y no necesitan reveal animation.
 export default function BulejeLandingClient() {
   return (
     <>
       <MobileNav />
-      <ScrollRevealStyles />
       {/* Spacer for fixed mobile header */}
       <div className="h-14 lg:hidden" aria-hidden="true" />
     </>

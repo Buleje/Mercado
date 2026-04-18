@@ -196,6 +196,7 @@ describe("OrdersDB.getByCustomerPhone tenant isolation (HOTFIX-005 / SN-1)", () 
       where: { tenantId: TENANT_A, customerPhone: "987654321" },
       include: { items: true },
       orderBy: { createdAt: "desc" },
+      take: 1000,
     });
   });
 
@@ -213,6 +214,7 @@ describe("OrdersDB.getByCustomerPhone tenant isolation (HOTFIX-005 / SN-1)", () 
       where: { tenantId: TENANT_A, customerPhone: "987654321" },
       include: { items: true },
       orderBy: { createdAt: "desc" },
+      take: 1000,
     });
   });
 });

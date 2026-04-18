@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import type { ModuleDescription } from "@/lib/module-descriptions";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -59,22 +59,22 @@ export default function ModuleTooltip({
           </div>
 
           {/* Tooltip card */}
-          <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg shadow-black/10 dark:shadow-black/30 border border-gray-200 dark:border-white/10 px-4 py-3 min-w-[220px] max-w-[280px]">
+          <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-black/10 dark:shadow-black/30 border border-[var(--rule-base)] dark:border-white/10 px-4 py-3 min-w-[220px] max-w-[280px]">
             {/* Module name with icon */}
             <div className="flex items-center gap-2 mb-1.5">
-              <Icon className="h-4 w-4 text-[#00B4A6] dark:text-emerald-400 shrink-0" />
-              <span className="text-sm font-bold text-[#00B4A6] dark:text-emerald-400 leading-tight">
+              <Icon className="h-4 w-4 text-[#00B4A6] dark:text-[var(--data-success)] shrink-0" />
+              <span className="text-sm font-bold text-[#00B4A6] dark:text-[var(--data-success)] leading-tight">
                 {label}
               </span>
             </div>
 
             {/* Summary */}
-            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed mb-1">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-1">
               {description.summary}
             </p>
 
             {/* Example */}
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed italic">
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-relaxed italic">
               {description.example}
             </p>
           </div>

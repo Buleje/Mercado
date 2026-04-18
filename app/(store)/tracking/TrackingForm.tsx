@@ -44,7 +44,7 @@ const STATUS_ORDER: Record<OrderStatus, number> = {
 function StatusBadge({ status }: { status: OrderStatus }) {
   const map: Record<OrderStatus, { label: string; className: string }> = {
     pendiente:  { label: "Pendiente",  className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
-    confirmado: { label: "Confirmado", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+    confirmado: { label: "Confirmado", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" },
     en_camino:  { label: "En camino",  className: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
     entregado:  { label: "Entregado",  className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
     cancelado:  { label: "Cancelado",  className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },

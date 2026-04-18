@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import type { VendorOrder } from "./vendor-dashboard.types";
-import { Package, Clock } from "lucide-react";
+import { Package, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 type Props = {
@@ -26,22 +27,27 @@ function statusLabel(status: string): string {
 
 function statusColor(status: string): string {
   if (status === "pendiente") return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-  if (status === "confirmado") return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-  return "bg-gray-100 text-gray-700";
+  if (status === "confirmado") return "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]";
+  return "bg-gray-100 text-[var(--text-primary)]";
 }
 
 export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />
           Pedidos sin atender
-        </h3>
+        </CardTitle>
         <div className="text-center py-8">
-          <span className="text-3xl">✅</span>
-          <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
-            Estás al día. No hay pedidos sin atender.
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--data-success)] dark:text-[var(--data-success)] mb-2">
+            <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} />
+          </div>
+          <p className="mt-2 text-sm font-semibold text-[var(--text-secondary)]">
+            Estás al día
+          </p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+            No hay pedidos sin atender
           </p>
         </div>
       </div>
@@ -49,15 +55,15 @@ export function VendorPendingOrders({ orders }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />
           Pedidos sin atender
           <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#f97316] text-white text-xs font-bold">
             {orders.length}
           </span>
-        </h3>
+        </CardTitle>
         <Link
           href="/admin?tab=pedidos"
           className="text-xs font-semibold text-[#00B4A6] hover:underline"
@@ -71,23 +77,23 @@ export function VendorPendingOrders({ orders }: Props) {
           <li key={order.id} className="py-3 flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm text-gray-900 dark:text-foreground truncate">
+                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
                   {order.customer.name}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(order.status)}`}>
                   {statusLabel(order.status)}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-muted mt-0.5 truncate">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">
                 {order.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <Clock className="h-3 w-3 text-gray-400" />
-                <span className="text-xs text-gray-400">{timeAgo(order.createdAt)}</span>
+                <Clock className="h-3 w-3 text-[var(--text-tertiary)]" />
+                <span className="text-xs text-[var(--text-tertiary)]">{timeAgo(order.createdAt)}</span>
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <p className="font-bold text-sm text-gray-900 dark:text-foreground">
+              <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">
                 S/ {order.total.toFixed(2)}
               </p>
             </div>

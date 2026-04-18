@@ -36,6 +36,7 @@ function mapCustomer(c: PCustomer & { locations: PSavedLocation[] }): DbCustomer
   return {
     phone: c.phone,
     name: c.name,
+    email: c.email ?? undefined,
     location: c.location,
     reference: c.reference,
     locations: c.locations.map((l: PSavedLocation) => ({ id: l.id, location: l.location, reference: l.reference })),
@@ -154,6 +155,14 @@ export const CustomersDB = {
     const row = await prisma.customer.findUnique({ where: { phone: normalizePhone(phone) }, include: { locations: true } });
     return row ? mapCustomer(row) : null;
   },
+  /** Find the first customer with a given email within a tenant. */
+  async getByEmail(email: string, tenantId: string): Promise<DbCustomer | null> {
+    const row = await prisma.customer.findFirst({
+      where: { email, tenantId },
+      include: { locations: true },
+    });
+    return row ? mapCustomer(row) : null;
+  },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
     const row = await prisma.customer.upsert({
@@ -163,12 +172,14 @@ export const CustomersDB = {
         location: data.location ?? "", reference: data.reference ?? "",
         activeLocationId: data.activeLocationId ?? null,
         tenantId,
+        ...(data.email && { email: data.email }),
         ...(data.birthday && { birthday: new Date(data.birthday) }),
         locations: { create: locs },
       },
       update: {
         name: data.name, location: data.location ?? "", reference: data.reference ?? "",
         activeLocationId: data.activeLocationId ?? null,
+        ...(data.email && { email: data.email }),
         ...(data.birthday !== undefined && { birthday: data.birthday ? new Date(data.birthday) : null }),
         locations: { deleteMany: {}, create: locs },
       },

@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   Loader2, Save, Check, GripVertical, Eye, EyeOff,
   ArrowUp, ArrowDown, Layers, Search, Globe, Tag, FileText, Link2, Sparkles,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type CategoryConfig = {
@@ -173,7 +174,7 @@ export default function CategoriesEditorTab() {
 
   if (loading) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">
+      <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">
         <Loader2 className="h-5 w-5 animate-spin mr-2" /> Cargando categorías…
       </div>
     );
@@ -184,18 +185,18 @@ export default function CategoriesEditorTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
             Gestión de Categorías
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             Reordena, renombra y oculta categorías del catálogo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={bulkGenerateSeo}
-            className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+            className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Auto-generar SEO
@@ -204,8 +205,8 @@ export default function CategoriesEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
-              saved ? "bg-emerald-500" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
+              saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
@@ -226,24 +227,24 @@ export default function CategoriesEditorTab() {
               className={cn(
                 "bg-white dark:bg-card border rounded-xl transition-all",
                 cat.visible
-                  ? "border-gray-200 dark:border-card-border"
-                  : "border-gray-100 dark:border-card-border/50 opacity-50"
+                  ? "border-[var(--rule-base)] dark:border-card-border"
+                  : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-50"
               )}
             >
               {/* Main Category Row */}
               <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3">
-                <GripVertical className="h-4 w-4 text-gray-300 shrink-0" />
+                <GripVertical className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
                 <span className="text-lg shrink-0 w-8 text-center">{cat.emoji}</span>
                 <input
                   value={cat.emoji}
                   onChange={(e) => updateField(i, "emoji", e.target.value)}
-                  className="w-12 text-center rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-1 py-1 text-sm"
+                  className="w-12 text-center rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-1 py-1 text-sm"
                   maxLength={4}
                 />
                 <input
                   value={cat.label}
                   onChange={(e) => updateField(i, "label", e.target.value)}
-                  className="flex-1 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-1.5 text-sm font-medium"
+                  className="flex-1 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-1.5 text-sm font-medium"
                 />
                 <span className="text-xs text-muted font-mono">{cat.id}</span>
                 
@@ -252,9 +253,9 @@ export default function CategoriesEditorTab() {
                   onClick={() => toggleSeoExpanded(cat.id)}
                   className={cn(
                     "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors",
-                    seoScore === "good" && "bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
-                    seoScore === "warning" && "bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
-                    seoScore === "error" && "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400"
+                    seoScore === "good" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+                    seoScore === "warning" && "bg-[var(--data-warning-100)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                    seoScore === "error" && "bg-[var(--data-error-100)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]"
                   )}
                   title="Click para editar SEO"
                 >
@@ -270,19 +271,19 @@ export default function CategoriesEditorTab() {
                     <ArrowDown className="h-3.5 w-3.5" />
                   </button>
                   <button onClick={() => toggleVisibility(i)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-                    {cat.visible ? <Eye className="h-3.5 w-3.5 text-emerald-500" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
+                    {cat.visible ? <Eye className="h-3.5 w-3.5 text-[var(--data-success)]" /> : <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                   </button>
                 </div>
               </div>
 
               {/* SEO Expanded Section */}
               {isSeoExpanded && (
-                <div className="border-t border-gray-100 dark:border-card-border px-4 py-4 space-y-4 bg-gray-50/50 dark:bg-background/50">
+                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-4 py-4 space-y-4 bg-gray-50/50 dark:bg-background/50">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-bold text-gray-700 dark:text-foreground flex flex-wrap items-center gap-2">
+                    <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
                       <Globe className="h-4 w-4 text-primary" />
                       SEO Metadata
-                    </h3>
+                    </CardTitle>
                     <button
                       onClick={() => generateSeoForCategory(i)}
                       className="text-xs font-semibold text-primary hover:text-primary-dark flex items-center gap-1"
@@ -294,14 +295,14 @@ export default function CategoriesEditorTab() {
 
                   {/* Meta Title */}
                   <div>
-                    <label className="flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
                         Meta Title
                       </span>
                       <span className={cn(
                         "font-mono",
-                        (cat.seo?.metaTitle?.length || 0) > 60 ? "text-red-500" : "text-gray-400"
+                        (cat.seo?.metaTitle?.length || 0) > 60 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
                       )}>
                         {cat.seo?.metaTitle?.length || 0}/60
                       </span>
@@ -310,21 +311,21 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaTitle || ""}
                       onChange={(e) => updateSeoField(i, "metaTitle", e.target.value)}
                       placeholder={`${cat.label} - Buleje`}
-                      className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
                       maxLength={70}
                     />
                   </div>
 
                   {/* Meta Description */}
                   <div>
-                    <label className="flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
                         Meta Description
                       </span>
                       <span className={cn(
                         "font-mono",
-                        (cat.seo?.metaDescription?.length || 0) > 160 ? "text-red-500" : "text-gray-400"
+                        (cat.seo?.metaDescription?.length || 0) > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
                       )}>
                         {cat.seo?.metaDescription?.length || 0}/160
                       </span>
@@ -333,7 +334,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaDescription || ""}
                       onChange={(e) => updateSeoField(i, "metaDescription", e.target.value)}
                       placeholder={`Compra ${cat.label.toLowerCase()} frescos en línea...`}
-                      className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm resize-none"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm resize-none"
                       rows={3}
                       maxLength={170}
                     />
@@ -341,12 +342,12 @@ export default function CategoriesEditorTab() {
 
                   {/* Keywords */}
                   <div>
-                    <label className="flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       <span className="flex items-center gap-1">
                         <Tag className="h-3 w-3" />
                         Keywords (separadas por coma, máx 10)
                       </span>
-                      <span className="font-mono text-gray-400">
+                      <span className="font-mono text-[var(--text-tertiary)]">
                         {cat.seo?.keywords?.length || 0}/10
                       </span>
                     </label>
@@ -357,14 +358,14 @@ export default function CategoriesEditorTab() {
                         updateSeoField(i, "keywords", keywords);
                       }}
                       placeholder="delivery, san martín, compra online..."
-                      className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Slug */}
                     <div>
-                      <label className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                      <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         <Link2 className="h-3 w-3" />
                         Slug
                       </label>
@@ -372,13 +373,13 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.slug || cat.id}
                         onChange={(e) => updateSeoField(i, "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
                         placeholder={cat.id}
-                        className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm font-mono"
+                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm font-mono"
                       />
                     </div>
 
                     {/* OG Image */}
                     <div>
-                      <label className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                      <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         <FileText className="h-3 w-3" />
                         OG Image URL (opcional)
                       </label>
@@ -386,14 +387,14 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.ogImage || ""}
                         onChange={(e) => updateSeoField(i, "ogImage", e.target.value)}
                         placeholder="https://..."
-                        className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
                       />
                     </div>
                   </div>
 
                   {/* Canonical URL */}
                   <div>
-                    <label className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       <Link2 className="h-3 w-3" />
                       Canonical URL (opcional)
                     </label>
@@ -401,24 +402,24 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.canonical || ""}
                       onChange={(e) => updateSeoField(i, "canonical", e.target.value)}
                       placeholder="https://buleje.pe/categoria/..."
-                      className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
                     />
                   </div>
 
                   {/* SEO Preview Card */}
-                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+                  <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+                    <div className="text-xs font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                       <Search className="h-3.5 w-3.5" />
                       Vista previa en Google
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-emerald-700 dark:text-emerald-400">
+                      <div className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
                         buleje.pe › categoria › {cat.seo?.slug || cat.id}
                       </div>
-                      <div className="text-lg text-blue-600 dark:text-blue-400 font-medium leading-snug">
+                      <div className="text-lg text-[var(--data-success)] dark:text-[var(--data-success)] font-medium leading-snug">
                         {cat.seo?.metaTitle || `${cat.label} - Buleje`}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                      <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
                         {cat.seo?.metaDescription || `Compra ${cat.label.toLowerCase()} frescos y de calidad en Buleje. Entrega rápida en tu zona.`}
                       </div>
                     </div>
@@ -427,25 +428,25 @@ export default function CategoriesEditorTab() {
                   {/* SEO Score Details */}
                   <div className={cn(
                     "rounded-lg p-3 text-xs",
-                    seoScore === "good" && "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30",
-                    seoScore === "warning" && "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30",
-                    seoScore === "error" && "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30"
+                    seoScore === "good" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
+                    seoScore === "warning" && "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30",
+                    seoScore === "error" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30"
                   )}>
                     <div className={cn(
                       "font-semibold mb-1",
-                      seoScore === "good" && "text-emerald-700 dark:text-emerald-400",
-                      seoScore === "warning" && "text-amber-700 dark:text-amber-400",
-                      seoScore === "error" && "text-red-700 dark:text-red-400"
+                      seoScore === "good" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
+                      seoScore === "warning" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                      seoScore === "error" && "text-[var(--data-error)] dark:text-[var(--data-error)]"
                     )}>
                       {seoScore === "good" && "SEO óptimo"}
                       {seoScore === "warning" && "SEO mejorable"}
                       {seoScore === "error" && "SEO incompleto"}
                     </div>
                     <div className={cn(
-                      "text-[10px] space-y-0.5",
-                      seoScore === "good" && "text-emerald-600 dark:text-emerald-300",
-                      seoScore === "warning" && "text-amber-600 dark:text-amber-300",
-                      seoScore === "error" && "text-red-600 dark:text-red-300"
+                      "text-[length:var(--ts-2xs)] space-y-0.5",
+                      seoScore === "good" && "text-[var(--data-success)] dark:text-[var(--data-success)]",
+                      seoScore === "warning" && "text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                      seoScore === "error" && "text-[var(--data-error)] dark:text-[var(--data-error)]"
                     )}>
                       {!cat.seo?.metaTitle && <div>• Falta meta title</div>}
                       {cat.seo?.metaTitle && cat.seo.metaTitle.length < 30 && <div>• Meta title demasiado corto (mín 30 caracteres)</div>}

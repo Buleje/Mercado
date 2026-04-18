@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingBag, ArrowRight, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { ShoppingBag, ArrowRight, Loader2, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import type { Sale } from "@/types/erp";
@@ -111,9 +111,9 @@ export default function ComboSuggestionCard() {
 
       {/* Error */}
       {!loading && error && (
-        <div className="flex items-start gap-2 rounded-md bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 px-3 py-2">
-          <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-red-700 dark:text-red-400">{error}</p>
+        <div className="flex items-start gap-2 rounded-md bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)] px-3 py-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0 mt-0.5" />
+          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         </div>
       )}
 

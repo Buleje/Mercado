@@ -124,12 +124,12 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white dark:bg-gray-900 overflow-hidden shadow-sm transition-all",
+        "rounded-2xl border bg-[var(--surface-raised)] overflow-hidden shadow-sm transition-all",
         matchPct === 100
           ? "border-[#00B4A6]"
           : matchPct >= 50
             ? "border-[#f97316]"
-            : "border-gray-200 dark:border-gray-700"
+            : "border-[var(--rule-base)]"
       )}
     >
       <button
@@ -140,11 +140,11 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <ChefHat className="w-4 h-4 text-[#f97316] flex-shrink-0" />
-              <h3 className="font-bold text-gray-900 dark:text-white text-sm">
+              <h3 className="font-bold text-[var(--text-primary)] text-sm">
                 {recipe.name}
               </h3>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 line-clamp-1">
               {recipe.description}
             </p>
           </div>
@@ -156,7 +156,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                   ? "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]"
                   : matchPct >= 50
                     ? "bg-[#f97316]/10 text-[#f97316]"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                    : "bg-[var(--surface-sunken)] text-gray-500"
               )}
             >
               {have.length}/{recipe.ingredients.length}
@@ -169,7 +169,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           </div>
         </div>
         {/* Mini progress */}
-        <div className="mt-3 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+        <div className="mt-3 h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
           <div
             className={cn(
               "h-full rounded-full transition-all",
@@ -181,7 +181,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-gray-800 p-4 pt-3">
+        <div className="border-t border-[var(--rule-base)] p-4 pt-3">
           <div className="space-y-1.5">
             {recipe.ingredients.map((ing) => {
               const present = hasIngredient(cartItems, ing);
@@ -197,8 +197,8 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                       className={cn(
                         "text-sm",
                         present
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-400 dark:text-gray-500"
+                          ? "text-[var(--text-primary)]"
+                          : "text-[var(--text-tertiary)]"
                       )}
                     >
                       {ing}
@@ -245,21 +245,21 @@ export default function RecipeSuggestions({ cartItems, onAddIngredient }: Props)
   }, [cartItems]);
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl p-4">
+    <div className="bg-[var(--surface-canvas)] rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-4">
         <ChefHat className="w-5 h-5 text-[#f97316]" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">
+        <h2 className="text-base font-bold text-[var(--text-primary)]">
           Recetas sugeridas
         </h2>
         {cartItems.length > 0 && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-[var(--text-tertiary)]">
             segun tu carrito
           </span>
         )}
       </div>
 
       {cartItems.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-6">
+        <p className="text-sm text-[var(--text-tertiary)] text-center py-6">
           Agrega productos al carrito para ver recetas sugeridas
         </p>
       ) : (

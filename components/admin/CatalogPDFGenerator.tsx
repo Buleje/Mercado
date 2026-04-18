@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Download, MessageCircle, Loader2, Eye, Package } from "lucide-react";
+import { Download, MessageCircle, Loader2, Eye, Package } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
@@ -167,23 +168,23 @@ export default function CatalogPDFGenerator() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
           Catalogo PDF
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-tertiary)]">
           Genera un catalogo imprimible o para compartir con clientes
         </p>
       </div>
 
       {/* Controls */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
               Categoria
             </label>
             {loading ? (
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Cargando categorias...
               </div>
@@ -191,7 +192,7 @@ export default function CatalogPDFGenerator() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               >
                 <option value="todas">Todas las categorias</option>
                 {categories.map((c) => (
@@ -206,7 +207,7 @@ export default function CatalogPDFGenerator() {
           <div className="flex items-end gap-2">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
             >
               <Eye className="h-4 w-4" />
               {showPreview ? "Ocultar" : "Vista previa"}
@@ -215,13 +216,13 @@ export default function CatalogPDFGenerator() {
         </div>
 
         {error && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="mt-3 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         )}
 
         {/* Stats */}
         <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-800">
           <Package className="h-4 w-4 text-[#00B4A6]" />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
+          <span className="text-sm text-[var(--text-secondary)]">
             <span className="font-semibold text-[#00B4A6]">
               {filtered.length}
             </span>{" "}
@@ -232,7 +233,7 @@ export default function CatalogPDFGenerator() {
 
       {/* Preview */}
       {showPreview && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="rounded-t-xl bg-[#00B4A6] p-4 text-center text-white">
             <p className="text-lg font-bold">Buleje</p>
             <p className="text-xs opacity-80">Catalogo de Productos — Pucallpa, Peru</p>
@@ -241,16 +242,16 @@ export default function CatalogPDFGenerator() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#f97316]/20">
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--text-secondary)]">
                     Producto
                   </th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--text-secondary)]">
                     Categoria
                   </th>
-                  <th className="px-4 py-2 text-right font-semibold text-gray-700 dark:text-gray-200">
+                  <th className="px-4 py-2 text-right font-semibold text-[var(--text-secondary)]">
                     Precio
                   </th>
-                  <th className="px-4 py-2 text-center font-semibold text-gray-700 dark:text-gray-200">
+                  <th className="px-4 py-2 text-center font-semibold text-[var(--text-secondary)]">
                     Disponible
                   </th>
                 </tr>
@@ -260,16 +261,16 @@ export default function CatalogPDFGenerator() {
                   <tr
                     key={p.id}
                     className={cn(
-                      "border-b border-gray-100 dark:border-gray-800",
+                      "border-b border-[var(--rule-base)]",
                       i % 2 === 0
-                        ? "bg-white dark:bg-gray-900"
-                        : "bg-gray-50 dark:bg-gray-800/50"
+                        ? "bg-[var(--surface-raised)]"
+                        : "bg-[var(--surface-sunken)]/50"
                     )}
                   >
-                    <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                    <td className="px-4 py-2 text-[var(--text-primary)]">
                       {p.name}
                     </td>
-                    <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                    <td className="px-4 py-2 text-[var(--text-tertiary)]">
                       {p.category ?? "—"}
                     </td>
                     <td className="px-4 py-2 text-right font-medium text-[#00B4A6]">
@@ -280,8 +281,8 @@ export default function CatalogPDFGenerator() {
                         className={cn(
                           "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
                           (p.stock ?? 1) > 0
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                            : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
                         )}
                       >
                         {(p.stock ?? 1) > 0 ? "Si" : "No"}
@@ -292,7 +293,7 @@ export default function CatalogPDFGenerator() {
               </tbody>
             </table>
             {filtered.length > 20 && (
-              <p className="p-3 text-center text-xs text-gray-400">
+              <p className="p-3 text-center text-xs text-[var(--text-tertiary)]">
                 Mostrando 20 de {filtered.length} productos. El PDF incluira
                 todos.
               </p>
@@ -323,7 +324,7 @@ export default function CatalogPDFGenerator() {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--accent-soft)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-soft)]"
         >
           <MessageCircle className="h-4 w-4" />
           Compartir por WhatsApp

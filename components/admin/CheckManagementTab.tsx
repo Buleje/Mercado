@@ -1,9 +1,10 @@
 "use client";
 
+import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   Wallet, Download, Search, Eye, X,
-  Calendar, AlertTriangle, Clock, Ban, Loader2, RefreshCw, CheckCircle } from "lucide-react";
+  Calendar, AlertTriangle, Clock, Ban, Loader2, RefreshCw, CheckCircle } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -43,13 +44,13 @@ type PayableRecord = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<CheckStatus, { label: string; color: string; bg: string }> = {
-  "en-cartera":    { label: "En cartera",    color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30"    },
-  "por-depositar": { label: "Por depositar", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30"  },
-  depositado:      { label: "Depositado",    color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30"},
-  cobrado:         { label: "Cobrado",       color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30"},
-  pagado:          { label: "Pagado",        color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30"},
-  rebotado:        { label: "Rebotado",      color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30"      },
-  pendiente:       { label: "Pendiente",     color: "text-orange-600",  bg: "bg-orange-100 dark:bg-orange-900/30"},
+  "en-cartera":    { label: "En cartera",    color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
+  "por-depositar": { label: "Por depositar", color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"  },
+  depositado:      { label: "Depositado",    color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]"},
+  cobrado:         { label: "Cobrado",       color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+  pagado:          { label: "Pagado",        color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+  rebotado:        { label: "Rebotado",      color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30"      },
+  pendiente:       { label: "Pendiente",     color: "text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"},
 };
 
 // Convierte cuentas por pagar en registros de cheques "emitidos"
@@ -133,21 +134,18 @@ export default function CheckManagementTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500 dark:text-muted">Cargando cheques...</p>
-      </div>
+      <LoadingState message="Cargando cheques..." />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -160,10 +158,10 @@ export default function CheckManagementTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" /> Gestión de Cheques
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             {stats.totalChecks} cheques registrados — portafolio de pagos a proveedores
           </p>
         </div>
@@ -184,7 +182,7 @@ export default function CheckManagementTab() {
               "cheques"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -196,36 +194,36 @@ export default function CheckManagementTab() {
           {
             label: "Total pendiente",
             value: fmt(stats.totalPending),
-            color: "text-amber-600",
-            bg: "bg-amber-50 dark:bg-amber-950/30",
+            color: "text-[var(--data-warning)]",
+            bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",
             icon: Clock,
           },
           {
             label: "Total pagado",
             value: fmt(stats.totalPaid),
-            color: "text-emerald-600",
-            bg: "bg-emerald-50 dark:bg-emerald-950/30",
+            color: "text-[var(--data-success)]",
+            bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: CheckCircle,
           },
           {
             label: "Por depositar",
             value: String(stats.toDeposit),
-            color: "text-blue-600",
-            bg: "bg-blue-50 dark:bg-blue-950/30",
+            color: "text-[var(--data-success)]",
+            bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: Calendar,
           },
           {
             label: "Rebotados / Tasa",
             value: `${stats.bounced} (${stats.bouncedRate.toFixed(1)}%)`,
-            color: stats.bounced > 0 ? "text-red-600" : "text-emerald-600",
-            bg: stats.bounced > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30",
+            color: stats.bounced > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]",
+            bg: stats.bounced > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: Ban,
           },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
               <p className={cn("text-xl font-extrabold", color)}>{value}</p>
             </div>
           </div>
@@ -234,13 +232,13 @@ export default function CheckManagementTab() {
 
       {/* Alertas */}
       {stats.bounced > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-red-700 dark:text-red-400">
+            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
               Alerta: {stats.bounced} cheque(s) rebotado(s)
             </p>
-            <p className="text-xs text-red-600/80">
+            <p className="text-xs text-[var(--data-error)]/80">
               Revisar y contactar a los proveedores correspondientes
             </p>
           </div>
@@ -248,8 +246,8 @@ export default function CheckManagementTab() {
       )}
 
       {/* Distribución visual por estado */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Distribución por estado</h3>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Distribución por estado</CardTitle>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(STATUS_MAP) as CheckStatus[]).map((s) => {
             const count = checks.filter((c) => c.status === s).length;
@@ -278,18 +276,18 @@ export default function CheckManagementTab() {
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por entidad, número, banco..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
           />
         </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-          className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
         >
           <option value="todos">Todos</option>
           <option value="recibido">Recibidos</option>
@@ -298,7 +296,7 @@ export default function CheckManagementTab() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-          className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
         >
           <option value="todos">Todos los estados</option>
           {(Object.entries(STATUS_MAP) as [CheckStatus, typeof STATUS_MAP[CheckStatus]][]).map(([k, v]) => (
@@ -310,11 +308,11 @@ export default function CheckManagementTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface">
+              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
                 <th className="px-4 py-3">Nro</th>
                 <th className="px-4 py-3">Banco</th>
                 <th className="px-4 py-3">Tipo</th>
@@ -333,33 +331,33 @@ export default function CheckManagementTab() {
                   <tr
                     key={c.id}
                     className={cn(
-                      "border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
-                      c.status === "rebotado" && "bg-red-50/50 dark:bg-red-950/10",
-                      isOverdue && "bg-amber-50/30 dark:bg-amber-950/5"
+                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
+                      c.status === "rebotado" && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10",
+                      isOverdue && "bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5"
                     )}
                   >
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
                       {c.number}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{c.bank}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{c.bank}</td>
                     <td className="px-4 py-3">
                       <span
                         className={cn(
                           "text-xs font-bold px-2 py-0.5 rounded-full",
                           c.type === "recibido"
-                            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
-                            : "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
+                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]"
+                            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]"
                         )}
                       >
                         {c.type === "recibido" ? "Recibido" : "Emitido"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{c.party}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(c.amount)}</td>
+                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{c.party}</td>
+                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.amount)}</td>
                     <td
                       className={cn(
-                        "px-4 py-3 text-gray-500 flex items-center gap-1",
-                        isOverdue && "text-amber-600 font-bold"
+                        "px-4 py-3 text-[var(--text-secondary)] flex items-center gap-1",
+                        isOverdue && "text-[var(--data-warning)] font-bold"
                       )}
                     >
                       <Calendar className="h-3 w-3" />
@@ -390,7 +388,7 @@ export default function CheckManagementTab() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400 dark:text-muted text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
                     {checks.length === 0
                       ? "No hay cuentas por pagar registradas aún."
                       : "No se encontraron cheques con los filtros seleccionados."}
@@ -409,15 +407,15 @@ export default function CheckManagementTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
                 Cheque #{detail.number}
-              </h3>
+              </CardTitle>
               <button onClick={() => setDetail(null)}>
-                <X className="h-4 w-4 text-gray-400" />
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -432,13 +430,13 @@ export default function CheckManagementTab() {
                 ["Estado", (STATUS_MAP[detail.status] ?? STATUS_MAP.pendiente).label],
               ].map(([k, v]) => (
                 <div key={k as string}>
-                  <p className="text-xs text-gray-400">{k}</p>
-                  <p className="font-bold text-gray-800 dark:text-foreground">{v}</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">{k}</p>
+                  <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{v}</p>
                 </div>
               ))}
             </div>
             {detail.notes && (
-              <p className="text-xs text-gray-400 italic border-t border-gray-100 dark:border-card-border pt-2">
+              <p className="text-xs text-[var(--text-tertiary)] italic border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
                 {detail.notes}
               </p>
             )}

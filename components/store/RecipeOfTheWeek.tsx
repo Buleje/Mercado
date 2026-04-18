@@ -104,7 +104,7 @@ export default function RecipeOfTheWeek() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="rounded-3xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800"
+          className="rounded-3xl overflow-hidden shadow-xl border border-[var(--rule-base)]"
           style={{
             background: `linear-gradient(135deg, ${colors.from}12, ${colors.to}12)`,
           }}
@@ -155,12 +155,12 @@ export default function RecipeOfTheWeek() {
                 </span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white leading-tight">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] leading-tight">
                 {receta.nombre}
               </h3>
 
               {receta.descripcion && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-[var(--text-secondary)] mt-2 line-clamp-2 leading-relaxed">
                   {receta.descripcion}
                 </p>
               )}
@@ -168,16 +168,16 @@ export default function RecipeOfTheWeek() {
               {/* Badges */}
               <div className="flex items-center gap-3 mt-4 flex-wrap">
                 {receta.tiempoMinutos && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-medium">
                     <Clock className="h-3.5 w-3.5" /> {receta.tiempoMinutos} min
                   </span>
                 )}
                 {receta.porciones && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-medium">
                     <Users className="h-3.5 w-3.5" /> {receta.porciones} porciones
                   </span>
                 )}
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-medium">
                   {receta.ingredientes.length} ingredientes
                 </span>
               </div>

@@ -148,7 +148,7 @@ export async function DELETE(
       slug,
     });
     return NextResponse.json(
-      { error: "Error al eliminar la tienda", detail: e instanceof Error ? e.message : String(e) },
+      { error: "Error al eliminar la tienda" },
       { status: 500 },
     );
   }

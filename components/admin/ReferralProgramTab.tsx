@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Users, Gift, Share2, TrendingUp, RefreshCw } from "lucide-react";
+import { Users, Gift, Share2, TrendingUp, RefreshCw } from "@buleje/design-system/icons";
 
 interface ReferralStats {
   totalReferrals: number;
@@ -72,14 +73,14 @@ export default function ReferralProgramTab() {
             <Gift className="h-4 w-4" />
             Puntos otorgados
           </div>
-          <p className="mt-1 text-2xl font-bold text-amber-400">{totalPoints.toLocaleString()}</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--data-warning)]">{totalPoints.toLocaleString()}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center gap-2 text-sm text-white/60">
             <TrendingUp className="h-4 w-4" />
             Conversión
           </div>
-          <p className="mt-1 text-2xl font-bold text-emerald-400">
+          <p className="mt-1 text-2xl font-bold text-[var(--data-success)]">
             {totalReferrals > 0 ? "Activo" : "Sin datos"}
           </p>
         </div>
@@ -95,7 +96,7 @@ export default function ReferralProgramTab() {
       {/* Top Referrers */}
       <div className="rounded-xl border border-white/10 bg-white/5 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white/80">Top Referidores</h3>
+          <CardTitle className="text-sm font-semibold text-white/80">Top Referidores</CardTitle>
           <button
             onClick={fetchStats}
             className="rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white"
@@ -126,7 +127,7 @@ export default function ReferralProgramTab() {
                       {i + 1}
                     </td>
                     <td className="py-2 text-white">{r.name}</td>
-                    <td className="py-2 font-mono text-xs text-amber-400">{r.referralCode}</td>
+                    <td className="py-2 font-mono text-xs text-[var(--data-warning)]">{r.referralCode}</td>
                     <td className="py-2 text-right font-semibold text-white">{r.referralCount}</td>
                   </tr>
                 ))}
@@ -139,7 +140,7 @@ export default function ReferralProgramTab() {
       {/* Recent Referrals */}
       {recentReferrals.length > 0 && (
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <h3 className="mb-3 text-sm font-semibold text-white/80">Referidos recientes</h3>
+          <CardTitle className="mb-3 text-sm font-semibold text-white/80">Referidos recientes</CardTitle>
           <div className="space-y-2">
             {recentReferrals.map((r, i) => (
               <div
@@ -151,7 +152,7 @@ export default function ReferralProgramTab() {
                   <span className="mx-2 text-white/40">→</span>
                   <span className="text-sm text-white">{r.refereeName}</span>
                 </div>
-                <span className="text-xs text-amber-400">+{r.points} pts</span>
+                <span className="text-xs text-[var(--data-warning)]">+{r.points} pts</span>
               </div>
             ))}
           </div>
@@ -159,8 +160,8 @@ export default function ReferralProgramTab() {
       )}
 
       {/* How it works */}
-      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-        <h3 className="mb-2 text-sm font-semibold text-emerald-400">Cómo funciona</h3>
+      <div className="rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)] p-4">
+        <CardTitle className="mb-2 text-sm font-semibold text-[var(--data-success)]">Cómo funciona</CardTitle>
         <ul className="space-y-1 text-sm text-white/60">
           <li>📱 Cada cliente tiene un código único de referido</li>
           <li>🤝 Cuando alguien usa ese código, ambos ganan <strong>50 puntos</strong></li>

@@ -5,30 +5,30 @@
  *
  * NIVELES:
  *   L1 — Título de módulo (AdminModuleHeader)
- *     → text-xl font-bold text-gray-900
+ *     → text-xl font-bold text-[var(--text-primary)]
  *
  *   L2 — Título de sección interna
- *     → text-lg font-semibold text-gray-900
+ *     → text-lg font-semibold text-[var(--text-primary)]
  *
  *   L3 — Título de card/grupo
- *     → text-sm font-semibold text-gray-900
+ *     → text-sm font-semibold text-[var(--text-primary)]
  *
  *   L4 — Label de campo o métrica
- *     → text-xs font-medium text-gray-500
+ *     → text-xs font-medium text-[var(--text-secondary)]
  *
  *   Body — Texto descriptivo
- *     → text-sm text-gray-600
+ *     → text-sm text-[var(--text-secondary)]
  *
  *   Caption — Nota al pie o timestamp
- *     → text-xs text-gray-400
+ *     → text-xs text-[var(--text-tertiary)]
  *
  *   Value — Valor numérico destacado
- *     → text-2xl font-bold text-gray-900  (grande)
- *     → text-lg font-bold text-gray-900   (mediano)
- *     → text-sm font-semibold text-gray-900 (pequeño)
+ *     → text-2xl font-bold text-[var(--text-primary)]  (grande)
+ *     → text-lg font-bold text-[var(--text-primary)]   (mediano)
+ *     → text-sm font-semibold text-[var(--text-primary)] (pequeño)
  *
  *   Accent — Color primario
- *     → text-[#00B4A6]  (teal, para valores positivos, CTAs)
+ *     → text-[#2563EB]  (teal, para valores positivos, CTAs)
  *
  *   Danger — Color de alerta
  *     → text-red-600    (para deudas, errores, métricas negativas)
@@ -41,42 +41,42 @@
 
 export const typography = {
   // Títulos
-  moduleTitle: "text-xl font-bold text-gray-900",
-  sectionTitle: "text-lg font-semibold text-gray-900",
-  cardTitle: "text-sm font-semibold text-gray-900",
+  moduleTitle: "text-xl font-bold text-[var(--text-primary)]",
+  sectionTitle: "text-lg font-semibold text-[var(--text-primary)]",
+  cardTitle: "text-sm font-semibold text-[var(--text-primary)]",
 
   // Texto
-  label: "text-xs font-medium text-gray-500",
-  body: "text-sm text-gray-600",
-  caption: "text-xs text-gray-400",
-  description: "text-xs text-gray-500",
+  label: "text-xs font-medium text-[var(--text-secondary)]",
+  body: "text-sm text-[var(--text-secondary)]",
+  caption: "text-xs text-[var(--text-tertiary)]",
+  description: "text-xs text-[var(--text-secondary)]",
 
   // Valores
-  valueLg: "text-2xl font-bold text-gray-900",
-  valueMd: "text-lg font-bold text-gray-900",
-  valueSm: "text-sm font-semibold text-gray-900",
+  valueLg: "text-2xl font-bold text-[var(--text-primary)]",
+  valueMd: "text-lg font-bold text-[var(--text-primary)]",
+  valueSm: "text-sm font-semibold text-[var(--text-primary)]",
 
   // Colores semánticos
-  accent: "text-[#00B4A6]",
+  accent: "text-[#2563EB]",
   danger: "text-red-600",
-  warning: "text-amber-600",
-  success: "text-emerald-600",
-  muted: "text-gray-400",
+  warning: "text-[var(--data-warning)]",
+  success: "text-[var(--data-success)]",
+  muted: "text-[var(--text-tertiary)]",
 
   // Badges
-  badgePrimary: "px-2 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold",
+  badgePrimary: "px-2 py-0.5 rounded-full bg-[#2563EB]/10 text-[#2563EB] text-xs font-bold",
   badgeDanger: "px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-bold",
   badgeWarning: "px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-bold",
-  badgeSuccess: "px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold",
-  badgeNeutral: "px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold",
+  badgeSuccess: "px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold",
+  badgeNeutral: "px-2 py-0.5 rounded-full bg-gray-100 text-[var(--text-secondary)] text-xs font-bold",
 
   // Tablas
-  tableHeader: "text-xs font-semibold text-gray-500 uppercase tracking-wide",
-  tableCell: "text-sm text-gray-700",
-  tableCellBold: "text-sm font-medium text-gray-900",
+  tableHeader: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide",
+  tableCell: "text-sm text-[var(--text-primary)]",
+  tableCellBold: "text-sm font-medium text-[var(--text-primary)]",
 
   // KPI Cards
-  kpiValue: "text-2xl font-extrabold text-gray-900",
-  kpiLabel: "text-xs font-medium text-gray-500",
+  kpiValue: "text-2xl font-extrabold text-[var(--text-primary)]",
+  kpiLabel: "text-xs font-medium text-[var(--text-secondary)]",
   kpiDelta: "text-xs font-bold",
 } as const;

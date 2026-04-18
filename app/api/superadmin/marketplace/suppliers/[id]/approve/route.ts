@@ -4,7 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 import { logActivity } from "@/lib/activity-logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { newTraceId, toErrorPayload } from "@/lib/api-error";
 
@@ -50,7 +50,7 @@ export async function POST(
       auth.username,
       undefined,
       "__platform__",
-    ).catch(() => {});
+    ).catch((err) => logger.error("[superadmin/marketplace/suppliers/[id]/approve] operation failed", { error: String(err) }));
 
     if (supplier.contactPhone) {
       const apiKeyPreview = supplier.apiKey
@@ -64,12 +64,7 @@ export async function POST(
         `\`${supplier.apiKey ?? apiKeyPreview}\`\n\n` +
         `Documentación: https://buleje.pe/supplier/docs\n` +
         `Panel: https://buleje.pe/supplier/dashboard`;
-      sendWhatsAppText(supplier.contactPhone, message).catch((e) =>
-        logger.warn("[supplier-approve] notify failed", {
-          error: String(e),
-          supplierId: id,
-        }),
-      );
+      sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-approve-notify" }).catch(() => {});
     }
 
     return NextResponse.json({

@@ -1,0 +1,1174 @@
+
+> buleje@0.1.1 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/dev/bodega-san-martin/bodega-san-martin[39m
+
+ [31m❯[39m __tests__/skills-structure.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31m❯[39m __tests__/tenant-hardcoded-main-guard.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 308[2mms[22m[39m
+[31m     [31m×[31m should block new hardcoded tenantId main usages[39m[33m 304[2mms[22m[39m
+ [31m❯[39m __tests__/api-treasury-transferencias.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 336[2mms[22m[39m
+[31m     [31m×[31m maneja errores de DB y retorna 500 via withApiHandler[39m[32m 11[2mms[22m[39m
+[31m     [31m×[31m maneja errores de DB y retorna 500 via withApiHandler[39m[32m 3[2mms[22m[39m
+ [31m❯[39m __tests__/empty-state.test.tsx [2m([22m[2m6 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 168[2mms[22m[39m
+[31m     [31m×[31m should render default title and description[39m[32m 111[2mms[22m[39m
+[31m     [31m×[31m should not have dark: classes[39m[32m 15[2mms[22m[39m
+ [31m❯[39m __tests__/api-orders-create.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31m❯[39m __tests__/orders-route-race-conditions.test.ts [2m([22m[2m0 test[22m[2m)[22m
+[90mstderr[2m | __tests__/api-fiados-cobrar.test.ts[2m > [22m[2mPOST /api/fiados/cobrar[2m > [22m[2mpermite acceso a admin y cajero
+[22m[39m[Fiados Cobrar] PrismaClientKnownRequestError: 
+Invalid `prisma.fiado.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid
+    at zr.handleRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:8286[90m)[39m
+    at zr.handleAndLogRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7581[90m)[39m
+    at zr.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7288[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at a [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:75:5816[90m)[39m
+    at POST (C:/dev/bodega-san-martin/bodega-san-martin/app/api/fiados/cobrar/route.ts:37:20)
+    at C:/dev/bodega-san-martin/bodega-san-martin/__tests__/api-fiados-cobrar.test.ts:98:17
+    at [90mfile:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1258:20 {
+  code: [32m'P1000'[39m,
+  meta: {
+    modelName: [32m'Fiado'[39m,
+    driverAdapterError: DriverAdapterError: AuthenticationFailed
+        at PrismaPgAdapter.onError [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:651:11[90m)[39m
+        at PrismaPgAdapter.performIO [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:646:12[90m)[39m
+    [90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+        at PrismaPgAdapter.queryRaw [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:566:30[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:44517[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:46181[90m)[39m
+        at e.run [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:43231[90m)[39m
+        at execute [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:57:815[90m)[39m
+        at jt.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:58:2327[90m)[39m
+        at Object.singleLoader [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:6569[90m)[39m {
+      cause: [36m[Object][39m
+    }
+  },
+  clientVersion: [32m'7.7.0'[39m
+}
+
+ [31m❯[39m __tests__/orders-route-hotfix-001-004.test.ts [2m([22m[2m0 test[22m[2m)[22m
+[90mstderr[2m | __tests__/api-fiados-cobrar.test.ts[2m > [22m[2mPOST /api/fiados/cobrar[2m > [22m[2mretorna 404 cuando no hay fiados activos para el cliente
+[22m[39m[Fiados Cobrar] PrismaClientKnownRequestError: 
+Invalid `prisma.fiado.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid
+    at zr.handleRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:8286[90m)[39m
+    at zr.handleAndLogRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7581[90m)[39m
+    at zr.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7288[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at a [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:75:5816[90m)[39m
+    at POST (C:/dev/bodega-san-martin/bodega-san-martin/app/api/fiados/cobrar/route.ts:37:20)
+    at C:/dev/bodega-san-martin/bodega-san-martin/__tests__/api-fiados-cobrar.test.ts:177:17
+    at [90mfile:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1258:20 {
+  code: [32m'P1000'[39m,
+  meta: {
+    modelName: [32m'Fiado'[39m,
+    driverAdapterError: DriverAdapterError: AuthenticationFailed
+        at PrismaPgAdapter.onError [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:651:11[90m)[39m
+        at PrismaPgAdapter.performIO [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:646:12[90m)[39m
+    [90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+        at PrismaPgAdapter.queryRaw [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:566:30[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:44517[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:46181[90m)[39m
+        at e.run [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:43231[90m)[39m
+        at execute [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:57:815[90m)[39m
+        at jt.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:58:2327[90m)[39m
+        at Object.singleLoader [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:6569[90m)[39m {
+      cause: [36m[Object][39m
+    }
+  },
+  clientVersion: [32m'7.7.0'[39m
+}
+
+ [31m❯[39m __tests__/SearchAutocomplete.test.tsx [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[33m 1266[2mms[22m[39m
+[31m     [31m×[31m llama al endpoint de sugerencias despues de 300ms de debounce[39m[33m 711[2mms[22m[39m
+[31m     [31m×[31m muestra sugerencias en el dropdown[39m[32m 159[2mms[22m[39m
+[31m     [31m×[31m click en sugerencia llama onSearch con el valor[39m[32m 88[2mms[22m[39m
+[31m     [31m×[31m muestra did you mean cuando no hay resultados[39m[32m 108[2mms[22m[39m
+[31m     [31m×[31m Esc cierra el dropdown[39m[32m 114[2mms[22m[39m
+[31m     [31m×[31m navega con teclado ArrowDown y selecciona con Enter[39m[32m 81[2mms[22m[39m
+[90mstderr[2m | __tests__/api-fiados-cobrar.test.ts[2m > [22m[2mPOST /api/fiados/cobrar[2m > [22m[2mcobra fiado exitosamente y retorna resultado completo (200)
+[22m[39m[Fiados Cobrar] PrismaClientKnownRequestError: 
+Invalid `prisma.fiado.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid
+    at zr.handleRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:8286[90m)[39m
+    at zr.handleAndLogRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7581[90m)[39m
+    at zr.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7288[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at a [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:75:5816[90m)[39m
+    at POST (C:/dev/bodega-san-martin/bodega-san-martin/app/api/fiados/cobrar/route.ts:37:20)
+    at C:/dev/bodega-san-martin/bodega-san-martin/__tests__/api-fiados-cobrar.test.ts:201:17
+    at [90mfile:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1258:20 {
+  code: [32m'P1000'[39m,
+  meta: {
+    modelName: [32m'Fiado'[39m,
+    driverAdapterError: DriverAdapterError: AuthenticationFailed
+        at PrismaPgAdapter.onError [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:651:11[90m)[39m
+        at PrismaPgAdapter.performIO [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:646:12[90m)[39m
+    [90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+        at PrismaPgAdapter.queryRaw [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:566:30[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:44517[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:46181[90m)[39m
+        at e.run [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:43231[90m)[39m
+        at execute [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:57:815[90m)[39m
+        at jt.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:58:2327[90m)[39m
+        at Object.singleLoader [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:6569[90m)[39m {
+      cause: [36m[Object][39m
+    }
+  },
+  clientVersion: [32m'7.7.0'[39m
+}
+
+[90mstderr[2m | __tests__/api-fiados-cobrar.test.ts[2m > [22m[2mPOST /api/fiados/cobrar[2m > [22m[2mmaneja errores internos de DB (500)
+[22m[39m[Fiados Cobrar] PrismaClientKnownRequestError: 
+Invalid `prisma.fiado.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid
+    at zr.handleRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:8286[90m)[39m
+    at zr.handleAndLogRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7581[90m)[39m
+    at zr.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7288[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at a [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:75:5816[90m)[39m
+    at POST (C:/dev/bodega-san-martin/bodega-san-martin/app/api/fiados/cobrar/route.ts:37:20)
+    at C:/dev/bodega-san-martin/bodega-san-martin/__tests__/api-fiados-cobrar.test.ts:229:17
+    at [90mfile:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1258:20 {
+  code: [32m'P1000'[39m,
+  meta: {
+    modelName: [32m'Fiado'[39m,
+    driverAdapterError: DriverAdapterError: AuthenticationFailed
+        at PrismaPgAdapter.onError [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:651:11[90m)[39m
+        at PrismaPgAdapter.performIO [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:646:12[90m)[39m
+    [90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+        at PrismaPgAdapter.queryRaw [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:566:30[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:44517[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:46181[90m)[39m
+        at e.run [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:43231[90m)[39m
+        at execute [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:57:815[90m)[39m
+        at jt.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:58:2327[90m)[39m
+        at Object.singleLoader [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:6569[90m)[39m {
+      cause: [36m[Object][39m
+    }
+  },
+  clientVersion: [32m'7.7.0'[39m
+}
+
+[90mstderr[2m | __tests__/api-message-templates.test.ts[2m > [22m[2mDELETE /api/message-templates[2m > [22m[2mreturns 404 when template not found
+[22m[39m[33m[WARN][0m 2026-04-16T20:14:27.986Z [N+1 DETECTED] messageTemplate.findFirst(id,tenantId) called 3x in 251ms {"pattern":"messageTemplate.findFirst(id,tenantId)","count":3,"windowMs":251,"suggestion":"Use messageTemplate.findMany() with { where: { id: { in: [...] } } } instead of looping"}
+
+[90mstderr[2m | __tests__/api-fiados-cobrar.test.ts[2m > [22m[2mPOST /api/fiados/cobrar[2m > [22m[2musa tenantId del cajero en multi-tenant
+[22m[39m[Fiados Cobrar] PrismaClientKnownRequestError: 
+Invalid `prisma.fiado.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid
+    at zr.handleRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:8286[90m)[39m
+    at zr.handleAndLogRequestError [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7581[90m)[39m
+    at zr.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:7288[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at a [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:75:5816[90m)[39m
+    at POST (C:/dev/bodega-san-martin/bodega-san-martin/app/api/fiados/cobrar/route.ts:37:20)
+    at C:/dev/bodega-san-martin/bodega-san-martin/__tests__/api-fiados-cobrar.test.ts:249:5
+    at [90mfile:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1258:20 {
+  code: [32m'P1000'[39m,
+  meta: {
+    modelName: [32m'Fiado'[39m,
+    driverAdapterError: DriverAdapterError: AuthenticationFailed
+        at PrismaPgAdapter.onError [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:651:11[90m)[39m
+        at PrismaPgAdapter.performIO [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:646:12[90m)[39m
+    [90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+        at PrismaPgAdapter.queryRaw [90m(file:///C:/dev/bodega-san-martin/bodega-san-martin/[39mnode_modules/[4m@prisma/adapter-pg[24m/dist/index.mjs:566:30[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:44517[90m)[39m
+        at e.interpretNode [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:46181[90m)[39m
+        at e.run [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:11:43231[90m)[39m
+        at execute [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:57:815[90m)[39m
+        at jt.request [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:58:2327[90m)[39m
+        at Object.singleLoader [90m(C:\dev\bodega-san-martin\bodega-san-martin\[39mnode_modules\[4m@prisma\client[24m\runtime\client.js:65:6569[90m)[39m {
+      cause: [36m[Object][39m
+    }
+  },
+  clientVersion: [32m'7.7.0'[39m
+}
+
+ [31m❯[39m __tests__/api-campaigns-create.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[33m 3213[2mms[22m[39m
+[31m     [31m×[31m rechaza JSON inválido (400)[39m[32m 8[2mms[22m[39m
+[31m     [31m×[31m crea campaña básica con defaults (201)[39m[33m 1116[2mms[22m[39m
+[31m     [31m×[31m crea campaña programada con scheduledAt (201)[39m[32m 247[2mms[22m[39m
+[31m     [31m×[31m estima audiencia correcta para segment 'vip'[39m[32m 226[2mms[22m[39m
+[31m     [31m×[31m usa tenantId correcto en multi-tenant[39m[32m 236[2mms[22m[39m
+[31m     [31m×[31m maneja errores de estimación de audiencia gracefully[39m[32m 166[2mms[22m[39m
+[90mstderr[2m | __tests__/api-notes.test.ts[2m > [22m[2mDELETE /api/notes[2m > [22m[2mreturns 404 when note not found
+[22m[39m[33m[WARN][0m 2026-04-16T20:14:27.992Z [N+1 DETECTED] note.findFirst(id,tenantId) called 3x in 229ms {"pattern":"note.findFirst(id,tenantId)","count":3,"windowMs":229,"suggestion":"Use note.findMany() with { where: { id: { in: [...] } } } instead of looping"}
+
+ [31m❯[39m __tests__/api-fiados-cobrar.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 2649[2mms[22m[39m
+[31m     [31m×[31m permite acceso a admin y cajero[39m[33m 773[2mms[22m[39m
+[31m     [31m×[31m retorna 404 cuando no hay fiados activos para el cliente[39m[32m 290[2mms[22m[39m
+[31m     [31m×[31m cobra fiado exitosamente y retorna resultado completo (200)[39m[32m 222[2mms[22m[39m
+[31m     [31m×[31m maneja errores internos de DB (500)[39m[32m 146[2mms[22m[39m
+[31m     [31m×[31m usa tenantId del cajero en multi-tenant[39m[32m 110[2mms[22m[39m
+ [31m❯[39m __tests__/api-message-templates.test.ts [2m([22m[2m14 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 1752[2mms[22m[39m
+[31m     [31m×[31m returns empty array[39m[33m 999[2mms[22m[39m
+[31m     [31m×[31m returns templates with parsed variables[39m[32m 107[2mms[22m[39m
+[31m     [31m×[31m creates template and returns 201[39m[32m 114[2mms[22m[39m
+[31m     [31m×[31m returns 404 when template not found[39m[32m 118[2mms[22m[39m
+[31m     [31m×[31m increments usageCount successfully[39m[32m 133[2mms[22m[39m
+[31m     [31m×[31m returns 404 when template not found[39m[32m 137[2mms[22m[39m
+[31m     [31m×[31m deletes and returns { ok: true }[39m[32m 103[2mms[22m[39m
+ [31m❯[39m __tests__/api-notes.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[33m 1779[2mms[22m[39m
+[31m     [31m×[31m returns empty array when no notes[39m[33m 820[2mms[22m[39m
+[31m     [31m×[31m returns notes list[39m[32m 221[2mms[22m[39m
+[31m     [31m×[31m creates a note and returns 201[39m[32m 167[2mms[22m[39m
+[31m     [31m×[31m accepts valid color values[39m[32m 96[2mms[22m[39m
+[31m     [31m×[31m returns 404 when note not found[39m[32m 120[2mms[22m[39m
+[31m     [31m×[31m updates and returns 200[39m[32m 108[2mms[22m[39m
+[31m     [31m×[31m returns 404 when note not found[39m[32m 127[2mms[22m[39m
+[31m     [31m×[31m deletes and returns { ok: true }[39m[32m 82[2mms[22m[39m
+ [31m❯[39m __tests__/api-activity-log.test.ts [2m([22m[2m18 tests[22m[2m | [22m[31m11 failed[39m[2m)[22m[33m 2029[2mms[22m[39m
+[31m     [31m×[31m returns paginated items and nextCursor:null when no more pages[39m[33m 870[2mms[22m[39m
+[31m     [31m×[31m returns nextCursor when there are more pages[39m[32m 192[2mms[22m[39m
+[31m     [31m×[31m passes user filter to prisma where clause[39m[32m 147[2mms[22m[39m
+[31m     [31m×[31m passes action filter to prisma where clause[39m[32m 108[2mms[22m[39m
+[31m     [31m×[31m passes entity filter to prisma where clause[39m[32m 108[2mms[22m[39m
+[31m     [31m×[31m always scopes to tenantId from auth[39m[32m 134[2mms[22m[39m
+[31m     [31m×[31m maps createdAt to ISO string in response[39m[32m 122[2mms[22m[39m
+[31m     [31m×[31m creates entry with tenantId from auth and returns 201[39m[32m 103[2mms[22m[39m
+[31m     [31m×[31m uses default user 'admin' when user is not provided[39m[32m 73[2mms[22m[39m
+[31m     [31m×[31m calls deleteMany scoped to tenantId[39m[32m 71[2mms[22m[39m
+[31m     [31m×[31m returns ok:true on success[39m[32m 59[2mms[22m[39m
+Warning: A vi.mock("@/lib/db") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/db/batches.db") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/agents/bus") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/agents/context") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 4 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m [ __tests__/api-orders-create.test.ts ][22m
+[41m[1m FAIL [22m[49m __tests__/orders-route-hotfix-001-004.test.ts[2m [ __tests__/orders-route-hotfix-001-004.test.ts ][22m
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m [ __tests__/orders-route-race-conditions.test.ts ][22m
+[31m[1mError[22m: Cannot find module 'C:\dev\bodega-san-martin\bodega-san-martin\node_modules\next\router' imported from C:\dev\bodega-san-martin\bodega-san-martin\node_modules\@sentry\nextjs\build\esm\client\routing\pagesRouterRoutingInstrumentation.js
+Did you mean to import "next/router.js"?[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/skills-structure.test.ts[2m [ __tests__/skills-structure.test.ts ][22m
+[31m[1mError[22m: ENOENT: no such file or directory, scandir 'C:\dev\bodega-san-martin\.github\agents'[39m
+[36m [2m❯[22m __tests__/skills-structure.test.ts:[2m67:25[22m[39m
+    [90m 65|[39m
+    [90m 66|[39m [34mdescribe[39m([32m'Agents structure validation'[39m[33m,[39m () [33m=>[39m {
+    [90m 67|[39m   const agentFiles = fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith…
+    [90m   |[39m                         [31m^[39m
+    [90m 68|[39m
+    [90m 69|[39m   [34mit[39m([32m'should have at least 10 agent files'[39m[33m,[39m () [33m=>[39m {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/52]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 48 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22mreturns paginated items and nextCursor:null when no more pages
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m101:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22mreturns nextCursor when there are more pages
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m114:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22mpasses user filter to prisma where clause
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m122:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22mpasses action filter to prisma where clause
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m129:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22mpasses entity filter to prisma where clause
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m136:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22malways scopes to tenantId from auth
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m143:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mGET /api/activity-log[2m > [22mmaps createdAt to ISO string in response
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/activity-log/route.ts:[2m35:16[22m[39m
+    [90m 33|[39m   [35mconst[39m action [33m=[39m req[33m.[39mnextUrl[33m.[39msearchParams[33m.[39m[35mget[39m([32m"action"[39m) [33m??[39m undefined[33m;[39m
+    [90m 34|[39m
+    [90m 35|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 36|[39m     where[33m:[39m {
+    [90m 37|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m150:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mPOST /api/activity-log[2m > [22mcreates entry with tenantId from auth and returns 201
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.POST app/api/activity-log/route.ts:[2m75:15[22m[39m
+    [90m 73|[39m   }
+    [90m 74|[39m
+    [90m 75|[39m   [35mconst[39m row [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mcreate[39m({
+    [90m   |[39m               [31m^[39m
+    [90m 76|[39m     data[33m:[39m {
+    [90m 77|[39m       action[33m:[39m parsed[33m.[39mdata[33m.[39maction[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m199:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mPOST /api/activity-log[2m > [22muses default user 'admin' when user is not provided
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.POST app/api/activity-log/route.ts:[2m75:15[22m[39m
+    [90m 73|[39m   }
+    [90m 74|[39m
+    [90m 75|[39m   [35mconst[39m row [33m=[39m [35mawait[39m prisma[33m.[39mactivityLog[33m.[39m[34mcreate[39m({
+    [90m   |[39m               [31m^[39m
+    [90m 76|[39m     data[33m:[39m {
+    [90m 77|[39m       action[33m:[39m parsed[33m.[39mdata[33m.[39maction[33m,[39m
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m215:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mDELETE /api/activity-log[2m > [22mcalls deleteMany scoped to tenantId
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.deleteMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.DELETE app/api/activity-log/route.ts:[2m104:3[22m[39m
+    [90m102|[39m   [35mif[39m (auth [35minstanceof[39m [33mNextResponse[39m) [35mreturn[39m auth[33m;[39m
+    [90m103|[39m
+    [90m104|[39m   await prisma.activityLog.deleteMany({ where: { tenantId: auth.tenant…
+    [90m   |[39m   [31m^[39m
+    [90m105|[39m   [35mreturn[39m [33mNextResponse[39m[33m.[39m[34mjson[39m({ ok[33m:[39m [35mtrue[39m })[33m;[39m
+    [90m106|[39m }
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m237:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-activity-log.test.ts[2m > [22mDELETE /api/activity-log[2m > [22mreturns ok:true on success
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.activityLog.deleteMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.DELETE app/api/activity-log/route.ts:[2m104:3[22m[39m
+    [90m102|[39m   [35mif[39m (auth [35minstanceof[39m [33mNextResponse[39m) [35mreturn[39m auth[33m;[39m
+    [90m103|[39m
+    [90m104|[39m   await prisma.activityLog.deleteMany({ where: { tenantId: auth.tenant…
+    [90m   |[39m   [31m^[39m
+    [90m105|[39m   [35mreturn[39m [33mNextResponse[39m[33m.[39m[34mjson[39m({ ok[33m:[39m [35mtrue[39m })[33m;[39m
+    [90m106|[39m }
+[90m [2m❯[22m __tests__/api-activity-log.test.ts:[2m244:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-campaigns-create.test.ts[2m > [22mPOST /api/campaigns[2m > [22mrechaza JSON inválido (400)
+[31m[1mSyntaxError[22m: Unexpected token 'i', "invalid json{" is not valid JSON[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-campaigns-create.test.ts[2m > [22mPOST /api/campaigns[2m > [22mcrea campaña básica con defaults (201)
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.campaign.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m POST app/api/campaigns/route.ts:[2m108:20[22m[39m
+    [90m106|[39m   [35mconst[39m totalAudience [33m=[39m [35mawait[39m [34mestimateAudience[39m(segment[33m,[39m auth[33m.[39mtenantId)[33m;[39m
+    [90m107|[39m
+    [90m108|[39m   [35mconst[39m campaign [33m=[39m [35mawait[39m prisma[33m.[39mcampaign[33m.[39m[34mcreate[39m({
+    [90m   |[39m                    [31m^[39m
+    [90m109|[39m     data[33m:[39m {
+    [90m110|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-campaigns-create.test.ts:[2m239:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-campaigns-create.test.ts[2m > [22mPOST /api/campaigns[2m > [22mcrea campaña programada con scheduledAt (201)
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.campaign.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m POST app/api/campaigns/route.ts:[2m108:20[22m[39m
+    [90m106|[39m   [35mconst[39m totalAudience [33m=[39m [35mawait[39m [34mestimateAudience[39m(segment[33m,[39m auth[33m.[39mtenantId)[33m;[39m
+    [90m107|[39m
+    [90m108|[39m   [35mconst[39m campaign [33m=[39m [35mawait[39m prisma[33m.[39mcampaign[33m.[39m[34mcreate[39m({
+    [90m   |[39m                    [31m^[39m
+    [90m109|[39m     data[33m:[39m {
+    [90m110|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-campaigns-create.test.ts:[2m281:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-campaigns-create.test.ts[2m > [22mPOST /api/campaigns[2m > [22mestima audiencia correcta para segment 'vip'
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.campaign.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m POST app/api/campaigns/route.ts:[2m108:20[22m[39m
+    [90m106|[39m   [35mconst[39m totalAudience [33m=[39m [35mawait[39m [34mestimateAudience[39m(segment[33m,[39m auth[33m.[39mtenantId)[33m;[39m
+    [90m107|[39m
+    [90m108|[39m   [35mconst[39m campaign [33m=[39m [35mawait[39m prisma[33m.[39mcampaign[33m.[39m[34mcreate[39m({
+    [90m   |[39m                    [31m^[39m
+    [90m109|[39m     data[33m:[39m {
+    [90m110|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-campaigns-create.test.ts:[2m312:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-campaigns-create.test.ts[2m > [22mPOST /api/campaigns[2m > [22musa tenantId correcto en multi-tenant
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.campaign.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m POST app/api/campaigns/route.ts:[2m108:20[22m[39m
+    [90m106|[39m   [35mconst[39m totalAudience [33m=[39m [35mawait[39m [34mestimateAudience[39m(segment[33m,[39m auth[33m.[39mtenantId)[33m;[39m
+    [90m107|[39m
+    [90m108|[39m   [35mconst[39m campaign [33m=[39m [35mawait[39m prisma[33m.[39mcampaign[33m.[39m[34mcreate[39m({
+    [90m   |[39m                    [31m^[39m
+    [90m109|[39m     data[33m:[39m {
+    [90m110|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-campaigns-create.test.ts:[2m353:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-campaigns-create.test.ts[2m > [22mPOST /api/campaigns[2m > [22mmaneja errores de estimación de audiencia gracefully
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.campaign.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m POST app/api/campaigns/route.ts:[2m108:20[22m[39m
+    [90m106|[39m   [35mconst[39m totalAudience [33m=[39m [35mawait[39m [34mestimateAudience[39m(segment[33m,[39m auth[33m.[39mtenantId)[33m;[39m
+    [90m107|[39m
+    [90m108|[39m   [35mconst[39m campaign [33m=[39m [35mawait[39m prisma[33m.[39mcampaign[33m.[39m[34mcreate[39m({
+    [90m   |[39m                    [31m^[39m
+    [90m109|[39m     data[33m:[39m {
+    [90m110|[39m       tenantId[33m:[39m auth[33m.[39mtenantId[33m,[39m
+[90m [2m❯[22m __tests__/api-campaigns-create.test.ts:[2m388:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-fiados-cobrar.test.ts[2m > [22mPOST /api/fiados/cobrar[2m > [22mpermite acceso a admin y cajero
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-fiados-cobrar.test.ts:[2m99:24[22m[39m
+    [90m 97|[39m
+    [90m 98|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req)[33m;[39m
+    [90m 99|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m100|[39m   })[33m;[39m
+    [90m101|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-fiados-cobrar.test.ts[2m > [22mPOST /api/fiados/cobrar[2m > [22mretorna 404 cuando no hay fiados activos para el cliente
+[31m[1mAssertionError[22m: expected 500 to be 404 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 404[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-fiados-cobrar.test.ts:[2m178:24[22m[39m
+    [90m176|[39m
+    [90m177|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req)[33m;[39m
+    [90m178|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m404[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m179|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m180|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"No hay fiados activos para este cliente"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-fiados-cobrar.test.ts[2m > [22mPOST /api/fiados/cobrar[2m > [22mcobra fiado exitosamente y retorna resultado completo (200)
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-fiados-cobrar.test.ts:[2m202:24[22m[39m
+    [90m200|[39m
+    [90m201|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req)[33m;[39m
+    [90m202|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m203|[39m
+    [90m204|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-fiados-cobrar.test.ts[2m > [22mPOST /api/fiados/cobrar[2m > [22mmaneja errores internos de DB (500)
+[31m[1mAssertionError[22m: expected 'Error al procesar el cobro' to be 'Internal server error' // Object.is equality[39m
+
+Expected: [32m"[7mInternal server er[27mro[7mr[27m"[39m
+Received: [31m"[7mError al procesar el cob[27mro"[39m
+
+[36m [2m❯[22m __tests__/api-fiados-cobrar.test.ts:[2m232:24[22m[39m
+    [90m230|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m500[39m)[33m;[39m
+    [90m231|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m232|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"Internal server error"[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m233|[39m   })[33m;[39m
+    [90m234|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-fiados-cobrar.test.ts[2m > [22mPOST /api/fiados/cobrar[2m > [22musa tenantId del cajero en multi-tenant
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ 'tenant-1', '987654321', 75, …(1) ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2m❯[22m __tests__/api-fiados-cobrar.test.ts:[2m252:34[22m[39m
+    [90m250|[39m
+    [90m251|[39m     [90m// Verify correct tenantId was passed[39m
+    [90m252|[39m     [34mexpect[39m(mockCobrarPorCliente)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   |[39m                                  [31m^[39m
+    [90m253|[39m       [32m"tenant-1"[39m[33m,[39m
+    [90m254|[39m       [32m"987654321"[39m[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mGET /api/message-templates[2m > [22mreturns empty array
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/message-templates/route.ts:[2m36:16[22m[39m
+    [90m 34|[39m   [35mif[39m (auth [35minstanceof[39m [33mNextResponse[39m) [35mreturn[39m auth[33m;[39m
+    [90m 35|[39m
+    [90m 36|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mmessageTemplate[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 37|[39m     where[33m:[39m { tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 38|[39m     orderBy: [{ starred: "desc" }, { usageCount: "desc" }, { createdAt…
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m75:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mGET /api/message-templates[2m > [22mreturns templates with parsed variables
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/message-templates/route.ts:[2m36:16[22m[39m
+    [90m 34|[39m   [35mif[39m (auth [35minstanceof[39m [33mNextResponse[39m) [35mreturn[39m auth[33m;[39m
+    [90m 35|[39m
+    [90m 36|[39m   [35mconst[39m rows [33m=[39m [35mawait[39m prisma[33m.[39mmessageTemplate[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 37|[39m     where[33m:[39m { tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 38|[39m     orderBy: [{ starred: "desc" }, { usageCount: "desc" }, { createdAt…
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m83:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mPOST /api/message-templates[2m > [22mcreates template and returns 201
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.POST app/api/message-templates/route.ts:[2m61:15[22m[39m
+    [90m 59|[39m   }
+    [90m 60|[39m
+    [90m 61|[39m   [35mconst[39m row [33m=[39m [35mawait[39m prisma[33m.[39mmessageTemplate[33m.[39m[34mcreate[39m({
+    [90m   |[39m               [31m^[39m
+    [90m 62|[39m     data[33m:[39m { [33m...[39mparsed[33m.[39mdata[33m,[39m tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 63|[39m   })[33m;[39m
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m122:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mPATCH /api/message-templates[2m > [22mreturns 404 when template not found
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.PATCH app/api/message-templates/route.ts:[2m82:20[22m[39m
+    [90m 80|[39m   }
+    [90m 81|[39m
+    [90m 82|[39m   const existing = await prisma.messageTemplate.findFirst({ where: { i…
+    [90m   |[39m                    [31m^[39m
+    [90m 83|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m 84|[39m
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m144:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mPATCH /api/message-templates[2m > [22mincrements usageCount successfully
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.PATCH app/api/message-templates/route.ts:[2m82:20[22m[39m
+    [90m 80|[39m   }
+    [90m 81|[39m
+    [90m 82|[39m   const existing = await prisma.messageTemplate.findFirst({ where: { i…
+    [90m   |[39m                    [31m^[39m
+    [90m 83|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m 84|[39m
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m152:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mDELETE /api/message-templates[2m > [22mreturns 404 when template not found
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.DELETE app/api/message-templates/route.ts:[2m100:20[22m[39m
+    [90m 98|[39m   if (!id) return NextResponse.json({ error: "id required" }, { status…
+    [90m 99|[39m
+    [90m100|[39m   const existing = await prisma.messageTemplate.findFirst({ where: { i…
+    [90m   |[39m                    [31m^[39m
+    [90m101|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m102|[39m
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m172:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-message-templates.test.ts[2m > [22mDELETE /api/message-templates[2m > [22mdeletes and returns { ok: true }
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.messageTemplate.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.DELETE app/api/message-templates/route.ts:[2m100:20[22m[39m
+    [90m 98|[39m   if (!id) return NextResponse.json({ error: "id required" }, { status…
+    [90m 99|[39m
+    [90m100|[39m   const existing = await prisma.messageTemplate.findFirst({ where: { i…
+    [90m   |[39m                    [31m^[39m
+    [90m101|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m102|[39m
+[90m [2m❯[22m __tests__/api-message-templates.test.ts:[2m180:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mGET /api/notes[2m > [22mreturns empty array when no notes
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/notes/route.ts:[2m26:17[22m[39m
+    [90m 24|[39m   [35mif[39m (auth [35minstanceof[39m [33mNextResponse[39m) [35mreturn[39m auth[33m;[39m
+    [90m 25|[39m
+    [90m 26|[39m   [35mconst[39m notes [33m=[39m [35mawait[39m prisma[33m.[39mnote[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                 [31m^[39m
+    [90m 27|[39m     where[33m:[39m { tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 28|[39m     orderBy[33m:[39m [{ pinned[33m:[39m [32m"desc"[39m }[33m,[39m { updatedAt[33m:[39m [32m"desc"[39m }][33m,[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m73:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mGET /api/notes[2m > [22mreturns notes list
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.findMany()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.GET app/api/notes/route.ts:[2m26:17[22m[39m
+    [90m 24|[39m   [35mif[39m (auth [35minstanceof[39m [33mNextResponse[39m) [35mreturn[39m auth[33m;[39m
+    [90m 25|[39m
+    [90m 26|[39m   [35mconst[39m notes [33m=[39m [35mawait[39m prisma[33m.[39mnote[33m.[39m[34mfindMany[39m({
+    [90m   |[39m                 [31m^[39m
+    [90m 27|[39m     where[33m:[39m { tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 28|[39m     orderBy[33m:[39m [{ pinned[33m:[39m [32m"desc"[39m }[33m,[39m { updatedAt[33m:[39m [32m"desc"[39m }][33m,[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m81:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mPOST /api/notes[2m > [22mcreates a note and returns 201
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.POST app/api/notes/route.ts:[2m47:16[22m[39m
+    [90m 45|[39m   }
+    [90m 46|[39m
+    [90m 47|[39m   [35mconst[39m note [33m=[39m [35mawait[39m prisma[33m.[39mnote[33m.[39m[34mcreate[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 48|[39m     data[33m:[39m { [33m...[39mparsed[33m.[39mdata[33m,[39m tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 49|[39m   })[33m;[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m115:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mPOST /api/notes[2m > [22maccepts valid color values
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.create()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.POST app/api/notes/route.ts:[2m47:16[22m[39m
+    [90m 45|[39m   }
+    [90m 46|[39m
+    [90m 47|[39m   [35mconst[39m note [33m=[39m [35mawait[39m prisma[33m.[39mnote[33m.[39m[34mcreate[39m({
+    [90m   |[39m                [31m^[39m
+    [90m 48|[39m     data[33m:[39m { [33m...[39mparsed[33m.[39mdata[33m,[39m tenantId[33m:[39m auth[33m.[39mtenantId }[33m,[39m
+    [90m 49|[39m   })[33m;[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m124:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mPATCH /api/notes[2m > [22mreturns 404 when note not found
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.PATCH app/api/notes/route.ts:[2m68:20[22m[39m
+    [90m 66|[39m   }
+    [90m 67|[39m
+    [90m 68|[39m   const existing = await prisma.note.findFirst({ where: { id, tenantId…
+    [90m   |[39m                    [31m^[39m
+    [90m 69|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m 70|[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m149:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mPATCH /api/notes[2m > [22mupdates and returns 200
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.PATCH app/api/notes/route.ts:[2m68:20[22m[39m
+    [90m 66|[39m   }
+    [90m 67|[39m
+    [90m 68|[39m   const existing = await prisma.note.findFirst({ where: { id, tenantId…
+    [90m   |[39m                    [31m^[39m
+    [90m 69|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m 70|[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m157:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mDELETE /api/notes[2m > [22mreturns 404 when note not found
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.DELETE app/api/notes/route.ts:[2m86:20[22m[39m
+    [90m 84|[39m   if (!id) return NextResponse.json({ error: "id required" }, { status…
+    [90m 85|[39m
+    [90m 86|[39m   const existing = await prisma.note.findFirst({ where: { id, tenantId…
+    [90m   |[39m                    [31m^[39m
+    [90m 87|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m 88|[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m179:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-notes.test.ts[2m > [22mDELETE /api/notes[2m > [22mdeletes and returns { ok: true }
+[31m[1mPrismaClientKnownRequestError[22m: 
+Invalid `prisma.note.findFirst()` invocation:
+
+
+Authentication failed against the database server, the provided database credentials for `(not available)` are not valid[39m
+[90m [2m❯[22m zr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m237:12[22m[39m
+[90m [2m❯[22m zr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m183:11[22m[39m
+[90m [2m❯[22m zr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:[2m152:11[22m[39m
+[90m [2m❯[22m a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:[2m808:23[22m[39m
+[36m [2m❯[22m Module.DELETE app/api/notes/route.ts:[2m86:20[22m[39m
+    [90m 84|[39m   if (!id) return NextResponse.json({ error: "id required" }, { status…
+    [90m 85|[39m
+    [90m 86|[39m   const existing = await prisma.note.findFirst({ where: { id, tenantId…
+    [90m   |[39m                    [31m^[39m
+    [90m 87|[39m   if (!existing) return NextResponse.json({ error: "not_found" }, { st…
+    [90m 88|[39m
+[90m [2m❯[22m __tests__/api-notes.test.ts:[2m187:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-treasury-transferencias.test.ts[2m > [22mPOST /api/treasury/transferencias[2m > [22mmaneja errores de DB y retorna 500 via withApiHandler
+[31m[1mAssertionError[22m: expected 503 to be 500 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 503[39m
+
+[36m [2m❯[22m __tests__/api-treasury-transferencias.test.ts:[2m265:24[22m[39m
+    [90m263|[39m
+    [90m264|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req)[33m;[39m
+    [90m265|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m500[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m266|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m267|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"Internal server error"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-treasury-transferencias.test.ts[2m > [22mGET /api/treasury/transferencias[2m > [22mmaneja errores de DB y retorna 500 via withApiHandler
+[31m[1mAssertionError[22m: expected 503 to be 500 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 503[39m
+
+[36m [2m❯[22m __tests__/api-treasury-transferencias.test.ts:[2m358:24[22m[39m
+    [90m356|[39m
+    [90m357|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mGET[39m(req)[33m;[39m
+    [90m358|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m500[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m359|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m360|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"Internal server error"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/empty-state.test.tsx[2m > [22mEmptyState[2m > [22mshould render default title and description
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: No hay información para mostrar aún.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"flex flex-col items-center justify-center py-12 px-4 text-center"[31m
+    [36m>[31m
+      [36m<h3[31m
+        [33mclass[31m=[32m"text-lg font-semibold text-gray-500 dark:text-zinc-400 mt-4"[31m
+      [36m>[31m
+        [0mSin datos[0m
+      [36m</h3>[31m
+      [36m<p[31m
+        [33mclass[31m=[32m"text-sm text-gray-400 dark:text-zinc-500 mt-1 max-w-xs"[31m
+      [36m>[31m
+        [0mNo hay informacion para mostrar aun.[0m
+      [36m</p>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m __tests__/empty-state.test.tsx:[2m9:19[22m[39m
+    [90m  7|[39m     [34mrender[39m([33m<[39m[33mEmptyState[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m  8|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m"Sin datos"[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m  9|[39m     expect(screen.getByText("No hay información para mostrar aún.")).t…
+    [90m   |[39m                   [31m^[39m
+    [90m 10|[39m   })[33m;[39m
+    [90m 11|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/empty-state.test.tsx[2m > [22mEmptyState[2m > [22mshould not have dark: classes
+[31m[1mAssertionError[22m: expected '<div class="flex flex-col items-cente…' not to contain 'dark:'[39m
+
+Expected: [32m"dark:"[39m
+Received: [31m"<div class="flex flex-col items-center justify-center py-12 px-4 text-center"><h3 class="text-lg font-semibold text-gray-500 dark:text-zinc-400 mt-4">Sin datos</h3><p class="text-sm text-gray-400 dark:text-zinc-500 mt-1 max-w-xs">No hay informacion para mostrar aun.</p></div>"[39m
+
+[36m [2m❯[22m __tests__/empty-state.test.tsx:[2m34:22[22m[39m
+    [90m 32|[39m     [35mconst[39m { container } [33m=[39m [34mrender[39m([33m<[39m[33mEmptyState[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 33|[39m     [35mconst[39m html [33m=[39m container[33m.[39minnerHTML[33m;[39m
+    [90m 34|[39m     [34mexpect[39m(html)[33m.[39mnot[33m.[39m[34mtoContain[39m([32m"dark:"[39m)[33m;[39m
+    [90m   |[39m                      [31m^[39m
+    [90m 35|[39m   })[33m;[39m
+    [90m 36|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/SearchAutocomplete.test.tsx[2m > [22mSearchAutocomplete[2m > [22mllama al endpoint de sugerencias despues de 300ms de debounce
+[41m[1m FAIL [22m[49m __tests__/SearchAutocomplete.test.tsx[2m > [22mSearchAutocomplete[2m > [22mmuestra sugerencias en el dropdown
+[41m[1m FAIL [22m[49m __tests__/SearchAutocomplete.test.tsx[2m > [22mSearchAutocomplete[2m > [22mclick en sugerencia llama onSearch con el valor
+[41m[1m FAIL [22m[49m __tests__/SearchAutocomplete.test.tsx[2m > [22mSearchAutocomplete[2m > [22mmuestra did you mean cuando no hay resultados
+[41m[1m FAIL [22m[49m __tests__/SearchAutocomplete.test.tsx[2m > [22mSearchAutocomplete[2m > [22mEsc cierra el dropdown
+[41m[1m FAIL [22m[49m __tests__/SearchAutocomplete.test.tsx[2m > [22mSearchAutocomplete[2m > [22mnavega con teclado ArrowDown y selecciona con Enter
+[31m[1mError[22m: [vitest] No "m" export is defined on the "framer-motion" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+[39m
+vi.mock(import("framer-motion"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+[36m [2m❯[22m SearchAutocomplete components/marketplace/SearchAutocomplete.tsx:[2m251:12[22m[39m
+    [90m249|[39m       [33m<[39m[33mAnimatePresence[39m[33m>[39m
+    [90m250|[39m         [33m{[39mshowDropdown [33m&&[39m (
+    [90m251|[39m           [33m<[39m[33mm[39m[33m.[39m[33mdiv[39m
+    [90m   |[39m            [31m^[39m
+    [90m252|[39m             [33minitial[39m[33m=[39m[33m{[39m{ opacity[33m:[39m [34m0[39m[33m,[39m y[33m:[39m [33m-[39m[34m8[39m[33m,[39m scale[33m:[39m [34m0.98[39m }[33m}[39m
+    [90m253|[39m             [33manimate[39m[33m=[39m[33m{[39m{ opacity[33m:[39m [34m1[39m[33m,[39m y[33m:[39m [34m0[39m[33m,[39m scale[33m:[39m [34m1[39m }[33m}[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:[2m25904:20[22m[39m
+[90m [2m❯[22m renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:[2m7662:22[22m[39m
+[90m [2m❯[22m updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:[2m10166:19[22m[39m
+[90m [2m❯[22m beginWork node_modules/react-dom/cjs/react-dom-client.development.js:[2m11778:18[22m[39m
+[90m [2m❯[22m runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:[2m874:13[22m[39m
+[90m [2m❯[22m performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:[2m17641:22[22m[39m
+[90m [2m❯[22m workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:[2m17469:41[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/tenant-hardcoded-main-guard.test.ts[2m > [22mTenant guard - hardcoded tenantId main[2m > [22mshould block new hardcoded tenantId main usages
+[31m[1mAssertionError[22m: New hardcoded tenantId:"main" detected. Move to tenant context or update allowlist with justification:
+app/api/daily-digest/route.ts -> 1 hardcoded usage(s)
+app/api/marketplace/drivers/apply/route.ts -> 2 usage(s), allowed 1: expected [ …(2) ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   "app/api/daily-digest/route.ts -> 1 hardcoded usage(s)",[39m
+[31m+   "app/api/marketplace/drivers/apply/route.ts -> 2 usage(s), allowed 1",[39m
+[31m+ ][39m
+
+[36m [2m❯[22m __tests__/tenant-hardcoded-main-guard.test.ts:[2m73:7[22m[39m
+    [90m 71|[39m       unexpected[33m,[39m
+    [90m 72|[39m       `New hardcoded tenantId:\"main\" detected. Move to tenant contex…
+    [90m 73|[39m     )[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   |[39m       [31m^[39m
+    [90m 74|[39m   })[33m;[39m
+    [90m 75|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/52]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m13 failed[39m[22m[2m | [22m[1m[32m176 passed[39m[22m[90m (189)[39m
+[2m      Tests [22m [1m[31m48 failed[39m[22m[2m | [22m[1m[32m2566 passed[39m[22m[2m | [22m[33m3 skipped[39m[2m | [22m[90m4 todo[39m[90m (2621)[39m
+[2m   Start at [22m 15:14:21
+[2m   Duration [22m 53.68s[2m (transform 23.32s, setup 56.88s, import 76.61s, tests 79.57s, environment 422.38s)[22m
+

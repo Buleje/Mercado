@@ -4,9 +4,27 @@ import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
+import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
+
+// ---------- constantes de categorías sugeridas ----------
+
+const SUGGESTED_CATEGORIES = [
+  "Abarrotes",
+  "Bebidas",
+  "Limpieza",
+  "Lácteos",
+  "Carnes",
+  "Panadería",
+  "Snacks",
+  "Frutas y verduras",
+  "Higiene personal",
+  "Ferretería",
+];
 
 // ---------- tipos ----------
 
@@ -18,12 +36,16 @@ interface StoreInfo {
   banner: string | null;
   category: string;
   zone: string;
+  lat?: number | null;
+  lng?: number | null;
   rating: number | null;
   reviewCount: number;
   description: string | null;
   isOpen?: boolean;
   vacationMode?: boolean;
   vacationMessage?: string | null;
+  tenantSlug?: string | null;
+  whatsappNumber?: string | null;
 }
 
 interface StoreProduct {
@@ -87,20 +109,25 @@ function ProductCard({
   storeId,
   storeName,
   storeSlug,
+  storeZone,
   onAdded,
+  highlighted,
   vacationMode,
 }: {
   product: StoreProduct;
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeZone?: string;
   onAdded: (productName: string) => void;
+  highlighted?: boolean;
   vacationMode?: boolean;
 }) {
   const [justAdded, setJustAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const { addItem, byStore, updateQuantity, removeItem } = useMarketplaceCart();
+  const { addItemWithUndo } = useCartWithUndo();
+  const { byStore, updateQuantity, removeItem } = useMarketplaceCart();
 
   // Find current qty in cart
   const cartItems = byStore[storeId]?.items ?? [];
@@ -108,18 +135,19 @@ function ProductCard({
   const qty = cartItem?.quantity ?? 0;
 
   const handleAdd = () => {
-    addItem({
+    addItemWithUndo({
+      category: product.category,
+      image: product.image,
       storeId,
       storeName,
       storeSlug,
+      storeZone,
       storeProductId: product.storeProductId,
       productId: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
       unit: product.unit,
     });
-    onAdded(product.name);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1500);
   };
@@ -140,6 +168,7 @@ function ProductCard({
 
   return (
     <article
+      id={`product-card-${product.id}`}
       className={`group relative flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 ${isOutOfStock ? "opacity-60" : ""}`}
     >
       {/* Badges */}
@@ -172,11 +201,13 @@ function ProductCard({
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-300 gap-2">
-            <svg aria-hidden="true" className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Sin imagen</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-slate-100 via-emerald-50 to-indigo-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-300 gap-2">
+            <div className="h-16 w-16 rounded-2xl bg-white/80 dark:bg-gray-900/40 ring-1 ring-white/70 dark:ring-gray-700/70 flex items-center justify-center shadow-sm">
+              <svg aria-hidden="true" className="h-8 w-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sin imagen</span>
           </div>
         )}
 
@@ -188,7 +219,7 @@ function ProductCard({
       </div>
 
       {/* Content */}
-      <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-h-[9.5rem] sm:min-h-[10.5rem]">
+      <div className="flex min-h-38 flex-1 flex-col gap-1.5 p-2.5 sm:min-h-42 sm:p-3">
         <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm leading-tight line-clamp-2">
           {product.name}
         </h3>
@@ -273,6 +304,10 @@ function ProductCard({
           </div>
         </div>
       </div>
+
+      {highlighted && (
+        <div className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(37,99,235,0.15)] animate-pulse" />
+      )}
     </article>
   );
 }
@@ -284,6 +319,7 @@ function RelatedProducts({
   storeId,
   storeName,
   storeSlug,
+  storeZone,
   onAdded,
   vacationMode,
 }: {
@@ -291,6 +327,7 @@ function RelatedProducts({
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeZone?: string;
   onAdded: (name: string) => void;
   vacationMode?: boolean;
 }) {
@@ -333,6 +370,7 @@ function RelatedProducts({
             storeId={storeId}
             storeName={storeName}
             storeSlug={storeSlug}
+            storeZone={storeZone}
             onAdded={onAdded}
             vacationMode={vacationMode}
           />
@@ -370,17 +408,19 @@ function ReviewPhotoGallery({ storeSlug }: { storeSlug: string }) {
   return (
     <section className="mt-8">
       <h3 className="mb-3 text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <svg aria-hidden="true" className="h-5 w-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         Fotos de clientes
       </h3>
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
         {photos.map((url, i) => (
-          <img
+          <Image
             key={i}
             src={url}
             alt={`Foto de cliente ${i + 1}`}
+            width={96}
+            height={96}
             className="h-24 w-24 shrink-0 rounded-xl object-cover border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-80 hover:scale-105 transition-all"
             onClick={() => window.open(url, "_blank")}
           />
@@ -497,7 +537,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="min-h-9 rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 transition-colors"
+            className="min-h-9 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
           >
             Escribir reseña
           </button>
@@ -521,7 +561,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
               onChange={(e) => setFormName(e.target.value)}
               required
               maxLength={100}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             />
             <input
               type="tel"
@@ -529,7 +569,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
               value={formPhone}
               onChange={(e) => setFormPhone(e.target.value)}
               maxLength={20}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             />
           </div>
 
@@ -562,7 +602,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             required
             maxLength={1000}
             rows={3}
-            className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm placeholder-gray-400 resize-none focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm placeholder-gray-400 resize-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           />
 
           {/* Photo upload */}
@@ -570,10 +610,10 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             <div className="flex items-center gap-2 mb-2">
               <label className="text-sm text-gray-600 dark:text-gray-400">Fotos (opcional, máx 3):</label>
               {uploadingPhoto && (
-                <span className="text-xs text-teal-600 animate-pulse">Subiendo...</span>
+                <span className="text-xs text-emerald-600 animate-pulse">Subiendo...</span>
               )}
               {formPhotos.length < 3 && !uploadingPhoto && (
-                <label className="cursor-pointer text-xs font-semibold text-teal-600 hover:text-teal-800 transition-colors">
+                <label className="cursor-pointer text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors">
                   + Agregar foto
                   <input
                     type="file"
@@ -589,9 +629,11 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
               <div className="flex gap-2 flex-wrap">
                 {formPhotos.map((url, i) => (
                   <div key={i} className="relative group">
-                    <img
+                    <Image
                       src={url}
                       alt={`Foto ${i + 1}`}
+                      width={64}
+                      height={64}
                       className="h-16 w-16 object-cover rounded-lg border border-gray-200"
                     />
                     <button
@@ -622,7 +664,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             <button
               type="submit"
               disabled={submitting || uploadingPhoto || !formName.trim() || !formComment.trim()}
-              className="min-h-9 rounded-xl bg-teal-700 px-5 py-2 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-50 transition-colors"
+              className="min-h-9 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {submitting ? "Enviando..." : "Enviar reseña"}
             </button>
@@ -686,10 +728,12 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
                   return (
                     <div className="flex gap-2 mt-2 flex-wrap">
                       {urls.map((url, i) => (
-                        <img
+                        <Image
                           key={i}
                           src={url}
                           alt={`Foto de reseña ${i + 1}`}
+                          width={80}
+                          height={80}
                           className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => window.open(url, "_blank")}
                         />
@@ -708,12 +752,183 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
   );
 }
 
+// ---------- store info section ----------
+
+function StoreInfoSection({ store }: { store: StoreInfo }) {
+  const zone = store.zone?.replace(/-/g, " ") ?? "Pucallpa";
+  // Google Maps link: use lat/lng if available, otherwise search by name+zone
+  const mapsUrl =
+    store.lat && store.lng
+      ? `https://www.google.com/maps?q=${store.lat},${store.lng}`
+      : `https://www.google.com/maps/search/${encodeURIComponent(`${store.name} ${zone} Perú`)}`;
+
+  const paymentMethods = [
+    { label: "Efectivo" },
+    { label: "Yape" },
+    { label: "Plin" },
+    { label: "Transferencia" },
+  ];
+
+  return (
+    <section
+      aria-label="Información de la tienda"
+      className="mt-12 mb-8 rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 overflow-hidden"
+    >
+      <div className="bg-primary/5 dark:bg-primary/10 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <svg aria-hidden="true" className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Información de la tienda
+        </h2>
+      </div>
+
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        {/* Horario */}
+        <div className="flex items-start gap-3 px-5 py-4">
+          <svg aria-hidden="true" className="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+              Horario de atención
+            </p>
+            <div className="space-y-0.5">
+              <p className="text-sm text-gray-900 dark:text-white">
+                <span className="font-medium">Lun – Sáb:</span> 7:00 am – 9:00 pm
+              </p>
+              <p className="text-sm text-gray-900 dark:text-white">
+                <span className="font-medium">Dom:</span> 8:00 am – 2:00 pm
+              </p>
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              {(store.isOpen ?? true) ? (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Abierto ahora</span>
+                </>
+              ) : (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+                  <span className="text-xs font-semibold text-red-600 dark:text-red-400">Cerrado ahora</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Dirección */}
+        <div className="flex items-start gap-3 px-5 py-4">
+          <svg aria-hidden="true" className="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+              Dirección
+            </p>
+            <p className="text-sm text-gray-900 dark:text-white capitalize">{zone}, Perú</p>
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1.5 inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+              aria-label={`Ver ${store.name} en Google Maps`}
+            >
+              <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Ver en Google Maps
+            </a>
+          </div>
+        </div>
+
+        {/* Contacto — WhatsApp y teléfono */}
+        <div className="flex items-start gap-3 px-5 py-4">
+          <svg aria-hidden="true" className="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+              Contacto
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`https://wa.me/51?text=${encodeURIComponent(`Hola, vi tu tienda ${store.name} en Buleje`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                aria-label={`Contactar ${store.name} por WhatsApp`}
+              >
+                <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.117 1.532 5.847L.073 23.927l6.217-1.44A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.49-5.187-1.349l-.371-.216-3.852.893.927-3.748-.239-.386A9.946 9.946 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                </svg>
+                WhatsApp
+              </a>
+              <a
+                href="tel:+51000000000"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                aria-label={`Llamar a ${store.name}`}
+              >
+                <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                Llamar
+              </a>
+            </div>
+
+            {/* WhatsApp CTA */}
+            <div className="mt-3">
+              <StoreWhatsAppButton
+                whatsappNumber={store.whatsappNumber}
+                storeName={store.name}
+                variant="primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Métodos de pago */}
+        <div className="flex items-start gap-3 px-5 py-4">
+          <svg aria-hidden="true" className="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+              Métodos de pago
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {paymentMethods.map((m) => (
+                <span
+                  key={m.label}
+                  className="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300"
+                >
+                  {m.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ---------- componente principal ----------
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
+// In-memory cache: avoids re-fetching products when navigating back to a store
+const storeProductCache = new Map<string, { data: StoreProduct[]; ts: number }>();
+const CACHE_TTL = 5 * 60_000; // 5 minutes
+
+// In-memory store info cache
+const storeInfoCache = new Map<string, { data: StoreInfo; ts: number }>();
+
 export default function StoreDetail({ slug }: { slug: string }) {
+  const searchParams = useSearchParams();
   const [store, setStore]       = useState<StoreInfo | null>(null);
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [search, setSearch]     = useState("");
@@ -726,9 +941,30 @@ export default function StoreDetail({ slug }: { slug: string }) {
   const [toastMsg, setToastMsg]             = useState<string | null>(null);
   const [customerPhone, setCustomerPhone]   = useState<string | null>(null);
   const [cartOpen, setCartOpen]             = useState(false);
+  const [followed, setFollowed]             = useState(false);
+  const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
 
   // Cart info for this specific store
   const { byStore, totalByStore } = useMarketplaceCart();
+
+  // Registrar visita para el contador de live-viewers (fire-and-forget)
+  useEffect(() => {
+    try {
+      const key = "mp-session-id";
+      let sessionId = sessionStorage.getItem(key);
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem(key, sessionId);
+      }
+      fetch(`/api/marketplace/stores/${slug}/live-viewers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      }).catch(() => {
+        // Fire-and-forget: pérdida del registro no afecta UX. Silent por diseño.
+      });
+    } catch { /* sessionStorage bloqueado (Safari incógnito, etc) */ }
+  }, [slug]);
 
   // Leer phone del localStorage para el chat
   useEffect(() => {
@@ -746,13 +982,23 @@ export default function StoreDetail({ slug }: { slug: string }) {
   const deferredSearch = useDeferredValue(search);
 
   const fetchStore = useCallback(async () => {
+    // Try cache first
+    const cached = storeInfoCache.get(slug);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setStore(cached.data);
+      setLoadingStore(false);
+      return;
+    }
+
     setLoadingStore(true);
     setErrorStore(null);
     try {
       const res = await fetch(`/api/marketplace/stores/${slug}`);
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const json = await res.json();
-      setStore(json.data ?? null);
+      const data = json.data ?? null;
+      setStore(data);
+      if (data) storeInfoCache.set(slug, { data, ts: Date.now() });
     } catch (err) {
       setErrorStore(err instanceof Error ? err.message : "No se pudo cargar la tienda");
     } finally {
@@ -761,14 +1007,26 @@ export default function StoreDetail({ slug }: { slug: string }) {
   }, [slug]);
 
   const fetchProducts = useCallback(async () => {
+    // Build query params
+    const params = new URLSearchParams();
+    if (deferredSearch) params.set("search", deferredSearch);
+    if (catFilter)      params.set("category", catFilter);
+    if (sortBy === "price_asc" || sortBy === "price_desc") params.set("sort", sortBy);
+
+    const isDefaultQuery = !deferredSearch && !catFilter && !sortBy;
+    const cacheKey = `${slug}:${params.toString()}`;
+
+    // Try cache first (avoids re-fetch when navigating back)
+    const cached = storeProductCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setProducts(cached.data);
+      setLoadingProducts(false);
+      return;
+    }
+
     setLoadingProducts(true);
     setErrorProducts(null);
     try {
-      const params = new URLSearchParams();
-      if (deferredSearch) params.set("search", deferredSearch);
-      if (catFilter)      params.set("category", catFilter);
-      if (sortBy === "price_asc" || sortBy === "price_desc") params.set("sort", sortBy);
-
       const res = await fetch(`/api/marketplace/stores/${slug}/products?${params}`);
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const json = await res.json();
@@ -778,6 +1036,12 @@ export default function StoreDetail({ slug }: { slug: string }) {
         data = [...data].sort((a: StoreProduct, b: StoreProduct) => b.stock - a.stock);
       }
       setProducts(data);
+      // Cache the result (default query + filtered queries)
+      storeProductCache.set(cacheKey, { data, ts: Date.now() });
+      // Also cache filtered data under default key for faster back-navigation
+      if (isDefaultQuery) {
+        storeProductCache.set(`${slug}:`, { data, ts: Date.now() });
+      }
     } catch (err) {
       setErrorProducts(err instanceof Error ? err.message : "No se pudieron cargar los productos");
     } finally {
@@ -787,6 +1051,35 @@ export default function StoreDetail({ slug }: { slug: string }) {
 
   useEffect(() => { fetchStore(); }, [fetchStore]);
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  useEffect(() => {
+    const raw = searchParams.get("product");
+    if (!raw) return;
+    const productId = Number(raw);
+    if (!Number.isFinite(productId) || productId <= 0) return;
+    setSearch("");
+    setCatFilter("");
+    setHighlightedProductId(productId);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!highlightedProductId) return;
+    if (!products.some((p) => p.id === highlightedProductId)) return;
+
+    const targetId = `product-card-${highlightedProductId}`;
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+
+    const timeout = setTimeout(() => setHighlightedProductId(null), 3000);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timeout);
+    };
+  }, [highlightedProductId, products]);
 
   // categorías únicas de los productos para el filtro
   const categories = Array.from(
@@ -811,80 +1104,187 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       ) : store ? (
         <div className="mb-8">
-          {/* banner */}
-          <div className="relative h-40 overflow-hidden rounded-2xl bg-linear-to-br from-teal-700 to-teal-900 sm:h-48">
+          {/* ── BANNER PRINCIPAL ── */}
+          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary to-[#1a4a36] sm:rounded-3xl" style={{ minHeight: "200px" }}>
             {store.banner && (
               <Image
                 src={store.banner}
                 alt={`Banner de ${store.name}`}
                 fill
-                className="object-cover opacity-70"
+                className="object-cover opacity-50"
                 priority
                 sizes="100vw"
               />
             )}
-            {/* overlay info */}
-            <div className="absolute inset-0 flex items-end p-5">
-              <div className="flex items-center gap-4">
-                {/* logo */}
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-white/30 bg-white shadow-lg">
-                  {store.logo ? (
-                    <Image
-                      src={store.logo}
-                      alt={`Logo de ${store.name}`}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
-                  ) : (
-                    <div
-                      className="flex h-full w-full items-center justify-center text-xl font-black text-white"
-                      style={{ background: "linear-gradient(135deg, #00B4A6, #134e4a)" }}
-                    >
-                      {store.name.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+            {/* Capa de gradiente sobre la imagen */}
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
 
-                <div>
-                  <h1 className="text-xl font-black text-white sm:text-2xl drop-shadow-sm">
-                    {store.name}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white capitalize">
-                      {store.category}
-                    </span>
-                    <span className="text-xs text-white/80 capitalize">
-                      {store.zone?.replace(/-/g, " ")}
-                    </span>
-                    {(store.isOpen ?? true) ? (
-                      <span className="rounded-full bg-green-400/30 px-2.5 py-0.5 text-xs font-bold text-green-200">
-                        Abierto
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-red-400/30 px-2.5 py-0.5 text-xs font-bold text-red-200">
-                        Cerrado
-                      </span>
-                    )}
+            {/* Acciones top-right: compartir */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <button
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.share) {
+                    navigator.share({ title: store.name, url: window.location.href }).catch(() => {});
+                  } else if (typeof navigator !== "undefined") {
+                    navigator.clipboard?.writeText(window.location.href).catch(() => {});
+                  }
+                }}
+                aria-label="Compartir tienda"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 transition-colors"
+              >
+                <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido central — logo + nombre */}
+            <div className="relative z-10 flex flex-col items-center justify-center px-5 pt-10 pb-6 text-center sm:pt-12 sm:pb-8">
+              {/* Logo grande centrado */}
+              <div className="relative mb-4 h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-4 border-white/40 bg-white shadow-xl sm:h-28 sm:w-28">
+                {store.logo ? (
+                  <Image
+                    src={store.logo}
+                    alt={`Logo de ${store.name}`}
+                    fill
+                    className="object-cover"
+                    sizes="112px"
+                  />
+                ) : (
+                  <div
+                    className="flex h-full w-full items-center justify-center text-3xl font-black text-white"
+                    style={{ background: "linear-gradient(135deg, var(--color-primary-dark), #1a4a36)" }}
+                  >
+                    {store.name.slice(0, 2).toUpperCase()}
                   </div>
-                </div>
+                )}
+              </div>
+
+              {/* Nombre */}
+              <h1 className="text-2xl font-black text-white sm:text-3xl drop-shadow-md tracking-tight">
+                {store.name}
+              </h1>
+
+              {/* Badges: categoría + zona + estado */}
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                <span className="rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white capitalize">
+                  {store.category}
+                </span>
+                {store.zone && (
+                  <span className="flex items-center gap-1 text-xs text-white/80 capitalize">
+                    <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {store.zone.replace(/-/g, " ")}
+                  </span>
+                )}
+                {(store.isOpen ?? true) ? (
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-500/30 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-emerald-200">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    Abierto
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 rounded-full bg-red-500/30 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-red-200">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
+                    Cerrado
+                  </span>
+                )}
+              </div>
+
+              {/* Rating inline */}
+              <div className="mt-3">
+                <StarRating rating={store.rating} count={store.reviewCount} />
+              </div>
+
+              {/* Delivery info */}
+              <div className="mt-3 flex items-center gap-3 text-xs text-white/80">
+                <span className="flex items-center gap-1">
+                  <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Delivery disponible
+                </span>
+                <span className="h-3 w-px bg-white/40" />
+                <span className="flex items-center gap-1">
+                  <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  30–60 min
+                </span>
+                <span className="h-3 w-px bg-white/40" />
+                <span>Pago con Yape</span>
+              </div>
+
+              {/* Botón Seguir */}
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => setFollowed((v) => !v)}
+                  aria-pressed={followed}
+                  aria-label={followed ? `Dejar de seguir ${store.name}` : `Seguir ${store.name}`}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-lg transition-all duration-200 ${
+                    followed
+                      ? "bg-white text-primary hover:bg-white/90"
+                      : "bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 border border-white/40"
+                  }`}
+                >
+                  {followed ? (
+                    <>
+                      <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Siguiendo
+                    </>
+                  ) : (
+                    <>
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Seguir tienda
+                    </>
+                  )}
+                </button>
+
+                {/* Visitar tienda — link to tenant's personal store page */}
+                {store.tenantSlug && (
+                  <Link
+                    href={`/t/${store.tenantSlug}/tienda`}
+                    className="inline-flex min-h-11 flex-col items-center justify-center rounded-xl border border-white/40 px-4 py-2 backdrop-blur-sm transition-all duration-200 hover:bg-white/10"
+                  >
+                    <span className="text-sm font-bold text-white">Ver ofertas exclusivas</span>
+                    <span className="text-[10px] text-white/60">Promociones, combos y mas</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
 
-          {/* rating + descripción */}
+          {/* descripción + vacation mode (debajo del banner) */}
           <div className="mt-4 px-1">
-            <StarRating rating={store.rating} count={store.reviewCount} />
             {store.description && (
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                 {store.description}
               </p>
             )}
 
             {/* Vacation mode banner */}
             {store.vacationMode && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
-                <span className="text-lg">🏖️</span>
+              <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+                <svg
+                  aria-hidden="true"
+                  className="h-5 w-5 text-amber-600 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 20h16" />
+                  <path d="M8 10c4-7 12-4 8 4" />
+                  <path d="M12 20V13" />
+                  <path d="M8 14c0-3 4-3 4 0" strokeOpacity="0.5" />
+                </svg>
                 <div>
                   <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Tienda en vacaciones</p>
                   <p className="text-xs text-amber-600 dark:text-amber-400">
@@ -900,7 +1300,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
           <p className="text-gray-500 dark:text-gray-400">Tienda no encontrada</p>
           <Link
             href="/marketplace"
-            className="mt-3 inline-block text-sm text-teal-600 underline hover:no-underline"
+            className="mt-3 inline-block text-sm text-emerald-600 underline hover:no-underline"
           >
             Volver al marketplace
           </Link>
@@ -908,7 +1308,8 @@ export default function StoreDetail({ slug }: { slug: string }) {
       )}
 
       {/* ── BARRA DE BÚSQUEDA + FILTROS ───────────────────────── */}
-      <div className="mb-6 space-y-4">
+      <div className="mb-6 space-y-3">
+        {/* Búsqueda */}
         <div className="relative">
           <svg
             aria-hidden="true"
@@ -925,60 +1326,79 @@ export default function StoreDetail({ slug }: { slug: string }) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar producto…"
             aria-label="Buscar producto en la tienda"
-            className="w-full rounded-2xl border border-gray-300 bg-white py-3 pl-12 pr-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
+            className="w-full rounded-2xl border border-gray-300 bg-white py-3 pl-12 pr-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
           />
         </div>
 
-        {/* filtro categoría + ordenar */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Sort select */}
+        {/* ── QUICK CATEGORY FILTER — pills scrollables ── */}
+        {(() => {
+          // Combinar categorías reales de los productos con las sugeridas para enriquecer el filtro
+          const realCats = categories;
+          // Mostrar siempre las reales; si hay pocas, sugerir algunas estándar
+          const displayCats = realCats.length > 0
+            ? realCats
+            : SUGGESTED_CATEGORIES.slice(0, 6);
+          return (
+            <div
+              className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"
+              role="group"
+              aria-label="Filtrar por categoría"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {/* Pill "Todos" */}
+              <button
+                onClick={() => setCatFilter("")}
+                aria-pressed={catFilter === ""}
+                className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
+                  catFilter === ""
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                }`}
+              >
+                Todos
+              </button>
+              {displayCats.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCatFilter(c === catFilter ? "" : c)}
+                  aria-pressed={catFilter === c}
+                  className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
+                    catFilter === c
+                      ? "bg-primary text-white shadow-md shadow-primary/25"
+                      : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* Ordenar — separado, alineado a la derecha */}
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {loadingProducts ? (
+              <span className="inline-block h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            ) : (
+              <>
+                {products.length}{" "}
+                {products.length === 1 ? "producto" : "productos"}
+                {catFilter && ` en "${catFilter}"`}
+              </>
+            )}
+          </p>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
             aria-label="Ordenar productos"
-            className="min-h-9 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-teal-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            className="min-h-9 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-primary dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
           >
             <option value="">Ordenar</option>
             <option value="price_asc">Precio: menor a mayor</option>
             <option value="price_desc">Precio: mayor a menor</option>
             <option value="popular">Más populares</option>
           </select>
-
-          {/* Divider when there are categories */}
-          {categories.length > 0 && (
-            <span className="hidden sm:block h-5 w-px bg-gray-200 dark:bg-gray-700" />
-          )}
-
-          {/* filtro categoría (solo si hay categorías) */}
-          {categories.length > 0 && (
-            <>
-              <button
-                onClick={() => setCatFilter("")}
-                aria-pressed={catFilter === ""}
-                className={`min-h-9 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-teal-600 ${
-                  catFilter === ""
-                    ? "bg-teal-700 text-white"
-                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                }`}
-              >
-                Todos
-              </button>
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCatFilter(c)}
-                  aria-pressed={catFilter === c}
-                  className={`min-h-9 rounded-full px-4 py-1.5 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-teal-600 ${
-                    catFilter === c
-                      ? "bg-teal-700 text-white"
-                      : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </>
-          )}
         </div>
       </div>
 
@@ -1000,7 +1420,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
           {(search || catFilter || sortBy) && (
             <button
               onClick={() => { setSearch(""); setCatFilter(""); setSortBy(""); }}
-              className="mt-3 min-h-11 rounded-xl bg-teal-700 px-6 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-teal-600"
+              className="mt-3 min-h-11 rounded-xl bg-primary px-6 text-sm font-semibold text-white hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-primary"
             >
               Limpiar filtros
             </button>
@@ -1008,9 +1428,6 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       ) : (
         <>
-          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            {products.length} {products.length === 1 ? "producto" : "productos"}
-          </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((p) => (
               <ProductCard
@@ -1019,7 +1436,9 @@ export default function StoreDetail({ slug }: { slug: string }) {
                 storeId={store?.id ?? slug}
                 storeName={store?.name ?? "Tienda"}
                 storeSlug={store?.slug ?? slug}
+                storeZone={store?.zone}
                 onAdded={(name) => showToast(`${name} agregado al carrito`)}
+                highlighted={highlightedProductId === p.id}
                 vacationMode={store?.vacationMode}
               />
             ))}
@@ -1031,6 +1450,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
             storeId={store?.id ?? slug}
             storeName={store?.name ?? "Tienda"}
             storeSlug={store?.slug ?? slug}
+            storeZone={store?.zone}
             onAdded={(name) => showToast(`${name} agregado al carrito`)}
             vacationMode={store?.vacationMode}
           />
@@ -1042,6 +1462,9 @@ export default function StoreDetail({ slug }: { slug: string }) {
 
       {/* ── SECCIÓN DE RESEÑAS ────────────────────────────────── */}
       {store && <StoreReviews storeSlug={store.slug} storeName={store.name} />}
+
+      {/* ── INFO DE TIENDA (horario, dirección, contacto, pagos) ── */}
+      {store && <StoreInfoSection store={store} />}
 
       {/* Toast al agregar producto */}
       {toastMsg && (

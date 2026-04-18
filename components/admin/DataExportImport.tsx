@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback } from "react";
-import { Download, Upload, CheckCircle, XCircle, FileJson, AlertTriangle } from "lucide-react";
+import { Download, Upload, CheckCircle, XCircle, FileJson, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -136,14 +137,14 @@ export default function DataExportImport() {
   return (
     <div className="space-y-6">
       {/* ── Sección Exportar ── */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-            <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+            <Download className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Exportar todos los datos</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <CardTitle className="font-semibold text-[var(--text-primary)]">Exportar todos los datos</CardTitle>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
               Descarga un JSON con productos, clientes, pedidos (últimos 6 meses), fiados y configuración del negocio.
             </p>
             <button
@@ -151,7 +152,7 @@ export default function DataExportImport() {
               disabled={exporting}
               className={cn(
                 "mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                "bg-emerald-600 hover:bg-emerald-700 text-white",
+                "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
@@ -163,14 +164,14 @@ export default function DataExportImport() {
       </div>
 
       {/* ── Sección Importar ── */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
         <div className="flex items-start gap-4 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-            <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+            <Upload className="w-5 h-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Importar datos</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <CardTitle className="font-semibold text-[var(--text-primary)]">Importar datos</CardTitle>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
               Sube un archivo JSON con productos y/o clientes para agregar en batch.
             </p>
           </div>
@@ -184,17 +185,17 @@ export default function DataExportImport() {
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
+              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
               dragOver
-                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/10"
-                : "border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10",
+                ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                : "border-[var(--rule-base)] dark:border-gray-600 hover:border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             )}
           >
-            <FileJson className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+            <FileJson className="w-8 h-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
+            <p className="text-sm text-[var(--text-secondary)] font-medium">
               Arrastra un archivo JSON aquí o haz clic para seleccionar
             </p>
-            <p className="text-xs text-gray-400 mt-1">Solo archivos .json exportados desde este sistema</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">Solo archivos .json exportados desde este sistema</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -209,33 +210,33 @@ export default function DataExportImport() {
         {preview && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <FileJson className="w-4 h-4 text-blue-500" />
+              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <FileJson className="w-4 h-4 text-[var(--data-success)]" />
                 <span className="font-medium">{previewFile}</span>
               </div>
-              <button onClick={handleClearPreview} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+              <button onClick={handleClearPreview} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors">
                 Cancelar
               </button>
             </div>
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+            <div className="rounded-lg bg-[var(--surface-canvas)]/50 border border-[var(--rule-base)] p-4 space-y-2">
               {(preview.products?.length ?? 0) > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-gray-700 dark:text-gray-300">
+                  <span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
+                  <span className="text-[var(--text-secondary)]">
                     <strong>{preview.products?.length}</strong> producto(s) para importar
                   </span>
                 </div>
               )}
               {(preview.customers?.length ?? 0) > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className="text-gray-700 dark:text-gray-300">
+                  <span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
+                  <span className="text-[var(--text-secondary)]">
                     <strong>{preview.customers?.length}</strong> cliente(s) para importar
                   </span>
                 </div>
               )}
               {(preview.products?.length ?? 0) === 0 && (preview.customers?.length ?? 0) === 0 && (
-                <div className="flex items-center gap-2 text-sm text-amber-600">
+                <div className="flex items-center gap-2 text-sm text-[var(--data-warning)]">
                   <AlertTriangle className="w-4 h-4" />
                   No se encontraron productos ni clientes en el archivo.
                 </div>
@@ -246,7 +247,7 @@ export default function DataExportImport() {
               disabled={importing || ((preview.products?.length ?? 0) === 0 && (preview.customers?.length ?? 0) === 0)}
               className={cn(
                 "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                "bg-blue-600 hover:bg-blue-700 text-white",
+                "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
@@ -258,27 +259,27 @@ export default function DataExportImport() {
 
         {/* Resultado */}
         {result && (
-          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 space-y-2">
-            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-medium">
+          <div className="rounded-lg border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-2">
+            <div className="flex items-center gap-2 text-[var(--data-success)] dark:text-[var(--data-success)] font-medium">
               <CheckCircle className="w-4 h-4" />
               Importación completada
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-[var(--text-secondary)]">
               {result.imported.products} producto(s) y {result.imported.customers} cliente(s) importados.
             </p>
             {result.errors.length > 0 && (
               <div className="mt-2 space-y-1">
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                <p className="text-xs font-medium text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                   {result.errors.length} error(es):
                 </p>
                 {result.errors.slice(0, 5).map((e, i) => (
-                  <p key={i} className="text-xs text-gray-500 dark:text-gray-400 pl-2">• {e}</p>
+                  <p key={i} className="text-xs text-[var(--text-tertiary)] pl-2">• {e}</p>
                 ))}
               </div>
             )}
             <button
               onClick={handleClearPreview}
-              className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="mt-2 text-xs text-[var(--data-success)] dark:text-[var(--data-success)] hover:underline"
             >
               Importar otro archivo
             </button>
@@ -288,7 +289,7 @@ export default function DataExportImport() {
 
       {/* Error global */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-4 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
           <XCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>

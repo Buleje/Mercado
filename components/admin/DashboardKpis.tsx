@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Loader2, TrendingUp, ShoppingCart, AlertTriangle, Wallet, ShoppingBag } from "lucide-react";
+import { LoadingState } from "@buleje/design-system";
+import { TrendingUp, ShoppingCart, AlertTriangle, Wallet, ShoppingBag } from "@buleje/design-system/icons";
 
 /**
  * components/admin/DashboardKpis.tsx
@@ -103,16 +104,12 @@ export function DashboardKpis() {
   }, []);
 
   if (state.kind === "loading") {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingState message="" size="sm" />;
   }
 
   if (state.kind === "error") {
     return (
-      <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+      <div className="rounded border border-[var(--data-error)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error)] dark:border-[var(--data-error)] dark:bg-red-950 dark:text-[var(--data-error)]">
         Dashboard KPIs unavailable: {state.message}
       </div>
     );
@@ -172,20 +169,20 @@ function KpiCard({ label, value, sub, icon, danger }: KpiCardProps) {
   return (
     <div
       className={
-        "rounded-lg border bg-white p-4 shadow-sm dark:bg-card " +
+        "rounded-lg border bg-white p-4  dark:bg-card " +
         (danger
           ? "border-amber-300 dark:border-amber-700"
-          : "border-gray-200 dark:border-gray-800")
+          : "border-[var(--rule-base)]")
       }
     >
-      <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
+      <div className="flex items-center justify-between text-[var(--text-tertiary)]">
         <span className="text-sm font-medium">{label}</span>
         {icon}
       </div>
-      <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-50">
+      <div className="mt-2 text-2xl font-semibold text-[var(--text-primary)] dark:text-gray-50">
         {value}
       </div>
-      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sub}</div>
+      <div className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</div>
     </div>
   );
 }

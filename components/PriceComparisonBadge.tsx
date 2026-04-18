@@ -47,7 +47,7 @@ export default function PriceComparisonBadge({ productId }: PriceComparisonBadge
         "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold border",
         cheaperThanMarket
           ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-700/40 text-emerald-700 dark:text-emerald-400"
-          : "bg-blue-50 dark:bg-blue-900/15 border-blue-200 dark:border-blue-700/40 text-blue-700 dark:text-blue-400"
+          : "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-700/40 text-emerald-700 dark:text-emerald-400"
       )}
     >
       {cheaperThanMarket ? (

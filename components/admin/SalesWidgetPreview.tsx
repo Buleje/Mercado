@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Wifi,
   Battery,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,30 +40,30 @@ function MiniWidget({ stats }: { stats: DailyStats }) {
   const pct = Math.min(100, (stats.salesTotal / stats.dailyGoal) * 100);
 
   return (
-    <div className="w-full rounded-2xl bg-gradient-to-br from-[#00B4A6] to-[#007A72] p-4 text-white shadow-lg">
+    <div className="w-full rounded-xl bg-[#00B4A6] p-4 text-white">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-medium text-green-200">Buleje</span>
-        <span className="text-xs text-green-300">hoy</span>
+        <span className="text-xs font-medium text-[var(--data-success)]">Buleje</span>
+        <span className="text-xs text-[var(--data-success)]">hoy</span>
       </div>
 
       <div className="mb-1 text-2xl font-bold">
         {stats.currency} {fmt(stats.salesTotal)}
       </div>
-      <div className="mb-3 text-xs text-green-200">ventas del día</div>
+      <div className="mb-3 text-xs text-[var(--data-success)]">ventas del día</div>
 
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/20">
         <div
-          className="h-full rounded-full bg-[#f97316] transition-all duration-700"
+          className="h-full rounded-full bg-[#f97316] transition-all duration-[var(--dur-slower)]"
           style={{ width: `${pct}%` }}
         />
       </div>
 
       <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1 text-green-200">
+        <div className="flex items-center gap-1 text-[var(--data-success)]">
           <ShoppingBag className="h-3 w-3" />
           {stats.ordersCount} pedidos
         </div>
-        <div className="text-green-300">
+        <div className="text-[var(--data-success)]">
           Meta: {Math.round(pct)}%
         </div>
       </div>
@@ -78,7 +78,7 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
   const timeStr = now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="relative mx-auto w-56 overflow-hidden rounded-[2.5rem] border-[5px] border-gray-800 bg-gray-900 shadow-2xl dark:border-gray-600">
+    <div className="relative mx-auto w-56 overflow-hidden rounded-[2.5rem] border-[5px] border-gray-800 bg-gray-900 dark:border-gray-600">
       {/* Notch */}
       <div className="flex items-center justify-between bg-black px-4 py-1.5">
         <span className="text-xs font-semibold text-white">{timeStr}</span>
@@ -89,7 +89,7 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
       </div>
 
       {/* Home screen */}
-      <div className="bg-gradient-to-b from-sky-500 to-sky-700 p-4">
+      <div className="bg-[#0284c7] p-4">
         {/* Date */}
         <p className="mb-1 text-center text-xs text-white/70">
           {now.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
@@ -101,12 +101,12 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
 
         {/* App grid placeholder */}
         <div className="mt-4 grid grid-cols-4 gap-2">
-          {["bg-green-500", "bg-blue-500", "bg-red-500", "bg-yellow-500",
-            "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"].map((color, i) => (
+          {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-red-500", "bg-yellow-500",
+            "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-teal-500"].map((color, i) => (
             <div
               key={i}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-2xl",
+                "flex h-10 w-10 items-center justify-center rounded-xl",
                 color
               )}
             >
@@ -199,32 +199,32 @@ export default function SalesWidgetPreview() {
     <div className="flex flex-col gap-6">
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
             <TrendingUp className="h-3.5 w-3.5 text-[#00B4A6]" />
             Ventas hoy
           </div>
           {loading ? (
-            <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+            <RefreshCw className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
           ) : (
-            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">
+            <p className="text-lg font-bold text-[var(--text-primary)]">
               S/ {fmt(stats.salesTotal)}
             </p>
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
             <ShoppingBag className="h-3.5 w-3.5 text-[#00B4A6]" />
             Pedidos
           </div>
-          <p className="text-lg font-bold text-gray-800 dark:text-gray-100">
+          <p className="text-lg font-bold text-[var(--text-primary)]">
             {loading ? "-" : stats.ordersCount}
           </p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
             <Target className="h-3.5 w-3.5 text-[#f97316]" />
             Meta
           </div>
@@ -232,10 +232,10 @@ export default function SalesWidgetPreview() {
             className={cn(
               "text-lg font-bold",
               pct >= 100
-                ? "text-green-600 dark:text-green-400"
+                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                 : pct >= 60
                 ? "text-[#f97316]"
-                : "text-gray-800 dark:text-gray-100"
+                : "text-[var(--text-primary)]"
             )}
           >
             {loading ? "-" : `${Math.round(pct)}%`}
@@ -246,14 +246,14 @@ export default function SalesWidgetPreview() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Phone mockup */}
         <div className="flex flex-col items-center gap-4">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">
             Así se ve en tu celular
           </p>
           <PhoneMockup stats={{ ...stats, dailyGoal: goalInput }} />
 
           {/* Goal configurator */}
           <div className="w-full max-w-56">
-            <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label className="mb-1 block text-xs font-medium text-[var(--text-tertiary)]">
               Meta diaria (S/)
             </label>
             <input
@@ -267,8 +267,8 @@ export default function SalesWidgetPreview() {
                 setStats((prev) => ({ ...prev, dailyGoal: v }));
               }}
               className={cn(
-                "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                "text-[var(--text-primary)] outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                 "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               )}
             />
@@ -279,7 +279,7 @@ export default function SalesWidgetPreview() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <Smartphone className="h-5 w-5 text-[#00B4A6]" />
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               Agregar a pantalla de inicio (PWA)
             </p>
           </div>
@@ -293,7 +293,7 @@ export default function SalesWidgetPreview() {
                   "w-full rounded-xl border p-4 text-left transition",
                   activeStep === i
                     ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                    : "border-gray-200 bg-white hover:border-[#00B4A6]/30 dark:border-gray-700 dark:bg-gray-900"
+                    : "border-[var(--rule-base)] bg-white hover:border-[#00B4A6]/30 dark:border-[var(--rule-base)] dark:bg-gray-900"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -302,23 +302,23 @@ export default function SalesWidgetPreview() {
                       "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                       activeStep === i
                         ? "bg-[#00B4A6] text-white"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                        : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]"
                     )}
                   >
                     {i + 1}
                   </div>
-                  <p className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-100">
+                  <p className="flex-1 text-sm font-medium text-[var(--text-primary)]">
                     {step.title}
                   </p>
                   <ChevronRight
                     className={cn(
-                      "h-4 w-4 text-gray-400 transition",
+                      "h-4 w-4 text-[var(--text-tertiary)] transition",
                       activeStep === i && "rotate-90"
                     )}
                   />
                 </div>
                 {activeStep === i && (
-                  <p className="ml-9 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="ml-9 mt-2 text-xs text-[var(--text-tertiary)]">
                     {step.detail}
                   </p>
                 )}
@@ -327,13 +327,13 @@ export default function SalesWidgetPreview() {
           </div>
 
           {/* Info box */}
-          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--data-success)]/30 bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success)]/30 dark:bg-[var(--accent-muted)]">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success)] dark:text-[var(--data-success)]" />
             <div>
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)]">
                 Sin descargar nada
               </p>
-              <p className="mt-0.5 text-xs text-blue-600 dark:text-blue-400">
+              <p className="mt-0.5 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
                 Como PWA, la bodega funciona sin Play Store ni App Store. Se instala directo
                 desde el navegador y puede funcionar sin conexion con datos guardados localmente.
               </p>
@@ -342,7 +342,7 @@ export default function SalesWidgetPreview() {
 
           {/* Quick action */}
           <button
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.open(window.location.origin, "_blank");
@@ -356,8 +356,8 @@ export default function SalesWidgetPreview() {
       </div>
 
       {/* Widget preview standalone */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
+        <p className="mb-3 text-xs font-semibold text-[var(--text-tertiary)]">
           Widget de resumen (vista directa)
         </p>
         <div className="max-w-sm">

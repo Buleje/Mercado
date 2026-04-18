@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   ShoppingCart, ChevronDown,
-  ChevronUp, Check, Loader2, TrendingDown } from "lucide-react";
+  ChevronUp, Check, Loader2, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type Urgency = "CRITICO" | "URGENTE" | "PLANIFICAR";
@@ -23,14 +23,14 @@ type Sugerencia = {
 };
 
 const URGENCY_CONFIG: Record<Urgency, { label: string; bg: string; border: string; dot: string; text: string }> = {
-  CRITICO: { label: "Critico (< 3 dias)", bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/40", dot: "bg-red-500", text: "text-red-700 dark:text-red-400" },
-  URGENTE: { label: "Urgente (< 7 dias)", bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-200 dark:border-yellow-900/40", dot: "bg-yellow-500", text: "text-yellow-700 dark:text-yellow-400" },
-  PLANIFICAR: { label: "Planificar (> 7 dias)", bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-200 dark:border-green-900/40", dot: "bg-green-500", text: "text-green-700 dark:text-green-400" },
+  CRITICO: { label: "Critico (< 3 dias)", bg: "bg-[var(--data-error-50)] dark:bg-red-950/20", border: "border-[var(--data-error)] dark:border-[var(--data-error)]/40", dot: "bg-[var(--data-error)]", text: "text-[var(--data-error)] dark:text-[var(--data-error)]" },
+  URGENTE: { label: "Urgente (< 7 dias)", bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/20", border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/40", dot: "bg-[var(--data-warning)]", text: "text-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+  PLANIFICAR: { label: "Planificar (> 7 dias)", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30", dot: "bg-[var(--accent-soft)]", text: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
 };
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 animate-pulse">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
       <div className="flex gap-3">
         <div className="h-5 w-5 rounded bg-gray-200 dark:bg-gray-700" />
         <div className="flex-1 space-y-2">
@@ -186,11 +186,11 @@ export default function SugerenciasCompraTab() {
   if (sugerencias.length === 0) {
     return (
       <div className="text-center py-12">
-        <Check className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
-        <p className="text-lg font-bold text-gray-700 dark:text-foreground">
+        <Check className="h-12 w-12 text-[var(--data-success)] mx-auto mb-3" />
+        <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
           Tu inventario esta bien
         </p>
-        <p className="text-sm text-gray-500 dark:text-muted mt-1">
+        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">
           No necesitas comprar nada por ahora
         </p>
       </div>
@@ -198,12 +198,12 @@ export default function SugerenciasCompraTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingDown className="h-5 w-5 text-primary" />
-          <p className="text-sm font-bold text-gray-700 dark:text-foreground">
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             {sugerencias.length} producto{sugerencias.length !== 1 ? "s" : ""} necesita
             {sugerencias.length === 1 ? "" : "n"} reabastecimiento
           </p>
@@ -233,11 +233,11 @@ export default function SugerenciasCompraTab() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={(e) => { e.stopPropagation(); selectAll(urgency); }}
-                  className="text-xs font-semibold text-gray-500 dark:text-muted hover:text-primary px-2 py-0.5 rounded"
+                  className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:text-primary px-2 py-0.5 rounded"
                 >
                   {items.every((i) => selected.has(i.productId)) ? "Deseleccionar" : "Seleccionar todos"}
                 </button>
-                {isCollapsed ? <ChevronDown className="h-4 w-4 text-gray-400" /> : <ChevronUp className="h-4 w-4 text-gray-400" />}
+                {isCollapsed ? <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" />}
               </div>
             </button>
 
@@ -248,10 +248,10 @@ export default function SugerenciasCompraTab() {
                   <div
                     key={s.productId}
                     className={cn(
-                      "bg-white dark:bg-card border rounded-xl p-3 transition-all cursor-pointer",
+                      "bg-white dark:bg-card border rounded-lg p-3 transition-all cursor-pointer",
                       selected.has(s.productId)
                         ? "border-primary ring-1 ring-primary/30"
-                        : "border-gray-200 dark:border-card-border hover:border-gray-300",
+                        : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300",
                     )}
                     onClick={() => toggleSelect(s.productId)}
                   >
@@ -262,7 +262,7 @@ export default function SugerenciasCompraTab() {
                           "mt-0.5 h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
                           selected.has(s.productId)
                             ? "bg-primary border-primary"
-                            : "border-gray-300 dark:border-gray-600",
+                            : "border-[var(--rule-base)] dark:border-gray-600",
                         )}
                       >
                         {selected.has(s.productId) && <Check className="h-3 w-3 text-white" />}
@@ -271,27 +271,27 @@ export default function SugerenciasCompraTab() {
                       <div className="flex-1 min-w-0">
                         {/* Name + category */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm text-gray-900 dark:text-foreground truncate">
+                          <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
                             {s.productName}
                           </span>
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted">
+                          <span className="text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted">
                             {s.category}
                           </span>
                         </div>
 
                         {/* Stock info */}
-                        <p className={cn("text-xs mt-1", s.daysOfStock <= 3 ? "text-red-600 font-semibold" : s.daysOfStock <= 7 ? "text-yellow-600" : "text-gray-500 dark:text-muted")}>
+                        <p className={cn("text-xs mt-1", s.daysOfStock <= 3 ? "text-[var(--data-error)] font-semibold" : s.daysOfStock <= 7 ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)] dark:text-muted")}>
                           Stock: {s.currentStock} | Venta/dia: {s.dailyAvg} | Para{" "}
                           {s.daysOfStock >= 9999 ? "mucho" : s.daysOfStock} dias
                         </p>
 
                         {/* Suggested qty */}
-                        <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mt-1">
+                        <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">
                           Sugerido: {s.suggestedQty} unidades
                         </p>
 
                         {/* Supplier + price */}
-                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-muted">
+                        <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-secondary)] dark:text-muted">
                           <span>
                             {s.suggestedSupplier
                               ? `Proveedor: ${s.suggestedSupplier.name}`
@@ -312,13 +312,13 @@ export default function SugerenciasCompraTab() {
       })}
 
       {/* Sticky bottom bar */}
-      <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border -mx-4 px-4 py-3 flex items-center justify-between gap-3 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
-        <p className="text-sm font-semibold text-gray-600 dark:text-muted">
+      <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] dark:border-card-border -mx-4 px-4 py-3 flex items-center justify-between gap-3 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
+        <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
           {selected.size} producto{selected.size !== 1 ? "s" : ""} seleccionado{selected.size !== 1 ? "s" : ""}
         </p>
         <div className="flex items-center gap-2">
           {result && (
-            <span className={cn("text-xs font-semibold", result.includes("Error") ? "text-red-600" : "text-emerald-600")}>
+            <span className={cn("text-xs font-semibold", result.includes("Error") ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
               {result}
             </span>
           )}

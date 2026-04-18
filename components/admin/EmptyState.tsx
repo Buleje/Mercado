@@ -42,25 +42,25 @@ export function EmptyState({
     <div
       className={[
         "flex flex-col items-center justify-center text-center py-14 px-6",
-        "bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border",
-        "rounded-2xl",
+        "bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border",
+        "rounded-xl",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
       {icon && (
-        <div className="mb-4 text-gray-300 dark:text-muted [&_svg]:h-10 [&_svg]:w-10 [&_svg]:mx-auto">
+        <div className="mb-4 text-[var(--text-tertiary)] dark:text-muted [&_svg]:h-10 [&_svg]:w-10 [&_svg]:mx-auto">
           {icon}
         </div>
       )}
 
-      <p className="font-semibold text-gray-800 dark:text-foreground text-base leading-snug">
+      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-base leading-snug">
         {title}
       </p>
 
       {description && (
-        <p className="text-sm text-gray-400 dark:text-muted mt-1.5 max-w-xs leading-relaxed">
+        <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1.5 max-w-xs leading-relaxed">
           {description}
         </p>
       )}
@@ -73,7 +73,7 @@ export function EmptyState({
               "min-h-11 px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
               isPrimary
                 ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground hover:bg-gray-200 dark:hover:bg-card-border",
+                : "bg-gray-100 dark:bg-surface text-[var(--text-primary)] dark:text-foreground hover:bg-gray-200 dark:hover:bg-card-border",
             ].join(" ");
 
             if (action.href) {

@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
 
 interface Recommendation {
   productId: number;
@@ -74,10 +75,10 @@ export function ProductRecommendations({
               href={`/marketplace/${tenantSlug}/producto/${rec.productId}`}
               className="snap-start shrink-0 w-36 group"
             >
-              <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="aspect-square bg-gray-50 dark:bg-gray-800 relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-3xl text-gray-300">
-                    📦
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div className="aspect-square bg-[var(--surface-sunken)] relative">
+                  <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)] opacity-70">
+                    <CanastaVacia size={72} strokeWidth={1.5} />
                   </div>
                 </div>
                 <div className="p-2.5">

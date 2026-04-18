@@ -1,8 +1,9 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Mail, Package, Truck, Tag } from "lucide-react";
+import { Mail, Package, Truck, Tag } from "@buleje/design-system/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -385,22 +386,22 @@ export default function OrderEmailTemplates() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Mail className="w-5 h-5 text-[#00B4A6] dark:text-[#4ade80]" />
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Templates de Email
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Vista previa de correos automaticos del sistema
           </p>
         </div>
       </div>
 
       {/* Tabs selector */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 border-b border-[var(--rule-base)]">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -409,7 +410,7 @@ export default function OrderEmailTemplates() {
               "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
               activeTab === t.id
                 ? "border-[#00B4A6] text-[#00B4A6] dark:border-[#4ade80] dark:text-[#4ade80]"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
             )}
           >
             {t.icon}
@@ -419,12 +420,12 @@ export default function OrderEmailTemplates() {
       </div>
 
       {/* Iframe preview */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-900">
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="w-3 h-3 rounded-full bg-red-400" />
-          <div className="w-3 h-3 rounded-full bg-yellow-400" />
-          <div className="w-3 h-3 rounded-full bg-green-400" />
-          <span className="ml-3 text-xs text-gray-400 dark:text-gray-500 font-mono">
+      <div className="rounded-xl border border-[var(--rule-base)] overflow-hidden bg-[var(--surface-canvas)]">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+          <div className="w-3 h-3 rounded-full bg-[var(--data-error)]" />
+          <div className="w-3 h-3 rounded-full bg-[var(--data-warning)]" />
+          <div className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" />
+          <span className="ml-3 text-xs text-[var(--text-tertiary)] font-mono">
             preview — {tabs.find((t) => t.id === activeTab)?.label}
           </span>
         </div>
@@ -437,7 +438,7 @@ export default function OrderEmailTemplates() {
       </div>
 
       {/* Nota de uso */}
-      <p className="text-xs text-gray-400 dark:text-gray-600 text-center">
+      <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] text-center">
         Datos de muestra. En produccion se usan los datos reales del pedido.
       </p>
     </div>

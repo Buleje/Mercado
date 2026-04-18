@@ -1,167 +1,251 @@
 "use client";
 
-/**
- * SearchAutocomplete
- * Input de busqueda con dropdown de sugerencias, debounce 300ms,
- * "did you mean", soporte teclado (↑↓ Enter Esc), mobile-first.
- */
-
 import {
   useState,
   useEffect,
   useRef,
+  useMemo,
   useCallback,
   useId,
   type KeyboardEvent,
+  type ElementType,
 } from "react";
-import { Search, X, Loader2, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { Search, X, Loader2, Store, Package, Tag, History, ArrowRight, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 
-// ── Tipos ─────────────────────────────────────────────────────────────────────
+export type MarketplaceSuggestionType = "query" | "store" | "product" | "category";
 
-interface Suggestion {
-  suggestion: string;
-  searchCount: number;
-}
-
-interface DidYouMean {
-  suggestion: string;
-  similarity: number;
+export interface MarketplaceSuggestionItem {
+  id: string;
+  type: MarketplaceSuggestionType;
+  label: string;
+  subtitle?: string;
+  href: string;
+  image?: string | null;
+  searchCount?: number;
 }
 
 interface Props {
   onSearch: (q: string) => void;
+  onSelect?: (item: MarketplaceSuggestionItem) => void;
   placeholder?: string;
   className?: string;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+interface SuggestionsResponse {
+  suggestions?: MarketplaceSuggestionItem[];
+}
+
+const TYPE_META: Record<MarketplaceSuggestionType, { title: string; icon: ElementType }> = {
+  query: { title: "Búsquedas", icon: History },
+  store: { title: "Tiendas", icon: Store },
+  product: { title: "Productos", icon: Package },
+  category: { title: "Categorías", icon: Tag },
+};
 
 export default function SearchAutocomplete({
   onSearch,
-  placeholder = "Buscar productos…",
+  onSelect,
+  placeholder = "Buscar productos, tiendas o categorías...",
   className,
 }: Props) {
   const [value, setValue] = useState("");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [didYouMean, setDidYouMean] = useState<DidYouMean[]>([]);
+  const [items, setItems] = useState<MarketplaceSuggestionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [noResults, setNoResults] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listId = useId();
 
-  // Fetch sugerencias con debounce 300ms
+  const grouped = useMemo(() => {
+    const g: Record<MarketplaceSuggestionType, MarketplaceSuggestionItem[]> = {
+      query: [],
+      store: [],
+      product: [],
+      category: [],
+    };
+    for (const it of items) g[it.type].push(it);
+    return g;
+  }, [items]);
+
+  const flatItems = useMemo(
+    () => [...grouped.query, ...grouped.store, ...grouped.product, ...grouped.category],
+    [grouped],
+  );
+
   const fetchSuggestions = useCallback(async (q: string) => {
-    if (q.trim().length < 1) {
-      setSuggestions([]);
-      setDidYouMean([]);
+    const normalized = q.trim();
+    if (normalized.length < 1) {
+      setItems([]);
       setLoading(false);
       setOpen(false);
       return;
     }
+
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/marketplace/search/suggestions?q=${encodeURIComponent(q.trim())}`
-      );
+      const res = await fetch(`/api/marketplace/search/suggestions?q=${encodeURIComponent(normalized)}`);
       if (res.ok) {
-        const json = await res.json() as { data: Suggestion[] };
-        setSuggestions(json.data ?? []);
+        const json = (await res.json()) as SuggestionsResponse;
+        const next = Array.isArray(json.suggestions) ? json.suggestions : [];
+        setItems(next);
         setActiveIndex(-1);
         setOpen(true);
       }
     } catch {
-      /* silent */
+      setItems([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Fetch resultados reales (para did you mean)
-  const fetchSearchResults = useCallback(async (q: string) => {
-    try {
-      const res = await fetch(
-        `/api/marketplace/search?q=${encodeURIComponent(q.trim())}`
-      );
-      if (res.ok) {
-        const json = await res.json() as {
-          data: unknown[];
-          didYouMean?: DidYouMean[];
-        };
-        const empty = !json.data || json.data.length === 0;
-        setNoResults(empty);
-        setDidYouMean(empty ? (json.didYouMean ?? []) : []);
-        if (empty) setOpen(true);
+  // ── Voice search (Web Speech API) ──────────────────────────────────────────
+  // Declarado DESPUÉS de fetchSuggestions para evitar TDZ en el dep array.
+  const [isListening, setIsListening] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+
+  const speechSupported =
+    typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+  const startListening = useCallback(() => {
+    if (!speechSupported || isListening) return;
+
+    // Web Speech API no tiene tipos oficiales en lib.dom por default.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const SpeechRecognitionAPI = w.webkitSpeechRecognition ?? w.SpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = "es-PE";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript: string = event?.results?.[0]?.[0]?.transcript ?? "";
+      if (transcript) {
+        setValue(transcript);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          fetchSuggestions(transcript);
+          onSearch(transcript);
+        }, 0);
       }
-    } catch {
-      /* silent */
-    }
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      window.dispatchEvent(
+        new CustomEvent("marketplace-toast", {
+          detail: { message: "No pudimos escucharte, probá de nuevo", type: "error" },
+        }),
+      );
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [speechSupported, isListening, fetchSuggestions, onSearch]);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
   }, []);
 
-  const handleChange = (v: string) => {
-    setValue(v);
-    setNoResults(false);
-    setDidYouMean([]);
+  const handleChange = (nextValue: string) => {
+    setValue(nextValue);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchSuggestions(v);
-    }, 150);
+      const q = nextValue.trim();
+      fetchSuggestions(q);
+      onSearch(q);
+    }, 180);
   };
 
-  const handleSubmit = useCallback(
-    (q: string) => {
-      if (!q.trim()) return;
-      setValue(q);
+  const handleSelect = useCallback(
+    (item: MarketplaceSuggestionItem) => {
+      setValue(item.label);
       setOpen(false);
-      setSuggestions([]);
-      onSearch(q.trim());
-      fetchSearchResults(q.trim());
+      setItems([]);
+      onSearch(item.label);
+
+      if (onSelect) {
+        onSelect(item);
+        return;
+      }
+
+      if (item.href) {
+        window.location.href = item.href;
+      }
     },
-    [onSearch, fetchSearchResults]
+    [onSearch, onSelect],
   );
 
-  const handleSuggestionClick = (s: string) => {
-    setValue(s);
-    setOpen(false);
-    setSuggestions([]);
-    onSearch(s);
-    fetchSearchResults(s);
-    inputRef.current?.focus();
-  };
+  const handleSubmitRaw = useCallback(() => {
+    const q = value.trim();
+    if (!q) return;
 
-  // Navegar con teclado
+    const fallback: MarketplaceSuggestionItem = {
+      id: `manual:${q}`,
+      type: "query",
+      label: q,
+      subtitle: "Buscar en marketplace",
+      href: `/marketplace?buscar=${encodeURIComponent(q)}`,
+    };
+    handleSelect(fallback);
+  }, [value, handleSelect]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (!open) {
-      if (e.key === "Enter") handleSubmit(value);
+    if (!open || flatItems.length === 0) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSubmitRaw();
+      }
       return;
     }
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
+      setActiveIndex((i) => Math.min(i + 1, flatItems.length - 1));
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, -1));
-    } else if (e.key === "Enter") {
+      return;
+    }
+
+    if (e.key === "Enter") {
       e.preventDefault();
-      if (activeIndex >= 0 && suggestions[activeIndex]) {
-        handleSuggestionClick(suggestions[activeIndex].suggestion);
+      if (activeIndex >= 0 && flatItems[activeIndex]) {
+        handleSelect(flatItems[activeIndex]);
       } else {
-        handleSubmit(value);
+        handleSubmitRaw();
       }
-    } else if (e.key === "Escape") {
+      return;
+    }
+
+    if (e.key === "Escape") {
       setOpen(false);
       setActiveIndex(-1);
     }
   };
 
-  // Cerrar al hacer click afuera
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -172,11 +256,10 @@ export default function SearchAutocomplete({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const showDropdown = open && (loading || suggestions.length > 0 || noResults);
+  const showDropdown = open && (loading || items.length > 0 || value.trim().length > 0);
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
-      {/* Input */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" aria-hidden="true" />
         <input
@@ -187,10 +270,13 @@ export default function SearchAutocomplete({
           aria-expanded={showDropdown}
           aria-controls={listId}
           aria-activedescendant={activeIndex >= 0 ? `sugg-${activeIndex}` : undefined}
+          aria-label="Buscar productos, tiendas o categorías"
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => { if (value.length >= 1) setOpen(true); }}
+          onFocus={() => {
+            if (value.trim().length >= 1) setOpen(true);
+          }}
           placeholder={placeholder}
           autoComplete="off"
           className={cn(
@@ -198,106 +284,145 @@ export default function SearchAutocomplete({
             "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
             "text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500",
             "outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-            "transition-all shadow-sm"
+            "transition-all shadow-sm",
           )}
         />
-        {/* Clear / spinner */}
+
         {loading ? (
           <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin pointer-events-none" />
         ) : value ? (
           <button
             type="button"
-            onClick={() => { setValue(""); setSuggestions([]); setOpen(false); setNoResults(false); setDidYouMean([]); inputRef.current?.focus(); }}
-            aria-label="Limpiar busqueda"
+            onClick={() => {
+              setValue("");
+              setItems([]);
+              setOpen(false);
+              onSearch("");
+              inputRef.current?.focus();
+            }}
+            aria-label="Limpiar búsqueda"
             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <X className="h-4 w-4 text-gray-400" />
           </button>
+        ) : speechSupported ? (
+          <button
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            aria-label="Buscar por voz"
+            aria-pressed={isListening}
+            className={cn(
+              "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
+              isListening
+                ? "text-red-500 animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
+                : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+            )}
+          >
+            {isListening ? (
+              <MicOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Mic className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
         ) : null}
       </div>
 
-      {/* Dropdown */}
       <AnimatePresence>
         {showDropdown && (
           <m.div
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             className={cn(
               "absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl shadow-2xl overflow-hidden",
               "border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
-              // Mobile: pantalla completa
-              "sm:max-h-72 max-h-[60vh]"
+              "sm:max-h-[28rem] max-h-[60vh]",
             )}
           >
             {loading && (
-              <div className="flex items-center gap-3 px-5 py-4">
-                <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+              <div role="status" aria-live="polite" className="flex items-center gap-3 px-5 py-4">
+                <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" aria-hidden="true" />
                 <span className="text-sm text-gray-500 dark:text-gray-400">Buscando sugerencias…</span>
               </div>
             )}
 
-            {/* Sugerencias */}
-            {!loading && suggestions.length > 0 && (
-              <ul
-                id={listId}
-                role="listbox"
-                className="overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800"
-              >
-                {suggestions.map((s, i) => (
-                  <li
-                    key={s.suggestion}
-                    id={`sugg-${i}`}
-                    role="option"
-                    aria-selected={i === activeIndex}
-                    onMouseDown={() => handleSuggestionClick(s.suggestion)}
-                    className={cn(
-                      "flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors",
-                      i === activeIndex
-                        ? "bg-primary/8 dark:bg-primary/15"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                    )}
-                  >
-                    <Search className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
-                    <span className="flex-1 text-sm text-gray-900 dark:text-white font-medium">
-                      {s.suggestion}
-                    </span>
-                    {s.searchCount > 0 && (
-                      <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
-                        {s.searchCount} busquedas
-                      </span>
-                    )}
-                    <ArrowRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
-                  </li>
-                ))}
-              </ul>
+            {!loading && flatItems.length > 0 && (
+              <div id={listId} role="listbox" aria-label="Sugerencias de búsqueda" className="overflow-y-auto">
+                {(Object.keys(TYPE_META) as MarketplaceSuggestionType[]).map((type) => {
+                  const section = grouped[type];
+                  if (section.length === 0) return null;
+                  const Icon = TYPE_META[type].icon;
+
+                  return (
+                    <div key={type} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                      <div aria-hidden="true" className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                        {TYPE_META[type].title}
+                      </div>
+                      {section.map((item) => {
+                        const index = flatItems.findIndex((f) => f.id === item.id);
+                        const active = index === activeIndex;
+                        const ItemIcon = TYPE_META[item.type].icon;
+                        return (
+                          <button
+                            key={item.id}
+                            id={`sugg-${index}`}
+                            role="option"
+                            aria-selected={active}
+                            onMouseDown={() => handleSelect(item)}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
+                              active
+                                ? "bg-primary/10 dark:bg-primary/15"
+                                : "hover:bg-gray-50 dark:hover:bg-gray-800",
+                            )}
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center shrink-0">
+                              {item.image ? (
+                                <Image
+                                  src={item.image}
+                                  alt=""
+                                  width={36}
+                                  height={36}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ItemIcon className="h-4 w-4 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {item.label}
+                              </p>
+                              {item.subtitle && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                  {item.subtitle}
+                                </p>
+                              )}
+                            </div>
+                            <ArrowRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" aria-hidden="true" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             )}
 
-            {/* No resultados + did you mean */}
-            {!loading && noResults && (
-              <div className="px-5 py-4 space-y-3">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  No encontramos{" "}
-                  <strong className="text-gray-900 dark:text-white">&ldquo;{value}&rdquo;</strong>
-                </p>
-                {didYouMean.length > 0 && (
-                  <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Quisiste decir:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {didYouMean.map((d) => (
-                        <button
-                          key={d.suggestion}
-                          type="button"
-                          onMouseDown={() => handleSuggestionClick(d.suggestion)}
-                          className="px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
-                        >
-                          {d.suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {!loading && flatItems.length === 0 && value.trim().length > 0 && (
+              <div className="px-4 py-4">
+                <button
+                  onMouseDown={handleSubmitRaw}
+                  aria-label={`Buscar "${value.trim()}" en el marketplace`}
+                  className="w-full flex items-center justify-between rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                    Buscar &ldquo;<strong className="text-gray-900 dark:text-white">{value.trim()}</strong>&rdquo;
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                </button>
               </div>
             )}
           </m.div>

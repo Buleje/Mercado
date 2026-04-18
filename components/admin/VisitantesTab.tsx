@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Users, Smartphone, Tablet, Monitor, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Smartphone, Tablet, Monitor, RefreshCw, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 
 type VisitorRow = {
   id: string;
@@ -25,9 +26,9 @@ const DEVICE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const DEVICE_COLORS: Record<string, string> = {
-  celular: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-  tablet: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-  computadora: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
+  celular: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  tablet: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  computadora: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-[var(--accent)]/20 dark:text-[var(--text-primary)]",
 };
 
 export default function VisitantesTab() {
@@ -65,7 +66,7 @@ export default function VisitantesTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Visitantes Nuevos</h2>
+          <SectionTitle className="text-lg font-bold text-foreground">Visitantes Nuevos</SectionTitle>
           <p className="text-sm text-muted">Formulario de bienvenida completado por primera vez</p>
         </div>
         <button
@@ -96,7 +97,7 @@ export default function VisitantesTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -110,7 +111,7 @@ export default function VisitantesTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-border bg-gray-50 dark:bg-surface text-left text-xs text-muted uppercase tracking-wide">
+                <tr className="border-b border-border bg-gray-50 dark:bg-surface text-left text-xs text-muted">
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Nombre</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Dispositivos</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">Navegador</th>
@@ -129,7 +130,7 @@ export default function VisitantesTab() {
                         {row.devices.map((d) => (
                           <span
                             key={d}
-                            className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium capitalize ${DEVICE_COLORS[d] ?? "bg-gray-100 text-gray-600"}`}
+                            className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium capitalize ${DEVICE_COLORS[d] ?? "bg-gray-100 text-[var(--text-secondary)]"}`}
                           >
                             {DEVICE_ICONS[d]}{d}
                           </span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +15,7 @@ import {
   Zap,
   MessageSquare,
   WifiOff,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ─── Animaciones CSS ─────────────────────────────────────────────────────── */
@@ -160,7 +161,7 @@ function SocialBtn({
       type="button"
       onClick={onClick}
       aria-label={`Iniciar sesión con ${label}`}
-      className="flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 hover:opacity-80 active:scale-95"
+      className="flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all duration-[var(--dur-base)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 hover:opacity-80 active:scale-95"
       style={{
         flex: 1,
         minHeight: "48px",
@@ -435,7 +436,7 @@ export default function AdminLoginPage() {
               {/* Logo */}
               <div className="flex items-center gap-3 mb-10">
                 <div
-                  className="flex items-center justify-center w-12 h-12 rounded-2xl"
+                  className="flex items-center justify-center w-12 h-12 rounded-xl"
                   style={{ background: "rgba(255,255,255,0.2)" }}
                 >
                   <Store className="w-6 h-6 text-white" />
@@ -449,8 +450,8 @@ export default function AdminLoginPage() {
               </div>
 
               {/* Headline */}
-              <h2
-                className="font-black text-white mb-3"
+              <SectionTitle
+                className="font-extrabold text-white mb-3"
                 style={{
                   fontSize: "clamp(1.75rem,3vw,2.4rem)",
                   lineHeight: "1.15",
@@ -461,7 +462,7 @@ export default function AdminLoginPage() {
                 <span style={{ color: "rgba(255,255,255,0.75)" }}>
                   inteligente
                 </span>
-              </h2>
+              </SectionTitle>
               <p
                 className="mb-10"
                 style={{
@@ -513,7 +514,7 @@ export default function AdminLoginPage() {
 
           {/* ── Columna derecha (formulario) ─────────────────────────────── */}
           <div
-            className="login-col-right bg-white dark:bg-gray-900 flex flex-col justify-center p-8 lg:p-10"
+            className="login-col-right bg-[var(--surface-raised)] flex flex-col justify-center p-8 lg:p-10"
             style={{ minHeight: "560px" }}
           >
             {/* Header del form */}
@@ -526,18 +527,18 @@ export default function AdminLoginPage() {
                 >
                   <Store className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-extrabold text-gray-900 dark:text-white text-lg">
+                <span className="font-extrabold text-[var(--text-primary)] text-lg">
                   Buleje
                 </span>
               </div>
 
-              <h1
-                className="font-black text-gray-900 dark:text-white mb-1"
+              <PageTitle
+                className="font-extrabold text-[var(--text-primary)] mb-1"
                 style={{ fontSize: "clamp(1.4rem,3vw,1.75rem)", letterSpacing: "-0.02em" }}
               >
                 Bienvenido de vuelta
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              </PageTitle>
+              <p className="text-sm text-[var(--text-tertiary)]">
                 Ingresa tus credenciales para continuar
               </p>
 
@@ -560,11 +561,11 @@ export default function AdminLoginPage() {
             </div>
 
             {/* Formulario */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Input usuario */}
               <div className="relative">
                 <User
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none"
                   aria-hidden="true"
                 />
                 <input
@@ -576,12 +577,12 @@ export default function AdminLoginPage() {
                   autoComplete="username"
                   className={cn(
                     "w-full pl-10 pr-4 py-3 rounded-xl border-2 text-sm",
-                    "bg-gray-50 dark:bg-gray-800",
-                    "text-gray-900 dark:text-gray-100",
-                    "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-                    "outline-none transition-all duration-200",
+                    "bg-[var(--surface-sunken)]",
+                    "text-[var(--text-primary)]",
+                    "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)]",
+                    "outline-none transition-all duration-[var(--dur-base)]",
                     "focus:border-teal-500 dark:focus:border-teal-500",
-                    "border-gray-200 dark:border-gray-700",
+                    "border-[var(--rule-base)]",
                     "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-500"
                   )}
                   style={{ minHeight: "48px" }}
@@ -591,7 +592,7 @@ export default function AdminLoginPage() {
               {/* Input contraseña */}
               <div className="relative">
                 <Lock
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none"
                   aria-hidden="true"
                 />
                 <input
@@ -602,13 +603,13 @@ export default function AdminLoginPage() {
                   autoComplete="current-password"
                   className={cn(
                     "w-full pl-10 pr-12 py-3 rounded-xl border-2 text-sm",
-                    "text-gray-900 dark:text-gray-100",
-                    "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-                    "outline-none transition-all duration-200",
+                    "text-[var(--text-primary)]",
+                    "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)]",
+                    "outline-none transition-all duration-[var(--dur-base)]",
                     "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-500",
                     error
-                      ? "border-red-400 bg-red-50 dark:bg-red-950/20 focus:border-red-400"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:border-teal-500 dark:focus:border-teal-500"
+                      ? "border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 focus:border-[var(--data-error)]"
+                      : "border-[var(--rule-base)] bg-[var(--surface-sunken)] focus:border-teal-500 dark:focus:border-teal-500"
                   )}
                   style={{ minHeight: "48px" }}
                 />
@@ -616,7 +617,7 @@ export default function AdminLoginPage() {
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-500 rounded"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-500 rounded"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -631,8 +632,8 @@ export default function AdminLoginPage() {
                 <div
                   className={cn(
                     "flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium",
-                    "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400",
-                    "border border-red-200 dark:border-red-800",
+                    "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+                    "border border-[var(--data-error)] dark:border-[var(--data-error)]",
                     shaking && "anim-shake"
                   )}
                 >
@@ -653,10 +654,10 @@ export default function AdminLoginPage() {
                     />
                     <div
                       className={cn(
-                        "w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-150",
+                        "w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-[var(--dur-fast)]",
                         rememberMe
                           ? "bg-teal-600 border-teal-600"
-                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+                          : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)]"
                       )}
                     >
                       {rememberMe && (
@@ -677,7 +678,7 @@ export default function AdminLoginPage() {
                       )}
                     </div>
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] dark:group-hover:text-gray-200 transition-colors">
                     Recordarme
                   </span>
                 </label>
@@ -694,7 +695,7 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
+                className="w-full flex items-center justify-center gap-2 rounded-lg font-bold text-sm text-white transition-all duration-[var(--dur-base)] disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
                 style={{
                   minHeight: "48px",
                   background: "linear-gradient(135deg,#00B4A6 0%,#2dd4bf 100%)",
@@ -713,7 +714,7 @@ export default function AdminLoginPage() {
             {/* Separador login social */}
             <div className="flex items-center gap-3 my-5">
               <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-              <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+              <span className="text-xs text-[var(--text-tertiary)] whitespace-nowrap">
                 o continúa con
               </span>
               <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
@@ -748,7 +749,7 @@ export default function AdminLoginPage() {
             {/* Separador bypass */}
             <div className="flex items-center gap-3 my-5">
               <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-              <span className="text-xs text-gray-400 dark:text-gray-500">o</span>
+              <span className="text-xs text-[var(--text-tertiary)]">o</span>
               <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
             </div>
 
@@ -757,7 +758,7 @@ export default function AdminLoginPage() {
               type="button"
               onClick={handleBypass}
               disabled={bypassLoading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 rounded-lg font-semibold text-sm transition-all duration-[var(--dur-base)] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 hover:bg-[var(--surface-sunken)] active:scale-[0.98]"
               style={{
                 minHeight: "48px",
                 background: "transparent",
@@ -774,14 +775,14 @@ export default function AdminLoginPage() {
             </button>
 
             {/* Hint de roles */}
-            <p className="text-center mt-3 text-gray-400 dark:text-gray-600 font-mono"
+            <p className="text-center mt-3 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] font-mono"
               style={{ fontSize: "0.68rem" }}>
               admin · cajero · almacen
             </p>
 
             {/* Footer */}
             <p
-              className="text-center mt-6 text-gray-400 dark:text-gray-600"
+              className="text-center mt-6 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
               style={{ fontSize: "0.7rem" }}
             >
               Buleje &copy; 2026 &middot; Hecho en Perú

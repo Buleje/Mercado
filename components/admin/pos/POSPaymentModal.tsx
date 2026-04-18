@@ -22,7 +22,7 @@ import {
   ClipboardList,
   HandCoins,
   AlertTriangle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
@@ -83,14 +83,14 @@ function calcularVuelto(monto: number): string {
 }
 
 const DENOM_VISUAL: Record<number, { color: string; shape: "rect" | "circle"; label: string }> = {
-  200: { color: "bg-emerald-800 text-white", shape: "rect", label: "S/200" },
-  100: { color: "bg-emerald-600 text-white", shape: "rect", label: "S/100" },
+  200: { color: "bg-[var(--accent-muted)] text-white", shape: "rect", label: "S/200" },
+  100: { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/100" },
   50:  { color: "bg-[#f97316] text-white", shape: "rect", label: "S/50" },
-  20:  { color: "bg-blue-500 text-white", shape: "rect", label: "S/20" },
-  10:  { color: "bg-amber-800 text-white", shape: "rect", label: "S/10" },
-  5:   { color: "bg-yellow-400 text-yellow-900", shape: "circle", label: "S/5" },
-  2:   { color: "bg-gray-300 text-gray-700", shape: "circle", label: "S/2" },
-  1:   { color: "bg-amber-600 text-white", shape: "circle", label: "S/1" },
+  20:  { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/20" },
+  10:  { color: "bg-[var(--data-warning)] text-white", shape: "rect", label: "S/10" },
+  5:   { color: "bg-[var(--data-warning)] text-[var(--data-warning)]", shape: "circle", label: "S/5" },
+  2:   { color: "bg-gray-300 text-[var(--text-primary)]", shape: "circle", label: "S/2" },
+  1:   { color: "bg-[var(--data-warning)] text-white", shape: "circle", label: "S/1" },
   0.5: { color: "bg-gray-400 text-white", shape: "circle", label: "S/.50" },
   0.2: { color: "bg-gray-500 text-white", shape: "circle", label: "S/.20" },
 };
@@ -116,7 +116,7 @@ function VueltoVisual({ monto }: { monto: number }) {
           <div
             key={`${denom}-${i}`}
             className={cn(
-              "flex items-center justify-center text-[9px] font-bold",
+              "flex items-center justify-center text-[length:var(--ts-2xs)] font-bold",
               visual.color,
               visual.shape === "rect"
                 ? "w-10 h-5 rounded"
@@ -180,28 +180,28 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
     : customers;
 
   return (
-    <div className="absolute inset-0 z-10 bg-white dark:bg-card rounded-2xl flex flex-col">
+    <div className="absolute inset-0 z-10 bg-white dark:bg-card rounded-xl flex flex-col">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ClipboardList className="h-4 w-4 text-primary" />
-          <h4 className="text-sm font-bold text-gray-900 dark:text-foreground">Todos los clientes</h4>
+          <h4 className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Todos los clientes</h4>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-          <X className="h-4 w-4 text-gray-400 dark:text-muted" />
+          <X className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
         </button>
       </div>
 
       {/* Search */}
-      <div className="px-4 py-2 border-b border-gray-100 dark:border-card-border">
+      <div className="px-4 py-2 border-b border-[var(--rule-soft)] dark:border-card-border">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)]" />
           <input
             type="text"
             value={filter}
             onChange={e => setFilter(e.target.value)}
             placeholder="Filtrar por nombre o telefono..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+            className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-colors"
             autoFocus
           />
         </div>
@@ -210,11 +210,11 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-32 text-gray-400 dark:text-muted">
+          <div className="flex items-center justify-center h-32 text-[var(--text-tertiary)] dark:text-muted">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-300 dark:text-muted">
+          <div className="flex flex-col items-center justify-center h-32 text-[var(--text-tertiary)] dark:text-muted">
             <User className="h-6 w-6 mb-1.5" />
             <p className="text-xs">Sin resultados</p>
           </div>
@@ -233,24 +233,24 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                   <User className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">{c.name}</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
                   <div className="flex items-center gap-1.5">
-                    <Phone className="h-2.5 w-2.5 text-gray-400" />
-                    <p className="text-[10px] text-gray-400 dark:text-muted">{c.phone}</p>
+                    <Phone className="h-2.5 w-2.5 text-[var(--text-tertiary)]" />
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{c.phone}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {c.categoria && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/20 text-blue-500">
+                    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]">
                       {c.categoria}
                     </span>
                   )}
                   {c.creditBalance != null && c.creditBalance > 0 ? (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/20 text-red-500">
+                    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)]">
                       Fiado: S/{c.creditBalance.toFixed(2)}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500">
+                    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]">
                       Sin deuda
                     </span>
                   )}
@@ -262,8 +262,8 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
       </div>
 
       {/* Footer count */}
-      <div className="px-4 py-2 border-t border-gray-100 dark:border-card-border text-center">
-        <p className="text-[10px] text-gray-400 dark:text-muted">
+      <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-card-border text-center">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
           {filtered.length} de {customers.length} clientes
         </p>
       </div>
@@ -492,7 +492,7 @@ export default function POSPaymentModal({
       onClick={onCancel}
     >
       <div
-        className="relative bg-white dark:bg-card rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col"
+        className="relative bg-white dark:bg-card rounded-xl max-w-xl w-full max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Customer list overlay (Mejora 3) */}
@@ -507,19 +507,19 @@ export default function POSPaymentModal({
         )}
 
         {/* Header */}
-        <div className="px-3 sm:px-6 py-5 border-b border-gray-100 dark:border-card-border text-center relative">
-          <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wider mb-1">
+        <div className="px-3 sm:px-6 py-5 border-b border-[var(--rule-soft)] dark:border-card-border text-center relative">
+          <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">
             Total a cobrar
           </p>
-          <p className="text-xl sm:text-3xl font-extrabold text-gray-900 dark:text-foreground">
+          <p className="text-xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
             {fmt(total)}
           </p>
           {discountAmount > 0 && (
-            <p className="text-[10px] text-red-500 font-semibold mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] font-semibold mt-0.5">
               Subtotal: {fmt(subtotal)} &mdash; Desc {discountMode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}: -{fmt(discountAmount)}
             </p>
           )}
-          <p className="text-xs text-gray-400 dark:text-muted mt-1">
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
             {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
           </p>
           {/* Mejora QW-10b: Sugerencia de redondeo */}
@@ -536,10 +536,10 @@ export default function POSPaymentModal({
             if (uniq.length === 0) return null;
             return (
               <div className="flex items-center justify-center gap-1 mt-1.5">
-                <span className="text-[10px] text-gray-400">Redondear:</span>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Redondear:</span>
                 {uniq.map(o => (
                   <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                    className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-[#00B4A6] hover:text-white transition-colors">
+                    className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[#00B4A6] hover:text-white transition-colors">
                     S/{o.val}
                   </button>
                 ))}
@@ -550,9 +550,9 @@ export default function POSPaymentModal({
             onClick={onCancel}
             className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
           >
-            <X className="h-4 w-4 text-gray-400 dark:text-muted" />
+            <X className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
           </button>
-          <kbd className="absolute top-4 left-4 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded font-mono">
+          <kbd className="absolute top-4 left-4 text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-1.5 py-0.5 rounded font-mono">
             F2
           </kbd>
           <button onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
@@ -568,13 +568,13 @@ export default function POSPaymentModal({
           <div>
             <button
               onClick={() => setShowDiscount(!showDiscount)}
-              className="flex items-center justify-between w-full text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2"
+              className="flex items-center justify-between w-full text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2"
             >
               <span className="flex items-center gap-1.5">
                 <Percent className="h-3.5 w-3.5" />
                 Descuento
                 {discountAmount > 0 && (
-                  <span className="text-red-500 normal-case font-bold">
+                  <span className="text-[var(--data-error)] normal-case font-bold">
                     (-{fmt(discountAmount)})
                   </span>
                 )}
@@ -583,10 +583,10 @@ export default function POSPaymentModal({
             </button>
 
             {showDiscount && (
-              <div className="space-y-2 bg-gray-50 dark:bg-surface rounded-xl p-2.5 border border-gray-100 dark:border-card-border">
+              <div className="space-y-2 bg-gray-50 dark:bg-surface rounded-xl p-2.5 border border-[var(--rule-soft)] dark:border-card-border">
                 <div className="flex items-center gap-2">
                   {/* Toggle % / S/ */}
-                  <div className="flex bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg overflow-hidden">
+                  <div className="flex bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
                     <button
                       onClick={() => {
                         setDiscountMode("percent");
@@ -596,7 +596,7 @@ export default function POSPaymentModal({
                         "px-2 py-1 text-xs font-bold transition-colors flex items-center gap-0.5",
                         discountMode === "percent"
                           ? "bg-primary text-white"
-                          : "text-gray-400 dark:text-muted hover:text-gray-600"
+                          : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
                       )}
                     >
                       <Percent className="h-3 w-3" />
@@ -610,7 +610,7 @@ export default function POSPaymentModal({
                         "px-2 py-1 text-xs font-bold transition-colors flex items-center gap-0.5",
                         discountMode === "fixed"
                           ? "bg-primary text-white"
-                          : "text-gray-400 dark:text-muted hover:text-gray-600"
+                          : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
                       )}
                     >
                       <DollarSign className="h-3 w-3" />
@@ -624,7 +624,7 @@ export default function POSPaymentModal({
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
                     placeholder="0"
-                    className="w-20 px-2 py-1 text-xs font-bold border border-gray-200 dark:border-card-border rounded-lg text-gray-900 dark:text-foreground outline-none focus:border-primary text-center"
+                    className="w-20 px-2 py-1 text-xs font-bold border border-[var(--rule-base)] dark:border-card-border rounded-lg text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary text-center"
                   />
                   {discountAmount > 0 && (
                     <button
@@ -632,7 +632,7 @@ export default function POSPaymentModal({
                         setDiscountValue("");
                         setShowDiscount(false);
                       }}
-                      className="text-[10px] font-bold text-red-500 hover:underline"
+                      className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] hover:underline"
                     >
                       Quitar
                     </button>
@@ -646,10 +646,10 @@ export default function POSPaymentModal({
                       key={q}
                       onClick={() => applyQuickDiscount(q)}
                       className={cn(
-                        "px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors",
+                        "px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-bold border transition-colors",
                         Number(discountValue) === q
                           ? "border-primary bg-primary/10 text-primary"
-                          : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-100"
+                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
                       )}
                     >
                       {discountMode === "percent" ? `${q}%` : `S/${q}`}
@@ -660,15 +660,15 @@ export default function POSPaymentModal({
                 {/* Summary */}
                 {discountAmount > 0 && (
                   <div className="text-xs space-y-0.5 pt-1">
-                    <div className="flex justify-between text-gray-400 dark:text-muted">
+                    <div className="flex justify-between text-[var(--text-tertiary)] dark:text-muted">
                       <span>Subtotal</span>
                       <span>{fmt(subtotal)}</span>
                     </div>
-                    <div className="flex justify-between text-red-500 font-semibold">
+                    <div className="flex justify-between text-[var(--data-error)] font-semibold">
                       <span>Desc. {discountMode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}</span>
                       <span>-{fmt(discountAmount)}</span>
                     </div>
-                    <div className="flex justify-between text-gray-900 dark:text-foreground font-extrabold border-t border-gray-200 dark:border-card-border pt-1">
+                    <div className="flex justify-between text-[var(--text-primary)] dark:text-foreground font-extrabold border-t border-[var(--rule-base)] dark:border-card-border pt-1">
                       <span>Total</span>
                       <span>{fmt(total)}</span>
                     </div>
@@ -680,17 +680,17 @@ export default function POSPaymentModal({
 
           {/* Payment lines */}
           <div>
-            <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2.5">
               {isSinglePayment ? "Metodo de pago" : "Pago mixto"}
             </p>
 
             {/* Fiado warning banner */}
             {isFiado && (
-              <div className="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="mb-3 p-3 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Modo Fiado</p>
-                  <p className="text-[11px] text-amber-600 dark:text-amber-500 mt-0.5">
+                  <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">Modo Fiado</p>
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
                     La venta se registra como deuda. El cliente debe estar seleccionado.
                   </p>
                 </div>
@@ -717,7 +717,7 @@ export default function POSPaymentModal({
                           "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-xs font-semibold transition-all",
                           paymentLines[0].method === m.id
                             ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-                            : "border-gray-200 dark:border-card-border text-gray-400 dark:text-muted hover:border-gray-300 hover:text-gray-600"
+                            : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-secondary)]"
                         )}
                       >
                         <m.icon className="h-5 w-5" />
@@ -756,12 +756,12 @@ export default function POSPaymentModal({
                     <div className={cn(
                       "rounded-xl p-3 mb-3 border",
                       isYape
-                        ? "bg-purple-50 dark:bg-purple-950/20 border-purple-100 dark:border-purple-800/30"
+                        ? "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
                         : "bg-teal-50 dark:bg-teal-950/20 border-teal-100 dark:border-teal-800/30"
                     )}>
                       <p className={cn(
                         "text-xs font-bold mb-2 text-center",
-                        isYape ? "text-purple-700 dark:text-purple-400" : "text-teal-700 dark:text-teal-400"
+                        isYape ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-teal-700 dark:text-teal-400"
                       )}>
                         {isYape ? "Yape" : "Plin"} &middot; {fmt(total)}
                       </p>
@@ -776,7 +776,7 @@ export default function POSPaymentModal({
                             try { localStorage.setItem(storageKey, v); } catch { /* ignore */ }
                           }}
                           placeholder={`Numero ${isYape ? "Yape" : "Plin"} del negocio`}
-                          className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                          className="flex-1 px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
                         />
                         {savedNumber && (
                           <button
@@ -784,8 +784,8 @@ export default function POSPaymentModal({
                             className={cn(
                               "px-3 py-2 text-xs font-bold rounded-lg hover:opacity-80 transition-opacity",
                               isYape
-                                ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-                                : "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+                                ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
+                                : "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent)]"
                             )}
                             title="Imprimir QR"
                           >
@@ -804,10 +804,10 @@ export default function POSPaymentModal({
                             height={180}
                             className="mx-auto rounded-lg"
                           />
-                          <p className="text-xs text-gray-400 mt-1">Muestrale este QR al cliente</p>
+                          <p className="text-xs text-[var(--text-tertiary)] mt-1">Muestrale este QR al cliente</p>
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-400 text-center py-2">
+                        <p className="text-xs text-[var(--text-tertiary)] text-center py-2">
                           Ingresa el numero para generar el QR
                         </p>
                       )}
@@ -820,7 +820,7 @@ export default function POSPaymentModal({
                   {paymentLines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border"
+                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border"
                     >
                       {!isSinglePayment && (
                         <select
@@ -831,7 +831,7 @@ export default function POSPaymentModal({
                               e.target.value as PaymentLineMethod
                             )
                           }
-                          className="flex-1 min-w-24 px-2 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-semibold bg-white dark:bg-card text-gray-700 dark:text-foreground outline-none"
+                          className="flex-1 min-w-24 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-semibold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none"
                         >
                           {METHODS.map((m) => (
                             <option key={m.id} value={m.id}>
@@ -841,7 +841,7 @@ export default function POSPaymentModal({
                         </select>
                       )}
                       <div className="relative flex-1 min-w-28">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">
                           S/
                         </span>
                         <input
@@ -855,10 +855,10 @@ export default function POSPaymentModal({
                           readOnly={isFiado}
                           placeholder={total.toFixed(2)}
                           className={cn(
-                            "w-full pl-7 pr-2 py-2 rounded-lg border text-sm font-bold text-gray-900 dark:text-foreground outline-none focus:border-primary",
+                            "w-full pl-7 pr-2 py-2 rounded-lg border text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary",
                             isFiado
-                              ? "border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 text-amber-600 cursor-not-allowed"
-                              : "border-gray-200 dark:border-card-border"
+                              ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning)] cursor-not-allowed"
+                              : "border-[var(--rule-base)] dark:border-card-border"
                           )}
                           autoFocus={idx === 0 && !isFiado}
                         />
@@ -866,7 +866,7 @@ export default function POSPaymentModal({
                       {paymentLines.length > 1 && (
                         <button
                           onClick={() => removeLine(idx)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                          className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -890,7 +890,7 @@ export default function POSPaymentModal({
                               "px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
                               paymentLines[0].amount === a
                                 ? "border-primary bg-primary/10 text-primary"
-                                : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                                : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                             )}
                           >
                             S/{a}
@@ -902,7 +902,7 @@ export default function POSPaymentModal({
                           "px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
                           paymentLines[0].amount === total
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                            : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
                         Exacto
@@ -914,22 +914,22 @@ export default function POSPaymentModal({
                 {isSinglePayment && paymentLines[0].method === "efectivo" && (
                   <div className="mt-2 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Billetes recibidos</span>
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Billetes recibidos</span>
                       {billetes.length > 0 && (
-                        <button onClick={limpiarBilletes} className="text-[10px] font-bold text-red-500 hover:underline">Limpiar</button>
+                        <button onClick={limpiarBilletes} className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] hover:underline">Limpiar</button>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {[200, 100, 50, 20, 10].map(b => (
                         <button key={b} onClick={() => addBillete(b)}
-                          className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
+                          className="px-2 py-1 rounded-md bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] text-xs font-bold cursor-pointer hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
                           S/{b}
                         </button>
                       ))}
                     </div>
                     {billetes.length > 0 && (
-                      <p className="text-xs text-gray-400 dark:text-muted">
-                        {billetes.map(b => `S/${b}`).join(" + ")} = <span className="font-bold text-gray-600 dark:text-gray-300">S/{totalBilletes}</span>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
+                        {billetes.map(b => `S/${b}`).join(" + ")} = <span className="font-bold text-[var(--text-secondary)]">S/{totalBilletes}</span>
                       </p>
                     )}
                   </div>
@@ -937,7 +937,7 @@ export default function POSPaymentModal({
 
                 {/* Fiado info */}
                 {isFiado && (
-                  <p className="text-[11px] text-amber-600 dark:text-amber-500 mt-2 text-center">
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-2 text-center">
                     Deuda: {fmt(total)} — se registrará a nombre del cliente
                   </p>
                 )}
@@ -956,7 +956,7 @@ export default function POSPaymentModal({
                         {/* Split button */}
                         <button
                           onClick={() => setShowSplit(true)}
-                          className="text-xs font-bold text-gray-500 dark:text-muted hover:text-primary flex items-center gap-1 transition-colors"
+                          className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:text-primary flex items-center gap-1 transition-colors"
                         >
                           <Users className="h-3 w-3" /> Dividir cuenta
                         </button>
@@ -969,13 +969,13 @@ export default function POSPaymentModal({
                         className={cn(
                           "font-bold",
                           pendiente <= 0.01
-                            ? "text-emerald-600"
-                            : "text-red-500"
+                            ? "text-[var(--data-success)]"
+                            : "text-[var(--data-error)]"
                         )}
                       >
                         {fmt(linesTotal)}
                       </span>
-                      <span className="text-gray-400">
+                      <span className="text-[var(--text-tertiary)]">
                         {" "}
                         / {fmt(total)}
                       </span>
@@ -988,17 +988,17 @@ export default function POSPaymentModal({
 
           {/* Change display */}
           {vuelto > 0 && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 rounded-xl p-3 text-center">
-              <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3 text-center">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] font-bold">
                 Vuelto
               </p>
-              <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-0.5">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-0.5">
                 {fmt(vuelto)}
               </p>
               {vuelto >= 0.2 && (
                 <>
                   <VueltoVisual monto={vuelto} />
-                  <p className="text-[11px] text-emerald-600/70 dark:text-emerald-500/70 mt-1.5 flex items-center justify-center gap-1">
+                  <p className="text-[length:var(--ts-xs)] text-[var(--data-success)]/70 dark:text-[var(--data-success)]/70 mt-1.5 flex items-center justify-center gap-1">
                     <span>{calcularVuelto(vuelto)}</span>
                   </p>
                 </>
@@ -1008,8 +1008,8 @@ export default function POSPaymentModal({
 
           {/* Pendiente warning */}
           {pendiente > 0.01 && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-800/30 rounded-lg p-2 text-center">
-              <span className="text-xs font-bold text-amber-600">
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-lg p-2 text-center">
+              <span className="text-xs font-bold text-[var(--data-warning)]">
                 Falta: {fmt(pendiente)}
               </span>
             </div>
@@ -1019,13 +1019,13 @@ export default function POSPaymentModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className={cn(
-                "text-xs font-bold uppercase tracking-wider",
+                "text-xs font-bold",
                 isFiado
-                  ? "text-amber-600 dark:text-amber-500"
-                  : "text-gray-500 dark:text-muted"
+                  ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                  : "text-[var(--text-secondary)] dark:text-muted"
               )}>
                 Cliente {isFiado ? (
-                  <span className="normal-case font-extrabold text-red-500">* requerido</span>
+                  <span className="normal-case font-extrabold text-[var(--data-error)]">* requerido</span>
                 ) : (
                   "(opcional)"
                 )}
@@ -1033,14 +1033,14 @@ export default function POSPaymentModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowNewCustomer(!showNewCustomer)}
-                  className="text-[10px] font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                  className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] hover:underline flex items-center gap-1"
                 >
                   <Plus className="h-3 w-3" />
                   Nuevo
                 </button>
                 <button
                   onClick={() => setShowCustomerList(true)}
-                  className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                  className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline flex items-center gap-1"
                 >
                   <ClipboardList className="h-3 w-3" />
                   Ver clientes
@@ -1050,22 +1050,22 @@ export default function POSPaymentModal({
 
             {/* Formulario inline para nuevo cliente */}
             {showNewCustomer && (
-              <div className="mb-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 space-y-2">
-                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Nuevo cliente rapido</p>
+              <div className="mb-2 p-2.5 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 space-y-2">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo cliente rapido</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={newCustName}
                     onChange={e => setNewCustName(e.target.value)}
                     placeholder="Nombre"
-                    className="flex-1 px-2 py-1.5 text-xs border border-gray-200 dark:border-card-border rounded-lg outline-none focus:border-primary text-gray-900 dark:text-foreground"
+                    className="flex-1 px-2 py-1.5 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground"
                   />
                   <input
                     type="tel"
                     value={newCustPhone}
                     onChange={e => setNewCustPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                     placeholder="Celular (9 dig)"
-                    className="w-28 px-2 py-1.5 text-xs border border-gray-200 dark:border-card-border rounded-lg outline-none focus:border-primary text-gray-900 dark:text-foreground"
+                    className="w-28 px-2 py-1.5 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -1089,13 +1089,13 @@ export default function POSPaymentModal({
                       } catch { /* ignore */ }
                       setSavingCustomer(false);
                     }}
-                    className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-700 transition-colors"
+                    className="flex-1 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--accent-soft)] transition-colors"
                   >
                     {savingCustomer ? "Guardando..." : "Guardar y seleccionar"}
                   </button>
                   <button
                     onClick={() => { setShowNewCustomer(false); setNewCustName(""); setNewCustPhone(""); }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1120,7 +1120,7 @@ export default function POSPaymentModal({
 
           {/* Tipo de comprobante */}
           <div>
-            <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">
               Comprobante
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -1147,7 +1147,7 @@ export default function POSPaymentModal({
                         "flex-1 min-w-[calc(33%-6px)] py-2 rounded-lg text-xs font-bold border transition-all",
                         comprobanteTipo === tipo
                           ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                          : "border-gray-200 dark:border-card-border text-gray-400 dark:text-muted hover:border-gray-300"
+                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] dark:text-muted hover:border-gray-300"
                       )}
                     >
                       {labels[tipo]}
@@ -1157,7 +1157,7 @@ export default function POSPaymentModal({
               )}
             </div>
             {(comprobanteTipo === "cotizacion" || comprobanteTipo === "proforma") && (
-              <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1.5 font-medium">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1.5 font-medium">
                 Se generará {comprobanteTipo === "cotizacion" ? "cotización" : "proforma"} con los items del carrito
               </p>
             )}
@@ -1180,18 +1180,18 @@ export default function POSPaymentModal({
                   placeholder="RUC (11 digitos)"
                   maxLength={11}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border text-sm text-gray-900 dark:text-foreground outline-none transition-colors",
+                    "w-full px-3 py-2.5 rounded-lg border text-sm text-[var(--text-primary)] dark:text-foreground outline-none transition-colors",
                     rucError
-                      ? "border-red-300 focus:border-red-500"
-                      : "border-gray-200 dark:border-card-border focus:border-primary"
+                      ? "border-[var(--data-error)] focus:border-[var(--data-error)]"
+                      : "border-[var(--rule-base)] dark:border-card-border focus:border-primary"
                   )}
                 />
                 {rucError && (
-                  <p className="text-[10px] text-red-500 mt-1">{rucError}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] mt-1">{rucError}</p>
                 )}
                 {comprobanteRuc.length > 0 &&
                   comprobanteRuc.length < 11 && (
-                    <p className="text-[10px] text-gray-400 mt-1">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
                       {11 - comprobanteRuc.length} digitos restantes
                     </p>
                   )}
@@ -1201,9 +1201,9 @@ export default function POSPaymentModal({
         </div>
 
         {/* Footer */}
-        <div className="px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
+        <div className="px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
           {isFiado && !customerPhone && (
-            <p className="text-[11px] text-red-500 font-semibold text-center mb-2">
+            <p className="text-[length:var(--ts-xs)] text-[var(--data-error)] font-semibold text-center mb-2">
               Selecciona un cliente para continuar
             </p>
           )}
@@ -1211,9 +1211,9 @@ export default function POSPaymentModal({
             onClick={handleConfirm}
             disabled={!canConfirm}
             className={cn(
-              "w-full py-3.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white",
+              "w-full py-3.5 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white",
               isFiado
-                ? "bg-amber-500 hover:bg-amber-600"
+                ? "bg-[var(--data-warning)] hover:bg-[var(--data-warning)]"
                 : "bg-primary hover:bg-primary-dark"
             )}
           >

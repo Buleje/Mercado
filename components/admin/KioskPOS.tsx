@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 /**
  * KioskPOS — Modo caja para tablets (1024x768+)
  * Layout 70/30: productos | carrito
@@ -13,7 +14,7 @@ import {
   Package, Loader2, CheckCircle2,
   Banknote, Smartphone, Users,
   ScanBarcode, Clock,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -94,10 +95,10 @@ function PayBtn({ active, label, icon, color, onClick }: PayBtnProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border-2 font-bold text-sm transition-all min-h-[56px]",
+        "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 font-bold text-sm transition-all min-h-[56px]",
         active
-          ? `${color} border-transparent text-white shadow-lg scale-105`
-          : "border-gray-700 text-gray-400 bg-gray-800 hover:border-gray-500 hover:text-gray-200"
+          ? `${color} border-transparent text-white scale-105`
+          : "border-gray-700 text-[var(--text-tertiary)] bg-gray-800 hover:border-gray-500 hover:text-gray-200"
       )}
     >
       {icon}
@@ -116,8 +117,8 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
       className={cn(
         "flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap min-h-[40px]",
         active
-          ? "bg-teal-600 text-white shadow-md"
-          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+          ? "bg-teal-600 text-white"
+          : "bg-gray-800 text-[var(--text-tertiary)] hover:bg-gray-700 hover:text-gray-200"
       )}
     >
       {label}
@@ -295,7 +296,7 @@ export default function KioskPOS() {
       <header className="flex items-center justify-between px-6 py-3 bg-gray-950 border-b border-gray-800 flex-shrink-0">
         {/* Reloj digital */}
         <div className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-teal-400" />
+          <Clock className="h-5 w-5 text-[var(--accent)]" />
           <span className="text-2xl font-mono font-bold text-teal-300 tabular-nums">{time}</span>
         </div>
 
@@ -305,18 +306,18 @@ export default function KioskPOS() {
             <span className="text-xs font-extrabold text-white">B</span>
           </div>
           <span className="text-base font-extrabold tracking-wide text-white">Buleje POS</span>
-          <span className="px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-300 text-[10px] font-bold uppercase tracking-wider">POS</span>
+          <span className="px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-300 text-[length:var(--ts-2xs)] font-bold">POS</span>
         </div>
 
         {/* Acciones */}
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-xs text-gray-500">
+          <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
             <ScanBarcode className="h-4 w-4" />
             Lector listo
           </span>
           <Link
             href="/admin"
-            className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-semibold transition-colors min-h-[44px] flex items-center"
+            className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-[var(--text-tertiary)] text-sm font-semibold transition-colors min-h-[44px] flex items-center"
           >
             Salir
           </Link>
@@ -332,7 +333,7 @@ export default function KioskPOS() {
           {/* Search + barcode */}
           <div className="px-5 pt-4 pb-3 bg-gray-950 border-b border-gray-800 flex-shrink-0 space-y-3">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-500" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-[var(--text-secondary)]" />
               <input
                 ref={searchRef}
                 type="text"
@@ -341,13 +342,13 @@ export default function KioskPOS() {
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleSearchKey}
                 placeholder="Buscar producto o escanear código..."
-                className="w-full pl-13 pr-12 py-4 text-xl rounded-2xl bg-gray-900 border-2 border-gray-700 text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500 transition-colors"
+                className="w-full pl-13 pr-12 py-4 text-xl rounded-xl bg-gray-900 border-2 border-gray-700 text-white placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-teal-500 transition-colors"
               />
               {search && (
                 <button
                   type="button"
                   onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-500 hover:text-gray-300"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-tertiary)]"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -375,11 +376,9 @@ export default function KioskPOS() {
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto p-4">
             {loadingProducts ? (
-              <div className="flex items-center justify-center h-48">
-                <Loader2 className="h-10 w-10 animate-spin text-teal-500" />
-              </div>
+              <LoadingState message="" size="lg" />
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-gray-600">
+              <div className="flex flex-col items-center justify-center h-48 text-[var(--text-secondary)]">
                 <Package className="h-12 w-12 mb-3 opacity-30" />
                 <p className="text-lg">Sin productos</p>
               </div>
@@ -393,9 +392,9 @@ export default function KioskPOS() {
                       type="button"
                       onClick={() => { addToCart(product); refocusSearch(); }}
                       className={cn(
-                        "group flex flex-col items-center rounded-2xl border-2 p-3 bg-gray-900 text-left transition-all active:scale-95 focus:outline-none min-h-[120px]",
+                        "group flex flex-col items-center rounded-xl border-2 p-3 bg-gray-900 text-left transition-all active:scale-95 focus:outline-none min-h-[120px]",
                         inCart
-                          ? "border-teal-500 shadow-lg shadow-teal-500/20"
+                          ? "border-teal-500"
                           : "border-gray-800 hover:border-gray-600"
                       )}
                     >
@@ -411,7 +410,7 @@ export default function KioskPOS() {
                           />
                         ) : (
                           <div className="flex items-center justify-center w-full h-full">
-                            <Package className="h-8 w-8 text-gray-700" />
+                            <Package className="h-8 w-8 text-[var(--text-primary)]" />
                           </div>
                         )}
 
@@ -441,7 +440,7 @@ export default function KioskPOS() {
           {/* Cart header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 flex-shrink-0">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-teal-400" />
+              <ShoppingCart className="h-5 w-5 text-[var(--accent)]" />
               <span className="font-bold text-white text-base">Carrito</span>
               {cartCount > 0 && (
                 <span className="bg-teal-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -453,7 +452,7 @@ export default function KioskPOS() {
               <button
                 type="button"
                 onClick={clearCart}
-                className="text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-1"
+                className="text-xs text-[var(--text-secondary)] hover:text-[var(--data-error)] transition-colors flex items-center gap-1"
               >
                 <X className="h-3.5 w-3.5" />
                 Vaciar
@@ -464,7 +463,7 @@ export default function KioskPOS() {
           {/* Cart items */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-gray-700">
+              <div className="flex flex-col items-center justify-center h-32 text-[var(--text-primary)]">
                 <ShoppingCart className="h-10 w-10 mb-2 opacity-30" />
                 <p className="text-sm">Carrito vacío</p>
               </div>
@@ -488,7 +487,7 @@ export default function KioskPOS() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.product.id, -1)}
-                      className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-300 transition-colors active:scale-90"
+                      className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-[var(--text-tertiary)] transition-colors active:scale-90"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -498,14 +497,14 @@ export default function KioskPOS() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.product.id, 1)}
-                      className="w-9 h-9 rounded-xl bg-teal-900/60 hover:bg-teal-800 flex items-center justify-center text-teal-400 transition-colors active:scale-90"
+                      className="w-9 h-9 rounded-lg bg-teal-900/60 hover:bg-teal-800 flex items-center justify-center text-teal-400 transition-colors active:scale-90"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.product.id)}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-600 hover:text-red-400 transition-colors"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--data-error)] transition-colors"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -519,7 +518,7 @@ export default function KioskPOS() {
           <div className="px-5 py-4 border-t border-gray-800 space-y-4 flex-shrink-0 bg-gray-950">
             {/* Total */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-400">Total</span>
+              <span className="text-sm font-semibold text-[var(--text-tertiary)]">Total</span>
               <span className="text-4xl font-extrabold text-teal-300 tabular-nums">
                 {fmt(cartTotal)}
               </span>
@@ -532,7 +531,7 @@ export default function KioskPOS() {
                 active={paymentMethod === "efectivo"}
                 label="Efectivo"
                 icon={<Banknote className="h-5 w-5" />}
-                color="bg-emerald-600"
+                color="bg-[var(--accent-soft)]"
                 onClick={() => setPaymentMethod("efectivo")}
               />
               <PayBtn
@@ -540,7 +539,7 @@ export default function KioskPOS() {
                 active={paymentMethod === "yape"}
                 label="Yape"
                 icon={<Smartphone className="h-5 w-5" />}
-                color="bg-purple-700"
+                color="bg-[var(--accent)]"
                 onClick={() => setPaymentMethod("yape")}
               />
               <PayBtn
@@ -555,7 +554,7 @@ export default function KioskPOS() {
 
             {/* Error inline */}
             {step === "error" && (
-              <p className="text-sm text-red-400 text-center font-medium">{errorMsg}</p>
+              <p className="text-sm text-[var(--data-error)] text-center font-medium">{errorMsg}</p>
             )}
 
             {/* COBRAR button — 80px height */}
@@ -565,16 +564,16 @@ export default function KioskPOS() {
               disabled={cart.length === 0 || step === "paying" || step === "success"}
               style={{ minHeight: 80 }}
               className={cn(
-                "w-full rounded-2xl font-extrabold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
+                "w-full rounded-xl font-extrabold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
                 "disabled:opacity-40 disabled:cursor-not-allowed",
                 cart.length > 0
-                  ? "bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white shadow-xl shadow-teal-900/40"
-                  : "bg-gray-800 text-gray-600 cursor-not-allowed"
+                  ? "bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white"
+                  : "bg-gray-800 text-[var(--text-secondary)] cursor-not-allowed"
               )}
             >
               {step === "paying" ? (
                 <>
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <LoadingState variant="inline" size="sm" />
                   Procesando...
                 </>
               ) : (
@@ -592,9 +591,9 @@ export default function KioskPOS() {
             <div className="w-28 h-28 rounded-full bg-teal-900/50 flex items-center justify-center ring-4 ring-teal-500/30">
               <CheckCircle2 className="h-14 w-14 text-teal-400" />
             </div>
-            <h2 className="text-4xl font-extrabold text-white">Venta registrada</h2>
+            <SectionTitle className="text-4xl font-extrabold text-white">Venta registrada</SectionTitle>
             <p className="text-xl text-teal-300 font-semibold">{fmt(cartTotal)}</p>
-            <p className="text-gray-500 text-sm mt-2">Volviendo al inicio...</p>
+            <p className="text-[var(--text-secondary)] text-sm mt-2">Volviendo al inicio...</p>
           </div>
         </div>
       )}

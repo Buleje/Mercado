@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Save, Check, RefreshCw, Minus, Plus } from "lucide-react";
+import { Clock, Save, Check, RefreshCw, Minus, Plus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -99,8 +100,8 @@ export default function DeliveryTimeSlots() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Horarios de entrega</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <CardTitle className="text-base font-semibold text-[var(--text-primary)]">Horarios de entrega</CardTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             {activeCount} de {slots.length} franjas activas
           </p>
         </div>
@@ -108,8 +109,8 @@ export default function DeliveryTimeSlots() {
           onClick={handleSave}
           disabled={saving}
           className={cn(
-            "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150",
-            saved ? "bg-emerald-500 text-white" : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
+            "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
+            saved ? "bg-[var(--accent-soft)] text-white" : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
             saving && "opacity-70 cursor-not-allowed"
           )}
         >
@@ -124,22 +125,22 @@ export default function DeliveryTimeSlots() {
           <div
             key={slot.id}
             className={cn(
-              "rounded-xl border p-4 transition-all duration-150",
+              "rounded-xl border p-4 transition-all duration-[var(--dur-fast)]",
               slot.active
                 ? "border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 dark:border-[#00B4A6]/40"
-                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-60"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] opacity-60"
             )}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Clock
                   size={15}
-                  className={cn(slot.active ? "text-[#00B4A6]" : "text-gray-400")}
+                  className={cn(slot.active ? "text-[#00B4A6]" : "text-[var(--text-tertiary)]")}
                 />
                 <span
                   className={cn(
                     "text-sm font-medium",
-                    slot.active ? "text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"
+                    slot.active ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"
                   )}
                 >
                   {slot.label}
@@ -150,7 +151,7 @@ export default function DeliveryTimeSlots() {
               <button
                 onClick={() => toggleSlot(slot.id)}
                 className={cn(
-                  "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200",
+                  "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-[var(--dur-base)]",
                   slot.active ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
                 )}
                 role="switch"
@@ -159,7 +160,7 @@ export default function DeliveryTimeSlots() {
               >
                 <span
                   className={cn(
-                    "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-200",
+                    "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
                     slot.active ? "translate-x-4" : "translate-x-1"
                   )}
                 />
@@ -168,12 +169,12 @@ export default function DeliveryTimeSlots() {
 
             {/* Max orders control */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Max. pedidos</span>
+              <span className="text-xs text-[var(--text-tertiary)]">Max. pedidos</span>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setMaxOrders(slot.id, -1)}
                   disabled={!slot.active || slot.maxOrders <= 1}
-                  className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-6 h-6 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Reducir"
                 >
                   <Minus size={11} />
@@ -185,12 +186,12 @@ export default function DeliveryTimeSlots() {
                   value={slot.maxOrders}
                   disabled={!slot.active}
                   onChange={(e) => setMaxOrdersDirect(slot.id, parseInt(e.target.value) || 1)}
-                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
                 />
                 <button
                   onClick={() => setMaxOrders(slot.id, 1)}
                   disabled={!slot.active || slot.maxOrders >= 50}
-                  className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-6 h-6 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Aumentar"
                 >
                   <Plus size={11} />
@@ -221,7 +222,7 @@ export function DeliverySlotPicker({ value, onChange, className }: DeliverySlotP
 
   if (slots.length === 0) {
     return (
-      <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+      <p className="text-sm text-[var(--text-tertiary)] italic">
         No hay franjas de entrega disponibles
       </p>
     );
@@ -235,14 +236,14 @@ export function DeliverySlotPicker({ value, onChange, className }: DeliverySlotP
           type="button"
           onClick={() => onChange(slot.id)}
           className={cn(
-            "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-150",
+            "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-[var(--dur-fast)]",
             value === slot.id
-              ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
-              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/50 hover:bg-[#00B4A6]/5"
+              ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-[var(--data-success)]"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[#00B4A6]/50 hover:bg-[#00B4A6]/5"
           )}
         >
           <span className="text-sm font-medium">{slot.label}</span>
-          <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          <span className="text-xs text-[var(--text-tertiary)] mt-0.5">
             Max {slot.maxOrders} pedidos
           </span>
         </button>

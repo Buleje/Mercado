@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
-import { Gauge, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, AlertTriangle, CheckCircle, ArrowUp, ArrowDown, BarChart3, Eye, Download, Star, RefreshCw } from "lucide-react";
+import { Gauge, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, AlertTriangle, CheckCircle, ArrowUp, ArrowDown, BarChart3, Eye, Download, Star, RefreshCw } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product, Sale, Customer } from "@/types/erp";
 
@@ -199,9 +200,9 @@ export default function ExecutiveDashboardTab() {
   );
   if (error) return (
     <div className="flex flex-col items-center justify-center py-24 gap-2 sm:gap-4">
-      <AlertTriangle className="h-8 w-8 text-red-500" />
-      <p className="text-sm text-red-600 dark:text-red-400 font-medium">Error cargando datos</p>
-      <button onClick={load} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+      <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+      <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-medium">Error cargando datos</p>
+      <button onClick={load} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
         Reintentar
       </button>
     </div>
@@ -212,19 +213,19 @@ export default function ExecutiveDashboardTab() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Gauge className="h-6 w-6 text-primary" /> Dashboard Ejecutivo
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
+          </SectionTitle>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
             Visión integral · {lastUpdated ? `Actualizado ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar datos">
-            <RefreshCw className="h-4 w-4 text-gray-500" />
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
           {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
-            <button key={p} onClick={() => setPeriod(p)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", period === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
+            <button key={p} onClick={() => setPeriod(p)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", period === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
               {PERIOD_LABELS[p]}
             </button>
           ))}
@@ -233,7 +234,7 @@ export default function ExecutiveDashboardTab() {
 
       {/* ── System health banner ── */}
       {(criticalCount > 0 || warningCount > 0) && (
-        <div className={cn("rounded-xl p-3 flex items-center gap-3 text-sm font-semibold border", criticalCount > 0 ? "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/30" : "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30")}>
+        <div className={cn("rounded-xl p-3 flex items-center gap-3 text-sm font-semibold border", criticalCount > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error)] dark:text-[var(--data-error)] border-[var(--data-error)] dark:border-[var(--data-error)]/30" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning)] dark:text-[var(--data-warning)] border-[var(--data-warning)] dark:border-[var(--data-warning)]/30")}>
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <span>
             {criticalCount > 0 && `${criticalCount} módulo${criticalCount > 1 ? "s" : ""} crítico${criticalCount > 1 ? "s" : ""}`}
@@ -243,7 +244,7 @@ export default function ExecutiveDashboardTab() {
         </div>
       )}
       {criticalCount === 0 && warningCount === 0 && (
-        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3 text-sm font-semibold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30">
+        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3 text-sm font-semibold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
           <CheckCircle className="h-5 w-5 shrink-0" />
           Sistema operando normalmente — todos los módulos en verde
         </div>
@@ -253,21 +254,21 @@ export default function ExecutiveDashboardTab() {
       {kpis && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Ingresos",      value: fmtShort(kpis.revenue),  delta: kpis.revDelta,  icon: DollarSign,  color: "text-emerald-500", bgColor: "bg-emerald-50 dark:bg-emerald-900/20",  spark: kpis.revSpark,    sparkColor: "#10b981" },
-            { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-blue-500",    bgColor: "bg-blue-50 dark:bg-blue-900/20",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
-            { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-violet-500", bgColor: "bg-violet-50 dark:bg-violet-900/20",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
-            { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-amber-500",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
+            { label: "Ingresos",      value: fmtShort(kpis.revenue),  delta: kpis.revDelta,  icon: DollarSign,  color: "text-[var(--data-success)]", bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  spark: kpis.revSpark,    sparkColor: "#00B4A6" },
+            { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-[var(--data-success)]",    bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
+            { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-[var(--text-secondary)]", bgColor: "bg-[var(--surface-sunken)]",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
+            { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-[var(--data-warning)]",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (
-            <div key={kpi.label} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4">
+            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", kpi.bgColor)}>
                   <kpi.icon className={cn("h-4.5 w-4.5", kpi.color)} />
                 </div>
-                <span className="text-xs font-semibold text-gray-500 dark:text-muted leading-tight">{kpi.label}</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted leading-tight">{kpi.label}</span>
               </div>
-              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground leading-none">{kpi.value}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">{kpi.value}</p>
               <div className="flex items-center justify-between mt-2">
-                <div className={cn("flex items-center gap-1 text-xs font-bold", kpi.delta >= 0 ? "text-emerald-500" : "text-red-500")}>
+                <div className={cn("flex items-center gap-1 text-xs font-bold", kpi.delta >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                   {kpi.delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                   {Math.abs(kpi.delta).toFixed(1)}%
                 </div>
@@ -279,11 +280,11 @@ export default function ExecutiveDashboardTab() {
       )}
 
       {/* ── Revenue bar chart ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" /> Ingresos — {PERIOD_LABELS[period]}
-          </h3>
+          </CardTitle>
           <button
             onClick={() => exportToCSV(revenueChart.map(r => ({ fecha: r.label, ingreso: r.value })), `ingresos-${period}`)}
             className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
@@ -292,19 +293,19 @@ export default function ExecutiveDashboardTab() {
           </button>
         </div>
         {revenueChart.every(r => r.value === 0) ? (
-          <p className="text-center text-sm text-gray-400 dark:text-muted py-8">Sin datos de ingresos para este período</p>
+          <p className="text-center text-sm text-[var(--text-tertiary)] dark:text-muted py-8">Sin datos de ingresos para este período</p>
         ) : (
           <div className="flex flex-wrap items-end gap-0.5 h-28 overflow-hidden">
             {revenueChart.map((r, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group min-w-0" title={`${r.label}: ${fmt(r.value)}`}>
                 <div className="w-full flex flex-col justify-end rounded-t overflow-hidden" style={{ height: 96 }}>
                   <div
-                    className={cn("w-full rounded-t transition-all duration-300 group-hover:opacity-80", r.value > 0 ? "bg-primary" : "bg-gray-100 dark:bg-surface")}
+                    className={cn("w-full rounded-t transition-all duration-[var(--dur-base)] group-hover:opacity-80", r.value > 0 ? "bg-primary" : "bg-gray-100 dark:bg-surface")}
                     style={{ height: `${(r.value / maxChart) * 96}px`, minHeight: 2 }}
                   />
                 </div>
                 {revenueChart.length <= 14 && (
-                  <span className="text-[8px] text-gray-400 dark:text-muted truncate w-full text-center">
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate w-full text-center">
                     {r.label.split(" ")[0]}
                   </span>
                 )}
@@ -316,9 +317,9 @@ export default function ExecutiveDashboardTab() {
 
       {/* ── Module health grid ── */}
       <div>
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <Eye className="h-4 w-4 text-primary" /> Salud por módulo
-        </h3>
+        </CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-start">
           {moduleHealth.map(h => {
             const pct = h.target > 0 ? Math.min((h.value / h.target) * 100, 100) : (h.value === 0 ? 100 : 0);
@@ -327,39 +328,39 @@ export default function ExecutiveDashboardTab() {
                 key={h.module}
                 onClick={() => setExpanded(expandedModule === h.module ? null : h.module)}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-200 hover:shadow-md",
-                  h.status === "critical" ? "border-red-300 dark:border-red-800" : h.status === "warning" ? "border-amber-300 dark:border-amber-800" : "border-gray-200 dark:border-card-border",
-                  expandedModule === h.module && "sm:col-span-2 shadow-md ring-1 ring-primary/20"
+                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-sm",
+                  h.status === "critical" ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : h.status === "warning" ? "border-[var(--data-warning)] dark:border-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border",
+                  expandedModule === h.module && "sm:col-span-2 ring-1 ring-primary/20"
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm text-gray-900 dark:text-foreground">{h.module}</span>
-                  <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : h.status === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                  <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{h.module}</span>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : h.status === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]" : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]")}>
                     {h.status === "ok" ? "OK" : h.status === "warning" ? "Alerta" : "Crítico"}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-muted mb-1.5">{h.metric}</p>
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1.5">{h.metric}</p>
                 <div className="flex items-end justify-between">
-                  <span className="text-xl font-extrabold text-gray-900 dark:text-foreground leading-none">
+                  <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">
                     {h.isCurrency ? fmtShort(h.value) : h.isDecimal ? h.value.toFixed(1) : h.value}
-                    {h.isDecimal && <Star className="h-3 w-3 text-amber-400 fill-amber-400 inline ml-1 mb-1" />}
+                    {h.isDecimal && <Star className="h-3 w-3 text-[var(--data-warning)] fill-[var(--data-warning)] inline ml-1 mb-1" />}
                   </span>
-                  <span className={cn("text-xs font-bold flex items-center gap-0.5", h.trend >= 0 ? "text-emerald-500" : "text-red-500")}>
+                  <span className={cn("text-xs font-bold flex items-center gap-0.5", h.trend >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                     {h.trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {h.trend > 0 ? "+" : ""}{h.trend.toFixed ? h.trend.toFixed(1) : h.trend}
                   </span>
                 </div>
                 {expandedModule === h.module && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border space-y-2">
-                    {h.detail && <p className="text-xs text-gray-500 dark:text-muted">{h.detail}</p>}
+                  <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border space-y-2">
+                    {h.detail && <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{h.detail}</p>}
                     {h.target > 0 && (
                       <>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-400 dark:text-muted">Meta: {h.target}</span>
-                          <span className="font-bold text-gray-600 dark:text-foreground">{pct.toFixed(0)}%</span>
+                          <span className="text-[var(--text-tertiary)] dark:text-muted">Meta: {h.target}</span>
+                          <span className="font-bold text-[var(--text-secondary)] dark:text-foreground">{pct.toFixed(0)}%</span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                          <div className={cn("h-full rounded-full transition-all", h.status === "ok" ? "bg-emerald-500" : h.status === "warning" ? "bg-amber-500" : "bg-red-500")} style={{ width: `${pct}%` }} />
+                          <div className={cn("h-full rounded-full transition-all", h.status === "ok" ? "bg-[var(--accent-soft)]" : h.status === "warning" ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]")} style={{ width: `${pct}%` }} />
                         </div>
                       </>
                     )}
@@ -372,13 +373,13 @@ export default function ExecutiveDashboardTab() {
       </div>
 
       {/* ── Recommendations ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500" /> Acciones recomendadas
-        </h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" /> Acciones recomendadas
+        </CardTitle>
         <div className="space-y-2">
           {recommendations.map((action, i) => (
-            <div key={i} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm", action.severity === "high" ? "bg-red-50 dark:bg-red-950/10 text-red-700 dark:text-red-400" : action.severity === "medium" ? "bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400")}>
+            <div key={i} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm", action.severity === "high" ? "bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error)] dark:text-[var(--data-error)]" : action.severity === "medium" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/10 text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]")}>
               {action.severity === "high" ? <AlertTriangle className="h-4 w-4 shrink-0" /> : action.severity === "medium" ? <AlertTriangle className="h-4 w-4 shrink-0 opacity-70" /> : <CheckCircle className="h-4 w-4 shrink-0" />}
               <span className="font-semibold">{action.text}</span>
             </div>
@@ -408,7 +409,7 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible opacity-70 group-hover:opacity-100 transition-opacity">
         <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 text-white text-[9px] font-semibold px-2 py-1 rounded-md whitespace-nowrap z-20 shadow-lg">
+      <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 text-white text-[length:var(--ts-2xs)] font-semibold px-2 py-1 rounded-md whitespace-nowrap z-20">
         7 días {trend} hoy: {typeof lastVal === 'number' && lastVal >= 1000 ? `${(lastVal/1000).toFixed(1)}k` : lastVal}
       </div>
     </div>

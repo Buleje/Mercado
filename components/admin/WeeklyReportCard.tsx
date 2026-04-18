@@ -1,7 +1,8 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -256,7 +257,7 @@ export default function WeeklyReportCard() {
   const maxDay = data ? Math.max(...data.salesByDay.map(d => d.total), 1) : 1;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -276,37 +277,35 @@ export default function WeeklyReportCard() {
       {/* Body */}
       <div className="p-5">
         {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-          </div>
+          <LoadingState />
         ) : error ? (
-          <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] text-center py-6">{error}</p>
         ) : data ? (
           <div className="space-y-5">
             {/* Periodo */}
-            <p className="text-xs text-gray-500 dark:text-gray-400">{data.weekLabel}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">{data.weekLabel}</p>
 
             {/* KPIs */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ventas</p>
-                <p className="text-base font-bold text-gray-900 dark:text-white">{fmt(weekTotal)}</p>
+              <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-center">
+                <p className="text-xs text-[var(--text-tertiary)] mb-1">Ventas</p>
+                <p className="text-base font-bold text-[var(--text-primary)]">{fmt(weekTotal)}</p>
               </div>
-              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Margen</p>
-                <p className="text-base font-bold text-[#00B4A6] dark:text-emerald-400">
+              <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-center">
+                <p className="text-xs text-[var(--text-tertiary)] mb-1">Margen</p>
+                <p className="text-base font-bold text-[#00B4A6] dark:text-[var(--data-success)]">
                   {data.margin.toFixed(1)}%
                 </p>
               </div>
-              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Transac.</p>
-                <p className="text-base font-bold text-gray-900 dark:text-white">{data.sales.length}</p>
+              <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-center">
+                <p className="text-xs text-[var(--text-tertiary)] mb-1">Transac.</p>
+                <p className="text-base font-bold text-[var(--text-primary)]">{data.sales.length}</p>
               </div>
             </div>
 
             {/* Ventas por dia — barras simples */}
             <div>
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+              <p className="text-xs font-medium text-[var(--text-secondary)] mb-2 flex items-center gap-1">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Ventas por dia
               </p>
@@ -316,11 +315,11 @@ export default function WeeklyReportCard() {
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                       <div
-                        className="w-full rounded-t-sm bg-[#00B4A6] dark:bg-emerald-600 min-h-[2px] transition-all"
+                        className="w-full rounded-t-sm bg-[#00B4A6] dark:bg-[var(--accent-soft)] min-h-[2px] transition-all"
                         style={{ height: `${Math.max(pct, 2)}%` }}
                         title={fmt(d.total)}
                       />
-                      <span className="text-[9px] text-gray-400">{d.label}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{d.label}</span>
                     </div>
                   );
                 })}
@@ -330,15 +329,15 @@ export default function WeeklyReportCard() {
             {/* Top productos */}
             {(data.dashboard?.topProducts?.length ?? 0) > 0 && (
               <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+                <p className="text-xs font-medium text-[var(--text-secondary)] mb-2 flex items-center gap-1">
                   <Package className="h-3.5 w-3.5" />
                   Top productos
                 </p>
                 <ul className="space-y-1">
                   {(data.dashboard?.topProducts ?? []).slice(0, 5).map((p, i) => (
                     <li key={i} className="flex items-center justify-between text-xs">
-                      <span className="text-gray-700 dark:text-gray-300 truncate max-w-[60%]">{p.name}</span>
-                      <span className="text-gray-500 dark:text-gray-400">{p.quantity} uds — {fmt(p.revenue)}</span>
+                      <span className="text-[var(--text-secondary)] truncate max-w-[60%]">{p.name}</span>
+                      <span className="text-[var(--text-tertiary)]">{p.quantity} uds — {fmt(p.revenue)}</span>
                     </li>
                   ))}
                 </ul>
@@ -347,9 +346,9 @@ export default function WeeklyReportCard() {
 
             {/* Stock bajo */}
             {data.lowStockCount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                <p className="text-xs text-amber-800 dark:text-amber-300">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] px-3 py-2">
+                <AlertTriangle className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)] flex-shrink-0" />
+                <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)]">
                   {data.lowStockCount} {data.lowStockCount === 1 ? "producto" : "productos"} con stock bajo
                 </p>
               </div>

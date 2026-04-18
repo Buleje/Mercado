@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeCompare } from "@/lib/timing-safe";
+import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendPushToPhone } from "@/lib/push-sender";
@@ -17,14 +17,7 @@ import { logActivity } from "@/lib/activity-logger";
  * Sugerencia vercel.json: "0 8,14,20 * * *" (3 veces al día)
  * Autorización: Bearer <CRON_SECRET>
  */
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("stock-alerts-notify", async (req) => {
   try {
     const result = await withCronRetry("stock-alerts-notify", async () => {
       // Multi-tenant: process all active tenants
@@ -89,12 +82,12 @@ export async function GET(req: NextRequest) {
           .join(", ");
         const sufijo = alertas.length > 5 ? ` y ${alertas.length - 5} más` : "";
 
-        await NotificationLogsDB.add({
+        NotificationLogsDB.add({
           type: "low_stock_cron",
           recipient: `admin-${tenant.slug}`,
           message: `${alertas.length} producto(s) con stock bajo: ${nombresAlerta}${sufijo}`,
           status: "pending",
-        }, tenant.id);
+        }, tenant.id).catch(() => {});
 
         // Send push + WhatsApp to store owner
         (async () => {
@@ -114,7 +107,7 @@ export async function GET(req: NextRequest) {
               title: `⚠️ ${alertas.length} producto(s) con stock bajo`,
               body: pushBody + extra,
               url: "/admin?module=inventario&tab=stock",
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/stock-alerts-notify] push send failed", { error: String(err), tenantId: tenant.id }));
 
             // WhatsApp alert for ALL low stock products (not just agotados)
             const agotados = alertas.filter(a => a.stockActual <= 0);
@@ -146,7 +139,7 @@ export async function GET(req: NextRequest) {
               recipient: ownerPhone,
               message: lines.join("\n"),
               tenantId: tenant.id,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/stock-alerts-notify] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));
 
             allResults.push({
               tenant: tenant.name,
@@ -181,4 +174,4 @@ export async function GET(req: NextRequest) {
     logger.error("[cron/stock-alerts-notify] Fatal error", { error: message });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
-}
+});

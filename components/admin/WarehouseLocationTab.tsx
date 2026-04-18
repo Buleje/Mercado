@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
-import { MapPin, Search, Check, AlertTriangle, Info, Loader2, Plus, Trash2 } from "lucide-react";
+import { MapPin, Search, Check, AlertTriangle, Info, Loader2, Plus, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/erp";
 
@@ -28,14 +29,14 @@ function ModuleTooltip() {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative inline-block">
-      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} className="text-gray-400 hover:text-primary transition-colors focus:outline-none" aria-label="Ayuda sobre Ubicaciones">
+      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none" aria-label="Ayuda sobre Ubicaciones">
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 text-xs leading-relaxed shadow-xl dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Ubicaciones de almacen</p>
-          <p className="mb-3 text-gray-600 dark:text-muted">Mapea donde esta cada producto dentro del almacen: zona, pasillo, estante y posicion.</p>
-          <p className="text-gray-500 dark:text-muted">Ejemplo: una gaseosa puede estar en A - Bebidas, pasillo 1, estante 2, bin 4, con 18 unidades ocupando 60% de capacidad.</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Ubicaciones de almacen</p>
+          <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Mapea donde esta cada producto dentro del almacen: zona, pasillo, estante y posicion.</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: una gaseosa puede estar en A - Bebidas, pasillo 1, estante 2, bin 4, con 18 unidades ocupando 60% de capacidad.</p>
         </div>
       )}
     </div>
@@ -149,52 +150,52 @@ export default function WarehouseLocationTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
-            <MapPin className="h-6 w-6 text-rose-500" /> Ubicaciones de Almacen <ModuleTooltip />
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-muted">Mapa real de ubicaciones por zona, almacen y capacidad</p>
+          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <MapPin className="h-6 w-6 text-[var(--text-secondary)]" /> Ubicaciones de Almacen <ModuleTooltip />
+          </SectionTitle>
+          <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Mapa real de ubicaciones por zona, almacen y capacidad</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Ubicaciones Ocupadas</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{occupied}/{totalSlots}</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Espacios Libres</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{empty}</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Ocupacion Promedio</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400">{avgOccupancy.toFixed(0)}%</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Casi Llenos (&gt;90%)</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400">{critical}</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Ubicaciones Ocupadas</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{occupied}/{totalSlots}</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Espacios Libres</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{empty}</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Ocupacion Promedio</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{avgOccupancy.toFixed(0)}%</p></div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Casi Llenos (&gt;90%)</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-[var(--data-warning)] dark:text-[var(--data-warning)]">{critical}</p></div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-gray-900 dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Nueva ubicacion</div>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Nueva ubicacion</div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} placeholder="Codigo" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-          <select value={form.zone} onChange={(event) => setForm((prev) => ({ ...prev, zone: event.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{ZONES.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select>
-          <select value={form.warehouseId} onChange={(event) => setForm((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select>
-          <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value, category: products.find((product) => String(product.id) === event.target.value)?.category || prev.category }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
+          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} placeholder="Codigo" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <select value={form.zone} onChange={(event) => setForm((prev) => ({ ...prev, zone: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{ZONES.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select>
+          <select value={form.warehouseId} onChange={(event) => setForm((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select>
+          <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value, category: products.find((product) => String(product.id) === event.target.value)?.category || prev.category }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
             <option value="">Sin producto asignado</option>
             {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
           </select>
-          <input value={form.aisle} onChange={(event) => setForm((prev) => ({ ...prev, aisle: event.target.value }))} placeholder="Pasillo" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-          <input value={form.shelf} onChange={(event) => setForm((prev) => ({ ...prev, shelf: event.target.value }))} placeholder="Estante" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-          <input value={form.bin} onChange={(event) => setForm((prev) => ({ ...prev, bin: event.target.value }))} placeholder="Bin" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <input value={form.aisle} onChange={(event) => setForm((prev) => ({ ...prev, aisle: event.target.value }))} placeholder="Pasillo" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <input value={form.shelf} onChange={(event) => setForm((prev) => ({ ...prev, shelf: event.target.value }))} placeholder="Estante" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <input value={form.bin} onChange={(event) => setForm((prev) => ({ ...prev, bin: event.target.value }))} placeholder="Bin" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input value={form.qty} onChange={(event) => setForm((prev) => ({ ...prev, qty: event.target.value }))} type="number" min={0} placeholder="Qty" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-            <input value={form.capacity} onChange={(event) => setForm((prev) => ({ ...prev, capacity: event.target.value }))} type="number" min={0} placeholder="Capacidad" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+            <input value={form.qty} onChange={(event) => setForm((prev) => ({ ...prev, qty: event.target.value }))} type="number" min={0} placeholder="Qty" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+            <input value={form.capacity} onChange={(event) => setForm((prev) => ({ ...prev, capacity: event.target.value }))} type="number" min={0} placeholder="Capacidad" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
           </div>
         </div>
-        <button onClick={addLocation} disabled={saving} className="mt-4 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Guardando..." : "Crear ubicacion"}</button>
+        <button onClick={addLocation} disabled={saving} className="mt-4 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Guardando..." : "Crear ubicacion"}</button>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
-        <h3 className="mb-4 text-sm font-extrabold text-gray-900 dark:text-foreground">Mapa de Zonas</h3>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
+        <CardTitle className="mb-4 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Mapa de Zonas</CardTitle>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {ZONES.map((zone) => {
             const zoneLocs = locs.filter((loc) => loc.zone === zone);
             return (
-              <button key={zone} onClick={() => setZoneFilter(zoneFilter === zone ? "" : zone)} className={cn("rounded-xl border-2 p-4 text-left transition-all hover:shadow-md", zoneFilter === zone ? "border-rose-500 bg-rose-50 dark:bg-rose-950/20" : "border-gray-200 bg-gray-50 dark:border-card-border dark:bg-surface")}>
-                <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{zone}</p>
+              <button key={zone} onClick={() => setZoneFilter(zoneFilter === zone ? "" : zone)} className={cn("rounded-lg border-2 p-4 text-left transition-all hover:shadow-sm", zoneFilter === zone ? "border-rose-500 bg-[var(--surface-sunken)]" : "border-[var(--rule-base)] bg-gray-50 dark:border-card-border dark:bg-surface")}>
+                <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{zone}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {zoneLocs.map((loc) => (
-                    <div key={loc.id} className={cn("h-4 w-4 rounded-sm", !loc.product ? "bg-gray-200 dark:bg-gray-700" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 ? "bg-red-400" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.6 ? "bg-amber-400" : "bg-emerald-400")} title={loc.code + (loc.product ? `: ${loc.product}` : " (vacio)")} />
+                    <div key={loc.id} className={cn("h-4 w-4 rounded-sm", !loc.product ? "bg-gray-200 dark:bg-gray-700" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 ? "bg-[var(--data-error)]" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.6 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]")} title={loc.code + (loc.product ? `: ${loc.product}` : " (vacio)")} />
                   ))}
                 </div>
               </button>
@@ -205,52 +206,52 @@ export default function WarehouseLocationTab() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar codigo o producto..." className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm dark:border-card-border dark:bg-card" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar codigo o producto..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm dark:border-card-border dark:bg-card" />
         </div>
-        <button onClick={() => setShowEmpty((prev) => !prev)} className={cn("rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", showEmpty ? "bg-primary text-white" : "border border-gray-200 bg-white text-gray-600 dark:border-card-border dark:bg-card dark:text-muted")}>{showEmpty ? "Mostrando vacios" : "Ocultar vacios"}</button>
+        <button onClick={() => setShowEmpty((prev) => !prev)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", showEmpty ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] dark:border-card-border dark:bg-card dark:text-muted")}>{showEmpty ? "Mostrando vacios" : "Ocultar vacios"}</button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface">
               <tr>
-                <th className="px-5 py-3 text-left font-bold text-gray-500 dark:text-muted">Codigo</th>
-                <th className="px-5 py-3 text-left font-bold text-gray-500 dark:text-muted">Zona</th>
-                <th className="px-5 py-3 text-left font-bold text-gray-500 dark:text-muted">Almacen</th>
-                <th className="px-5 py-3 text-left font-bold text-gray-500 dark:text-muted">Producto</th>
-                <th className="px-5 py-3 text-right font-bold text-gray-500 dark:text-muted">Qty/Cap</th>
-                <th className="px-5 py-3 text-left font-bold text-gray-500 dark:text-muted">Acciones</th>
+                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Codigo</th>
+                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Zona</th>
+                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Almacen</th>
+                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
+                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Qty/Cap</th>
+                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {loading && <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando ubicaciones...</td></tr>}
-              {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted">No hay ubicaciones registradas.</td></tr>}
+              {loading && <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando ubicaciones...</td></tr>}
+              {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">No hay ubicaciones registradas.</td></tr>}
               {filtered.map((loc) => (
                 <tr key={loc.id} className="hover:bg-gray-50 dark:hover:bg-surface">
-                  <td className="px-5 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{loc.code}</td>
-                  <td className="px-5 py-3 text-gray-600 dark:text-muted">{loc.zone}</td>
-                  <td className="px-5 py-3 text-gray-600 dark:text-muted">{loc.warehouseName}</td>
+                  <td className="px-5 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{loc.code}</td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{loc.zone}</td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{loc.warehouseName}</td>
                   <td className="px-5 py-3">
-                    <select value={loc.productId ?? ""} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, productId: event.target.value ? Number(event.target.value) : null, product: products.find((product) => String(product.id) === event.target.value)?.name ?? null, category: products.find((product) => String(product.id) === event.target.value)?.category ?? item.category } : item))} className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm dark:border-card-border dark:bg-surface">
+                    <select value={loc.productId ?? ""} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, productId: event.target.value ? Number(event.target.value) : null, product: products.find((product) => String(product.id) === event.target.value)?.name ?? null, category: products.find((product) => String(product.id) === event.target.value)?.category ?? item.category } : item))} className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-sm dark:border-card-border dark:bg-surface">
                       <option value="">Sin producto</option>
                       {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
                     </select>
                   </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      <input value={loc.qty} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, qty: Number(event.target.value || 0) } : item))} type="number" min={0} className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-right text-sm dark:border-card-border dark:bg-surface" />
-                      <span className="text-gray-400">/</span>
-                      <input value={loc.capacity} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, capacity: Number(event.target.value || 0) } : item))} type="number" min={0} className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-right text-sm dark:border-card-border dark:bg-surface" />
+                      <input value={loc.qty} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, qty: Number(event.target.value || 0) } : item))} type="number" min={0} className="w-20 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-right text-sm dark:border-card-border dark:bg-surface" />
+                      <span className="text-[var(--text-tertiary)]">/</span>
+                      <input value={loc.capacity} onChange={(event) => setLocs((prev) => prev.map((item) => item.id === loc.id ? { ...item, capacity: Number(event.target.value || 0) } : item))} type="number" min={0} className="w-20 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-right text-sm dark:border-card-border dark:bg-surface" />
                     </div>
-                    {loc.capacity > 0 && loc.qty > loc.capacity && <p className="mt-1 text-xs text-red-500">Sobre capacidad</p>}
+                    {loc.capacity > 0 && loc.qty > loc.capacity && <p className="mt-1 text-xs text-[var(--data-error)]">Sobre capacidad</p>}
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => saveLocation(loc)} className="rounded-lg border border-emerald-200 p-2 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900/40 dark:hover:bg-emerald-950/20"><Check className="h-4 w-4" /></button>
-                      <button onClick={() => deleteLocation(loc.id)} className="rounded-lg border border-red-200 p-2 text-red-500 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
-                      {loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                      <button onClick={() => saveLocation(loc)} className="rounded-lg border border-[var(--data-success)]/30 p-2 text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:border-[var(--data-success)]/30 dark:hover:bg-[var(--accent-muted)]"><Check className="h-4 w-4" /></button>
+                      <button onClick={() => deleteLocation(loc.id)} className="rounded-lg border border-[var(--data-error)] p-2 text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:border-[var(--data-error)]/40 dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
+                      {loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 && <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />}
                     </div>
                   </td>
                 </tr>

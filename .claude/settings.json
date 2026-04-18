@@ -7,7 +7,8 @@
     "BSM_HOOKS_DEBUG": "0",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "",
-    "OTEL_SERVICE_NAME": "bodega-san-martin-claude"
+    "OTEL_SERVICE_NAME": "bodega-san-martin-claude",
+    "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000"
   },
   "hooks": {
     "PreToolUse": [
@@ -68,6 +69,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/hex-code-guard.mjs",
+            "timeout": 3,
+            "async": true
+          },
+          {
+            "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-tool-lint.mjs",
             "timeout": 30,
             "async": true
@@ -100,6 +107,44 @@
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start-context.mjs",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/user-prompt-adr-injector.mjs",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-compact-handoff.mjs",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/subagent-cost-log.mjs",
+            "timeout": 2,
+            "async": true
           }
         ]
       }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, X, MapPin, Trash2, Bike, ShoppingBasket } from "lucide-react";
+import { Check, X, MapPin, Trash2, Bike, ShoppingBasket } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
@@ -58,7 +58,7 @@ export function OrdersList({
     return (
       <div className="space-y-3 animate-pulse">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center gap-4">
+          <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center gap-4">
             <div className="h-5 w-5 bg-gray-200 dark:bg-surface rounded shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded w-1/4" />
@@ -74,7 +74,7 @@ export function OrdersList({
   if (activeOrders.length === 0) {
     return (
       <EmptyState
-        icon={<ShoppingBasket className="h-10 w-10 text-gray-300" />}
+        icon={<ShoppingBasket className="h-10 w-10 text-[var(--text-tertiary)]" />}
         title="No hay pedidos activos"
         description="Los pedidos nuevos aparecerán aquí en tiempo real."
         actions={[{ label: "Ver todos los pedidos", href: "/admin?tab=pedidos", variant: "secondary" }]}
@@ -101,7 +101,7 @@ export function OrdersList({
             <div
               key={o.id}
               className={cn(
-                "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden",
+                "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden",
                 urgencyBorder,
                 selectedOrderIds.has(o.id) && "ring-2 ring-primary"
               )}
@@ -116,39 +116,39 @@ export function OrdersList({
                   checked={selectedOrderIds.has(o.id)}
                   onClick={e => e.stopPropagation()}
                   onChange={() => onToggleSelect(o.id)}
-                  className="rounded border-gray-300 text-primary focus:ring-primary shrink-0 self-start mt-1"
+                  className="rounded border-[var(--rule-base)] text-primary focus:ring-primary shrink-0 self-start mt-1"
                 />
 
                 {/* Left: customer info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-gray-900 dark:text-foreground">{o.customer.name}</span>
+                    <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</span>
                     {o.customer.phone && (
-                      <span className="text-xs font-mono text-gray-400 dark:text-muted">{o.customer.phone}</span>
+                      <span className="text-xs font-mono text-[var(--text-tertiary)] dark:text-muted">{o.customer.phone}</span>
                     )}
                     <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
                       {STATUS_LABELS[o.status]}
                     </span>
                     {isUrgent2h && (
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400 animate-pulse">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)] animate-pulse">
                         {"\u26A0"} +2h
                       </span>
                     )}
                     {isUrgent1h && (
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]">
                         {"\u23F0"} +1h
                       </span>
                     )}
                     {o.paymentMethod && (
                       <span className={cn(
                         "inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                        o.paymentMethod === "yape" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
+                        o.paymentMethod === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--accent-soft)] text-[var(--data-success)]"
                       )}>
                         {o.paymentMethod === "yape" ? "Yape" : "Efectivo"}
                       </span>
                     )}
                     {o.paymentMethod === "efectivo" && o.deuda && (
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)]">
                         Deuda pendiente
                       </span>
                     )}
@@ -161,19 +161,19 @@ export function OrdersList({
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-muted mt-0.5 truncate">{o.customer.location}</p>
+                  <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">{o.customer.location}</p>
                   {storeLat !== null && storeLon !== null && (() => {
                     const gps = parseGps(o.customer.location);
                     if (!gps) return null;
                     const km = haversineKm(storeLat, storeLon, gps.lat, gps.lon);
                     const label = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
                     return (
-                      <span className="inline-flex items-center gap-1 text-xs text-blue-500 font-semibold">
+                      <span className="inline-flex items-center gap-1 text-xs text-[var(--data-success)] font-semibold">
                         <MapPin className="h-3 w-3 shrink-0" />{label}
                       </span>
                     );
                   })()}
-                  <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
+                  <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
                     {formatDate(o.createdAt)} · {o.items.length} producto{o.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{o.total.toFixed(2)}</span>
                   </p>
                 </div>
@@ -187,14 +187,14 @@ export function OrdersList({
                     <>
                       <button
                         onClick={() => onVerifyYape(o.id)}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors border border-[var(--data-success)]/30"
                         title="Confirmar Yape como válido"
                       >
                         <Check className="h-4 w-4" /> Confirmar Yape
                       </button>
                       <button
                         onClick={() => onRejectYape(o.id)}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-200"
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors border border-[var(--data-error)]"
                         title="Rechazar Yape (pago falso)"
                       >
                         <X className="h-4 w-4" /> Falso
@@ -204,7 +204,7 @@ export function OrdersList({
                   {o.paymentMethod === "efectivo" && o.deuda && (
                     <button
                       onClick={() => onMarkDeudaPaid(o.id)}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors border border-[var(--data-success)]/30"
                       title="Marcar deuda como cobrada"
                     >
                       <Check className="h-4 w-4" /> Cobrado
@@ -214,7 +214,7 @@ export function OrdersList({
                     href={googleMapsUrl(o.customer.location)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                    className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
                     title="Ver en Google Maps"
                   >
                     <MapPin className="h-4 w-4" />
@@ -222,7 +222,7 @@ export function OrdersList({
                   <select
                     value={o.status}
                     onChange={e => onUpdateStatus(o.id, e.target.value as OrderStatus)}
-                    className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border px-2 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
+                    className="text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border px-2 py-2 outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card"
                     disabled={!VALID_TRANSITIONS[o.status]?.length}
                   >
                     <option value={o.status}>{STATUS_LABELS[o.status]}</option>
@@ -232,7 +232,7 @@ export function OrdersList({
                   </select>
                   <button
                     onClick={() => onDeleteOrder(o.id)}
-                    className="p-2 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -250,17 +250,17 @@ export function OrdersList({
           <button
             disabled={safeOrdPage <= 1}
             onClick={() => onPageChange(Math.max(1, safeOrdPage - 1))}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Anterior
           </button>
-          <span className="text-xs text-gray-500 dark:text-muted">
+          <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
             Página {safeOrdPage} de {ordTotalPages} · {activeOrders.length} pedidos
           </span>
           <button
             disabled={safeOrdPage >= ordTotalPages}
             onClick={() => onPageChange(safeOrdPage + 1)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Siguiente
           </button>

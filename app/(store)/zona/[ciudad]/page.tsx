@@ -17,7 +17,10 @@ import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import { categories } from "@/data/products";
 import { zones, findZone, getZoneFAQs } from "@/data/zones";
+import { getDistrictsForCity } from "@/data/districts";
 import { ProductsDB } from "@/lib/db/products.db";
+import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
+import { Package, ShoppingCart, Bike, CreditCard, FileText, BarChart3 } from "lucide-react";
 import {
   generateSoftwareApplicationLD,
   generateZoneLandingLD,
@@ -98,34 +101,38 @@ function CategoryCard({
   zoneName: string;
   zoneSlug: string;
 }) {
+  // eslint-disable-next-line react-hooks/purity -- getCatalogCategoryIcon retorna un componente lucide ya creado (lookup no factory)
+  const CatIcon = getCatalogCategoryIcon(category.id);
   return (
     <Link
       href={`/zona/${zoneSlug}/${category.id}`}
-      className="group flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-emerald-300 hover:-translate-y-0.5"
+      className="group flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-slate-900 hover:-translate-y-0.5"
     >
-      <span className="text-4xl" role="img" aria-label={category.label}>
-        {category.emoji}
-      </span>
-      <h2 className="text-lg font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
-        {category.label}
-      </h2>
-      <p className="text-sm text-slate-500">
-        {count > 0
-          ? `${count} productos disponibles`
-          : "Categoria disponible"}
-      </p>
+      <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
+        <CatIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+      </div>
+      <div>
+        <h2 className="text-base font-extrabold tracking-tight text-slate-800 group-hover:text-slate-900 transition-colors">
+          {category.label}
+        </h2>
+        <p className="text-xs text-slate-500 mt-1 tabular-nums">
+          {count > 0
+            ? `${count} productos disponibles`
+            : "Categoría disponible"}
+        </p>
+      </div>
     </Link>
   );
 }
 
 // ── Platform features section ───────────────────────────────────────
 const FEATURES = [
-  { icon: "📦", title: "Inventario", desc: "Control de stock en tiempo real con alertas" },
-  { icon: "🛒", title: "Ventas POS", desc: "Punto de venta rapido desde celular o PC" },
-  { icon: "🛵", title: "Delivery", desc: "Tus clientes piden y tu entregas a domicilio" },
-  { icon: "💳", title: "Fiado Digital", desc: "Credito automatico con score para clientes" },
-  { icon: "🧾", title: "SUNAT", desc: "Boletas y facturas electronicas integradas" },
-  { icon: "📊", title: "Reportes", desc: "Resumen diario por WhatsApp con IA" },
+  { Icon: Package, title: "Inventario", desc: "Control de stock en tiempo real con alertas" },
+  { Icon: ShoppingCart, title: "Ventas POS", desc: "Punto de venta rápido desde celular o PC" },
+  { Icon: Bike, title: "Delivery", desc: "Tus clientes piden y vos entregás a domicilio" },
+  { Icon: CreditCard, title: "Fiado Digital", desc: "Crédito automático con score para clientes" },
+  { Icon: FileText, title: "SUNAT", desc: "Boletas y facturas electrónicas integradas" },
+  { Icon: BarChart3, title: "Reportes", desc: "Resumen diario por WhatsApp con IA" },
 ];
 
 function FeaturesGrid({ zoneName }: { zoneName: string }) {
@@ -135,18 +142,25 @@ function FeaturesGrid({ zoneName }: { zoneName: string }) {
         Todo lo que necesita tu bodega en {zoneName}
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {FEATURES.map((f) => (
-          <div
-            key={f.title}
-            className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center"
-          >
-            <span className="text-2xl">{f.icon}</span>
-            <h3 className="mt-1 text-sm font-semibold text-slate-700">
-              {f.title}
-            </h3>
-            <p className="mt-0.5 text-xs text-slate-500">{f.desc}</p>
-          </div>
-        ))}
+        {FEATURES.map((f) => {
+          const FIcon = f.Icon;
+          return (
+            <div
+              key={f.title}
+              className="rounded-xl border border-slate-200 bg-white p-4"
+            >
+              <div className="h-8 w-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
+                <FIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              </div>
+              <h3 className="mt-3 text-sm font-extrabold tracking-tight text-slate-800">
+                {f.title}
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+                {f.desc}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -299,6 +313,32 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
 
       {/* Features */}
       <FeaturesGrid zoneName={zone.name} />
+
+      {/* Districts strip (hyperlocal SEO signal) */}
+      {getDistrictsForCity(zone.slug).length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">
+            Buleje por distritos de {zone.name}
+          </h2>
+          <p className="text-sm text-slate-500 mb-3">
+            Landings hiperlocales con delivery y soporte por distrito.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {getDistrictsForCity(zone.slug).map((d) => (
+              <Link
+                key={d.slug}
+                href={`/zona/${zone.slug}/distrito/${d.slug}`}
+                className="group rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+              >
+                {d.name}
+                <span className="block text-xs text-slate-400 group-hover:text-emerald-500 mt-0.5">
+                  Ver bodegas y delivery
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FAQ */}
       <FAQSection zone={zone} />

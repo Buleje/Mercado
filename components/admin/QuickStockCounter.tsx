@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback } from "react";
 import {
   Barcode,
@@ -11,7 +12,7 @@ import {
   Loader2,
   MinusCircle,
   PlusCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -180,12 +181,12 @@ export default function QuickStockCounter() {
   return (
     <div className="flex flex-col gap-6">
       {/* Scanner input */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="mb-4 flex items-center gap-2">
           <Barcode className="h-5 w-5 text-[#00B4A6]" />
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
             Escanear o ingresar código
-          </h3>
+          </CardTitle>
         </div>
 
         <div className="flex gap-2">
@@ -197,8 +198,8 @@ export default function QuickStockCounter() {
             placeholder="Código de barras o SKU..."
             autoFocus
             className={cn(
-              "flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-              "text-gray-800 placeholder-gray-400 outline-none transition",
+              "flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+              "text-[var(--text-primary)] placeholder-gray-400 outline-none transition",
               "focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             )}
@@ -219,12 +220,12 @@ export default function QuickStockCounter() {
 
         {/* Lookup feedback */}
         {lookupState === "notfound" && (
-          <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+          <p className="mt-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
             Producto no encontrado con ese código.
           </p>
         )}
         {lookupState === "error" && (
-          <p className="mt-2 text-xs text-red-600 dark:text-red-400">{lookupError}</p>
+          <p className="mt-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">{lookupError}</p>
         )}
 
         {/* Found product */}
@@ -232,20 +233,20 @@ export default function QuickStockCounter() {
           <div className="mt-4 rounded-lg border border-[#00B4A6]/30 bg-[#00B4A6]/5 p-4 dark:bg-[#00B4A6]/10">
             <div className="mb-3 flex items-start justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">
                   {foundProduct.name}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-[var(--text-tertiary)]">
                   SKU: {foundProduct.sku} · Stock sistema: {foundProduct.stock} {foundProduct.unit}
                 </p>
               </div>
-              <span className="rounded-full bg-[#00B4A6]/10 px-2 py-0.5 text-xs font-medium text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-green-300">
+              <span className="rounded-full bg-[#00B4A6]/10 px-2 py-0.5 text-xs font-medium text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-[var(--data-success)]">
                 {fmt(foundProduct.price)}
               </span>
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
+              <label className="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">
                 Stock físico contado:
               </label>
               <div className="flex items-center gap-1">
@@ -253,7 +254,7 @@ export default function QuickStockCounter() {
                   onClick={() =>
                     setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
                   }
-                  className="rounded-md p-1 text-gray-500 hover:text-[#00B4A6] dark:hover:text-green-300"
+                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-[#00B4A6] dark:hover:text-[var(--data-success)]"
                 >
                   <MinusCircle className="h-5 w-5" />
                 </button>
@@ -269,14 +270,14 @@ export default function QuickStockCounter() {
                     if (e.key === "Enter") addToCount();
                   }}
                   className={cn(
-                    "w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-sm",
-                    "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                    "w-20 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-center text-sm",
+                    "text-[var(--text-primary)] outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   )}
                 />
                 <button
                   onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
-                  className="rounded-md p-1 text-gray-500 hover:text-[#00B4A6] dark:hover:text-green-300"
+                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-[#00B4A6] dark:hover:text-[var(--data-success)]"
                 >
                   <PlusCircle className="h-5 w-5" />
                 </button>
@@ -287,10 +288,10 @@ export default function QuickStockCounter() {
                   className={cn(
                     "text-xs font-medium",
                     Number(physicalStock) === foundProduct.stock
-                      ? "text-gray-500"
+                      ? "text-[var(--text-secondary)]"
                       : Number(physicalStock) > foundProduct.stock
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-red-600 dark:text-red-400"
+                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                      : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                   )}
                 >
                   {Number(physicalStock) === foundProduct.stock
@@ -315,11 +316,11 @@ export default function QuickStockCounter() {
 
       {/* Counted list */}
       {counted.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
+            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Productos contados ({counted.length})
-            </h3>
+            </CardTitle>
           </div>
 
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -328,25 +329,25 @@ export default function QuickStockCounter() {
               return (
                 <div key={item.productId} className="flex items-center gap-3 px-5 py-3">
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                    <p className="truncate text-sm font-medium text-[var(--text-primary)]">
                       {item.productName}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       Sistema: {item.systemStock} · Físico: {item.physicalStock} {item.unit}
                     </p>
                   </div>
 
                   <div className="text-right">
                     {diff === 0 ? (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                      <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                        <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success)]" />
                         OK
                       </span>
                     ) : (
                       <span
                         className={cn(
                           "flex items-center gap-1 text-xs font-semibold",
-                          diff < 0 ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"
+                          diff < 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--data-success)] dark:text-[var(--data-success)]"
                         )}
                       >
                         <AlertTriangle className="h-3.5 w-3.5" />
@@ -358,7 +359,7 @@ export default function QuickStockCounter() {
 
                   <button
                     onClick={() => removeItem(item.productId)}
-                    className="ml-1 rounded-md p-1 text-gray-300 hover:text-red-500 dark:text-gray-600"
+                    className="ml-1 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)] dark:text-[var(--text-secondary)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -368,35 +369,35 @@ export default function QuickStockCounter() {
           </div>
 
           {/* Summary bar */}
-          <div className="border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-800/50">
+          <div className="border-t border-[var(--rule-soft)] bg-gray-50 px-5 py-4 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
             <div className="mb-3 flex flex-wrap gap-4 text-sm">
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Contados: </span>
-                <span className="font-semibold text-gray-800 dark:text-gray-100">
+                <span className="text-[var(--text-tertiary)]">Contados: </span>
+                <span className="font-semibold text-[var(--text-primary)]">
                   {summary.total}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Con diferencia: </span>
+                <span className="text-[var(--text-tertiary)]">Con diferencia: </span>
                 <span
                   className={cn(
                     "font-semibold",
-                    summary.withDiff > 0 ? "text-red-600 dark:text-red-400" : "text-gray-800 dark:text-gray-100"
+                    summary.withDiff > 0 ? "text-[var(--data-error)] dark:text-[var(--data-error)]" : "text-[var(--text-primary)]"
                   )}
                 >
                   {summary.withDiff}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Diferencia total: </span>
+                <span className="text-[var(--text-tertiary)]">Diferencia total: </span>
                 <span
                   className={cn(
                     "font-semibold",
                     summary.totalDiffValue < 0
-                      ? "text-red-600 dark:text-red-400"
+                      ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
                       : summary.totalDiffValue > 0
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-800 dark:text-gray-100"
+                      ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                      : "text-[var(--text-primary)]"
                   )}
                 >
                   {fmt(summary.totalDiffValue)}
@@ -410,9 +411,9 @@ export default function QuickStockCounter() {
               className={cn(
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition",
                 saveState === "saved"
-                  ? "bg-green-600"
+                  ? "bg-[var(--accent-soft)]"
                   : saveState === "error"
-                  ? "bg-red-600"
+                  ? "bg-[var(--data-error)]"
                   : "bg-[#00B4A6] hover:bg-[#245a40]",
                 "disabled:opacity-60"
               )}

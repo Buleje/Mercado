@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   RefreshCw,
@@ -7,7 +8,7 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types (espejo del contract en lib/finance/cashflow-rolling.ts) ─────────
@@ -136,18 +137,18 @@ export default function CashflowRollingTable() {
   }, [data]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] text-white flex items-center justify-center  shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
               Flujo de caja — 13 semanas
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-tertiary)]">
               Proyección rodante. Actualizado al{" "}
               {data ? formatShortDate(data.generatedAt) : "..."}.
             </p>
@@ -157,7 +158,7 @@ export default function CashflowRollingTable() {
           type="button"
           onClick={() => void fetchData()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 shadow-sm transition-colors shrink-0 min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -166,14 +167,14 @@ export default function CashflowRollingTable() {
 
       {/* Critical week alert */}
       {criticalWeek !== null && data && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40">
-          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-[var(--data-error)] bg-[var(--data-error-50)] dark:border-[var(--data-error)] dark:bg-red-950/40">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] dark:text-[var(--data-error)] shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-bold text-red-800 dark:text-red-200">
+            <p className="font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
               Alerta: en la semana {criticalWeek} tu caja podría caer en
               negativo.
             </p>
-            <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+            <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
               Acción sugerida: cobrar fiados vencidos, renegociar pagos a
               proveedores, o retrasar gastos no esenciales. Saldo proyectado al
               cierre de la semana {criticalWeek}:{" "}
@@ -190,20 +191,20 @@ export default function CashflowRollingTable() {
 
       {/* Starting balance card */}
       {data && (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-card">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-card">
           <div>
-            <p className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-bold text-[var(--text-tertiary)]">
               Saldo hoy
             </p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1 font-mono">
+            <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 font-mono">
               {formatCurrency(data.startingBalance)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-bold text-[var(--text-tertiary)]">
               Semanas sanas
             </p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+            <p className="text-2xl font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
               {data.weeks.filter((w) => !w.isNegative).length} / 13
             </p>
           </div>
@@ -212,22 +213,20 @@ export default function CashflowRollingTable() {
 
       {/* Loading */}
       {loading && !data && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
-        </div>
+        <LoadingState />
       )}
 
       {/* Error */}
       {error && !data && (
         <div className="flex flex-col items-center justify-center gap-3 py-12">
-          <AlertTriangle className="h-8 w-8 text-red-400" />
-          <p className="text-sm font-medium text-red-600 dark:text-red-400 text-center">
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+          <p className="text-sm font-medium text-[var(--data-error)] dark:text-[var(--data-error)] text-center">
             {error}
           </p>
           <button
             type="button"
             onClick={() => void fetchData()}
-            className="text-xs font-bold text-emerald-600 hover:underline"
+            className="text-xs font-bold text-[var(--data-success)] hover:underline"
           >
             Reintentar
           </button>
@@ -236,13 +235,13 @@ export default function CashflowRollingTable() {
 
       {/* Data table: 1 columna fija "Concepto" + 13 columnas semana */}
       {data && data.weeks.length > 0 && (
-        <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-card">
+        <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-card">
           <table className="w-full min-w-[1100px] text-sm border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-white/10">
+              <tr className="border-b border-[var(--rule-base)] dark:border-white/10">
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-card/80 text-left py-3 px-3 text-[10px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-white/10"
+                  className="sticky left-0 z-10 bg-gray-50 dark:bg-card/80 text-left py-3 px-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] border-r border-[var(--rule-base)] dark:border-white/10"
                 >
                   Concepto
                 </th>
@@ -251,15 +250,15 @@ export default function CashflowRollingTable() {
                     scope="col"
                     key={h.number}
                     className={cn(
-                      "py-3 px-2 text-right text-[10px] uppercase tracking-wider font-bold",
+                      "py-3 px-2 text-right text-[length:var(--ts-2xs)] font-bold",
                       h.isNegative
-                        ? "text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-900/10"
-                        : "text-gray-500 dark:text-gray-400",
+                        ? "text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/10"
+                        : "text-[var(--text-tertiary)]",
                     )}
                   >
                     <div className="flex flex-col items-end">
                       <span>S{h.number}</span>
-                      <span className="text-[9px] font-normal text-gray-400">
+                      <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">
                         {formatShortDate(h.start)}
                       </span>
                     </div>
@@ -274,21 +273,21 @@ export default function CashflowRollingTable() {
                   <tr
                     key={row.key}
                     className={cn(
-                      "border-b border-gray-100 dark:border-white/5",
+                      "border-b border-[var(--rule-soft)] dark:border-white/5",
                       isClosing &&
-                        "bg-gray-50 dark:bg-white/5 border-t-2 border-gray-300 dark:border-white/20",
+                        "bg-gray-50 dark:bg-white/5 border-t-2 border-[var(--rule-base)] dark:border-white/20",
                     )}
                   >
                     <th
                       scope="row"
                       className={cn(
-                        "sticky left-0 z-10 text-left py-3 px-3 text-xs font-bold border-r border-gray-200 dark:border-white/10",
+                        "sticky left-0 z-10 text-left py-3 px-3 text-xs font-bold border-r border-[var(--rule-base)] dark:border-white/10",
                         isClosing
-                          ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
-                          : "bg-white dark:bg-card text-gray-700 dark:text-gray-300",
+                          ? "bg-gray-100 dark:bg-white/10 text-[var(--text-primary)]"
+                          : "bg-white dark:bg-card text-[var(--text-secondary)]",
                       )}
                     >
-                      <span className="mr-1 text-gray-400">{row.sign}</span>
+                      <span className="mr-1 text-[var(--text-tertiary)]">{row.sign}</span>
                       {row.label}
                     </th>
                     {data.weeks.map((w) => {
@@ -301,25 +300,25 @@ export default function CashflowRollingTable() {
                           className={cn(
                             "py-3 px-2 text-right font-mono text-xs",
                             weekCellNegative &&
-                              "bg-red-100 dark:bg-red-900/30",
+                              "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30",
                             row.tone === "positive" &&
                               !isClosing &&
-                              "text-emerald-600 dark:text-emerald-400",
+                              "text-[var(--data-success)] dark:text-[var(--data-success)]",
                             row.tone === "negative" &&
                               !isClosing &&
-                              "text-red-500 dark:text-red-400",
+                              "text-[var(--data-error)] dark:text-[var(--data-error)]",
                             row.tone === "neutral" &&
-                              "text-gray-700 dark:text-gray-300",
+                              "text-[var(--text-secondary)]",
                             row.tone === "bold" &&
                               (weekCellNegative
-                                ? "text-red-700 dark:text-red-300 font-bold"
-                                : "text-gray-900 dark:text-white font-bold"),
+                                ? "text-[var(--data-error)] dark:text-[var(--data-error)] font-bold"
+                                : "text-[var(--text-primary)] font-bold"),
                           )}
                         >
                           {formatCurrency(value)}
                           {weekCellNegative && (
                             <TrendingDown
-                              className="inline-block ml-1 h-3 w-3 text-red-500"
+                              className="inline-block ml-1 h-3 w-3 text-[var(--data-error)]"
                               aria-label="saldo negativo"
                             />
                           )}
@@ -337,11 +336,11 @@ export default function CashflowRollingTable() {
       {/* Empty state */}
       {data && data.weeks.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <AlertTriangle className="h-8 w-8 text-gray-300" />
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <AlertTriangle className="h-8 w-8 text-[var(--text-tertiary)]" />
+          <p className="text-sm font-medium text-[var(--text-tertiary)]">
             Sin datos para proyectar
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-sm">
+          <p className="text-xs text-[var(--text-tertiary)] text-center max-w-sm">
             Registra cobros, fiados o pagos a proveedores para ver tu flujo de
             caja rodante.
           </p>

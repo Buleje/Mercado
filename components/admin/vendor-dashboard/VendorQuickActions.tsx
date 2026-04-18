@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
-import { Package, PlusSquare, Store, ExternalLink } from "lucide-react";
+import { Package, PlusSquare, Store, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 
@@ -21,7 +22,7 @@ function buildActions(slug: string): QuickAction[] {
       description: "Atiende los pedidos pendientes",
       href: "/admin?tab=pedidos",
       icon: Package,
-      color: "bg-[#f97316] hover:bg-orange-500",
+      color: "bg-[#f97316] hover:bg-[var(--data-warning)]",
     },
     {
       label: "Cargar producto",
@@ -59,8 +60,8 @@ export function VendorQuickActions() {
   const actions = useMemo(() => buildActions(slug), [slug]);
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
-      <h3 className="font-bold text-gray-900 dark:text-foreground mb-4">Acciones rápidas</h3>
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4">Acciones rápidas</CardTitle>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {actions.map((action) => {
           const Icon = action.icon;
@@ -69,7 +70,7 @@ export function VendorQuickActions() {
               key={action.label}
               href={action.href}
               {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className={`flex items-center gap-3 p-4 rounded-2xl text-white transition-colors min-h-14 ${action.color}`}
+              className={`flex items-center gap-3 p-4 rounded-xl text-white transition-colors min-h-14 ${action.color}`}
             >
               <Icon className="h-6 w-6 shrink-0" />
               <div className="min-w-0 flex-1">

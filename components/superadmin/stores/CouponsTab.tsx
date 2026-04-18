@@ -25,13 +25,13 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
   {
     key: "storeName",
     label: "Tienda",
-    render: (row) => <span className="text-sm text-gray-700 dark:text-gray-300">{row.storeName}</span>,
+    render: (row) => <span className="text-sm text-[var(--text-secondary)]">{row.storeName}</span>,
   },
   {
     key: "discount",
     label: "Descuento",
     render: (row) => (
-      <span className="text-sm font-bold text-green-600 dark:text-green-400">
+      <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
         {row.discountType === "percent" ? `${row.discountValue}%` : fmt(row.discountValue)}
       </span>
     ),
@@ -40,7 +40,7 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
     key: "usage",
     label: "Uso",
     render: (row) => (
-      <span className="text-sm text-gray-600 dark:text-gray-400 tabular-nums">
+      <span className="text-sm text-[var(--text-secondary)] tabular-nums">
         {row.usedCount} / {row.maxUses}
       </span>
     ),
@@ -50,7 +50,7 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
     label: "Estado",
     render: (row) => (
       <span
-        className={`inline-flex items-center gap-1 text-xs font-semibold ${row.active ? "text-green-600" : "text-gray-400"}`}
+        className={`inline-flex items-center gap-1 text-xs font-semibold ${row.active ? "text-[var(--data-success)]" : "text-gray-400"}`}
       >
         {row.active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
         {row.active ? "Activo" : "Inactivo"}
@@ -116,7 +116,7 @@ export function CouponsTab() {
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 rounded-xl px-4 py-3 text-sm">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] rounded-xl px-4 py-3 text-sm">
           {error}
         </div>
       )}

@@ -84,9 +84,9 @@ describe("ProductGallery", () => {
     // Hay múltiples imgs con ese alt (thumbnail + principal) — verificamos que al menos 1 existe
     const imgs = screen.getAllByAltText("Vista trasera");
     expect(imgs.length).toBeGreaterThanOrEqual(1);
-    // El thumbnail #3 debe tener la clase de selección (border-[#00B4A6])
+    // El thumbnail #3 debe tener la clase de selección (border-[#2563EB])
     const thumb3 = screen.getByRole("button", { name: "Imagen 3 de 5" });
-    expect(thumb3.className).toContain("00B4A6");
+    expect(thumb3.className).toContain("border-primary");
   });
 
   it("sin imágenes y sin fallback → muestra texto 'Sin imagen'", () => {

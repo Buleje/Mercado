@@ -221,7 +221,7 @@ export default function PurchaseOrderPDF({ order, supplier }: PurchaseOrderPDFPr
     <button
       type="button"
       onClick={() => printPurchaseOrder(order, supplier)}
-      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-bold transition-colors"
+      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] text-xs font-bold transition-colors"
       title="Descargar / Imprimir PDF"
     >
       <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -1,8 +1,9 @@
 "use client";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { BarChart3, RefreshCw, ChevronDown, Users } from "lucide-react";
+import { BarChart3, RefreshCw, ChevronDown, Users } from "@buleje/design-system/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -197,11 +198,11 @@ function ComparisonBars({
       <div className="flex items-center gap-4 mb-3">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[#00B4A6]" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">Esta semana</span>
+          <span className="text-xs text-[var(--text-tertiary)]">Esta semana</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-gray-300 dark:bg-gray-600" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">Semana anterior</span>
+          <span className="text-xs text-[var(--text-tertiary)]">Semana anterior</span>
         </div>
       </div>
 
@@ -215,7 +216,7 @@ function ComparisonBars({
             <div key={day.date} className="flex-1 flex flex-col items-center group">
               {/* Tooltip */}
               {(day.revenue > 0 || prevDay.revenue > 0) && (
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] rounded px-1.5 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 space-y-0.5">
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[length:var(--ts-2xs)] rounded px-1.5 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 space-y-0.5">
                   <div>Esta: {fmt(day.revenue)}</div>
                   {prevDay.revenue > 0 && <div>Ant: {fmt(prevDay.revenue)}</div>}
                 </div>
@@ -224,17 +225,17 @@ function ComparisonBars({
               {/* Par de barras */}
               <div className="w-full flex items-end gap-0.5" style={{ height: 80 }}>
                 <div
-                  className="flex-1 bg-[#00B4A6] dark:bg-[#2dd4bf] rounded-t transition-all duration-500"
+                  className="flex-1 bg-[#00B4A6] dark:bg-[#2dd4bf] rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{ height: `${thisH}px` }}
                 />
                 <div
-                  className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-t transition-all duration-500"
+                  className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{ height: `${prevH}px` }}
                 />
               </div>
 
               {/* Etiqueta dia */}
-              <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-1 leading-none">
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1 leading-none">
                 {day.dayLabel.split(" ")[0]}
                 <br />
                 {day.dayLabel.split(" ")[1]}
@@ -251,7 +252,7 @@ function ComparisonBars({
 
 function TopProductsTable({ products }: { products: TopProduct[] }) {
   if (products.length === 0) {
-    return <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Sin ventas esta semana</p>;
+    return <p className="text-xs text-[var(--text-tertiary)] text-center py-3">Sin ventas esta semana</p>;
   }
   const maxRev = Math.max(...products.map((p) => p.totalRevenue), 1);
 
@@ -261,22 +262,22 @@ function TopProductsTable({ products }: { products: TopProduct[] }) {
         const barPct = (p.totalRevenue / maxRev) * 100;
         return (
           <div key={p.name} className="flex items-center gap-3">
-            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 w-4 text-right flex-shrink-0">
+            <span className="text-xs font-bold text-[var(--text-tertiary)] w-4 text-right flex-shrink-0">
               {i + 1}
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between text-xs mb-0.5">
-                <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{p.name}</span>
-                <span className="text-gray-400 dark:text-gray-500 ml-2 flex-shrink-0">{fmt(p.totalRevenue)}</span>
+                <span className="text-[var(--text-secondary)] truncate font-medium">{p.name}</span>
+                <span className="text-[var(--text-tertiary)] ml-2 flex-shrink-0">{fmt(p.totalRevenue)}</span>
               </div>
-              <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#f97316] rounded-full transition-all duration-500"
+                  className="h-full bg-[#f97316] rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${barPct}%` }}
                 />
               </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+            <span className="text-xs text-[var(--text-tertiary)] flex-shrink-0">
               {p.totalQty} uds
             </span>
           </div>
@@ -329,16 +330,16 @@ export default function EmployeePerformanceChart() {
       : null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-5 h-5 text-[#00B4A6] dark:text-green-400" />
+          <BarChart3 className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Rendimiento por empleado
-            </h2>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-tertiary)]">
               {lastUpdated
                 ? `Actualizado ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
                 : "Cargando..."}
@@ -351,7 +352,7 @@ export default function EmployeePerformanceChart() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#00B4A6] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+            "text-[#00B4A6] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -366,10 +367,10 @@ export default function EmployeePerformanceChart() {
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
             className={cn(
-              "w-full appearance-none rounded-xl border border-gray-200 dark:border-gray-700",
-              "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100",
+              "w-full appearance-none rounded-xl border border-[var(--rule-base)]",
+              "bg-[var(--surface-raised)] text-[var(--text-primary)]",
               "px-4 py-3 pr-10 text-sm font-medium",
-              "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] dark:focus:ring-green-500"
+              "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] dark:focus:ring-[var(--data-success)]/40"
             )}
           >
             {allStats.map((s) => (
@@ -378,7 +379,7 @@ export default function EmployeePerformanceChart() {
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
         </div>
       )}
 
@@ -386,22 +387,22 @@ export default function EmployeePerformanceChart() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div key={i} className="h-16 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
           ))}
         </div>
       )}
       {!loading && error && (
-        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-center">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          <button onClick={fetchData} className="mt-2 text-xs text-red-500 underline">
+        <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-4 text-center">
+          <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
+          <button onClick={fetchData} className="mt-2 text-xs text-[var(--data-error)] underline">
             Reintentar
           </button>
         </div>
       )}
       {!loading && !error && allStats.length === 0 && (
-        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
-          <Users className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-          <p className="text-sm text-gray-400 dark:text-gray-500">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+          <Users className="w-8 h-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
+          <p className="text-sm text-[var(--text-tertiary)]">
             No hay datos de ventas disponibles
           </p>
         </div>
@@ -421,39 +422,39 @@ export default function EmployeePerformanceChart() {
                   : "primera semana",
                 subColor: weekChange != null
                   ? weekChange >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                     : "text-red-500 dark:text-red-400"
-                  : "text-gray-400",
+                  : "text-[var(--text-tertiary)]",
               },
               {
                 label: "Ventas",
                 value: selected.salesCount,
                 sub: "esta semana",
-                subColor: "text-gray-400 dark:text-gray-500",
+                subColor: "text-[var(--text-tertiary)]",
               },
               {
                 label: "Ticket prom.",
                 value: fmtShort(selected.avgTicket),
                 sub: "por venta",
-                subColor: "text-gray-400 dark:text-gray-500",
+                subColor: "text-[var(--text-tertiary)]",
               },
             ].map((kpi) => (
               <div
                 key={kpi.label}
-                className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-center"
+                className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center"
               >
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{kpi.label}</p>
-                <p className="font-bold text-lg text-gray-900 dark:text-gray-100">{kpi.value}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
+                <p className="font-bold text-lg text-[var(--text-primary)]">{kpi.value}</p>
                 <p className={cn("text-xs", kpi.subColor)}>{kpi.sub}</p>
               </div>
             ))}
           </div>
 
           {/* Grafico de barras comparativo */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
               Ventas por dia (esta semana vs anterior)
-            </h3>
+            </CardTitle>
             <ComparisonBars
               thisPeriod={selected.thisPeriod}
               prevPeriod={selected.prevPeriod}
@@ -461,10 +462,10 @@ export default function EmployeePerformanceChart() {
           </div>
 
           {/* Top 5 productos */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
               Productos mas vendidos (esta semana)
-            </h3>
+            </CardTitle>
             <TopProductsTable products={selected.topProducts} />
           </div>
 
@@ -473,18 +474,18 @@ export default function EmployeePerformanceChart() {
             <div className={cn(
               "rounded-xl p-3 flex items-center justify-between",
               weekChange != null && weekChange >= 0
-                ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-                : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
+                : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)]"
             )}>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-[var(--text-secondary)]">
                 Semana anterior: <strong>{fmt(selected.totalPrevWeek)}</strong>
               </span>
               {weekChange != null && (
                 <span className={cn(
                   "text-sm font-bold",
                   weekChange >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-red-500 dark:text-red-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                    : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                 )}>
                   {weekChange >= 0 ? "+" : ""}{weekChange.toFixed(1)}%
                 </span>

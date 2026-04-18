@@ -2,7 +2,8 @@
 
 import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingCart, AlertTriangle, Minus, Plus, Package, Flame } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Package } from "lucide-react";
+import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -21,10 +22,12 @@ function getLowStockProducts(allProducts: Product[]): Product[] {
     .slice(0, 8);
 }
 
-export default function LastUnitsSection() {
+export default function LastUnitsSection({ serverProducts, showEmpty = false, emptyVariant = "admin" }: { serverProducts?: Product[]; showEmpty?: boolean; emptyVariant?: "admin" | "public" }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const lowStock = useMemo(() => getLowStockProducts(products), [products]);
   const lastClickRef = useRef(0);
 
@@ -38,8 +41,9 @@ export default function LastUnitsSection() {
     [addItem]
   );
 
-  // No render while loading or if empty — prevents blank gaps
-  if (isLoading || lowStock.length === 0) return <SectionPlaceholder title="Ultimas Unidades" hint="Se muestran automaticamente productos con bajo stock" cols={4} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Ultimas Unidades" hint="Cargando..." cols={4} />;
+  if (lowStock.length === 0) return showEmpty ? <SectionPlaceholder title="Ultimas Unidades" hint="Productos con stock bajo apareceran aqui" cols={4} variant={emptyVariant} publicTitle="Ultimas unidades" /> : null;
 
   return (
     <section
@@ -47,17 +51,16 @@ export default function LastUnitsSection() {
       className="py-14 sm:py-20 bg-surface"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Header — tono neutral sin urgencia agresiva */}
         <div className="text-center mb-10 sm:mb-12">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-wider uppercase rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 mb-4">
-            <Flame className="h-3.5 w-3.5" />
-            Se agotan rápido
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-wider uppercase rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+            Disponibilidad limitada
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-            Últimas Unidades
+            Últimas unidades
           </h2>
           <p className="text-muted text-sm mt-2">
-            Quedan pocas — no te quedes sin ellos
+            Stock reducido — consulta disponibilidad
           </p>
         </div>
 
@@ -77,14 +80,11 @@ export default function LastUnitsSection() {
                     : "opacity-0 translate-y-4"
                 }`}
               >
-                {/* Stock badge */}
+                {/* Stock badge — scarcity neutral via DS (accent-soft, no rojo) */}
                 <div className="absolute top-2 left-2 z-10">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white shadow-md">
-                    <AlertTriangle className="h-3 w-3" />
-                    {stockLeft === 1
-                      ? "¡Último!"
-                      : `Quedan ${stockLeft}`}
-                  </span>
+                  <ProductBadge intent="scarcity">
+                    {stockLeft === 1 ? "Última unidad" : `Quedan ${stockLeft}`}
+                  </ProductBadge>
                 </div>
 
                 {/* Image */}
@@ -105,10 +105,10 @@ export default function LastUnitsSection() {
                     </div>
                   )}
 
-                  {/* Urgency progress bar */}
-                  <div className="absolute bottom-0 inset-x-0 h-1.5 bg-gray-200 dark:bg-gray-700">
+                  {/* Progress bar — teal accent, sin urgencia rojo alarmista */}
+                  <div className="absolute bottom-0 inset-x-0 h-1 bg-[var(--rule-soft)]">
                     <div
-                      className="h-full bg-red-500 transition-all duration-700"
+                      className="h-full bg-[var(--accent)] transition-all duration-700"
                       style={{
                         width: `${Math.max(5, (stockLeft / LOW_STOCK_THRESHOLD) * 100)}%`,
                       }}
@@ -122,10 +122,8 @@ export default function LastUnitsSection() {
                     {product.name}
                   </h3>
 
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-lg font-extrabold text-foreground">
-                      S/{product.price.toFixed(2)}
-                    </span>
+                  <div className="mb-3">
+                    <ProductPrice price={product.price} size="md" />
                   </div>
 
                   {/* Add to cart */}
@@ -153,10 +151,10 @@ export default function LastUnitsSection() {
                   ) : (
                     <button
                       onClick={() => guardedAdd(product)}
-                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold shadow-sm transition-all duration-200 active:scale-95"
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-sm transition-all duration-200 active:scale-95"
                     >
                       <ShoppingCart className="h-3.5 w-3.5" />
-                      ¡Agarrar antes de que se acabe!
+                      Agregar al carrito
                     </button>
                   )}
                 </div>

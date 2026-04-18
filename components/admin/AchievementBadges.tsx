@@ -1,8 +1,9 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { Award, Lock, CheckCircle } from "lucide-react";
+import { Award, Lock, CheckCircle } from "@buleje/design-system/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,8 +55,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias sin diferencia",
     maxProgress: 7,
     iconSymbol: "C",
-    colorUnlocked: "text-emerald-600 dark:text-emerald-400",
-    colorBg: "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700",
+    colorUnlocked: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
   },
   {
     id: "madrugador",
@@ -65,8 +66,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias con primera venta temprana",
     maxProgress: 1,
     iconSymbol: "M",
-    colorUnlocked: "text-blue-600 dark:text-blue-400",
-    colorBg: "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
+    colorUnlocked: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
   },
   {
     id: "cliente-feliz",
@@ -76,8 +77,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "resenas con mencion",
     maxProgress: 1,
     iconSymbol: "R",
-    colorUnlocked: "text-pink-600 dark:text-pink-400",
-    colorBg: "bg-pink-50 dark:bg-pink-900/30 border-pink-300 dark:border-pink-700",
+    colorUnlocked: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    colorBg: "bg-[var(--surface-sunken)] border-pink-300 dark:border-pink-700",
   },
   {
     id: "meta-cumplida",
@@ -87,8 +88,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias de meta cumplida esta semana",
     maxProgress: 5,
     iconSymbol: "G",
-    colorUnlocked: "text-[#00B4A6] dark:text-green-400",
-    colorBg: "bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700",
+    colorUnlocked: "text-[#00B4A6] dark:text-[var(--data-success)]",
+    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
   },
 ];
 
@@ -153,20 +154,20 @@ function BadgeCard({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border-2 p-4 transition-all duration-300",
+        "relative rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)]",
         unlocked
           ? definition.colorBg
-          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-70"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] opacity-70"
       )}
     >
       {/* Icono principal */}
       <div className="flex flex-col items-center mb-3">
         <div
           className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black border-4 transition-all duration-300",
+            "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-extrabold border-4 transition-all duration-[var(--dur-base)]",
             unlocked
-              ? cn(definition.colorBg, definition.colorUnlocked, "border-current shadow-lg scale-105")
-              : "border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+              ? cn(definition.colorBg, definition.colorUnlocked, "border-current scale-105")
+              : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           )}
         >
           {unlocked ? (
@@ -191,11 +192,11 @@ function BadgeCard({
       <div className="text-center mb-3">
         <h3 className={cn(
           "font-bold text-sm mb-1",
-          unlocked ? "text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"
+          unlocked ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"
         )}>
           {definition.name}
         </h3>
-        <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+        <p className="text-xs text-[var(--text-tertiary)] leading-relaxed">
           {definition.description}
         </p>
       </div>
@@ -203,23 +204,23 @@ function BadgeCard({
       {/* Barra de progreso */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-xs">
-          <span className="text-gray-400 dark:text-gray-500">{definition.progressLabel}</span>
+          <span className="text-[var(--text-tertiary)]">{definition.progressLabel}</span>
           <span className={cn(
             "font-semibold",
-            unlocked ? definition.colorUnlocked : "text-gray-400 dark:text-gray-500"
+            unlocked ? definition.colorUnlocked : "text-[var(--text-tertiary)]"
           )}>
             {current}/{definition.maxProgress}
           </span>
         </div>
-        <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-500",
+              "h-full rounded-full transition-all duration-[var(--dur-slow)]",
               unlocked
-                ? "bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf]"
+                ? "bg-[var(--data-success)]"
                 : pct > 50
-                ? "bg-gradient-to-r from-[#f97316] to-[#e76f51]"
-                : "bg-gray-300 dark:bg-gray-600"
+                ? "bg-[var(--data-warning)]"
+                : "bg-[var(--rule-base)]"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -227,27 +228,27 @@ function BadgeCard({
       </div>
 
       {/* Criterio */}
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center italic">
+      <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center italic">
         {definition.criterion}
       </p>
 
       {/* Controles de modo edicion (admin/testing) */}
       {editMode && (
-        <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-[var(--rule-base)]">
           <button
             onClick={() => onAdjust(definition.id, -1)}
             disabled={current <= 0}
-            className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
+            className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
           >
             -
           </button>
-          <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[2rem] text-center">
+          <span className="text-xs text-[var(--text-tertiary)] min-w-[2rem] text-center">
             {current}
           </span>
           <button
             onClick={() => onAdjust(definition.id, 1)}
             disabled={current >= definition.maxProgress * 2}
-            className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
+            className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
           >
             +
           </button>
@@ -306,23 +307,23 @@ export default function AchievementBadges({
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {BADGE_DEFINITIONS.map((d) => (
-          <div key={d.id} className="h-52 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          <div key={d.id} className="h-52 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Award className="w-5 h-5 text-[#00B4A6] dark:text-green-400" />
+          <Award className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Logros del empleado
-            </h2>
-            <p className="text-sm text-gray-400 dark:text-gray-500">
+            </SectionTitle>
+            <p className="text-sm text-[var(--text-tertiary)]">
               {unlockedCount} de {BADGE_DEFINITIONS.length} desbloqueados
             </p>
           </div>
@@ -335,7 +336,7 @@ export default function AchievementBadges({
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
               editMode
                 ? "bg-[#00B4A6] text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-600"
             )}
           >
             {editMode ? "Terminar edicion" : "Modo prueba"}
@@ -344,16 +345,16 @@ export default function AchievementBadges({
       </div>
 
       {/* Progreso global */}
-      <div className="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3">
+      <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-3">
         <div className="flex justify-between text-xs mb-2">
-          <span className="text-gray-500 dark:text-gray-400">Progreso total</span>
-          <span className="font-semibold text-[#00B4A6] dark:text-green-400">
+          <span className="text-[var(--text-tertiary)]">Progreso total</span>
+          <span className="font-semibold text-[#00B4A6] dark:text-[var(--data-success)]">
             {Math.round((unlockedCount / BADGE_DEFINITIONS.length) * 100)}%
           </span>
         </div>
         <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf] rounded-full transition-all duration-700"
+            className="h-full bg-[var(--data-success)] rounded-full transition-all duration-[var(--dur-slower)]"
             style={{ width: `${(unlockedCount / BADGE_DEFINITIONS.length) * 100}%` }}
           />
         </div>
@@ -380,7 +381,7 @@ export default function AchievementBadges({
       </div>
 
       {editMode && (
-        <p className="text-xs text-center text-gray-400 dark:text-gray-600">
+        <p className="text-xs text-center text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
           Modo prueba activo: ajusta el progreso de cada logro manualmente. Se guarda en este dispositivo.
         </p>
       )}

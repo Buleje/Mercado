@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { StoreBannersDB } from "@/lib/db/store-banners.db";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const PostSchema = z.object({
   title: z.string().min(1).max(200),
@@ -50,7 +51,8 @@ export async function POST(
     return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
   }
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[marketplace/stores/[slug]/banners] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = PostSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

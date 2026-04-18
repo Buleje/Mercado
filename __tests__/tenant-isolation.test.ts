@@ -224,7 +224,7 @@ describe("Tenant Isolation — Data Boundaries", () => {
     mockPrisma.settings.findUnique.mockResolvedValueOnce({
       tenantId: "demo",
       businessName: "Bodega Demo",
-      primaryColor: "#00B4A6",
+      primaryColor: "#2563EB",
     });
 
     const settingsDemo = await mockPrisma.settings.findUnique({

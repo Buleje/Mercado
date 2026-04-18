@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
 import { X } from "lucide-react";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface AdminModalProps {
@@ -42,7 +43,7 @@ export default function AdminModal({ open, onClose, title, variant = "default", 
   if (!open) return null;
 
   const variantClasses = {
-    default: "max-w-lg w-full mx-4 rounded-2xl",
+    default: "max-w-lg w-full mx-4 rounded-xl",
     fullscreen: "w-full h-full",
     side: "ml-auto h-full w-full max-w-md rounded-l-2xl",
   };
@@ -62,19 +63,19 @@ export default function AdminModal({ open, onClose, title, variant = "default", 
     >
       <div
         className={cn(
-          "bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col",
+          "bg-[var(--surface-raised)] overflow-hidden flex flex-col",
           variantClasses[variant],
           className,
         )}
       >
         {/* Header */}
         {(title || !hideCloseButton) && (
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
-            {title && <h2 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h2>}
+          <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] shrink-0">
+            {title && <CardTitle as="h2" className="text-sm font-bold">{title}</CardTitle>}
             {!hideCloseButton && (
               <button
                 onClick={onClose}
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 aria-label="Cerrar"
               >
                 <X className="h-4 w-4" />

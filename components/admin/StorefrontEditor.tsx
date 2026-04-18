@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
@@ -10,7 +11,7 @@ import {
   Zap, TrendingUp, Star, Clock, Heart, Home, Store, AlertTriangle,
   Navigation, ChefHat, Award, Mail, History, Globe,
   X, Search, Plus, ChevronUp, ChevronDown, Pencil,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -73,21 +74,21 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Banner de anuncio",
     description: "Barra superior con mensajes promocionales",
     icon: <Megaphone className="h-4 w-4" />,
-    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
   },
   {
     key: "hero",
     label: "Hero principal",
     description: "Banner grande con foto y llamada a la acción",
     icon: <Layout className="h-4 w-4" />,
-    iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   },
   {
     key: "categories",
     label: "Categorías",
     description: "Burbujas de categorías para explorar la tienda",
     icon: <Grid3x3 className="h-4 w-4" />,
-    iconBg: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
+    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
   {
     key: "popular",
@@ -101,35 +102,35 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Ofertas del día",
     description: "Producto con descuento especial y cuenta regresiva",
     icon: <Tag className="h-4 w-4" />,
-    iconBg: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
+    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
   },
   {
     key: "combos",
     label: "Combos",
     description: "Paquetes de productos con precio especial",
     icon: <Package className="h-4 w-4" />,
-    iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
   },
   {
     key: "recipes",
     label: "Recetas",
     description: "Ideas de recetas peruanas con ingredientes de la bodega",
     icon: <BookOpen className="h-4 w-4" />,
-    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   },
   {
     key: "testimonials",
     label: "Testimonios",
     description: "Opiniones de clientes satisfechos",
     icon: <MessageSquare className="h-4 w-4" />,
-    iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
+    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/40 dark:text-[var(--data-info)]",
   },
   {
     key: "faq",
     label: "Preguntas frecuentes",
     description: "Respuestas a las dudas más comunes de los clientes",
     icon: <HelpCircle className="h-4 w-4" />,
-    iconBg: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+    iconBg: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
   },
   {
     key: "contact",
@@ -143,7 +144,7 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Mapa de delivery",
     description: "Mapa interactivo con la zona de cobertura",
     icon: <MapIcon className="h-4 w-4" />,
-    iconBg: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-400",
+    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/40 dark:text-[var(--data-info)]",
   },
 ];
 
@@ -165,7 +166,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Oferta Especial de Hoy",
     description: "El producto del día con precio especial",
     icon: <Star className="h-4 w-4" />,
-    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
     defaultEnabled: true,
   },
   {
@@ -173,7 +174,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Promo de Temporada",
     description: "Promoción estacional destacada",
     icon: <Tag className="h-4 w-4" />,
-    iconBg: "bg-pink-100 text-pink-600 dark:bg-pink-900/40 dark:text-pink-400",
+    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
     defaultEnabled: true,
   },
   {
@@ -181,7 +182,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Cuenta Regresiva",
     description: "Banner con cuenta atrás para ofertas limitadas",
     icon: <Clock className="h-4 w-4" />,
-    iconBg: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
+    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
     defaultEnabled: true,
   },
   {
@@ -189,7 +190,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Ofertas Relámpago",
     description: "Ofertas por tiempo limitado con temporizador",
     icon: <Zap className="h-4 w-4" />,
-    iconBg: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
     defaultEnabled: true,
   },
   {
@@ -197,7 +198,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Más Vendidos de la Semana",
     description: "Los productos que más se venden esta semana",
     icon: <TrendingUp className="h-4 w-4" />,
-    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
     defaultEnabled: true,
   },
   {
@@ -205,7 +206,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Productos Destacados",
     description: "Carrusel de productos que quieres resaltar",
     icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
     defaultEnabled: true,
   },
   {
@@ -213,7 +214,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Combos Inteligentes",
     description: "Paquetes de productos con precio especial",
     icon: <Package className="h-4 w-4" />,
-    iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
     defaultEnabled: true,
   },
   {
@@ -229,7 +230,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Mis Favoritos",
     description: "Productos que el cliente marcó como favoritos",
     icon: <Heart className="h-4 w-4" />,
-    iconBg: "bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400",
+    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
     defaultEnabled: true,
   },
   {
@@ -245,7 +246,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Últimas Unidades",
     description: "Productos con poco stock — incentiva compra por urgencia",
     icon: <AlertTriangle className="h-4 w-4" />,
-    iconBg: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
+    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/40 dark:text-[var(--data-error)]",
     defaultEnabled: true,
   },
 ];
@@ -267,14 +268,14 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
     label: "Tienda",
     description: "Catálogo completo de productos",
     icon: <Store className="h-4 w-4" />,
-    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
+    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
   },
   {
     id: "recetas",
     label: "Recetas",
     description: "Ideas de recetas con ingredientes de la tienda",
     icon: <ChefHat className="h-4 w-4" />,
-    iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
   },
   {
     id: "marketplace",
@@ -288,28 +289,28 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
     label: "Historial",
     description: "Historial de compras del cliente",
     icon: <History className="h-4 w-4" />,
-    iconBg: "bg-pink-100 text-pink-600 dark:bg-pink-900/40 dark:text-pink-400",
+    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
   {
     id: "categorias",
     label: "Categorías",
     description: "Menú de categorías en la navegación",
     icon: <Grid3x3 className="h-4 w-4" />,
-    iconBg: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
+    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
   {
     id: "beneficios",
     label: "Beneficios",
     description: "Sección de ¿Por qué elegirnos?",
     icon: <Award className="h-4 w-4" />,
-    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/40 dark:text-[var(--data-warning)]",
   },
   {
     id: "contacto",
     label: "Contacto",
     description: "Información de contacto y formulario",
     icon: <Mail className="h-4 w-4" />,
-    iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
+    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info)] dark:bg-[var(--data-info)]/40 dark:text-[var(--data-info)]",
   },
 ];
 
@@ -469,16 +470,16 @@ function SectionEditorModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-[var(--rule-base)] dark:border-card-border flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <div>
-            <h2 className="text-lg font-extrabold text-foreground">Editar sección</h2>
+            <SectionTitle className="text-lg font-extrabold text-foreground">Editar sección</SectionTitle>
             <p className="text-xs text-muted mt-0.5">{sectionLabel}</p>
           </div>
-          <button onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -486,35 +487,35 @@ function SectionEditorModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Section title */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Título de la sección</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Título de la sección</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={sectionLabel}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>
 
           {/* Assigned products */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">
+            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               Productos en esta sección ({assignedProducts.length})
             </label>
             {assignedProducts.length === 0 ? (
-              <div className="mt-2 p-6 rounded-xl border border-dashed border-gray-300 dark:border-card-border text-center">
-                <Package className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+              <div className="mt-2 p-6 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-card-border text-center">
+                <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" />
                 <p className="text-sm text-muted">No hay productos asignados</p>
                 <p className="text-xs text-muted mt-1">Busca y agrega productos abajo</p>
               </div>
             ) : (
               <div className="mt-2 space-y-1.5">
                 {assignedProducts.map((p, idx) => (
-                  <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+                  <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
                     <div className="relative h-9 w-9 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
                         <Image src={p.image} alt="" fill className="object-cover" sizes="36px" />
                       ) : (
-                        <div className="h-full flex items-center justify-center text-gray-300"><Package className="h-4 w-4" /></div>
+                        <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-4 w-4" /></div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -522,13 +523,13 @@ function SectionEditorModal({
                       <p className="text-xs text-primary font-bold">S/{p.price.toFixed(2)}</p>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0">
-                      <button type="button" onClick={() => moveUp(idx)} disabled={idx === 0} className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-foreground hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-30">
+                      <button type="button" onClick={() => moveUp(idx)} disabled={idx === 0} className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-30">
                         <ChevronUp className="h-3.5 w-3.5" />
                       </button>
-                      <button type="button" onClick={() => moveDown(idx)} disabled={idx === assignedProducts.length - 1} className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-foreground hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-30">
+                      <button type="button" onClick={() => moveDown(idx)} disabled={idx === assignedProducts.length - 1} className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-foreground hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-30">
                         <ChevronDown className="h-3.5 w-3.5" />
                       </button>
-                      <button type="button" onClick={() => removeProduct(p.id)} className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      <button type="button" onClick={() => removeProduct(p.id)} className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -540,17 +541,17 @@ function SectionEditorModal({
 
           {/* Search and add products */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Agregar productos</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Agregar productos</label>
             <div className="relative mt-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar producto para agregar…"
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button type="button" onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
@@ -566,13 +567,13 @@ function SectionEditorModal({
                     key={p.id}
                     type="button"
                     onClick={() => addProduct(p.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left"
                   >
                     <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
                         <Image src={p.image} alt="" fill className="object-cover" sizes="32px" />
                       ) : (
-                        <div className="h-full flex items-center justify-center text-gray-300"><Package className="h-4 w-4" /></div>
+                        <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-4 w-4" /></div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -593,16 +594,16 @@ function SectionEditorModal({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-6 py-4 border-t border-gray-100 dark:border-card-border flex items-center justify-end gap-2">
+        <div className="shrink-0 px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave({ productIds, title: title.trim() || undefined })}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold  hover:bg-primary/90 active:scale-95 transition-all"
           >
             <Save className="h-4 w-4" />
             Guardar sección
@@ -645,11 +646,11 @@ function SortableRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 select-none",
+        "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-[var(--dur-fast)] select-none",
         section.enabled
-          ? "bg-white dark:bg-card border-gray-200 dark:border-card-border shadow-sm"
-          : "bg-gray-50 dark:bg-surface border-gray-100 dark:border-card-border opacity-60",
-        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10 shadow-lg"
+          ? "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border "
+          : "bg-gray-50 dark:bg-surface border-[var(--rule-soft)] dark:border-card-border opacity-60",
+        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10"
       )}
     >
       {/* Drag handle */}
@@ -660,7 +661,7 @@ function SortableRow({
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />
+        <GripVertical className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
       </button>
 
       {/* Icon */}
@@ -684,7 +685,7 @@ function SortableRow({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+          className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
           aria-label={`Editar ${section.label}`}
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -696,7 +697,7 @@ function SortableRow({
         type="button"
         onClick={onToggle}
         className={cn(
-          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-200",
+          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
           section.enabled
             ? "bg-primary border-primary"
             : "bg-gray-200 dark:bg-gray-700 border-transparent"
@@ -706,7 +707,7 @@ function SortableRow({
       >
         <span
           className={cn(
-            "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
+            "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
             section.enabled ? "translate-x-5" : "translate-x-0.5"
           )}
         />
@@ -832,9 +833,7 @@ export default function StorefrontEditor() {
 
   if (loadingSettings) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <LoadingState />
     );
   }
 
@@ -843,7 +842,7 @@ export default function StorefrontEditor() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-lg font-extrabold text-foreground">Secciones de la tienda online</h2>
+          <SectionTitle className="text-lg font-extrabold text-foreground">Secciones de la tienda online</SectionTitle>
           <p className="text-sm text-muted mt-0.5">
             Activa, desactiva y reordena las secciones.{" "}
             <span className="font-semibold text-foreground">{enabledCount} de {totalCount}</span> {activeTab === "navegacion" ? "enlaces visibles" : "secciones visibles"}.
@@ -855,7 +854,7 @@ export default function StorefrontEditor() {
             href="/tienda"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors min-h-[44px]"
           >
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Vista previa</span>
@@ -866,9 +865,9 @@ export default function StorefrontEditor() {
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all min-h-[44px]",
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all min-h-[44px]",
               saved
-                ? "bg-emerald-500 hover:bg-emerald-600"
+                ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
                 : "bg-primary hover:bg-primary/90 active:scale-[0.98]",
               saving && "opacity-70 cursor-not-allowed"
             )}
@@ -893,7 +892,7 @@ export default function StorefrontEditor() {
           className={cn(
             "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
             activeTab === "tienda"
-              ? "bg-white dark:bg-card text-foreground shadow-sm"
+              ? "bg-white dark:bg-card text-foreground "
               : "text-muted hover:text-foreground"
           )}
         >
@@ -906,7 +905,7 @@ export default function StorefrontEditor() {
           className={cn(
             "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
             activeTab === "navegacion"
-              ? "bg-white dark:bg-card text-foreground shadow-sm"
+              ? "bg-white dark:bg-card text-foreground "
               : "text-muted hover:text-foreground"
           )}
         >
@@ -959,10 +958,10 @@ export default function StorefrontEditor() {
             <div
               key={item.id}
               className={cn(
-                "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150",
+                "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-[var(--dur-fast)]",
                 item.visible
-                  ? "bg-white dark:bg-card border-gray-200 dark:border-card-border shadow-sm"
-                  : "bg-gray-50 dark:bg-surface border-gray-100 dark:border-card-border opacity-60"
+                  ? "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border "
+                  : "bg-gray-50 dark:bg-surface border-[var(--rule-soft)] dark:border-card-border opacity-60"
               )}
             >
               <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", item.iconBg)}>
@@ -978,7 +977,7 @@ export default function StorefrontEditor() {
                 type="button"
                 onClick={() => toggleNavItem(item.id)}
                 className={cn(
-                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-200",
+                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
                   item.visible
                     ? "bg-primary border-primary"
                     : "bg-gray-200 dark:bg-gray-700 border-transparent"
@@ -988,7 +987,7 @@ export default function StorefrontEditor() {
               >
                 <span
                   className={cn(
-                    "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
+                    "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
                     item.visible ? "translate-x-5" : "translate-x-0.5"
                   )}
                 />
@@ -999,7 +998,7 @@ export default function StorefrontEditor() {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-card-border">
+      <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
         <button
           type="button"
           onClick={() => {

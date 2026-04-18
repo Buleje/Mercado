@@ -45,11 +45,10 @@ const TIER_CONFIG = {
     Icon: Shield,
     gradientFrom: "#b45309",
     gradientTo: "#f59e0b",
-    gradientClass:
-      "from-amber-700 via-amber-500 to-yellow-400",
-    ringClass: "ring-amber-500/40",
-    textClass: "text-amber-700 dark:text-amber-400",
-    bgClass: "bg-amber-50 dark:bg-amber-900/20",
+    fillClass: "bg-[#b45309]",
+    ringClass: "ring-[#b45309]/40",
+    textClass: "text-[#b45309] dark:text-[#f59e0b]",
+    bgClass: "bg-[var(--surface-sunken)]",
     minPoints: 0,
     maxPoints: 500,
     nextTier: "plata" as Tier | null,
@@ -65,11 +64,10 @@ const TIER_CONFIG = {
     Icon: Award,
     gradientFrom: "#6b7280",
     gradientTo: "#d1d5db",
-    gradientClass:
-      "from-slate-500 via-gray-400 to-slate-300",
-    ringClass: "ring-slate-400/40",
-    textClass: "text-slate-600 dark:text-slate-300",
-    bgClass: "bg-slate-50 dark:bg-slate-800/30",
+    fillClass: "bg-[#6b7280]",
+    ringClass: "ring-[#6b7280]/40",
+    textClass: "text-[#6b7280] dark:text-[#d1d5db]",
+    bgClass: "bg-[var(--surface-sunken)]",
     minPoints: 500,
     maxPoints: 1000,
     nextTier: "oro" as Tier | null,
@@ -85,11 +83,10 @@ const TIER_CONFIG = {
     Icon: Crown,
     gradientFrom: "#b45309",
     gradientTo: "#fbbf24",
-    gradientClass:
-      "from-yellow-600 via-amber-400 to-yellow-300",
-    ringClass: "ring-yellow-400/50",
-    textClass: "text-yellow-700 dark:text-yellow-400",
-    bgClass: "bg-yellow-50 dark:bg-yellow-900/20",
+    fillClass: "bg-[#d97706]",
+    ringClass: "ring-[#d97706]/50",
+    textClass: "text-[#d97706] dark:text-[#fbbf24]",
+    bgClass: "bg-[var(--surface-sunken)]",
     minPoints: 1000,
     maxPoints: null,
     nextTier: null,
@@ -160,9 +157,7 @@ function TeaserCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-[#00B4A6]/30 bg-gradient-to-br",
-        "from-[#00B4A6]/5 via-background to-[#f4a261]/5",
-        "dark:from-[#00B4A6]/10 dark:via-background dark:to-[#f4a261]/10",
+        "relative overflow-hidden rounded-2xl border border-[#00B4A6]/30 bg-[var(--surface-sunken)]",
         "p-5",
         className,
       )}
@@ -183,13 +178,13 @@ function TeaserCard({ className }: { className?: string }) {
         {/* Header con íconos de tiers */}
         <div className="flex items-center gap-3">
           <div className="flex -space-x-1">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-700 to-yellow-400 ring-2 ring-background shadow-sm">
-              <Shield className="h-4 w-4 text-white" aria-hidden="true" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--text-primary)] ring-2 ring-background">
+              <Shield className="h-4 w-4 text-[var(--surface-canvas)]" aria-hidden="true" />
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-500 to-slate-300 ring-2 ring-background shadow-sm">
-              <Award className="h-4 w-4 text-white" aria-hidden="true" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--text-tertiary)] ring-2 ring-background">
+              <Award className="h-4 w-4 text-[var(--surface-canvas)]" aria-hidden="true" />
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-yellow-600 to-yellow-300 ring-2 ring-background shadow-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00B4A6] ring-2 ring-background">
               <Crown className="h-4 w-4 text-white" aria-hidden="true" />
             </div>
           </div>
@@ -267,7 +262,7 @@ function ProgressBar({
     >
       <div
         ref={barRef}
-        className={cn("h-full rounded-full bg-gradient-to-r", tierClass)}
+        className={cn("h-full rounded-full", tierClass)}
         style={{ width: "0%" }}
       />
     </div>
@@ -307,20 +302,19 @@ function TierBadge({ tier }: { tier: Tier }) {
       {/* Anillo exterior con glow */}
       <div
         className={cn(
-          "flex h-16 w-16 items-center justify-center rounded-full",
-          "bg-gradient-to-br shadow-lg ring-4",
-          config.gradientClass,
+          "flex h-16 w-16 items-center justify-center rounded-full ring-4",
+          config.fillClass,
           config.ringClass,
         )}
         aria-hidden="true"
       >
-        <Icon className="h-7 w-7 text-white drop-shadow-sm" />
+        <Icon className="h-7 w-7 text-white" />
       </div>
       {/* Etiqueta del tier debajo del badge */}
       <span
         className={cn(
           "absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap",
-          "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+          "rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
           config.bgClass,
           config.textClass,
         )}
@@ -429,7 +423,7 @@ export function LoyaltyWidget({
       className={cn(
         "relative overflow-hidden rounded-2xl border bg-card shadow-sm",
         "border-border dark:border-border",
-        "transition-shadow duration-300 hover:shadow-md",
+        "transition-shadow duration-[var(--dur-base)] hover:shadow-md",
         className,
       )}
       role="region"
@@ -438,8 +432,8 @@ export function LoyaltyWidget({
       {/* Franja superior de color del tier */}
       <div
         className={cn(
-          "h-1.5 w-full bg-gradient-to-r",
-          config.gradientClass,
+          "h-1.5 w-full",
+          config.fillClass,
         )}
         aria-hidden="true"
       />
@@ -455,7 +449,7 @@ export function LoyaltyWidget({
               Tus puntos acumulados
             </p>
             <p
-              className="mt-0.5 text-3xl font-black tabular-nums leading-none text-foreground"
+              className="mt-0.5 text-3xl font-extrabold tabular-nums leading-none text-foreground"
               aria-label={`${formatPoints(data.points)} puntos`}
             >
               {formatPoints(data.points)}
@@ -505,8 +499,8 @@ export function LoyaltyWidget({
           {isGold ? (
             <div
               className={cn(
-                "h-3 w-full overflow-hidden rounded-full bg-gradient-to-r",
-                config.gradientClass,
+                "h-3 w-full overflow-hidden rounded-full",
+                config.fillClass,
               )}
               role="progressbar"
               aria-valuenow={100}
@@ -515,9 +509,9 @@ export function LoyaltyWidget({
               aria-label="Nivel maximo alcanzado"
             />
           ) : (
-            <ProgressBar pct={progressPct} tierClass={config.gradientClass} />
+            <ProgressBar pct={progressPct} tierClass={config.fillClass} />
           )}
-          <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
+          <div className="flex justify-between text-[length:var(--ts-2xs)] text-muted-foreground tabular-nums">
             <span>{formatPoints(config.minPoints)}</span>
             {!isGold && config.maxPoints != null && (
               <span>{formatPoints(config.maxPoints)}</span>

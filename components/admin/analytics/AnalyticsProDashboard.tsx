@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Product, Sale, Customer } from "@/types/erp";
@@ -96,13 +97,13 @@ function WidgetCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-card",
-        "shadow-sm flex flex-col overflow-hidden",
+        "rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-card",
+        " flex flex-col overflow-hidden",
         className
       )}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-        <span className="text-sm font-semibold text-gray-800 dark:text-foreground tracking-wide">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground tracking-wide">
           {title}
         </span>
         {onRefresh && (
@@ -112,7 +113,7 @@ function WidgetCard({
             aria-label="Actualizar"
           >
             <svg
-              className={cn("w-4 h-4 text-gray-500 dark:text-gray-400", spinning && "animate-spin")}
+              className={cn("w-4 h-4 text-[var(--text-tertiary)]", spinning && "animate-spin")}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -215,10 +216,10 @@ export default function AnalyticsProDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">
+          <PageTitle className="text-2xl font-bold text-[var(--text-primary)] dark:text-foreground">
             Analytics Pro Dashboard
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          </PageTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Actualizado: {lastRefreshed.toLocaleTimeString("es-PE")}
           </p>
         </div>
@@ -257,7 +258,7 @@ export default function AnalyticsProDashboard() {
               "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
               period === key
                 ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                : "bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6] hover:text-[#00B4A6]"
+                : "bg-white dark:bg-card text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[#00B4A6] hover:text-[#00B4A6]"
             )}
           >
             {PERIOD_LABELS[key]}
@@ -270,14 +271,14 @@ export default function AnalyticsProDashboard() {
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
             />
-            <span className="text-gray-500 dark:text-gray-400 text-sm">hasta</span>
+            <span className="text-[var(--text-tertiary)] text-sm">hasta</span>
             <input
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
             />
           </div>
         )}
@@ -287,17 +288,17 @@ export default function AnalyticsProDashboard() {
       {data?.alerts && (
         <div className="flex flex-wrap gap-3 mb-6">
           {data.alerts.lowStock > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
               <span className="font-medium">{data.alerts.lowStock}</span> productos con stock bajo
             </div>
           )}
           {data.alerts.pendingOrders > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)] text-sm">
               <span className="font-medium">{data.alerts.pendingOrders}</span> pedidos pendientes
             </div>
           )}
           {data.alerts.overduePayables > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
               <span className="font-medium">{data.alerts.overduePayables}</span> pagos vencidos
             </div>
           )}
@@ -306,7 +307,7 @@ export default function AnalyticsProDashboard() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+        <div className="mb-6 p-4 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
           {error}. Verifica la conexion y vuelve a intentarlo.
         </div>
       )}
@@ -357,7 +358,7 @@ export default function AnalyticsProDashboard() {
       )}
 
       {/* Footer note */}
-      <p className="mt-6 text-center text-xs text-gray-400 dark:text-gray-600">
+      <p className="mt-6 text-center text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
         Auto-actualiza cada 5 minutos. Periodo seleccionado: {PERIOD_LABELS[period]}
       </p>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart,
@@ -12,7 +13,7 @@ import {
   Cell,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@buleje/design-system/icons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,15 +57,15 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.name}</p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
+      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.name}</p>
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
         <span className="font-mono font-medium" style={{ color: d.fill }}>S/ {d.displayValue.toFixed(2)}</span>
       </p>
-      <p className="text-xs text-gray-500 flex justify-between gap-4">
+      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>% del total</span>
-        <span className="font-mono font-medium text-gray-400">{d.label}</span>
+        <span className="font-mono font-medium text-[var(--text-tertiary)]">{d.label}</span>
       </p>
     </div>
   );
@@ -156,13 +157,13 @@ export default function MarginWaterfallChart() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 h-64 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+          <div className="flex-1 h-64 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
           <div className="flex-1 space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-8 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+              <div key={i} className="h-8 bg-[var(--surface-sunken)] rounded animate-pulse" />
             ))}
           </div>
         </div>
@@ -173,11 +174,11 @@ export default function MarginWaterfallChart() {
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-red-600 dark:text-red-400 mb-3">No se pudieron cargar los datos de margenes</p>
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 p-6 flex flex-col items-center justify-center h-64">
+        <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] mb-3">No se pudieron cargar los datos de margenes</p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
+          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -189,17 +190,17 @@ export default function MarginWaterfallChart() {
   // ── Empty ──
   if (!data || !data.products.length) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos suficientes de margenes</p>
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
+        <p className="text-sm text-[var(--text-tertiary)]">No hay datos suficientes de margenes</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <CardTitle className="text-sm font-semibold text-[var(--text-primary)] mb-4">
         Cascada de Margenes
-      </h3>
+      </CardTitle>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT: Waterfall chart */}
@@ -242,8 +243,8 @@ export default function MarginWaterfallChart() {
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                 showBest
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               Mejores
@@ -253,8 +254,8 @@ export default function MarginWaterfallChart() {
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                 !showBest
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               Peores
@@ -275,7 +276,7 @@ export default function MarginWaterfallChart() {
                 <div key={product.productId} className="flex items-center gap-2 group">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs text-gray-700 dark:text-gray-300 truncate mr-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                      <span className="text-xs text-[var(--text-secondary)] truncate mr-2 group-hover:text-[var(--text-primary)] dark:group-hover:text-white transition-colors">
                         {product.name}
                       </span>
                       <span
@@ -285,7 +286,7 @@ export default function MarginWaterfallChart() {
                         {product.marginPct.toFixed(1)}%
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                       <div
                         className={cn("h-full rounded-full transition-all", barColor)}
                         style={{ width: `${barWidth}%` }}

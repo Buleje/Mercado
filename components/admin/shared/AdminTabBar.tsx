@@ -24,6 +24,7 @@ interface AdminTabBarProps {
   className?: string;
   vertical?: boolean;
   children?: ReactNode;
+  onTabHover?: (id: string) => void;
 }
 
 export default function AdminTabBar({
@@ -35,6 +36,7 @@ export default function AdminTabBar({
   className,
   vertical = false,
   children,
+  onTabHover,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
 
@@ -156,12 +158,13 @@ export default function AdminTabBar({
                 <button
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
+                  onMouseEnter={() => onTabHover?.(tab.id)}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] transition-all duration-150",
+                    "flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--ts-sm)] transition-all duration-[var(--dur-fast)]",
                     "lg:rounded-none lg:rounded-r-lg",
                     activeTab === tab.id
                       ? "bg-primary/10 font-semibold text-primary border-l-[3px] border-l-primary dark:bg-primary/15"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-200 border-l-[3px] border-l-transparent",
+                      : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] dark:hover:bg-white/[0.06] border-l-[3px] border-l-transparent",
                     "rounded-lg lg:rounded-none lg:rounded-r-lg",
                     tab.disabled && "cursor-not-allowed opacity-40",
                   )}
@@ -169,7 +172,7 @@ export default function AdminTabBar({
                   {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
                   <span className="truncate">{tab.label}</span>
                   {tab.badge != null && (
-                    <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-[var(--data-error)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
                       {tab.badge}
                     </span>
                   )}
@@ -181,7 +184,7 @@ export default function AdminTabBar({
           {isReordered && (
             <button
               onClick={resetOrder}
-              className="mt-1.5 w-full border-t border-gray-100 px-3 pt-1.5 text-left text-[10px] text-gray-400 transition-colors hover:text-primary dark:border-white/10"
+              className="mt-1.5 w-full border-t border-[var(--rule-soft)] px-3 pt-1.5 text-left text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:text-primary dark:border-white/10"
             >
               Restablecer orden
             </button>
@@ -196,22 +199,21 @@ export default function AdminTabBar({
 
   return (
     <>
-    {/* Hidden on desktop — sidebar renders these tabs instead */}
-    <div className={cn("relative sm:hidden", className)}>
+    <div className={cn("relative", className)}>
       {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
-          className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-gradient-to-r from-white via-white/90 to-transparent transition-opacity duration-300"
+          className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
           aria-label="Ver tabs anteriores"
         >
-          <ChevronLeft className="h-4 w-4 text-gray-500" />
+          <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
       )}
 
       <div
         ref={tabsRef}
         onScroll={checkScroll}
-        className="-mx-1 flex gap-0.5 overflow-x-auto scroll-smooth border-b border-gray-200 px-1 scrollbar-none sm:gap-1"
+        className="-mx-1 flex gap-0.5 overflow-x-auto scroll-smooth border-b border-[var(--rule-base)] px-1 scrollbar-none sm:gap-1"
         style={{ scrollbarWidth: "none" }}
       >
         {orderedTabs.map((tab) => {
@@ -233,24 +235,25 @@ export default function AdminTabBar({
                 setDragOverTab(null);
               }}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
+              onMouseEnter={() => onTabHover?.(tab.id)}
               disabled={tab.disabled}
               title={tab.label}
               className={cn(
-                "flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 py-2 text-xs transition-all duration-200 sm:px-4 sm:py-2.5 sm:text-sm",
+                "flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 py-2 text-xs transition-all duration-[var(--dur-base)] sm:px-4 sm:py-2.5 sm:text-sm",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
-                  ? "border-[#00B4A6] bg-[#00B4A6]/5 font-semibold text-[#00B4A6]"
-                  : "border-transparent font-normal text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                  ? "border-primary bg-primary/5 font-semibold text-primary"
+                  : "border-transparent font-normal text-[var(--text-secondary)] hover:bg-gray-50 hover:text-[var(--text-primary)]",
                 tab.disabled && "cursor-not-allowed opacity-40",
                 draggedTab === tab.id && "scale-95 opacity-40",
-                dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-[#00B4A6] ring-offset-1",
+                dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
               )}
             >
               {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
               {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
               <span>{tab.shortLabel || tab.label}</span>
               {tab.badge != null && (
-                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--data-error)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
                   {tab.badge}
                 </span>
               )}
@@ -261,7 +264,7 @@ export default function AdminTabBar({
         {isReordered && (
           <button
             onClick={resetOrder}
-            className="ml-1 shrink-0 whitespace-nowrap px-2 py-1.5 text-[10px] text-gray-400 transition-colors hover:text-[#00B4A6]"
+            className="ml-1 shrink-0 whitespace-nowrap px-2 py-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:text-primary"
             title="Restablecer orden de tabs"
           >
             Restablecer
@@ -272,10 +275,10 @@ export default function AdminTabBar({
       {canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
-          className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-gradient-to-l from-white via-white/90 to-transparent transition-opacity duration-300"
+          className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
           aria-label="Ver más tabs"
         >
-          <ChevronRight className="h-4 w-4 text-gray-500" />
+          <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
       )}
     </div>

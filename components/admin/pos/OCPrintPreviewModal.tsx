@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useCallback } from "react";
 
 interface OCPrintPreviewModalProps {
@@ -149,50 +150,50 @@ export default function OCPrintPreviewModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-4" id="oc-print-area">
           {/* Header */}
-          <div className="flex items-center justify-between border-b dark:border-gray-700 pb-4">
+          <div className="flex items-center justify-between border-b dark:border-[var(--rule-base)] pb-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">ORDEN DE COMPRA</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Buleje</p>
+              <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">ORDEN DE COMPRA</SectionTitle>
+              <p className="text-sm text-[var(--text-tertiary)]">Buleje</p>
             </div>
-            <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-              <p className="font-bold text-gray-900 dark:text-white">N° {lastOCId || "---"}</p>
+            <div className="text-right text-sm text-[var(--text-tertiary)]">
+              <p className="font-bold text-[var(--text-primary)]">N° {lastOCId || "---"}</p>
               <p>Fecha: {new Date().toLocaleDateString("es-PE")}</p>
               {deliveryDate && <p>Entrega: {new Date(deliveryDate).toLocaleDateString("es-PE")}</p>}
             </div>
           </div>
 
           {/* Proveedor */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Proveedor</p>
-            <p className="font-bold text-gray-900 dark:text-white">{selectedSupplier?.name || "---"}</p>
-            {selectedSupplier?.ruc && <p className="text-sm text-gray-600 dark:text-gray-400">RUC: {selectedSupplier.ruc}</p>}
-            {selectedSupplier?.phone && <p className="text-sm text-gray-600 dark:text-gray-400">Tel: {selectedSupplier.phone}</p>}
+          <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
+            <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase">Proveedor</p>
+            <p className="font-bold text-[var(--text-primary)]">{selectedSupplier?.name || "---"}</p>
+            {selectedSupplier?.ruc && <p className="text-sm text-[var(--text-secondary)]">RUC: {selectedSupplier.ruc}</p>}
+            {selectedSupplier?.phone && <p className="text-sm text-[var(--text-secondary)]">Tel: {selectedSupplier.phone}</p>}
           </div>
 
           {/* Tabla de items */}
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                <th className="text-left py-2 font-semibold text-gray-700 dark:text-gray-300">Producto</th>
-                <th className="text-right py-2 font-semibold text-gray-700 dark:text-gray-300">Cant.</th>
-                <th className="text-right py-2 font-semibold text-gray-700 dark:text-gray-300">P.Unit</th>
-                <th className="text-right py-2 font-semibold text-gray-700 dark:text-gray-300">Total</th>
+              <tr className="border-b-2 border-[var(--rule-base)]">
+                <th className="text-left py-2 font-semibold text-[var(--text-secondary)]">Producto</th>
+                <th className="text-right py-2 font-semibold text-[var(--text-secondary)]">Cant.</th>
+                <th className="text-right py-2 font-semibold text-[var(--text-secondary)]">P.Unit</th>
+                <th className="text-right py-2 font-semibold text-[var(--text-secondary)]">Total</th>
               </tr>
             </thead>
             <tbody>
               {cart.map((item, idx) => (
-                <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
-                  <td className="py-2 text-gray-800 dark:text-gray-200">{item.product.name}</td>
-                  <td className="py-2 text-right text-gray-600 dark:text-gray-400">
+                <tr key={idx} className="border-b border-[var(--rule-base)]">
+                  <td className="py-2 text-[var(--text-primary)]">{item.product.name}</td>
+                  <td className="py-2 text-right text-[var(--text-secondary)]">
                     {item.quantity} {item.product.unit}
                   </td>
-                  <td className="py-2 text-right font-mono text-gray-600 dark:text-gray-400">
+                  <td className="py-2 text-right font-mono text-[var(--text-secondary)]">
                     S/{(item.product.costPrice ?? item.product.price).toFixed(2)}
                   </td>
-                  <td className="py-2 text-right font-mono font-bold text-gray-900 dark:text-white">
+                  <td className="py-2 text-right font-mono font-bold text-[var(--text-primary)]">
                     S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}
                   </td>
                 </tr>
@@ -201,44 +202,44 @@ export default function OCPrintPreviewModal({
           </table>
 
           {/* Totales */}
-          <div className="border-t-2 border-gray-200 dark:border-gray-700 pt-3 space-y-1">
+          <div className="border-t-2 border-[var(--rule-base)] pt-3 space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+              <span className="text-[var(--text-tertiary)]">Subtotal</span>
               <span className="font-mono dark:text-gray-200">S/{subtotal.toFixed(2)}</span>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-sm text-red-600">
+              <div className="flex justify-between text-sm text-[var(--data-error)]">
                 <span>Descuento {discount}%</span>
                 <span className="font-mono">-S/{discountAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-lg font-bold border-t dark:border-gray-700 pt-2 dark:text-white">
+            <div className="flex justify-between text-lg font-bold border-t dark:border-[var(--rule-base)] pt-2 dark:text-white">
               <span>TOTAL</span>
               <span className="font-mono text-[#00B4A6]">S/{total.toFixed(2)}</span>
             </div>
           </div>
 
           {/* Condiciones */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 pt-3 space-y-1">
+          <div className="text-xs text-[var(--text-tertiary)] border-t dark:border-[var(--rule-base)] pt-3 space-y-1">
             <p><strong>Pago:</strong> {paymentMethod.replace("_", " ")}</p>
             {notes && <p><strong>Notas:</strong> {notes}</p>}
           </div>
 
           {/* Firma */}
-          <div className="flex justify-between pt-6 mt-4 border-t dark:border-gray-700">
+          <div className="flex justify-between pt-6 mt-4 border-t dark:border-[var(--rule-base)]">
             <div className="text-center">
               <div className="w-40 border-b border-gray-400 dark:border-gray-600 mb-1"></div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Firma autorizada</p>
+              <p className="text-xs text-[var(--text-tertiary)]">Firma autorizada</p>
             </div>
             <div className="text-center">
               <div className="w-40 border-b border-gray-400 dark:border-gray-600 mb-1"></div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Proveedor</p>
+              <p className="text-xs text-[var(--text-tertiary)]">Proveedor</p>
             </div>
           </div>
         </div>
 
         {/* Botones del modal */}
-        <div className="flex gap-2 p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
+        <div className="flex gap-2 p-4 border-t dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-2xl">
           <button
             type="button"
             onClick={() => {
@@ -265,21 +266,21 @@ export default function OCPrintPreviewModal({
                 }
               }
             }}
-            className="flex-1 py-2 bg-[#00B4A6] text-white rounded-xl text-sm font-medium hover:bg-[#009690] transition-colors"
+            className="flex-1 py-2 bg-[#00B4A6] text-white rounded-lg text-sm font-medium hover:bg-[#009690] transition-colors"
           >
             Imprimir
           </button>
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="flex-1 py-2 bg-[var(--accent-soft)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-soft)] transition-colors"
           >
             Descargar PDF
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-300 transition-colors"
+            className="px-4 py-2 bg-gray-200 text-[var(--text-primary)] rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
           >
             Cerrar
           </button>

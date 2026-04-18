@@ -3,7 +3,7 @@ import { z } from "zod";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 import { logActivity } from "@/lib/activity-logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Parse & validate body ──────────────────────────────────────────
-    const body = await req.json().catch(() => null);
+    const body = await req.json().catch((err) => { logger.error("[supplier/register] parse JSON body failed", { error: String(err) }); return null; });
     if (!body) {
       return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
     }
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
       "system",
       undefined,
       "__platform__",
-    ).catch(() => {});
+    ).catch((err) => logger.error("[supplier/register] operation failed", { error: String(err) }));
 
     const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
     if (adminPhone) {
@@ -133,9 +133,7 @@ export async function POST(req: NextRequest) {
         `Teléfono: ${data.contactPhone}\n` +
         `Email: ${data.contactEmail}\n\n` +
         `Revisa la cola en /superadmin/marketplace/suppliers`;
-      sendWhatsAppText(adminPhone, message).catch((e) =>
-        logger.warn("[supplier-register] admin notify failed", { error: String(e) }),
-      );
+      sendWhatsAppQueued(adminPhone, message, { tenantId: "__platform__", context: "supplier-register-admin-notify" }).catch(() => {});
     }
 
     return NextResponse.json(

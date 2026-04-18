@@ -4,6 +4,8 @@ import React, { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
+import ShareCartButton from "@/components/marketplace/ShareCartButton";
+import WhatsAppOrderButton from "@/components/marketplace/WhatsAppOrderButton";
 
 // ---------- helpers ----------
 
@@ -111,30 +113,90 @@ function CartItemRow({
 // ---------- badge para navbar ----------
 
 export function CartBadge({ onClick }: { onClick: () => void }) {
-  const { itemCount } = useMarketplaceCart();
+  const { itemCount, grandTotal, byStore } = useMarketplaceCart();
+  const [showPreview, setShowPreview] = useState(false);
+
+  const allItems = Object.values(byStore).flatMap(s => s.items).slice(0, 3);
+  const fmtPrice = (n: number) =>
+    new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
+
   return (
-    <button
-      onClick={onClick}
-      aria-label={`Carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
-      className="relative flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
+    <div
+      className="relative"
+      onMouseEnter={() => itemCount > 0 && setShowPreview(true)}
+      onMouseLeave={() => setShowPreview(false)}
     >
-      <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
+      <button
+        onClick={onClick}
+        aria-label={`Carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <AnimatePresence>
+          {itemCount > 0 && (
+            <motion.span
+              key="badge"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white"
+            >
+              {itemCount > 99 ? "99+" : itemCount}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </button>
+
+      {/* Hover preview */}
       <AnimatePresence>
-        {itemCount > 0 && (
-          <motion.span
-            key="badge"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black text-white"
+        {showPreview && itemCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 p-3 z-50"
           >
-            {itemCount > 99 ? "99+" : itemCount}
-          </motion.span>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+              {itemCount} producto{itemCount !== 1 ? "s" : ""} en el carrito
+            </p>
+            <div className="space-y-2">
+              {allItems.map(item => (
+                <div key={`${item.storeId}-${item.productId}`} className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0">
+                    {item.image && (
+                      <img src={item.image} alt="" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{item.name}</p>
+                    <p className="text-[10px] text-gray-400">x{item.quantity}</p>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white shrink-0">
+                    {fmtPrice(item.price * item.quantity)}
+                  </span>
+                </div>
+              ))}
+              {itemCount > 3 && (
+                <p className="text-[10px] text-gray-400 text-center">y {itemCount - 3} más...</p>
+              )}
+            </div>
+            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <span className="text-xs text-gray-500">Total</span>
+              <span className="text-sm font-bold text-emerald-600">{fmtPrice(grandTotal)}</span>
+            </div>
+            <button
+              onClick={onClick}
+              className="w-full mt-2 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
+            >
+              Ver carrito
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
-    </button>
+    </div>
   );
 }
 
@@ -186,6 +248,9 @@ export default function MarketplaceCart({
   const [redeemPoints, setRedeemPoints] = useState(0);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
+  // WhatsApp phone per store (slug → phone | null)
+  const [storePhones, setStorePhones] = useState<Record<string, string | null>>({});
+
   // Persist customer info in localStorage
   useState(() => {
     if (typeof window === "undefined") return;
@@ -234,13 +299,33 @@ export default function MarketplaceCart({
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!cancelled && d) {
-          setLoyaltyPoints(d.points ?? 0);
+          setLoyaltyPoints(d.data?.points ?? 0);
         }
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoyaltyLoading(false); });
     return () => { cancelled = true; };
   }, [step, customerPhone]);
+
+  // Fetch WhatsApp phones for each store when the cart opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const slugs = Object.values(byStore).map((g) => g.storeSlug);
+    const missing = slugs.filter((sl) => !(sl in storePhones));
+    if (missing.length === 0) return;
+
+    for (const slug of missing) {
+      fetch(`/api/marketplace/stores/${encodeURIComponent(slug)}/phone`)
+        .then((r) => r.ok ? r.json() : { phone: null })
+        .then((d: { phone?: string | null }) => {
+          setStorePhones((prev) => ({ ...prev, [slug]: d.phone ?? null }));
+        })
+        .catch(() => {
+          setStorePhones((prev) => ({ ...prev, [slug]: null }));
+        });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, byStore]);
 
   // Calculate total discounts
   const totalCouponDiscount = Object.values(couponResults).reduce(
@@ -332,7 +417,9 @@ export default function MarketplaceCart({
           })),
           total: group.items.reduce((s, i) => s + i.price * i.quantity, 0),
         }),
-      }).catch(() => {});
+      }).catch(() => {
+        // Silent — analytics best-effort, no bloquea el flujo de checkout
+      });
     }
 
     const results = await Promise.allSettled(
@@ -448,7 +535,7 @@ export default function MarketplaceCart({
             aria-label="Carrito de compras"
           >
             {/* header — glassmorphism */}
-            <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary/5 to-transparent border-b border-gray-200/80 dark:border-gray-800/80">
+            <div className="flex items-center justify-between px-5 py-4 bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)]">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/20">
                   <svg aria-hidden="true" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -592,7 +679,7 @@ export default function MarketplaceCart({
                 <div className="px-5 py-4 space-y-4">
                   <button
                     onClick={goBackToCart}
-                    className="flex items-center gap-1 text-sm text-teal-700 hover:underline dark:text-teal-400"
+                    className="flex items-center gap-1 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
                   >
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -611,7 +698,7 @@ export default function MarketplaceCart({
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                         placeholder="Ej: Juan Pérez"
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
                         maxLength={100}
                       />
                     </div>
@@ -626,7 +713,7 @@ export default function MarketplaceCart({
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="Ej: 916409675"
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
                         maxLength={20}
                       />
                     </div>
@@ -641,7 +728,7 @@ export default function MarketplaceCart({
                         value={customerAddress}
                         onChange={(e) => setCustomerAddress(e.target.value)}
                         placeholder="Ej: Jr. Los Olivos 123, Pucallpa"
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
                         maxLength={300}
                       />
                     </div>
@@ -656,7 +743,7 @@ export default function MarketplaceCart({
                         onChange={(e) => setCustomerNotes(e.target.value)}
                         placeholder="Ej: Tocar el timbre, cerca de la esquina..."
                         rows={2}
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 resize-none"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 resize-none"
                         maxLength={500}
                       />
                     </div>
@@ -677,13 +764,13 @@ export default function MarketplaceCart({
                               value={couponCodes[g.storeSlug] ?? ""}
                               onChange={(e) => setCouponCodes((p) => ({ ...p, [g.storeSlug]: e.target.value.toUpperCase() }))}
                               placeholder="Código de cupón"
-                              className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                              className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
                               maxLength={30}
                             />
                             <button
                               onClick={() => validateCoupon(g.storeSlug)}
                               disabled={!!couponLoading[g.storeSlug] || !couponCodes[g.storeSlug]?.trim()}
-                              className="rounded-lg bg-teal-600 px-2.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+                              className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
                             >
                               {couponLoading[g.storeSlug] ? "..." : "Aplicar"}
                             </button>
@@ -701,7 +788,7 @@ export default function MarketplaceCart({
                     {loyaltyPoints > 0 && (
                       <div className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">⭐ Tus puntos: <strong>{loyaltyPoints}</strong></span>
+                          <span className="text-gray-600 dark:text-gray-400">Tus puntos: <strong className="tabular-nums">{loyaltyPoints}</strong></span>
                           <span className="text-gray-400 dark:text-gray-500">(100 pts = S/1)</span>
                         </div>
                         <div className="flex gap-1.5 mt-1">
@@ -713,7 +800,7 @@ export default function MarketplaceCart({
                             value={redeemPoints}
                             onChange={(e) => setRedeemPoints(Math.min(Number(e.target.value) || 0, loyaltyPoints))}
                             placeholder="0"
-                            className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                           />
                           <span className="self-center text-xs text-gray-500 dark:text-gray-400">
                             puntos = -{fmt(redeemPoints / 100)}
@@ -731,7 +818,7 @@ export default function MarketplaceCart({
                 <div className="px-5 py-4 space-y-4">
                   <button
                     onClick={goBackToDatos}
-                    className="flex items-center gap-1 text-sm text-teal-700 hover:underline dark:text-teal-400"
+                    className="flex items-center gap-1 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
                   >
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -811,7 +898,7 @@ export default function MarketplaceCart({
                           onChange={(e) => setCashAmount(e.target.value)}
                           placeholder={finalTotal.toFixed(2)}
                           min={0}
-                          className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                          className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                         />
                       </div>
                       {cashAmount && Number(cashAmount) >= finalTotal && (
@@ -868,7 +955,7 @@ export default function MarketplaceCart({
                 <div className="px-5 py-4 space-y-4">
                   <button
                     onClick={goBackToPago}
-                    className="flex items-center gap-1 text-sm text-teal-700 hover:underline dark:text-teal-400"
+                    className="flex items-center gap-1 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
                   >
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -882,7 +969,7 @@ export default function MarketplaceCart({
 
                   {/* Datos del cliente */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">📍 Datos de entrega</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Nombre</span>
                       <span className="font-medium text-gray-900 dark:text-white">{customerName}</span>
@@ -905,7 +992,7 @@ export default function MarketplaceCart({
 
                   {/* Método de pago */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">💳 Método de pago</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
                     <div className="flex items-center gap-2">
                       {paymentMethod === "yape" ? (
                         <>
@@ -929,7 +1016,7 @@ export default function MarketplaceCart({
 
                   {/* Productos por tienda */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">🛒 Productos</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
                       const couponR = couponResults[g.storeSlug];
@@ -994,7 +1081,7 @@ export default function MarketplaceCart({
                           <div className="flex items-center gap-2">
                             <div
                               className="flex h-6 w-6 items-center justify-center rounded-md text-xs font-black text-white"
-                              style={{ background: "linear-gradient(135deg,#00B4A6,#134e4a)" }}
+                              style={{ background: "linear-gradient(135deg,#2563EB,#134e4a)" }}
                               aria-hidden="true"
                             >
                               {group.storeName.slice(0, 1).toUpperCase()}
@@ -1034,6 +1121,22 @@ export default function MarketplaceCart({
                             {fmt(storeSub)}
                           </span>
                         </div>
+
+                        {/* botón WhatsApp por tienda */}
+                        <WhatsAppOrderButton
+                          storeSlug={group.storeSlug}
+                          storeName={group.storeName}
+                          storePhone={storePhones[group.storeSlug] ?? null}
+                          items={group.items.map((i) => ({
+                            name: i.name,
+                            quantity: i.quantity,
+                            price: i.price,
+                            unit: i.unit,
+                          }))}
+                          customerName={customerName || undefined}
+                          customerAddress={customerAddress || undefined}
+                          className="mt-2"
+                        />
                       </section>
                     );
                   })}
@@ -1070,6 +1173,9 @@ export default function MarketplaceCart({
                     >
                       Continuar · {fmt(grandTotal)}
                     </button>
+                    <div className="mt-2">
+                      <ShareCartButton />
+                    </div>
                     <p className="mt-2 text-center text-[10px] text-gray-400 dark:text-gray-500">
                       Se crea un pedido separado por cada tienda
                     </p>

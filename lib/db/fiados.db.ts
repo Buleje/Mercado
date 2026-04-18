@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { logger } from "@/lib/logger";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,10 @@ export const FiadosDB = {
     });
     if (!row) return null;
     // Fetch customer name separately
-    const customer = await prisma.customer.findUnique({ where: { phone: row.customerId }, select: { name: true } }).catch(() => null);
+    const customer = await prisma.customer.findUnique({ where: { phone: row.customerId }, select: { name: true } }).catch((err) => {
+      logger.warn("FiadosDB.getById: customer lookup failed (non-critical)", { fiadoId: id, err: String(err) });
+      return null;
+    });
     return mapFiado({ ...row, customer: { name: customer?.name || null } });
   },
 
@@ -166,7 +170,73 @@ export const FiadosDB = {
         data: { status },
         include: { cuotas: { orderBy: { createdAt: "asc" } } },
       })
-      .catch(() => null);
+      .catch((err) => {
+        logger.warn("FiadosDB.updateStatus: update failed", { fiadoId: id, status, err: String(err) });
+        return null;
+      });
     return row ? mapFiado(row) : null;
+  },
+
+  /**
+   * Collect a payment from a customer applied across their active fiados,
+   * oldest-first. Atomic via $transaction. Returns a breakdown of payments
+   * applied and any remaining amount (if the collection exceeded the debt).
+   */
+  async cobrarPorCliente(
+    tenantId: string,
+    customerId: string,
+    monto: number,
+    notas?: string,
+  ): Promise<{
+    totalCobrado: number;
+    payments: Array<{ id: string; fiadoId: string; monto: number }>;
+    remaining: number;
+  }> {
+    const fiados = await prisma.fiado.findMany({
+      where: { tenantId, customerId, status: "ACTIVO" },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (fiados.length === 0) {
+      return { totalCobrado: 0, payments: [], remaining: monto };
+    }
+
+    let remaining = monto;
+    const payments: Array<{ id: string; fiadoId: string; monto: number }> = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const fiado of fiados) {
+        if (remaining <= 0) break;
+        const saldo = Number(fiado.saldo);
+        const payment = Math.min(remaining, saldo);
+        const newSaldo = saldo - payment;
+
+        await tx.fiado.update({
+          where: { id: fiado.id },
+          data: {
+            saldo: newSaldo,
+            status: newSaldo <= 0.01 ? "PAGADO" : "ACTIVO",
+          },
+        });
+
+        const cuota = await tx.fiadoCuota.create({
+          data: {
+            fiadoId: fiado.id,
+            monto: payment,
+            pagadoEn: new Date(),
+            notas: notas || "Cobro desde POS",
+          },
+        });
+
+        payments.push({ id: cuota.id, fiadoId: fiado.id, monto: payment });
+        remaining -= payment;
+      }
+    });
+
+    return {
+      totalCobrado: monto - remaining,
+      payments,
+      remaining: Math.max(0, remaining),
+    };
   },
 };

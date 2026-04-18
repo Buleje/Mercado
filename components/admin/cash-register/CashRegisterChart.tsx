@@ -31,13 +31,13 @@ export default function CashRegisterChart({
   tendencia,
 }: CashRegisterChartProps) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">
           Tendencia de diferencias (ultimos {diffsCount} cierres)
         </p>
         {tendencia && (
-          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", tendencia.color)}>
+          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", tendencia.color)}>
             {tendencia.label === "Mejorando"
               ? "Mejorando ↓"
               : tendencia.label === "Empeorando"
@@ -52,8 +52,8 @@ export default function CashRegisterChart({
         <AreaChart data={sparkData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <defs>
             <linearGradient id="sparkPos" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+              <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="sparkNeg" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#ef4444" stopOpacity={0} />
@@ -64,7 +64,7 @@ export default function CashRegisterChart({
           <Area
             type="monotone"
             dataKey="pos"
-            stroke="#22c55e"
+            stroke="#00B4A6"
             fill="url(#sparkPos)"
             strokeWidth={1.5}
             dot={false}
@@ -79,7 +79,7 @@ export default function CashRegisterChart({
           />
         </AreaChart>
       </ResponsiveContainer>
-      <div className="flex justify-between mt-1 text-[9px] text-gray-400">
+      <div className="flex justify-between mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <span>Antiguo</span>
         <span>Reciente</span>
       </div>

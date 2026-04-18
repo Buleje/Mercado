@@ -81,8 +81,9 @@ Los 3 corren en paralelo. Cero conflictos.
 
 ## Limites
 
-- Maximo 5 worktrees simultaneos (mas que eso degrada performance)
+- Maximo **8 worktrees simultaneos** en modo turbo (ADR-061). Default 6. Mas que 8 degrada disco.
 - Cada worktree consume ~500MB de disco (copia completa del repo)
+- **run_in_background: true + 1 solo mensaje multi-Agent** = verdadero paralelismo. Nunca spawnear agentes secuencialmente.
 - No usar para tareas que comparten archivos criticos (checkout, cart-context, schema.prisma)
 - Para archivos compartidos, usar el flujo A2A con gating de dependencias (feedback_multi_agent_hierarchy_level3)
 
@@ -92,3 +93,4 @@ Los 3 corren en paralelo. Cero conflictos.
 2. SIEMPRE verificar que no hay overlap de archivos
 3. SIEMPRE correr verificacion completa despues del merge
 4. Si un frente falla, NO bloquear los otros — aislar y reportar
+5. **TURBO (ADR-061):** spawn de 3-8 agentes va en 1 solo mensaje con run_in_background=true; no esperar entre calls.

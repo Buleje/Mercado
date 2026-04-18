@@ -1,7 +1,8 @@
 "use client";
 
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, TrendingUp, Eye, Target, Percent } from "lucide-react";
+import { Loader2, TrendingUp, Eye, Target, Percent } from "@buleje/design-system/icons";
 
 type Analytics = {
   visits7d: number;
@@ -34,14 +35,12 @@ export default function AnalyticsTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
+      <LoadingState />
     );
   }
 
   if (!data) {
-    return <div className="text-center text-gray-500 py-12">Sin datos</div>;
+    return <div className="text-center text-[var(--text-secondary)] py-12">Sin datos</div>;
   }
 
   const maxVisits = Math.max(1, ...data.visitsByDay.map((d) => d.visits));
@@ -77,10 +76,10 @@ export default function AnalyticsTab() {
       </div>
 
       {/* Visits by day chart */}
-      <section className="p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <section className="p-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-4 h-4 text-teal-600" />
-          <h3 className="font-bold">Visitas últimos 30 días</h3>
+          <TrendingUp className="w-4 h-4 text-[var(--data-success)]" />
+          <CardTitle className="font-bold">Visitas últimos 30 días</CardTitle>
         </div>
         <div className="flex items-end gap-1 h-32">
           {data.visitsByDay.map((d) => {
@@ -92,12 +91,12 @@ export default function AnalyticsTab() {
                 title={`${d.day}: ${d.visits} visitas, ${d.conversions} conversiones`}
               >
                 <div
-                  className="bg-teal-500 rounded-t hover:bg-teal-600 transition-colors"
+                  className="bg-[var(--accent-soft)] rounded-t hover:bg-[var(--accent-soft)] transition-colors"
                   style={{ height: `${h}%`, minHeight: "2px" }}
                 />
                 {d.conversions > 0 && (
                   <div
-                    className="bg-green-500 rounded-t"
+                    className="bg-[var(--accent-soft)] rounded-t"
                     style={{
                       height: `${Math.max(
                         2,
@@ -110,7 +109,7 @@ export default function AnalyticsTab() {
             );
           })}
         </div>
-        <div className="flex justify-between mt-2 text-[10px] text-gray-400 font-mono">
+        <div className="flex justify-between mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">
           <span>{data.visitsByDay[0]?.day}</span>
           <span>
             {data.visitsByDay[data.visitsByDay.length - 1]?.day}
@@ -120,10 +119,10 @@ export default function AnalyticsTab() {
 
       {/* Top referrers + utm */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section className="p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <h3 className="font-bold mb-3">Top referrers (30d)</h3>
+        <section className="p-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          <CardTitle className="font-bold mb-3">Top referrers (30d)</CardTitle>
           {data.topReferrers.length === 0 ? (
-            <p className="text-sm text-gray-500">Sin datos</p>
+            <p className="text-sm text-[var(--text-secondary)]">Sin datos</p>
           ) : (
             <ul className="space-y-2">
               {data.topReferrers.map((r) => (
@@ -132,7 +131,7 @@ export default function AnalyticsTab() {
                   className="flex items-center justify-between text-sm"
                 >
                   <span className="truncate max-w-[70%]">{r.referrer}</span>
-                  <span className="font-mono font-bold text-teal-600">
+                  <span className="font-mono font-bold text-[var(--data-success)]">
                     {r.count}
                   </span>
                 </li>
@@ -141,10 +140,10 @@ export default function AnalyticsTab() {
           )}
         </section>
 
-        <section className="p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <h3 className="font-bold mb-3">Top UTM sources (30d)</h3>
+        <section className="p-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          <CardTitle className="font-bold mb-3">Top UTM sources (30d)</CardTitle>
           {data.topUtmSources.length === 0 ? (
-            <p className="text-sm text-gray-500">Sin datos</p>
+            <p className="text-sm text-[var(--text-secondary)]">Sin datos</p>
           ) : (
             <ul className="space-y-2">
               {data.topUtmSources.map((r) => (
@@ -153,7 +152,7 @@ export default function AnalyticsTab() {
                   className="flex items-center justify-between text-sm"
                 >
                   <span>{r.source}</span>
-                  <span className="font-mono font-bold text-blue-600">
+                  <span className="font-mono font-bold text-[var(--data-success)]">
                     {r.count}
                   </span>
                 </li>
@@ -178,18 +177,18 @@ function Kpi({
   color: "teal" | "blue" | "green" | "amber";
 }) {
   const colors: Record<string, string> = {
-    teal: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    green: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    amber: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    teal: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    blue: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    green: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+    amber: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
   };
   return (
-    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <div className="p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${colors[color]}`}>
         <Icon className="w-4 h-4" />
       </div>
-      <p className="text-2xl font-black">{value}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+      <p className="text-2xl font-extrabold">{value}</p>
+      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
     </div>
   );
 }

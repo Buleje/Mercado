@@ -1,7 +1,8 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
-import { Moon, Sun, SunMoon, Monitor } from "lucide-react";
+import { Moon, Sun, SunMoon, Monitor } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Constantes ── */
@@ -104,9 +105,9 @@ export default function NightModeToggle() {
       {/* Header */}
       <div className="flex items-center gap-2">
         <SunMoon className="w-5 h-5 text-[#00B4A6]" />
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
           Modo Nocturno Automatico
-        </h2>
+        </SectionTitle>
       </div>
 
       {/* Estado actual */}
@@ -114,16 +115,16 @@ export default function NightModeToggle() {
         className={cn(
           "rounded-xl border p-5 flex items-center gap-4 transition-all",
           nightActive
-            ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20"
-            : "border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/10"
+            ? "border-[var(--data-info)] dark:border-[var(--data-info)] bg-[var(--surface-sunken)]"
+            : "border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/10"
         )}
       >
         <div
           className={cn(
             "w-12 h-12 rounded-full flex items-center justify-center shrink-0",
             nightActive
-              ? "bg-indigo-600 dark:bg-indigo-700"
-              : "bg-amber-400 dark:bg-amber-500"
+              ? "bg-[var(--data-info)] dark:bg-[var(--surface-sunken)]"
+              : "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]"
           )}
         >
           {nightActive ? (
@@ -133,10 +134,10 @@ export default function NightModeToggle() {
           )}
         </div>
         <div>
-          <p className="font-semibold text-gray-900 dark:text-gray-100">
+          <p className="font-semibold text-[var(--text-primary)]">
             {nightActive ? "Modo nocturno activo" : "Modo diurno activo"}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             {prefs.override === "auto"
               ? `Automatico — ${nextTransition()}`
               : prefs.override === "night"
@@ -144,7 +145,7 @@ export default function NightModeToggle() {
               : "Forzado manual (dia)"}
           </p>
           {nightActive && (
-            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+            <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-primary)] mt-1">
               Pantalla extra oscura, texto mas grande para reducir fatiga visual.
             </p>
           )}
@@ -152,8 +153,8 @@ export default function NightModeToggle() {
       </div>
 
       {/* Control de override */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-3">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-3">
+        <p className="text-sm font-medium text-[var(--text-secondary)]">
           Control manual
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -171,7 +172,7 @@ export default function NightModeToggle() {
                 "flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-all",
                 prefs.override === value
                   ? "border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6] dark:border-[#2dd4bf] dark:text-[#2dd4bf]"
-                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >
               <Icon className="w-5 h-5" />
@@ -182,8 +183,8 @@ export default function NightModeToggle() {
       </div>
 
       {/* Opciones de tipografia */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-3">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-3">
+        <p className="text-sm font-medium text-[var(--text-secondary)]">
           Tamano de texto en modo nocturno
         </p>
         <div className="flex gap-2">
@@ -200,7 +201,7 @@ export default function NightModeToggle() {
                 "flex-1 py-2 rounded-lg border text-sm font-medium transition-colors",
                 prefs.fontSize === value
                   ? "border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6] dark:border-[#2dd4bf] dark:text-[#2dd4bf]"
-                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >
               {label}
@@ -210,30 +211,30 @@ export default function NightModeToggle() {
       </div>
 
       {/* Horario configurado */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-4">
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/60 p-4">
+        <p className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
           Horario automatico configurado
         </p>
-        <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
+        <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)]">
           <div className="flex items-center gap-1.5">
-            <Moon className="w-4 h-4 text-indigo-500" />
+            <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
             <span>Noche: 7pm — 7am</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Sun className="w-4 h-4 text-amber-500" />
+            <Sun className="w-4 h-4 text-[var(--data-warning)]" />
             <span>Dia: 7am — 7pm</span>
           </div>
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+        <p className="text-xs text-[var(--text-tertiary)] mt-2">
           Hora actual: {String(currentHour).padStart(2, "0")}:00 —{" "}
           {isNight ? "Dentro del horario nocturno" : "Fuera del horario nocturno"}
         </p>
       </div>
 
       {/* Nota sobre CSS */}
-      <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-        Agrega las clases <code className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">.night-mode-extra</code> y{" "}
-        <code className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">.night-mode-large-text</code> en tu globals.css para personalizar el efecto.
+      <p className="text-xs text-[var(--text-tertiary)] text-center">
+        Agrega las clases <code className="font-mono bg-[var(--surface-sunken)] px-1 rounded">.night-mode-extra</code> y{" "}
+        <code className="font-mono bg-[var(--surface-sunken)] px-1 rounded">.night-mode-large-text</code> en tu globals.css para personalizar el efecto.
       </p>
     </div>
   );

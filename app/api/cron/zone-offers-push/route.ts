@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
           title,
           body,
           url: `/marketplace/tienda/${bestOffer.storeSlug}`,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/zone-offers-push] push send failed", { error: String(err), phone: customer.phone }));
 
         sentCount++;
       }

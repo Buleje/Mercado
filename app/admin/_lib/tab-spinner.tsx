@@ -12,11 +12,11 @@ export function TabSpinner() {
       {/* KPI cards skeleton */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+          <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
         ))}
       </div>
       {/* Table skeleton */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 space-y-3">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="flex items-center gap-4">
             <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
@@ -29,7 +29,7 @@ export function TabSpinner() {
         ))}
       </div>
       {/* Secondary content skeleton */}
-      <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+      <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl" />
     </div>
   );
 }

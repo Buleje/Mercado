@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Package } from "lucide-react";
+import { Search, Package } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -44,24 +44,24 @@ function stockBadge(stock: number | undefined) {
   if (stock == null) return null;
   if (stock <= 0)
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-muted">
+      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted">
         Sin stock
       </span>
     );
   if (stock <= 2)
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-500">
+      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)]">
         {stock}
       </span>
     );
   if (stock <= 10)
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-500">
+      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)]">
         {stock}
       </span>
     );
   return (
-    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500">
+    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)]">
       {stock}
     </span>
   );
@@ -151,7 +151,7 @@ export default function POSSearchBar({
     <div ref={containerRef} className="space-y-2">
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
         <input
           data-pos-search
           type="text"
@@ -163,19 +163,19 @@ export default function POSSearchBar({
           onFocus={() => setShowResults(true)}
           placeholder="Buscar producto, código de barras..."
           aria-label="Buscar productos"
-          className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+          className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-colors"
           autoComplete="off"
         />
-        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-muted px-1.5 py-0.5 rounded font-mono">
+        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted px-1.5 py-0.5 rounded font-mono">
           F1
         </kbd>
       </div>
 
       {/* Search results dropdown */}
       {showResults && debouncedQuery.trim() && (
-        <div className="absolute z-30 left-0 right-0 mx-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg max-h-80 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 mx-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-80 overflow-y-auto">
           {results.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-6 text-gray-400 dark:text-muted">
+            <div className="flex flex-col items-center justify-center py-6 text-[var(--text-tertiary)] dark:text-muted">
               <Package className="h-5 w-5 mb-1" />
               <p className="text-xs">No se encontraron productos</p>
             </div>
@@ -204,12 +204,12 @@ export default function POSSearchBar({
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <Package className="h-4 w-4 text-gray-400" />
+                        <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">
+                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                       {p.name}
                     </p>
                     <div className="flex items-center gap-1.5">
@@ -217,12 +217,12 @@ export default function POSSearchBar({
                         S/ {p.price.toFixed(2)}
                       </p>
                       {p.previousPrice && p.previousPrice !== p.price && (
-                        <span className="text-[10px] text-gray-400 line-through">
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-through">
                           S/{p.previousPrice.toFixed(2)}
                         </span>
                       )}
                       {p.updatedAt && (nowTs - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (
-                        <span className="text-[9px] font-bold text-white bg-[#f97316] px-1 py-0.5 rounded">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[#f97316] px-1 py-0.5 rounded">
                           Nuevo precio
                         </span>
                       )}
@@ -247,10 +247,10 @@ export default function POSSearchBar({
                 onClick={() => handleAdd(p)}
                 disabled={outOfStock}
                 className={cn(
-                  "shrink-0 px-2 py-1 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap flex items-center gap-1",
+                  "shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-medium transition-all whitespace-nowrap flex items-center gap-1",
                   outOfStock
-                    ? "bg-gray-100 dark:bg-surface text-gray-400 cursor-not-allowed"
-                    : "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800/30"
+                    ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] cursor-not-allowed"
+                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
                 )}
               >
                 <span className="truncate max-w-20">{p.name}</span>

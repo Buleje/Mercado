@@ -1,8 +1,10 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Printer, Download, Copy, Check, QrCode } from "lucide-react";
+import Image from "next/image";
+import { Search, Printer, Download, Copy, Check, QrCode } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -154,7 +156,7 @@ export default function ProductQRGenerator() {
             body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; }
             img { display: block; max-width: 300px; }
             .label { margin-top: 10px; font-size: 14px; font-weight: bold; color: #1a3d2e; text-align: center; }
-            .price { font-size: 16px; font-weight: bold; color: #00B4A6; text-align: center; }
+            .price { font-size: 16px; font-weight: bold; color: var(--color-primary); text-align: center; }
             .barcode { font-size: 11px; color: #888; margin-top: 4px; text-align: center; }
             @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
           </style>
@@ -214,37 +216,37 @@ export default function ProductQRGenerator() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
           Generador de Codigos QR
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-tertiary)]">
           Imprime codigos QR para pegar en los estantes de cada producto
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Controls */}
-        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Search */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
               Buscar producto
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Escribe el nombre del producto..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
             {search && (
-              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
                 {loading ? (
-                  <p className="p-3 text-sm text-gray-500">Cargando...</p>
+                  <p className="p-3 text-sm text-[var(--text-secondary)]">Cargando...</p>
                 ) : filtered.length === 0 ? (
-                  <p className="p-3 text-sm text-gray-500">Sin resultados</p>
+                  <p className="p-3 text-sm text-[var(--text-secondary)]">Sin resultados</p>
                 ) : (
                   filtered.slice(0, 8).map((p) => (
                     <button
@@ -253,10 +255,10 @@ export default function ProductQRGenerator() {
                         setSelected(p);
                         setSearch(p.name);
                       }}
-                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
                     >
-                      <span className="text-gray-800 dark:text-gray-200">{p.name}</span>
-                      <span className="font-medium text-[#00B4A6]">S/ {p.price?.toFixed(2)}</span>
+                      <span className="text-[var(--text-primary)]">{p.name}</span>
+                      <span className="font-medium text-primary">S/ {p.price?.toFixed(2)}</span>
                     </button>
                   ))
                 )}
@@ -266,7 +268,7 @@ export default function ProductQRGenerator() {
 
           {/* Size selector */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Tamano del QR
             </label>
             <div className="flex gap-2">
@@ -277,8 +279,8 @@ export default function ProductQRGenerator() {
                   className={cn(
                     "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition",
                     size === s
-                      ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                   )}
                 >
                   {s === "small" ? "Pequeno" : s === "medium" ? "Mediano" : "Grande"}
@@ -292,13 +294,13 @@ export default function ProductQRGenerator() {
           {selected && (
             <div className="space-y-2">
               <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">URL del QR</p>
-                <p className="mt-1 break-all font-mono text-xs text-[#00B4A6]">{qrUrl}</p>
+                <p className="text-xs font-medium text-[var(--text-tertiary)]">URL del QR</p>
+                <p className="mt-1 break-all font-mono text-xs text-primary">{qrUrl}</p>
               </div>
               {selected.barcode && (
                 <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Codigo de barras</p>
-                  <p className="mt-0.5 font-mono text-xs text-gray-700 dark:text-gray-300">{selected.barcode}</p>
+                  <p className="text-xs font-medium text-[var(--text-tertiary)]">Codigo de barras</p>
+                  <p className="mt-0.5 font-mono text-xs text-[var(--text-secondary)]">{selected.barcode}</p>
                 </div>
               )}
             </div>
@@ -306,24 +308,25 @@ export default function ProductQRGenerator() {
         </div>
 
         {/* Right: QR Preview */}
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {selected ? (
             <>
-              <div className={cn("rounded-xl border-2 border-[#00B4A6] bg-white p-4", rendering && "opacity-50")}>
+              <div className={cn("rounded-xl border-2 border-primary bg-white p-4", rendering && "opacity-50")}>
                 {/* SVG del servidor (preferido) */}
                 {svgSrc ? (
-                  <img
+                  <Image
                     src={svgSrc}
                     alt={`QR de ${selected.name}`}
                     width={SIZE_PX[size]}
                     height={SIZE_PX[size] + 50}
                     className="block"
+                    unoptimized
                   />
                 ) : (
                   <>
                     <canvas ref={canvasRef} className="block" />
                     <p className="mt-2 text-center text-sm font-bold text-[#1a3d2e]">{selected.name}</p>
-                    <p className="text-center text-base font-bold text-[#00B4A6]">S/ {selected.price.toFixed(2)}</p>
+                    <p className="text-center text-base font-bold text-primary">S/ {selected.price.toFixed(2)}</p>
                   </>
                 )}
               </div>
@@ -333,7 +336,7 @@ export default function ProductQRGenerator() {
                 <button
                   onClick={handlePrint}
                   disabled={rendering}
-                  className="flex items-center gap-2 rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50"
                 >
                   <Printer className="h-4 w-4" />
                   Imprimir
@@ -341,7 +344,7 @@ export default function ProductQRGenerator() {
                 <button
                   onClick={handleDownload}
                   disabled={rendering}
-                  className="flex items-center gap-2 rounded-lg border border-[#00B4A6] px-4 py-2 text-sm font-semibold text-[#00B4A6] transition hover:bg-[#00B4A6]/5 disabled:opacity-50 dark:text-emerald-400"
+                  className="flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5 disabled:opacity-50 dark:text-[var(--data-success)]"
                 >
                   <Download className="h-4 w-4" />
                   Descargar
@@ -352,8 +355,8 @@ export default function ProductQRGenerator() {
                   className={cn(
                     "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition disabled:opacity-50",
                     copied
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
-                      : "border-gray-200 text-gray-600 hover:border-gray-400 dark:border-gray-700 dark:text-gray-300"
+                      ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                      : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-400 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
                   )}
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -363,10 +366,10 @@ export default function ProductQRGenerator() {
             </>
           ) : (
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <QrCode className="h-12 w-12 text-gray-200 dark:text-gray-700" />
+              <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)]">
+                <QrCode className="h-12 w-12 text-gray-200 dark:text-[var(--text-primary)]" />
               </div>
-              <p className="text-sm text-gray-400">Selecciona un producto para generar su QR</p>
+              <p className="text-sm text-[var(--text-tertiary)]">Selecciona un producto para generar su QR</p>
             </div>
           )}
         </div>

@@ -39,7 +39,7 @@ export default function ReferralProgram() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-[#00B4A6]/5 to-[#f97316]/5 rounded-2xl border border-[#00B4A6]/15 p-6 animate-pulse">
+      <div className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-6 animate-pulse">
         <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-3" />
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
       </div>
@@ -81,7 +81,7 @@ export default function ReferralProgram() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-[#00B4A6]/5 to-[#f97316]/5 dark:from-[#00B4A6]/10 dark:to-[#f97316]/10 rounded-2xl border border-[#00B4A6]/15 dark:border-[#00B4A6]/25 p-5 sm:p-6"
+      className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-5 sm:p-6"
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-5">
@@ -89,25 +89,25 @@ export default function ReferralProgram() {
           <Gift className="h-5 w-5 text-[#f97316]" />
         </div>
         <div>
-          <h3 className="text-base font-extrabold text-gray-900 dark:text-white">
+          <h3 className="text-base font-extrabold text-[var(--text-primary)]">
             Invita a un amigo y ambos ganan S/5
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Comparte tu codigo y gana descuentos
           </p>
         </div>
       </div>
 
       {/* Code display */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-4">
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">Tu codigo de referido</p>
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 mb-4">
+        <p className="text-xs text-[var(--text-tertiary)] mb-1.5 font-medium">Tu codigo de referido</p>
         <div className="flex items-center gap-3">
           <span className="text-2xl font-extrabold text-[#00B4A6] dark:text-[#2dd4bf] tracking-wider flex-1">
             {data.code}
           </span>
           <button
             onClick={handleCopy}
-            className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             aria-label="Copiar codigo"
           >
             {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-gray-500" />}
@@ -117,15 +117,15 @@ export default function ReferralProgram() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 text-center">
           <Users className="h-4 w-4 text-[#00B4A6] mx-auto mb-1" />
-          <p className="text-lg font-extrabold text-gray-900 dark:text-white">{data.referredCount}</p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">Amigos referidos</p>
+          <p className="text-lg font-extrabold text-[var(--text-primary)]">{data.referredCount}</p>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Amigos referidos</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 text-center">
           <TrendingUp className="h-4 w-4 text-[#f97316] mx-auto mb-1" />
-          <p className="text-lg font-extrabold text-gray-900 dark:text-white">S/ {data.totalEarned.toFixed(2)}</p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">Ganado</p>
+          <p className="text-lg font-extrabold text-[var(--text-primary)]">S/ {data.totalEarned.toFixed(2)}</p>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Ganado</p>
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export default function ReferralProgram() {
         </button>
         <button
           onClick={handleShareGeneric}
-          className="py-3.5 px-5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
+          className="py-3.5 px-5 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-secondary)] font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
         >
           <Share2 className="h-4 w-4" />
           Compartir

@@ -1,7 +1,8 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ export default function ConversionFunnel() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-gray-500">
+      <div className="flex items-center gap-2 py-8 text-[var(--text-secondary)]">
         <RefreshCw className="h-5 w-5 animate-spin" />
         Cargando embudo de conversion...
       </div>
@@ -115,9 +116,9 @@ export default function ConversionFunnel() {
 
   if (error || !current) {
     return (
-      <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-6 text-sm text-red-600 dark:text-red-400">
+      <div className="rounded-xl border border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10 p-6 text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
         {error ?? "Sin datos"}
-        <button onClick={load} className="ml-3 underline text-red-500 hover:text-red-700">Reintentar</button>
+        <button onClick={load} className="ml-3 underline text-[var(--data-error)] hover:text-[var(--data-error)]">Reintentar</button>
       </div>
     );
   }
@@ -128,16 +129,16 @@ export default function ConversionFunnel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Embudo de conversion
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             De visitante a comprador — esta semana vs anterior
           </p>
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -155,13 +156,13 @@ export default function ConversionFunnel() {
           return (
             <div key={stage.label} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-gray-700 dark:text-gray-300">{stage.label}</span>
+                <span className="font-medium text-[var(--text-secondary)]">{stage.label}</span>
                 <div className="flex items-center gap-3">
                   {prevStage && (
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
-                      {deltaSign === "up" && <TrendingUp className="h-3 w-3 text-green-500" />}
-                      {deltaSign === "down" && <TrendingDown className="h-3 w-3 text-red-400" />}
-                      {deltaSign === "same" && <Minus className="h-3 w-3 text-gray-400" />}
+                    <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                      {deltaSign === "up" && <TrendingUp className="h-3 w-3 text-[var(--data-success)]" />}
+                      {deltaSign === "down" && <TrendingDown className="h-3 w-3 text-[var(--data-error)]" />}
+                      {deltaSign === "same" && <Minus className="h-3 w-3 text-[var(--text-tertiary)]" />}
                       ant: {prevStage.value.toLocaleString("es-PE")}
                     </span>
                   )}
@@ -172,9 +173,9 @@ export default function ConversionFunnel() {
               </div>
 
               {/* Bar */}
-              <div className="relative h-10 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              <div className="relative h-10 rounded-lg bg-[var(--surface-sunken)] overflow-hidden">
                 <div
-                  className={cn("h-full rounded-lg transition-all duration-700", STAGE_COLORS[i])}
+                  className={cn("h-full rounded-lg transition-all duration-[var(--dur-slower)]", STAGE_COLORS[i])}
                   style={{ width: `${widthPct}%` }}
                 />
                 {/* Conversion badge */}
@@ -183,10 +184,10 @@ export default function ConversionFunnel() {
                     <span className={cn(
                       "text-xs font-semibold px-2 py-0.5 rounded-full",
                       stage.conversionFromPrev >= 60
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                         : stage.conversionFromPrev >= 30
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
+                        : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
                     )}>
                       {stage.conversionFromPrev}% conversion
                     </span>
@@ -201,36 +202,36 @@ export default function ConversionFunnel() {
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {/* Overall conversion */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Conversion total</p>
-          <p className="text-2xl font-bold text-[#00B4A6] dark:text-green-400 mt-1">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs text-[var(--text-tertiary)]">Conversion total</p>
+          <p className="text-2xl font-bold text-[#00B4A6] dark:text-[var(--data-success)] mt-1">
             {current.stages[0]?.value > 0
               ? `${Math.round(((current.stages[current.stages.length - 1]?.value ?? 0) / current.stages[0].value) * 100)}%`
               : "—"}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">Visitantes que compraron</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Visitantes que compraron</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Compradores esta semana</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs text-[var(--text-tertiary)]">Compradores esta semana</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">
             {current.stages[current.stages.length - 1]?.value.toLocaleString("es-PE") ?? "—"}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">Pedidos completados</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Pedidos completados</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Abandono en carrito</p>
-          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs text-[var(--text-tertiary)]">Abandono en carrito</p>
+          <p className="text-2xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">
             {current.stages[1]?.value > 0
               ? `${Math.round(((current.stages[1].value - (current.stages[2]?.value ?? 0)) / current.stages[1].value) * 100)}%`
               : "—"}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">No llegaron al checkout</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">No llegaron al checkout</p>
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-[var(--text-tertiary)]">
         Nota: los visitantes y pasos intermedios son estimaciones basadas en pedidos registrados. Conecta Google Analytics para datos exactos.
       </p>
     </div>

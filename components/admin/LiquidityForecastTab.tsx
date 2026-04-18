@@ -1,10 +1,11 @@
 "use client";
 
+import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp, Download, AlertTriangle,
   ArrowUp, ArrowDown, Wallet, DollarSign, Loader2, RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -123,9 +124,9 @@ function buildForecast(
 }
 
 const SCENARIO_META: Record<Scenario, { label: string; color: string }> = {
-  base:      { label: "Base",      color: "text-blue-600"    },
-  optimista: { label: "Optimista", color: "text-emerald-600" },
-  pesimista: { label: "Pesimista", color: "text-red-600"     },
+  base:      { label: "Base",      color: "text-[var(--data-success)]"    },
+  optimista: { label: "Optimista", color: "text-[var(--data-success)]" },
+  pesimista: { label: "Pesimista", color: "text-[var(--data-error)]"     },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -196,21 +197,18 @@ export default function LiquidityForecastTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500 dark:text-muted">Cargando datos financieros...</p>
-      </div>
+      <LoadingState message="Cargando datos financieros..." />
     );
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
+        <AlertTriangle className="h-10 w-10 text-[var(--data-error)]" />
+        <p className="text-[var(--text-secondary)] dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -223,10 +221,10 @@ export default function LiquidityForecastTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" /> Proyección de Liquidez
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
             Flujo de caja proyectado con base en {sales.length} ventas y {payables.length} cuentas por pagar
           </p>
         </div>
@@ -243,7 +241,7 @@ export default function LiquidityForecastTab() {
               `liquidez-${scenario}`
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -252,15 +250,15 @@ export default function LiquidityForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Wallet },
-          { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-red-600" : "text-emerald-600", bg: stats.minCum < 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: ArrowDown },
-          { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: ArrowUp },
-          { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-red-600" : "text-emerald-600", bg: stats.deficitWeeks > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: AlertTriangle },
+          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Wallet },
+          { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: stats.minCum < 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowDown },
+          { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowUp },
+          { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]", bg: stats.deficitWeeks > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: AlertTriangle },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
               <p className={cn("text-xl font-extrabold", color)}>{value}</p>
             </div>
           </div>
@@ -270,7 +268,7 @@ export default function LiquidityForecastTab() {
       {/* Controles */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Horizonte */}
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           {([30, 60, 90] as const).map((h) => (
             <button
               key={h}
@@ -279,7 +277,7 @@ export default function LiquidityForecastTab() {
                 "px-3 py-2 text-sm font-semibold transition-colors",
                 horizon === h
                   ? "bg-primary text-white"
-                  : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
               )}
             >
               {h} días
@@ -288,7 +286,7 @@ export default function LiquidityForecastTab() {
         </div>
 
         {/* Escenario */}
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
           {(Object.keys(SCENARIO_META) as Scenario[]).map((k) => (
             <button
               key={k}
@@ -296,8 +294,8 @@ export default function LiquidityForecastTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
                 scenario === k
-                  ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
-                  : "text-gray-500 dark:text-muted hover:text-gray-700"
+                  ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                  : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]"
               )}
             >
               {SCENARIO_META[k].label}
@@ -308,13 +306,13 @@ export default function LiquidityForecastTab() {
 
       {/* Alerta de déficit */}
       {stats.deficitWeeks > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
+          <AlertTriangle className="h-5 w-5 text-[var(--data-error)] shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-red-700 dark:text-red-400">
+            <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
               Alerta: {stats.deficitWeeks} semana(s) con saldo negativo — escenario {SCENARIO_META[scenario].label}
             </p>
-            <p className="text-xs text-red-600/80">
+            <p className="text-xs text-[var(--data-error)]/80">
               Considera adelantar cobros o postergar pagos a proveedores
             </p>
           </div>
@@ -322,35 +320,35 @@ export default function LiquidityForecastTab() {
       )}
 
       {/* Gráfico de barras */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
           Ingresos vs Egresos semanales ({horizon} días)
-        </h3>
+        </CardTitle>
         {weeks.length === 0 ? (
-          <p className="text-center text-sm text-gray-400 dark:text-muted py-8">
+          <p className="text-center text-sm text-[var(--text-tertiary)] dark:text-muted py-8">
             Sin datos suficientes para proyectar. Registra ventas para ver la proyección.
           </p>
         ) : (
           <div className="space-y-2">
             {weeks.map((w) => (
               <div key={w.weekLabel} className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="w-32 text-gray-500 dark:text-muted shrink-0 truncate">
+                <span className="w-32 text-[var(--text-secondary)] dark:text-muted shrink-0 truncate">
                   {w.weekLabel.split("(")[0]}
                 </span>
                 <div className="flex-1 flex flex-col gap-0.5 min-w-[100px]">
                   <div
-                    className="h-3 rounded-full bg-emerald-500"
+                    className="h-3 rounded-full bg-[var(--accent-soft)]"
                     style={{ width: `${(w.inflows / barMax) * 100}%` }}
                   />
                   <div
-                    className="h-3 rounded-full bg-red-500"
+                    className="h-3 rounded-full bg-[var(--data-error)]"
                     style={{ width: `${(w.outflows / barMax) * 100}%` }}
                   />
                 </div>
                 <span
                   className={cn(
                     "w-24 text-right font-bold",
-                    w.balance >= 0 ? "text-emerald-600" : "text-red-600"
+                    w.balance >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                   )}
                 >
                   {w.balance >= 0 ? "+" : ""}
@@ -360,22 +358,22 @@ export default function LiquidityForecastTab() {
             ))}
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-gray-400 mt-2">
+        <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-tertiary)] mt-2">
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-emerald-500" /> Ingresos (proyectados)
+            <span className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" /> Ingresos (proyectados)
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-red-500" /> Egresos (proyectados)
+            <span className="w-3 h-3 rounded-full bg-[var(--data-error)]" /> Egresos (proyectados)
           </span>
         </div>
       </div>
 
       {/* Tabla detallada */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface">
+              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
                 <th className="px-4 py-3">Semana</th>
                 <th className="px-4 py-3">Ingresos</th>
                 <th className="px-4 py-3">Egresos</th>
@@ -388,18 +386,18 @@ export default function LiquidityForecastTab() {
                 <tr
                   key={w.weekLabel}
                   className={cn(
-                    "border-t border-gray-100 dark:border-card-border",
-                    w.cumulative < 0 && "bg-red-50/50 dark:bg-red-950/10"
+                    "border-t border-[var(--rule-soft)] dark:border-card-border",
+                    w.cumulative < 0 && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10"
                   )}
                 >
-                  <td className="px-4 py-3 font-bold text-gray-700 dark:text-foreground text-xs">
+                  <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground text-xs">
                     {w.weekLabel}
                   </td>
-                  <td className="px-4 py-3 text-emerald-600 font-bold flex items-center gap-1">
+                  <td className="px-4 py-3 text-[var(--data-success)] font-bold flex items-center gap-1">
                     <ArrowUp className="h-3 w-3" />
                     {fmt(w.inflows)}
                   </td>
-                  <td className="px-4 py-3 text-red-600 font-bold">
+                  <td className="px-4 py-3 text-[var(--data-error)] font-bold">
                     <span className="flex items-center gap-1">
                       <ArrowDown className="h-3 w-3" />
                       {fmt(w.outflows)}
@@ -408,7 +406,7 @@ export default function LiquidityForecastTab() {
                   <td
                     className={cn(
                       "px-4 py-3 font-extrabold",
-                      w.balance >= 0 ? "text-emerald-600" : "text-red-600"
+                      w.balance >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                     )}
                   >
                     {w.balance >= 0 ? "+" : ""}
@@ -417,7 +415,7 @@ export default function LiquidityForecastTab() {
                   <td
                     className={cn(
                       "px-4 py-3 font-extrabold",
-                      w.cumulative >= 0 ? "text-blue-600" : "text-red-600"
+                      w.cumulative >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
                     )}
                   >
                     {fmt(w.cumulative)}
@@ -431,14 +429,14 @@ export default function LiquidityForecastTab() {
 
       {/* Compromisos pendientes */}
       {pendingPayables.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">
             Compromisos pendientes de pago ({payables.filter((p) => p.status !== "pagado").length} total)
-          </h3>
+          </CardTitle>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[400px] text-sm">
               <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100 dark:border-card-border">
+                <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--rule-soft)] dark:border-card-border">
                   <th className="text-left pb-2">Proveedor</th>
                   <th className="text-right pb-2">Monto</th>
                   <th className="text-right pb-2">Pagado</th>
@@ -451,21 +449,21 @@ export default function LiquidityForecastTab() {
                   const remaining = p.amount - p.paidAmount;
                   const isOverdue = new Date(p.dueDate) < new Date();
                   return (
-                    <tr key={p.id} className={cn(isOverdue && "bg-amber-50/50 dark:bg-amber-950/10")}>
-                      <td className="py-2 font-semibold text-gray-800 dark:text-foreground">
+                    <tr key={p.id} className={cn(isOverdue && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
+                      <td className="py-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
                         {p.supplierName || "Proveedor"}
                       </td>
-                      <td className="py-2 text-right text-gray-600 dark:text-muted">{fmt(p.amount)}</td>
-                      <td className="py-2 text-right text-emerald-600">{fmt(p.paidAmount)}</td>
-                      <td className="py-2 text-right font-bold text-red-600">{fmt(remaining)}</td>
+                      <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(p.amount)}</td>
+                      <td className="py-2 text-right text-[var(--data-success)]">{fmt(p.paidAmount)}</td>
+                      <td className="py-2 text-right font-bold text-[var(--data-error)]">{fmt(remaining)}</td>
                       <td
                         className={cn(
                           "py-2 text-right text-xs",
-                          isOverdue ? "text-red-600 font-bold" : "text-gray-500 dark:text-muted"
+                          isOverdue ? "text-[var(--data-error)] font-bold" : "text-[var(--text-secondary)] dark:text-muted"
                         )}
                       >
                         {new Date(p.dueDate).toLocaleDateString("es-PE")}
-                        {isOverdue && " ⚠"}
+                        {isOverdue && " !"}
                       </td>
                     </tr>
                   );
@@ -479,25 +477,25 @@ export default function LiquidityForecastTab() {
       {/* Totales */}
       <div className="flex flex-wrap items-center gap-4 bg-gray-50 dark:bg-surface rounded-xl p-3 text-sm">
         <div>
-          <span className="text-gray-400">Total ingresos proyect.: </span>
-          <span className="font-extrabold text-emerald-600 flex items-center gap-1 inline-flex">
+          <span className="text-[var(--text-tertiary)]">Total ingresos proyect.: </span>
+          <span className="font-extrabold text-[var(--data-success)] flex items-center gap-1 inline-flex">
             <DollarSign className="h-3.5 w-3.5" />
             {fmt(stats.totalInflows)}
           </span>
         </div>
         <div>
-          <span className="text-gray-400">Total egresos proyect.: </span>
-          <span className="font-extrabold text-red-600 flex items-center gap-1 inline-flex">
+          <span className="text-[var(--text-tertiary)]">Total egresos proyect.: </span>
+          <span className="font-extrabold text-[var(--data-error)] flex items-center gap-1 inline-flex">
             <DollarSign className="h-3.5 w-3.5" />
             {fmt(stats.totalOutflows)}
           </span>
         </div>
         <div>
-          <span className="text-gray-400">Neto: </span>
+          <span className="text-[var(--text-tertiary)]">Neto: </span>
           <span
             className={cn(
               "font-extrabold",
-              stats.totalInflows - stats.totalOutflows >= 0 ? "text-emerald-600" : "text-red-600"
+              stats.totalInflows - stats.totalOutflows >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
             )}
           >
             {fmt(stats.totalInflows - stats.totalOutflows)}

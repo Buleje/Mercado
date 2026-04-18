@@ -1,10 +1,11 @@
 "use client";
 
+import { SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
 import {
   X, ChevronRight, ChevronLeft, Check,
   Loader2, AlertTriangle, Package,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 
@@ -115,24 +116,24 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               Recepcion de Pedido
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-muted">
+            </SectionTitle>
+            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
               OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
         </div>
 
         {/* Step indicator */}
-        <div className="flex px-5 py-2 gap-1 border-b border-gray-100 dark:border-card-border/50">
+        <div className="flex px-5 py-2 gap-1 border-b border-[var(--rule-soft)] dark:border-card-border/50">
           {[1, 2, 3].map((s) => (
             <div
               key={s}
@@ -149,14 +150,14 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {/* Step 1: Verify Items */}
           {step === 1 && (
             <>
-              <p className="text-sm font-bold text-gray-700 dark:text-foreground flex items-center gap-2">
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" />
                 Verificar cantidades recibidas
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-card-border text-xs text-gray-500 dark:text-muted">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-center py-2 px-1">Pedido</th>
                       <th className="text-center py-2 px-1">Recibido</th>
@@ -168,11 +169,11 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                     {receivedItems.map((item, idx) => {
                       const diff = item.receivedQty - item.orderedQty;
                       return (
-                        <tr key={item.productId} className="border-b border-gray-100 dark:border-card-border/50">
-                          <td className="py-2 px-2 font-semibold text-gray-900 dark:text-foreground">
+                        <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
+                          <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
                             {item.name}
                           </td>
-                          <td className="py-2 px-1 text-center text-gray-600 dark:text-muted">
+                          <td className="py-2 px-1 text-center text-[var(--text-secondary)] dark:text-muted">
                             {item.orderedQty} {item.unit}
                           </td>
                           <td className="py-2 px-1 text-center">
@@ -181,13 +182,13 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                               min={0}
                               value={item.receivedQty}
                               onChange={(e) => updateItem(idx, { receivedQty: Math.max(0, parseInt(e.target.value) || 0), noLlego: false })}
-                              className="w-16 text-center border border-gray-200 dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                              className="w-16 text-center border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
                               disabled={item.noLlego}
                             />
                           </td>
                           <td className="py-2 px-1 text-center">
                             {diff !== 0 && (
-                              <span className={cn("text-xs font-bold", diff < 0 ? "text-red-600" : "text-emerald-600")}>
+                              <span className={cn("text-xs font-bold", diff < 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]")}>
                                 {diff < 0 ? `Faltaron ${Math.abs(diff)}` : `+${diff}`}
                               </span>
                             )}
@@ -212,14 +213,14 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {/* Step 2: Adjust Prices */}
           {step === 2 && (
             <>
-              <p className="text-sm font-bold text-gray-700 dark:text-foreground flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-card-border text-xs text-gray-500 dark:text-muted">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-right py-2 px-1">Precio anterior</th>
                       <th className="text-center py-2 px-1">Precio factura</th>
@@ -238,11 +239,11 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                         const isSignificant = Math.abs(priceDiff) > 5;
 
                         return (
-                          <tr key={item.productId} className="border-b border-gray-100 dark:border-card-border/50">
-                            <td className="py-2 px-2 font-semibold text-gray-900 dark:text-foreground">
+                          <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
+                            <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
                               {item.name}
                             </td>
-                            <td className="py-2 px-1 text-right text-gray-500 dark:text-muted">
+                            <td className="py-2 px-1 text-right text-[var(--text-secondary)] dark:text-muted">
                               S/ {item.originalPrice.toFixed(2)}
                             </td>
                             <td className="py-2 px-1 text-center">
@@ -252,7 +253,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 step={0.01}
                                 value={item.unitPrice}
                                 onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                className="w-24 text-center border border-gray-200 dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                                className="w-24 text-center border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
                               />
                             </td>
                             <td className="py-2 px-1 text-right">
@@ -260,7 +261,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 <span
                                   className={cn(
                                     "text-xs font-semibold flex items-center justify-end gap-0.5",
-                                    isSignificant ? "text-amber-600 dark:text-amber-400" : "text-gray-500",
+                                    isSignificant ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]" : "text-[var(--text-secondary)]",
                                   )}
                                 >
                                   {isSignificant && <AlertTriangle className="h-3 w-3" />}
@@ -275,8 +276,8 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 </table>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500 dark:text-muted">Total factura:</p>
-                <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>
+                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
                   S/ {totalFactura.toFixed(2)}
                 </p>
               </div>
@@ -286,23 +287,23 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {/* Step 3: Confirm */}
           {step === 3 && (
             <>
-              <p className="text-sm font-bold text-gray-700 dark:text-foreground flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-500" />
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+                <Check className="h-4 w-4 text-[var(--data-success)]" />
                 Confirmar recepcion
               </p>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30">
-                  <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Recibidos</p>
-                  <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{itemsRecibidos.length}</p>
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Recibidos</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsRecibidos.length}</p>
                 </div>
-                <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 text-center border border-amber-200 dark:border-amber-800/30">
-                  <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">Con diferencia</p>
-                  <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{itemsConDiferencia.length}</p>
+                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Con diferencia</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsConDiferencia.length}</p>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 text-center border border-blue-200 dark:border-blue-800/30">
-                  <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Total factura</p>
-                  <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">S/ {totalFactura.toFixed(2)}</p>
+                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Total factura</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {totalFactura.toFixed(2)}</p>
                 </div>
               </div>
 
@@ -310,10 +311,10 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               <div className="bg-gray-50 dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
                 {receivedItems.map((item) => (
                   <div key={item.productId} className="flex justify-between text-xs">
-                    <span className={cn("text-gray-700 dark:text-foreground", item.receivedQty === 0 && "line-through text-gray-400")}>
+                    <span className={cn("text-[var(--text-primary)] dark:text-foreground", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
                       {item.name}
                     </span>
-                    <span className="text-gray-500 dark:text-muted font-semibold">
+                    <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">
                       {item.receivedQty}/{item.orderedQty} - S/ {(item.receivedQty * item.unitPrice).toFixed(2)}
                     </span>
                   </div>
@@ -324,12 +325,12 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
                 placeholder="Notas sobre la recepcion (opcional)..."
-                className="w-full border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-card text-gray-900 dark:text-foreground outline-none focus:border-primary resize-none"
+                className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary resize-none"
                 rows={3}
               />
 
               {error && (
-                <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg px-3 py-2">
+                <div className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-lg px-3 py-2">
                   {error}
                 </div>
               )}
@@ -338,11 +339,11 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-t border-[var(--rule-base)] dark:border-card-border">
           {step > 1 ? (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="flex items-center gap-1 text-sm font-bold text-gray-600 dark:text-muted hover:text-gray-900 dark:hover:text-foreground transition-colors"
+              className="flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground transition-colors"
             >
               <ChevronLeft className="h-4 w-4" /> Anterior
             </button>
@@ -361,7 +362,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar Recepcion

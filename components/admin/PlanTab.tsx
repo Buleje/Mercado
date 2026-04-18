@@ -1,11 +1,12 @@
 "use client";
 
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import {
   Zap, ShoppingBag, Users, ShoppingCart, Globe, BarChart2,
   CheckCircle2, XCircle, Crown, Loader2, AlertTriangle, CreditCard,
   Link, Trash2, RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { PLANS, type PlanId, type PlanDef, type PlanLimits } from "@/lib/plans";
 
 // ─── Icono SVG de Mercado Pago ────────────────────────────
@@ -55,17 +56,17 @@ function formatLimit(max: number) {
 }
 
 const PLAN_COLORS: Record<string, string> = {
-  free: "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
-  pro: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-  business: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
-  enterprise: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+  free: "bg-gray-200 dark:bg-gray-700 text-[var(--text-primary)]",
+  pro: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+  business: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+  enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
 };
 
 const PLAN_BAR_COLOR: Record<string, string> = {
   free: "bg-gray-400",
-  pro: "bg-blue-500",
-  business: "bg-violet-500",
-  enterprise: "bg-amber-500",
+  pro: "bg-[var(--accent-soft)]",
+  business: "bg-[var(--text-primary)]",
+  enterprise: "bg-[var(--data-warning)]",
 };
 
 const WARNING_THRESHOLD = 80; // % usage where we show a warning
@@ -92,29 +93,29 @@ function UsageBar({
           {icon}
           {label}
         </div>
-        <span className={`text-xs font-semibold ${isFull ? "text-red-500" : isWarning ? "text-amber-500" : "text-muted"}`}>
+        <span className={`text-xs font-semibold ${isFull ? "text-[var(--data-error)]" : isWarning ? "text-[var(--data-warning)]" : "text-muted"}`}>
           {unlimited ? (
-            <span className="text-emerald-500 font-bold">∞ ilimitado</span>
+            <span className="text-[var(--data-success)] font-bold">∞ ilimitado</span>
           ) : (
             <>{used.toLocaleString("es-PE")} / {max.toLocaleString("es-PE")}</>
           )}
         </span>
       </div>
       {!unlimited && (
-        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-2 w-full bg-[var(--surface-sunken)] rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${isFull ? "bg-red-500" : isWarning ? "bg-amber-400" : PLAN_BAR_COLOR[planId] ?? "bg-primary"}`}
+            className={`h-full rounded-full transition-all ${isFull ? "bg-[var(--data-error)]" : isWarning ? "bg-[var(--data-warning)]" : PLAN_BAR_COLOR[planId] ?? "bg-primary"}`}
             style={{ width: `${percent}%` }}
           />
         </div>
       )}
       {isWarning && !isFull && (
-        <p className="text-xs text-amber-500 flex items-center gap-1">
+        <p className="text-xs text-[var(--data-warning)] flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" /> Cerca del límite ({percent}%)
         </p>
       )}
       {isFull && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
+        <p className="text-xs text-[var(--data-error)] flex items-center gap-1">
           <XCircle className="w-3 h-3" /> Límite alcanzado — actualiza tu plan
         </p>
       )}
@@ -127,9 +128,9 @@ function FeatureRow({ label, available }: { label: string; available: boolean })
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {available ? (
-        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+        <CheckCircle2 className="w-4 h-4 text-[var(--data-success)] shrink-0" />
       ) : (
-        <XCircle className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+        <XCircle className="w-4 h-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
       )}
       <span className={available ? "text-foreground" : "text-muted line-through"}>{label}</span>
     </div>
@@ -157,18 +158,18 @@ function PlanCard({
 
   return (
     <div
-      className={`rounded-2xl border-2 p-3 sm:p-5 space-y-4 transition-all ${
+      className={`rounded-xl border-2 p-3 sm:p-5 space-y-4 transition-all ${
         isActive
-          ? "border-primary bg-primary/5 shadow-lg"
-          : "border-gray-200 dark:border-gray-700 hover:border-primary/40"
+          ? "border-primary bg-primary/5"
+          : "border-[var(--rule-base)] hover:border-primary/40"
       }`}
     >
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-amber-500" : "text-violet-500"}`} />}
-            <h3 className="font-bold text-base">{def.name}</h3>
+            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-[var(--data-warning)]" : "text-[var(--text-secondary)]"}`} />}
+            <CardTitle className="font-bold text-base">{def.name}</CardTitle>
           </div>
           <div className="mt-1">
             {def.priceMonthly === 0 ? (
@@ -196,7 +197,7 @@ function PlanCard({
       </div>
 
       {/* Features */}
-      <div className="space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-3">
+      <div className="space-y-1.5 border-t border-[var(--rule-base)] pt-3">
         <FeatureRow label="Dominio propio" available={limits.customDomain} />
         <FeatureRow label="Analytics avanzado" available={limits.advancedAnalytics} />
         <FeatureRow label="API access" available={limits.apiAccess} />
@@ -214,7 +215,7 @@ function PlanCard({
           <button
             onClick={onSelectStripe}
             disabled={loadingStripe || loadingMP}
-            className="w-full py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
+            className="w-full py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
           >
             {loadingStripe ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -228,7 +229,7 @@ function PlanCard({
           <button
             onClick={onSelectMP}
             disabled={loadingStripe || loadingMP}
-            className="w-full py-2 rounded-xl text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
+            className="w-full py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
             style={{ backgroundColor: loadingStripe || loadingMP ? "#009ee3cc" : "#009ee3" }}
           >
             {loadingMP ? (
@@ -419,9 +420,7 @@ export default function PlanTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-muted" />
-      </div>
+      <LoadingState />
     );
   }
 
@@ -447,8 +446,8 @@ export default function PlanTab() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
-            toast.ok ? "bg-emerald-600" : "bg-red-600"
+          className={`fixed top-4 right-4 z-50 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm font-medium ${
+            toast.ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]"
           }`}
         >
           {toast.msg}
@@ -457,13 +456,13 @@ export default function PlanTab() {
 
       {/* Trial banner */}
       {trialActive && (
-        <div className="flex flex-wrap items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+        <div className="flex flex-wrap items-center gap-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-4">
+          <AlertTriangle className="w-5 h-5 text-[var(--data-warning)] shrink-0" />
           <div>
-            <p className="font-semibold text-sm text-amber-800 dark:text-amber-200">
+            <p className="font-semibold text-sm text-[var(--data-warning)] dark:text-[var(--data-warning)]">
               Período de prueba — {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""} restantes
             </p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+            <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
               Actualiza tu plan antes de que venza para no perder el acceso.
             </p>
           </div>
@@ -473,10 +472,10 @@ export default function PlanTab() {
       {/* Current plan header */}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-base sm:text-xl font-bold flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-base sm:text-xl font-bold flex flex-wrap items-center gap-2">
             <Zap className="w-5 h-5 text-primary" />
             Plan actual
-          </h2>
+          </SectionTitle>
           <p className="text-muted text-sm mt-1">Tienda: <strong>{tenant.name ?? tenant.slug}</strong></p>
         </div>
         <span className={`text-sm font-bold px-4 py-1.5 rounded-full ${PLAN_COLORS[plan] ?? PLAN_COLORS.free}`}>
@@ -486,8 +485,8 @@ export default function PlanTab() {
       </div>
 
       {/* Usage meters */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-2xl p-3 sm:p-6 space-y-3 sm:space-y-6">
-        <h3 className="font-semibold text-sm uppercase tracking-wide text-muted">Uso del mes actual</h3>
+      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-6">
+        <CardTitle className="font-semibold text-sm text-muted">Uso del mes actual</CardTitle>
         <UsageBar
           label="Productos"
           icon={<ShoppingBag className="w-4 h-4 text-muted" />}
@@ -512,10 +511,10 @@ export default function PlanTab() {
       </div>
 
       {/* Features enabled */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-2xl p-3 sm:p-6 space-y-3">
-        <h3 className="font-semibold text-sm uppercase tracking-wide text-muted flex items-center gap-1.5">
+      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3">
+        <CardTitle className="font-semibold text-sm text-muted flex items-center gap-1.5">
           <BarChart2 className="w-4 h-4" /> Funcionalidades incluidas
-        </h3>
+        </CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FeatureRow label="Analytics avanzado" available={limits.advancedAnalytics} />
           <FeatureRow label="API Access" available={limits.apiAccess} />
@@ -528,17 +527,17 @@ export default function PlanTab() {
       </div>
 
       {/* Custom domain management */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-2xl p-3 sm:p-6 space-y-4">
-        <h3 className="font-semibold text-sm uppercase tracking-wide text-muted flex items-center gap-1.5">
+      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-4">
+        <CardTitle className="font-semibold text-sm text-muted flex items-center gap-1.5">
           <Globe className="w-4 h-4" /> Dominio personalizado
-        </h3>
+        </CardTitle>
         {!limits.customDomain ? (
           <div className="flex flex-wrap items-start gap-3 text-sm text-muted">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--data-warning)]" />
             <span>El dominio personalizado está disponible en los planes <strong>Pro</strong>, <strong>Business</strong> y <strong>Enterprise</strong>. Actualiza tu plan para configurarlo.</span>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Input row */}
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
@@ -548,13 +547,13 @@ export default function PlanTab() {
                   value={domainInput}
                   onChange={(e) => setDomainInput(e.target.value)}
                   placeholder="www.mitienda.com"
-                  className="w-full bg-transparent border border-(--color-card-border) rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-transparent border border-(--color-card-border) rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <button
                 onClick={handleSaveDomain}
                 disabled={domainSaving || !domainInput.trim()}
-                className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
+                className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
               >
                 {domainSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 Guardar
@@ -564,7 +563,7 @@ export default function PlanTab() {
                   onClick={handleRemoveDomain}
                   disabled={domainRemoving}
                   title="Eliminar dominio"
-                  className="p-2.5 rounded-xl border border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50"
+                  className="p-2.5 rounded-lg border border-[var(--data-error)] text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950 disabled:opacity-50"
                 >
                   {domainRemoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
@@ -594,18 +593,18 @@ export default function PlanTab() {
                     Verificar CNAME
                   </button>
                   {domainVerified === true && (
-                    <span className="flex items-center gap-1 text-xs text-emerald-500 font-medium">
+                    <span className="flex items-center gap-1 text-xs text-[var(--data-success)] font-medium">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
                     </span>
                   )}
                   {domainVerified === false && (
-                    <span className="flex items-center gap-1 text-xs text-red-500">
+                    <span className="flex items-center gap-1 text-xs text-[var(--data-error)]">
                       <XCircle className="w-3.5 h-3.5" /> No verificado
                     </span>
                   )}
                 </div>
                 {domainVerifyMsg && (
-                  <p className={`text-xs mt-1 ${domainVerified ? "text-emerald-500" : "text-red-500"}`}>{domainVerifyMsg}</p>
+                  <p className={`text-xs mt-1 ${domainVerified ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{domainVerifyMsg}</p>
                 )}
               </div>
             )}
@@ -615,7 +614,7 @@ export default function PlanTab() {
 
       {/* Manage subscription (only when on a paid plan with Stripe) */}
       {plan !== "free" && tenant.stripeCustomerId && (
-        <div className="flex items-center justify-between bg--(--color-card) border border-(--color-card-border) rounded-2xl px-5 py-4">
+        <div className="flex items-center justify-between bg--(--color-card) border border-(--color-card-border) rounded-xl px-5 py-4">
           <div>
             <p className="font-semibold text-sm">Gestionar facturación</p>
             <p className="text-xs text-muted mt-0.5">Cambia tu método de pago, descarga facturas o cancela.</p>
@@ -623,7 +622,7 @@ export default function PlanTab() {
           <button
             onClick={handlePortal}
             disabled={redirecting}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-(--color-card-border) text-sm font-semibold hover:bg-(--color-surface) disabled:opacity-60"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-(--color-card-border) text-sm font-semibold hover:bg-(--color-surface) disabled:opacity-60"
           >
             {redirecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
             Portal de facturación
@@ -633,7 +632,7 @@ export default function PlanTab() {
 
       {/* Plan comparison cards */}
       <div>
-        <h3 className="font-semibold text-base mb-4">Comparar planes</h3>
+        <CardTitle className="font-semibold text-base mb-4">Comparar planes</CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {(Object.values(PLANS) as PlanDef[]).map((def) => (
             <PlanCard

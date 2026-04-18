@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
-import { Loader2 } from "lucide-react";
+import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import type { Tab } from "./_lib/tabs.types";
@@ -170,9 +170,9 @@ function AdminPage() {
     : [];
   const [subSidebarMobileOpen, setSubSidebarMobileOpen] = React.useState(false);
 
-  // When sub-sidebar is active, main sidebar goes slim (icons only)
-  const effectiveFocusMode = focusMode || !!hasSubSidebar;
-  const mainSidebarWidth = effectiveFocusMode ? 64 : 256; // px
+  // Sub-tabs now render inline inside the main sidebar — no more collapsing
+  const effectiveFocusMode = focusMode;
+  const mainSidebarWidth = effectiveFocusMode ? 64 : 260; // px
 
   // Keyboard: Arrow Up/Down navigate sub-tabs, Escape closes sub-sidebar
   React.useEffect(() => {
@@ -195,11 +195,7 @@ function AdminPage() {
   }, [hasSubSidebar, subSidebarTabs, tab, navigateTab]);
 
   if (!authReady) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingState variant="fullscreen" message="" />;
   }
 
   return (
@@ -248,28 +244,11 @@ function AdminPage() {
         }}
       />
 
-      {/* Secondary sidebar — sub-sections of active module */}
-      {hasSubSidebar && (
-        <AdminSubSidebar
-          categoryLabel={activeCategory.label}
-          categoryIcon={activeCategory.icon}
-          tabs={subSidebarTabs}
-          activeTab={tab}
-          onTabChange={(id) => navigateTab(id as Tab)}
-          onBack={() => navigateTab("asistente-ia" as Tab)}
-          mainSidebarWidth={mainSidebarWidth}
-          alerts={alerts}
-          mobileOpen={subSidebarMobileOpen}
-          onMobileClose={() => setSubSidebarMobileOpen(false)}
-        />
-      )}
-
       <div className={cn(
-        "flex flex-col min-h-screen transition-[margin] duration-300",
+        "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
         presentationMode ? "sm:ml-0"
-          : hasSubSidebar ? "sm:ml-[256px]"  /* 64 (slim sidebar) + 192 (sub-sidebar) */
           : focusMode ? "sm:ml-16"
-          : "sm:ml-64",
+          : "sm:ml-[260px]",
       )}>
         <AdminTopHeader
           presentationMode={presentationMode}
@@ -286,28 +265,7 @@ function AdminPage() {
           onLogout={handleLogout}
         />
 
-        {/* Breadcrumb — Category > Sub-section */}
-        {hasSubSidebar && (
-          <div className="px-4 sm:px-6 py-2 flex items-center gap-1.5 text-sm border-b border-gray-100 dark:border-card-border bg-white/50 dark:bg-card/30">
-            <button
-              onClick={() => navigateTab("asistente-ia" as Tab)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              Admin
-            </button>
-            <span className="text-gray-300 dark:text-gray-600">/</span>
-            <button
-              onClick={() => navigateTab(activeCategory.tabs[0] as Tab)}
-              className="text-gray-500 hover:text-primary dark:hover:text-primary transition-colors font-medium"
-            >
-              {activeCategory.label}
-            </button>
-            <span className="text-gray-300 dark:text-gray-600">/</span>
-            <span className="text-gray-800 dark:text-foreground font-semibold">
-              {ALL_TABS.find(t => t.id === tab)?.label ?? tab}
-            </span>
-          </div>
-        )}
+        {/* Breadcrumb removed — already shown in module headers */}
 
         <AdminCommandPalette items={commandItems} />
 

@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Link,
   Eye,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -84,22 +84,22 @@ const SEED_HISTORY: NotificationRecord[] = [
 
 function NotifPreview({ title, body, url }: { title: string; body: string; url?: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-md dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-800">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#00B4A6]">
         <Bell className="h-4 w-4 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
           {title || "Título de la notificación"}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+        <p className="text-xs text-[var(--text-tertiary)] line-clamp-2">
           {body || "Cuerpo del mensaje..."}
         </p>
         {url && (
           <p className="mt-0.5 text-xs text-[#00B4A6] truncate">{url}</p>
         )}
       </div>
-      <span className="shrink-0 text-xs text-gray-400">ahora</span>
+      <span className="shrink-0 text-xs text-[var(--text-tertiary)]">ahora</span>
     </div>
   );
 }
@@ -166,7 +166,7 @@ export default function PushNotificationManager() {
   return (
     <div className="flex flex-col gap-6">
       {/* Tabs */}
-      <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex rounded-xl border border-[var(--rule-base)] bg-gray-50 p-1 dark:border-[var(--rule-base)] dark:bg-gray-800">
         {(["compose", "history"] as const).map((tab) => (
           <button
             key={tab}
@@ -174,8 +174,8 @@ export default function PushNotificationManager() {
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition",
               activeTab === tab
-                ? "bg-white text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-100"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                ? "bg-white text-[var(--text-primary)]  dark:bg-gray-700 dark:text-gray-100"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
             )}
           >
             {tab === "compose" ? (
@@ -199,7 +199,7 @@ export default function PushNotificationManager() {
           <div className="flex flex-col gap-4">
             {/* Segment */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                 Destinatarios
               </label>
               <div className="relative">
@@ -207,8 +207,8 @@ export default function PushNotificationManager() {
                   value={segment}
                   onChange={(e) => setSegment(e.target.value as SendSegment)}
                   className={cn(
-                    "w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 py-2 pl-3 pr-8 text-sm",
-                    "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                    "w-full appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-3 pr-8 text-sm",
+                    "text-[var(--text-primary)] outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   )}
                 >
@@ -218,9 +218,9 @@ export default function PushNotificationManager() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
               </div>
-              <p className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+              <p className="mt-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
                 <Users className="h-3 w-3" />
                 Suscriptores del segmento seleccionado
               </p>
@@ -228,7 +228,7 @@ export default function PushNotificationManager() {
 
             {/* Title */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                 Título
               </label>
               <input
@@ -237,17 +237,17 @@ export default function PushNotificationManager() {
                 maxLength={80}
                 placeholder="Ej: Ofertas de fin de semana"
                 className={cn(
-                  "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                  "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
-              <p className="mt-0.5 text-right text-xs text-gray-400">{title.length}/80</p>
+              <p className="mt-0.5 text-right text-xs text-[var(--text-tertiary)]">{title.length}/80</p>
             </div>
 
             {/* Body */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                 Mensaje
               </label>
               <textarea
@@ -257,17 +257,17 @@ export default function PushNotificationManager() {
                 rows={3}
                 placeholder="Escribe el cuerpo de la notificación..."
                 className={cn(
-                  "w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                  "w-full resize-none rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
-              <p className="mt-0.5 text-right text-xs text-gray-400">{body.length}/200</p>
+              <p className="mt-0.5 text-right text-xs text-[var(--text-tertiary)]">{body.length}/200</p>
             </div>
 
             {/* URL */}
             <div>
-              <label className="mb-1 flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="mb-1 flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
                 <Link className="h-3 w-3" />
                 Enlace al hacer clic (opcional)
               </label>
@@ -276,8 +276,8 @@ export default function PushNotificationManager() {
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="/tienda, /ofertas, https://..."
                 className={cn(
-                  "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                  "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
@@ -285,7 +285,7 @@ export default function PushNotificationManager() {
 
             {/* Send button */}
             {sendError && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error)] dark:border-[var(--data-error)] dark:bg-[var(--data-error)]/20 dark:text-[var(--data-error)]">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {sendError}
               </div>
@@ -295,11 +295,11 @@ export default function PushNotificationManager() {
               onClick={handleSend}
               disabled={!isValid || sendState === "sending"}
               className={cn(
-                "flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition",
+                "flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition",
                 sendState === "sent"
-                  ? "bg-green-600"
+                  ? "bg-[var(--accent-soft)]"
                   : sendState === "error"
-                  ? "bg-red-600"
+                  ? "bg-[var(--data-error)]"
                   : "bg-[#00B4A6] hover:bg-[#245a40]",
                 "disabled:opacity-40"
               )}
@@ -316,14 +316,14 @@ export default function PushNotificationManager() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-gray-400" />
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <Eye className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <span className="text-xs font-medium text-[var(--text-tertiary)]">
                   Vista previa
                 </span>
               </div>
               <button
                 onClick={() => setShowPreview((v) => !v)}
-                className="text-xs text-gray-400 hover:text-gray-600"
+                className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
               >
                 {showPreview ? "Ocultar" : "Mostrar"}
               </button>
@@ -337,7 +337,7 @@ export default function PushNotificationManager() {
                     <div className="h-1.5 w-12 rounded-full bg-gray-700" />
                     <div className="h-2 w-2 rounded-full bg-gray-700" />
                   </div>
-                  <div className="rounded-2xl bg-gray-800 p-2">
+                  <div className="rounded-xl bg-gray-800 p-2">
                     <NotifPreview title={title} body={body} url={url} />
                   </div>
                   <div className="mt-3 space-y-1.5">
@@ -351,7 +351,7 @@ export default function PushNotificationManager() {
                   </div>
                 </div>
 
-                <p className="text-center text-xs text-gray-400">
+                <p className="text-center text-xs text-[var(--text-tertiary)]">
                   Así aparece en pantalla de bloqueo
                 </p>
               </div>
@@ -362,11 +362,11 @@ export default function PushNotificationManager() {
 
       {/* History */}
       {activeTab === "history" && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Bell className="mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm text-gray-400">Sin notificaciones enviadas</p>
+              <Bell className="mb-2 h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
+              <p className="text-sm text-[var(--text-tertiary)]">Sin notificaciones enviadas</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -379,10 +379,10 @@ export default function PushNotificationManager() {
                   <div key={n.id} className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">
                           {n.title}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                        <p className="text-xs text-[var(--text-tertiary)] line-clamp-2">
                           {n.body}
                         </p>
                         {n.url && (
@@ -393,15 +393,15 @@ export default function PushNotificationManager() {
                         className={cn(
                           "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
                           n.status === "sent"
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
                         )}
                       >
                         {n.status === "sent" ? "Enviada" : "Fallida"}
                       </span>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--text-tertiary)]">
                       <span>
                         {new Date(n.sentAt).toLocaleDateString("es-PE", {
                           day: "2-digit",
@@ -417,7 +417,7 @@ export default function PushNotificationManager() {
                         {n.sent} enviadas
                       </span>
                       {openRate && (
-                        <span className="flex items-center gap-1 text-[#00B4A6] dark:text-green-400">
+                        <span className="flex items-center gap-1 text-[#00B4A6] dark:text-[var(--data-success)]">
                           <Eye className="h-3 w-3" />
                           {n.opened} abiertas ({openRate}%)
                         </span>

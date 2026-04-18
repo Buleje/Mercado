@@ -1,9 +1,10 @@
 "use client";
 
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import {
   Banknote, CheckCircle, Clock, Download, Search, Eye, X,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -85,9 +86,9 @@ export default function PayrollTab() {
   }
 
   const STATUS_META: Record<PayrollStatus, { label: string; color: string; bg: string }> = {
-    pendiente:   { label: "Pendiente",   color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-100 dark:bg-amber-900/30"   },
-    pagado:      { label: "Pagado",      color: "text-emerald-700 dark:text-emerald-400",bg: "bg-emerald-100 dark:bg-emerald-900/30"},
-    observacion: { label: "Observación", color: "text-red-700 dark:text-red-400",        bg: "bg-red-100 dark:bg-red-900/30"        },
+    pendiente:   { label: "Pendiente",   color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30"   },
+    pagado:      { label: "Pagado",      color: "text-[var(--data-success)] dark:text-[var(--data-success)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+    observacion: { label: "Observación", color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30"        },
   };
 
   return (
@@ -95,17 +96,17 @@ export default function PayrollTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Banknote className="h-6 w-6 text-primary" /> Nómina
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Planilla mensual, descuentos AFP/ONP y control de pagos</p>
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Planilla mensual, descuentos AFP/ONP y control de pagos</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           {totals.pending > 0 && (
-            <button onClick={markAllPaid} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors">
+            <button onClick={markAllPaid} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-semibold hover:bg-[var(--accent-soft)] transition-colors">
               <CheckCircle className="h-4 w-4" /> Pagar todos ({totals.pending})
             </button>
           )}
@@ -115,7 +116,7 @@ export default function PayrollTab() {
       {/* Month selector */}
       <div className="flex items-center gap-2 flex-wrap">
         {MONTHS.map(m => (
-          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {MONTH_LABELS[m] ?? m}
           </button>
         ))}
@@ -123,49 +124,49 @@ export default function PayrollTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="rounded-2xl bg-blue-50 dark:bg-blue-950/30 p-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Total bruto</p>
-          <p className="text-lg font-extrabold text-blue-600">{fmt(totals.gross)}</p>
+        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Total bruto</p>
+          <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(totals.gross)}</p>
         </div>
-        <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 p-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Descuentos (AFP+IR)</p>
-          <p className="text-lg font-extrabold text-amber-600">{fmt(totals.afp + totals.tax)}</p>
+        <div className="rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/30 p-4">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descuentos (AFP+IR)</p>
+          <p className="text-lg font-extrabold text-[var(--data-warning)]">{fmt(totals.afp + totals.tax)}</p>
         </div>
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Total neto a pagar</p>
-          <p className="text-lg font-extrabold text-emerald-600">{fmt(totals.net)}</p>
+        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Total neto a pagar</p>
+          <p className="text-lg font-extrabold text-[var(--data-success)]">{fmt(totals.net)}</p>
         </div>
-        <div className={cn("rounded-2xl p-4", totals.pending > 0 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-emerald-50 dark:bg-emerald-950/30")}>
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{totals.pending > 0 ? "Pagos pendientes" : "Todo pagado"}</p>
-          <p className={cn("text-lg font-extrabold", totals.pending > 0 ? "text-amber-600" : "text-emerald-600")}>{totals.pending > 0 ? `${totals.pending} empleado(s)` : `${totals.paid} pagados`}</p>
+        <div className={cn("rounded-xl p-4", totals.pending > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{totals.pending > 0 ? "Pagos pendientes" : "Todo pagado"}</p>
+          <p className={cn("text-lg font-extrabold", totals.pending > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>{totals.pending > 0 ? `${totals.pending} empleado(s)` : `${totals.paid} pagados`}</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar empleado..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar empleado..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as PayrollStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as PayrollStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as PayrollStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Empleado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Bruto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">AFP/ONP</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">Renta 5ta</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600 uppercase tracking-wide">Neto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Acciones</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Empleado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Bruto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-warning)]">AFP/ONP</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-warning)]">Renta 5ta</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success)]">Neto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -174,13 +175,13 @@ export default function PayrollTab() {
                 return (
                   <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-gray-800 dark:text-foreground">{p.employeeName}</p>
-                      <p className="text-xs text-gray-400 dark:text-muted">{p.role} · {p.department}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{p.employeeName}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.role} · {p.department}</p>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(p.grossSalary)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{fmt(p.snpOrAfp)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{fmt(p.incomeTax)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-emerald-600">{fmt(p.netSalary)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(p.grossSalary)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning)]">{fmt(p.snpOrAfp)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning)]">{fmt(p.incomeTax)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success)]">{fmt(p.netSalary)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full", sm.bg, sm.color)}>
                         {p.status === "pagado" ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -189,11 +190,11 @@ export default function PayrollTab() {
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors" title="Ver detalle">
+                        <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Ver detalle">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                         {p.status === "pendiente" && (
-                          <button onClick={() => markPaid(p.id)} className="px-2.5 py-1 text-xs rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition-colors">
+                          <button onClick={() => markPaid(p.id)} className="px-2.5 py-1 text-xs rounded-lg bg-[var(--accent-soft)] text-white font-semibold hover:bg-[var(--accent-soft)] transition-colors">
                             Pagar
                           </button>
                         )}
@@ -203,13 +204,13 @@ export default function PayrollTab() {
                 );
               })}
             </tbody>
-            <tfoot className="bg-gray-50 dark:bg-surface/50 border-t-2 border-gray-200 dark:border-card-border">
+            <tfoot className="bg-gray-50 dark:bg-surface/50 border-t-2 border-[var(--rule-base)] dark:border-card-border">
               <tr>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-700 dark:text-foreground uppercase">TOTAL {MONTH_LABELS[selectedMonth]}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(totals.gross)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(totals.afp)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(totals.tax)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-emerald-600">{fmt(totals.net)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-primary)] dark:text-foreground uppercase">TOTAL {MONTH_LABELS[selectedMonth]}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(totals.gross)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning)]">{fmt(totals.afp)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning)]">{fmt(totals.tax)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success)]">{fmt(totals.net)}</td>
                 <td colSpan={2} />
               </tr>
             </tfoot>
@@ -220,35 +221,35 @@ export default function PayrollTab() {
       {/* Payslip detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Boleta de pago</h3>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Boleta de pago</CardTitle>
+              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 text-sm space-y-2">
-              <p className="font-bold text-gray-900 dark:text-foreground">{detail.employeeName}</p>
-              <p className="text-xs text-gray-500 dark:text-muted">{detail.role} · {detail.department} · {MONTH_LABELS[detail.month] ?? detail.month}</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.employeeName}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{detail.role} · {detail.department} · {MONTH_LABELS[detail.month] ?? detail.month}</p>
             </div>
             <div className="space-y-2 text-sm">
               <Row label="Salario base" value={fmt(detail.baseSalary)} />
-              {detail.overtime > 0 && <Row label="Horas extra" value={`+${fmt(detail.overtime)}`} vcolor="text-blue-600" />}
-              {detail.bonuses > 0 && <Row label="Bonificaciones" value={`+${fmt(detail.bonuses)}`} vcolor="text-blue-600" />}
-              <div className="border-t border-gray-100 dark:border-card-border pt-2">
+              {detail.overtime > 0 && <Row label="Horas extra" value={`+${fmt(detail.overtime)}`} vcolor="text-[var(--data-success)]" />}
+              {detail.bonuses > 0 && <Row label="Bonificaciones" value={`+${fmt(detail.bonuses)}`} vcolor="text-[var(--data-success)]" />}
+              <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
                 <Row label="Salario bruto" value={fmt(detail.grossSalary)} bold />
               </div>
               <Row label="AFP / ONP (13%)" value={`-${fmt(detail.snpOrAfp)}`} vcolor="text-amber-600" />
               {detail.incomeTax > 0 && <Row label="Renta 5ta cat." value={`-${fmt(detail.incomeTax)}`} vcolor="text-amber-600" />}
               {detail.otherDiscounts > 0 && <Row label="Otros descuentos" value={`-${fmt(detail.otherDiscounts)}`} vcolor="text-red-500" />}
-              <div className="border-t-2 border-gray-200 dark:border-card-border pt-2">
+              <div className="border-t-2 border-[var(--rule-base)] dark:border-card-border pt-2">
                 <Row label="SALARIO NETO" value={fmt(detail.netSalary)} bold accent />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {detail.status === "pendiente" && (
-                <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Marcar como pagado</button>
+                <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-lg bg-[var(--accent-soft)] text-white font-semibold hover:bg-[var(--accent-soft)]">Marcar como pagado</button>
               )}
               {detail.status === "pagado" && (
-                <p className="text-xs text-emerald-600 font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>
+                <p className="text-xs text-[var(--data-success)] font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>
               )}
             </div>
           </div>
@@ -261,8 +262,8 @@ export default function PayrollTab() {
 function Row({ label, value, bold, accent, vcolor }: { label: string; value: string; bold?: boolean; accent?: boolean; vcolor?: string }) {
   return (
     <div className="flex justify-between">
-      <span className={cn("text-gray-500 dark:text-muted", bold && "font-bold text-gray-700 dark:text-foreground")}>{label}</span>
-      <span className={cn("font-semibold", bold && "font-extrabold", accent ? "text-emerald-600 text-base" : vcolor ?? "text-gray-700 dark:text-foreground")}>{value}</span>
+      <span className={cn("text-[var(--text-secondary)] dark:text-muted", bold && "font-bold text-[var(--text-primary)] dark:text-foreground")}>{label}</span>
+      <span className={cn("font-semibold", bold && "font-extrabold", accent ? "text-[var(--data-success)] text-base" : vcolor ?? "text-[var(--text-primary)] dark:text-foreground")}>{value}</span>
     </div>
   );
 }

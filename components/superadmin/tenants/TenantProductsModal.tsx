@@ -1,6 +1,8 @@
 "use client";
 
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   X, Package, Loader2, Search, AlertTriangle,
   CheckCircle2, XCircle, ImageIcon,
@@ -98,16 +100,16 @@ export function TenantProductsModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 sm:inset-auto sm:top-[5%] sm:left-1/2 sm:-translate-x-1/2 sm:w-[90vw] sm:max-w-3xl sm:max-h-[85vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-4 sm:inset-auto sm:top-[5%] sm:left-1/2 sm:-translate-x-1/2 sm:w-[90vw] sm:max-w-3xl sm:max-h-[85vh] bg-[var(--surface-raised)] rounded-xl shadow-[var(--shadow-xl)] z-50 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)]">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                <div className="h-10 w-10 rounded-xl bg-[var(--data-success-100)] dark:bg-[var(--data-success)]/40 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-[var(--data-success)] dark:text-[var(--data-success)]" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-lg font-bold text-[var(--text-primary)]">
                     Productos de {tenantName}
                   </h2>
                   <p className="text-xs text-gray-400">
@@ -117,7 +119,7 @@ export function TenantProductsModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <X className="h-5 w-5 text-gray-400" />
               </button>
@@ -125,28 +127,28 @@ export function TenantProductsModal({
 
             {/* Stats */}
             {!loading && !error && products.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 px-6 py-3 bg-gray-50 dark:bg-gray-800/30">
+              <div className="grid grid-cols-4 gap-2 px-6 py-3 bg-[var(--surface-sunken)]/30">
                 <div className="text-center">
-                  <div className="text-sm font-bold text-green-600">{activeCount}</div>
-                  <div className="text-[10px] text-gray-400">Activos</div>
+                  <div className="text-sm font-bold text-[var(--data-success)] tabular-nums">{activeCount}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Activos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-gray-400">{inactiveCount}</div>
-                  <div className="text-[10px] text-gray-400">Inactivos</div>
+                  <div className="text-sm font-bold text-[var(--text-tertiary)] tabular-nums">{inactiveCount}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Inactivos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-amber-500">{lowStockCount}</div>
-                  <div className="text-[10px] text-gray-400">Stock bajo</div>
+                  <div className="text-sm font-bold text-[var(--data-warning)] tabular-nums">{lowStockCount}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Stock bajo</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-red-500">{outOfStockCount}</div>
-                  <div className="text-[10px] text-gray-400">Sin stock</div>
+                  <div className="text-sm font-bold text-[var(--data-error)] tabular-nums">{outOfStockCount}</div>
+                  <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sin stock</div>
                 </div>
               </div>
             )}
 
             {/* Search */}
-            <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800">
+            <div className="px-6 py-3 border-b border-[var(--rule-base)]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -154,7 +156,7 @@ export function TenantProductsModal({
                   placeholder="Buscar por nombre, código o categoría..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-teal-500/30"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-sm text-[var(--text-primary)] placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-[var(--data-success)]/30"
                 />
               </div>
             </div>
@@ -162,20 +164,18 @@ export function TenantProductsModal({
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-3">
               {loading && (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
-                </div>
+                <LoadingState />
               )}
 
               {error && (
-                <div className="flex flex-col items-center justify-center py-12 text-red-500">
+                <div className="flex flex-col items-center justify-center py-12 text-[var(--data-error)]">
                   <AlertTriangle className="h-8 w-8 mb-2" />
                   <p className="text-sm">{error}</p>
                 </div>
               )}
 
               {!loading && !error && filtered.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)]">
                   <Package className="h-8 w-8 mb-2" />
                   <p className="text-sm">
                     {search ? "Sin resultados para la búsqueda" : "Esta tienda no tiene productos"}
@@ -188,15 +188,17 @@ export function TenantProductsModal({
                   {filtered.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-sunken)]/50 hover:bg-[var(--surface-sunken)] transition-colors"
                     >
                       {/* Image */}
-                      <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="relative w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
                         {p.image ? (
-                          <img
+                          <Image
                             src={p.image}
                             alt={p.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="40px"
+                            className="object-cover"
                             loading="lazy"
                           />
                         ) : (
@@ -207,16 +209,16 @@ export function TenantProductsModal({
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          <span className="text-sm font-medium text-[var(--text-primary)] truncate">
                             {p.name}
                           </span>
                           {p.active ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--data-success)] shrink-0" />
                           ) : (
-                            <XCircle className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <XCircle className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                        <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           {p.barcode && <span>Cód: {p.barcode}</span>}
                           {p.category && <span>• {p.category}</span>}
                           {p.unit && <span>• {p.unit}</span>}
@@ -225,16 +227,16 @@ export function TenantProductsModal({
 
                       {/* Price + Stock */}
                       <div className="text-right shrink-0">
-                        <div className="text-sm font-bold text-gray-900 dark:text-white">
+                        <div className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
                           S/{p.price.toFixed(2)}
                         </div>
                         <div
-                          className={`text-[10px] font-semibold ${
+                          className={`text-[length:var(--ts-2xs)] font-semibold tabular-nums ${
                             p.stock <= 0
-                              ? "text-red-500"
+                              ? "text-[var(--data-error)]"
                               : p.stock <= 5
-                              ? "text-amber-500"
-                              : "text-green-600"
+                              ? "text-[var(--data-warning)]"
+                              : "text-[var(--data-success)]"
                           }`}
                         >
                           {p.stock <= 0 ? "Sin stock" : `${p.stock} unid.`}
@@ -247,7 +249,7 @@ export function TenantProductsModal({
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <div className="px-6 py-3 border-t border-[var(--rule-base)] flex items-center justify-between">
               <span className="text-xs text-gray-400">
                 {search && filtered.length !== products.length
                   ? `${filtered.length} de ${products.length} producto${products.length !== 1 ? "s" : ""}`
@@ -255,7 +257,7 @@ export function TenantProductsModal({
               </span>
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 Cerrar
               </button>

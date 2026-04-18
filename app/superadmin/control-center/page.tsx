@@ -6,7 +6,9 @@ import {
   Store, ShieldCheck, Users, Package, CreditCard, Truck, ChefHat,
   Search, Heart, Globe, FileText, Terminal, ExternalLink, Copy, Check,
   HeartPulse, MonitorCheck, Eye, EyeOff, Trash2, LogIn, KeyRound,
+  Map, ChevronDown,
 } from "lucide-react";
+import { SITE_MAP, TOTAL_ROUTES } from "@/lib/site-map";
 
 // ── Link sections ─────────────────────────────────────────────────────────────
 
@@ -28,7 +30,7 @@ interface Section {
 const SECTIONS: Section[] = [
   {
     title: "SuperAdmin (Plataforma SaaS)",
-    color: "text-teal-600 dark:text-teal-400",
+    color: "text-[var(--accent)]",
     bgColor: "bg-teal-50 dark:bg-teal-950/30",
     links: [
       { label: "Dashboard", href: "/superadmin/dashboard", icon: <LayoutDashboard className="w-4 h-4" />, desc: "Panel principal de la plataforma" },
@@ -42,7 +44,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Admin Panel (ERP Bodega)",
-    color: "text-emerald-600 dark:text-emerald-400",
+    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
     bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     links: [
       { label: "Dashboard Admin", href: "/admin", icon: <LayoutDashboard className="w-4 h-4" />, desc: "Panel de administración" },
@@ -53,8 +55,8 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Tienda (Storefront)",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     links: [
       { label: "Inicio", href: "/", icon: <Store className="w-4 h-4" />, desc: "Página principal de la tienda" },
       { label: "Catálogo", href: "/tienda", icon: <Package className="w-4 h-4" />, desc: "Todos los productos" },
@@ -68,8 +70,8 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Páginas SaaS / Público",
-    color: "text-purple-600 dark:text-purple-400",
-    bgColor: "bg-purple-50 dark:bg-purple-950/30",
+    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    bgColor: "bg-[var(--surface-sunken)]",
     links: [
       { label: "Landing SaaS", href: "/saas", icon: <Globe className="w-4 h-4" />, desc: "Página de venta de la plataforma" },
       { label: "Pricing", href: "/pricing", icon: <CreditCard className="w-4 h-4" />, desc: "Planes y precios" },
@@ -97,8 +99,8 @@ const CREDENTIALS: Credential[] = [
   { label: "SuperAdmin", username: "platform", password: "Buleje2026", url: "/superadmin/login", badge: "Platform", badgeColor: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
   { label: "Admin", username: "admin", password: "Admin2026", url: "/admin/login", badge: "Admin", badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   { label: "Cajero", username: "cajero", password: "Cajero2026", url: "/admin/login", badge: "Cajero", badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  { label: "Almacenero", username: "almacen", password: "Almacen2026", url: "/admin/login", badge: "Almacén", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  { label: "Demo Admin", username: "demo", password: "demo1234", url: "/t/demo/admin", badge: "Demo", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  { label: "Almacenero", username: "almacen", password: "Almacen2026", url: "/admin/login", badge: "Almacén", badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  { label: "Demo Admin", username: "demo", password: "demo1234", url: "/t/demo/admin", badge: "Demo", badgeColor: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
 ];
 
 // ── Clipboard helper ──────────────────────────────────────────────────────────
@@ -113,7 +115,7 @@ function CopyButton({ text }: { text: string }) {
   };
   return (
     <button onClick={copy} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar">
-      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+      {copied ? <Check className="w-3.5 h-3.5 text-[var(--data-success)]" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
     </button>
   );
 }
@@ -146,14 +148,14 @@ function HealthStatus() {
 
   const colors = {
     loading: "bg-gray-200 dark:bg-gray-700",
-    ok: "bg-green-400 dark:bg-green-500",
-    degraded: "bg-amber-400 dark:bg-amber-500",
-    error: "bg-red-400 dark:bg-red-500",
+    ok: "bg-[var(--data-success)] dark:bg-[var(--data-success)]",
+    degraded: "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]",
+    error: "bg-[var(--data-error)] dark:bg-[var(--data-error)]",
   };
   const labels = { loading: "Verificando...", ok: "Todo funcionando", degraded: "Degradado", error: "Con errores" };
 
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
       <span className={`w-2.5 h-2.5 rounded-full ${colors[status]} ${status === "loading" ? "animate-pulse" : ""}`} />
       <span>{labels[status]}</span>
       {latency > 0 && <span className="text-xs text-gray-400 dark:text-gray-600">({latency}ms)</span>}
@@ -198,9 +200,9 @@ function SavedTenantCredentials() {
 
   if (credentials.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-blue-600" />
+      <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-[var(--data-success)]" />
           Credenciales de Tiendas
         </h3>
         <p className="text-sm text-gray-400">No hay credenciales guardadas. Guarda credenciales desde el módulo Tiendas → Detalle de cada tienda.</p>
@@ -209,10 +211,10 @@ function SavedTenantCredentials() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+    <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-blue-600" />
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-[var(--data-success)]" />
           Credenciales de Tiendas ({credentials.length})
         </h3>
         <button
@@ -227,7 +229,7 @@ function SavedTenantCredentials() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 dark:border-gray-800">
+            <tr className="border-b border-[var(--rule-base)]">
               <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Tienda</th>
               <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Usuario</th>
               <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Contraseña</th>
@@ -237,14 +239,14 @@ function SavedTenantCredentials() {
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
             {credentials.map((c) => (
-              <tr key={c.slug} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+              <tr key={c.slug} className="hover:bg-[var(--surface-sunken)]/50 transition-colors">
                 <td className="py-2.5 px-3">
-                  <span className="font-semibold text-gray-900 dark:text-white">{c.slug}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{c.slug}</span>
                 </td>
-                <td className="py-2.5 px-3 font-mono text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <td className="py-2.5 px-3 font-mono text-[var(--text-secondary)] flex items-center gap-1.5">
                   {c.username} <CopyButton text={c.username} />
                 </td>
-                <td className="py-2.5 px-3 font-mono text-gray-700 dark:text-gray-300">
+                <td className="py-2.5 px-3 font-mono text-[var(--text-secondary)]">
                   <span className="flex items-center gap-1.5">
                     {showPasswords ? c.password : "••••••••"} <CopyButton text={c.password} />
                   </span>
@@ -257,7 +259,7 @@ function SavedTenantCredentials() {
                     <button
                       type="button"
                       onClick={() => handleLogin(c.slug)}
-                      className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+                      className="p-1.5 rounded-lg text-[var(--data-success)] hover:bg-[var(--data-success-50)] dark:hover:bg-emerald-950/30 transition-colors"
                       title="Iniciar sesión como esta tienda"
                     >
                       <LogIn className="w-4 h-4" />
@@ -265,7 +267,7 @@ function SavedTenantCredentials() {
                     <button
                       type="button"
                       onClick={() => handleDelete(c.slug)}
-                      className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="p-1.5 rounded-lg text-gray-300 hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors"
                       title="Eliminar credenciales guardadas"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -281,28 +283,157 @@ function SavedTenantCredentials() {
   );
 }
 
+// ── SiteMapBlock — las 101 rutas categorizadas ───────────────────────
+
+function SiteMapBlock() {
+  const [openCategory, setOpenCategory] = useState<string | null>("store-customer");
+
+  const statusColor = (status: "live" | "wip" | "legacy") =>
+    status === "live"
+      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+      : status === "wip"
+        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
+
+  const authBadge = (auth: string) => ({
+    public: "🌐",
+    customer: "🛒",
+    admin: "🏪",
+    superadmin: "⚡",
+    supplier: "📦",
+    driver: "🛵",
+  }[auth] ?? "?");
+
+  return (
+    <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+            <Map className="w-4 h-4 text-teal-600" />
+            Site Map completo
+          </h3>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
+            Las {TOTAL_ROUTES} rutas del proyecto, organizadas en {SITE_MAP.length} categorías JTBD
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] dark:bg-emerald-950/30 text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-1 font-bold tabular-nums">
+            {SITE_MAP.flatMap((c) => c.routes).filter((r) => r.status === "live").length} live
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] px-2 py-1 font-bold tabular-nums">
+            {SITE_MAP.flatMap((c) => c.routes).filter((r) => r.status === "wip").length} WIP
+          </span>
+        </div>
+      </div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        {SITE_MAP.map((cat) => {
+          const isOpen = openCategory === cat.id;
+          return (
+            <div key={cat.id}>
+              <button
+                type="button"
+                onClick={() => setOpenCategory(isOpen ? null : cat.id)}
+                className="w-full flex items-center justify-between px-6 py-3 hover:bg-[var(--surface-sunken)]/50 transition-colors text-left"
+                aria-expanded={isOpen}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-[var(--text-primary)]">{cat.label}</span>
+                    <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)]">
+                      {cat.routes.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                    {cat.description} · Audiencia: {cat.audience}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isOpen && (
+                <div className="bg-[var(--surface-canvas)]/30 px-6 py-2">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[var(--rule-base)]">
+                        <th className="text-left py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Ruta</th>
+                        <th className="text-left py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Label</th>
+                        <th className="text-left py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Descripción</th>
+                        <th className="text-center py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Auth</th>
+                        <th className="text-center py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
+                      {cat.routes.map((r) => (
+                        <tr key={r.path} className="hover:bg-white dark:hover:bg-gray-900/50 transition-colors">
+                          <td className="py-2">
+                            <a
+                              href={r.path.replace(/\[.*?\]/g, "_")}
+                              target="_blank"
+                              rel="noopener"
+                              className="inline-flex items-center gap-1 font-mono text-xs text-[var(--text-secondary)] hover:text-teal-600 dark:hover:text-teal-400 tabular-nums"
+                              title={r.path.includes("[") ? "Contiene params dinámicos — visitá con valor real" : undefined}
+                            >
+                              {r.path}
+                              <ExternalLink className="w-3 h-3 opacity-40" />
+                            </a>
+                          </td>
+                          <td className="py-2 text-xs font-semibold text-[var(--text-primary)]">{r.label}</td>
+                          <td className="py-2 text-xs text-[var(--text-tertiary)]">{r.description}</td>
+                          <td className="py-2 text-center text-base" title={r.auth}>
+                            {authBadge(r.auth)}
+                          </td>
+                          <td className="py-2 text-center">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${statusColor(r.status)}`}>
+                              {r.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div className="px-6 py-3 bg-[var(--surface-canvas)]/30 border-t border-[var(--rule-base)] flex flex-wrap items-center gap-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">
+        <span>Leyenda auth:</span>
+        <span>🌐 Public</span>
+        <span>🛒 Customer</span>
+        <span>🏪 Admin</span>
+        <span>⚡ Superadmin</span>
+        <span>📦 Supplier</span>
+        <span>🛵 Driver</span>
+      </div>
+    </div>
+  );
+}
+
 export default function ControlCenterPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Centro de Control</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Accesos rápidos a todas las secciones de la plataforma</p>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Centro de Control</h2>
+          <p className="text-sm text-[var(--text-tertiary)] mt-1">Accesos rápidos a todas las secciones de la plataforma</p>
         </div>
         <HealthStatus />
       </div>
 
       {/* Credentials */}
-      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+      <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4 flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-teal-600" />
           Credenciales de acceso
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
+              <tr className="border-b border-[var(--rule-base)]">
                 <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Rol</th>
                 <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Usuario</th>
                 <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Contraseña</th>
@@ -311,16 +442,16 @@ export default function ControlCenterPage() {
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
               {CREDENTIALS.map((c) => (
-                <tr key={c.username} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                <tr key={c.username} className="hover:bg-[var(--surface-sunken)]/50 transition-colors">
                   <td className="py-2.5 px-3">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${c.badgeColor}`}>
                       {c.badge}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 font-mono text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <td className="py-2.5 px-3 font-mono text-[var(--text-secondary)] flex items-center gap-1.5">
                     {c.username} <CopyButton text={c.username} />
                   </td>
-                  <td className="py-2.5 px-3 font-mono text-gray-700 dark:text-gray-300">
+                  <td className="py-2.5 px-3 font-mono text-[var(--text-secondary)]">
                     <span className="flex items-center gap-1.5">
                       {c.password} <CopyButton text={c.password} />
                     </span>
@@ -330,7 +461,7 @@ export default function ControlCenterPage() {
                       href={c.url}
                       target="_blank"
                       rel="noopener"
-                      className="inline-flex items-center gap-1 text-teal-600 dark:text-teal-400 hover:underline text-xs font-medium"
+                      className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline text-xs font-medium"
                     >
                       Entrar <ExternalLink className="w-3 h-3" />
                     </a>
@@ -345,14 +476,17 @@ export default function ControlCenterPage() {
       {/* Saved tenant credentials */}
       <SavedTenantCredentials />
 
+      {/* ── SITE MAP COMPLETO — las 101 rutas del proyecto ── */}
+      <SiteMapBlock />
+
       {/* Link sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {SECTIONS.map((section) => (
           <div
             key={section.title}
-            className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden"
+            className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl overflow-hidden"
           >
-            <div className={`px-6 py-3 ${section.bgColor} border-b border-gray-100 dark:border-gray-800`}>
+            <div className={`px-6 py-3 ${section.bgColor} border-b border-[var(--rule-base)]`}>
               <h3 className={`text-sm font-semibold ${section.color} uppercase tracking-wider`}>
                 {section.title}
               </h3>
@@ -364,13 +498,13 @@ export default function ControlCenterPage() {
                   href={link.href}
                   target={link.external ? "_blank" : undefined}
                   rel={link.external ? "noopener" : undefined}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors group"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center shrink-0 text-[var(--text-tertiary)] group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                     {link.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{link.label}</div>
+                    <div className="text-sm font-medium text-[var(--text-primary)] truncate">{link.label}</div>
                     <div className="text-xs text-gray-400 dark:text-gray-600 truncate">{link.desc}</div>
                   </div>
                   <ExternalLink className="w-3.5 h-3.5 text-gray-300 dark:text-gray-700 group-hover:text-gray-500 transition-colors shrink-0" />

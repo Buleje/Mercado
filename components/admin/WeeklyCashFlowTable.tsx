@@ -1,6 +1,7 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
-import { BarChart2, TrendingUp, TrendingDown, Minus, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { BarChart2, TrendingUp, TrendingDown, Minus, Loader2, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -160,24 +161,24 @@ export default function WeeklyCashFlowTable() {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <BarChart2 className="w-5 h-5 text-[#00B4A6]" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Flujo de Caja Semanal
-          </h2>
+          </SectionTitle>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setWeekOffset((w) => w - 1)}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
           >
             Anterior
           </button>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-32 text-center">
+          <span className="text-sm font-medium text-[var(--text-secondary)] min-w-32 text-center">
             {weekOffset === 0
               ? "Esta semana"
               : weekOffset === -1
@@ -187,7 +188,7 @@ export default function WeeklyCashFlowTable() {
           <button
             onClick={() => setWeekOffset((w) => Math.min(0, w + 1))}
             disabled={weekOffset === 0}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-750 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>
@@ -195,7 +196,7 @@ export default function WeeklyCashFlowTable() {
             onClick={load}
             disabled={loading}
             title="Refrescar"
-            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
@@ -204,21 +205,21 @@ export default function WeeklyCashFlowTable() {
 
       {/* Neto total con tendencia */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 col-span-2 sm:col-span-1">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Ventas semana</p>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 col-span-2 sm:col-span-1">
+          <p className="text-xs text-[var(--text-tertiary)]">Ventas semana</p>
           <p className="text-xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
             {fmt(totals.sales)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Total compras</p>
-          <p className="text-xl font-bold text-red-600 dark:text-red-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          <p className="text-xs text-[var(--text-tertiary)]">Total compras</p>
+          <p className="text-xl font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">
             {fmt(totals.purchases)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Total gastos</p>
-          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          <p className="text-xs text-[var(--text-tertiary)]">Total gastos</p>
+          <p className="text-xl font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
             {fmt(totals.expenses)}
           </p>
         </div>
@@ -226,21 +227,21 @@ export default function WeeklyCashFlowTable() {
           className={cn(
             "rounded-xl border p-3",
             totals.net >= 0
-              ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10"
-              : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10"
+              ? "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+              : "border-[var(--data-error)] dark:border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/10"
           )}
         >
           <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Neto semanal</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Neto semanal</p>
             {netTrend !== null && (
               <span
                 className={cn(
                   "text-xs font-medium flex items-center gap-0.5",
                   netTrend > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                     : netTrend < 0
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-gray-500"
+                    ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    : "text-[var(--text-secondary)]"
                 )}
               >
                 {netTrend > 0 ? (
@@ -258,8 +259,8 @@ export default function WeeklyCashFlowTable() {
             className={cn(
               "text-xl font-bold",
               totals.net >= 0
-                ? "text-emerald-700 dark:text-emerald-400"
-                : "text-red-700 dark:text-red-400"
+                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                : "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}
           >
             {fmt(totals.net)}
@@ -269,13 +270,13 @@ export default function WeeklyCashFlowTable() {
 
       {/* Error / Loading */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)] px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error} — mostrando datos estimados
         </div>
       )}
       {loading && (
-        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500">
+        <div className="flex items-center justify-center py-8 text-[var(--text-tertiary)]">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           Cargando flujo de caja...
         </div>
@@ -283,29 +284,29 @@ export default function WeeklyCashFlowTable() {
 
       {/* Tabla */}
       {!loading && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-x-auto">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700">
-                <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-28">
+              <tr className="border-b border-[var(--rule-base)]">
+                <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)] w-28">
                   Concepto
                 </th>
                 {DAY_LABELS.map((d, i) => (
                   <th
                     key={d}
                     className={cn(
-                      "px-3 py-3 text-right font-medium text-gray-500 dark:text-gray-400",
+                      "px-3 py-3 text-right font-medium text-[var(--text-tertiary)]",
                       currentWeek[i] === new Date().toISOString().split("T")[0] &&
                         "text-[#00B4A6] dark:text-[#2dd4bf]"
                     )}
                   >
                     <div>{d}</div>
-                    <div className="text-xs font-normal text-gray-400 dark:text-gray-500">
+                    <div className="text-xs font-normal text-[var(--text-tertiary)]">
                       {currentWeek[i]?.slice(5)}
                     </div>
                   </th>
                 ))}
-                <th className="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-3 text-right font-medium text-[var(--text-secondary)]">
                   Total
                 </th>
               </tr>
@@ -333,8 +334,8 @@ export default function WeeklyCashFlowTable() {
                       className={cn(
                         "px-4 py-2.5",
                         isNet
-                          ? "font-semibold text-gray-800 dark:text-gray-200"
-                          : "text-gray-600 dark:text-gray-400"
+                          ? "font-semibold text-[var(--text-primary)]"
+                          : "text-[var(--text-secondary)]"
                       )}
                     >
                       {row.label}
@@ -345,10 +346,10 @@ export default function WeeklyCashFlowTable() {
                         className={cn(
                           "px-3 py-2.5 text-right text-xs tabular-nums",
                           val > 0
-                            ? "text-emerald-600 dark:text-emerald-400"
+                            ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                             : val < 0
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-gray-400 dark:text-gray-600"
+                            ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                            : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                         )}
                       >
                         {val !== 0
@@ -360,10 +361,10 @@ export default function WeeklyCashFlowTable() {
                       className={cn(
                         "px-4 py-2.5 text-right text-xs tabular-nums font-semibold",
                         rowTotal > 0
-                          ? "text-emerald-700 dark:text-emerald-400"
+                          ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                           : rowTotal < 0
-                          ? "text-red-700 dark:text-red-400"
-                          : "text-gray-400"
+                          ? "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                          : "text-[var(--text-tertiary)]"
                       )}
                     >
                       {rowTotal !== 0
@@ -380,14 +381,14 @@ export default function WeeklyCashFlowTable() {
 
       {/* Tendencia vs semana anterior */}
       {!loading && netTrend !== null && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+        <p className="text-xs text-[var(--text-tertiary)] text-center">
           {netTrend > 0 ? "Mejor" : "Peor"} que la semana anterior en un{" "}
           <span
             className={cn(
               "font-semibold",
               netTrend > 0
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-600 dark:text-red-400"
+                ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
+                : "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}
           >
             {Math.abs(netTrend).toFixed(1)}%

@@ -4,7 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { sendPushToPhone } from "@/lib/push-sender";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 // ── Valid marketplace order status transitions ────────────────────────────────
 
@@ -119,7 +120,7 @@ export async function PATCH(
       note: parsed.data.cancelReason ?? null,
       tenantId: auth.tenantId,
     },
-  }).catch(() => {});
+  }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
   // ── Push notification to customer ──────────────────────────────────────
 
@@ -155,13 +156,14 @@ export async function PATCH(
       title: notification.title,
       body: notification.body,
       url: `/marketplace/orders/${order.id}`,
-    }).catch(() => {});
+    }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err) }));
 
     // WhatsApp notification (fire-and-forget)
-    sendWhatsAppText(
+    sendWhatsAppQueued(
       phone,
       `${notification.emoji} *${notification.title}*\n\n${notification.body}\n\n` +
-      `📋 Pedido: #${order.id.slice(-8)}\n💰 Total: S/${order.total.toFixed(2)}`
+      `📋 Pedido: #${order.id.slice(-8)}\n💰 Total: S/${order.total.toFixed(2)}`,
+      { tenantId: auth.tenantId, context: "marketplace-order-status-change" },
     ).catch(() => {});
   }
 
@@ -172,7 +174,7 @@ export async function PATCH(
     `Estado cambiado de ${order.status} a ${parsed.data.status}`,
     id,
     auth.username,
-  ).catch(() => {});
+  ).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err) }));
 
   // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
   if (parsed.data.status === "entregado" && phone) {
@@ -196,14 +198,15 @@ export async function PATCH(
         title: "🎁 ¡Tienes un cupón de regalo!",
         body: `Usa el código ${couponCode} y obtén 5% de descuento en tu próxima compra. Válido por 15 días.`,
         url: `/marketplace/orders/${order.id}`,
-      }).catch(() => {});
-      sendWhatsAppText(
+      }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
+      sendWhatsAppQueued(
         phone!,
         `🎁 *¡Vuelve pronto!*\n\nGracias por tu compra.\n\n` +
         `🎟️ Usa tu cupón *${couponCode}* para obtener *5% de descuento* en tu próxima compra.\n` +
-        `⏰ Válido por 15 días.`
+        `⏰ Válido por 15 días.`,
+        { tenantId: auth.tenantId, context: "marketplace-order-return-coupon" },
       ).catch(() => {});
-    }).catch(() => {});
+    }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
   }
 
   return NextResponse.json({

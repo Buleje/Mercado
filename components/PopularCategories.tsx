@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
+import { getCategoryIcon } from "@/lib/category-icons";
 
 const CATEGORIES = [
-  { emoji: "🥫", name: "Abarrotes",        id: "abarrotes",       count: 80,  gradient: "from-emerald-500/10 to-teal-500/5",  border: "border-emerald-200/60 dark:border-emerald-800/40", hoverBg: "hover:bg-emerald-50 dark:hover:bg-emerald-950/30" },
-  { emoji: "🥤", name: "Bebidas",           id: "bebidas",          count: 45,  gradient: "from-sky-500/10 to-blue-500/5",       border: "border-sky-200/60 dark:border-sky-800/40",     hoverBg: "hover:bg-sky-50 dark:hover:bg-sky-950/30" },
-  { emoji: "🧹", name: "Limpieza",          id: "limpieza",         count: 30,  gradient: "from-violet-500/10 to-purple-500/5",  border: "border-violet-200/60 dark:border-violet-800/40", hoverBg: "hover:bg-violet-50 dark:hover:bg-violet-950/30" },
-  { emoji: "🥛", name: "Lácteos",           id: "lacteos",          count: 25,  gradient: "from-blue-500/10 to-indigo-500/5",    border: "border-blue-200/60 dark:border-blue-800/40",   hoverBg: "hover:bg-blue-50 dark:hover:bg-blue-950/30" },
-  { emoji: "🥩", name: "Carnes",            id: "carnes",           count: 20,  gradient: "from-rose-500/10 to-red-500/5",       border: "border-rose-200/60 dark:border-rose-800/40",   hoverBg: "hover:bg-rose-50 dark:hover:bg-rose-950/30" },
-  { emoji: "🥬", name: "Frutas y Verduras", id: "frutas-verduras",  count: 35,  gradient: "from-lime-500/10 to-green-500/5",     border: "border-lime-200/60 dark:border-lime-800/40",   hoverBg: "hover:bg-lime-50 dark:hover:bg-lime-950/30" },
+  { name: "Abarrotes",        id: "abarrotes",       count: 80,  gradient: "from-emerald-500/10 to-teal-500/5",  border: "border-emerald-200/60 dark:border-emerald-800/40", hoverBg: "hover:bg-emerald-50 dark:hover:bg-emerald-950/30" },
+  { name: "Bebidas",           id: "bebidas",          count: 45,  gradient: "from-sky-500/10 to-emerald-500/5",       border: "border-sky-200/60 dark:border-sky-800/40",     hoverBg: "hover:bg-sky-50 dark:hover:bg-sky-950/30" },
+  { name: "Limpieza",          id: "limpieza",         count: 30,  gradient: "from-violet-500/10 to-purple-500/5",  border: "border-violet-200/60 dark:border-violet-800/40", hoverBg: "hover:bg-violet-50 dark:hover:bg-violet-950/30" },
+  { name: "Lácteos",           id: "lacteos",          count: 25,  gradient: "from-emerald-500/10 to-indigo-500/5",    border: "border-emerald-200/60 dark:border-emerald-800/40",   hoverBg: "hover:bg-emerald-50 dark:hover:bg-emerald-950/30" },
+  { name: "Carnes",            id: "carnes",           count: 20,  gradient: "from-rose-500/10 to-red-500/5",       border: "border-rose-200/60 dark:border-rose-800/40",   hoverBg: "hover:bg-rose-50 dark:hover:bg-rose-950/30" },
+  { name: "Frutas y Verduras", id: "frutas-verduras",  count: 35,  gradient: "from-lime-500/10 to-green-500/5",     border: "border-lime-200/60 dark:border-lime-800/40",   hoverBg: "hover:bg-lime-50 dark:hover:bg-lime-950/30" },
 ];
 
 export default function PopularCategories() {
@@ -43,31 +44,35 @@ export default function PopularCategories() {
 
         {/* Categories grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {CATEGORIES.map((cat, i) => (
-            <Link
-              key={cat.id}
-              href={`/tienda?categoria=${cat.id}`}
-              className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-gradient-to-b ${cat.gradient} bg-white dark:bg-card border ${cat.border} ${cat.hoverBg} hover:shadow-xl hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
-                inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
-              }`}
-              style={inView ? { animationDelay: `${100 + i * 70}ms` } : undefined}
-            >
-              {/* Decorative circle */}
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-primary/[0.03] group-hover:bg-primary/[0.06] transition-colors duration-500" aria-hidden="true" />
+          {CATEGORIES.map((cat, i) => {
+            const Icon = getCategoryIcon(cat.id);
+            return (
+              <Link
+                key={cat.id}
+                href={`/tienda?categoria=${cat.id}`}
+                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-gradient-to-b ${cat.gradient} bg-white dark:bg-card border ${cat.border} ${cat.hoverBg} hover:shadow-xl hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
+                  inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
+                }`}
+                style={inView ? { animationDelay: `${100 + i * 70}ms` } : undefined}
+              >
+                {/* Decorative circle */}
+                <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-primary/[0.03] group-hover:bg-primary/[0.06] transition-colors duration-500" aria-hidden="true" />
 
-              <span className="text-4xl sm:text-5xl group-hover:scale-115 transition-transform duration-300 relative z-10">
-                {cat.emoji}
-              </span>
-              <div className="text-center relative z-10">
-                <p className="text-xs sm:text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-300">
-                  {cat.name}
-                </p>
-                <p className="text-[10px] sm:text-xs text-muted mt-1 font-medium">
-                  {cat.count}+ productos
-                </p>
-              </div>
-            </Link>
-          ))}
+                <Icon
+                  size={64}
+                  className="text-[var(--text-secondary)] group-hover:scale-115 group-hover:text-[var(--accent)] transition-all duration-300 relative z-10 sm:h-20 sm:w-20"
+                />
+                <div className="text-center relative z-10">
+                  <p className="text-xs sm:text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-300">
+                    {cat.name}
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-muted mt-1 font-medium">
+                    {cat.count}+ productos
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         {/* CTA */}

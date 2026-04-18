@@ -1,8 +1,9 @@
 "use client";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
-import { MapPin, Loader2, AlertCircle, TrendingUp } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -42,8 +43,8 @@ function inferZone(customer: Customer): string {
 }
 
 const ZONE_COLORS = [
-  "bg-[#00B4A6]",
-  "bg-[#33C4B8]",
+  "bg-primary",
+  "bg-primary-light",
   "bg-[#2dd4bf]",
   "bg-[#74c69d]",
   "bg-[#95d5b2]",
@@ -51,12 +52,12 @@ const ZONE_COLORS = [
 ];
 
 const ZONE_TEXT_COLORS = [
-  "text-[#00B4A6]",
-  "text-[#33C4B8]",
+  "text-primary",
+  "text-primary-light",
   "text-[#2dd4bf]",
   "text-[#74c69d]",
   "text-[#95d5b2]",
-  "text-gray-400",
+  "text-[var(--text-tertiary)]",
 ];
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -103,19 +104,19 @@ export default function CustomerHeatmap() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
           Mapa de Calor de Clientes
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        </SectionTitle>
+        <p className="text-sm text-[var(--text-secondary)]">
           Distribucion de clientes por zona de Pucallpa
         </p>
       </div>
 
       {/* Insight banner */}
       {!loading && topZone && (
-        <div className="flex items-center gap-3 rounded-xl bg-[#00B4A6]/10 px-4 py-3 dark:bg-[#00B4A6]/20">
-          <TrendingUp className="h-5 w-5 shrink-0 text-[#00B4A6]" />
-          <p className="text-sm font-medium text-[#00B4A6] dark:text-emerald-400">
+        <div className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3">
+          <TrendingUp className="h-5 w-5 shrink-0 text-primary" />
+          <p className="text-sm font-medium text-primary">
             El {topPct}% de tus clientes estan en {topZone.zone} ({topZone.count}{" "}
             clientes)
           </p>
@@ -124,49 +125,47 @@ export default function CustomerHeatmap() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#00B4A6]">{total}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+          <p className="text-2xl font-bold text-primary">{total}</p>
+          <p className="text-xs text-[var(--text-secondary)]">
             Total clientes
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#00B4A6]">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+          <p className="text-2xl font-bold text-primary">
             {zones.filter((z) => z.zone !== "Sin ubicacion").length}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Zonas</p>
+          <p className="text-xs text-[var(--text-secondary)]">Zonas</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#00B4A6]">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+          <p className="text-2xl font-bold text-primary">
             {zones.find((z) => z.zone === "Sin ubicacion")?.count ?? 0}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-[var(--text-secondary)]">
             Sin ubicacion
           </p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
-        </div>
+        <LoadingState />
       ) : error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error)] bg-[var(--data-error-50)] px-4 py-3">
+          <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+          <p className="text-sm text-[var(--data-error)]">{error}</p>
         </div>
       ) : (
         /* Horizontal bar chart */
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-          <h3 className="mb-4 text-sm font-semibold text-gray-800 dark:text-white">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+          <CardTitle className="mb-4 text-sm font-semibold text-[var(--text-primary)]">
             Clientes por zona
-          </h3>
+          </CardTitle>
           {zones.length === 0 ? (
-            <p className="text-center text-sm text-gray-400">
+            <p className="text-center text-sm text-[var(--text-tertiary)]">
               No hay datos suficientes para mostrar zonas.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {zones.map((z, idx) => {
                 const pct = total > 0 ? Math.round((z.count / total) * 100) : 0;
                 const colorBar = ZONE_COLORS[idx % ZONE_COLORS.length];
@@ -178,28 +177,28 @@ export default function CustomerHeatmap() {
                     <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <MapPin className={cn("h-3.5 w-3.5", colorText)} />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-[var(--text-primary)]">
                           {z.zone}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-[var(--text-secondary)]">
                           {z.count} clientes ({pct}%)
                         </span>
                         <button
                           onClick={() =>
                             setExpandedZone(isExpanded ? null : z.zone)
                           }
-                          className="text-xs text-[#00B4A6] underline-offset-2 hover:underline"
+                          className="text-xs text-primary underline-offset-2 hover:underline"
                         >
                           {isExpanded ? "Ocultar" : "Ver lista"}
                         </button>
                       </div>
                     </div>
-                    <div className="relative h-6 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                    <div className="relative h-6 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
                         className={cn(
-                          "flex h-full items-center justify-end pr-2 transition-all duration-500",
+                          "flex h-full items-center justify-end pr-2 transition-all duration-[var(--dur-slow)]",
                           colorBar
                         )}
                         style={{ width: `${Math.max(pct, 4)}%` }}
@@ -212,11 +211,11 @@ export default function CustomerHeatmap() {
                       </div>
                     </div>
                     {isExpanded && (
-                      <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
+                      <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg bg-gray-50 p-3">
                         {z.customers.map((name, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-gray-700 shadow-sm dark:bg-gray-700 dark:text-gray-300"
+                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-[var(--text-primary)] "
                           >
                             {name}
                           </span>

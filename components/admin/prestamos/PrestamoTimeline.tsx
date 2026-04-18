@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from "@/lib/utils";
-import { CheckCircle2, XCircle, Clock, Circle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Circle } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,27 +54,27 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
   const nextPendingIdx = cuotas.findIndex(c => !c.pagadoEn);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Summary bar */}
       <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
+          <p className="text-xs font-bold text-[var(--text-secondary)]">
             {pagadas} de {totalCuotas} cuotas pagadas ({porcentaje}%)
           </p>
           <span className={cn(
             "text-xs font-bold px-2 py-0.5 rounded-lg",
             porcentaje === 100
-              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
               : porcentaje > 50
-                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
+                : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           )}>
             {porcentaje}%
           </span>
         </div>
         <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className="h-full rounded-full bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
             style={{ width: `${porcentaje}%` }}
           />
         </div>
@@ -100,7 +100,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                 <div className={cn(
                   "absolute left-[-14px] top-5 w-0.5 h-[calc(100%-4px)]",
                   currentPaid && (i + 1 < cuotas.length && cuotas[i + 1].pagadoEn)
-                    ? "bg-emerald-400 dark:bg-emerald-600"
+                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
                     : "bg-gray-200 dark:bg-white/10"
                 )} />
               )}
@@ -108,23 +108,23 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               {/* Node */}
               <div className="absolute left-[-20px] top-0.5">
                 {status === "pagada" && (
-                  <div className="h-6 w-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <div className="h-6 w-6 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+                    <CheckCircle2 className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
                   </div>
                 )}
                 {status === "vencida" && (
-                  <div className="h-6 w-6 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
-                    <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <div className="h-6 w-6 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/40 flex items-center justify-center">
+                    <XCircle className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
                   </div>
                 )}
                 {status === "proxima" && (
-                  <div className="h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center animate-pulse">
-                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <div className="h-6 w-6 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center animate-pulse">
+                    <Clock className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
                   </div>
                 )}
                 {status === "futura" && (
-                  <div className="h-6 w-6 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-card flex items-center justify-center">
-                    <Circle className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+                  <div className="h-6 w-6 rounded-full border-2 border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-card flex items-center justify-center">
+                    <Circle className="h-3 w-3 text-[var(--text-tertiary)]" />
                   </div>
                 )}
               </div>
@@ -132,21 +132,21 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               {/* Content */}
               <div className={cn(
                 "ml-2 rounded-xl p-3 transition-colors",
-                status === "pagada" && "bg-emerald-50/50 dark:bg-emerald-900/10",
-                status === "vencida" && "bg-red-50/50 dark:bg-red-900/10",
-                status === "proxima" && "bg-amber-50/50 dark:bg-amber-900/10 ring-1 ring-amber-200 dark:ring-amber-800",
+                status === "pagada" && "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]",
+                status === "vencida" && "bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/10",
+                status === "proxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10 ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
                 status === "futura" && "bg-gray-50/50 dark:bg-white/[0.02]",
               )}>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">
                     Cuota {c.numeroCuota} &mdash; {formatCurrency(c.monto)}
                   </p>
                   <span className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                    status === "pagada" && "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
-                    status === "vencida" && "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
-                    status === "proxima" && "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
-                    status === "futura" && "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
+                    "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
+                    status === "pagada" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
+                    status === "vencida" && "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
+                    status === "proxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                    status === "futura" && "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                   )}>
                     {status === "pagada" && "PAGADA"}
                     {status === "vencida" && "VENCIDA"}
@@ -155,7 +155,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </span>
                 </div>
 
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1">
                   {status === "pagada" && c.pagadoEn && (
                     <>Pagado el {formatDate(c.pagadoEn)}{c.montoPagado ? ` — ${formatCurrency(c.montoPagado)}` : ""}</>
                   )}

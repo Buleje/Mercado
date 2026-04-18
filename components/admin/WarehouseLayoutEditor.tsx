@@ -1,8 +1,9 @@
 "use client";
+import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect } from "react";
-import { Save, Search, RotateCcw, Grid3X3 } from "lucide-react";
+import { Save, Search, RotateCcw, Grid3X3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -19,24 +20,24 @@ const DEFAULT_ROWS = 4;
 const DEFAULT_COLS = 6;
 
 const CATEGORIES = [
-  { name: "Abarrotes", color: "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100" },
-  { name: "Bebidas", color: "bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-100" },
-  { name: "Lacteos", color: "bg-yellow-200 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100" },
-  { name: "Limpieza", color: "bg-cyan-200 text-cyan-800 dark:bg-cyan-800 dark:text-cyan-100" },
-  { name: "Snacks", color: "bg-orange-200 text-orange-800 dark:bg-orange-800 dark:text-orange-100" },
-  { name: "Carnes", color: "bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-100" },
-  { name: "Frutas", color: "bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-100" },
+  { name: "Abarrotes", color: "bg-[var(--data-warning)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+  { name: "Bebidas", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
+  { name: "Lacteos", color: "bg-[var(--data-warning)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+  { name: "Limpieza", color: "bg-[var(--data-info)] text-[var(--data-info)] dark:bg-[var(--data-info)] dark:text-[var(--data-info)]" },
+  { name: "Snacks", color: "bg-[var(--data-warning)] text-[var(--data-warning)] dark:bg-[var(--data-warning)] dark:text-[var(--data-warning)]" },
+  { name: "Carnes", color: "bg-[var(--data-error)] text-[var(--data-error)] dark:bg-[var(--data-error)] dark:text-[var(--data-error)]" },
+  { name: "Frutas", color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" },
   { name: "Granos", color: "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-100" },
-  { name: "Higiene", color: "bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-100" },
-  { name: "Panaderia", color: "bg-rose-200 text-rose-800 dark:bg-rose-800 dark:text-rose-100" },
-  { name: "Congelados", color: "bg-sky-200 text-sky-800 dark:bg-sky-800 dark:text-sky-100" },
-  { name: "Otros", color: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100" },
+  { name: "Higiene", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
+  { name: "Panaderia", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
+  { name: "Congelados", color: "bg-[var(--data-info)] text-[var(--data-info)] dark:bg-[var(--data-info)] dark:text-[var(--data-info)]" },
+  { name: "Otros", color: "bg-gray-200 text-[var(--text-primary)] dark:bg-gray-700 dark:text-gray-100" },
 ];
 
 function catColor(name: string) {
   return (
     CATEGORIES.find((c) => c.name === name)?.color ??
-    "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+    "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
   );
 }
 
@@ -131,10 +132,10 @@ export default function WarehouseLayoutEditor() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
             Editor de Layout del Almacen
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          </SectionTitle>
+          <p className="text-sm text-[var(--text-tertiary)]">
             Asigna categorias a cada zona del almacen. Haz clic en una celda
             para pintarla.
           </p>
@@ -142,7 +143,7 @@ export default function WarehouseLayoutEditor() {
         <div className="flex gap-2">
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
           >
             <RotateCcw className="h-4 w-4" />
             Resetear
@@ -151,7 +152,7 @@ export default function WarehouseLayoutEditor() {
             onClick={handleSave}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white transition",
-              saved ? "bg-emerald-600" : "bg-[#00B4A6] hover:bg-[#009690]"
+              saved ? "bg-[var(--accent-soft)]" : "bg-[#00B4A6] hover:bg-[#009690]"
             )}
           >
             <Save className="h-4 w-4" />
@@ -163,7 +164,7 @@ export default function WarehouseLayoutEditor() {
       {/* Find product */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={(e) => {
@@ -172,7 +173,7 @@ export default function WarehouseLayoutEditor() {
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar categoria (ej: Bebidas)..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
           />
         </div>
         <button
@@ -184,7 +185,7 @@ export default function WarehouseLayoutEditor() {
         {highlight && (
           <button
             onClick={() => { setHighlight(null); setSearch(""); }}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-50 dark:border-[var(--rule-base)] dark:hover:bg-gray-800"
           >
             Limpiar
           </button>
@@ -194,7 +195,7 @@ export default function WarehouseLayoutEditor() {
       {highlight && (
         <div className="flex items-center gap-2 rounded-lg bg-[#00B4A6]/10 px-4 py-2.5 dark:bg-[#00B4A6]/20">
           <Grid3X3 className="h-4 w-4 text-[#00B4A6]" />
-          <p className="text-sm font-medium text-[#00B4A6] dark:text-emerald-400">
+          <p className="text-sm font-medium text-[#00B4A6] dark:text-[var(--data-success)]">
             Las celdas resaltadas contienen: {highlight}
           </p>
         </div>
@@ -202,7 +203,7 @@ export default function WarehouseLayoutEditor() {
 
       {/* Category palette */}
       <div>
-        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <p className="mb-2 text-sm font-medium text-[var(--text-secondary)]">
           Paleta de categorias (selecciona una y haz clic en el mapa)
         </p>
         <div className="flex flex-wrap gap-2">
@@ -212,7 +213,7 @@ export default function WarehouseLayoutEditor() {
               "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
               selectedCat === null
                 ? "border-gray-500 bg-gray-500 text-white"
-                : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                : "border-[var(--rule-base)] bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
             )}
           >
             Borrar
@@ -239,8 +240,8 @@ export default function WarehouseLayoutEditor() {
       </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-        <div className="mb-2 flex items-center gap-2 text-xs text-gray-400">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
+        <div className="mb-2 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
           <span>Entrada</span>
           <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
           <span>Fondo</span>
@@ -261,10 +262,10 @@ export default function WarehouseLayoutEditor() {
                   "flex min-h-[64px] cursor-pointer select-none items-center justify-center rounded-lg border-2 text-xs font-medium transition",
                   cell.category
                     ? catColor(cell.category)
-                    : "border-dashed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600",
+                    : "border-dashed border-[var(--rule-base)] bg-gray-50 text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",
                   isHighlighted &&
                     "ring-4 ring-[#f97316] ring-offset-1",
-                  !cell.category && "border-gray-200"
+                  !cell.category && "border-[var(--rule-base)]"
                 )}
               >
                 {cell.category ?? "+"}
@@ -272,18 +273,18 @@ export default function WarehouseLayoutEditor() {
             );
           })}
         </div>
-        <p className="mt-2 text-center text-xs text-gray-400">
+        <p className="mt-2 text-center text-xs text-[var(--text-tertiary)]">
           Vista del almacen — {rows} filas x {cols} columnas
         </p>
       </div>
 
       {/* Grid size controls */}
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-gray-50 px-4 py-3 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
+        <p className="text-sm font-medium text-[var(--text-secondary)]">
           Tamano del mapa:
         </p>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Filas</span>
+          <span className="text-xs text-[var(--text-secondary)]">Filas</span>
           <input
             type="number"
             min={1}
@@ -294,11 +295,11 @@ export default function WarehouseLayoutEditor() {
               setRows(r);
               setCells((prev) => buildGrid(r, cols, prev));
             }}
-            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Columnas</span>
+          <span className="text-xs text-[var(--text-secondary)]">Columnas</span>
           <input
             type="number"
             min={1}
@@ -309,7 +310,7 @@ export default function WarehouseLayoutEditor() {
               setCols(c);
               setCells((prev) => buildGrid(rows, c, prev));
             }}
-            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
       </div>

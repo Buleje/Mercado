@@ -90,7 +90,7 @@ function StatusBadge({ status }: { status: string }) {
     pending:   "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
     approved:  "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
     rejected:  "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-    shipped:   "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+    shipped:   "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     delivered: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
     settled:   "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   };
@@ -500,7 +500,7 @@ export default function SupplierDashboard({
                               <button
                                 onClick={() => updateOrderStatus(o.id, "shipped")}
                                 disabled={updatingId === o.id}
-                                className="min-h-[36px] rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-900/30 dark:text-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+                                className="min-h-[36px] rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-50 dark:bg-emerald-900/30 dark:text-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
                               >
                                 Marcar enviado
                               </button>

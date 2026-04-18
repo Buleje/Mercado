@@ -1,14 +1,14 @@
 "use client";
 
+import { CardTitle, LoadingState, PageTitle, StatCard } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Truck, User, Calendar, Printer, MapPin, Package,
-  FileText, CheckCircle, XCircle, Filter, Copy, ChevronDown, ChevronUp } from "lucide-react";
+  FileText, CheckCircle, XCircle, Filter, Copy, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type GuiaStatus = "BORRADOR" | "EMITIDA" | "EN_TRANSITO" | "ENTREGADA" | "ANULADA";
@@ -86,11 +86,11 @@ type DraftItem = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string; dot: string }> = {
-  BORRADOR:    { label: "Borrador",    color: "text-gray-700 dark:text-gray-400",       bg: "bg-gray-100 dark:bg-gray-800/50",       dot: "bg-gray-400" },
-  EMITIDA:     { label: "Emitida",     color: "text-blue-700 dark:text-blue-400",       bg: "bg-blue-100 dark:bg-blue-900/30",       dot: "bg-blue-500" },
-  EN_TRANSITO: { label: "En tránsito", color: "text-amber-700 dark:text-amber-400",     bg: "bg-amber-100 dark:bg-amber-900/30",     dot: "bg-amber-500" },
-  ENTREGADA:   { label: "Entregada",   color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", dot: "bg-emerald-500" },
-  ANULADA:     { label: "Anulada",     color: "text-red-700 dark:text-red-400",         bg: "bg-red-100 dark:bg-red-900/30",         dot: "bg-red-500" },
+  BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-gray-100",       dot: "bg-gray-400" },
+  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
+  EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning)]" },
+  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  ANULADA:     { label: "Anulada",     color: "text-[var(--data-error)]",         bg: "bg-[var(--data-error-100)]",         dot: "bg-[var(--data-error)]" },
 };
 
 const _STATUS_ORDER: GuiaStatus[] = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"];
@@ -105,12 +105,12 @@ const MOTIVOS = [
 ];
 
 const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
-  "":          { active: "bg-[#00B4A6] text-white",  inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
-  BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
-  EMITIDA:     { active: "bg-blue-600 text-white",    inactive: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" },
-  EN_TRANSITO: { active: "bg-amber-500 text-white",   inactive: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" },
-  ENTREGADA:   { active: "bg-emerald-600 text-white", inactive: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" },
-  ANULADA:     { active: "bg-red-600 text-white",     inactive: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400" },
+  "":          { active: "bg-primary text-white",  inactive: "bg-gray-100 text-[var(--text-secondary)]" },
+  BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-gray-100 text-[var(--text-secondary)]" },
+  EMITIDA:     { active: "bg-[var(--accent-soft)] text-white",    inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  EN_TRANSITO: { active: "bg-[var(--data-warning)] text-white",   inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning)]" },
+  ENTREGADA:   { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  ANULADA:     { active: "bg-[var(--data-error)] text-white",     inactive: "bg-[var(--data-error-50)] text-[var(--data-error)]" },
 };
 
 const PER_PAGE = 10;
@@ -148,8 +148,8 @@ function emptyItem(): DraftItem {
 function _ValidationBadge({ status }: { status: "valid" | "invalid" | "empty" }) {
   if (status === "empty") return null;
   return status === "valid"
-    ? <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-    : <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />;
+    ? <CheckCircle className="h-4 w-4 text-[var(--data-success)] shrink-0" />
+    : <AlertTriangle className="h-4 w-4 text-[var(--data-error)] shrink-0" />;
 }
 
 // ── GuiaPreview (tooltip on hover) ───────────────────────────────────────────
@@ -158,31 +158,31 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
   const meta = STATUS_META[guia.status];
   const placa = getPlaca(guia);
   return (
-    <div className="w-75 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl p-4 space-y-2">
+    <div className="w-75 bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-gray-500">{guia.numero}</span>
-        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold", meta.bg, meta.color)}>
+        <span className="font-mono text-xs text-[var(--text-secondary)]">{guia.numero}</span>
+        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
           <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />{meta.label}
         </span>
       </div>
-      <p className="font-bold text-gray-900 dark:text-white text-sm">{guia.destinatarioNombre}</p>
-      <p className="text-[10px] text-gray-400">{guia.puntoPartida} → {guia.puntoLlegada}</p>
+      <p className="font-bold text-[var(--text-primary)] text-sm">{guia.destinatarioNombre}</p>
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{guia.puntoPartida} → {guia.puntoLlegada}</p>
       {guia.transportistaNombre && (
-        <p className="text-[10px] text-gray-500 flex items-center gap-1">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
           <Truck className="h-3 w-3" /> {guia.transportistaNombre}
-          {placa && <span className="ml-1 px-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-[9px] font-bold">{placa}</span>}
+          {placa && <span className="ml-1 px-1 bg-[var(--accent-soft)] text-[var(--data-success)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
         </p>
       )}
-      <div className="border-t border-gray-100 dark:border-white/5 pt-2">
-        <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Items</p>
+      <div className="border-t border-[var(--rule-soft)] pt-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase mb-1">Items</p>
         {guia.items.slice(0, 3).map((it, i) => (
-          <p key={i} className="text-xs text-gray-600 dark:text-gray-300 truncate">{it.cantidad}× {it.descripcion}</p>
+          <p key={i} className="text-xs text-[var(--text-secondary)] truncate">{it.cantidad}× {it.descripcion}</p>
         ))}
-        {guia.items.length > 3 && <p className="text-[10px] text-gray-400">y {guia.items.length - 3} más...</p>}
+        {guia.items.length > 3 && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">y {guia.items.length - 3} más...</p>}
       </div>
-      <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-white/5">
-        <span className="text-xs text-gray-500">{formatDate(guia.fechaTraslado)}</span>
-        <span className="text-xs font-semibold text-gray-500">{guia.motivoTraslado}</span>
+      <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
+        <span className="text-xs text-[var(--text-secondary)]">{formatDate(guia.fechaTraslado)}</span>
+        <span className="text-xs font-semibold text-[var(--text-secondary)]">{guia.motivoTraslado}</span>
       </div>
     </div>
   );
@@ -197,7 +197,7 @@ function GuiaHoverRow({ children, preview }: { children: ReactNode; preview: Rea
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       {children}
       {show && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
           {preview}
         </div>
       )}
@@ -222,27 +222,27 @@ function _OrderPickerCard({ order, isSelected, onSelect }: {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        "w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 relative overflow-hidden",
+        "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
-          ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20 bg-[#00B4A6]/5"
-          : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#00B4A6]/40"
+          ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+          : "bg-white border-[var(--rule-base)] hover:shadow-lg hover:border-primary/40"
       )}
     >
-      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#00B4A6]" : "bg-blue-400")} />
+      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-[var(--accent-soft)]")} />
       <div className="pl-2">
         <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white">#{order.numero}</span>
-          <span className="text-[10px] text-gray-400">{formatDate(order.createdAt)}</span>
+          <span className="font-mono text-xs font-bold text-[var(--text-primary)]">#{order.numero}</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(order.createdAt)}</span>
         </div>
-        <p className={cn("text-sm font-semibold truncate mb-1", isSelected ? "text-[#00B4A6]" : "text-gray-800 dark:text-white")}>
+        <p className={cn("text-sm font-semibold truncate mb-1", isSelected ? "text-primary" : "text-[var(--text-primary)]")}>
           {order.customerName}
         </p>
         {order.shippingAddress && (
-          <p className="text-[10px] text-gray-400 truncate flex items-center gap-1">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate flex items-center gap-1">
             <MapPin className="h-2.5 w-2.5 shrink-0" /> {order.shippingAddress}
           </p>
         )}
-        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+        <div className="flex items-center gap-1 mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           <Package className="h-3 w-3 shrink-0" />
           {order.items.length} item{order.items.length !== 1 ? "s" : ""}
         </div>
@@ -258,10 +258,10 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 animate-pulse">
-            <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-white/10 mb-2" />
-            <div className="h-3 w-20 rounded bg-gray-100 dark:bg-white/10 mb-1.5" />
-            <div className="h-7 w-10 rounded bg-gray-100 dark:bg-white/10" />
+          <div key={i} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
+            <div className="h-7 w-7 rounded-lg bg-gray-100 mb-2" />
+            <div className="h-3 w-20 rounded bg-gray-100 mb-1.5" />
+            <div className="h-7 w-10 rounded bg-gray-100" />
           </div>
         ))}
       </div>
@@ -270,10 +270,10 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
   if (!resumen) return null;
 
   const kpis = [
-    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
-    { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30" },
-    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-    { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-red-600 dark:text-red-400" : "text-gray-400", bg: resumen.anuladas > 0 ? "bg-red-100 dark:bg-red-900/30" : "bg-gray-100 dark:bg-gray-800/30" },
+    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)]" },
+    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-gray-100" },
   ];
 
   return (
@@ -283,30 +283,30 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
           const Icon = card.icon;
           return (
             <m.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-3">
+              className="bg-white border border-[var(--rule-base)] rounded-xl  p-3">
               <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center mb-2", card.bg)}>
                 <Icon className={cn("h-3.5 w-3.5", card.color)} />
               </div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{card.label}</p>
-              <p className="text-2xl font-mono font-bold text-gray-900 dark:text-white">{card.value}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold">{card.label}</p>
+              <p className="text-2xl font-mono font-bold text-[var(--text-primary)]">{card.value}</p>
             </m.div>
           );
         })}
       </div>
       {resumen.transportistasFrecuentes.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-3 flex items-center gap-1.5">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold mb-3 flex items-center gap-1.5">
             <Truck className="h-3 w-3" /> Transportistas frecuentes
           </p>
           <div className="space-y-2">
             {resumen.transportistasFrecuentes.slice(0, 3).map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0">{i + 1}</div>
+                <div className="h-7 w-7 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] shrink-0">{i + 1}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{t.nombre}</p>
-                  <p className="text-[10px] text-gray-400 font-mono">{t.ruc}</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{t.nombre}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">{t.ruc}</p>
                 </div>
-                <span className="text-xs font-bold text-[#00B4A6]">{t.count} guía{t.count !== 1 ? "s" : ""}</span>
+                <span className="text-xs font-bold text-primary">{t.count} guía{t.count !== 1 ? "s" : ""}</span>
               </div>
             ))}
           </div>
@@ -772,27 +772,26 @@ export default function GuiasRemisionModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
-            <Truck className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Guías de Remisión</h1>
-            <p className="text-sm text-gray-500">Documentos de traslado de mercadería</p>
-          </div>
+      {/* Header — kicker + H1 + subtitle (ADR-074 Phase 3) */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3 justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Documentos / Logística</p>
+          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
+            <Truck className="h-5 w-5 currentColor" />
+            Guías de Remisión
+          </PageTitle>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Documentos de traslado de mercadería</p>
         </div>
         <button
           onClick={() => { setShowNew(true); setCreateError(null); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nueva Guía
         </button>
       </div>
 
-      {/* Mejora 11: KPI Cards */}
+      {/* KPI Cards — UnifiedKPITile (ADR-074 Phase 3) */}
       {!loading && guias.length > 0 && (() => {
         const now = new Date();
         const mesActual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -801,26 +800,11 @@ export default function GuiasRemisionModule() {
         const entregadas = guias.filter(g => g.status === "ENTREGADA").length;
         const anuladas = guias.filter(g => g.status === "ANULADA").length;
         return (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "Emitidas este mes", value: emitidasMes, icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
-              { label: "En tránsito", value: enTransito, icon: Truck, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30" },
-              { label: "Entregadas", value: entregadas, icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-              { label: "Anuladas", value: anuladas, icon: XCircle, color: anuladas > 0 ? "text-red-600 dark:text-red-400" : "text-gray-400", bg: anuladas > 0 ? "bg-red-100 dark:bg-red-900/30" : "bg-gray-100 dark:bg-gray-800/30" },
-            ].map(card => {
-              const CardIcon = card.icon;
-              return (
-                <div key={card.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", card.bg)}>
-                      <CardIcon className={cn("h-3.5 w-3.5", card.color)} />
-                    </div>
-                  </div>
-                  <p className="text-xs uppercase tracking-wider text-gray-400 font-bold">{card.label}</p>
-                  <p className="text-2xl font-mono font-bold text-gray-900 dark:text-white">{card.value}</p>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Emitidas este mes" value={emitidasMes} icon={FileText} />
+            <StatCard label="En tránsito" value={enTransito} icon={Truck} emphasis={enTransito > 0 ? "warning" : "neutral"} />
+            <StatCard label="Entregadas" value={entregadas} icon={CheckCircle} emphasis="success" />
+            <StatCard label="Anuladas" value={anuladas} icon={XCircle} emphasis={anuladas > 0 ? "error" : "neutral"} />
           </div>
         );
       })()}
@@ -828,14 +812,14 @@ export default function GuiasRemisionModule() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
             placeholder="Buscar por destinatario..."
             aria-label="Buscar guías de remisión"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {/* Mejora 12: Pills coloreadas con count */}
@@ -843,12 +827,12 @@ export default function GuiasRemisionModule() {
           {(["", "BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA", "ANULADA"] as const).map(s => {
             const count = s === "" ? guias.length : guias.filter(g => g.status === s).length;
             const pillColors: Record<string, { active: string; inactive: string }> = {
-              "": { active: "bg-[#00B4A6] text-white", inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
-              BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
-              EMITIDA: { active: "bg-blue-600 text-white", inactive: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" },
-              EN_TRANSITO: { active: "bg-amber-500 text-white", inactive: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" },
-              ENTREGADA: { active: "bg-emerald-600 text-white", inactive: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" },
-              ANULADA: { active: "bg-red-600 text-white", inactive: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400" },
+              "": { active: "bg-primary text-white", inactive: "bg-gray-100 text-[var(--text-secondary)]" },
+              BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-gray-100 text-[var(--text-secondary)]" },
+              EMITIDA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+              EN_TRANSITO: { active: "bg-[var(--data-warning)] text-white", inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning)]" },
+              ENTREGADA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+              ANULADA: { active: "bg-[var(--data-error)] text-white", inactive: "bg-[var(--data-error-50)] text-[var(--data-error)]" },
             };
             const colors = pillColors[s] ?? pillColors[""];
             return (
@@ -863,8 +847,8 @@ export default function GuiasRemisionModule() {
               >
                 {s === "" ? "Todos" : STATUS_META[s].label}
                 <span className={cn(
-                  "px-1.5 py-0.5 rounded-full text-[10px] font-bold min-w-5 text-center",
-                  statusFilter === s ? "bg-white/20" : "bg-black/5 dark:bg-white/10"
+                  "px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold min-w-5 text-center",
+                  statusFilter === s ? "bg-white/20" : "bg-black/5"
                 )}>{count}</span>
               </button>
             );
@@ -873,35 +857,33 @@ export default function GuiasRemisionModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
-          </div>
+          <LoadingState />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <AlertTriangle className="h-8 w-8 text-red-400" />
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            <button onClick={fetchGuias} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">Reintentar</button>
+            <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
+            <p className="text-sm text-[var(--data-error)]">{error}</p>
+            <button onClick={fetchGuias} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : guias.length === 0 ? (
           <div className="text-center py-16 px-4">
-            <div className="text-6xl mb-4">🚚</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin guías de remisión</h3>
-            <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Documenta tus envíos de mercadería</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Crear guía</button>
+            <Truck className="h-14 w-14 mb-4 text-[var(--text-tertiary)] mx-auto" />
+            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin guías de remisión</CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Documenta tus envíos de mercadería</p>
+            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Crear guía</button>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <table className="w-full min-w-150 sm:min-w-0 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-white/5 text-left">
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">N° GRR</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden sm:table-cell">Fecha traslado</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Destinatario</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden md:table-cell">Motivo</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Status</th>
+                  <tr className="border-b border-[var(--rule-soft)] text-left">
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">N° GRR</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Fecha traslado</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Destinatario</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden md:table-cell">Motivo</th>
+                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -911,24 +893,24 @@ export default function GuiasRemisionModule() {
                       <tr
                         key={g.id}
                         onClick={() => setSelected(g)}
-                        className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
+                        className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
                       >
-                        <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                           {/* Mejora 17: Preview al hover */}
                           <GuiaHoverRow preview={<GuiaPreview guia={g} />}>
                             <span>{g.numero}</span>
                           </GuiaHoverRow>
                         </td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
+                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                              <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                              <Truck className="h-4 w-4 text-[var(--data-success)]" />
                             </div>
-                            <p className="font-medium text-gray-900 dark:text-white truncate">{g.destinatarioNombre}</p>
+                            <p className="font-medium text-[var(--text-primary)] truncate">{g.destinatarioNombre}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden md:table-cell">{g.motivoTraslado}</td>
+                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{g.motivoTraslado}</td>
                         <td className="px-4 py-3">
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                             {meta.label}
@@ -941,15 +923,15 @@ export default function GuiasRemisionModule() {
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
+                <p className="text-xs text-[var(--text-secondary)]">
                   {guias.length} guía{guias.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 transition-colors">
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 transition-colors">
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -967,83 +949,83 @@ export default function GuiasRemisionModule() {
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
             <m.div key="grr-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl overflow-y-auto">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white font-mono">{selected.numero}</h3>
-                    <p className="text-xs text-gray-400">Creada: {formatDateTime(selected.createdAt)}</p>
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
+                    <p className="text-xs text-[var(--text-tertiary)]">Creada: {formatDateTime(selected.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {selected.status === "BORRADOR" && (
-                      <button onClick={handleDuplicate} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Duplicar">
-                        <Copy className="h-4 w-4 text-gray-400" />
+                      <button onClick={handleDuplicate} className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Duplicar">
+                        <Copy className="h-4 w-4 text-[var(--text-tertiary)]" />
                       </button>
                     )}
                     {selected.status !== "ANULADA" && selected.status !== "ENTREGADA" && (
-                      <button onClick={() => setShowAnular(true)} className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Anular">
-                        <XCircle className="h-4 w-4 text-red-400" />
+                      <button onClick={() => setShowAnular(true)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] transition-colors" title="Anular">
+                        <XCircle className="h-4 w-4 text-[var(--data-error)]" />
                       </button>
                     )}
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                      <X className="h-5 w-5 text-gray-500" />
+                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-3">
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">{selected.destinatarioNombre}</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)]">{selected.destinatarioNombre}</p>
                     <span className={cn("px-2 py-1 rounded-lg text-xs font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
                       {STATUS_META[selected.status].label}
                     </span>
                   </div>
-                  {selected.destinatarioRuc && <p className="text-xs text-gray-500">RUC: {selected.destinatarioRuc}</p>}
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-400">
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Motivo</p><p>{selected.motivoTraslado}</p></div>
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Fecha traslado</p><p>{formatDate(selected.fechaTraslado)}</p></div>
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Origen</p><p>{selected.puntoPartida}</p></div>
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Destino</p><p>{selected.puntoLlegada}</p></div>
+                  {selected.destinatarioRuc && <p className="text-xs text-[var(--text-secondary)]">RUC: {selected.destinatarioRuc}</p>}
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)] text-xs text-[var(--text-secondary)]">
+                    <div><p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Motivo</p><p>{selected.motivoTraslado}</p></div>
+                    <div><p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Fecha traslado</p><p>{formatDate(selected.fechaTraslado)}</p></div>
+                    <div><p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Origen</p><p>{selected.puntoPartida}</p></div>
+                    <div><p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Destino</p><p>{selected.puntoLlegada}</p></div>
                   </div>
                   {/* Mejora 8: Tracking mejorado — Transportista + Placa */}
-                  <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-2">
-                    <p className="font-bold text-gray-400 text-[10px] uppercase">Transportista</p>
+                  <div className="pt-2 border-t border-[var(--rule-base)] space-y-2">
+                    <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Transportista</p>
                     {selected.transportistaNombre ? (
-                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                          <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+                        <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                          <Truck className="h-4 w-4 text-[var(--data-success)]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-white">{selected.transportistaNombre}</p>
-                          {selected.transportistaRuc && <p className="text-[10px] text-gray-400">RUC: {selected.transportistaRuc}</p>}
+                          <p className="font-medium text-[var(--text-primary)]">{selected.transportistaNombre}</p>
+                          {selected.transportistaRuc && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">RUC: {selected.transportistaRuc}</p>}
                         </div>
                         {selected.transportistaPlaca ? (
-                          <span className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                          <span className="px-2 py-1 rounded-lg bg-[var(--accent-soft)] text-xs font-bold text-[var(--data-success)] flex items-center gap-1">
                             {selected.transportistaPlaca}
                           </span>
                         ) : (
-                          <span className="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                          <span className="px-2 py-1 rounded-lg bg-[var(--data-warning-50)] text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
                             Agregar placa
                           </span>
                         )}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-400 italic">Sin transportista asignado</p>
+                      <p className="text-xs text-[var(--text-tertiary)] italic">Sin transportista asignado</p>
                     )}
                   </div>
 
                   {/* Conductor */}
                   {(selected.conductorNombre || selected.conductorDni) && (
-                    <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-1">
-                      <p className="font-bold text-gray-400 text-[10px] uppercase">Conductor</p>
-                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-                        <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                          <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <div className="pt-2 border-t border-[var(--rule-base)] space-y-1">
+                      <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Conductor</p>
+                      <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+                        <div className="h-8 w-8 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
+                          <User className="h-4 w-4 text-[var(--text-secondary)]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          {selected.conductorNombre && <p className="font-medium text-gray-900 dark:text-white">{selected.conductorNombre}</p>}
-                          {selected.conductorDni && <p className="text-[10px] text-gray-400">DNI: {selected.conductorDni}</p>}
+                          {selected.conductorNombre && <p className="font-medium text-[var(--text-primary)]">{selected.conductorNombre}</p>}
+                          {selected.conductorDni && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">DNI: {selected.conductorDni}</p>}
                         </div>
                       </div>
                     </div>
@@ -1051,30 +1033,30 @@ export default function GuiasRemisionModule() {
 
                   {/* Detalles adicionales: bultos, doc ref, pesos */}
                   {(selected.bultos || selected.documentoRef || selected.pesoTotal || selected.pesoBruto) && (
-                    <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                      <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
+                    <div className="pt-2 border-t border-[var(--rule-base)]">
+                      <div className="grid grid-cols-2 gap-3 text-xs text-[var(--text-secondary)]">
                         {selected.bultos != null && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Bultos</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{selected.bultos}</p>
+                            <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Bultos</p>
+                            <p className="font-semibold text-[var(--text-primary)]">{selected.bultos}</p>
                           </div>
                         )}
                         {selected.documentoRef && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Doc. Referencia</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{selected.documentoRef}</p>
+                            <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Doc. Referencia</p>
+                            <p className="font-semibold text-[var(--text-primary)]">{selected.documentoRef}</p>
                           </div>
                         )}
                         {selected.pesoTotal != null && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Peso Neto</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{Number(selected.pesoTotal).toFixed(2)} kg</p>
+                            <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Peso Neto</p>
+                            <p className="font-semibold text-[var(--text-primary)]">{Number(selected.pesoTotal).toFixed(2)} kg</p>
                           </div>
                         )}
                         {selected.pesoBruto != null && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Peso Bruto</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{Number(selected.pesoBruto).toFixed(3)} kg</p>
+                            <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Peso Bruto</p>
+                            <p className="font-semibold text-[var(--text-primary)]">{Number(selected.pesoBruto).toFixed(3)} kg</p>
                           </div>
                         )}
                       </div>
@@ -1082,8 +1064,8 @@ export default function GuiasRemisionModule() {
                   )}
 
                   {/* Mejora 8: Timeline de estados */}
-                  <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                    <p className="font-bold text-gray-400 text-[10px] uppercase mb-2">Timeline de estados</p>
+                  <div className="pt-2 border-t border-[var(--rule-base)]">
+                    <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase mb-2">Timeline de estados</p>
                     <div className="space-y-0">
                       {(["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"] as const).map((st, idx) => {
                         const statusOrder: GuiaStatus[] = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"];
@@ -1095,33 +1077,33 @@ export default function GuiasRemisionModule() {
                             <div className="flex flex-col items-center">
                               <div className={cn(
                                 "h-5 w-5 rounded-full flex items-center justify-center",
-                                isDone ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-gray-100 dark:bg-white/10"
+                                isDone ? "bg-[var(--accent-soft)]" : "bg-gray-100"
                               )}>
                                 {isDone ? (
-                                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                                  <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
                                 ) : (
-                                  <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
+                                  <div className="h-2 w-2 rounded-full bg-gray-300" />
                                 )}
                               </div>
-                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-emerald-200 dark:bg-emerald-800" : "bg-gray-200 dark:bg-white/10")} />}
+                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-[var(--accent-soft)]" : "bg-gray-200")} />}
                             </div>
                             <div className="pb-2">
-                              <p className={cn("text-xs font-bold", isDone ? "text-gray-900 dark:text-white" : "text-gray-400")}>{meta.label}</p>
-                              {isDone && idx === 0 && <p className="text-[10px] text-gray-400">{formatDate(selected.createdAt)}</p>}
-                              {isDone && idx === currentIdx && idx > 0 && <p className="text-[10px] text-gray-400">{formatDate(selected.updatedAt)}</p>}
-                              {!isDone && <p className="text-[10px] text-gray-400 italic">pendiente</p>}
+                              <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{meta.label}</p>
+                              {isDone && idx === 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(selected.createdAt)}</p>}
+                              {isDone && idx === currentIdx && idx > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(selected.updatedAt)}</p>}
+                              {!isDone && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic">pendiente</p>}
                             </div>
                           </div>
                         );
                       })}
                       {selected.status === "ANULADA" && (
                         <div className="flex gap-3 items-center mt-1">
-                          <div className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                            <div className="h-2 w-2 rounded-full bg-red-500" />
+                          <div className="h-5 w-5 rounded-full bg-[var(--data-error-100)] flex items-center justify-center">
+                            <div className="h-2 w-2 rounded-full bg-[var(--data-error)]" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-red-600 dark:text-red-400">ANULADA</p>
-                            <p className="text-[10px] text-gray-400">{formatDate(selected.updatedAt)}</p>
+                            <p className="text-xs font-bold text-[var(--data-error)]">ANULADA</p>
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(selected.updatedAt)}</p>
                           </div>
                         </div>
                       )}
@@ -1131,16 +1113,16 @@ export default function GuiasRemisionModule() {
 
                 {/* Items */}
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Items</h4>
+                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
                   <div className="space-y-2">
                     {(selected.items ?? []).map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-                        <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                          <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                          <Package className="h-4 w-4 text-[var(--data-success)]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.descripcion}</p>
-                          <p className="text-xs text-gray-400">{item.cantidad} {item.unidad} {item.pesoUnitario ? `· ${item.pesoUnitario} kg` : ""}</p>
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.descripcion}</p>
+                          <p className="text-xs text-[var(--text-tertiary)]">{item.cantidad} {item.unidad} {item.pesoUnitario ? `· ${item.pesoUnitario} kg` : ""}</p>
                         </div>
                       </div>
                     ))}
@@ -1154,15 +1136,15 @@ export default function GuiasRemisionModule() {
                   const itemsSinPeso = items.filter(it => !it.pesoUnitario || it.pesoUnitario <= 0);
                   const pesoTotal = itemsConPeso.reduce((sum, it) => sum + (it.cantidad * (it.pesoUnitario || 0)), 0);
                   return (
-                    <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-4">
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Peso total</span>
-                        <span className="text-lg font-extrabold text-[#00B4A6]">
+                        <span className="text-sm font-bold text-[var(--text-primary)]">Peso total</span>
+                        <span className="text-lg font-extrabold text-primary">
                           {pesoTotal > 0 ? `${pesoTotal.toFixed(1)} kg` : "Sin datos de peso"}
                         </span>
                       </div>
                       {itemsSinPeso.length > 0 && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        <p className="text-xs text-[var(--data-warning)] mt-1">
                           {itemsSinPeso.length} item{itemsSinPeso.length !== 1 ? "s" : ""} sin peso registrado
                         </p>
                       )}
@@ -1173,12 +1155,12 @@ export default function GuiasRemisionModule() {
                 {/* Mejora 12: Imprimir GRR formato SUNAT */}
                 <div className="flex gap-2">
                   <button onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir
                   </button>
                   <button
                     onClick={() => printGuiaSunat(selected, formatDate)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
                   >
                     <Printer className="h-4 w-4" /> GRR SUNAT
                   </button>
@@ -1203,12 +1185,12 @@ export default function GuiasRemisionModule() {
               className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
-              <div className="w-full max-w-3xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl flex flex-col max-h-[90vh] my-8">
+              <div className="w-full max-w-3xl bg-white border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Nueva Guía de Remisión</h3>
-                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <X className="h-5 w-5 text-gray-500" />
+                <div className="sticky top-0 z-10 bg-white border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
+                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -1216,129 +1198,129 @@ export default function GuiasRemisionModule() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Order ID optional */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Vincular pedido (opcional)</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Vincular pedido (opcional)</label>
                     <input type="text" value={form.orderIds} onChange={e => setForm(p => ({ ...p, orderIds: e.target.value }))} placeholder="N° de orden"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Motivo */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Motivo de traslado</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Motivo de traslado</label>
                     <select value={form.motivoTraslado} onChange={e => setForm(p => ({ ...p, motivoTraslado: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                       {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                   {/* Destinatario */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Destinatario</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Destinatario</label>
                     <input type="text" value={form.destinatarioNombre} onChange={e => setForm(p => ({ ...p, destinatarioNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">RUC destinatario</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC destinatario</label>
                     <input type="text" value={form.destinatarioRuc} onChange={e => setForm(p => ({ ...p, destinatarioRuc: e.target.value }))} placeholder="20XXXXXXXXX"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Dirección destinatario</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dirección destinatario</label>
                     <input type="text" value={form.destinatarioDireccion} onChange={e => setForm(p => ({ ...p, destinatarioDireccion: e.target.value }))} placeholder="Dirección"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Transportista */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Transportista</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Transportista</label>
                     <input type="text" value={form.transportistaNombre} onChange={e => setForm(p => ({ ...p, transportistaNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">RUC transp.</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC transp.</label>
                       <input type="text" value={form.transportistaRuc} onChange={e => setForm(p => ({ ...p, transportistaRuc: e.target.value }))} placeholder="RUC"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Placa</label>
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Placa</label>
                       <input type="text" value={form.vehiculoPlaca} onChange={e => setForm(p => ({ ...p, vehiculoPlaca: e.target.value }))} placeholder="ABC-123"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   {/* Partida / Llegada */}
                   {/* Conductor */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Conductor</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Conductor</label>
                     <input type="text" value={form.conductorNombre} onChange={e => setForm(p => ({ ...p, conductorNombre: e.target.value }))} placeholder="Nombre del conductor"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">DNI Conductor</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">DNI Conductor</label>
                     <input type="text" value={form.conductorDni} onChange={e => setForm(p => ({ ...p, conductorDni: e.target.value.replace(/\D/g, "").slice(0, 8) }))} placeholder="12345678" maxLength={8}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Bultos / Doc Referencia / Peso Bruto */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° Bultos</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° Bultos</label>
                     <input type="number" min="0" value={form.bultos} onChange={e => setForm(p => ({ ...p, bultos: e.target.value }))} placeholder="0"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Doc. Referencia</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Doc. Referencia</label>
                     <input type="text" value={form.documentoRef} onChange={e => setForm(p => ({ ...p, documentoRef: e.target.value }))} placeholder="Factura, boleta u orden"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Peso Bruto (kg)</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Peso Bruto (kg)</label>
                     <input type="number" min="0" step="0.001" value={form.pesoBruto} onChange={e => setForm(p => ({ ...p, pesoBruto: e.target.value }))} placeholder="0.000"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Ruta */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Punto de partida</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Punto de partida</label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                       <input type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Punto de llegada</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Punto de llegada</label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                       <input type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   {/* Fecha */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Fecha y hora de traslado</label>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha y hora de traslado</label>
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                       <input type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                 </div>
 
                 {/* Items */}
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Items</h4>
+                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">Items</h4>
                   <div className="space-y-2">
                     {newItems.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <input type="text" value={item.descripcion} onChange={e => updateItem(idx, "descripcion", e.target.value)} placeholder="Descripción"
-                          className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
+                          className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
-                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
-                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
-                          className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
+                          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         {newItems.length > 1 && (
-                          <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600"><X className="h-4 w-4" /></button>
+                          <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error)] hover:text-[var(--data-error)]"><X className="h-4 w-4" /></button>
                         )}
                       </div>
                     ))}
                   </div>
-                  <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-[#00B4A6] hover:underline mt-2">
+                  <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-primary hover:underline mt-2">
                     <Plus className="h-3.5 w-3.5" /> Agregar item
                   </button>
 
@@ -1348,13 +1330,13 @@ export default function GuiasRemisionModule() {
                     const itemsSinPeso = newItems.filter(it => it.descripcion.trim() && (!it.pesoUnitario || parseFloat(it.pesoUnitario) <= 0));
                     const pesoTotal = itemsConPeso.reduce((sum, it) => sum + ((parseFloat(it.cantidad) || 0) * (parseFloat(it.pesoUnitario) || 0)), 0);
                     return pesoTotal > 0 || itemsSinPeso.length > 0 ? (
-                      <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-lg p-3 mt-2">
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="font-bold text-gray-700 dark:text-gray-300">Peso total:</span>
-                          <span className="font-extrabold text-[#00B4A6]">{pesoTotal.toFixed(1)} kg</span>
+                          <span className="font-bold text-[var(--text-primary)]">Peso total:</span>
+                          <span className="font-extrabold text-primary">{pesoTotal.toFixed(1)} kg</span>
                         </div>
                         {itemsSinPeso.length > 0 && (
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-1">
                             {itemsSinPeso.length} item{itemsSinPeso.length !== 1 ? "s" : ""} sin peso registrado
                           </p>
                         )}
@@ -1363,16 +1345,16 @@ export default function GuiasRemisionModule() {
                   })()}
                 </div>
 
-                {createError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{createError}</p>}
+                {createError && <p className="text-xs text-[var(--data-error)] font-semibold">{createError}</p>}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button onClick={() => setShowNew(false)}
-                    className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
+                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors">
                     Cancelar
                   </button>
                   <button onClick={handleCreate} disabled={creating}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 rounded-lg shadow-sm transition-colors">
+                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-lg  transition-colors">
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Crear Guía
                   </button>

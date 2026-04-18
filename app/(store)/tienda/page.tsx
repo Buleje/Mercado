@@ -14,6 +14,9 @@ import {
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
+import TiendaSections from "@/components/TiendaSections";
+import TiendaHero from "@/components/store/TiendaHero";
+import TrustBar from "@/components/store/TrustBar";
 
 export const metadata: Metadata = {
   title: "Catalogo de Productos — Buleje ERP",
@@ -39,17 +42,7 @@ export const metadata: Metadata = {
   },
 };
 
-// ── Above-the-fold (SSR + eager hydration) ──
-const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
-const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
-const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
-const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
-
-// ── Main catalog & sections ──
-const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
-const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
-const CombosSection     = dynamic(() => import("@/components/CombosSection"));
-const LastUnitsSection  = dynamic(() => import("@/components/LastUnitsSection"));
+// ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
 const Footer            = dynamic(() => import("@/components/Footer"));
 
@@ -143,11 +136,12 @@ export default async function TiendaPage() {
 
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
+  let tenantSlug = "main";
   try {
     const { headers } = await import("next/headers");
     const hdrs = await headers();
-    const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    initialProducts = await getCachedProducts(tenantId) as unknown as Array<Record<string, unknown>>;
+    tenantSlug = hdrs.get("x-tenant-id") ?? "main";
+    initialProducts = await getCachedProducts(tenantSlug) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
   }
@@ -198,58 +192,29 @@ export default async function TiendaPage() {
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
-        {order.map((key) => {
-          if (!show(key)) return null;
-          switch (key) {
-            case "daily_special":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <DailySpecial />
-                </Suspense>
-              );
-            case "seasonal_promo":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <SeasonalPromo />
-                </Suspense>
-              );
-            case "countdown":
-              return <CountdownBanner key={key} />;
-            case "flash_deals":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <FlashDeals />
-                </Suspense>
-              );
-            case "popular_products":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <PopularProducts />
-                </Suspense>
-              );
-            case "featured_carousel":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <FeaturedCarousel />
-                </Suspense>
-              );
-            case "combos":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <CombosSection />
-                </Suspense>
-              );
-            case "last_units":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <LastUnitsSection />
-                </Suspense>
-              );
-            // recipes, favorites, recently_viewed → handled by TiendaClientShell
-            default:
-              return null;
-          }
-        })}
+        {/* Hero 2-column con ilustracion autentica Pucallpa (DoniaElena) +
+            CTAs + identidad local. Reemplaza el hero editorial frio. */}
+        <TiendaHero
+          slug={tenantSlug}
+          storeName="Bodega San Martin"
+          productCount={initialProducts.length}
+        />
+
+        {/* 4 chips de confianza editorial (25 min, pago en casa, fresco, whatsapp). */}
+        <TrustBar />
+
+        {/* All dynamic sections — single component handles loading + distribution.
+            showEmptyPlaceholders=true → regla 1: seccion habilitada sin productos
+            muestra placeholder amable ("No hay productos agregados todavia").
+            strictAdminOnly=true → regla anti-magia: si admin no asigno productos,
+            ninguna seccion pickea al azar del catalogo. */}
+        <TiendaSections
+          serverProducts={initialProducts as any}
+          visibleSections={visible}
+          sectionOrder={order}
+          showEmptyPlaceholders={true}
+          strictAdminOnly={true}
+        />
 
         {/* Always visible — main product catalog */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>

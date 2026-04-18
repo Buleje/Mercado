@@ -52,9 +52,9 @@ describe("useModuleTiers", () => {
     const { result } = renderHook(() => useModuleTiers());
 
     // Principal modules visible
-    expect(result.current.isModuleVisible("ventas-caja")).toBe(true);
     expect(result.current.isModuleVisible("inventario")).toBe(true);
     expect(result.current.isModuleVisible("productos")).toBe(true);
+    expect(result.current.isModuleVisible("asistente-ia")).toBe(true);
 
     // Intermedio modules hidden
     expect(result.current.isModuleVisible("fiados")).toBe(false);
@@ -69,7 +69,7 @@ describe("useModuleTiers", () => {
     localStorage.setItem("buleje-module-tier", "intermedio");
     const { result } = renderHook(() => useModuleTiers());
 
-    expect(result.current.isModuleVisible("ventas-caja")).toBe(true); // principal
+    expect(result.current.isModuleVisible("asistente-ia")).toBe(true); // principal
     expect(result.current.isModuleVisible("fiados")).toBe(true); // intermedio
     expect(result.current.isModuleVisible("analytics-bi")).toBe(false); // avanzado
   });
@@ -84,7 +84,7 @@ describe("useModuleTiers", () => {
 
   it("should return the correct tier for a module", () => {
     const { result } = renderHook(() => useModuleTiers());
-    expect(result.current.getModuleTier("ventas-caja")).toBe("principal");
+    expect(result.current.getModuleTier("asistente-ia")).toBe("principal");
     expect(result.current.getModuleTier("fiados")).toBe("intermedio");
     expect(result.current.getModuleTier("analytics-bi")).toBe("avanzado");
   });
