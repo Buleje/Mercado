@@ -11,15 +11,23 @@ import {
   type LiveSession as MockLive,
   getLiveNow,
   getUpcomingLives,
+  getPastLives,
   getLiveById as getMockLiveById,
 } from "@/lib/mocks/lives.mock";
 
-function getMockActiveLives(): MockLive[] {
-  const active: MockLive[] = [];
+export interface LivesActivePayload {
+  active: MockLive[];
+  upcoming: MockLive[];
+  past: MockLive[];
+}
+
+function getMockActivePayload(): LivesActivePayload {
   const now = getLiveNow();
-  if (now) active.push(now);
-  active.push(...getUpcomingLives());
-  return active;
+  return {
+    active: now ? [now] : [],
+    upcoming: getUpcomingLives(),
+    past: getPastLives(),
+  };
 }
 
 type DbLive = {
@@ -51,9 +59,13 @@ function isMockLive(src: unknown): src is MockLive {
   return "startsAt" in src && "thumbnail" in src && "category" in src;
 }
 
-/** Convierte payload DB a la shape legacy UI (MockLive). */
-export function toUiLive(src: DbLive | MockLive): MockLive {
-  if (isMockLive(src)) return src;
+/** Convierte payload DB/backend a la shape legacy UI (MockLive). Accepts optional products/messages. */
+export function toUiLive(
+  src: DbLive | MockLive | Record<string, unknown>,
+  _products?: unknown[],
+  _messages?: unknown[],
+): MockLive {
+  if (isMockLive(src)) return src as MockLive;
   const db = src as DbLive;
   const mappedStatus: MockLive["status"] =
     db.status === "live"
@@ -80,18 +92,38 @@ export function toUiLive(src: DbLive | MockLive): MockLive {
   };
 }
 
-/** Fetch lives activos — intenta DB, fallback a mock. */
-export async function fetchActiveLives(): Promise<MockLive[]> {
+/** Fetch lives — intenta DB, fallback a mock. Devuelve payload con active/upcoming/past. */
+export async function fetchActiveLives(): Promise<LivesActivePayload> {
   try {
     const res = await fetch("/api/lives/active", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as { lives?: DbLive[] };
-    if (!Array.isArray(data?.lives) || data.lives.length === 0) {
-      return getMockActiveLives();
+    const data = (await res.json()) as {
+      active?: DbLive[];
+      upcoming?: DbLive[];
+      past?: DbLive[];
+      lives?: DbLive[];
+    };
+    // Soporta shape nueva {active, upcoming, past} y legacy {lives}
+    const hasRich = data?.active || data?.upcoming || data?.past;
+    if (hasRich) {
+      return {
+        active: (data.active ?? []).map((x) => toUiLive(x)),
+        upcoming: (data.upcoming ?? []).map((x) => toUiLive(x)),
+        past: (data.past ?? []).map((x) => toUiLive(x)),
+      };
     }
-    return data.lives.map(toUiLive);
+    if (Array.isArray(data?.lives) && data.lives.length > 0) {
+      // legacy: split por status en el cliente
+      const all = data.lives.map((x) => toUiLive(x));
+      return {
+        active: all.filter((l) => l.status === "live"),
+        upcoming: all.filter((l) => l.status === "upcoming"),
+        past: all.filter((l) => l.status === "past"),
+      };
+    }
+    return getMockActivePayload();
   } catch {
-    return getMockActiveLives();
+    return getMockActivePayload();
   }
 }
 

@@ -10,6 +10,8 @@ export interface LiveChatProps {
   hostName: string;
   /** Si el live está activo; si no, deshabilita input. */
   active?: boolean;
+  /** ID del live — opcional para futuro POST a /api/lives/[id]/chat. */
+  liveId?: string;
 }
 
 const FAUX_MESSAGES = [
@@ -27,7 +29,7 @@ const FAUX_MESSAGES = [
  * para que el chat se sienta vivo (cuando active=true). Reemplazar por
  * subscripción WebSocket real más adelante.
  */
-export function LiveChat({ initialMessages, hostName, active = true }: LiveChatProps) {
+export function LiveChat({ initialMessages, hostName, active = true, liveId: _liveId }: LiveChatProps) {
   const [messages, setMessages] = useState<LiveChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);

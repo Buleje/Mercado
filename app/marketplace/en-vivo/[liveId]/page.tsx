@@ -17,7 +17,7 @@ async function resolveLive(liveId: string) {
   try {
     const result = await LiveSessionsDB.getById(null, liveId);
     if (result) {
-      return toUiLive(result.session, result.products, result.messages);
+      return toUiLive(result.session as unknown as Record<string, unknown>, result.products, result.messages);
     }
   } catch {
     // DB no accesible (ej. antes de migration) → fallback mock
