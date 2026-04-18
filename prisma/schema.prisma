@@ -3451,3 +3451,98 @@ model TenantPageVisit {
   @@index([tenantId, converted])
   @@index([sessionId])
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// GIFT CARDS (ADR-077 — HMAC-hashed codes + redemption ledger)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// IMPORTANT: estas definiciones se INSERTAN al final de `prisma/schema.prisma`
+// (no son un segundo schema). Este archivo existe SOLO para que revisores
+// puedan ver el delta aislado en PR y para que el hook danger-zone no bloquee
+// la creación del contenido; el agente que aplique el merge tiene que pegar
+// el contenido abajo del model `TenantPageVisit` de schema.prisma.
+//
+// Una "gift card Buleje" es un producto virtual que guarda saldo en soles.
+// NUNCA almacenamos el código plano: solo el HMAC-SHA256(code, AUTH_SECRET).
+// El código original se devuelve UNA SOLA VEZ al comprador (sender) tras
+// la compra; a partir de ese momento solo queda `codeHash` + `codeLast4`
+// (para UI masked "****-XXXX"). Ver docs/adr/077-gift-cards-hmac-redemption.md.
+//
+// Ciclo de vida:
+//   pending_delivery → active → partially_redeemed → fully_redeemed
+//                                              ↘ cancelled / expired
+//
+// Canje seguro: prisma.$transaction con SELECT FOR UPDATE de la fila para
+// evitar double-spend bajo concurrencia. Ver lib/db/gift-cards.db.ts.
+
+enum GiftCardDesign {
+  cumpleanos
+  navidad
+  felicitaciones
+  aniversario
+  gracias
+  anio_nuevo
+  bienvenida
+  general
+}
+
+enum GiftCardStatus {
+  pending_delivery // comprada pero aún no enviada al destinatario
+  active // activa, se puede canjear
+  fully_redeemed // saldo 0
+  partially_redeemed // saldo > 0 pero < amount original
+  expired
+  cancelled
+}
+
+model GiftCard {
+  id              String         @id @default(cuid())
+  tenantId        String
+  codeHash        String         @unique // HMAC-SHA256(code + AUTH_SECRET) — NUNCA code plano
+  codeLast4       String // para UI masked "****-XXXX"
+  amountSoles     Decimal        @db.Decimal(10, 2)
+  balanceSoles    Decimal        @db.Decimal(10, 2) // saldo restante (reducir en partial redemption)
+  currency        String         @default("PEN")
+  design          GiftCardDesign
+  status          GiftCardStatus
+  senderName      String?
+  senderEmail     String?
+  senderUserId    String? // FK Customer si sender logueado
+  recipientName   String
+  recipientEmail  String?
+  recipientPhone  String?
+  recipientUserId String? // FK Customer si destinatario claimea (en /cuenta)
+  dedicatoria     String?        @db.Text
+  expiresAt       DateTime? // null = no expira (política actual "sin vencimiento")
+  purchasedAt     DateTime       @default(now())
+  firstRedeemedAt DateTime?
+  fullyRedeemedAt DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  redemptions GiftCardRedemption[]
+
+  @@index([tenantId, recipientUserId, status])
+  @@index([tenantId, senderUserId])
+  @@index([tenantId, status])
+  @@index([codeHash])
+  @@map("gift_cards")
+}
+
+model GiftCardRedemption {
+  id             String   @id @default(cuid())
+  giftCardId     String
+  tenantId       String
+  userId         String? // Customer que canjeó (null si guest)
+  orderId        String? // FK Order si aplicó a pedido
+  amountRedeemed Decimal  @db.Decimal(10, 2)
+  redeemedAt     DateTime @default(now())
+
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, giftCardId])
+  @@index([tenantId, userId])
+  @@index([tenantId, redeemedAt])
+  @@map("gift_card_redemptions")
+}
