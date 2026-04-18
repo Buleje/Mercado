@@ -3720,3 +3720,122 @@ model SocioCashbackEntry {
   @@index([tenantId, orderId])
   @@map("socio_cashback_entries")
 }
+
+model VendorApplication {
+  id String @id @default(cuid())
+
+  // ── Datos del negocio (wizard step 1) ──────────────────
+  businessName String
+  ruc          String         @unique
+  address      String
+  district     VendorDistrict
+  category     VendorCategory
+
+  // ── Contacto (wizard step 2) ───────────────────────────
+  contactName  String
+  contactDni   String
+  contactPhone String
+  contactEmail String
+
+  // ── Verificacion (wizard step 3) ───────────────────────
+  rucDocumentUrl     String?
+  storefrontPhotoUrl String?
+  termsAcceptedAt    DateTime?
+
+  // ── Horarios + delivery (wizard step 4) ────────────────
+  schedule         Json
+  deliveryZones    Json
+  deliveryFeeSoles Decimal @db.Decimal(10, 2)
+
+  // ── Plan (wizard step 5) ───────────────────────────────
+  plan VendorPlan
+
+  // ── Workflow ───────────────────────────────────────────
+  status          ApplicationStatus @default(pending)
+  submittedAt     DateTime          @default(now())
+  reviewStartedAt DateTime?
+  decidedAt       DateTime?
+  reviewerUserId  String?
+  decisionReason  String?           @db.Text
+  infoRequestNote String?           @db.Text
+
+  // ── Post-approval: link al tenant ──────────────────────
+  tenantId   String? @unique
+  tenantSlug String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews VendorApplicationReview[]
+
+  @@index([status, submittedAt])
+  @@index([district, status])
+  @@index([contactEmail])
+  @@map("vendor_applications")
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// VendorApplicationReview — log append-only de cada accion sobre una solicitud.
+/// Nunca se actualiza ni borra. Es la historia de vida de la aplicacion.
+/// ─────────────────────────────────────────────────────────────────────────────
+model VendorApplicationReview {
+  id             String                  @id @default(cuid())
+  applicationId  String
+  reviewerUserId String
+  action         ApplicationReviewAction
+  note           String?                 @db.Text
+  previousStatus ApplicationStatus
+  newStatus      ApplicationStatus
+  createdAt      DateTime                @default(now())
+
+  application VendorApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+  @@index([reviewerUserId])
+  @@map("vendor_application_reviews")
+}
+
+enum VendorDistrict {
+  callerya
+  yarinacocha
+  manantay
+  puerto_callao
+  pucallpa_centro
+  san_fernando
+  masisea
+  otros_ucayali
+}
+
+enum VendorCategory {
+  bodega
+  minimarket
+  carniceria
+  fruteria
+  panaderia
+  licoreria
+  farmacia
+  ferreteria
+  restaurante_comida
+}
+
+enum VendorPlan {
+  free
+  pro
+}
+
+enum ApplicationStatus {
+  pending
+  under_review
+  info_requested
+  approved
+  tenant_provisioned
+  rejected
+}
+
+enum ApplicationReviewAction {
+  start_review
+  request_info
+  approve
+  reject
+  reopen
+}
