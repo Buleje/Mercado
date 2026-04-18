@@ -280,7 +280,7 @@ function FiadoTendenciaCobro() {
           label={lastNeto >= 0 ? "Recuperando mas de lo que prestas" : "Prestando mas de lo que cobras"}
         />
       </div>
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer minWidth={0} width="100%" height={200}>
         <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="mes" tick={{ fontSize: 11 }} />

@@ -306,7 +306,7 @@ export default function FiadoAnalyticsPanel() {
           </h4>
           {donutData.length > 0 ? (
             <div className="relative">
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer minWidth={0} width="100%" height={250}>
                 <PieChart>
                   <Pie
                     data={donutData}
@@ -359,7 +359,7 @@ export default function FiadoAnalyticsPanel() {
             Tendencia de recuperacion
           </h4>
           {tendencia && tendencia.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer minWidth={0} width="100%" height={250}>
               <AreaChart data={tendencia} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(107,114,128,0.15)" strokeDasharray="3 3" />
                 <XAxis

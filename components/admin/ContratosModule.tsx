@@ -1370,7 +1370,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Tipo</CardTitle>
                     {stats.typeData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={250}>
+                      <ResponsiveContainer minWidth={0} width="100%" height={250}>
                         <RechartsPie>
                           <Pie data={stats.typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`}>
                             {stats.typeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -1386,7 +1386,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Mes</CardTitle>
                     {stats.monthData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={250}>
+                      <ResponsiveContainer minWidth={0} width="100%" height={250}>
                         <BarChart data={stats.monthData}>
                           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                           <XAxis dataKey="name" fontSize={11} />

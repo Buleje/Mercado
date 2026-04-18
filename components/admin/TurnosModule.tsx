@@ -633,7 +633,7 @@ export default function TurnosModule() {
                   Ventas por Cajero (este mes)
                 </CardTitle>
                 <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-4">
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer minWidth={0} width="100%" height={250}>
                     <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `S/${v}`} />

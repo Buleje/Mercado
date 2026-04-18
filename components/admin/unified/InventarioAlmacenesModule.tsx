@@ -174,7 +174,7 @@ function CategoryTreemapView() {
         <p className="text-center text-[var(--text-tertiary)] py-8">No hay datos de inventario para mostrar</p>
       ) : (
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer minWidth={0} width="100%" height={320}>
             <Treemap
               data={treemapData}
               dataKey="size"
@@ -388,7 +388,7 @@ function InventoryAnalyticsDashboard() {
               <FavStar id="categoria" favs={invFavs} />
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <PieChart>
               <Pie
                 data={categoryData}
@@ -434,7 +434,7 @@ function InventoryAnalyticsDashboard() {
             <h4 className="text-sm font-bold text-[var(--text-primary)]">Unidades por Categoria</h4>
             <FavStar id="unidades" favs={invFavs} />
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis type="number" tick={{ fontSize: 11, fill: "#6b7280" }} />
@@ -474,7 +474,7 @@ function InventoryAnalyticsDashboard() {
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Top 10 Productos por Valor en Stock</h4>
           <FavStar id="top10" favs={invFavs} />
         </div>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer minWidth={0} width="100%" height={300}>
           <BarChart data={top10Value} layout="vertical" margin={{ left: 10, right: 30 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis type="number" tick={{ fontSize: 11, fill: "#6b7280" }} tickFormatter={(v: number) => `S/${v >= 1000 ? (v / 1000).toFixed(1) + "k" : v}`} />
@@ -515,7 +515,7 @@ function InventoryAnalyticsDashboard() {
         </div>
         <p className="text-xs text-[var(--text-tertiary)] mb-3">Dias de stock vs ventas estimadas mensuales</p>
         <div className="relative">
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer minWidth={0} width="100%" height={320}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="x" name="Dias stock" type="number" domain={[0, 90]} tick={{ fontSize: 11, fill: "#6b7280" }} label={{ value: "Dias de stock", position: "insideBottom", offset: -5, fontSize: 11, fill: "#9ca3af" }} />
@@ -571,7 +571,7 @@ function InventoryAnalyticsDashboard() {
         return rentables.length > 0 ? (
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Productos mas rentables</h4>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer minWidth={0} width="100%" height={300}>
               <BarChart data={rentables} layout="vertical" margin={{ left: 10, right: 30 }}>
                 <defs>
                   <linearGradient id="rentGrad" x1="0" y1="0" x2="1" y2="0">
@@ -640,7 +640,7 @@ function InventoryAnalyticsDashboard() {
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
         <ChartExpandModal title="Valor por Categoria" onClose={() => setExpandedChart(null)}>
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer minWidth={0} width="100%" height={500}>
               <PieChart>
                 <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={100} outerRadius={200} paddingAngle={2} label>
                   {categoryData.map((_, i) => <Cell key={i} fill={ANALYTICS_COLORS[i % ANALYTICS_COLORS.length]} />)}

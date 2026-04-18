@@ -44,7 +44,7 @@ export default function BusinessOverviewChart({ data, fmtR, fmtShortR }: Props) 
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={320}>
+    <ResponsiveContainer minWidth={0} width="100%" height={320}>
       <ComposedChart data={enrichedData} margin={{ left: 10, right: 10, top: 10, bottom: 0 }}>
         <defs>
           <linearGradient id="emeraldFill" x1="0" y1="0" x2="0" y2="1">

@@ -205,7 +205,7 @@ export default function MarginWaterfallChart() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT: Waterfall chart */}
         <div className="flex-1">
-          <ResponsiveContainer width="100%" height={380}>
+          <ResponsiveContainer minWidth={0} width="100%" height={380}>
             <BarChart data={waterfallData} margin={{ top: 20, right: 10, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis

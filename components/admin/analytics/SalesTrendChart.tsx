@@ -283,7 +283,7 @@ export default function SalesTrendChart() {
       </div>
 
       {/* Chart — Mejora 18: con prediccion 7 dias */}
-      <ResponsiveContainer width="100%" height={420}>
+      <ResponsiveContainer minWidth={0} width="100%" height={420}>
         <ComposedChart data={predictedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">

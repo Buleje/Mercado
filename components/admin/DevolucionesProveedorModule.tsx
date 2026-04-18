@@ -620,7 +620,7 @@ export default function DevolucionesProveedorModule() {
                 <p className="text-xs font-semibold text-[var(--text-secondary)] mb-3">
                   Devoluciones por mes
                 </p>
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer minWidth={0} width="100%" height={180}>
                   <BarChart data={reportesPorMes} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="mes" tick={{ fontSize: 11 }} />

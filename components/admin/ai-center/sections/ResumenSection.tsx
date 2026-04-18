@@ -601,7 +601,7 @@ export default function ResumenSection({ data }: Props) {
               </p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={80}>
+            <ResponsiveContainer minWidth={0} width="100%" height={80}>
               <BarChart
                 data={chartData}
                 margin={{ top: 0, right: 0, left: 0, bottom: 0 }}

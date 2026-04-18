@@ -48,7 +48,7 @@ export default function CashRegisterChart({
           </span>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={60}>
+      <ResponsiveContainer minWidth={0} width="100%" height={60}>
         <AreaChart data={sparkData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <defs>
             <linearGradient id="sparkPos" x1="0" y1="0" x2="0" y2="1">

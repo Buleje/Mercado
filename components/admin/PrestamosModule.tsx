@@ -179,7 +179,7 @@ function SparklineKPICard({
       <p className="text-xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
       {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
       <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer minWidth={0} width="100%" height="100%">
           <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -347,7 +347,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer minWidth={0} width="100%" height={250}>
               <AreaChart data={areaData}>
                 <defs>
                   <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
@@ -383,7 +383,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
               <User className="h-4 w-4 text-secondary" /> Top 5 deudores
             </CardTitle>
             {topDeudores.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer minWidth={0} width="100%" height={220}>
                 <BarChart data={topDeudores} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
                   <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -408,7 +408,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
             </CardTitle>
             {donutData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer minWidth={0} width="100%" height={160}>
                   <PieChart>
                     <Pie data={donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={72} dataKey="value" stroke="none" paddingAngle={2}>
                       {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}
@@ -1086,7 +1086,7 @@ export default function PrestamosModule() {
                 <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                   <TrendingUp className="h-3.5 w-3.5" /> Movimiento mensual (6 meses)
                 </h4>
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer minWidth={0} width="100%" height={180}>
                   <BarChart data={monthData}>
                     <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 10 }} width={50} tickFormatter={(v: number) => `S/${v}`} />
@@ -1560,7 +1560,7 @@ export default function PrestamosModule() {
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-[var(--data-info)]" /> Evolución Capital vs Interés ({calcSistema})
               </CardTitle>
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer minWidth={0} width="100%" height={220}>
                 <LineChart data={amortizacion}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" />
                   <XAxis dataKey="num" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />

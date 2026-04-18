@@ -126,7 +126,7 @@ function SparklineKPICard({
       <p className="text-xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
       {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
       <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer minWidth={0} width="100%" height={300}>
           <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -240,7 +240,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer minWidth={0} width="100%" height={250}>
               <AreaChart data={areaData}>
                 <defs>
                   <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
@@ -274,7 +274,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
               <User className="h-4 w-4 text-[var(--text-secondary)]" /> Top 5 deudores
             </CardTitle>
             {topDeudores.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer minWidth={0} width="100%" height={220}>
                 <BarChart data={topDeudores} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
                   <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -298,7 +298,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             </CardTitle>
             {donutData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer minWidth={0} width="100%" height={160}>
                   <PieChart>
                     <Pie data={donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={72} dataKey="value" stroke="none" paddingAngle={2}>
                       {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}

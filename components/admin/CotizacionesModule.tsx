@@ -249,7 +249,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Cotizaciones por mes</CardTitle>
           {monthlyData.some(d => d.count > 0) ? (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer minWidth={0} width="100%" height={220}>
               <AreaChart data={monthlyData}>
                 <defs>
                   <linearGradient id="cotGrad" x1="0" y1="0" x2="0" y2="1">
@@ -271,7 +271,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 clientes por monto</CardTitle>
           {topClientes.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer minWidth={0} width="100%" height={220}>
               <BarChart data={topClientes} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
                 <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />

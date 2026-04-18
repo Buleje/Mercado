@@ -96,7 +96,7 @@ export default function DashboardCharts({
   switch (chartId) {
     case "ventas-categoria":
       return chartVentasCategoria.length > 0 ? (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <PieChart>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Pie data={chartVentasCategoria} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={(({ name, percent }: any) => `${name} ${(Number(percent) * 100).toFixed(0)}%`) as any} labelLine={false} fontSize={10}>
@@ -114,7 +114,7 @@ export default function DashboardCharts({
 
     case "metodo-pago":
       return chartMetodoPago.length > 0 ? (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <PieChart>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Pie data={chartMetodoPago} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={(({ name, percent }: any) => `${name} ${(Number(percent) * 100).toFixed(0)}%`) as any} labelLine={false} fontSize={10}>
@@ -132,7 +132,7 @@ export default function DashboardCharts({
 
     case "top-10":
       return chartTop10.length > 0 ? (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <BarChart data={chartTop10} layout="vertical" margin={{ left: 60, right: 20, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis type="number" fontSize={10} />
@@ -148,7 +148,7 @@ export default function DashboardCharts({
 
     case "ventas-hora":
       return (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <BarChart data={chartVentasHora} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="name" fontSize={9} />
@@ -162,7 +162,7 @@ export default function DashboardCharts({
 
     case "tendencia-semanal":
       return (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <LineChart data={chartTendenciaSemanal} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="name" fontSize={10} />
@@ -176,7 +176,7 @@ export default function DashboardCharts({
 
     case "flujo-caja":
       return (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <ComposedChart data={chartFlujoCaja} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="name" fontSize={10} />

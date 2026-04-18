@@ -1576,7 +1576,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
         </div>
         <div className="relative">
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <PieChart>
               <Pie
                 data={statusData}
@@ -1609,7 +1609,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         {/* Pedidos por hora */}
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Pedidos por Hora - Hoy</CardTitle>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer minWidth={0} width="100%" height={250}>
             <BarChart data={hourlyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="hora" tick={{ fontSize: 10 }} />
@@ -1627,7 +1627,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         {/* Metodo de pago */}
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Metodo de Pago</CardTitle>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer minWidth={0} width="100%" height={250}>
             <PieChart>
               <Pie
                 data={paymentData}
@@ -1651,7 +1651,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 4: Tendencia 7 Dias (ComposedChart) === */}
       <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
         <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Tendencia de Pedidos - Ultimos 7 dias</CardTitle>
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <ComposedChart data={weeklyData}>
             <defs>
               <linearGradient id="ordersBarGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1679,7 +1679,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           {zonaData.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de zona" />
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer minWidth={0} width="100%" height={220}>
               <BarChart data={zonaData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
                 <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
@@ -1848,7 +1848,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
             <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors"><XIcon2 className="h-5 w-5 text-[var(--text-secondary)]" /></button>
           </div>
           <div style={{ height: 500 }}>
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer minWidth={0} width="100%" height={500}>
               <PieChart>
                 <Pie data={statusData} innerRadius={100} outerRadius={200} dataKey="value" paddingAngle={2} label>
                   {statusData.map((s, i) => <Cell key={i} fill={DASH_STATUS_COLORS[s.key] || DASH_COLORS[i % DASH_COLORS.length]} />)}
@@ -1881,7 +1881,7 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
           </div>
           {sparkColor && sparkVal != null && sparkVal > 0 && (
             <div className="h-8 w-20 mt-1">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer minWidth={0} width="100%" height="100%">
                 <LineChart data={[{v:sparkVal*0.7},{v:sparkVal*0.85},{v:sparkVal*0.75},{v:sparkVal*0.9},{v:sparkVal*0.82},{v:sparkVal*0.95},{v:sparkVal}]}>
                   <Line type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={1.5} dot={false} />
                 </LineChart>

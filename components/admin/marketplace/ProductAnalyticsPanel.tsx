@@ -193,7 +193,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
             <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
               Tendencia — últimos {days} días
             </h4>
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer minWidth={0} width="100%" height={240}>
               <LineChart data={data!.days} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
                 <XAxis
                   dataKey="date"

@@ -327,7 +327,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             </div>
             {k.spark && (
               <div className="h-8 w-20 mt-1">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer minWidth={0} width="100%" height="100%">
                   <LineChart data={[{v:k.sparkVal*0.7},{v:k.sparkVal*0.85},{v:k.sparkVal*0.75},{v:k.sparkVal*0.9},{v:k.sparkVal*0.82},{v:k.sparkVal*0.95},{v:k.sparkVal}]}>
                     <Line type="monotone" dataKey="v" stroke={k.strokeColor} strokeWidth={1.5} dot={false} />
                   </LineChart>
@@ -347,7 +347,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         </button>
       </div>
       {hourlyData.some(h => h.total > 0) ? (
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <BarChart data={hourlyData} onClick={(e) => { const ev = e as { activePayload?: { payload?: { hora?: unknown } }[] } | null; if (ev?.activePayload?.[0]?.payload?.hora != null) setDrillHour(Number(ev.activePayload[0].payload.hora)); }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
             <XAxis dataKey="hora" tick={{ fontSize: 11 }} />
@@ -372,7 +372,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           )}
         </div>
         {paymentData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <PieChart>
               <Pie data={paymentData} innerRadius={50} outerRadius={80} dataKey="value" label className="cursor-pointer"
                 onClick={(_: unknown, idx: number) => setPieFilter(prev => prev === paymentData[idx]?.name ? null : paymentData[idx]?.name ?? null)}>
@@ -407,7 +407,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer minWidth={0} width="100%" height={250}>
         <AreaChart data={weeklyData}>
           <defs>
             <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
@@ -427,7 +427,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     <div key="comparison" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">vs Semana Pasada</CardTitle>
       {comparisonData.some(d => d.estaSemana > 0 || d.semanaPasada > 0) ? (
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer minWidth={0} width="100%" height={250}>
           <LineChart data={comparisonData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
             <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
@@ -505,7 +505,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
       </div>
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer minWidth={0} width="100%" height={280}>
         <LineChart data={forecastData}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
           <XAxis dataKey="dia" tick={{ fontSize: 9 }} interval={2} />
@@ -551,7 +551,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         </div>
       </div>
       {monthComparisonData.weekData.some(w => w.mes1 > 0 || w.mes2 > 0) ? (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer minWidth={0} width="100%" height={220}>
           <BarChart data={monthComparisonData.weekData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
             <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
@@ -582,7 +582,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       {/* Expanded chart modals */}
       {expandedChart === "hourly" && (
         <ChartExpandModal title="Ventas por hora" onClose={() => setExpandedChart(null)}>
-          <ResponsiveContainer width="100%" height={500}>
+          <ResponsiveContainer minWidth={0} width="100%" height={500}>
             <BarChart data={hourlyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="hora" tick={{ fontSize: 13 }} />
@@ -595,7 +595,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       )}
       {expandedChart === "weekly" && (
         <ChartExpandModal title="Tendencia de ventas" onClose={() => setExpandedChart(null)}>
-          <ResponsiveContainer width="100%" height={500}>
+          <ResponsiveContainer minWidth={0} width="100%" height={500}>
             <AreaChart data={weeklyData}>
               <defs>
                 <linearGradient id="salesGradBig" x1="0" y1="0" x2="0" y2="1">
@@ -639,7 +639,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       )}
       {expandedChart === "forecast" && (
         <ChartExpandModal title="Pronostico 7 dias" onClose={() => setExpandedChart(null)}>
-          <ResponsiveContainer width="100%" height={500}>
+          <ResponsiveContainer minWidth={0} width="100%" height={500}>
             <LineChart data={forecastData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="dia" tick={{ fontSize: 11 }} />

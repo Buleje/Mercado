@@ -273,7 +273,7 @@ function ProductsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center gap-2 mb-4"><FavStar id="distribucion-cat" favs={catFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Distribucion por categoria</CardTitle></div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={radialData} startAngle={180} endAngle={-180}>
               <RadialBar dataKey="value" background={{ fill: "rgba(0,0,0,0.05)" }} cornerRadius={6} />
               <Legend iconSize={10} formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
@@ -295,7 +295,7 @@ function ProductsDashboard() {
               <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <PieChart>
               <Pie data={inventoryByCat.slice(0, 8)} innerRadius={55} outerRadius={90} dataKey="value" paddingAngle={2} className="cursor-pointer"
                 label={({ name, percent }: { name?: string; percent?: number }) => `${(name || "").substring(0, 12)} ${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -322,7 +322,7 @@ function ProductsDashboard() {
       {/* === SECCION 3: Histograma de precios === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Rango de precios</CardTitle>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer minWidth={0} width="100%" height={240}>
           <BarChart data={priceHistogram}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="rango" tick={{ fontSize: 11 }} className="fill-gray-500" />
@@ -351,7 +351,7 @@ function ProductsDashboard() {
       {/* === SECCION 4: Top 10 por valor en stock (ComposedChart) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 10 productos por valor en stock</CardTitle>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer minWidth={0} width="100%" height={300}>
           <ComposedChart data={top10Stock} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
@@ -368,7 +368,7 @@ function ProductsDashboard() {
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Analisis de margenes</CardTitle>
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Precio venta vs margen % — tamano = stock</p>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer minWidth={0} width="100%" height={300}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="precio" name="Precio" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v}`} className="fill-gray-500" />
@@ -412,7 +412,7 @@ function ProductsDashboard() {
       {/* === SECCION 6: Estado de stock (Gauge donut) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Productos por estado de stock</CardTitle>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <PieChart>
             <Pie data={stockGauge} innerRadius={55} outerRadius={80} startAngle={180} endAngle={0} dataKey="value" paddingAngle={2}>
               {stockGauge.map((entry, i) => (
@@ -480,7 +480,7 @@ function ProductsDashboard() {
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
         <ChartExpandModal title="Valor del inventario por categoria" onClose={() => setExpandedChart(null)}>
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer minWidth={0} width="100%" height={500}>
               <PieChart>
                 <Pie data={inventoryByCat.slice(0, 8)} innerRadius={100} outerRadius={200} dataKey="value" paddingAngle={2} label>
                   {inventoryByCat.slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}

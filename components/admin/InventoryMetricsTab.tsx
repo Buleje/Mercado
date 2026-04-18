@@ -354,7 +354,7 @@ export default function InventoryMetricsTab() {
           {movementChartData.length === 0 ? (
             <EmptyState message="No hay movimientos registrados" />
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer minWidth={0} width="100%" height={280}>
               <BarChart data={movementChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis
@@ -388,7 +388,7 @@ export default function InventoryMetricsTab() {
           {topRotationProducts.length === 0 ? (
             <EmptyState message="No hay datos de ventas en los últimos 30 días" />
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer minWidth={0} width="100%" height={280}>
               <PieChart>
                 <Pie
                   data={topRotationProducts}

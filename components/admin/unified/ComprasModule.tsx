@@ -327,7 +327,7 @@ function ComprasDashboard() {
       {/* === Compras por Mes (AreaChart) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (ultimos 6 meses)</CardTitle></div>
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -372,7 +372,7 @@ function ComprasDashboard() {
               <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <PieChart>
               <Pie data={supplierSpend} innerRadius={55} outerRadius={90} dataKey="total" paddingAngle={2} className="cursor-pointer"
                 label={({ name, percent }: { name?: string; percent?: number }) => `${(name || "").substring(0, 10)} ${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -423,7 +423,7 @@ function ComprasDashboard() {
       {/* === Estado de OC (BarChart stacked) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Estado de ordenes por mes</CardTitle>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer minWidth={0} width="100%" height={250}>
           <BarChart data={statusByMonth}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
@@ -445,7 +445,7 @@ function ComprasDashboard() {
           {debtBySupplier.length === 0 ? (
             <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer minWidth={0} width="100%" height={260}>
               <BarChart data={debtBySupplier} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
                 <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
@@ -504,7 +504,7 @@ function ComprasDashboard() {
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Tendencia de gastos</CardTitle>
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Gasto real vs promedio movil 3 meses</p>
-        <ResponsiveContainer width="100%" height={260}>
+        <ResponsiveContainer minWidth={0} width="100%" height={260}>
           <ComposedChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
@@ -520,7 +520,7 @@ function ComprasDashboard() {
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
         <ChartExpandModal title="Gasto por proveedor" onClose={() => setExpandedChart(null)}>
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer minWidth={0} width="100%" height={500}>
               <PieChart>
                 <Pie data={supplierSpend} innerRadius={100} outerRadius={200} dataKey="total" paddingAngle={2} label>
                   {supplierSpend.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}

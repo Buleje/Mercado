@@ -249,7 +249,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Flujo de caja (6 meses)</CardTitle>
             {flowData.some(d => d.ingresos > 0 || d.egresos > 0) ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer minWidth={0} width="100%" height={220}>
                 <AreaChart data={flowData}>
                   <defs>
                     <linearGradient id="tresoIngGrad" x1="0" y1="0" x2="0" y2="1">
@@ -281,7 +281,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Saldo por tipo de cuenta</CardTitle>
             {tipoPieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer minWidth={0} width="100%" height={220}>
                 <PieChart>
                   <Pie
                     data={tipoPieData}

@@ -37,7 +37,7 @@ export default function PriceSparkline({ productId }: { productId: number }) {
 
   return (
     <div className="w-[60px] h-[24px]">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer minWidth={0} width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id={`sparkGrad-${productId}`} x1="0" y1="0" x2="0" y2="1">

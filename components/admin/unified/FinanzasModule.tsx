@@ -233,7 +233,7 @@ function ComparativoMensual() {
   return (
     <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Comparativo Mensual</p>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer minWidth={0} width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
@@ -442,7 +442,7 @@ function GastosDonut() {
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={0} width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
@@ -761,7 +761,7 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
     <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
       <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">{label}</p>
       <div className="relative w-35 h-20">
-        <ResponsiveContainer width="100%" height={80}>
+        <ResponsiveContainer minWidth={0} width="100%" height={80}>
           <PieChart>
             <Pie
               data={data}
@@ -1155,7 +1155,7 @@ function FinanzasDashboard() {
                   )}
                   {sparkData && (
                     <div className="h-8 w-20 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer minWidth={0} width="100%" height="100%">
                         <LineChart data={sparkData}>
                           <Line type="monotone" dataKey="v" stroke={def.color} strokeWidth={1.5} dot={false} />
                         </LineChart>
@@ -1185,7 +1185,7 @@ function FinanzasDashboard() {
               <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer minWidth={0} width="100%" height={320}>
             <ComposedChart data={monthlyData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="gradIngresos" x1="0" y1="0" x2="0" y2="1">
@@ -1238,7 +1238,7 @@ function FinanzasDashboard() {
           {expensesByCategory.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="relative w-45 h-45 shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer minWidth={0} width="100%" height="100%">
                   <PieChart>
                     <Pie data={expensesByCategory} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none" className="cursor-pointer"
                       onClick={(_: unknown, idx: number) => setGastosPieFilter(prev => prev === expensesByCategory[idx]?.name ? null : expensesByCategory[idx]?.name ?? null)}>
@@ -1281,7 +1281,7 @@ function FinanzasDashboard() {
           {paymentMethods.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="relative w-45 h-45 shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer minWidth={0} width="100%" height="100%">
                   <PieChart>
                     <Pie data={paymentMethods} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none">
                       {paymentMethods.map((entry, index) => (
@@ -1331,7 +1331,7 @@ function FinanzasDashboard() {
               <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <AreaChart data={cashFlow} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="gradCashIngresos" x1="0" y1="0" x2="0" y2="1">
@@ -1521,7 +1521,7 @@ function FinanzasDashboard() {
             <p className="text-sm font-bold text-[var(--text-primary)]">Debo a proveedores</p>
           </div>
           {topPayables.length > 0 ? (
-            <ResponsiveContainer width="100%" height={Math.max(topPayables.length * 44, 120)}>
+            <ResponsiveContainer minWidth={0} width="100%" height={Math.max(topPayables.length * 44, 120)}>
               <BarChart data={topPayables} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }}>
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} width={120} axisLine={false} tickLine={false} />
@@ -1558,7 +1558,7 @@ function FinanzasDashboard() {
             <p className="text-sm font-bold text-[var(--text-primary)]">Me deben (fiados)</p>
           </div>
           {topFiados.length > 0 ? (
-            <ResponsiveContainer width="100%" height={Math.max(topFiados.length * 44, 120)}>
+            <ResponsiveContainer minWidth={0} width="100%" height={Math.max(topFiados.length * 44, 120)}>
               <BarChart data={topFiados} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }}>
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} width={120} axisLine={false} tickLine={false} />
@@ -1607,7 +1607,7 @@ function FinanzasDashboard() {
             <div className="flex flex-col sm:flex-row items-center gap-6">
               {/* Gauge semicircular */}
               <div className="relative w-40 h-22.5 shrink-0">
-                <ResponsiveContainer width="100%" height={90}>
+                <ResponsiveContainer minWidth={0} width="100%" height={90}>
                   <PieChart>
                     <Pie
                       data={[{ name: "score", value: healthScore.total }, { name: "empty", value: 100 - healthScore.total }]}
@@ -1687,7 +1687,7 @@ function FinanzasDashboard() {
                     <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer minWidth={0} width="100%" height={220}>
                   <BarChart data={compareData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
                     <XAxis dataKey="tipo" tick={{ fontSize: 11 }} />
@@ -1708,7 +1708,7 @@ function FinanzasDashboard() {
       {expandedChart && (
         <ChartExpandModal title={expandedChart === "ingresos-gastos" ? "Ingresos vs Gastos vs Utilidad" : expandedChart === "flujo-caja" ? "Flujo de Caja" : expandedChart === "gastos-cat" ? "Gastos por Categoria" : expandedChart} onClose={() => setExpandedChart(null)}>
             {expandedChart === "ingresos-gastos" && monthlyData.length > 0 && (
-              <ResponsiveContainer width="100%" height={500}>
+              <ResponsiveContainer minWidth={0} width="100%" height={500}>
                 <ComposedChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="mes" tick={{ fontSize: 14 }} />
@@ -1722,7 +1722,7 @@ function FinanzasDashboard() {
               </ResponsiveContainer>
             )}
             {expandedChart === "flujo-caja" && cashFlow.length > 0 && (
-              <ResponsiveContainer width="100%" height={500}>
+              <ResponsiveContainer minWidth={0} width="100%" height={500}>
                 <AreaChart data={cashFlow}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
@@ -1735,7 +1735,7 @@ function FinanzasDashboard() {
               </ResponsiveContainer>
             )}
             {expandedChart === "gastos-cat" && expensesByCategory.length > 0 && (
-              <ResponsiveContainer width="100%" height={500}>
+              <ResponsiveContainer minWidth={0} width="100%" height={500}>
                 <PieChart>
                   <Pie data={expensesByCategory} cx="50%" cy="50%" innerRadius={100} outerRadius={200} paddingAngle={3} dataKey="value" label>
                     {expensesByCategory.map((_, index) => (

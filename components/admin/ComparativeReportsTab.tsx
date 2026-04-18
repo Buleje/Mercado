@@ -292,7 +292,7 @@ export default function ComparativeReportsTab() {
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer minWidth={0} width="100%" height="100%">
                 <BarChart data={chartData} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--card-border, #e5e7eb)" />
                   <XAxis

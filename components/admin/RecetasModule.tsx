@@ -122,7 +122,7 @@ function RecetasDashboard() {
       <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Lotes producidos por semana</CardTitle>
         {weeklyData.some(d => d.lotes > 0) ? (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <BarChart data={weeklyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
@@ -143,7 +143,7 @@ function RecetasDashboard() {
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Recetas por tipo</CardTitle>
           {categoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer minWidth={0} width="100%" height={220}>
               <PieChart>
                 <Pie data={categoryData} innerRadius={50} outerRadius={80} dataKey="value" label>
                   {categoryData.map((_, i) => <Cell key={i} fill={RECETAS_DASH_COLORS[i % RECETAS_DASH_COLORS.length]} />)}
@@ -1389,7 +1389,7 @@ function ProduccionTab() {
               <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" /> Produccion semanal (ultimas 4 semanas)
               </h4>
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer minWidth={0} width="100%" height={180}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="semana" tick={{ fontSize: 11 }} />

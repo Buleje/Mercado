@@ -458,7 +458,7 @@ export default function CRMTab() {
         return (
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center gap-4">
             <div style={{ width: 100, height: 100 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer minWidth={0} width="100%" height="100%">
                 <PieChart>
                   <Pie data={chartData} dataKey="value" cx="50%" cy="50%" outerRadius={45} innerRadius={20} strokeWidth={1}>
                     {chartData.map((_, i) => <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />)}

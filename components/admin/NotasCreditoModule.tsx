@@ -934,7 +934,7 @@ export default function NotasCreditoModule() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2 bg-white border border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-xs font-bold text-[var(--text-primary)] mb-2">NC por semana ({"\u00fa"}ltimos 3 meses)</p>
-            <ResponsiveContainer width="100%" height={130}>
+            <ResponsiveContainer minWidth={0} width="100%" height={130}>
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="week" tick={{ fontSize: 10 }} />
@@ -948,7 +948,7 @@ export default function NotasCreditoModule() {
             {donutData.length > 1 && (
               <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex-1">
                 <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Motivos del mes</p>
-                <ResponsiveContainer width="100%" height={80}>
+                <ResponsiveContainer minWidth={0} width="100%" height={80}>
                   <PieChart>
                     <Pie data={donutData} dataKey="value" cx="50%" cy="50%" innerRadius={20} outerRadius={36} paddingAngle={2}>
                       {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
@@ -969,7 +969,7 @@ export default function NotasCreditoModule() {
             {/* Días con más devoluciones */}
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex-1">
               <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Días con más devoluciones</p>
-              <ResponsiveContainer width="100%" height={80}>
+              <ResponsiveContainer minWidth={0} width="100%" height={80}>
                 <BarChart data={weekdayData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                   <YAxis tick={{ fontSize: 9 }} allowDecimals={false} />

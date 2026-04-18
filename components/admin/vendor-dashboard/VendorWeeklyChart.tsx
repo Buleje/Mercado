@@ -70,7 +70,7 @@ export function VendorWeeklyChart({ data }: Props) {
       </div>
       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-4">Solo pedidos entregados</p>
 
-      <ResponsiveContainer width="100%" height={140}>
+      <ResponsiveContainer minWidth={0} width="100%" height={140}>
         <BarChart data={chartData} barCategoryGap="30%">
           <XAxis
             dataKey="day"
