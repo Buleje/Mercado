@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Pause,
@@ -142,7 +142,7 @@ function BoostCard({
   const status = STATUS_CONFIG[boost.status] ?? STATUS_CONFIG.expired;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4"
@@ -189,7 +189,7 @@ function BoostCard({
         </div>
         <ActionButtons boost={boost} onAction={onAction} loading={actionLoading} />
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 

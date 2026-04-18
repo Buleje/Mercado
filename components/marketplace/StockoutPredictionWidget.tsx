@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Package, RefreshCw, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -167,7 +167,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
 
         {/* Empty state */}
         {!loading && !error && items.length === 0 && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center justify-center py-6 text-center"
@@ -181,7 +181,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Tus stocks estan en niveles seguros
             </p>
-          </motion.div>
+          </m.div>
         )}
 
         {/* Items */}
@@ -194,7 +194,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
                   : "high";
                 const config = SEVERITY_CONFIG[sev];
                 return (
-                  <motion.li
+                  <m.li
                     key={item.id}
                     initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -246,7 +246,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
                     >
                       {config.label}
                     </span>
-                  </motion.li>
+                  </m.li>
                 );
               })}
             </ul>

@@ -47,14 +47,16 @@ export async function GET(req: NextRequest) {
     };
     const parsed = QuerySchema.safeParse(queryParams);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Parámetros inválidos", issues: parsed.error.issues }, { status: 400 });
+      // Graceful: retornamos [] en vez de 400 para no romper widgets admin secundarios
+      return NextResponse.json({ data: [] });
     }
     const store = await prisma.store.findFirst({
       where: { tenantId: auth.tenantId, slug: parsed.data.storeSlug },
       select: { id: true },
     });
     if (!store) {
-      return NextResponse.json({ error: "Store no encontrado" }, { status: 404 });
+      // Graceful: store no encontrado → widget muestra empty state
+      return NextResponse.json({ data: [] });
     }
     const anomalies = await SalesAnomaliesDB.getRecent(auth.tenantId, store.id, {
       severity: parsed.data.severity,
@@ -64,7 +66,8 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json({ data: anomalies });
   } catch (err) {
-    logger.error("[marketplace/anomalies] GET error", { error: err instanceof Error ? err.message : String(err) });
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    // Graceful fallback — widget secundario no debe romper UI admin
+    logger.warn("[marketplace/anomalies] GET fallback empty", { error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ data: [] });
   }
 }

@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { TrendingDown, TrendingUp, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -153,7 +153,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
             const pct = Math.abs(item.deltaPct).toFixed(0);
 
             return (
-              <motion.div
+              <m.div
                 key={item.id}
                 initial={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0, overflow: "hidden" }}
@@ -211,7 +211,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                   <X className="h-3 w-3" />
                   Entendido
                 </button>
-              </motion.div>
+              </m.div>
             );
           })}
         </AnimatePresence>

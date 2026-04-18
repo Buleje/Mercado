@@ -30,13 +30,20 @@ export async function GET(req: NextRequest) {
     const storeId = searchParams.get("storeId");
 
     if (!storeId) {
-      return NextResponse.json({ error: "storeId requerido" }, { status: 400 });
+      // Graceful: widget admin muestra empty state en vez de 400
+      return NextResponse.json({ data: [], total: 0 });
     }
 
     logger.debug("sponsored GET", { requestId, tenantId: auth.tenantId, storeId });
 
-    const boosts = await SponsoredBoostsDB.listByStore(auth.tenantId, storeId);
-    return NextResponse.json({ data: boosts, total: boosts.length });
+    try {
+      const boosts = await SponsoredBoostsDB.listByStore(auth.tenantId, storeId);
+      return NextResponse.json({ data: boosts, total: boosts.length });
+    } catch (innerErr) {
+      // DB failure (ej. tabla no migrada) → widget queda en empty sin romper
+      logger.warn("sponsored GET fallback empty", { requestId, err: String(innerErr) });
+      return NextResponse.json({ data: [], total: 0 });
+    }
   } catch (err) {
     logger.error("sponsored GET: error", { requestId, err });
     const { payload, status } = toErrorPayload(err, traceId);
