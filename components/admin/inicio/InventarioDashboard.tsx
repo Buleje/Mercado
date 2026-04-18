@@ -3,9 +3,8 @@
 import { StatCard } from "@buleje/design-system";
 import { useMemo, useState } from "react";
 import {
-  Package, AlertTriangle, Timer, TrendingDown, TrendingUp,
-  ArrowUpRight, ArrowDownRight, RefreshCw, Layers, ShoppingCart,
-  DollarSign, BarChart3,
+  Package, AlertTriangle, Timer, TrendingUp,
+  DollarSign,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -252,56 +251,22 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
   );
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
-
-function KPICard({ label, value, Icon, delta, accent }: {
-  label: string; value: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  delta?: number | null;
-  accent: "emerald" | "blue" | "violet" | "cyan" | "amber" | "red";
-}) {
-  const isPositive = delta != null ? delta >= 0 : false;
-  const colorMap = {
-    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
-    blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]" },
-    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
-    cyan: { bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30", icon: "text-cyan-500" },
-    amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: "text-amber-500" },
-    red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: "text-red-500" },
-  };
-  const c = colorMap[accent];
-
-  return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
-          <Icon className={cn("h-4.5 w-4.5", c.icon)} />
-        </div>
-        {delta != null && (
-          <div className={cn("flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-bold",
-            isPositive ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
-          )}>
-            {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-            {Math.abs(delta).toFixed(1)}%
-          </div>
-        )}
-      </div>
-      <p className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">{label}</p>
-    </div>
-  );
-}
-
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28 animate-pulse" />)}
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
       </div>
+      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
+      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-64 animate-pulse" />)}
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
       </div>
     </div>
   );
