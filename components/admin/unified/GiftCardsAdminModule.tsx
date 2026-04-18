@@ -8,7 +8,7 @@
  * extender vencimientos y emitir cards manuales por compensación.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Gift,
   DollarSign,
@@ -29,6 +29,53 @@ import {
   type GiftCardDetails,
 } from "./gift-cards-admin/GiftCardDetailsModal";
 import { CreateManualGiftCardModal } from "./gift-cards-admin/CreateManualGiftCardModal";
+
+// ADR-077: cargar data real desde el backend.
+type AdminStats = {
+  vendidas30d: number;
+  ingreso30d: number;
+  canjeadas30d: number;
+  saldoPendiente: number;
+  totalActivas: number;
+  totalCanceladas: number;
+};
+
+type ApiGiftCard = {
+  id: string;
+  code: string; // masked "****-****-****-XXXX"
+  amount: number;
+  balance: number;
+  recipientName: string;
+  recipientContact?: string;
+  senderName?: string;
+  message?: string;
+  status: "activa" | "canjeada" | "expirada";
+  createdAt: string;
+  expiresAt?: string | null;
+  redeemedAt?: string | null;
+};
+
+function toGiftCardDetails(card: ApiGiftCard): GiftCardDetails {
+  const statusMap: Record<string, GiftCardDetails["status"]> = {
+    activa: "pendiente",
+    canjeada: "canjeada",
+    expirada: "expirada",
+  };
+  return {
+    id: card.id,
+    code: card.code,
+    amount: card.amount,
+    balance: card.balance,
+    recipientName: card.recipientName,
+    recipientPhone: card.recipientContact,
+    senderName: card.senderName ?? "",
+    message: card.message ?? "",
+    status: statusMap[card.status] ?? "pendiente",
+    createdAt: card.createdAt,
+    expiresAt: card.expiresAt ?? "",
+    redeemedAt: card.redeemedAt ?? undefined,
+  };
+}
 
 // ── Mock data ───────────────────────────────────────────────────────────────
 
@@ -168,11 +215,46 @@ const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function GiftCardsAdminModule() {
-  const [cards, setCards] = useState<GiftCardDetails[]>(MOCK_CARDS);
+  const [cards, setCards] = useState<GiftCardDetails[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<GiftCardDetails["status"] | "all">("all");
   const [selected, setSelected] = useState<GiftCardDetails | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [issuedCode, setIssuedCode] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [listRes, statsRes] = await Promise.all([
+        fetch("/api/admin/gift-cards", { cache: "no-store" }),
+        fetch("/api/admin/gift-cards/stats", { cache: "no-store" }),
+      ]);
+      if (listRes.ok) {
+        const data = (await listRes.json()) as { cards: ApiGiftCard[] };
+        setCards(data.cards.map(toGiftCardDetails));
+      } else {
+        // Dev fallback: si no hay auth admin, dejamos el array vacio
+        setCards([]);
+      }
+      if (statsRes.ok) {
+        const data = (await statsRes.json()) as { stats: AdminStats };
+        setStats(data.stats);
+      }
+    } catch {
+      setCards([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refetch();
+  }, [refetch]);
+
+  // Suprimir referencias no usadas al mock (se deja para referencia rapida en dev).
+  void MOCK_CARDS;
 
   const filtered = useMemo(() => {
     return cards.filter((c) => {
@@ -187,30 +269,45 @@ export default function GiftCardsAdminModule() {
     });
   }, [cards, search, statusFilter]);
 
-  // KPIs este mes
-  const now = new Date();
-  const thisMonth = (iso: string) => {
-    const d = new Date(iso);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  // KPIs: prioriza stats reales del backend; fallback calculo local sobre las
+  // cards cargadas si stats aun no esta disponible.
+  const vendidasEsteMes = stats?.vendidas30d ?? cards.length;
+  const canjeadasEsteMes = stats?.canjeadas30d ?? cards.filter((c) => c.redeemedAt).length;
+  const ingresoEsteMes =
+    stats?.ingreso30d ?? cards.reduce((sum, c) => sum + c.amount, 0);
+  const saldoPendiente =
+    stats?.saldoPendiente ??
+    cards
+      .filter((c) => c.status === "pendiente")
+      .reduce((sum, c) => sum + c.balance, 0);
+
+  const handleCancel = async (id: string) => {
+    const reason = window.prompt("Motivo de la cancelacion:", "Solicitud del cliente");
+    if (!reason || reason.trim().length < 3) return;
+
+    try {
+      const res = await fetch(`/api/admin/gift-cards/${id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+      if (res.ok) {
+        setCards((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, status: "cancelada", balance: 0 } : c)),
+        );
+        setSelected(null);
+        void refetch();
+      }
+    } catch {
+      /* noop */
+    }
   };
 
-  const vendidasEsteMes = cards.filter((c) => thisMonth(c.createdAt));
-  const canjeadasEsteMes = cards.filter((c) => c.redeemedAt && thisMonth(c.redeemedAt));
-  const ingresoEsteMes = vendidasEsteMes.reduce((sum, c) => sum + c.amount, 0);
-  const saldoPendiente = cards
-    .filter((c) => c.status === "pendiente")
-    .reduce((sum, c) => sum + c.balance, 0);
-
-  const handleCancel = (id: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: "cancelada" as const, balance: 0 } : c))
-    );
-    setSelected(null);
-  };
-
+  // TODO(ADR-077 follow-up): implementar endpoint /extend. Por ahora queda
+  // como optimistic local update — no persiste. La UI avisa cuando hay API.
   const handleExtend = (id: string, newExpiry: string) => {
     setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, expiresAt: newExpiry } : c))
+      prev.map((c) => (c.id === id ? { ...c, expiresAt: newExpiry } : c)),
     );
     setSelected((s) => (s?.id === id ? { ...s, expiresAt: newExpiry } : s));
   };
@@ -223,25 +320,34 @@ export default function GiftCardsAdminModule() {
     expiresAt: string;
     reason: string;
   }) => {
-    const code = `GIFT-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    const newCard: GiftCardDetails = {
-      id: `GC-${Date.now()}`,
-      code,
-      amount: data.amount,
-      balance: data.amount,
-      recipientName: data.recipientName,
-      recipientPhone: data.recipientPhone,
-      senderName: `Admin (${data.reason})`,
-      message: data.message,
-      status: "pendiente",
-      createdAt: new Date().toISOString().split("T")[0],
-      expiresAt: data.expiresAt || (() => {
-        const d = new Date();
-        d.setFullYear(d.getFullYear() + 1);
-        return d.toISOString().split("T")[0];
-      })(),
-    };
-    setCards((prev) => [newCard, ...prev]);
+    try {
+      const res = await fetch("/api/admin/gift-cards/issue-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Math.floor(data.amount),
+          recipientName: data.recipientName,
+          recipientPhone: data.recipientPhone || null,
+          message: data.message || undefined,
+          expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : null,
+          reason: data.reason,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("No se pudo emitir la gift card");
+      }
+      const payload = (await res.json()) as {
+        plainCode?: string;
+        giftCard?: ApiGiftCard;
+      };
+      if (payload.plainCode) setIssuedCode(payload.plainCode);
+      if (payload.giftCard) {
+        setCards((prev) => [toGiftCardDetails(payload.giftCard!), ...prev]);
+      }
+      void refetch();
+    } catch {
+      throw new Error("No se pudo emitir la gift card. Intenta nuevamente.");
+    }
   };
 
   return (
@@ -263,22 +369,22 @@ export default function GiftCardsAdminModule() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPICard
-          label="Vendidas este mes"
-          value={vendidasEsteMes.length}
+          label="Vendidas (30d)"
+          value={vendidasEsteMes}
           icon={Gift}
           color="#00B4A6"
           subtitle="Tarjetas emitidas"
         />
         <KPICard
-          label="Ingreso este mes"
+          label="Ingreso (30d)"
           value={fmt(ingresoEsteMes)}
           icon={DollarSign}
           color="#10B981"
           subtitle="Monto vendido"
         />
         <KPICard
-          label="Canjeadas este mes"
-          value={canjeadasEsteMes.length}
+          label="Canjeadas (30d)"
+          value={canjeadasEsteMes}
           icon={CheckCircle}
           color="#3B82F6"
           subtitle="Tarjetas redimidas"
@@ -292,6 +398,54 @@ export default function GiftCardsAdminModule() {
           alert={saldoPendiente > 2000}
         />
       </div>
+
+      {loading && (
+        <div className="text-xs text-[var(--text-tertiary)]">Cargando datos...</div>
+      )}
+
+      {/* Modal cuando un admin emite gift card manual — muestra el plainCode UNA vez */}
+      {issuedCode && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setIssuedCode(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+              Codigo generado
+            </h3>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
+              (WhatsApp, email, impreso). No lo podemos recuperar despues.
+            </p>
+            <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-gray-100 px-3 py-3">
+              <code className="font-mono text-base font-bold tracking-wider text-[var(--text-primary)]">
+                {issuedCode}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(issuedCode).catch(() => {});
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-primary-dark transition-colors"
+              >
+                Copiar
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIssuedCode(null)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+              >
+                Listo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
