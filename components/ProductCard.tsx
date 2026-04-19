@@ -119,13 +119,16 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     setSoldCount(getSellingCount(product.id));
   }, [product.id]);
 
-  /* Z1: Recently viewed badge — deferred to avoid localStorage read on mount for every card */
+  /* Z1: Recently viewed badge — deferred via queueMicrotask para cumplir
+     react-hooks/set-state-in-effect (no setState síncrono dentro del effect). */
   const [recentlyViewed, setRecentlyViewed] = useState(false);
   useEffect(() => {
-    try {
-      const items: { id: number }[] = JSON.parse(localStorage.getItem("buleje-recently-viewed") || "[]");
-      setRecentlyViewed(items.slice(0, 5).some((p) => p.id === product.id));
-    } catch {}
+    queueMicrotask(() => {
+      try {
+        const items: { id: number }[] = JSON.parse(localStorage.getItem("buleje-recently-viewed") || "[]");
+        setRecentlyViewed(items.slice(0, 5).some((p) => p.id === product.id));
+      } catch {}
+    });
   }, [product.id]);
 
   /* Y1+M11: Offer countdown — uses promoEndDate if available, else midnight */

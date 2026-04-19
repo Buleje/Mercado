@@ -417,19 +417,19 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               B
             </div>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+              <h2 className="font-display text-3xl font-semibold italic text-gray-900 dark:text-white tracking-[-0.015em]">
                 {step === "otp"
                   ? "Verificación"
                   : tab === "register"
                     ? "Crea tu cuenta"
                     : "¡Hola de nuevo!"}
               </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {step === "otp"
                   ? "Ingresa el código que te enviamos"
                   : tab === "register"
-                    ? "Regístrate y empieza a comprar"
-                    : "Inicia sesión para continuar"}
+                    ? "Regístrate y empezá a comprar en tu barrio"
+                    : "Volvé a tu bodega de confianza"}
               </p>
             </div>
           </div>
