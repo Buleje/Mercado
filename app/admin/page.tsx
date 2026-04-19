@@ -25,6 +25,7 @@ import {
 } from "./_hooks";
 
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
+import { AdminKPIBanner } from "@/components/admin/AdminKPIBanner";
 import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminNavigation } from "./_components/AdminNavigation";
@@ -295,6 +296,16 @@ function AdminPage() {
             onClearDemoData: clearDemoData,
           }}
         />
+
+        {/* KPI banner — muestra Ventas hoy · Pedidos pendientes · Stock crítico.
+            Siempre visible al inicio del main content para que el dueño tenga
+            el pulso del negocio sin buscar. Oculto automáticamente si el API
+            falla (degradación silenciosa). */}
+        {!presentationMode && (
+          <div className="px-4 pt-4 sm:px-6 lg:px-8">
+            <AdminKPIBanner />
+          </div>
+        )}
 
         <AdminMainContent
           tab={tab}

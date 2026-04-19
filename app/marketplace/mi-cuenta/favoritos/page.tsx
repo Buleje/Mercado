@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
+import { EmptyState } from "@/components/ui-system/EmptyState";
 import type { DbFavoriteProduct } from "@/lib/db/favorites.db";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -75,17 +77,19 @@ export default function FavoritosPage() {
 
   if (favorites.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aun no tienes productos guardados.
-        </p>
-        <a
-          href="/marketplace"
-          className="mt-3 inline-block text-sm font-medium text-[#2d6a4f] hover:underline dark:text-[#52b788]"
-        >
-          Explorar productos
-        </a>
-      </div>
+      <EmptyState
+        eyebrow="Favoritos"
+        title="Aún no guardaste productos"
+        description="Tocá el corazón sobre cualquier producto del marketplace y aparecerá acá para volver a comprarlo rápido."
+        action={
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Explorar productos
+          </Link>
+        }
+      />
     );
   }
 

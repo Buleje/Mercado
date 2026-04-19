@@ -16,6 +16,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductDetailClient } from "@/components/marketplace/product-detail/ProductDetailClient";
+import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
 import type { RelatedProduct } from "@/components/marketplace/product-detail/ProductRelated";
 
 // ── Types desde la API ─────────────────────────────────────────────────────────
@@ -225,6 +226,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
   return (
     <>
       <ProductJsonLd product={product} slug={slug} productId={productId} />
+
+      {/* Breadcrumbs — cliente puede volver a la tienda o al marketplace en 1 click. */}
+      <div className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { label: "Marketplace", href: "/marketplace" },
+            { label: product.store.name, href: `/marketplace/${slug}` },
+            ...(product.category
+              ? [{ label: product.category, href: `/marketplace/${slug}?categoria=${encodeURIComponent(product.category)}` }]
+              : []),
+            { label: product.name },
+          ]}
+        />
+      </div>
+
       <ProductDetailClient
         product={{
           id: product.id,

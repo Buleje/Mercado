@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
+import { EmptyState } from "@/components/ui-system/EmptyState";
 import type { DbCustomerCoupon } from "@/lib/db/customer-coupons.db";
 import { cn } from "@/lib/utils";
 
@@ -79,14 +81,19 @@ export default function CuponesPage() {
 
   if (coupons.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aun no tienes cupones disponibles.
-        </p>
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-          Los cupones llegaran aqui cuando hagas compras o te los asignen.
-        </p>
-      </div>
+      <EmptyState
+        eyebrow="Cupones"
+        title="Aún no tienes cupones"
+        description="Los cupones aparecerán acá cuando la tienda te los asigne o cuando completes una compra con promoción."
+        action={
+          <Link
+            href="/marketplace/ofertas"
+            className="inline-flex items-center rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Ver ofertas del día
+          </Link>
+        }
+      />
     );
   }
 

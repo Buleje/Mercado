@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { z } from "zod/v4";
 import { useCustomer } from "@/contexts/customer-context";
 import type { SavedLocation } from "@/contexts/customer-context";
+import { EmptyState } from "@/components/ui-system/EmptyState";
 import { cn } from "@/lib/utils";
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -199,11 +200,20 @@ export default function DireccionesPage() {
 
       {/* Empty */}
       {locations.length === 0 && !showForm && (
-        <div className="py-12 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Aun no tienes direcciones guardadas.
-          </p>
-        </div>
+        <EmptyState
+          eyebrow="Direcciones"
+          title="Aún no tienes direcciones guardadas"
+          description="Agrega al menos una dirección para que tus pedidos lleguen al lugar correcto sin escribirla cada vez."
+          action={
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="inline-flex items-center rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Agregar dirección
+            </button>
+          }
+        />
       )}
 
       {/* List */}
