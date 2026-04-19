@@ -121,7 +121,7 @@ function AdminPage() {
 
   const { toggle: toggleTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
-  const _webhookPendingCount = useWebhookPendingCount(userRole);
+  const _webhookPendingCount = useWebhookPendingCount(userRole, authReady);
   void _webhookPendingCount;
 
   useAdminNavigateEvent(navigateTab);

@@ -71,17 +71,16 @@ export function useAdminAuth(onUnauth: () => void): UseAdminAuthResult {
       })
       .catch(() => {});
 
-    // 2. Auth me (autoritativo)
+    // 2. Auth me (autoritativo) — ahora devuelve 200 con role:null si no hay sesion
     fetch("/api/auth/me")
       .then((r) => {
         if (!r.ok) throw new Error("unauth");
         return r.json() as Promise<AuthMeResponse>;
       })
       .then((d) => {
-        if (d?.role) {
-          setUserRole(d.role);
-          setUserName(d.username ?? "admin");
-        }
+        if (!d?.role) throw new Error("no-session");
+        setUserRole(d.role);
+        setUserName(d.username ?? "admin");
         setAuthReady(true);
       })
       .catch(() => {

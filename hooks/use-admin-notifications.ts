@@ -18,8 +18,8 @@ interface NotificationState {
 
 /**
  * Hook for real-time admin notifications via SSE.
- * Connects to /api/admin/notifications/stream.
- * Auto-reconnects on disconnect.
+ * Connects to /api/admin/notifications/stream SOLO si hay sesión admin.
+ * Auto-reconnects on disconnect (pero no si nunca hubo auth).
  */
 export function useAdminNotifications() {
   const [state, setState] = useState<NotificationState>({
@@ -32,7 +32,10 @@ export function useAdminNotifications() {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     function connect() {
+      if (cancelled) return;
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
@@ -65,13 +68,28 @@ export function useAdminNotifications() {
       es.onerror = () => {
         es.close();
         setState((prev) => ({ ...prev, connected: false }));
-        reconnectTimerRef.current = setTimeout(connect, 10_000);
+        // Re-verificar auth antes de reconectar (evita loop 401 infinito)
+        reconnectTimerRef.current = setTimeout(() => {
+          fetch("/api/auth/me")
+            .then((r) => r.json())
+            .then((d) => {
+              if (!cancelled && d?.role === "admin") connect();
+            })
+            .catch(() => { /* auth check silent fail — reconexion deferida */ });
+        }, 10_000);
       };
     }
 
-    connect();
+    // Gate inicial: solo conectar SSE si hay sesion admin confirmada
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d?.role === "admin") connect();
+      })
+      .catch(() => { /* auth check silent fail — no SSE connect */ });
 
     return () => {
+      cancelled = true;
       eventSourceRef.current?.close();
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };

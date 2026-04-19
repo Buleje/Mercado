@@ -5,11 +5,13 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  // Retornamos 200 con role:null cuando no hay sesion para evitar ruido 401
+  // en la consola del browser. El caller debe chequear d?.role truthy.
   const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ role: null }, { status: 401 });
+  if (!token) return NextResponse.json({ role: null, authenticated: false });
   const payload = await getSessionPayload(token);
-  if (!payload) return NextResponse.json({ role: null }, { status: 401 });
-  return NextResponse.json(payload);
+  if (!payload) return NextResponse.json({ role: null, authenticated: false });
+  return NextResponse.json({ ...payload, authenticated: true });
 }
 
 const UpdateProfileSchema = z.object({

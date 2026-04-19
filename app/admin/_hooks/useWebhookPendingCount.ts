@@ -21,11 +21,12 @@ interface WebhookQueueItem {
 
 const POLL_INTERVAL_MS = 60_000;
 
-export function useWebhookPendingCount(userRole: AdminRole): number {
+export function useWebhookPendingCount(userRole: AdminRole, authReady: boolean = true): number {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (userRole !== "admin") return;
+    // Gate: solo fetch cuando auth confirmado Y rol sea admin
+    if (!authReady || userRole !== "admin") return;
 
     const fetchCount = () =>
       fetch("/api/billing/webhook-queue")
@@ -38,7 +39,7 @@ export function useWebhookPendingCount(userRole: AdminRole): number {
     fetchCount();
     const interval = setInterval(fetchCount, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [userRole]);
+  }, [userRole, authReady]);
 
   return count;
 }
