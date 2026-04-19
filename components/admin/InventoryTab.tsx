@@ -10,6 +10,7 @@ import {
   Warehouse, Maximize2, Copy,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Image from "next/image";
@@ -763,46 +764,59 @@ export default function InventoryTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header — formato estandar: icono + titulo + subtitulo + acciones */}
+      {/* Header — formato editorial con acciones primarias + menu de más acciones */}
       <AdminModuleHeader
         icon={Warehouse}
-        bgTint="bg-amber-50 dark:bg-amber-900/20"
-        iconColorClass="text-amber-500 dark:text-amber-400"
-        title="Inventario"
-        description="Productos, stock y movimientos"
+        eyebrow="Inventario · Catálogo y stock"
+        title="Tu stock"
+        description="Productos, movimientos y alertas de reposición. Saber qué hay y qué falta en tu bodega."
       >
-        {/* View toggle */}
-        <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 overflow-x-auto">
+        {/* View toggle — segmented control */}
+        <div className="flex bg-[var(--surface-sunken)] rounded-lg p-0.5 overflow-x-auto">
           {(["productos", "kanban"] as const).map(v => (
             <button
               key={v}
               onClick={() => setView(v)}
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
-                view === v ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground"
+                view === v
+                  ? "bg-[var(--surface-canvas)] text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
-              {v === "productos" ? "Productos" : "Vista rapida"}
+              {v === "productos" ? "Productos" : "Vista rápida"}
             </button>
           ))}
         </div>
-        <button
-          onClick={() => setShowScanner(true)}
-          disabled={scanLoading}
-          className="flex items-center gap-1.5 text-sm font-medium rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
-        >
-          {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
-          {scanLoading ? "Buscando..." : "Escanear"}
-        </button>
+
+        {/* Acción primaria — "Nuevo producto" destacado */}
         <button
           onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-          className="flex items-center gap-1.5 text-sm font-medium text-white rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] px-4 py-2.5 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
-          <Plus className="h-4 w-4" /> Nuevo
+          <Plus className="h-4 w-4" strokeWidth={2} /> Nuevo
         </button>
-        <button onClick={load} disabled={loading} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors text-[var(--text-secondary)] dark:text-muted">
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-        </button>
+
+        {/* Acciones secundarias — agrupadas en dropdown */}
+        <ModuleActionMenu
+          items={[
+            {
+              label: scanLoading ? "Buscando..." : "Escanear código de barras",
+              icon: ScanBarcode,
+              onClick: () => setShowScanner(true),
+              disabled: scanLoading,
+              description: "Añadir producto con lector de barras",
+            },
+            {
+              label: loading ? "Actualizando..." : "Actualizar",
+              icon: RefreshCw,
+              onClick: load,
+              disabled: loading,
+              description: "Recargar datos del servidor",
+              dividerBefore: true,
+            },
+          ]}
+        />
       </AdminModuleHeader>
 
       {/* Toolbar — busqueda + filtros + acciones en UNA barra */}
