@@ -101,23 +101,23 @@ function VariantBadge({
   if (variant === "top" && rank !== undefined) {
     const rankMeta: Record<
       number,
-      { bg: string; text: string; label: string }
+      { bg: string; text: string }
     > = {
-      1: { bg: "bg-amber-400 dark:bg-amber-500", text: "text-white", label: "🥇" },
-      2: { bg: "bg-gray-300 dark:bg-gray-500", text: "text-gray-800 dark:text-white", label: "🥈" },
-      3: { bg: "bg-orange-400 dark:bg-orange-500", text: "text-white", label: "🥉" },
+      1: { bg: "bg-[var(--color-primary)] dark:bg-[var(--color-primary)]", text: "text-white" },
+      2: { bg: "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]", text: "text-[var(--text-primary)] dark:text-[var(--text-primary)]" },
+      3: { bg: "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-secondary)]" },
     };
     const meta = rankMeta[rank] ?? rankMeta[3];
     return (
       <span
         className={cn(
-          "absolute top-2 left-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-black shadow-md",
+          "absolute top-2 left-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black border border-[var(--rule-base)]",
           meta.bg,
           meta.text
         )}
         aria-label={`Posición ${rank}`}
       >
-        {meta.label}
+        {rank}
       </span>
     );
   }
