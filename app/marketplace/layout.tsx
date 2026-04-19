@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import StoreProviders from "@/components/StoreProviders";
@@ -39,7 +40,12 @@ export default function MarketplaceLayout({
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
           <MarketplaceNavbar />
           <ContextualHintBar />
-          <main id="main-content">{children}</main>
+          {/* Suspense explicito: Next 16 Cache Components exige boundary
+              para data fetching en children (evita blocking-route warning).
+              Ver ADR-019. */}
+          <Suspense fallback={null}>
+            <main id="main-content">{children}</main>
+          </Suspense>
           <CompareFloatingBadge />
           <ProductCompareDrawer />
         </div>

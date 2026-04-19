@@ -367,11 +367,26 @@ export const SocioBulejeDB: ISocioBulejeDB = {
     userId: string,
   ): Promise<SocioMembershipWithBalance | null> {
     return getOrSet(membershipCacheKey(tenantId, userId), CACHE_TTL_SEC, async () => {
-      const membership = await pdb.socioMembership.findUnique({
-        where: { tenantId_userId: { tenantId, userId } },
-      });
-      if (!membership) return null;
-      return hydrateWithBalance(membership);
+      try {
+        const membership = await pdb.socioMembership.findUnique({
+          where: { tenantId_userId: { tenantId, userId } },
+        });
+        if (!membership) return null;
+        return hydrateWithBalance(membership);
+      } catch (e: unknown) {
+        // Graceful fallback: si la migration de socio_memberships aún no
+        // corrió (P2021), tratamos como "sin membership" en lugar de 500.
+        // Mismo patrón que subscriptions.db.ts:listForUser.
+        const err = e as { code?: string };
+        if (err?.code === "P2021") {
+          logger.warn("[socio-buleje.db] socio_memberships table missing — returning null", {
+            tenantId,
+            userId,
+          });
+          return null;
+        }
+        throw e;
+      }
     });
   },
 
