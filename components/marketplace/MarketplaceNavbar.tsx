@@ -163,6 +163,7 @@ export default function MarketplaceNavbar() {
   const router = useRouter();
   const pathname = usePathname();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
   const { count: wishlistCount } = useWishlist();
   const { customer, clear } = useCustomer();
@@ -203,6 +204,33 @@ export default function MarketplaceNavbar() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen]);
+
+  // Autofocus search al abrir drawer mobile
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const timer = setTimeout(() => mobileSearchRef.current?.focus(), 60);
+    return () => clearTimeout(timer);
+  }, [mobileMenuOpen]);
+
+  // Body scroll lock mientras drawer mobile abierto
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileMenuOpen]);
+
+  // Escape cierra drawer mobile
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileMenuOpen]);
 
   const isActive = (link: NavLink) => {
     if (!pathname) return false;
@@ -481,7 +509,7 @@ export default function MarketplaceNavbar() {
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                 aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                 aria-expanded={mobileMenuOpen}
-                aria-controls="mobile-menu"
+                aria-controls="mobile-drawer"
               >
                 {mobileMenuOpen ? (
                   <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
@@ -492,18 +520,50 @@ export default function MarketplaceNavbar() {
             </div>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile menu dropdown — lista básica */}
-        {mobileMenuOpen && (
-          <div
-            id="mobile-menu"
-            className="md:hidden border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
+      {/* ── Mobile drawer lateral ── */}
+      {mobileMenuOpen && (
+        <div className="md:hidden" role="presentation">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Cerrar menú"
+            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+          />
+          <aside
+            id="mobile-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú del marketplace"
+            className="fixed inset-y-0 right-0 z-[70] flex w-[90vw] max-w-sm flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200"
           >
+            {/* Header drawer */}
+            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3">
+              <span className="inline-flex items-center gap-2 text-[var(--accent)]">
+                <BulejeWordmark
+                  size={28}
+                  strokeWidth={1.75}
+                  textSize={16}
+                  className="text-[var(--accent)] dark:text-white"
+                />
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Cerrar menú"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            {/* Search top, autofocus */}
             <form
               onSubmit={handleSearch}
               role="search"
               aria-label={t("nav.search")}
-              className="px-4 py-3 border-b border-[var(--rule-soft)]"
+              className="border-b border-[var(--rule-soft)] px-4 py-3"
             >
               <div className="relative">
                 <Search
@@ -512,6 +572,7 @@ export default function MarketplaceNavbar() {
                   strokeWidth={1.75}
                 />
                 <input
+                  ref={mobileSearchRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -521,55 +582,67 @@ export default function MarketplaceNavbar() {
                 />
               </div>
             </form>
-            <div className="px-3 py-3 space-y-0.5">
-              {PRIMARY_LINKS.map((link) => {
-                if (link.discover) return null;
-                const active = isActive(link);
-                const LinkIcon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
-                      active
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900",
-                    )}
-                  >
-                    <LinkIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                    <span className="flex-1">{t(link.labelKey)}</span>
-                    {link.showLiveDot && hasActiveLive && (
-                      <span
-                        aria-label={t("nav.liveNow")}
-                        className="relative inline-flex h-2 w-2"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error)] opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error)]" />
+
+            {/* Scrollable: links + mega-menu + switchers */}
+            <div className="flex-1 overflow-y-auto px-3 py-3">
+              <div className="space-y-0.5">
+                {PRIMARY_LINKS.map((link) => {
+                  if (link.discover) return null;
+                  const active = isActive(link);
+                  const LinkIcon = link.icon;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
+                        active
+                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900",
+                      )}
+                    >
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-gray-50 dark:bg-gray-900">
+                        <LinkIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                       </span>
-                    )}
-                    {link.showNewBadge && (
-                      <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--data-warning)]">
-                        {t("nav.new")}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+                      <span className="flex-1">{t(link.labelKey)}</span>
+                      {link.showLiveDot && hasActiveLive && (
+                        <span
+                          aria-label={t("nav.liveNow")}
+                          className="relative inline-flex h-2 w-2"
+                        >
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error)] opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error)]" />
+                        </span>
+                      )}
+                      {link.showNewBadge && (
+                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                          {t("nav.new")}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Separator + Descubrí mega-menu */}
+              <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
+                <DiscoverMegaMenu
+                  variant="mobile"
+                  onNavigate={() => setMobileMenuOpen(false)}
+                />
+              </div>
+
+              {/* Separator + Locale/Currency horizontal compact */}
+              <div className="mt-3 flex items-center gap-2 border-t border-[var(--rule-soft)] pt-3">
+                <CurrencySwitcher />
+                <LocaleSwitcher />
+              </div>
             </div>
-            <div className="px-4 py-3 border-t border-[var(--rule-soft)]">
-              <DiscoverMegaMenu
-                variant="mobile"
-                onNavigate={() => setMobileMenuOpen(false)}
-              />
-            </div>
-            <div className="px-4 py-3 border-t border-[var(--rule-soft)] flex items-center gap-2">
-              <CurrencySwitcher />
-              <LocaleSwitcher />
-            </div>
-            <div className="px-3 py-3 border-t border-[var(--rule-soft)] space-y-1">
+
+            {/* Footer drawer — auth + theme fijo abajo */}
+            <div className="border-t border-[var(--rule-soft)] px-3 py-3 space-y-1">
               {customer ? (
                 <>
                   <Link
@@ -586,6 +659,18 @@ export default function MarketplaceNavbar() {
                       {t("nav.account")}
                       {customer.name ? ` — ${customer.name.split(" ")[0]}` : ""}
                     </span>
+                  </Link>
+                  <Link
+                    href="/mis-pedidos"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  >
+                    <Package
+                      className="h-4 w-4 text-gray-500"
+                      aria-hidden="true"
+                      strokeWidth={1.75}
+                    />
+                    <span>{t("nav.orders")}</span>
                   </Link>
                   <Link
                     href="/marketplace/favoritos"
@@ -658,9 +743,9 @@ export default function MarketplaceNavbar() {
                 </button>
               )}
             </div>
-          </div>
-        )}
-      </nav>
+          </aside>
+        </div>
+      )}
 
       <MarketplaceCart
         isOpen={cartOpen}
