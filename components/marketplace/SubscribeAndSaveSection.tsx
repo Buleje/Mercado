@@ -23,6 +23,7 @@ import {
   type SubscribableProductMock,
 } from "@/lib/mocks/subscriptions.mock";
 import { cn } from "@/lib/utils";
+import MarketplaceSection, { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 
 const fmtMoney = (n: number) =>
   `S/ ${n.toLocaleString("es-PE", {
@@ -93,41 +94,12 @@ export default function SubscribeAndSaveSection() {
   if (products.length === 0) return null;
 
   return (
-    <section
-      aria-labelledby="subscribe-save-title"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-    >
-      <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
-            <Repeat
-              className="h-4 w-4 text-[var(--text-secondary)]"
-              aria-hidden
-            />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle id="subscribe-save-title" className="text-[length:var(--ts-lg)]">
-                Productos que podes suscribir y ahorrar 5%
-              </CardTitle>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5",
-                  "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-                  "border border-[var(--rule-base)] bg-[var(--surface-sunken)]",
-                  "text-[var(--text-secondary)]",
-                )}
-              >
-                <BadgePercent className="h-3 w-3" aria-hidden />
-                Bodega al Mes
-              </span>
-            </div>
-            <Caption className="mt-0.5 text-[var(--text-tertiary)]">
-              Entrega automatica, pausa o cancela cuando quieras. Tu bodega
-              recuerda por vos.
-            </Caption>
-          </div>
-        </div>
+    <MarketplaceSection
+      id="subscribe-save"
+      kicker="Bodega al Mes"
+      title="Productos que podes suscribir y ahorrar 5%"
+      subtitle="Entrega automatica, pausa o cancela cuando quieras. Tu bodega recuerda por vos."
+      actions={
         <Link
           href="/cuenta/suscripciones"
           className={cn(
@@ -138,10 +110,10 @@ export default function SubscribeAndSaveSection() {
           Ver mis suscripciones
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
-      </div>
-
+      }
+    >
       {/* Desktop grid */}
-      <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className={cn("hidden sm:grid", MARKETPLACE_GRID)}>
         {products.slice(0, 8).map((p) => (
           <SubscribableCard key={p.productId} product={p} />
         ))}
@@ -158,6 +130,6 @@ export default function SubscribeAndSaveSection() {
           </div>
         ))}
       </div>
-    </section>
+    </MarketplaceSection>
   );
 }

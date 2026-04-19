@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -253,7 +254,7 @@ export default function CatalogView({
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className={MARKETPLACE_GRID}>
           {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
@@ -275,7 +276,7 @@ export default function CatalogView({
       {!loading && products.length > 0 && (
         <div
           ref={gridRef}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4"
+          className={MARKETPLACE_GRID}
         >
           {products.map((product, i) => (
             <div key={`${product.storeId}-${product.productId}`} className="relative">

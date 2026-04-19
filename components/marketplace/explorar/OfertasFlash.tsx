@@ -8,6 +8,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import {
   VerduraFresca,
   CarniceriaFresca,
@@ -79,32 +80,21 @@ const OFERTAS: OfertaCard[] = [
 
 export default function OfertasFlash() {
   return (
-    <section
-      aria-labelledby="ofertas-flash-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
-    >
-      <header className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
-        <div>
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
-            Esta semana
-          </span>
-          <h2
-            id="ofertas-flash-heading"
-            className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white"
-          >
-            Ofertas destacadas
-          </h2>
-        </div>
+    <MarketplaceSection
+      id="ofertas-destacadas"
+      kicker="Esta semana"
+      title="Ofertas destacadas"
+      actions={
         <Link
           href="/marketplace/ofertas"
-          className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline shrink-0"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline shrink-0"
         >
-          Ver todas las ofertas
+          Ver todas
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
         </Link>
-      </header>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
+      }
+    >
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {OFERTAS.map((oferta) => {
           const Ill = oferta.Illustration;
           return (
@@ -123,7 +113,7 @@ export default function OfertasFlash() {
                 <Ill size={80} strokeWidth={1.5} />
               </div>
 
-              <div className="p-3 sm:p-4">
+              <div className="p-3">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
                   {oferta.title}
                 </h3>
@@ -135,17 +125,6 @@ export default function OfertasFlash() {
           );
         })}
       </div>
-
-      {/* CTA mobile (link "ver todas" se oculta en mobile del header) */}
-      <div className="mt-6 sm:hidden">
-        <Link
-          href="/marketplace/ofertas"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
-        >
-          Ver todas las ofertas
-          <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-        </Link>
-      </div>
-    </section>
+    </MarketplaceSection>
   );
 }

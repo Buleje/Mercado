@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
+import { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -173,8 +174,7 @@ export default function CatalogSections() {
     return null;
   }
 
-  const gridCols =
-    "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
+  const gridCols = MARKETPLACE_GRID;
 
   return (
     <div className="mt-8 space-y-2">

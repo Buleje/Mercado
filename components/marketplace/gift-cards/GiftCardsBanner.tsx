@@ -11,7 +11,7 @@ import GiftCardArtwork from "./shared/GiftCardArtwork";
  */
 export default function GiftCardsBanner() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href="/marketplace/gift-cards"
         className="group flex items-center gap-5 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-400 hover:shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600"
