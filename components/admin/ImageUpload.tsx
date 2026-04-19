@@ -5,6 +5,8 @@ import Image from "next/image";
 import { LoadingState } from "@buleje/design-system";
 import { Upload, X, ImageIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { validateProductImage, type ImageValidationResult } from "@/lib/image-validator";
+import { ImageValidationPanel } from "@/components/admin/shared/ImageValidationPanel";
 
 type ImageUploadProps = {
   value?: string;
@@ -15,6 +17,12 @@ type ImageUploadProps = {
   hint?: string;
   className?: string;
   aspectRatio?: "square" | "video" | "banner";
+  /**
+   * Si true, valida la imagen contra el estándar de producto del marketplace
+   * (resolución, peso, fondo, formato). Muestra warnings/errors antes de subir.
+   * Default: false (solo activar en upload de productos de catálogo).
+   */
+  validateProduct?: boolean;
 };
 
 const ASPECT_MAP = {
@@ -32,10 +40,12 @@ export default function ImageUpload({
   hint,
   className,
   aspectRatio = "video",
+  validateProduct = false,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [validation, setValidation] = useState<ImageValidationResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const uploadFile = useCallback(
@@ -69,11 +79,24 @@ export default function ImageUpload({
   );
 
   const handleFiles = useCallback(
-    (files: FileList | null) => {
-      if (!files?.[0]) return;
-      uploadFile(files[0]);
+    async (files: FileList | null) => {
+      const file = files?.[0];
+      if (!file) return;
+
+      // Si validateProduct=true, corre validación antes del upload.
+      // Errores bloquean; warnings se muestran pero permiten continuar.
+      if (validateProduct) {
+        const result = await validateProductImage(file);
+        setValidation(result);
+        if (!result.ok) {
+          // Hay errores bloqueantes — no subir
+          return;
+        }
+      }
+
+      uploadFile(file);
     },
-    [uploadFile],
+    [uploadFile, validateProduct],
   );
 
   const handleDrop = useCallback(
@@ -183,6 +206,11 @@ export default function ImageUpload({
           <X className="h-3 w-3" />
           {error}
         </div>
+      )}
+
+      {/* Validación de producto (warnings/errors de estándar) */}
+      {validation && (
+        <ImageValidationPanel result={validation} className="mt-2" />
       )}
 
       {/* Hint */}

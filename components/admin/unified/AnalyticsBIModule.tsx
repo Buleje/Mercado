@@ -612,7 +612,7 @@ export default function AnalyticsBIModule() {
           },
         ];
         return (
-          <div className="max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
+          <div className="max-w-[1600px] mx-auto" key={`resumen-${refreshKey}`}>
             <ChartManager moduleId="analytics-resumen" charts={resumenCharts} />
           </div>
         );
@@ -656,7 +656,7 @@ export default function AnalyticsBIModule() {
           },
         ];
         return (
-          <div className="max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
+          <div className="max-w-[1600px] mx-auto" key={`ventas-${refreshKey}`}>
             <ChartManager moduleId="analytics-ventas" charts={ventasCharts} />
           </div>
         );
@@ -701,7 +701,7 @@ export default function AnalyticsBIModule() {
           },
         ];
         return (
-          <div className="max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
+          <div className="max-w-[1600px] mx-auto" key={`productos-${refreshKey}`}>
             <ChartManager moduleId="analytics-productos" charts={productosCharts} />
           </div>
         );
@@ -746,7 +746,7 @@ export default function AnalyticsBIModule() {
           },
         ];
         return (
-          <div className="max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
+          <div className="max-w-[1600px] mx-auto" key={`clientes-${refreshKey}`}>
             <ChartManager moduleId="analytics-clientes" charts={clientesCharts} />
           </div>
         );

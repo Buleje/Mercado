@@ -1,6 +1,8 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { validateProductImage, type ImageValidationResult } from "@/lib/image-validator";
+import { ImageValidationPanel, ImageRequirementsGuide } from "@/components/admin/shared/ImageValidationPanel";
 import { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
@@ -123,6 +125,7 @@ function ProductFormModal({
 
   // ── Image upload ──────────────────────────────────────────────────────────
   const [uploading, setUploading] = useState(false);
+  const [imageValidation, setImageValidation] = useState<ImageValidationResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchNational = useCallback((q: string) => {
@@ -166,6 +169,16 @@ function ProductFormModal({
     if (!file) return;
     setUploading(true);
     try {
+      // Validar contra el estándar de imágenes de producto del marketplace.
+      // Los errores bloquean; warnings se muestran pero permiten subir.
+      const validation = await validateProductImage(file);
+      setImageValidation(validation);
+      if (!validation.ok) {
+        // Hay errores bloqueantes — aborta upload
+        setUploading(false);
+        return;
+      }
+
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", "products");
@@ -349,6 +362,16 @@ function ProductFormModal({
                 className="flex-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
+
+            {/* Validación de imagen contra estándar del marketplace */}
+            {imageValidation && (
+              <ImageValidationPanel result={imageValidation} className="mt-3" />
+            )}
+
+            {/* Guía de requisitos (visible solo si no hay imagen aún) */}
+            {!form.image && !imageValidation && (
+              <ImageRequirementsGuide className="mt-3" />
+            )}
           </div>
 
           {/* Name */}
