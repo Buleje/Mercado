@@ -36,18 +36,18 @@ describe("ProductBadges — casos marketplace", () => {
     expect(screen.getByText("Verificado")).toBeInTheDocument();
   });
 
-  it("badge 'fast-shipping' renderiza 'Envio racudo'", () => {
+  it("badge 'fast-shipping' renderiza 'Envío rápido'", () => {
     render(<ProductBadges badges={["fast-shipping"]} />);
-    expect(screen.getByText("Envio rapido")).toBeInTheDocument();
+    expect(screen.getByText("Envío rápido")).toBeInTheDocument();
   });
 
   it("apilamiento: best-seller + verified + fast-shipping juntos en el mismo componente", () => {
     render(
       <ProductBadges badges={["best-seller", "verified", "fast-shipping"]} />
     );
-    expect(screen.getByText("Mas vendido")).toBeInTheDocument();
+    expect(screen.getByText("Más vendido")).toBeInTheDocument();
     expect(screen.getByText("Verificado")).toBeInTheDocument();
-    expect(screen.getByText("Envio rapido")).toBeInTheDocument();
+    expect(screen.getByText("Envío rápido")).toBeInTheDocument();
   });
 
   it("apilamiento con low-stock: los 4 badges juntos renderizan todos", () => {
@@ -57,7 +57,7 @@ describe("ProductBadges — casos marketplace", () => {
         details={{ lowStock: 3 }}
       />
     );
-    expect(screen.getByText("Mas vendido")).toBeInTheDocument();
+    expect(screen.getByText("Más vendido")).toBeInTheDocument();
     expect(screen.getByText("Nuevo")).toBeInTheDocument();
     expect(screen.getByText("Solo 3")).toBeInTheDocument();
     expect(screen.getByText("Verificado")).toBeInTheDocument();

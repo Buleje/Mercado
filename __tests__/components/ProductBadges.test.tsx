@@ -24,9 +24,9 @@ describe("ProductBadges", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("badges=['best-seller'] → texto 'Mas vendido' presente (sin tilde)", () => {
+  it("badges=['best-seller'] → texto 'Más vendido' presente", () => {
     render(<ProductBadges badges={["best-seller"]} />);
-    expect(screen.getByText("Mas vendido")).toBeInTheDocument();
+    expect(screen.getByText("Más vendido")).toBeInTheDocument();
   });
 
   it("badges=['new'] → texto 'Nuevo' presente", () => {
@@ -51,14 +51,14 @@ describe("ProductBadges", () => {
         details={{ lowStock: 3 }}
       />
     );
-    expect(screen.getByText("Mas vendido")).toBeInTheDocument();
+    expect(screen.getByText("Más vendido")).toBeInTheDocument();
     expect(screen.getByText("Nuevo")).toBeInTheDocument();
     expect(screen.getByText("Solo 3")).toBeInTheDocument();
   });
 
   it("tooltip presente: el span tiene atributo title con el label", () => {
     render(<ProductBadges badges={["best-seller"]} />);
-    const span = screen.getByTitle("Mas vendido");
+    const span = screen.getByTitle("Más vendido");
     expect(span).toBeInTheDocument();
   });
 

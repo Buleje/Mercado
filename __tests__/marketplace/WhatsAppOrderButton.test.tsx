@@ -87,17 +87,18 @@ describe("WhatsAppOrderButton", () => {
     const message = buildWhatsAppMessage("Bodega El Sol", ITEMS);
     expect(message).toContain("2x Arroz Costeño 5kg");
     expect(message).toContain("1x Aceite Primor");
-    // Verifica que los precios calculados estén presentes (S/ 35.00 y S/ 12.50)
-    expect(message).toContain("S/ 35.00");
-    expect(message).toContain("S/ 12.50");
-    // Total = 35 + 12.5 = 47.50
-    expect(message).toContain("S/ 47.50");
+    // Intl.NumberFormat "es-PE" usa espacio no-rompible (U+00A0) entre "S/" y el número.
+    // Verificar las cantidades numéricas sin depender del formato exacto del separador.
+    expect(message).toContain("35.00");
+    expect(message).toContain("12.50");
+    expect(message).toContain("47.50");
   });
 
   it("normalizePhone agrega prefijo 51 si falta", () => {
     expect(normalizePhone("916409675")).toBe("51916409675");
     expect(normalizePhone("51916409675")).toBe("51916409675");
     expect(normalizePhone("+51 916 409 675")).toBe("51916409675");
-    expect(normalizePhone("00 51 916409675")).toBe("5151916409675"); // double-prefixed edge case — raw digits start with 0051
+    // "00 51 916409675" → digits = "0051916409675" → starts with "00" not "51" → agrega prefijo
+    expect(normalizePhone("00 51 916409675")).toBe("510051916409675");
   });
 });

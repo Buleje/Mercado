@@ -22,7 +22,20 @@ const UNIFIED_DIR = path.resolve(
 
 // Módulos que son proxies o tienen excepciones documentadas
 const PROXY_MODULES = ["AnalyticsProModule.tsx"];
-const NO_TABS_MODULES = ["AICommandModule.tsx", "AnalyticsProModule.tsx", "ChatIAModule.tsx"];
+// Módulos sin tabs (single-view): excluídos del check AdminTabBar y MODULE_ID
+const NO_TABS_MODULES = [
+  "AICommandModule.tsx",
+  "AnalyticsProModule.tsx",
+  "ChatIAModule.tsx",
+  // GiftCards y Lives son single-view — no tienen sub-tabs, no necesitan AdminTabBar
+  "GiftCardsAdminModule.tsx",
+  "LivesAdminModule.tsx",
+];
+// Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
+const CUSTOM_HEADER_MODULES = [
+  // FinanzasModule usa PageTitle + AdminTabBar como estructura alternativa (ADR-074 Phase 3)
+  "FinanzasModule.tsx",
+];
 // Módulos que legítimamente usan dark: classes (dark mode habilitado)
 const DARK_MODE_MODULES = [
   "CRMClientesModule.tsx",
@@ -52,6 +65,7 @@ describe("Admin Modules — Estándares de estructura", () => {
   describe("AdminModuleHeader — presente en todos los módulos", () => {
     for (const file of moduleFiles) {
       if (PROXY_MODULES.includes(file)) continue;
+      if (CUSTOM_HEADER_MODULES.includes(file)) continue;
 
       it(`${file} importa AdminModuleHeader`, () => {
         const content = readModule(file);
@@ -84,6 +98,8 @@ describe("Admin Modules — Estándares de estructura", () => {
   describe("MODULE_ID — definido en cada módulo", () => {
     for (const file of moduleFiles) {
       if (PROXY_MODULES.includes(file)) continue;
+      // Single-view modules (no tabs) no necesitan MODULE_ID (sin persistencia de tab)
+      if (NO_TABS_MODULES.includes(file)) continue;
 
       it(`${file} tiene MODULE_ID definido`, () => {
         const content = readModule(file);
@@ -108,6 +124,8 @@ describe("Admin Modules — Estándares de estructura", () => {
   describe("Estructura wrapper consistente", () => {
     for (const file of moduleFiles) {
       if (PROXY_MODULES.includes(file)) continue;
+      // Módulos con header custom pueden usar space-y-6 u otra variante
+      if (CUSTOM_HEADER_MODULES.includes(file)) continue;
 
       it(`${file} usa <div className="space-y-4"> como wrapper`, () => {
         const content = readModule(file);

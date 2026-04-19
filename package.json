@@ -6,11 +6,22 @@
     "packages/*"
   ],
   "scripts": {
+    "predev": "node scripts/predev-cache-guard.mjs",
     "dev": "next dev --turbopack",
     "dev:fast": "next dev --turbopack",
     "dev:webpack": "next dev --webpack",
     "dev:clean": "taskkill //F //IM node.exe 2>nul & del /f /q .next\\dev\\lock 2>nul & next dev --turbopack",
     "dev:nuke": "taskkill //F //IM node.exe 2>nul & rmdir /s /q .next 2>nul & next dev --turbopack",
+    "dev:zombies": "node scripts/dev-guardian.mjs",
+    "dev:zombies:dry": "cross-env DRY_RUN=1 node scripts/dev-guardian.mjs",
+    "dev:monitor": "node scripts/dev-monitor.mjs",
+    "dev:duplicates": "node scripts/find-duplicates.mjs",
+    "dev:dangers": "node scripts/list-danger-zones.mjs",
+    "dev:dangers:check": "node scripts/check-zone-skills.mjs",
+    "dev:health": "node scripts/dev-health.mjs",
+    "dev:health:fast": "cross-env SKIP_TESTS=1 node scripts/dev-health.mjs",
+    "db:sanity": "tsx scripts/db-sanity.ts",
+    "dev:lucide:audit": "node scripts/audit-lucide-imports.mjs",
     "build": "next build",
     "analyze": "cross-env ANALYZE=true next build",
     "postinstall": "prisma generate",
@@ -45,7 +56,8 @@
     "chromatic": "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN --only-changed --exit-zero-on-changes",
     "queue:workers": "tsx lib/queue/workers.ts",
     "sentry:setup-alerts": "tsx scripts/setup-sentry-alerts.ts",
-    "redis:health": "node -e \"fetch('http://localhost:3000/api/admin/health').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2))).catch(()=>console.log('Dev server not running — inicia con: npm run dev'))\""
+    "redis:health": "node -e \"fetch('http://localhost:3000/api/admin/health').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2))).catch(()=>console.log('Dev server not running — inicia con: npm run dev'))\"",
+    "audit:tenant": "node scripts/audit-tenant-isolation.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",

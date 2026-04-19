@@ -16,14 +16,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-vi.mock("lucide-react", () => ({
-  SlidersHorizontal: () => <span data-testid="icon-sliders" />,
-  X: () => <span data-testid="icon-x" />,
-  LocateFixed: () => <span data-testid="icon-locate" />,
-  Loader2: () => <span data-testid="icon-loader" />,
-  ChevronDown: () => <span data-testid="icon-chevron" />,
-  Check: () => <span data-testid="icon-check" />,
-}));
+vi.mock("lucide-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("lucide-react")>();
+  return {
+    ...actual,
+    SlidersHorizontal: () => <span data-testid="icon-sliders" />,
+    X: () => <span data-testid="icon-x" />,
+    LocateFixed: () => <span data-testid="icon-locate" />,
+    Loader2: () => <span data-testid="icon-loader" />,
+    ChevronDown: () => <span data-testid="icon-chevron" />,
+    Check: () => <span data-testid="icon-check" />,
+  };
+});
 
 vi.mock("@/lib/utils", () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(" "),

@@ -78,12 +78,15 @@ describe("GET /api/marketplace/sponsored", () => {
     expect(res.status).toBe(401);
   });
 
-  it("retorna 400 si falta storeId", async () => {
+  it("retorna 200 con data vacía si falta storeId (graceful degradation para widget admin)", async () => {
     mockRequireAdmin.mockResolvedValueOnce(AUTH);
 
     const res = await GET(makeReq("GET", `${BASE}/api/marketplace/sponsored`));
+    const json = await res.json();
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    expect(json.data).toEqual([]);
+    expect(json.total).toBe(0);
   });
 
   it("lista boosts de la store correctamente", async () => {

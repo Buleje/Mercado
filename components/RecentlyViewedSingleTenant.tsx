@@ -11,14 +11,54 @@ const STORAGE_KEY = "buleje-recently-viewed";
 const MAX_ITEMS = 12;
 
 // ── Persist recently viewed products ──────────────────────────────────────────
-function getRecent(): Product[] {
+
+/**
+ * Sanitize a raw entry from localStorage: coerce price to number, validate
+ * id (positive integer) and name (non-empty string). Returns null when invalid.
+ */
+function sanitizeEntry(raw: unknown): Product | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Record<string, unknown>;
+  const id = typeof entry.id === "number" && Number.isInteger(entry.id) && entry.id > 0
+    ? entry.id
+    : null;
+  if (id === null) return null;
+  const name = typeof entry.name === "string" && entry.name.length > 0 ? entry.name : null;
+  if (!name) return null;
+  const rawPrice = entry.price;
+  const price = typeof rawPrice === "number" && !isNaN(rawPrice)
+    ? rawPrice
+    : typeof rawPrice === "string"
+      ? (isNaN(parseFloat(rawPrice)) ? 0 : parseFloat(rawPrice))
+      : 0;
+  return {
+    id,
+    name,
+    price,
+    image: typeof entry.image === "string" ? entry.image : "",
+    category: typeof entry.category === "string" ? entry.category : "",
+    unit: typeof entry.unit === "string" ? entry.unit : "",
+  };
+}
+
+export function getRecent(): Product[] {
   if (typeof window === "undefined") return [];
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    if (!Array.isArray(raw)) return [];
+    return raw.map(sanitizeEntry).filter((p): p is Product => p !== null);
+  } catch { return []; }
 }
 
 export function trackView(product: Product) {
-  const items = getRecent().filter(p => p.id !== product.id);
-  items.unshift(product);
+  const price = typeof product.price === "number" && !isNaN(product.price)
+    ? product.price
+    : typeof (product.price as unknown) === "string"
+      ? (isNaN(parseFloat(String(product.price))) ? 0 : parseFloat(String(product.price)))
+      : 0;
+  const normalized = { ...product, price };
+  const items = getRecent().filter(p => p.id !== normalized.id);
+  items.unshift(normalized);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
   // Notify RecentlyViewed component to refresh its list
   window.dispatchEvent(new Event("buleje:productViewed"));

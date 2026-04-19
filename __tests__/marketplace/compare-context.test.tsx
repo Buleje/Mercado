@@ -45,24 +45,25 @@ describe("useCompare", () => {
     expect(result.current.items[0].productId).toBe(1);
   });
 
-  it("add con 3 items ya no agrega el 4to y retorna false", () => {
+  it("add con 4 items ya no agrega el 5to (MAX=4, silent no-op)", () => {
     const { result } = renderHook(() => useCompare(), { wrapper });
 
     act(() => {
       result.current.add(makeItem(1));
       result.current.add(makeItem(2));
       result.current.add(makeItem(3));
-    });
-
-    expect(result.current.items).toHaveLength(3);
-
-    act(() => {
       result.current.add(makeItem(4));
     });
 
-    // add es void — si ya hay MAX items, no agrega (silent no-op)
-    expect(result.current.items).toHaveLength(3);
-    expect(result.current.items.map((i) => i.productId)).not.toContain(4);
+    expect(result.current.items).toHaveLength(4);
+
+    act(() => {
+      result.current.add(makeItem(5));
+    });
+
+    // add es void — si ya hay MAX items (4), no agrega (silent no-op)
+    expect(result.current.items).toHaveLength(4);
+    expect(result.current.items.map((i) => i.productId)).not.toContain(5);
   });
 
   it("remove quita un item por productId", () => {
