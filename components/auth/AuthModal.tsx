@@ -8,6 +8,10 @@ import {
   type KeyboardEvent,
 } from "react";
 import { X, User, Phone, Shield, Loader2, Search } from "lucide-react";
+import {
+  getSupabaseBrowser,
+  isSupabaseAuthConfigured,
+} from "@/lib/supabase/client";
 
 // ---------------------------------------------------------------------------
 // Tipos de respuesta de la API
@@ -297,13 +301,44 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     showToast("Puedes solicitar un nuevo código.");
   }, [showToast]);
 
+  // Ola 7 — OAuth via Supabase Auth si está configurado.
+  // Si no, fallback al flujo custom legacy `/api/auth/google` (queda vivo).
+  const oauthReady = isSupabaseAuthConfigured();
+
+  const signInWithSupabase = useCallback(
+    async (provider: "google" | "facebook") => {
+      try {
+        const supabase = getSupabaseBrowser();
+        const origin = window.location.origin;
+        const nextParam = encodeURIComponent("/marketplace/explorar");
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: `${origin}/api/auth/oauth/callback?next=${nextParam}`,
+          },
+        });
+        if (error) {
+          console.error(`[AuthModal] ${provider} OAuth error:`, error.message);
+          showToast("No se pudo iniciar sesión. Intenta de nuevo.");
+        }
+        // Si no hay error, Supabase redirige al consent del provider.
+      } catch (err) {
+        console.error(`[AuthModal] ${provider} exception:`, err);
+        showToast("No se pudo iniciar sesión. Intenta de nuevo.");
+      }
+    },
+    [showToast],
+  );
+
   const handleGoogle = useCallback(() => {
-    window.location.href = "/api/auth/google";
-  }, []);
+    if (!oauthReady) return;
+    void signInWithSupabase("google");
+  }, [oauthReady, signInWithSupabase]);
 
   const handleFacebook = useCallback(() => {
-    window.location.href = "/api/auth/facebook";
-  }, []);
+    if (!oauthReady) return;
+    void signInWithSupabase("facebook");
+  }, [oauthReady, signInWithSupabase]);
 
   const handleTabChange = useCallback((newTab: Tab) => {
     setTab(newTab);
@@ -406,18 +441,24 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 <button
                   ref={firstFocusableRef}
                   onClick={handleGoogle}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500"
+                  disabled={!oauthReady}
+                  title={oauthReady ? undefined : "Configuración pendiente"}
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm"
                 >
                   <GoogleIcon />
-                  Continuar con Google
+                  {oauthReady ? "Continuar con Google" : "Google — Próximamente"}
                 </button>
 
                 <button
                   onClick={handleFacebook}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#166FE5] hover:shadow-md hover:shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500"
+                  disabled={!oauthReady}
+                  title={oauthReady ? undefined : "Configuración pendiente"}
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#166FE5] hover:shadow-md hover:shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm"
                 >
                   <FacebookIcon />
-                  Continuar con Facebook
+                  {oauthReady
+                    ? "Continuar con Facebook"
+                    : "Facebook — Próximamente"}
                 </button>
               </div>
 
