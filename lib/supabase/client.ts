@@ -46,8 +46,7 @@ export function getSupabaseBrowser(): SupabaseClient {
     );
   }
 
-  _browserClient = createBrowserClient(url, key);
-  return _browserClient;
+  return (_browserClient = createBrowserClient(url, key));
 }
 
 /**

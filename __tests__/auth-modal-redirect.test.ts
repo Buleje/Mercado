@@ -27,8 +27,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       pathname: "/about",
       fromParam: null,
     });
-    expect(result.action).toBe("push");
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("landing `/planes` -> push a /marketplace/explorar", () => {
@@ -36,7 +35,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       pathname: "/planes",
       fromParam: null,
     });
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("landing `/negocios` -> push a /marketplace/explorar", () => {
@@ -44,7 +43,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       pathname: "/negocios",
       fromParam: null,
     });
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("ruta marketplace `/marketplace` -> refresh (no push)", () => {
@@ -112,7 +111,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       fromParam: null,
       isNew: true,
     });
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("redirectAfterLogin manual override (checkout) -> respeta el prop", () => {
@@ -131,7 +130,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       redirectAfterLogin: "/welcome",
       isNew: true,
     });
-    expect(result.url).toBe("/welcome");
+    expect(result).toEqual({ action: "push", url: "/welcome" });
   });
 
   it("safety: rechaza ?from=//evil.com (open-redirect) y cae a la logica normal", () => {
@@ -140,7 +139,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       fromParam: "//evil.com/steal",
     });
     // `//...` no pasa la validacion "/" && !startsWith("//") -> fallback a landing rule
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("safety: rechaza ?from=https://evil.com (URL absoluta) y cae a logica normal", () => {
@@ -148,7 +147,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       pathname: "/",
       fromParam: "https://evil.com",
     });
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("safety: ?from vacio se ignora", () => {
@@ -156,7 +155,7 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       pathname: "/",
       fromParam: "",
     });
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 
   it("safety: ruta sin slash inicial se ignora", () => {
@@ -164,6 +163,6 @@ describe("resolvePostLoginRedirect — politica post-login", () => {
       pathname: "/",
       fromParam: "cuenta/pedidos",
     });
-    expect(result.url).toBe("/marketplace/explorar");
+    expect(result).toEqual({ action: "push", url: "/marketplace/explorar" });
   });
 });
