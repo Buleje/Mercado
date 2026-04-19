@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import LiveViewers from "@/components/marketplace/LiveViewers";
+import { StoreCardCanonical } from "@buleje/design-system";
 
 // ---------- tipos ----------
 
@@ -61,122 +61,106 @@ function StarRating({ rating, count }: { rating: number | null; count: number })
   );
 }
 
-function StoreInitials({ name }: { name: string }) {
-  const parts = name.trim().split(/\s+/);
-  const initials = parts.length >= 2
-    ? (parts[0][0] + parts[1][0]).toUpperCase()
-    : name.slice(0, 2).toUpperCase();
-  return (
-    <div
-      className="flex h-full w-full items-center justify-center text-2xl font-black text-white"
-      style={{ background: "linear-gradient(135deg, #00B4A6 0%, #134e4a 100%)" }}
-    >
-      {initials}
-    </div>
-  );
-}
-
 // ---------- skeletons ----------
 
 function StoreCardSkeleton() {
   return (
-    <div aria-hidden="true" className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="h-32 rounded-t-2xl bg-gray-200 dark:bg-gray-800" />
-      <div className="p-4 space-y-2">
-        <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
-        <div className="h-3 w-1/2 rounded bg-gray-200 dark:bg-gray-800" />
-        <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-gray-800" />
-        <div className="h-9 w-full rounded-xl bg-gray-200 dark:bg-gray-800" />
+    <div aria-hidden="true" className="animate-pulse rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="aspect-[4/3] rounded-t-lg bg-[var(--surface-sunken)]" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 w-3/4 rounded bg-[var(--surface-sunken)]" />
+        <div className="h-3 w-1/2 rounded bg-[var(--surface-sunken)]" />
+        <div className="h-3 w-2/3 rounded bg-[var(--surface-sunken)]" />
+        <div className="h-9 w-full rounded-xl bg-[var(--surface-sunken)]" />
       </div>
     </div>
   );
 }
 
-// ---------- card de tienda ----------
-
-function StoreCard({ store, priority = false }: { store: Store; priority?: boolean }) {
+// ---------- wrapper de card de tienda ----------
+/**
+ * StoreCardWrapper — adapta StoreCardCanonical al contexto MarketplaceGrid.
+ * Preserva hover-prefetch y slots especificos (StarRating, LiveViewers, isOpen badge,
+ * productCount, CTA button). El canonical maneja imagen/placeholder/focus/a11y.
+ */
+function StoreCardWrapper({ store, priority = false }: { store: Store; priority?: boolean }) {
   const isOpen = store.isOpen ?? true; // fallback optimista
   const href = `/marketplace/${store.slug}`;
   const { onMouseEnter, onMouseLeave } = useHoverPrefetch(href);
 
+  const badges = (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold ${
+        isOpen
+          ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400"
+          : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400"
+      }`}
+    >
+      {isOpen ? "Abierto" : "Cerrado"}
+    </span>
+  );
+
+  const footer = (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold capitalize text-teal-700 dark:bg-teal-900/30 dark:text-teal-400">
+          {store.category}
+        </span>
+        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">
+          {store.zone?.replace(/-/g, " ")}
+        </span>
+      </div>
+      <StarRating rating={store.rating} count={store.reviewCount} />
+      {store.productCount != null && (
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          {store.productCount} productos
+        </p>
+      )}
+      <LiveViewers storeSlug={store.slug} compact className="mt-1" />
+      <a
+        href={href}
+        aria-label={`Ver tienda ${store.name}`}
+        className="mt-1 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+        style={{
+          background: "linear-gradient(135deg, #00B4A6 0%, #0d6560 100%)",
+          boxShadow: "0 4px 14px -2px rgba(15,118,110,0.35)",
+          paddingTop: "0.625rem",
+          paddingBottom: "0.625rem",
+        }}
+      >
+        Ver tienda
+      </a>
+    </div>
+  );
+
   return (
-    <article
-      className="group flex flex-col rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
-      aria-label={`Tienda ${store.name}`}
+    <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      aria-label={`Tienda ${store.name}`}
     >
-      {/* imagen / iniciales */}
-      <div className="relative h-32 overflow-hidden rounded-t-2xl bg-gray-100 dark:bg-gray-800">
-        {store.logo ? (
+      <StoreCardCanonical
+        storeId={store.id}
+        name={store.name}
+        slug={store.slug}
+        imageUrl={store.logo}
+        badges={badges}
+        footer={footer}
+        renderImage={({ src, alt, className }) => (
           <Image
-            src={store.logo}
-            alt={`Logo de ${store.name}`}
+            src={src}
+            alt={alt}
             fill
             priority={priority}
             loading={priority ? "eager" : "lazy"}
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={className}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             placeholder="blur"
             blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PGZpbHRlciBpZD0iYiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMiIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsdGVyPSJ1cmwoI2IpIiBmaWxsPSIjZWVlIi8+PC9zdmc+"
           />
-        ) : (
-          <StoreInitials name={store.name} />
         )}
-        {/* badge abierto/cerrado */}
-        <span
-          className={`absolute right-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-bold ${
-            isOpen
-              ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400"
-              : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400"
-          }`}
-        >
-          {isOpen ? "Abierto" : "Cerrado"}
-        </span>
-      </div>
-
-      {/* contenido */}
-      <div className="flex flex-1 flex-col p-4">
-        <h2 className="truncate text-base font-bold text-gray-900 dark:text-white">
-          {store.name}
-        </h2>
-
-        <div className="mt-1 flex items-center gap-2">
-          <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold capitalize text-teal-700 dark:bg-teal-900/30 dark:text-teal-400">
-            {store.category}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-            {store.zone?.replace(/-/g, " ")}
-          </span>
-        </div>
-
-        <div className="mt-2">
-          <StarRating rating={store.rating} count={store.reviewCount} />
-        </div>
-
-        {store.productCount != null && (
-          <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-            {store.productCount} productos
-          </p>
-        )}
-
-        <LiveViewers storeSlug={store.slug} compact className="mt-2" />
-
-        <Link
-          href={href}
-          aria-label={`Ver tienda ${store.name}`}
-          className="mt-auto pt-4 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-          style={{
-            background: "linear-gradient(135deg, #00B4A6 0%, #0d6560 100%)",
-            boxShadow: "0 4px 14px -2px rgba(15,118,110,0.35)",
-            paddingTop: "0.625rem",
-            paddingBottom: "0.625rem",
-          }}
-        >
-          Ver tienda
-        </Link>
-      </div>
-    </article>
+      />
+    </div>
   );
 }
 
@@ -221,10 +205,10 @@ export default function MarketplaceGrid() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-black text-gray-900 dark:text-white sm:text-4xl">
+        <h1 className="text-3xl font-black text-[var(--text-primary)] sm:text-4xl">
           Encuentra tu bodega
         </h1>
-        <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-base text-[var(--text-secondary)]">
           Todas las bodegas, minimarkets y distribuidores en un solo lugar
         </p>
       </div>
@@ -234,7 +218,7 @@ export default function MarketplaceGrid() {
         <div className="relative">
           <svg
             aria-hidden="true"
-            className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+            className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -247,7 +231,7 @@ export default function MarketplaceGrid() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar tienda por nombre…"
             aria-label="Buscar tienda"
-            className="w-full rounded-2xl border border-gray-300 bg-white py-3 pl-12 pr-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] py-3 pl-12 pr-4 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
       </div>
@@ -256,7 +240,7 @@ export default function MarketplaceGrid() {
       <div className="mb-8 space-y-3">
         {/* Zonas */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Zona
           </p>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por zona">
@@ -268,7 +252,7 @@ export default function MarketplaceGrid() {
                 className={`min-h-[36px] rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${
                   zone === z.value
                     ? "bg-teal-700 text-white shadow-sm"
-                    : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]"
                 }`}
               >
                 {z.label}
@@ -279,7 +263,7 @@ export default function MarketplaceGrid() {
 
         {/* Categorías */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Categoría
           </p>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
@@ -291,7 +275,7 @@ export default function MarketplaceGrid() {
                 className={`min-h-[36px] rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${
                   category === c.value
                     ? "bg-teal-700 text-white shadow-sm"
-                    : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]"
                 }`}
               >
                 {c.label}
@@ -303,7 +287,7 @@ export default function MarketplaceGrid() {
 
       {/* ── CONTENIDO ──────────────────────────────────────────── */}
       {error && (
-        <div role="alert" className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}{" "}
           <button onClick={fetchStores} aria-label="Reintentar cargar tiendas" className="underline hover:no-underline">
             Reintentar
@@ -320,20 +304,20 @@ export default function MarketplaceGrid() {
           {[...Array(6)].map((_, i) => <StoreCardSkeleton key={i} />)}
         </div>
       ) : stores.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 py-20 dark:border-gray-700">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--rule-base)] py-20">
           <svg
             aria-hidden="true"
-            className="mb-4 h-12 w-12 text-gray-300 dark:text-gray-600"
+            className="mb-4 h-12 w-12 text-[var(--text-tertiary)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-lg font-semibold text-gray-500 dark:text-gray-400">
+          <p className="text-lg font-semibold text-[var(--text-secondary)]">
             No se encontraron tiendas
           </p>
-          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Prueba con otros filtros o busca por otro nombre
           </p>
           <button
@@ -349,7 +333,7 @@ export default function MarketplaceGrid() {
           <p
             aria-live="polite"
             aria-atomic="true"
-            className="mb-4 text-sm text-gray-500 dark:text-gray-400"
+            className="mb-4 text-sm text-[var(--text-secondary)]"
           >
             {stores.length} {stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}
           </p>
@@ -361,7 +345,7 @@ export default function MarketplaceGrid() {
             {stores.map((s, idx) => (
               <div key={s.id} role="listitem">
                 {/* First 6 cards render eagerly with priority for LCP — rest lazy */}
-                <StoreCard store={s} priority={idx < 6} />
+                <StoreCardWrapper store={s} priority={idx < 6} />
               </div>
             ))}
           </div>

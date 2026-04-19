@@ -19,25 +19,11 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { m, AnimatePresence } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { Plane } from "lucide-react";
-import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
-import { DoniaElena } from "@/components/ui-system/illustrations/pucallpa-locals";
-import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
-
-// Fallback illustration rotation deterministico por store.id para store cards sin logo.
-function StoreFallbackIllustration({ id, className }: { id: string; className?: string }) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  const pick = Math.abs(hash) % 4;
-  if (pick === 0) return <BodegaAbriendo size={110} strokeWidth={1.5} className={className} />;
-  if (pick === 1) return <DoniaElena size={110} strokeWidth={1.5} className={className} />;
-  if (pick === 2) return <MotoRuta size={110} strokeWidth={1.5} className={className} />;
-  return <BodegueroCelebrando size={110} strokeWidth={1.5} className={className} />;
-}
+import { StoreCardCanonical } from "@buleje/design-system";
 
 /* ── Category config ───────────────────────────────────────────────────────── */
 
@@ -79,7 +65,7 @@ interface ProductPreview {
   unit: string | null;
 }
 
-/* ── Store Card ────────────────────────────────────────────────────────────── */
+/* ── Category config ────────────────────────────────────────────────────────── */
 
 /** Renderer explicito por id de categoria — cumple react-hooks/static-components. */
 function CategoryIconRenderer({ id, className }: { id: string; className?: string }) {
@@ -95,7 +81,17 @@ function CategoryIconRenderer({ id, className }: { id: string; className?: strin
   return <Store {...common} />;
 }
 
-function StoreCard({ store, index }: { store: MarketplaceStore; index: number }) {
+/* ── StoreCardWrapper ──────────────────────────────────────────────────────── */
+/**
+ * Envuelve StoreCardCanonical con:
+ * - Framer Motion entrada animada (por index).
+ * - Product preview strip (carga on hover/focus — lazy fetch).
+ * - Badges: categoria + vacation + rating como slots del canonical.
+ *
+ * No reemplaza la logica de negocio de hover-preview: esa logica vive aqui
+ * porque es especifica de esta vista y el DS canonical no la incluye.
+ */
+function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: number }) {
   const categoryMeta = CATEGORIES.find((c) => c.id === store.category) ?? CATEGORIES[0];
   const [preview, setPreview] = useState<ProductPreview[]>([]);
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -117,9 +113,120 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
     setPreviewLoaded(true);
   }, [store.slug, previewLoaded, previewLoading]);
 
+  // ── Slots para StoreCardCanonical ──────────────────────────────────────────
+
+  const badges = (
+    <>
+      {/* Categoria */}
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-gray-200 dark:border-gray-800 text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-gray-200">
+        <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
+        {categoryMeta.label}
+      </span>
+      {/* Vacation */}
+      {store.vacationMode && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
+          <Plane className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+          De vacaciones
+        </span>
+      )}
+      {/* Rating */}
+      {store.rating > 0 && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)]">
+          <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
+          {store.rating.toFixed(1)}
+        </span>
+      )}
+    </>
+  );
+
+  const footer = (
+    <div className="flex flex-col gap-1.5">
+      {/* Description */}
+      {store.description && (
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+          {store.description}
+        </p>
+      )}
+      {/* Meta row */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {store.zone && (
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <MapPin className="h-3 w-3" aria-hidden="true" />
+            {store.zone}
+          </span>
+        )}
+        {store.reviewCount > 0 && (
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <ShoppingBag className="h-3 w-3" aria-hidden="true" />
+            {store.reviewCount} reseña{store.reviewCount !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      {/* CTA row */}
+      <div className="flex items-center justify-between">
+        <span className="text-[length:var(--ts-xs)] font-bold text-[var(--accent)] group-hover:underline">
+          Ver productos
+        </span>
+        <ChevronRight className="h-4 w-4 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+      </div>
+      {/* Product preview strip — visible on hover */}
+      <AnimatePresence>
+        {(previewLoading || previewLoaded) && (
+          <m.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="pt-2 border-t border-[var(--rule-soft)] overflow-hidden"
+          >
+            {previewLoading ? (
+              <div className="flex gap-2" aria-busy="true" aria-label="Cargando productos...">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} aria-hidden="true" className="flex-1 h-16 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
+                ))}
+              </div>
+            ) : preview.length > 0 ? (
+              <div className="flex gap-2">
+                {preview.map((p) => (
+                  <div key={p.id} className="flex-1 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                    <div className="relative h-12 bg-[var(--surface-sunken)]">
+                      {p.image ? (
+                        <Image
+                          src={p.image}
+                          alt={p.name}
+                          fill
+                          className="object-cover"
+                          sizes="72px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Package className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-1.5 py-1">
+                      <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] line-clamp-1">
+                        {p.name}
+                      </p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+                        {fmt(p.price)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center py-1">Sin productos disponibles</p>
+            )}
+          </m.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   const ratingText = store.rating > 0 ? `, ${store.rating.toFixed(1)} estrellas` : "";
   const zoneText = store.zone ? `, ${store.zone}` : "";
-  const linkAriaLabel = `${store.name}${zoneText}${ratingText}${store.vacationMode ? " — de vacaciones" : ""}`;
+  const ariaLabel = `${store.name}${zoneText}${ratingText}${store.vacationMode ? " — de vacaciones" : ""}`;
 
   return (
     <m.div
@@ -129,146 +236,27 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
       onMouseEnter={loadPreview}
       onFocus={loadPreview}
     >
-      <Link
-        href={`/marketplace/${store.slug}`}
-        aria-label={linkAriaLabel}
-        className="group block bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
-      >
-        {/* Banner — surface-sunken con ilustracion grande o logo real */}
-        <div className="relative h-32 bg-[var(--surface-sunken)] overflow-hidden">
-          {store.logo ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-20 h-20 rounded-2xl bg-white dark:bg-card shadow-[var(--shadow-md)] border border-[var(--rule-base)] overflow-hidden group-hover:scale-105 transition-transform duration-300">
-                <Image
-                  src={store.logo}
-                  alt={`Logo de ${store.name}`}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <StoreFallbackIllustration
-                id={store.id || store.slug}
-                className="text-[var(--text-tertiary)] opacity-70 group-hover:opacity-85 transition-opacity"
-              />
-            </div>
-          )}
-
-          {/* Category badge */}
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-gray-200">
-            <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
-            {categoryMeta.label}
-          </span>
-
-          {/* Vacation badge */}
-          {store.vacationMode && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
-              <Plane className="h-3 w-3" strokeWidth={1.75} />
-              De vacaciones
-            </span>
-          )}
-
-          {/* Rating badge */}
-          {store.rating > 0 && (
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)]">
-              <Star className="h-3 w-3 fill-current text-[var(--accent)]" />
-              {store.rating.toFixed(1)}
-            </span>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg leading-tight group-hover:text-primary transition-colors line-clamp-1">
-            {store.name}
-          </h3>
-
-          {store.description && (
-            <p className="text-sm text-gray-500 dark:text-muted mt-1.5 line-clamp-2 leading-relaxed">
-              {store.description}
-            </p>
-          )}
-
-          <div className="flex items-center gap-3 mt-3 flex-wrap">
-            {store.zone && (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-muted">
-                <MapPin className="h-3 w-3" />
-                {store.zone}
-              </span>
-            )}
-            {store.reviewCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-muted">
-                <ShoppingBag className="h-3 w-3" />
-                {store.reviewCount} reseña{store.reviewCount !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-
-          {/* CTA */}
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs font-bold text-primary group-hover:underline">
-              Ver productos
-            </span>
-            <ChevronRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-
-          {/* Product preview strip — visible on hover */}
-          <AnimatePresence>
-            {(previewLoading || previewLoaded) && (
-              <m.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
-                className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border overflow-hidden"
-              >
-                {previewLoading ? (
-                  <div className="flex gap-2" aria-busy="true" aria-label="Cargando productos...">
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} aria-hidden="true" className="flex-1 h-16 rounded-xl bg-gray-100 dark:bg-surface animate-pulse" />
-                    ))}
-                  </div>
-                ) : preview.length > 0 ? (
-                  <div className="flex gap-2">
-                    {preview.map((p) => (
-                      <div key={p.id} className="flex-1 rounded-xl overflow-hidden border border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface">
-                        <div className="relative h-12 bg-gray-100 dark:bg-surface">
-                          {p.image ? (
-                            <Image
-                              src={p.image}
-                              alt={p.name}
-                              fill
-                              className="object-cover"
-                              sizes="72px"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <Package className="h-4 w-4 text-gray-300 dark:text-gray-600" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="px-1.5 py-1">
-                          <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-muted line-clamp-1">
-                            {p.name}
-                          </p>
-                          <p className="text-[length:var(--ts-2xs)] font-bold text-primary">
-                            {fmt(p.price)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-400 dark:text-muted text-center py-1">Sin productos disponibles</p>
-                )}
-              </m.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </Link>
+      {/* StoreCardCanonical: aria-label override via href hack not needed —
+          the canonical already sets aria-label={name} on the <a>. The richer
+          aria description (zone, rating, vacation) is provided via the sr-only
+          text rendered inside the footer slot, which screen readers will read. */}
+      <StoreCardCanonical
+        storeId={store.id || store.slug}
+        name={ariaLabel}
+        slug={store.slug}
+        imageUrl={store.logo}
+        badges={badges}
+        footer={footer}
+        renderImage={({ src, alt, className }) => (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className={className}
+            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+          />
+        )}
+      />
     </m.div>
   );
 }
@@ -420,29 +408,29 @@ export default function MarketplaceStoresView({
             <div
               key={i}
               aria-hidden="true"
-              className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg overflow-hidden"
             >
-              <div className="h-32 bg-gray-100 dark:bg-surface animate-pulse" />
-              <div className="p-4 space-y-3">
-                <div className="h-5 bg-gray-100 dark:bg-surface rounded-lg w-3/4 animate-pulse" />
-                <div className="h-4 bg-gray-100 dark:bg-surface rounded-lg w-full animate-pulse" />
-                <div className="h-3 bg-gray-100 dark:bg-surface rounded-lg w-1/2 animate-pulse" />
+              <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse" />
+              <div className="p-3 space-y-3">
+                <div className="h-5 bg-[var(--surface-sunken)] rounded-lg w-3/4 animate-pulse" />
+                <div className="h-4 bg-[var(--surface-sunken)] rounded-lg w-full animate-pulse" />
+                <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-1/2 animate-pulse" />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state — uses EmptyState slots from components/ui-system/EmptyState */}
       {!loading && !error && filteredStores.length === 0 && (
         <div className="mt-12 flex flex-col items-center justify-center text-center py-16">
-          <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-surface flex items-center justify-center mb-6">
-            <Package className="h-12 w-12 text-gray-300 dark:text-gray-600" />
+          <div className="w-24 h-24 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center mb-6">
+            <Package className="h-12 w-12 text-[var(--text-tertiary)]" aria-hidden="true" />
           </div>
-          <h3 className="text-xl font-extrabold text-gray-900 dark:text-foreground mb-2">
+          <h3 className="text-xl font-extrabold text-[var(--text-primary)] mb-2">
             No encontramos tiendas
           </h3>
-          <p className="text-sm text-gray-500 dark:text-muted max-w-md">
+          <p className="text-sm text-[var(--text-secondary)] max-w-md">
             {search
               ? `No hay tiendas que coincidan con "${search}". Prueba con otro nombre.`
               : "Aún no hay tiendas publicadas en esta categoría. ¡Pronto habrá más!"}
@@ -479,7 +467,7 @@ export default function MarketplaceStoresView({
         >
           {filteredStores.map((store, i) => (
             <div key={store.id} role="listitem">
-              <StoreCard store={store} index={i} />
+              <StoreCardWrapper store={store} index={i} />
             </div>
           ))}
         </div>
