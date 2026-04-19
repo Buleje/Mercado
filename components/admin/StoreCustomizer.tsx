@@ -10,6 +10,7 @@ import {
   Paintbrush, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import dynamic from "next/dynamic";
 import StorefrontEditor from "./StorefrontEditor";
@@ -673,24 +674,17 @@ export default function StoreCustomizer() {
         </div>
       )}
 
-      {/* ── Header mejorado ───────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
-            <Palette className="h-5 w-5 text-[var(--surface-canvas)]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <PageTitle className="text-lg font-extrabold text-foreground">Mi Tienda Personal</PageTitle>
-              {hasUnsavedChanges && (
-                <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-[length:var(--ts-2xs)] font-bold">
-                  Sin guardar
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted">Cambia el aspecto y contenido de tu tienda online</p>
-          </div>
-        </div>
+      {/* ── Header editorial estandarizado ─────────────────────────── */}
+      <AdminModuleHeader
+        icon={Palette}
+        eyebrow="Mi tienda · Personalización visual"
+        title="Mi tienda personal"
+        description={
+          hasUnsavedChanges
+            ? "⚠️ Tenés cambios sin guardar. Cambiá el aspecto, colores y contenido de tu tienda online."
+            : "Cambiá el aspecto, colores y contenido de tu tienda online. Lo que ve el cliente cuando entra."
+        }
+      >
         <div className="flex items-center gap-2">
           <a
             href={`/t/${activeTenantSlug}?preview=true`}
@@ -718,7 +712,7 @@ export default function StoreCustomizer() {
             Modo Creativo
           </PrimaryButton>
         </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* ── Layout: sidebar tabs + contenido ──────────────────────── */}
       <div className="flex flex-col lg:flex-row flex-1 gap-5 min-h-0">

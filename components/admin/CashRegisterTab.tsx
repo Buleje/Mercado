@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { CardTitle, EmptyState, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 
 const CashRegisterChart = dynamic(

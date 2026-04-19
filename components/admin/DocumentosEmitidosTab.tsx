@@ -1,6 +1,7 @@
 'use client';
 
 import { SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -150,16 +151,12 @@ export default function DocumentosEmitidosTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
-          Documentos Emitidos
-        </SectionTitle>
-        <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
-          Boletas, facturas, cotizaciones, contratos y mas — todo en un lugar
-        </p>
-      </div>
+      <AdminModuleHeader
+        icon={FileText}
+        eyebrow="Ventas · Documentos SUNAT"
+        title="Documentos emitidos"
+        description="Boletas, facturas, cotizaciones, guías de remisión y contratos — todo en un solo lugar, listos para enviar al cliente."
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
