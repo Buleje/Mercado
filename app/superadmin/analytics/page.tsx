@@ -7,6 +7,7 @@ import {
   AlertTriangle, XCircle, Loader2,
 } from "@buleje/design-system/icons";
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
 
@@ -73,8 +74,8 @@ export default function AnalyticsPage() {
     setError("");
     try {
       const [analyticsRes, tenantsRes] = await Promise.all([
-        fetch("/api/superadmin/analytics", { credentials: "include" }),
-        fetch("/api/superadmin/tenants", { credentials: "include" }),
+        fetchSuperadmin("/api/superadmin/analytics"),
+        fetchSuperadmin("/api/superadmin/tenants"),
       ]);
       if (!analyticsRes.ok || !tenantsRes.ok) {
         setError("Error al cargar datos de analytics");

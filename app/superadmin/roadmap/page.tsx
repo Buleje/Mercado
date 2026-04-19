@@ -15,6 +15,7 @@ import { LoadingState } from "@buleje/design-system";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import {
   AlertTriangle,
   BarChart3,
@@ -248,10 +249,8 @@ export default function RoadmapPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/superadmin/roadmap/items", {
-        credentials: "include",
-        cache: "no-store",
-      });
+      // fetchSuperadmin maneja 401/403/404 redirigiendo a login silencioso.
+      const res = await fetchSuperadmin("/api/superadmin/roadmap/items");
       if (!res.ok) {
         setError(`Error al cargar roadmap (${res.status})`);
         return;

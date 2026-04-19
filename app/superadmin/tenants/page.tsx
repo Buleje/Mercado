@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, LayoutGrid, List, Bomb,
 } from "lucide-react";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
@@ -52,7 +53,7 @@ export default function TenantsPage() {
   const loadTenants = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const res = await fetch("/api/superadmin/tenants", { credentials: "include" });
+      const res = await fetchSuperadmin("/api/superadmin/tenants");
       if (!res.ok) { setError("Error al cargar tenants"); return; }
       const data = await res.json() as { tenants: TenantRow[] };
       setTenants(data.tenants);
@@ -65,7 +66,7 @@ export default function TenantsPage() {
   const loadGrowth = useCallback(async () => {
     setGrowthLoading(true);
     try {
-      const res = await fetch("/api/superadmin/tenants/growth", { credentials: "include" });
+      const res = await fetchSuperadmin("/api/superadmin/tenants/growth");
       if (res.ok) {
         const json = await res.json() as { data: GrowthEntry[] };
         setGrowthData(json.data);
