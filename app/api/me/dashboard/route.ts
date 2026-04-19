@@ -15,11 +15,15 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
+
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
@@ -43,9 +47,10 @@ export async function GET(req: NextRequest) {
       savedCart,
       pendingDeuda,
     ] = await Promise.all([
-      // Customer profile
-      prisma.customer.findUnique({
-        where: { phone: customerPhone },
+      // Customer profile — findFirst con tenantId para aislamiento multi-tenant
+      // (phone es PK global: findUnique ignora tenantId → cross-tenant leak)
+      prisma.customer.findFirst({
+        where: { phone: customerPhone, tenantId },
         select: {
           name: true,
           phone: true,

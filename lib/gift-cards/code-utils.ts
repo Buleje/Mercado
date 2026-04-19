@@ -41,13 +41,7 @@ export function normalizeCode(input: string): string {
 function getHmacSecret(): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "AUTH_SECRET is required to sign gift card codes in production",
-      );
-    }
-    // Fallback dev — DOCUMENTADO. Nunca usar en prod.
-    return "buleje-dev-fallback-gift-cards-change-me";
+    throw new Error("AUTH_SECRET required — add to .env");
   }
   // Derivar un sub-secreto dedicado: si algun dia decidimos rotar el de gift
   // cards sin tocar el de sesiones, la rotacion vive aqui.

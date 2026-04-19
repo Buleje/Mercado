@@ -29,12 +29,12 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   startTransition,
   type ReactNode,
 } from "react";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
+import { isAuthenticatedSync } from "@/hooks/use-is-authenticated";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -223,8 +223,6 @@ export function SubscriptionProvider({
 
   const [subscriptions, setSubscriptions] = useState<SubscriptionPlan[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  /** True si el server respondió OK en el hidrate inicial — habilita writes remotos. */
-  const apiAvailableRef = useRef(false);
 
   // Hydrate from localStorage (or seed) after mount.
   useEffect(() => {
@@ -240,13 +238,18 @@ export function SubscriptionProvider({
     });
 
     // Intenta sincronizar desde el servidor si el cliente está autenticado.
+    // Skip la llamada si no hay customer local — evita 401 en consola para
+    // visitantes anónimos. El endpoint además responde 204 cuando anónimo,
+    // pero este gate evita el round-trip.
+    if (!isAuthenticatedSync()) {
+      return () => { cancelled = true; };
+    }
     (async () => {
       const res = await fetchJson<{ items: SubscriptionDto[] }>(
         "/api/subscriptions",
       );
       if (cancelled) return;
       if (res.ok) {
-        apiAvailableRef.current = true;
         // Merge: para cada dto del server usa el plan local como fuente de
         // datos de display (nombre/imagen/precio). Si no existía local, cae al
         // placeholder.
@@ -301,7 +304,11 @@ export function SubscriptionProvider({
 
       // Fire-and-forget POST al API; al éxito reemplaza el plan local con el
       // dto del server (misma entrada en la lista) para fijar el id real.
-      if (apiAvailableRef.current) {
+      // Opción A (P0 #8): eliminamos el gate apiAvailableRef para evitar la
+      // race condition donde el usuario hace clic ANTES que termine la
+      // hidratación. isAuthenticatedSync() garantiza sesión; el server
+      // devuelve 401 si no aplica y fetchJson lo maneja gracefully.
+      if (isAuthenticatedSync()) {
         const productIdInt = Number(input.productId);
         if (Number.isFinite(productIdInt) && productIdInt > 0) {
           void (async () => {
@@ -337,9 +344,13 @@ export function SubscriptionProvider({
 
   const patchStatus = useCallback(
     (id: string, status: SubscriptionStatus, cancelReason?: string) => {
+      // Capturar snapshot para rollback (P1 #24).
+      let snapshot: SubscriptionPlan[] | null = null;
+
       // Optimistic update.
-      setSubscriptions((prev) =>
-        prev.map((s) => {
+      setSubscriptions((prev) => {
+        snapshot = prev;
+        return prev.map((s) => {
           if (s.id !== id) return s;
           if (status === "active" && s.status === "paused") {
             return {
@@ -349,13 +360,24 @@ export function SubscriptionProvider({
             };
           }
           return { ...s, status };
-        }),
-      );
-      if (apiAvailableRef.current) {
-        void fetchJson(`/api/subscriptions/${encodeURIComponent(id)}`, {
-          method: "PATCH",
-          body: JSON.stringify({ status, cancelReason }),
         });
+      });
+
+      // Opción A (P0 #8): gate por sesión, no por apiAvailableRef.
+      if (isAuthenticatedSync()) {
+        void (async () => {
+          const res = await fetchJson(
+            `/api/subscriptions/${encodeURIComponent(id)}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ status, cancelReason }),
+            },
+          );
+          if (!res.ok && snapshot !== null) {
+            // Rollback al snapshot previo si el server rechaza el cambio.
+            setSubscriptions(snapshot);
+          }
+        })();
       }
     },
     [],
@@ -394,7 +416,7 @@ export function SubscriptionProvider({
             : s,
         ),
       );
-      if (apiAvailableRef.current) {
+      if (isAuthenticatedSync()) {
         void fetchJson(`/api/subscriptions/${encodeURIComponent(id)}`, {
           method: "PATCH",
           body: JSON.stringify({ frequency }),
@@ -418,7 +440,7 @@ export function SubscriptionProvider({
           : s,
       ),
     );
-    if (apiAvailableRef.current) {
+    if (isAuthenticatedSync()) {
       void fetchJson(`/api/subscriptions/${encodeURIComponent(id)}/skip`, {
         method: "POST",
         body: JSON.stringify({}),

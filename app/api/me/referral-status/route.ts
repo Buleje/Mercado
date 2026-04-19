@@ -13,11 +13,14 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
@@ -28,9 +31,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Get my referral code
-    const me = await prisma.customer.findUnique({
-      where: { phone: customerPhone },
+    // findFirst con tenantId para aislamiento multi-tenant
+    // TODO(P1 #15): migrar a CustomersDB
+    const me = await prisma.customer.findFirst({
+      where: { phone: customerPhone, tenantId },
       select: {
         referralCode: true,
         loyaltyPoints: true,

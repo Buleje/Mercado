@@ -84,12 +84,35 @@ export function resolveTenantFromHost(req: NextRequest): string {
  * Returns the resolved tenant ID, or the input `baseTenant` if no fallback
  * produced a value.
  */
+/**
+ * Multi-source tenant fallback usado cuando el host resuelve a "main".
+ *
+ * SECURITY NOTE (P0 #2 — PARCIALMENTE APLICADO):
+ * El Source 1 (session cookie) idealmente debería verificarse con HMAC via
+ * getSessionPayload() para prevenir tenant spoofing. Sin embargo, esa función
+ * es async y el contrato de este módulo es síncrono (consumido directamente
+ * en proxy.ts línea 53 sin await).
+ *
+ * El fix completo requiere:
+ *   1. Hacer esta función async (ya preparada arriba con import de getSessionPayload)
+ *   2. Agregar `await` en proxy.ts línea 53 (bloqueado por danger-zone hook —
+ *      debe ser aplicado por security-squad via /security-squad agent)
+ *
+ * MITIGACIÓN ACTUAL: aunque no se verifica HMAC aquí, el tenantId extraído
+ * de la cookie solo se usa para routing en el middleware. La autorización real
+ * ocurre en requireAdmin() / requireCustomer() que SÍ verifican HMAC
+ * (getSessionPayload) antes de ejecutar cualquier query de base de datos.
+ * Un atacante que forge la cookie obtiene routing incorrecto pero NO acceso
+ * a datos de otro tenant porque los API handlers tienen su propia verificación.
+ *
+ * TODO(security-squad P0 #2): make async + add await in proxy.ts:53
+ */
 export function resolveTenantMultiSource(req: NextRequest, baseTenant: string): string {
   if (baseTenant !== DEFAULT_TENANT_ID) return baseTenant;
 
   // Source 1 (HIGHEST): Admin session JWT — canonical tenantId (CUID).
-  // Always contains the real Tenant.id, set during login or impersonation.
-  // We support both the current cookie name and the legacy one after rebrand.
+  // SECURITY: decodifica sin verificar HMAC (limitación de contrato síncrono).
+  // Ver nota arriba sobre P0 #2 y la mitigación en requireAdmin/requireCustomer.
   const sessionCookie =
     req.cookies.get("buleje-admin-sess")?.value ??
     req.cookies.get("bsm-admin-sess")?.value;

@@ -13,7 +13,11 @@ export interface PlatformSession {
 }
 
 function getSecret(): string {
-  return process.env.AUTH_SECRET ?? "buleje-dev-fallback-2024-change-in-production";
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error("AUTH_SECRET required — add to .env");
+  }
+  return secret;
 }
 
 async function sign(secret: string, data: string): Promise<string> {

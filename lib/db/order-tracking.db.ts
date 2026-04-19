@@ -28,10 +28,7 @@ const DEFAULT_TTL_MS = 72 * 60 * 60 * 1000; // 72h
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("AUTH_SECRET environment variable is required in production");
-    }
-    return "buleje-dev-fallback-2024-change-in-production";
+    throw new Error("AUTH_SECRET required — add to .env");
   }
   return secret;
 }

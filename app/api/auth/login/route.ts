@@ -23,12 +23,17 @@ async function getLegacyUsers(): Promise<LegacyAdminUser[]> {
   }
 }
 
-/** Check password against a stored value – supports bcrypt hashes and plain text (legacy). */
-async function checkPassword(input: string, stored: string): Promise<boolean> {
-  if (stored.startsWith("$2")) {
+/** Check password against a stored value – only accepts valid bcrypt hashes (fail-closed). */
+async function checkPassword(input: string, stored: string, username?: string): Promise<boolean> {
+  if (
+    stored.startsWith("$2a$") ||
+    stored.startsWith("$2b$") ||
+    stored.startsWith("$2y$")
+  ) {
     return compare(input, stored);
   }
-  return input === stored;
+  logger.error("Invalid password hash format — rejecting authentication", { username });
+  return false;
 }
 
 function makeAccessCookie() {
@@ -119,7 +124,7 @@ export async function POST(req: Request) {
   }
 
   for (const u of dbUsers) {
-    if (await checkPassword(password, u.passwordHash)) {
+    if (await checkPassword(password, u.passwordHash, u.username)) {
       // Always use the canonical Tenant ID (CUID) for the session
       const [token, refreshToken] = await Promise.all([
         createSessionToken(u.role as AdminRole, u.username, tenantId, u.name),
@@ -152,7 +157,7 @@ export async function POST(req: Request) {
     const legacyUsers = await getLegacyUsers();
     const candidates = username ? legacyUsers.filter((u) => u.username === username) : legacyUsers;
     for (const u of candidates) {
-      if (await checkPassword(password, u.password)) {
+      if (await checkPassword(password, u.password, u.username)) {
         const [token, refreshToken] = await Promise.all([
           createSessionToken(u.role, u.username, tenantId, u.name),
           createRefreshToken(u.role, u.username, tenantId, u.name),
@@ -170,7 +175,7 @@ export async function POST(req: Request) {
   try {
     const settings = await SettingsDB.get(tenantId);
     const adminPassword = settings.adminPassword;
-    if (adminPassword && await checkPassword(password, adminPassword)) {
+    if (adminPassword && await checkPassword(password, adminPassword, "admin")) {
       const [token, refreshToken] = await Promise.all([
         createSessionToken("admin", "admin", tenantId, "Administrador"),
         createRefreshToken("admin", "admin", tenantId, "Administrador"),

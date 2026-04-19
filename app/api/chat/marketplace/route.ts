@@ -1,9 +1,12 @@
+import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireCustomer } from "@/lib/auth/require-customer";
+import { requireAdmin } from "@/lib/require-admin";
 
 // ---------- helpers ----------
 
@@ -39,6 +42,14 @@ export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
   const limited = applyRateLimit(req, "MODERATE", "chat-mkt-get");
   if (limited) return limited;
 
+  // P0 #5 — requiere sesión de cliente autenticado
+  const customer = await requireCustomer(req);
+  if (customer instanceof NextResponse) return customer;
+
+  if (!customer.customerId) {
+    return NextResponse.json({ error: "Cuenta no vinculada a un teléfono" }, { status: 400 });
+  }
+
   try {
     const { searchParams } = req.nextUrl;
     const storeId = searchParams.get("storeId");
@@ -55,6 +66,11 @@ export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
     const phone = normalizePhone(rawPhone);
     if (!PHONE_RE.test(phone)) {
       return NextResponse.json({ error: "customerPhone inválido (9 dígitos)" }, { status: 400 });
+    }
+
+    // Ownership check: el phone del query debe coincidir con el de la sesión
+    if (normalizePhone(customer.customerId) !== phone) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
     // Usamos ChatMessage existente con filtro por combinación storeId+phone
@@ -96,7 +112,10 @@ export const POST = withApiHandler("chat-marketplace-post", async (req, ctx) => 
   if (limited) return limited;
 
   try {
-    const body = await req.json().catch(() => null);
+    const body = await req.json().catch((err) => {
+      logger.warn("Invalid JSON body in chat-marketplace POST", { err: err instanceof Error ? err.message : String(err) });
+      return null;
+    });
     const parsed = MarketplaceChatSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos de chat inválidos" }, { status: 400 });
@@ -111,7 +130,25 @@ export const POST = withApiHandler("chat-marketplace-post", async (req, ctx) => 
       senderType,
     } = parsed.data;
 
-    const customerPhone = normalizePhone(parsed.data.customerPhone);
+    let customerPhone: string;
+
+    if (senderType === "customer") {
+      // P0 #6 — requiere sesión de cliente; ignorar customerPhone del body
+      const customer = await requireCustomer(req);
+      if (customer instanceof NextResponse) return customer;
+
+      if (!customer.customerId) {
+        return NextResponse.json({ error: "Cuenta no vinculada a un teléfono" }, { status: 400 });
+      }
+      customerPhone = normalizePhone(customer.customerId);
+    } else {
+      // senderType === "store" — requiere admin del tenant
+      const admin = await requireAdmin(req, ["admin", "cajero", "tienda_owner"]);
+      if (admin instanceof NextResponse) return admin;
+
+      customerPhone = normalizePhone(parsed.data.customerPhone);
+    }
+
     if (!PHONE_RE.test(customerPhone)) {
       return NextResponse.json({ error: "customerPhone inválido (9 dígitos)" }, { status: 400 });
     }

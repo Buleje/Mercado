@@ -32,53 +32,57 @@ export async function POST(req: NextRequest) {
     return d;
   }
 
+  // SECURITY: tenantId debe extraerse ANTES de los deleteMany para aislamiento.
+  // Sin where:{tenantId}, deleteMany borra datos de TODOS los tenants (P0 #7).
+  const tenantId = auth.tenantId;
+
   try {
-    // ── Clear all data first ──────────────────────────
-    await prisma.aBTestEvent.deleteMany();
-    await prisma.aBTest.deleteMany();
-    await prisma.surveyResponse.deleteMany();
-    await prisma.pageVersion.deleteMany();
-    await prisma.pageBlock.deleteMany();
-    await prisma.page.deleteMany();
-    await prisma.blockTemplate.deleteMany();
-    await prisma.media.deleteMany();
-    await prisma.themeSettings.deleteMany();
-    await prisma.navigation.deleteMany();
-    await prisma.chatMessage.deleteMany();
-    await prisma.notificationLog.deleteMany();
-    await prisma.customerNotification.deleteMany();
-    await prisma.pushSubscription.deleteMany();
-    await prisma.activityLog.deleteMany();
-    await prisma.bundleItem.deleteMany();
-    await prisma.bundle.deleteMany();
-    await prisma.expense.deleteMany();
-    await prisma.supplierEvaluation.deleteMany();
-    await prisma.adminMessage.deleteMany();
-    await prisma.deliverySlot.deleteMany();
-    await prisma.priceHistory.deleteMany();
-    await prisma.shoppingListItem.deleteMany();
-    await prisma.shoppingList.deleteMany();
-    await prisma.returnItem.deleteMany();
-    await prisma.return.deleteMany();
-    await prisma.coupon.deleteMany();
-    await prisma.inventoryMovement.deleteMany();
-    await prisma.cashMovement.deleteMany();
-    await prisma.cashRegister.deleteMany();
-    await prisma.payment.deleteMany();
-    await prisma.payable.deleteMany();
-    await prisma.promotion.deleteMany();
-    await prisma.saleItem.deleteMany();
-    await prisma.sale.deleteMany();
-    await prisma.purchaseItem.deleteMany();
-    await prisma.purchaseOrder.deleteMany();
-    await prisma.supplier.deleteMany();
-    await prisma.review.deleteMany();
-    await prisma.orderItem.deleteMany();
-    await prisma.order.deleteMany();
-    await prisma.savedCart.deleteMany();
-    await prisma.savedLocation.deleteMany();
-    await prisma.customer.deleteMany();
-    await prisma.product.deleteMany();
+    // ── Clear all data for THIS tenant only ───────────
+    await prisma.aBTestEvent.deleteMany({ where: { tenantId } });
+    await prisma.aBTest.deleteMany({ where: { tenantId } });
+    await prisma.surveyResponse.deleteMany({ where: { tenantId } });
+    await prisma.pageVersion.deleteMany({ where: { page: { tenantId } } });
+    await prisma.pageBlock.deleteMany({ where: { page: { tenantId } } });
+    await prisma.page.deleteMany({ where: { tenantId } });
+    await prisma.blockTemplate.deleteMany({ where: { tenantId } });
+    await prisma.media.deleteMany({ where: { tenantId } });
+    await prisma.themeSettings.deleteMany({ where: { tenantId } });
+    await prisma.navigation.deleteMany({ where: { tenantId } });
+    await prisma.chatMessage.deleteMany({ where: { tenantId } });
+    await prisma.notificationLog.deleteMany({ where: { tenantId } });
+    await prisma.customerNotification.deleteMany({ where: { tenantId } });
+    await prisma.pushSubscription.deleteMany({ where: { tenantId } });
+    await prisma.activityLog.deleteMany({ where: { tenantId } });
+    await prisma.bundleItem.deleteMany({ where: { bundle: { tenantId } } });
+    await prisma.bundle.deleteMany({ where: { tenantId } });
+    await prisma.expense.deleteMany({ where: { tenantId } });
+    await prisma.supplierEvaluation.deleteMany({ where: { tenantId } });
+    await prisma.adminMessage.deleteMany({ where: { tenantId } });
+    await prisma.deliverySlot.deleteMany({ where: { tenantId } });
+    await prisma.priceHistory.deleteMany({ where: { tenantId } });
+    await prisma.shoppingListItem.deleteMany({ where: { shoppingList: { tenantId } } });
+    await prisma.shoppingList.deleteMany({ where: { tenantId } });
+    await prisma.returnItem.deleteMany({ where: { returnRecord: { tenantId } } });
+    await prisma.return.deleteMany({ where: { tenantId } });
+    await prisma.coupon.deleteMany({ where: { tenantId } });
+    await prisma.inventoryMovement.deleteMany({ where: { tenantId } });
+    await prisma.cashMovement.deleteMany({ where: { cashRegister: { tenantId } } });
+    await prisma.cashRegister.deleteMany({ where: { tenantId } });
+    await prisma.payment.deleteMany({ where: { payable: { tenantId } } });
+    await prisma.payable.deleteMany({ where: { tenantId } });
+    await prisma.promotion.deleteMany({ where: { tenantId } });
+    await prisma.saleItem.deleteMany({ where: { sale: { tenantId } } });
+    await prisma.sale.deleteMany({ where: { tenantId } });
+    await prisma.purchaseItem.deleteMany({ where: { purchaseOrder: { tenantId } } });
+    await prisma.purchaseOrder.deleteMany({ where: { tenantId } });
+    await prisma.supplier.deleteMany({ where: { tenantId } });
+    await prisma.review.deleteMany({ where: { tenantId } });
+    await prisma.orderItem.deleteMany({ where: { order: { tenantId } } });
+    await prisma.order.deleteMany({ where: { tenantId } });
+    await prisma.savedCart.deleteMany({ where: { tenantId } });
+    await prisma.savedLocation.deleteMany({ where: { customer: { tenantId } } });
+    await prisma.customer.deleteMany({ where: { tenantId } });
+    await prisma.product.deleteMany({ where: { tenantId } });
 
     // ── Products ────────────────────────────────────────
     const productData = [
@@ -148,8 +152,6 @@ export async function POST(req: NextRequest) {
       { name: "Ají Panca Molido 80g", category: "Abarrotes", price: 3.00, costPrice: 2.00, unit: "sobre", stock: 20, stockMin: 5, stockMax: 30 },
       { name: "Comino Molido 50g", category: "Abarrotes", price: 2.00, costPrice: 1.20, unit: "sobre", stock: 25, stockMin: 5, stockMax: 35 },
     ];
-
-    const tenantId = auth.tenantId;
 
     // TD-018: Prisma devuelve price/costPrice como Decimal — convertir a number
     // para que el resto del seed pueda hacer aritmética sin TS errors.

@@ -15,6 +15,7 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
@@ -30,6 +31,8 @@ const DeleteBody = z.object({
 // ── GET: list addresses ─────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
@@ -40,6 +43,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // SavedLocation no tiene tenantId en el schema — el aislamiento se da
+    // porque customerPhone viene del session autenticado (no de query param).
+    // TODO(P1 #15): migrar a CustomersDB + agregar tenantId a SavedLocation
     const addresses = await prisma.savedLocation.findMany({
       where: { customerPhone },
       orderBy: { id: "desc" },
@@ -73,7 +79,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
   }
 
-  const body = await req.json().catch(() => null);
+  const body = await req.json().catch((err) => {
+    logger.warn("Invalid JSON body in me/addresses POST", { err: err instanceof Error ? err.message : String(err) });
+    return null;
+  });
   const parsed = AddressBody.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -84,6 +93,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Limit to 10 addresses per customer
+    // TODO(P1 #15): agregar tenantId a SavedLocation para aislamiento estricto
     const count = await prisma.savedLocation.count({
       where: { customerPhone },
     });
@@ -128,7 +138,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
   }
 
-  const body = await req.json().catch(() => null);
+  const body = await req.json().catch((err) => {
+    logger.warn("Invalid JSON body in me/addresses DELETE", { err: err instanceof Error ? err.message : String(err) });
+    return null;
+  });
   const parsed = DeleteBody.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "id requerido" }, { status: 400 });

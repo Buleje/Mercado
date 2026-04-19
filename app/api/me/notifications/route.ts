@@ -15,10 +15,14 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
+
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
@@ -93,7 +97,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
   }
 
-  const body = await req.json().catch(() => null);
+  const body = await req.json().catch((err) => {
+    logger.warn("Invalid JSON body in me/notifications POST", { err: err instanceof Error ? err.message : String(err) });
+    return null;
+  });
 
   try {
     if (body?.all === true) {
