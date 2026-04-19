@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, PageTitle, StatCard } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -959,9 +960,11 @@ export default function GuiasRemisionModule() {
                   </div>
                   <div className="flex items-center gap-2">
                     {selected.status === "BORRADOR" && (
-                      <button onClick={handleDuplicate} className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Duplicar">
-                        <Copy className="h-4 w-4 text-[var(--text-tertiary)]" />
-                      </button>
+                      <AdminTooltip content="Crear una copia de esta guía">
+                        <button onClick={handleDuplicate} aria-label="Duplicar" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                          <Copy className="h-4 w-4 text-[var(--text-tertiary)]" />
+                        </button>
+                      </AdminTooltip>
                     )}
                     {selected.status !== "ANULADA" && selected.status !== "ENTREGADA" && (
                       <button onClick={() => setShowAnular(true)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] transition-colors" title="Anular">

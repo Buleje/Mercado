@@ -248,11 +248,15 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Apertura, cierre y resumen de ventas por turno y cajero</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => { setLoadingData(true); loadShiftData(); }} disabled={loadingData} title="Actualizar datos de ventas" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
+          <AdminTooltip content="Recargar datos de turnos y ventas">
+            <button onClick={() => { setLoadingData(true); loadShiftData(); }} disabled={loadingData} aria-label="Actualizar datos" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
+          </AdminTooltip>
           {onNavigateToArqueo && (
-            <button onClick={onNavigateToArqueo} title="Ver Arqueo de Caja" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
-              <ExternalLink className="h-4 w-4" /> Ver Arqueo
-            </button>
+            <AdminTooltip content="Ir al módulo de arqueo de caja detallado">
+              <button onClick={onNavigateToArqueo} aria-label="Ver Arqueo de Caja" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
+                <ExternalLink className="h-4 w-4" /> Ver Arqueo
+              </button>
+            </AdminTooltip>
           )}
           <button onClick={() => exportToCSV(closedShifts.map(s => ({ cajero: s.userName, apertura: s.openedAt, cierre: s.closedAt ?? "", duracion: duration(s.openedAt, s.closedAt), ventas_total: s.totalSales, pedidos: s.totalOrders, efectivo: s.cashSales, digital: s.digitalSales, fondo_inicio: s.openingCash, efectivo_contado: s.closingCash ?? 0, esperado: s.expectedCash, diferencia: s.difference ?? 0 })), "historial-turnos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar

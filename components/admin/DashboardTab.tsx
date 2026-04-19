@@ -10,6 +10,7 @@ import {
   ArrowUp, ArrowDown, Trophy, Edit3,
   Beaker, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard } from "@buleje/design-system/icons";
 import { CardTitle, ErrorAlert, WarningAlert } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn, exportToCSV } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { OrderStats } from "@/components/OrderStats";
@@ -1451,9 +1452,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
             )}
           </div>
-          <button onClick={load} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors" title="Actualizar">
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-          </button>
+          <AdminTooltip content="Recargar todas las métricas del dashboard">
+            <button onClick={load} aria-label="Actualizar" className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            </button>
+          </AdminTooltip>
           {/* N2 — WA daily summary */}
           <a
             href={(() => {

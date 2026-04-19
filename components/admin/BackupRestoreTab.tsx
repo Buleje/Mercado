@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useCallback } from "react";
 import { Shield, Download, Upload, Clock, CheckCircle, AlertTriangle, HardDrive, Database, RefreshCw, Trash2, Play } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -206,9 +207,11 @@ export default function BackupRestoreTab() {
                               className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)]" title="Descargar">
                               <Download className="h-4 w-4" />
                             </a>
-                            <button className="p-1.5 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 text-[var(--data-warning)]" title="Restaurar (próximamente)">
-                              <Upload className="h-4 w-4" />
-                            </button>
+                            <AdminTooltip content="Restaurar desde este backup — próximamente">
+                              <button aria-label="Restaurar" className="p-1.5 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 text-[var(--data-warning)]">
+                                <Upload className="h-4 w-4" />
+                              </button>
+                            </AdminTooltip>
                           </>
                         )}
                         <button onClick={() => handleDelete(b.id)}

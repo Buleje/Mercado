@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Bot, X, Send, Mic, MicOff, Sparkles,
@@ -947,9 +948,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-lg transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar voz" : "Activar voz"}>
               {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
             </button>
-            <button onClick={clearHistory} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Limpiar historial">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <AdminTooltip content="Borrar toda la conversación con el asistente">
+              <button onClick={clearHistory} aria-label="Limpiar historial" className="p-1.5 rounded-lg hover:bg-white/20 transition-colors">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </AdminTooltip>
           </div>
         </div>
 
@@ -1099,7 +1102,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               <button onClick={() => setShowPanel(showPanel === "stats" ? "chat" : "stats")} className={cn("p-1.5 rounded-lg transition-colors", showPanel === "stats" ? "bg-white/30" : "hover:bg-white/20")} title="Stats">
                 <BarChart3 className="h-3.5 w-3.5" />
               </button>
-              <button onClick={clearHistory} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Limpiar"><Trash2 className="h-3.5 w-3.5" /></button>
+              <AdminTooltip content="Borrar historial de la conversación"><button onClick={clearHistory} aria-label="Limpiar" className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button></AdminTooltip>
               {/* Mejora 28: Size cycle */}
               <button onClick={() => setWidgetSize(s => s === "mini" ? "medium" : s === "medium" ? "large" : "mini")}
                 className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Cambiar tamaño">
