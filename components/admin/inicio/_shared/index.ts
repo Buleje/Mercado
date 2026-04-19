@@ -13,3 +13,4 @@ export { ChartCard, ChartTooltip, CHART_TOKENS } from "./ChartCard";
 export { MicroDonut, type MicroDonutDatum } from "./MicroDonut";
 export { MicroList, type MicroListItem } from "./MicroList";
 export { MicroGauge } from "./MicroGauge";
+export { DashboardSectionHeader } from "./DashboardSectionHeader";

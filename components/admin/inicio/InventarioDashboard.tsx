@@ -12,6 +12,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const InventarioCharts = dynamic(() => import("./InventarioCharts"), { ssr: false });
+import { DashboardSectionHeader } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -222,7 +223,14 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <DashboardSectionHeader
+        eyebrow="Dashboard · Inventario y stock"
+        title="Qué hay"
+        titleAccent="en bodega"
+        subtitle="Stock disponible, alertas de reposición, productos por vencer y valor total del inventario."
+      />
+
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Valor Inventario" value={fmt(data.valorInventario)} icon={DollarSign} />

@@ -12,6 +12,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const ClientesCharts = dynamic(() => import("./ClientesCharts"), { ssr: false });
+import { DashboardSectionHeader } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -273,7 +274,14 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <DashboardSectionHeader
+        eyebrow="Dashboard · Clientes y fidelidad"
+        title="Quién"
+        titleAccent="te compra"
+        subtitle="Clientes activos, ticket promedio, tiers de fidelidad y los que llevan tiempo sin volver."
+      />
+
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Total Clientes" value={String(data.totalClientes)} icon={Users} />

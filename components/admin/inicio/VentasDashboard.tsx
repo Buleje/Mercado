@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 const VentasCharts = dynamic(() => import("./VentasCharts"), { ssr: false });
+import { DashboardSectionHeader } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -257,7 +258,14 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <DashboardSectionHeader
+        eyebrow="Dashboard · Ventas y utilidad"
+        title="Tu negocio en"
+        titleAccent="ingresos"
+        subtitle="Ventas netas, margen y tickets del periodo. Miralo todos los días para saber si estás ganando."
+      />
+
       {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) — con sparklines ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas.length >= 2 ? { data: data.sparkVentas } : undefined} />

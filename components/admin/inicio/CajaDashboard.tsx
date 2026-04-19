@@ -12,6 +12,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const CajaCharts = dynamic(() => import("./CajaCharts"), { ssr: false });
+import { DashboardSectionHeader } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -206,7 +207,14 @@ export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <DashboardSectionHeader
+        eyebrow="Dashboard · Caja y flujo de efectivo"
+        title="Dónde está"
+        titleAccent="el efectivo"
+        subtitle="Arqueos, métodos de pago, movimientos y diferencias. Saber a dónde se va la plata."
+      />
+
       {/* ── KPI Hero Row · ADR-068 armonía estricta — con sparklines ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Ingresos" value={fmt(data.ingresos)} icon={ArrowUpFromLine} delta={data.dIngresos} sparkline={data.flujoDiario.length >= 2 ? { data: data.flujoDiario.map(d => d.ingresos) } : undefined} />

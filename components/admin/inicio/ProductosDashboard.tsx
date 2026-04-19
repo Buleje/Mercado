@@ -12,6 +12,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const ProductosCharts = dynamic(() => import("./ProductosCharts"), { ssr: false });
+import { DashboardSectionHeader } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -227,7 +228,14 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <DashboardSectionHeader
+        eyebrow="Dashboard · Productos y catálogo"
+        title="Tu catálogo"
+        titleAccent="en números"
+        subtitle="Productos activos, categorías, precios y los que más rotan en el periodo."
+      />
+
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Productos Activos" value={String(data.productosActivos)} icon={Package} />

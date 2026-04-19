@@ -12,6 +12,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const ComprasCharts = dynamic(() => import("./ComprasCharts"), { ssr: false });
+import { DashboardSectionHeader } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,7 +179,14 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <DashboardSectionHeader
+        eyebrow="Dashboard · Compras y proveedores"
+        title="Cómo entra"
+        titleAccent="el stock"
+        subtitle="Órdenes de compra, deuda con proveedores, costo promedio y rotación del inventario."
+      />
+
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Total Compras" value={fmt(data.totalCompras)} icon={DollarSign} delta={data.dCompras} />
