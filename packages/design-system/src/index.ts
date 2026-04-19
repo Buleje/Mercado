@@ -83,6 +83,21 @@ export {
   type ProductPriceProps,
 } from "./store";
 
+// ── Canonical product cards (Ola 7 — 3 tamanos estrategicos) ────────────────
+// Ver packages/design-system/src/product-card/index.ts para docs + ejemplos.
+export {
+  ProductCardHero,
+  ProductCardGrid,
+  ProductCardCompact,
+  type ProductCardHeroProps,
+  type ProductCardHeroVariant,
+  type ProductCardGridProps,
+  type ProductCardCompactProps,
+  type ProductCardProduct,
+  type ProductCardActions,
+  type ProductCardBadge,
+} from "./product-card";
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 export { undoToast } from "./undoToast";
 export { cn } from "./utils";
