@@ -9,6 +9,8 @@ export * from "./pucallpa-locals";
 export * from "./feature-identity";
 export { IllustrationCard } from "./IllustrationCard";
 export { BulejeLogo, BulejeMark, BulejeWordmark } from "./BulejeLogo";
+// Mascota amazónica — paiche line-art extraído de pucallpa-locals
+export { PaicheMascot } from "./PaicheMascot";
 
 // Re-export agrupados por contexto para autocomplete
 export { EMPTY_ILLUSTRATIONS } from "./empty-states";

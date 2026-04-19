@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Home, ShoppingBag, Search, MapPin, AlertCircle } from "lucide-react";
+import { Home, ShoppingBag, Search, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
-import { MapaUcayaliAutentico } from "@/components/ui-system/illustrations";
+import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
 
 export const metadata: Metadata = {
-  title: "404 — Esta ruta se perdió en el barrio | Buleje",
+  title: "404 — El paiche se fue por otro río | Buleje",
   description:
     "La pagina que buscas no existe o fue movida. Explora productos, zonas de cobertura o vuelve al inicio.",
   robots: { index: false, follow: true },
@@ -19,30 +19,20 @@ export default function NotFound() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4 py-12">
       <div className="text-center max-w-2xl">
-        {/* Illustration Buleje — mapa Ucayali con "X" marca de perdido */}
-        <div className="relative text-[var(--text-primary)] flex justify-center mb-6">
-          <MapaUcayaliAutentico size={220} className="text-[var(--text-secondary)] opacity-80" />
-          {/* Marca "perdido" superpuesta */}
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full bg-[var(--surface-canvas)] border-2 border-[var(--data-error,#e11d48)] flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <AlertCircle
-              className="h-8 w-8 text-[var(--data-error,#e11d48)]"
-              strokeWidth={1.75}
-            />
-          </div>
+        {/* Paiche — símbolo amazónico perdido en el río equivocado */}
+        <div className="text-[var(--accent)] flex justify-center mb-8">
+          <PaicheMascot size={200} strokeWidth={1.75} animated />
         </div>
 
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
           Error 404
         </p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
-          Esta ruta se perdió en el barrio
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] italic">
+          El paiche se fue por otro río
         </h1>
-        <p className="mt-3 text-[var(--text-secondary)] text-base leading-relaxed max-w-md mx-auto">
-          La página que buscás no existe o la movieron de lugar. Probá volviendo
-          al inicio o buscando lo que necesitás.
+        <p className="mt-4 font-display text-lg text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto">
+          La página que buscás no existe. Pero tu próxima compra sí —
+          volvé al inicio o buscá lo que necesitás.
         </p>
 
         {/* Search prompt */}

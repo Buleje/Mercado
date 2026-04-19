@@ -50,11 +50,11 @@ export function EmptyState({
           {eyebrow}
         </p>
       )}
-      <h3 className="mt-2 text-lg font-extrabold tracking-tight text-[var(--text-primary)] max-w-sm">
+      <h3 className="font-display mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)] max-w-sm italic">
         {title}
       </h3>
       {description && (
-        <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
+        <p className="mt-3 text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
           {description}
         </p>
       )}

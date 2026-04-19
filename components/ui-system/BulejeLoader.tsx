@@ -27,6 +27,7 @@
 
 import { useEffect, useState } from "react";
 import { BulejeMark } from "@/components/ui-system/illustrations/BulejeLogo";
+import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -36,15 +37,24 @@ interface Props {
   size?: "sm" | "md" | "lg";
   /** Si es true, no ocupa min-h-screen (útil para cards internas). */
   inline?: boolean;
+  /**
+   * Ilustración a mostrar:
+   *   - "mark" (default): logo bodega con animación respiración
+   *   - "paiche": pez paiche nadando — para secciones amazónicas
+   *     (marketplace, ofertas, descubrí), más cálido y distintivo.
+   */
+  variant?: "mark" | "paiche";
   className?: string;
 }
 
 const LOGO_SIZE = { sm: 40, md: 64, lg: 96 } as const;
+const PAICHE_SIZE = { sm: 80, md: 140, lg: 200 } as const;
 
 export function BulejeLoader({
   label = "Cargando",
   size = "md",
   inline = false,
+  variant = "mark",
   className,
 }: Props) {
   const [dots, setDots] = useState("");
@@ -70,17 +80,22 @@ export function BulejeLoader({
         className,
       )}
     >
-      <div
-        className="text-[var(--accent)] motion-safe:animate-buleje-breathe"
-        style={{
-          // Animación inline (no requiere tailwind.config si no está registrada).
-          animation: "buleje-breathe 2s ease-in-out infinite",
-        }}
-      >
-        <BulejeMark size={LOGO_SIZE[size]} strokeWidth={1.75} />
-      </div>
+      {variant === "paiche" ? (
+        <div className="text-[var(--accent)]">
+          <PaicheMascot size={PAICHE_SIZE[size]} strokeWidth={1.75} animated />
+        </div>
+      ) : (
+        <div
+          className="text-[var(--accent)] motion-safe:animate-buleje-breathe"
+          style={{
+            animation: "buleje-breathe 2s ease-in-out infinite",
+          }}
+        >
+          <BulejeMark size={LOGO_SIZE[size]} strokeWidth={1.75} />
+        </div>
+      )}
 
-      <p className="text-sm font-medium text-[var(--text-tertiary)] tabular-nums">
+      <p className="font-display text-base italic text-[var(--text-secondary)] tabular-nums">
         <span>{label}</span>
         <span className="inline-block w-6 text-left" aria-hidden>
           {dots}

@@ -61,6 +61,18 @@
   --color-destructive: #ef4444;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
+
+  /* Display font — Fraunces, serif editorial cálido.
+     Uso: headers grandes (h1/h2), eyebrows en empty states, 404.
+     Aplicar con clase `.font-display`. NO usar para body. */
+  --font-display-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+/* Utility class — display font editorial */
+.font-display {
+  font-family: var(--font-display-family);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
 }
 
 /* ── Modo Oscuro ────────────────────────────────────────────────────────── */

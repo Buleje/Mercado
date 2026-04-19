@@ -1,12 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist } from "next/font/google";
+import { Geist, Fraunces } from "next/font/google";
 
+// Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
 const GeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
   preload: true,
+});
+
+// Display — Fraunces: serif editorial cálido con personalidad amazónica.
+// Uso: headers grandes (<h1>, <h2>), eyebrows, y empty states donde
+// queremos que el texto se sienta "impreso", no genérico AI.
+// axes: SOFT=50 (contornos suavizados) + opsz automático para tamaños.
+const FrauncesDisplay = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
@@ -184,7 +198,7 @@ export default async function RootLayout({
   const { ratingValue, ratingCount } = await getCachedReviewStats();
 
   return (
-    <html lang="es-PE" className={`${GeistSans.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${FrauncesDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />
