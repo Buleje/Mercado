@@ -157,7 +157,7 @@ export default async function MarketplacePage(props: {
         />
       )}
 
-      <MarketplaceContent initialStores={initialStores} />
+      <MarketplaceContent />
     </>
   );
 }

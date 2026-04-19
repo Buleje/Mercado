@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from "next/cache";
 import ExplorarClient from "@/components/marketplace/explorar/ExplorarClient";
 
 const BASE_URL = "https://www.buleje.pe";
@@ -35,6 +36,9 @@ export const metadata: Metadata = {
  * Ilustraciones exclusivamente del DS (25+ componentes monoline) — cero
  * fotos stock, cero emojis, cero colores saturados.
  */
-export default function ExplorarPage() {
+export default async function ExplorarPage() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("marketplace-explorar");
   return <ExplorarClient />;
 }

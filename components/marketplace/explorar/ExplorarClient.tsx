@@ -6,23 +6,21 @@
  *
  * Stack canonico (top → bottom):
  *   1. ExplorarHero (kicker + h1 + search + trust)
- *   2. QuickAccessGrid (6 boxes 2x2 illustrations)
- *   3. RecommendationsStrip (tiendas cerca)
- *   4. OfertasFlash (grid con ProductBadge teal)
- *   5. ExplorarPorSector (mini-boxes con icons)
- *   6. ExplorarPorOcasion (6 editorial cards)
- *   7. GuiasTips (3 cards de contenido)
- *   8. FinalCTA (abrir tienda)
+ *   2. OfertasFlash (grid con ProductBadge teal)
+ *   3. GuiasTips (3 cards de contenido)
+ *   4. FinalCTA (abrir tienda)
+ *
+ * REMOVIDOS (ronda A — migrados a /tiendas o nav secundaria):
+ *   - QuickAccessGrid     → ronda B secondary nav
+ *   - RecommendationsStrip (tiendas) → /tiendas
+ *   - ExplorarPorSector   → ronda B secondary nav
+ *   - ExplorarPorOcasion  → ronda B secondary nav
  */
 
 import Link from "next/link";
 import { ArrowUpRight } from "@buleje/design-system/icons";
 import ExplorarHero from "./ExplorarHero";
-import QuickAccessGrid from "./QuickAccessGrid";
-import RecommendationsStrip from "./RecommendationsStrip";
 import OfertasFlash from "./OfertasFlash";
-import ExplorarPorSector from "./ExplorarPorSector";
-import ExplorarPorOcasion from "./ExplorarPorOcasion";
 import GuiasTips from "./GuiasTips";
 import RecentlyViewed from "@/components/store/RecentlyViewed";
 
@@ -67,11 +65,7 @@ export default function ExplorarClient() {
       <ExplorarHero />
 
       <div className="py-10 sm:py-14 space-y-12 sm:space-y-16">
-        <QuickAccessGrid />
-        <RecommendationsStrip />
         <OfertasFlash />
-        <ExplorarPorSector />
-        <ExplorarPorOcasion />
         <GuiasTips />
         <RecentlyViewed />
         <FinalCTA />

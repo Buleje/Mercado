@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Store,
   TrendingUp,
   Clock,
   LocateFixed,
-  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { m } from "framer-motion";
-import MarketplaceFilters, {
-  type MarketplaceFiltersState,
-} from "@/components/marketplace/MarketplaceFilters";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
-import MarketplaceStoresView, {
-  CATEGORIES,
-  ZONES,
-} from "@/components/marketplace/MarketplaceStoresView";
 import MarketplaceCatalogViewSection from "@/components/marketplace/MarketplaceCatalogViewSection";
 import {
   useMarketplaceGeo,
@@ -27,11 +18,7 @@ import {
 } from "@/components/marketplace/useMarketplaceGeo";
 import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-import { useCustomer } from "@/contexts/customer-context";
-import ReorderButton from "@/components/marketplace/ReorderButton";
-import QuickFilterChips, {
-  type QuickChipId,
-} from "@/components/marketplace/QuickFilterChips";
+// useCustomer y ReorderButton removidos (ronda A) — sin uso en catálogo puro
 import MarketplaceHeroBanner from "@/components/marketplace/MarketplaceHeroBanner";
 import { LiveSocialProofBanner } from "@/components/marketing/LiveSocialProofBanner";
 import MarketplaceStories from "@/components/marketplace/MarketplaceStories";
@@ -43,10 +30,10 @@ import MarketplaceRecipesWidget from "@/components/marketplace/MarketplaceRecipe
 import MarketplaceRecentViewed from "@/components/marketplace/MarketplaceRecentViewed";
 import SubscribeAndSaveSection from "@/components/marketplace/SubscribeAndSaveSection";
 import GiftCardsBanner from "@/components/marketplace/gift-cards/GiftCardsBanner";
-import { LiveNowWidget } from "@/components/marketplace/en-vivo/LiveNowWidget";
+// LiveNowWidget removido (ronda A) — ver /marketplace/en-vivo
+// import { LiveNowWidget } from "@/components/marketplace/en-vivo/LiveNowWidget";
 import MarketplaceWelcomeCoupon from "@/components/marketplace/MarketplaceWelcomeCoupon";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
-import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
 // ── Home narrative modules (ENRICH-6) ────────────────────────────────────────
 import ParaVosSection from "@/components/marketplace/home/ParaVosSection";
 import OfertasDelDiaHero from "@/components/marketplace/home/OfertasDelDiaHero";
@@ -57,11 +44,18 @@ import ComparedProductsSection from "@/components/marketplace/home/ComparedProdu
 import AsistenteHomeBanner from "@/components/marketplace/home/AsistenteHomeBanner";
 import VenderMiniCTA from "@/components/marketplace/home/VenderMiniCTA";
 
-type ViewMode = "tiendas" | "catalogo";
+// Removidos (ronda A) — ahora en /tiendas o ronda B nav secundaria:
+// import MarketplaceFilters, { type MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
+// import MarketplaceStoresView, { CATEGORIES, ZONES } from "@/components/marketplace/MarketplaceStoresView";
+// import QuickFilterChips, { type QuickChipId } from "@/components/marketplace/QuickFilterChips";
+// import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
+// import { cn } from "@/lib/utils";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
-const MAX_PRICE_LIMIT = 500;
+// MAX_PRICE_LIMIT reservado para ronda B (product filter bar)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _MAX_PRICE_LIMIT = 500;
 
 /**
  * SHOW_SECONDARY_HOME_SECTIONS — toggle de densidad del home.
@@ -76,36 +70,25 @@ const MAX_PRICE_LIMIT = 500;
  */
 const SHOW_SECONDARY_HOME_SECTIONS = false;
 
-const DEFAULT_FILTERS: MarketplaceFiltersState = {
-  minPrice: 0,
-  maxPrice: MAX_PRICE_LIMIT,
-  productCategory: null,
-  sortBy: "relevance",
-  nearbyEnabled: false,
-};
-
 /* ── Props ──────────────────────────────────────────────────────────────────── */
 
-interface MarketplaceContentProps {
-  /**
-   * Stores pre-fetched en el servidor para eliminar el skeleton flash
-   * del first paint. Si están presentes, se usan como estado inicial
-   * y se skip-ea el primer fetch cliente.
-   *
-   * Solo deberían venir populados cuando NO hay filtros en la URL
-   * (zona, categoria, buscar) — para esos casos el cliente hace fetch
-   * fresh con los filtros correctos.
-   */
-  initialStores?: MarketplaceStore[];
-}
+// initialStores removido (ronda A) — ya no se pre-fetcha el listado de tiendas
+// en el marketplace home. El catálogo de productos lo maneja MarketplaceCatalogViewSection.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface MarketplaceContentProps {}
 
 /* ── MarketplaceContent (orchestrator) ─────────────────────────────────────── */
 
-export default function MarketplaceContent({ initialStores }: MarketplaceContentProps = {}) {
+export default function MarketplaceContent(_props: MarketplaceContentProps = {}) {
   const searchParams = useSearchParams();
   const { addItem } = useMarketplaceCart();
   const cartImportDone = useRef(false);
   const [sharedCartToast, setSharedCartToast] = useState<string | null>(null);
+  const [search, setSearch] = useState(searchParams.get("buscar") ?? "");
+
+  // ── Geo hook — solo para badge "Ordenado por cercanía" en stats row ──
+  const [_stores] = useState<MarketplaceStore[]>([]);
+  const { geoActive } = useMarketplaceGeo(_stores, () => {});
 
   // ── Import shared cart from ?cart= param ──
   useEffect(() => {
@@ -118,19 +101,15 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
     const items = deserializeCart(token);
     if (items.length === 0) return;
 
-    // Fetch store details to build full CartItem shape
-    // We only know productId + storeSlug + quantity — add minimal stubs;
-    // the full product data loads when the user opens the product card.
-    // For each unique storeSlug, we can import items directly into the cart.
     for (const shared of items) {
       addItem({
         storeId: shared.s,
-        storeName: shared.s,         // stub — shown in cart until real name loads
+        storeName: shared.s,
         storeSlug: shared.s,
         storeProductId: `${shared.s}-${shared.p}`,
         productId: shared.p,
-        name: `Producto #${shared.p}`,  // stub — updated when user sees cart
-        price: 0,                        // preview only — totals computed server-side
+        name: `Producto #${shared.p}`,
+        price: 0,
         quantity: shared.q,
         image: null,
         unit: null,
@@ -140,122 +119,12 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
     setSharedCartToast(`Carrito importado: ${items.length} ${items.length === 1 ? "producto" : "productos"}`);
     setTimeout(() => setSharedCartToast(null), 4000);
 
-    // Remove ?cart= from URL to prevent re-import on refresh
     try {
       const url = new URL(window.location.href);
       url.searchParams.delete("cart");
       window.history.replaceState({}, "", url.toString());
     } catch { /* SSR guard */ }
   }, [searchParams, addItem]);
-
-  const initialCategoria = searchParams.get("categoria") ?? "todos";
-  // Map landing category slugs to marketplace category IDs
-  const CATEGORIA_MAP: Record<string, string> = {
-    // Product-type slugs → store categories
-    abarrotes: "bodega", bebidas: "bodega", carnes: "carniceria",
-    verduras: "fruteria", frutas: "fruteria", lacteos: "bodega",
-    panaderia: "panaderia", limpieza: "bodega", higiene: "bodega",
-    snacks: "bodega", embutidos: "carniceria", congelados: "bodega",
-    // Landing page slugs → marketplace category IDs
-    bodegas: "bodega", restaurantes: "restaurante",
-    "frutas-verduras": "fruteria", mascotas: "bodega",
-  };
-  const mappedCategory = CATEGORIA_MAP[initialCategoria] ?? (CATEGORIES.some(c => c.id === initialCategoria) ? initialCategoria : "todos");
-
-  const [stores, setStores] = useState<MarketplaceStore[]>(initialStores ?? []);
-  const [loading, setLoading] = useState(!initialStores || initialStores.length === 0);
-  // Si llegaron initialStores, skip-eamos el primer fetch cliente
-  // (solo se hace fetch al cambiar filtros).
-  const [initialFetchDone, setInitialFetchDone] = useState(!!initialStores && initialStores.length > 0);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState(searchParams.get("buscar") ?? "");
-  const [category, setCategory] = useState(mappedCategory);
-  const [zone, setZone] = useState("");
-  const [productFilters, setProductFilters] = useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
-
-  // ── Quick-filter chips ──
-  const [activeChips, setActiveChips] = useState<Set<QuickChipId>>(new Set());
-
-  const handleChipToggle = useCallback((chipId: QuickChipId) => {
-    setActiveChips((prev) => {
-      const next = new Set(prev);
-      if (next.has(chipId)) {
-        next.delete(chipId);
-      } else {
-        next.add(chipId);
-      }
-      return next;
-    });
-  }, []);
-
-  // ── New: view mode ──
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window === "undefined") return "tiendas";
-    return (localStorage.getItem("marketplace-view-mode") as ViewMode) || "tiendas";
-  });
-
-  // Persist view mode preference
-  useEffect(() => {
-    try { localStorage.setItem("marketplace-view-mode", viewMode); } catch { /* silent */ }
-  }, [viewMode]);
-
-  // ── Geo hook ──
-  const {
-    geoLoading,
-    geoActive,
-    userCoords,
-    filteredStores,
-    handleGeoSort,
-    setGeoActive,
-    setUserCoords,
-  } = useMarketplaceGeo(stores, setProductFilters);
-
-  const handleFiltersChange = useCallback((patch: Partial<MarketplaceFiltersState>) => {
-    setProductFilters((prev) => {
-      const next = { ...prev, ...patch };
-      // Si activamos nearbyEnabled desde el panel de filtros, pedir GPS
-      if (patch.nearbyEnabled === true && !prev.nearbyEnabled) {
-        return next; // la lógica GPS ya está en handleGeoSort
-      }
-      return next;
-    });
-    // Si el usuario activa nearbyEnabled desde MarketplaceFilters, sincronizar con geoActive
-    if (patch.nearbyEnabled === false) {
-      setGeoActive(false);
-      setUserCoords(null);
-    }
-  }, [setGeoActive, setUserCoords]);
-
-  const fetchStores = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (category !== "todos") params.set("category", category);
-      if (zone) params.set("zone", zone);
-      if (search.trim()) params.set("search", search.trim());
-      params.set("limit", "50");
-
-      const res = await fetch(`/api/marketplace/stores?${params}`);
-      if (!res.ok) throw new Error("Error cargando tiendas");
-      const json = await res.json();
-      setStores(json.data ?? []);
-    } catch {
-      setError("No pudimos cargar las tiendas. Intenta de nuevo.");
-    }
-    setLoading(false);
-  }, [category, zone, search]);
-
-  useEffect(() => {
-    // Si ya tenemos initialStores y no hay filtros, skip del primer fetch.
-    const hasFilters = category !== "todos" || zone !== "" || search.trim() !== "";
-    if (!initialFetchDone && !hasFilters) {
-      setInitialFetchDone(true);
-      return;
-    }
-    const timer = setTimeout(fetchStores, search ? 400 : 0);
-    return () => clearTimeout(timer);
-  }, [fetchStores, search, category, zone, initialFetchDone]);
 
   return (
     <FlyToCartProvider>
@@ -298,9 +167,9 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              Todas las tiendas,{" "}
+              Todo el catálogo{" "}
               <span className="text-primary relative">
-                un solo lugar
+                de Pucallpa
                 <svg
                   aria-hidden="true"
                   className="absolute -bottom-1 left-0 w-full h-2 text-primary/30"
@@ -348,9 +217,8 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
               <SearchAutocomplete
                 onSearch={(q) => {
                   setSearch(q);
-                  if (q.trim()) setViewMode("catalogo");
                 }}
-                placeholder="Busca productos, tiendas o categorías..."
+                placeholder="Busca productos, categorías..."
               />
             </m.div>
           </div>
@@ -364,7 +232,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           >
             <span className="inline-flex items-center gap-1.5">
               <Store className="h-4 w-4 text-primary" aria-hidden="true" />
-              <strong className="text-gray-900 dark:text-foreground">{stores.length}</strong> tiendas
+              Miles de productos en Pucallpa
             </span>
             <span className="inline-flex items-center gap-1.5">
               <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -382,59 +250,8 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
             )}
           </m.div>
 
-          {/* ── Quick Filter Chips ── */}
-          <m.div
-            className="mt-5 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <QuickFilterChips
-              activeChips={activeChips}
-              onToggle={handleChipToggle}
-            />
-          </m.div>
-
-          {/* ── View Mode Toggle ── */}
-          <m.div
-            className="flex items-center justify-center mt-5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div
-              role="group"
-              aria-label="Modo de vista"
-              className="inline-flex items-center rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1 shadow-md shadow-gray-200/40 dark:shadow-none"
-            >
-              <button
-                onClick={() => setViewMode("tiendas")}
-                aria-pressed={viewMode === "tiendas"}
-                className={cn(
-                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
-                  viewMode === "tiendas"
-                    ? "bg-primary text-white shadow-md shadow-primary/25"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
-                )}
-              >
-                <Store className="h-4 w-4" aria-hidden="true" />
-                Tiendas
-              </button>
-              <button
-                onClick={() => setViewMode("catalogo")}
-                aria-pressed={viewMode === "catalogo"}
-                className={cn(
-                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
-                  viewMode === "catalogo"
-                    ? "bg-primary text-white shadow-md shadow-primary/25"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
-                )}
-              >
-                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-                Catálogo
-              </button>
-            </div>
-          </m.div>
+          {/* QuickFilterChips y ViewMode Toggle removidos (ronda A).
+              Van a nav secundaria en ronda B. */}
         </div>
       </section>
 
@@ -449,8 +266,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           Narrativa de urgencia + prueba social en tiempo real.
           ══════════════════════════════════════════════════════════════════ */}
 
-      {/* ── Buleje en Vivo: widget si hay transmisión activa ── */}
-      <LiveNowWidget />
+      {/* LiveNowWidget removido (ronda A) — ver /marketplace/en-vivo */}
 
       {/* ── Ofertas flash con countdown (secundaria — redundante con OfertasDelDia) ── */}
       {SHOW_SECONDARY_HOME_SECTIONS && <OfertasFlashSection />}
@@ -464,117 +280,14 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
       {/* ── Productos de la selva (Pucallpa/Ucayali) ── */}
       <MarketplaceJungleProducts />
 
-      {/* ── Filters + Grid ── */}
-      {/* max-w-[1600px] (Ola 7) — user pidio secciones amplias que abarquen todo el ancho */}
+      {/* ── Catálogo de productos ──
+          Category chips de tiendas, zone selector y MarketplaceStoresView
+          removidos (ronda A) — tiendas migradas a /tiendas.
+          Ronda B montará el secondary nav con chips de categoría de producto. */}
       <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Sticky filter cluster: se queda pegado arriba al scrollear (glassmorphism) */}
-        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 glass rounded-2xl mb-3">
-        {/* Category pills — arriba de todo */}
-        <div
-          role="group"
-          aria-label="Filtrar por categoría de tienda"
-          className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
-        >
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setCategory(cat.id)}
-              aria-pressed={category === cat.id}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap border transition-all shrink-0",
-                category === cat.id
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
-                  : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-400",
-              )}
-            >
-              {(() => {
-                const CatIcon = getStoreCategoryIcon(cat.id);
-                return <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />;
-              })()}
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Zona + Filtros de producto — barra compacta */}
-        <div className="flex items-center gap-2 mt-4 flex-wrap">
-          {/* Zone selector */}
-          <select
-            value={zone}
-            onChange={(e) => setZone(e.target.value)}
-            aria-label="Filtrar por zona"
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-semibold outline-none transition-colors",
-              zone
-                ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
-            )}
-          >
-            {ZONES.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.label}
-              </option>
-            ))}
-          </select>
-
-          {/* Separador */}
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 shrink-0 hidden sm:block" />
-
-          {/* Product filters (sort, price, category, nearby) */}
-          <MarketplaceFilters
-            filters={productFilters}
-            userCoords={userCoords}
-            geoLoading={geoLoading}
-            onChange={handleFiltersChange}
-            onRequestGeo={handleGeoSort}
-          />
-
-          {(category !== "todos" || zone || geoActive) && (
-            <button
-              onClick={() => {
-                setCategory("todos");
-                setZone("");
-                setGeoActive(false);
-                setUserCoords(null);
-                setProductFilters(DEFAULT_FILTERS);
-              }}
-              aria-label="Limpiar todos los filtros activos"
-              className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors underline"
-            >
-              Limpiar todo
-            </button>
-          )}
-        </div>
-        </div> {/* ← end sticky filter cluster */}
-
-        {/* ── Conditional View Rendering ── */}
-        {viewMode === "catalogo" ? (
-          <MarketplaceCatalogViewSection
-            searchQuery={search || undefined}
-            zone={zone || undefined}
-            category={category !== "todos" ? category : undefined}
-          />
-        ) : (
-          <MarketplaceStoresView
-            stores={stores}
-            loading={loading}
-            error={error}
-            search={search}
-            category={category}
-            zone={zone}
-            geoActive={geoActive}
-            filteredStores={filteredStores}
-            activeChips={activeChips}
-            onRetry={fetchStores}
-            onClearAll={() => {
-              setSearch("");
-              setCategory("todos");
-              setZone("");
-              setGeoActive(false);
-              setUserCoords(null);
-            }}
-          />
-        )}
+        <MarketplaceCatalogViewSection
+          searchQuery={search || undefined}
+        />
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
