@@ -283,8 +283,8 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
       {/* ── Stories tipo Instagram — accesos rápidos ── */}
       <MarketplaceStories />
 
-      {/* ── Hero Section ── */}
-      <section className="relative overflow-hidden bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] pb-6 pt-5 sm:pt-8 sm:pb-8">
+      {/* ── Hero Section ── noise-texture-bg da feel "papel impreso" */}
+      <section className="relative overflow-hidden noise-texture-bg bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] pb-6 pt-5 sm:pt-8 sm:pb-8">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-secondary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
@@ -293,7 +293,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           {/* Title — compact since search is in navbar now */}
           <div className="text-center mb-5">
             <m.h1
-              className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-foreground leading-tight"
+              className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.02em] italic"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}

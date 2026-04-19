@@ -75,6 +75,32 @@
   letter-spacing: -0.01em;
 }
 
+/* Noise texture — SVG data-URI + very low opacity.
+   Uso: aplicar a hero sections (.noise-texture-bg) para dar textura
+   orgánica tipo "papel impreso" al estilo editorial amazónico.
+   Zero JS, zero request — el pattern vive en el CSS. */
+.noise-texture-bg {
+  position: relative;
+  isolation: isolate;
+}
+.noise-texture-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.dark .noise-texture-bg::after {
+  opacity: 0.06;
+  mix-blend-mode: screen;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Texture estática, no requiere reducción. */
+}
+
 /* ── Modo Oscuro ────────────────────────────────────────────────────────── */
 .dark {
   color-scheme: dark;

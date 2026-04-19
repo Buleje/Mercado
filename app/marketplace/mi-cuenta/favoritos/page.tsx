@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import { EmptyState } from "@/components/ui-system/EmptyState";
@@ -114,13 +115,16 @@ export default function FavoritosPage() {
               href={`/marketplace/${product.storeSlug}`}
               className="block p-3 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={product.image || "/placeholder-product.png"}
-                alt={product.name}
-                className="h-24 w-full rounded-md object-cover"
-                loading="lazy"
-              />
+              <div className="relative h-24 w-full overflow-hidden rounded-md">
+                <Image
+                  src={product.image || "/placeholder-product.png"}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  className="object-cover"
+                  loading="lazy"
+                />
+              </div>
               <p className="mt-2 text-sm font-medium text-gray-900 line-clamp-2 dark:text-gray-100">
                 {product.name}
               </p>

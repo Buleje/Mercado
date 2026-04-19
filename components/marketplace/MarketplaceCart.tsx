@@ -159,20 +159,26 @@ export function CartBadge({ onClick }: { onClick: () => void }) {
             transition={{ duration: 0.15 }}
             className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 p-3 z-50"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 mb-2">
               {itemCount} producto{itemCount !== 1 ? "s" : ""} en el carrito
             </p>
             <div className="space-y-2">
               {allItems.map(item => (
                 <div key={`${item.storeId}-${item.productId}`} className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0">
+                  <div className="relative w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0">
                     {item.image && (
-                      <img src={item.image} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{item.name}</p>
-                    <p className="text-[10px] text-gray-400">x{item.quantity}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">x{item.quantity}</p>
                   </div>
                   <span className="text-xs font-bold text-gray-900 dark:text-white shrink-0">
                     {fmtPrice(item.price * item.quantity)}
@@ -180,7 +186,7 @@ export function CartBadge({ onClick }: { onClick: () => void }) {
                 </div>
               ))}
               {itemCount > 3 && (
-                <p className="text-[10px] text-gray-400 text-center">y {itemCount - 3} más...</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 text-center">y {itemCount - 3} más...</p>
               )}
             </div>
             <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
