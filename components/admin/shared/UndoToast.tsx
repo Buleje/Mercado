@@ -147,7 +147,7 @@ function UndoToastItem({
     <div
       role="status"
       className={cn(
-        "pointer-events-auto overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-2xl",
+        "pointer-events-auto overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[var(--shadow-xl)]",
         "flex items-center gap-3 pr-2 pl-4 py-2.5 min-w-[320px] max-w-[480px]",
         "animate-undo-toast-in",
       )}

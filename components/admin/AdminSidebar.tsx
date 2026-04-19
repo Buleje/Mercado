@@ -322,6 +322,57 @@ export const CONFIG_SIDEBAR_MODULE: SidebarModule = {
 };
 
 
+// ─── Sub-component: Sidebar Badge (con pulse al incrementar) ──────────────────
+
+function SidebarBadge({ moduleId, count }: { moduleId: string; count: number }) {
+  const prevCountRef = React.useRef(count);
+  const [pulse, setPulse] = React.useState(false);
+
+  React.useEffect(() => {
+    if (count > prevCountRef.current) {
+      setPulse(true);
+      const t = setTimeout(() => setPulse(false), 1800);
+      prevCountRef.current = count;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = count;
+  }, [count]);
+
+  const colorClass =
+    moduleId === "pedidos" ? "bg-[var(--data-error)] text-white" :
+    moduleId === "inventario" ? "bg-[var(--data-warning)] text-white" :
+    moduleId === "fiados" ? "bg-[var(--data-warning)] text-white" :
+    moduleId === "compras" ? "bg-[var(--accent)] text-white" :
+    "bg-gray-500 text-white";
+
+  return (
+    <span
+      className={cn(
+        "ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold leading-none transition-transform",
+        colorClass,
+        pulse && "animate-sidebar-badge-pulse",
+      )}
+      aria-live="polite"
+    >
+      {count > 99 ? "99+" : count}
+      <style jsx>{`
+        @keyframes sidebar-badge-pulse {
+          0% { transform: scale(1); }
+          30% { transform: scale(1.25); }
+          60% { transform: scale(0.95); }
+          100% { transform: scale(1); }
+        }
+        .animate-sidebar-badge-pulse {
+          animation: sidebar-badge-pulse 600ms ease-out 3;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-sidebar-badge-pulse { animation: none; }
+        }
+      `}</style>
+    </span>
+  );
+}
+
 // ─── Sub-component: Module Item ───────────────────────────────────────────────
 
 interface ModuleItemProps {
@@ -419,16 +470,7 @@ function ModuleItem({
             </span>
             {/* Mejora 19: Badge de pendientes para documentos */}
             {badgeCount != null && badgeCount > 0 && (
-              <span className={cn(
-                "ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold leading-none",
-                module.id === "pedidos" ? "bg-[var(--data-error)] text-white" :
-                module.id === "inventario" ? "bg-[var(--data-warning)] text-white" :
-                module.id === "fiados" ? "bg-[var(--data-warning)] text-white" :
-                module.id === "compras" ? "bg-[var(--accent)] text-white" :
-                "bg-gray-500 text-white"
-              )}>
-                {badgeCount > 99 ? "99+" : badgeCount}
-              </span>
+              <SidebarBadge moduleId={module.id} count={badgeCount} />
             )}
             {editMode && (
               <div className="flex items-center gap-0.5 ml-1 shrink-0">
