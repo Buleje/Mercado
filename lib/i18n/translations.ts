@@ -46,12 +46,16 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "nav.logout": { es: "Cerrar sesión", en: "Sign out", shi: "Kenai" },
   "nav.search": { es: "Buscar", en: "Search", shi: "Benati" },
   "nav.searchPlaceholder": {
-    es: "Buscar tiendas, productos, categorías...",
-    en: "Search stores, products, categories...",
-    shi: "Benati xobo, piti, kirika...",
+    es: "Buscá productos o tiendas en Pucallpa...",
+    en: "Search products or stores in Pucallpa...",
+    shi: "Benati piti, xobo Pucallpa...",
   },
   "nav.darkMode": { es: "Modo oscuro", en: "Dark mode", shi: "Jonipakoi" },
   "nav.lightMode": { es: "Modo claro", en: "Light mode", shi: "Pakoi" },
+  "nav.live": { es: "En Vivo", en: "Live", shi: "Kikini" },
+  "nav.offers": { es: "Ofertas", en: "Offers", shi: "Rawe" },
+  "nav.notifications": { es: "Notificaciones", en: "Notifications", shi: "Yoiti" },
+  "nav.subscriptions": { es: "Suscripciones", en: "Subscriptions", shi: "Jene kirika" },
 
   // ── Cart / Carrito ────────────────────────────────────────────────────
   "cart.add": { es: "Agregar al carrito", en: "Add to cart", shi: "Yoimea" },
