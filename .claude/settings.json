@@ -81,6 +81,12 @@
           },
           {
             "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-tool-tsc.mjs",
+            "timeout": 120,
+            "async": true
+          },
+          {
+            "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/auto-learn.mjs",
             "timeout": 5,
             "async": true
