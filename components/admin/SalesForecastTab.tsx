@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useMemo } from "react";
 import { TrendingUp, ArrowUp, ArrowDown, Download, AlertTriangle, BarChart3 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -44,14 +45,12 @@ export default function SalesForecastTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" /> Forecasting de Ventas
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Proyección basada en tendencias históricas y patrones estacionales</p>
-        </div>
+      <AdminModuleHeader
+        icon={TrendingUp}
+        eyebrow="Gráficos · Proyección"
+        title="Precisión de ventas"
+        description="Proyección de demanda basada en tendencias históricas y patrones estacionales. Qué vas a vender la próxima semana."
+      >
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex bg-gray-100 dark:bg-surface rounded-xl p-1">
             {(["general", "productos"] as const).map(v => (
@@ -64,7 +63,7 @@ export default function SalesForecastTab() {
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* Period selector */}
       <div className="flex bg-gray-100 dark:bg-surface rounded-xl p-1 w-fit">

@@ -12,6 +12,7 @@ import {
   RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { CardTitle, LoadingState, PageTitle, SectionTitle, WarningAlert } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -963,27 +964,18 @@ export default function PrestamosModule() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const prestamosDescription = activos.length > 0
+    ? `Préstamos a clientes con cuotas programadas. ${activos.length} activos${saldoPendiente > 0 ? ` — saldo pendiente ${formatCurrency(saldoPendiente)}.` : "."}`
+    : "Préstamos a clientes con cuotas programadas. Registrá, calculá cuotas y llevá el seguimiento de pagos.";
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header — ADR-074 Phase 3 */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas / Créditos</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <DollarSign className="h-5 w-5 currentColor" />
-            Préstamos
-            {activos.length > 0 && (
-              <span className="ml-2 text-xs font-semibold bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning)] px-2 py-0.5 rounded-full align-middle">{activos.length} activos</span>
-            )}
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Préstamos a clientes con cuotas programadas</p>
-          {activeTab === "activos" && saldoPendiente > 0 && (
-            <p className="text-xs text-[var(--data-error)] font-semibold mt-1 tabular-nums">
-              Saldo pendiente: {formatCurrency(saldoPendiente)}
-            </p>
-          )}
-        </div>
-      </div>
+      <AdminModuleHeader
+        icon={DollarSign}
+        eyebrow="Finanzas · Créditos y cuotas"
+        title="Préstamos"
+        description={prestamosDescription}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">

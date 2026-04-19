@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback } from "react";
 import {
   Loader2, Save, Check, RotateCcw, Eye,
@@ -293,17 +294,12 @@ export default function HomepageEditorTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Layout className="h-5 w-5 text-primary" />
-            Editor de Página de Inicio
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
-            Personaliza el contenido de cada sección de la landing page
-          </p>
-        </div>
+      <AdminModuleHeader
+        icon={Layout}
+        eyebrow="Mi tienda · Personalización"
+        title="Página de inicio"
+        description="Personalizá el contenido de cada sección de tu landing pública. Lo que ve el cliente antes de comprar."
+      >
         <div className="flex flex-wrap items-center gap-2">
           <a
             href="/"
@@ -340,7 +336,7 @@ export default function HomepageEditorTab() {
             {saved ? "¡Guardado!" : "Guardar cambios"}
           </button>
         </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* Info banner */}
       <div className="flex flex-wrap items-start gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
