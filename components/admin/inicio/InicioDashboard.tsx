@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
+import { MultiMetricCard } from "@/components/admin/shared/MultiMetricCard";
+import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
 
 // Lazy load recharts for bundle optimization
 const RechartsCharts = dynamic(() => import("./InicioCharts"), { ssr: false });
@@ -382,55 +384,54 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
         </button>
       </header>
 
-      {/* ── KPI Hero Row (6 big cards) ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard
-          label={`Ventas ${periodLabel}`}
-          value={fmtSoles(data.ventasHoy)}
-          delta={data.deltaVentas}
-          icon={DollarSign}
-          color="blue"
-          spark={data.sparkVentas}
-        />
-        <KPICard
-          label="Utilidad"
-          value={fmtSoles(data.utilidadHoy)}
-          delta={data.deltaUtilidad}
-          icon={TrendingUp}
-          color="emerald"
-          spark={data.sparkUtilidad}
-        />
-        <KPICard
-          label="Tickets"
-          value={String(data.ticketsHoy)}
-          delta={data.deltaTickets}
-          icon={ShoppingCart}
-          color="violet"
-          spark={data.sparkTickets}
-          subtitle={`Prom. ${fmtSoles(data.ticketPromedio)}`}
-        />
-        <KPICard
-          label="Pedidos pendientes"
-          value={String(data.pedidosPendientes)}
-          icon={Package}
-          color={data.pedidosPendientes > 3 ? "red" : data.pedidosPendientes > 0 ? "amber" : "emerald"}
-          badge={data.pedidosPendientes === 0 ? "Al día" : data.pedidosPendientes <= 3 ? "Atender" : "Urgente"}
-        />
-        <KPICard
-          label="Stock crítico"
-          value={String(data.stockCritico)}
-          icon={AlertTriangle}
-          color={data.stockCritico > 5 ? "red" : data.stockCritico > 0 ? "amber" : "emerald"}
-          badge={data.stockCritico === 0 ? "OK" : "Reponer"}
-        />
-        <KPICard
-          label="Deuda proveedores"
-          value={fmtSoles(data.deudaProveedores)}
-          icon={Truck}
-          color={data.deudaProveedores > 0 ? "amber" : "emerald"}
-          subtitle={`${data.clientesActivos} clientes`}
-        />
-      </div>
+      {/* ── KPI Hero Row — drag & drop para reordenar ──
+          El dueño puede arrastrar los widgets para priorizar los que le
+          importan. El orden se persiste en localStorage por usuario. */}
+      <DraggableWidgetGrid storageKey="inicio-kpi-order" columns={3}>
+        <div key="ventas">
+          <MultiMetricCard
+            eyebrow={`Ventas ${periodLabel}`}
+            title="Ingresos"
+            value={fmtSoles(data.ventasHoy)}
+            delta={data.deltaVentas != null ? { value: data.deltaVentas, label: "vs anterior" } : undefined}
+            spark={data.sparkVentas}
+            secondary={[
+              { icon: TrendingUp, label: "Utilidad", value: fmtSoles(data.utilidadHoy) },
+              { icon: ShoppingCart, label: "Tickets", value: String(data.ticketsHoy) },
+            ]}
+          />
+        </div>
+        <div key="tickets">
+          <MultiMetricCard
+            eyebrow={`Tickets ${periodLabel}`}
+            title="Movimiento"
+            value={String(data.ticketsHoy)}
+            caption={`Promedio ${fmtSoles(data.ticketPromedio)}`}
+            delta={data.deltaTickets != null ? { value: data.deltaTickets, label: "vs anterior" } : undefined}
+            spark={data.sparkTickets}
+            secondary={[
+              { icon: DollarSign, label: "Prom.", value: fmtSoles(data.ticketPromedio) },
+              { icon: TrendingUp, label: "Margen", value: `${data.margenHoy.toFixed(0)}%` },
+            ]}
+          />
+        </div>
+        <div key="operacion">
+          <MultiMetricCard
+            eyebrow="Operación · ahora"
+            title="Qué atender hoy"
+            value={String(data.pedidosPendientes)}
+            caption={`${data.pedidosPendientes === 1 ? "Pedido pendiente" : "Pedidos pendientes"}`}
+            badge={{
+              label: data.pedidosPendientes === 0 ? "Al día" : data.pedidosPendientes <= 3 ? "Atender" : "Urgente",
+              intent: data.pedidosPendientes === 0 ? "success" : data.pedidosPendientes <= 3 ? "warning" : "error",
+            }}
+            secondary={[
+              { icon: AlertTriangle, label: "Stock crítico", value: String(data.stockCritico) },
+              { icon: Truck, label: "Deuda prov.", value: fmtSoles(data.deudaProveedores) },
+            ]}
+          />
+        </div>
+      </DraggableWidgetGrid>
 
       {/* ── Margen bar — card editorial ── */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 noise-texture-bg">
