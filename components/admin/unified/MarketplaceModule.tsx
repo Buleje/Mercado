@@ -33,6 +33,8 @@ import ImageUpload from "@/components/admin/ImageUpload";
 
 // Dynamic import del tab de precios competitivos
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
+// Dynamic import del dashboard del marketplace (charts unificados)
+const MarketplaceDashboardTab = lazy(() => import("@/components/admin/marketplace/MarketplaceDashboard"));
 
 // ── Spinner compacto ──
 const Spinner = () => (
@@ -124,6 +126,7 @@ const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: strin
 const MODULE_ID = "marketplace";
 
 const TABS = [
+  { id: "resumen",      label: "Resumen",      icon: BarChart3 },
   { id: "tienda",       label: "Mi Tienda Personal",    icon: Store },
   { id: "productos",    label: "Productos",    icon: Package },
   { id: "ordenes",      label: "Órdenes",      icon: ShoppingCart },
@@ -2089,6 +2092,11 @@ export default function MarketplaceModule() {
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
       >
+        {tab === "resumen"     && (
+          <Suspense fallback={<Spinner />}>
+            <MarketplaceDashboardTab kpis={kpis} loading={kpisLoading} />
+          </Suspense>
+        )}
         {tab === "tienda"      && <TiendaTab />}
         {tab === "productos"   && <ProductosTab />}
         {tab === "ordenes"     && <OrdenesTab />}
