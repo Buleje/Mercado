@@ -6,13 +6,13 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ShoppingCart,
-  Package,
   Store as StoreIcon,
-  Star,
   GitCompareArrows,
   Check,
-  Eye,
+  Heart,
+  Timer,
 } from "@buleje/design-system/icons";
+import { MarketplaceItemPlaceholder } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
@@ -27,6 +27,7 @@ export interface UnifiedProductCardProduct {
   price: number;
   originalPrice?: number;
   image?: string | null;
+  description?: string | null;
   storeName?: string;
   storeSlug?: string;
   storeId?: string;
@@ -36,6 +37,8 @@ export interface UnifiedProductCardProduct {
   category?: string;
   stock?: number;
   discount?: number;
+  /** Indica si el producto es peruano/nacional — muestra badge "PERUANO" */
+  isPeruvian?: boolean;
 }
 
 export type UnifiedProductCardVariant = "default" | "flash" | "top" | "liquidation";
@@ -81,73 +84,6 @@ function useCountdown(endsAt?: Date): string | null {
   return remaining;
 }
 
-/* ── Badge de variante (overlay sobre la imagen) ───────────────────────────── */
-
-function VariantBadge({
-  variant,
-  rank,
-  discount,
-  stock,
-  countdown,
-}: {
-  variant: UnifiedProductCardVariant;
-  rank?: number;
-  discount?: number;
-  stock?: number;
-  countdown: string | null;
-}) {
-  if (variant === "default") return null;
-
-  if (variant === "top" && rank !== undefined) {
-    const rankMeta: Record<
-      number,
-      { bg: string; text: string }
-    > = {
-      1: { bg: "bg-[var(--color-primary)] dark:bg-[var(--color-primary)]", text: "text-white" },
-      2: { bg: "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]", text: "text-[var(--text-primary)] dark:text-[var(--text-primary)]" },
-      3: { bg: "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-secondary)]" },
-    };
-    const meta = rankMeta[rank] ?? rankMeta[3];
-    return (
-      <span
-        className={cn(
-          "absolute top-2 left-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black border border-[var(--rule-base)]",
-          meta.bg,
-          meta.text
-        )}
-        aria-label={`Posición ${rank}`}
-      >
-        {rank}
-      </span>
-    );
-  }
-
-  if (variant === "flash") {
-    return (
-      <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md">
-          {discount ? `-${discount}%` : "OFERTA"}
-        </span>
-        {countdown && countdown !== "Expirado" && (
-          <span className="inline-flex items-center rounded-full bg-black/70 px-2 py-0.5 text-[length:var(--ts-2xs)] font-mono font-bold text-white">
-            {countdown}
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  if (variant === "liquidation") {
-    return (
-      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-400 dark:bg-amber-500 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md">
-        {stock !== undefined && stock > 0 ? `¡Solo ${stock}!` : "LIQUIDACION"}
-      </span>
-    );
-  }
-
-  return null;
-}
-
 /* ── Componente principal ───────────────────────────────────────────────────── */
 
 export default function UnifiedProductCard({
@@ -159,7 +95,7 @@ export default function UnifiedProductCard({
   index = 0,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
-  const { add: addToCompare, remove: removeFromCompare, has: isInCompare } = useCompare();
+  const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
@@ -179,6 +115,11 @@ export default function UnifiedProductCard({
       removeFromCompare(product.id);
       return;
     }
+    if (compareItems.length >= compareMax) {
+      setCompareLimitMsg(true);
+      setTimeout(() => setCompareLimitMsg(false), 2000);
+      return;
+    }
     addToCompare({
       id: product.id,
       storeSlug: product.storeSlug ?? "",
@@ -190,7 +131,7 @@ export default function UnifiedProductCard({
       rating: product.storeRating,
       stock: product.stock ?? undefined,
     });
-  }, [inCompare, addToCompare, removeFromCompare, product]);
+  }, [inCompare, addToCompare, removeFromCompare, compareItems, compareMax, product]);
 
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
@@ -209,28 +150,44 @@ export default function UnifiedProductCard({
     setTimeout(() => setJustAdded(false), 1200);
   }, [addItemWithUndo, product, isOutOfStock]);
 
+  /* ── Badges top-left ───────────────────────────────────────────── */
+  const showOfertaBadge =
+    variant === "flash" || variant === "liquidation" ||
+    (product.discount != null && product.discount > 0);
+
+  const ofertaLabel =
+    variant === "liquidation"
+      ? "LIQUIDACION"
+      : product.discount
+        ? `OFERTA -${product.discount}%`
+        : "OFERTA";
+
+  /* ── Rank badge (top variant) ─────────────────────────────────── */
+  const rankColors: Record<number, string> = {
+    1: "bg-[var(--color-primary)] text-white",
+    2: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200",
+    3: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
+  };
+
   return (
-    <motion.div
+    <motion.article
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 dark:border-card-border dark:bg-card"
+      className={cn(
+        "group relative flex w-full flex-col overflow-hidden rounded-xl",
+        "border border-gray-100 bg-white dark:border-card-border dark:bg-card",
+        "transition-all duration-300",
+        "hover:-translate-y-0.5 hover:shadow-md hover:border-gray-200 dark:hover:border-card-border",
+        isOutOfStock && "opacity-70",
+      )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* ── Badges de variante ── */}
-      <VariantBadge
-        variant={variant}
-        rank={rank}
-        discount={product.discount}
-        stock={product.stock}
-        countdown={countdown}
-      />
-
-      {/* ── Imagen ── */}
+      {/* ── Zona imagen ──────────────────────────────────────────────────────── */}
       <div className="relative">
         <Link href={productHref} className="block">
-          <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-surface">
+          <div className="relative aspect-square overflow-hidden rounded-t-xl bg-[var(--surface-sunken)] dark:bg-surface">
             {product.image ? (
               <Image
                 src={product.image}
@@ -240,127 +197,184 @@ export default function UnifiedProductCard({
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Package className="h-10 w-10 text-gray-200 dark:text-gray-700" aria-hidden="true" />
-              </div>
+              <MarketplaceItemPlaceholder />
             )}
           </div>
         </Link>
-        {/* Quick view trigger — visible en hover desktop, tap-tap mobile */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setQuickViewOpen(true);
-          }}
-          className="absolute top-2 right-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 dark:bg-card/95 backdrop-blur-sm border border-gray-200 dark:border-card-border opacity-0 group-hover:opacity-100 hover:bg-white dark:hover:bg-card transition-opacity shadow-sm"
-          aria-label={`Vista rápida de ${product.name}`}
-        >
-          <Eye className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" strokeWidth={1.75} aria-hidden />
-        </button>
+
+        {/* Badges top-left — apilados verticalmente */}
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+          {/* Rank badge (variant top) */}
+          {variant === "top" && rank !== undefined && (
+            <span
+              className={cn(
+                "inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black border border-[var(--rule-base)]",
+                rankColors[rank] ?? rankColors[3],
+              )}
+              aria-label={`Posicion ${rank}`}
+            >
+              {rank}
+            </span>
+          )}
+
+          {/* Oferta / liquidacion badge */}
+          {showOfertaBadge && variant !== "top" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+              {ofertaLabel}
+            </span>
+          )}
+
+          {/* Timer badge (flash) */}
+          {variant === "flash" && countdown && countdown !== "Expirado" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+              <Timer className="h-3 w-3" aria-hidden />
+              {countdown}
+            </span>
+          )}
+
+          {/* Peruano badge */}
+          {product.isPeruvian && (
+            <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+              PERUANO
+            </span>
+          )}
+        </div>
+
+        {/* Acciones top-right — heart + compare, siempre visibles */}
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
+          {/* Heart favorito */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setQuickViewOpen(true);
+            }}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-sm transition-colors hover:border-gray-300 dark:hover:border-gray-600"
+            aria-label={`Ver rapido ${product.name}`}
+          >
+            <Heart className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" strokeWidth={1.75} aria-hidden />
+          </button>
+
+          {/* Compare */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCompare();
+            }}
+            aria-label={inCompare ? `Quitar ${product.name} de la comparacion` : `Comparar ${product.name}`}
+            aria-pressed={inCompare}
+            className={cn(
+              "inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition-colors",
+              inCompare
+                ? "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]"
+                : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600",
+            )}
+          >
+            <GitCompareArrows className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          </button>
+        </div>
+
+        {/* Overlay agotado */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-t-xl">
+            <span className="rounded-full bg-gray-800/80 px-3 py-1 text-[length:var(--ts-2xs)] font-bold text-white">
+              Agotado
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* ── Contenido ── */}
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      {/* ── Contenido ────────────────────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col gap-1 p-3">
         {/* Nombre */}
         <Link href={productHref}>
-          <p className="line-clamp-2 text-xs font-bold leading-snug text-gray-900 transition-colors group-hover:text-primary dark:text-foreground">
+          <p className="line-clamp-2 text-xs font-bold leading-snug text-gray-900 dark:text-foreground group-hover:text-[var(--accent)] transition-colors">
             {product.name}
           </p>
         </Link>
 
-        {/* Precio */}
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-extrabold text-primary">
-            {fmt(product.price)}
-          </span>
-          {product.originalPrice && product.originalPrice > product.price && (
-            <span className="text-[length:var(--ts-2xs)] text-gray-400 line-through dark:text-muted">
-              {fmt(product.originalPrice)}
-            </span>
-          )}
-          {product.discount && product.discount > 0 && !product.originalPrice && (
-            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-red-500 dark:bg-red-950/30">
-              -{product.discount}%
-            </span>
-          )}
-        </div>
+        {/* "Ver detalles →" link */}
+        <Link
+          href={productHref}
+          className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] hover:underline"
+        >
+          Ver detalles &rarr;
+        </Link>
+
+        {/* Descripcion (opcional) */}
+        {product.description && (
+          <p className="line-clamp-2 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted leading-snug">
+            {product.description}
+          </p>
+        )}
 
         {/* Tienda */}
         {product.storeName && (
           <div className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
             <StoreIcon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{product.storeName}</span>
-            {product.storeRating !== undefined && product.storeRating > 0 && (
-              <>
-                <Star className="ml-0.5 h-2.5 w-2.5 fill-amber-400 text-amber-400" aria-hidden="true" />
-                <span>{product.storeRating.toFixed(1)}</span>
-              </>
-            )}
           </div>
         )}
 
-        {/* Botón agregar al carrito — touch target mínimo 44px */}
-        <button
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          aria-label={
-            isOutOfStock
-              ? `${product.name} — agotado`
-              : `Agregar ${product.name} al carrito`
-          }
-          className={cn(
-            "mt-auto flex min-h-[44px] w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold transition-all sm:min-h-0 sm:py-1.5",
-            isOutOfStock
-              ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
-              : justAdded
-                ? "bg-emerald-500 text-white"
-                : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
-          )}
-        >
-          {isOutOfStock ? (
-            "Agotado"
-          ) : justAdded ? (
-            "✓ Agregado"
-          ) : (
-            <>
-              <ShoppingCart className="h-3 w-3" aria-hidden="true" />
-              Agregar
-            </>
-          )}
-        </button>
+        {/* Precio + CTA circular */}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+          <div>
+            {/* Precio tachado original */}
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="block text-[length:var(--ts-2xs)] text-gray-400 line-through dark:text-muted">
+                {fmt(product.originalPrice)}
+              </span>
+            )}
+            {/* Precio actual */}
+            <div className="flex items-baseline gap-1">
+              <span className="text-base font-extrabold text-gray-900 dark:text-foreground leading-none">
+                {fmt(product.price)}
+              </span>
+              {product.unit && (
+                <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
+                  / {product.unit}
+                </span>
+              )}
+            </div>
+            {/* Stock */}
+            {product.stock != null && product.stock > 0 && (
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
+                Stock: {product.stock} {product.unit ?? "unidad"}
+              </span>
+            )}
+          </div>
 
-        {/* Botón comparar */}
-        <button
-          onClick={handleCompare}
-          aria-label={
-            inCompare
-              ? `Quitar ${product.name} de la comparacion`
-              : `Comparar ${product.name}`
-          }
-          aria-pressed={inCompare}
-          className={cn(
-            "flex w-full items-center justify-center gap-1 rounded-lg py-1 text-xs transition-colors",
-            inCompare
-              ? "font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-              : "text-gray-400 hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-300"
-          )}
-        >
-          {inCompare ? (
-            <>
-              <Check className="h-3 w-3" aria-hidden="true" />
-              Quitar de comparar
-            </>
-          ) : (
-            <>
-              <GitCompareArrows className="h-3 w-3" aria-hidden="true" />
-              Comparar
-            </>
-          )}
-        </button>
+          {/* CTA circular teal */}
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            aria-label={
+              isOutOfStock
+                ? `${product.name} — agotado`
+                : `Agregar ${product.name} al carrito`
+            }
+            className={cn(
+              "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+              isOutOfStock
+                ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                : justAdded
+                  ? "bg-emerald-500 text-white scale-90"
+                  : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-sm",
+            )}
+          >
+            {justAdded ? (
+              <Check className="h-4 w-4" aria-hidden />
+            ) : (
+              <ShoppingCart className="h-4 w-4" aria-hidden />
+            )}
+          </button>
+        </div>
 
-        {/* Aviso limite maximo */}
+        {/* Aviso limite comparar */}
         {compareLimitMsg && (
           <p
             role="alert"
@@ -371,7 +385,7 @@ export default function UnifiedProductCard({
         )}
       </div>
 
-      {/* Quick view modal — monta on-demand al abrir */}
+      {/* Quick view modal */}
       {quickViewOpen && (
         <QuickViewModal
           open={quickViewOpen}
@@ -385,11 +399,12 @@ export default function UnifiedProductCard({
             category: product.category,
             unit: product.unit ?? undefined,
             stock: product.stock,
-            badges: variant === "flash" && product.discount
-              ? [{ label: `-${product.discount}% OFF`, variant: "accent" as const }]
-              : variant === "liquidation"
-                ? [{ label: "Liquidación", variant: "warning" as const }]
-                : undefined,
+            badges:
+              variant === "flash" && product.discount
+                ? [{ label: `-${product.discount}% OFF`, variant: "accent" as const }]
+                : variant === "liquidation"
+                  ? [{ label: "Liquidacion", variant: "warning" as const }]
+                  : undefined,
           }}
           storeName={product.storeName}
           onAddToCart={async (qty) => {
@@ -397,6 +412,6 @@ export default function UnifiedProductCard({
           }}
         />
       )}
-    </motion.div>
+    </motion.article>
   );
 }

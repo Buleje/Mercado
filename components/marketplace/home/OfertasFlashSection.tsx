@@ -14,19 +14,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
-  BadgePercent,
   Clock,
   Zap,
 } from "@buleje/design-system/icons";
 import { CardTitle, Caption, Kicker } from "@buleje/design-system";
 import { MOCK_DEALS, type Deal } from "@/lib/mock-deals";
 import { cn } from "@/lib/utils";
-
-const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
 function useCountdown(target: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -58,52 +52,21 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-function FlashCard({ deal }: { deal: Deal }) {
-  return (
-    <Link
-      href={`/marketplace/${deal.storeSlug}/producto/${deal.id}`}
-      className={cn(
-        "group block rounded-xl overflow-hidden bg-white dark:bg-gray-900",
-        "border border-[var(--rule-base)] hover:border-[var(--rule-strong)]",
-        "transition-colors",
-      )}
-    >
-      <div className="relative aspect-square bg-[var(--surface-sunken)] flex items-center justify-center">
-        <span
-          className={cn(
-            "absolute top-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5",
-            "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-            "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
-          )}
-        >
-          <BadgePercent className="h-3 w-3" aria-hidden />
-          -{deal.discountPct}%
-        </span>
-        <span
-          className="text-[length:var(--ts-3xl)] font-extrabold text-[var(--text-tertiary)]/30 tracking-tight"
-          aria-hidden
-        >
-          {deal.category.slice(0, 3).toUpperCase()}
-        </span>
-      </div>
-      <div className="p-3">
-        <h3 className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] leading-tight line-clamp-2 h-10">
-          {deal.name}
-        </h3>
-        <div className="mt-2 flex items-baseline gap-1.5">
-          <span className="text-[length:var(--ts-base)] font-extrabold text-[var(--text-primary)] tabular-nums">
-            {fmt(deal.price)}
-          </span>
-          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-through tabular-nums">
-            {fmt(deal.previousPrice)}
-          </span>
-        </div>
-        <div className="mt-1 truncate text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          {deal.storeName}
-        </div>
-      </div>
-    </Link>
-  );
+/** Convierte un Deal (mock) al shape que espera UnifiedProductCard */
+function dealToCardProduct(deal: Deal) {
+  // MOCK_DEALS usa id string — hasheamos a number para el card
+  const numId = deal.id.split("_")[1] ? parseInt(deal.id.split("_")[1], 10) : 0;
+  return {
+    id: numId,
+    name: deal.name,
+    price: deal.price,
+    originalPrice: deal.previousPrice,
+    image: null,
+    unit: deal.unit,
+    storeName: deal.storeName,
+    storeSlug: deal.storeSlug,
+    discount: deal.discountPct,
+  };
 }
 
 export default function OfertasFlashSection() {
@@ -167,16 +130,29 @@ export default function OfertasFlashSection() {
 
       {/* Desktop grid */}
       <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {flashDeals.map((d) => (
-          <FlashCard key={d.id} deal={d} />
+        {flashDeals.map((d, i) => (
+          <UnifiedProductCard
+            key={d.id}
+            product={dealToCardProduct(d)}
+            variant="flash"
+            endsAt={new Date(d.endsAt)}
+            index={i}
+            href={`/marketplace/${d.storeSlug}/producto/${dealToCardProduct(d).id}`}
+          />
         ))}
       </div>
 
       {/* Mobile horizontal scroll */}
       <div className="sm:hidden -mx-4 px-4 flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory">
-        {flashDeals.map((d) => (
-          <div key={d.id} className="shrink-0 w-[160px] snap-start">
-            <FlashCard deal={d} />
+        {flashDeals.map((d, i) => (
+          <div key={d.id} className="shrink-0 w-[200px] snap-start">
+            <UnifiedProductCard
+              product={dealToCardProduct(d)}
+              variant="flash"
+              endsAt={new Date(d.endsAt)}
+              index={i}
+              href={`/marketplace/${d.storeSlug}/producto/${dealToCardProduct(d).id}`}
+            />
           </div>
         ))}
       </div>

@@ -88,6 +88,12 @@ export { StoreImagePlaceholder, type StoreImagePlaceholderProps } from "./store-
 export { StoreCardCanonical, type StoreCardCanonicalProps } from "./store-card";
 // STORE_CARD_RATIO se re-exporta automaticamente via `export * from "./tokens"` abajo.
 
+// ── Canonical marketplace item placeholder (ADR-075) ────────────────────────
+export {
+  MarketplaceItemPlaceholder,
+  type MarketplaceItemPlaceholderProps,
+} from "./marketplace-item-placeholder";
+
 // ── Canonical recipe primitives (ADR-075 Fase 5) ────────────────────────────
 export { RecipeImagePlaceholder, type RecipeImagePlaceholderProps } from "./recipe-image-placeholder";
 export { RecipeCardCanonical, type RecipeCardCanonicalProps } from "./recipe-card";
