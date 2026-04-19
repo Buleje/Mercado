@@ -387,7 +387,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
           Filtros
           {activeCount > 0 && (
-            <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+            <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[length:var(--ts-2xs)] font-bold text-white">
               {activeCount}
             </span>
           )}

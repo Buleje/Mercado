@@ -158,14 +158,14 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
           )}
 
           {/* Category badge */}
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-[11px] font-bold text-gray-700 dark:text-gray-200">
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-gray-200">
             <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
             {categoryMeta.label}
           </span>
 
           {/* Vacation badge */}
           {store.vacationMode && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-[var(--data-warning)]/40 text-[11px] font-bold text-[var(--data-warning)]">
+            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
               <Plane className="h-3 w-3" strokeWidth={1.75} />
               De vacaciones
             </span>
@@ -251,10 +251,10 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
                           )}
                         </div>
                         <div className="px-1.5 py-1">
-                          <p className="text-[10px] font-semibold text-gray-600 dark:text-muted line-clamp-1">
+                          <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-muted line-clamp-1">
                             {p.name}
                           </p>
-                          <p className="text-[10px] font-bold text-primary">
+                          <p className="text-[length:var(--ts-2xs)] font-bold text-primary">
                             {fmt(p.price)}
                           </p>
                         </div>

@@ -25,7 +25,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-md rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-8 text-center">
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
             Seguimiento
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground mt-2">
@@ -87,7 +87,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
             </span>
             <span className="text-sm font-extrabold tracking-tight">Buleje</span>
           </Link>
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-white/40">
             {slug} · Seguimiento público
           </span>
         </div>
@@ -98,7 +98,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
       </main>
 
       <footer className="border-t border-gray-100 dark:border-card-border mt-12 py-8">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-[11px] text-muted">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-[length:var(--ts-2xs)] text-muted">
           Este link vive 72 horas y permite ver el estado del pedido sin login.
           <br />
           Hecho con{" "}

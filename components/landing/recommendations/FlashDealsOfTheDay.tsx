@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Timer } from "lucide-react";
+import { ChevronRight, Timer } from "@buleje/design-system/icons";
 import { SectionHeader } from "@/components/ui-system";
 import { ProductCard } from "@/components/ProductCard";
 import { pickWithDiscount, type MockProduct } from "@/lib/recommendations/mock";
@@ -51,7 +51,7 @@ function CountdownUnit({ value, label }: { value: string; label: string }) {
       <span className="tabular-nums text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
         {value}
       </span>
-      <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
+      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
         {label}
       </span>
     </div>

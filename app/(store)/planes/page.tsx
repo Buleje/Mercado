@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Wallet, Store, Check, ChevronDown, ArrowUpRight } from "lucide-react";
+import { Wallet, Store, Check, ChevronDown, ArrowUpRight } from "@buleje/design-system/icons";
 
 export const metadata: Metadata = {
   title: "Planes y Precios — Buleje | Software ERP para Bodegas",
@@ -96,7 +96,7 @@ export default function PlanesPage() {
       {/* Hero */}
       <section className="bg-linear-to-b from-[#060e08] to-[#0a1f0d] text-white py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
             <Wallet className="h-3 w-3" strokeWidth={2} />
             Planes y Precios
           </span>

@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { AlertTriangle } from "lucide-react";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";

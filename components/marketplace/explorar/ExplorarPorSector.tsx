@@ -47,7 +47,7 @@ export default function ExplorarPorSector() {
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
       <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
           Catalogo
         </span>
         <h2

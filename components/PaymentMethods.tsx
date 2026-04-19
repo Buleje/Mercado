@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, CreditCard, Smartphone, Banknote, QrCode } from "lucide-react";
+import { ShieldCheck, CreditCard, Smartphone, Banknote, QrCode } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 
 const METHODS = [

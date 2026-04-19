@@ -1,6 +1,6 @@
 "use client";
 
-import { Hash, User, Phone, Loader2, CheckCircle2 } from "lucide-react";
+import { Hash, User, Phone, Loader2, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DniLookupState } from "../types";
 
@@ -73,7 +73,7 @@ export function CustomerFormFields({
         </div>
         <p
           className={cn(
-            "text-[11px] mt-1 font-semibold",
+            "text-[length:var(--ts-2xs)] mt-1 font-semibold",
             dniLookup.status === "error"
               ? "text-red-500"
               : dniLookup.status === "success"
@@ -128,7 +128,7 @@ export function CustomerFormFields({
           />
         </div>
         {phone.length > 0 && phoneValidation.hint && (
-          <p className={`text-[11px] mt-1 font-semibold ${phoneValidation.color}`}>
+          <p className={`text-[length:var(--ts-2xs)] mt-1 font-semibold ${phoneValidation.color}`}>
             {phoneValidation.hint}
           </p>
         )}

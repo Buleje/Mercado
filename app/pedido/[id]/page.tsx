@@ -7,7 +7,7 @@ import {
   CheckCircle2, Clock, Truck, PackageCheck,
   XCircle, ShoppingBag, RefreshCw, AlertCircle,
   Star, Send,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { OrderStatus, DbOrderItem } from "@/lib/jsondb";
 
 type PublicOrder = {
@@ -220,11 +220,11 @@ export default function PedidoPage() {
             </div>
             <div>
               <p className="font-extrabold text-gray-900 dark:text-gray-100 text-sm leading-tight">Buleje</p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">Seguimiento de pedido</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">Seguimiento de pedido</p>
             </div>
           </div>
           {lastUpdated && (
-            <div className="flex items-center gap-1 text-[11px] text-gray-400">
+            <div className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               En vivo
             </div>
@@ -301,7 +301,7 @@ export default function PedidoPage() {
                     }`}>
                       {step.label}
                       {active && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                        <span className="ml-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold bg-primary/10 text-primary rounded-full px-2 py-0.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                           Ahora
                         </span>

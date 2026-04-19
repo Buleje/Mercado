@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Star, Send, CheckCircle, Truck } from "lucide-react";
+import { Star, Send, CheckCircle, Truck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 

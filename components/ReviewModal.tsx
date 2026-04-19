@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
-import { X, Star, Send, Pencil, Camera, ZoomIn } from "lucide-react";
+import { X, Star, Send, Pencil, Camera, ZoomIn } from "@buleje/design-system/icons";
 import { useReviews } from "@/contexts/reviews-context";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 

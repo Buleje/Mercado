@@ -31,7 +31,7 @@ export default function StoreCategories({
     <section aria-labelledby="store-categories-heading" className="space-y-5">
       {/* Header */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
           Categorías
         </p>
         <h2

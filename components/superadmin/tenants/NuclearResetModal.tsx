@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bomb, AlertTriangle, Loader2 } from "lucide-react";
+import { Bomb, AlertTriangle, Loader2 } from "@buleje/design-system/icons";
 
 interface NuclearResetModalProps {
   onConfirm: () => void;

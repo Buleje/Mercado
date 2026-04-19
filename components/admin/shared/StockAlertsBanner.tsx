@@ -10,7 +10,7 @@ import {
   Package,
   Clock,
   ShoppingCart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Scale, ArrowRight } from "lucide-react";
+import { Scale, ArrowRight } from "@buleje/design-system/icons";
 import { useCompare } from "@/contexts/compare-context";
 
 /**

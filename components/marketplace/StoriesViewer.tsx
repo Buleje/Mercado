@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";

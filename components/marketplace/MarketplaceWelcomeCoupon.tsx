@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Copy, Check, X } from "lucide-react";
+import { Gift, Copy, Check, X } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -106,7 +106,7 @@ export default function MarketplaceWelcomeCoupon() {
         </button>
 
         <div className="p-5">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500">
+          <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500">
             <Gift className="h-3 w-3" strokeWidth={2} />
             Cupón · nuevos clientes
           </div>
@@ -120,7 +120,7 @@ export default function MarketplaceWelcomeCoupon() {
 
           {/* Countdown minimal */}
           <div className="mt-4 flex items-baseline justify-between border-t border-white/10 dark:border-gray-200 pt-3">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-white/55 dark:text-gray-500">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white/55 dark:text-gray-500">
               Vence en
             </span>
             <span className="font-mono text-base font-bold tabular-nums">
@@ -138,12 +138,12 @@ export default function MarketplaceWelcomeCoupon() {
               {COUPON_CODE}
             </span>
             {copied ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 dark:text-emerald-600">
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-300 dark:text-emerald-600">
                 <Check className="h-3 w-3" strokeWidth={2} />
                 Copiado
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white/70 dark:text-gray-600">
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-white/70 dark:text-gray-600">
                 <Copy className="h-3 w-3" strokeWidth={1.75} />
                 Copiar
               </span>

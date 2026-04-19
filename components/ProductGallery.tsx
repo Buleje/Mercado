@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
-import { X, ZoomIn, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { X, ZoomIn, ChevronLeft, ChevronRight, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface ProductGalleryProps {

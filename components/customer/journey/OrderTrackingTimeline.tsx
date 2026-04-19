@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clock, Package, Truck, Home, MessageCircle, Phone } from "lucide-react";
+import { Check, Clock, Package, Truck, Home, MessageCircle, Phone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { IconBadge } from "@buleje/design-system";
 

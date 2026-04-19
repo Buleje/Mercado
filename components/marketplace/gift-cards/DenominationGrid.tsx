@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus } from "@buleje/design-system/icons";
 import { GIFT_CARD_DENOMINATIONS } from "@/lib/mocks/gift-cards.mock";
 
 type Props = {

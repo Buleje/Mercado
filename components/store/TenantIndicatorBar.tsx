@@ -1,6 +1,6 @@
 "use client";
 
-import { Store } from "lucide-react";
+import { Store } from "@buleje/design-system/icons";
 import { useTenantSlug } from "@/contexts/tenant-context";
 import { useSettings } from "@/contexts/settings-context";
 

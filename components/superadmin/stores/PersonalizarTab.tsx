@@ -6,7 +6,7 @@ import {
   Eye, EyeOff, Percent, Globe, RefreshCw, Check, X,
   ShoppingBag, Star, Crown, Palette, Image as ImageIcon,
   ToggleRight, GripVertical,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { PlanBadge } from "@/components/superadmin/_shared/SABadge";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 import { StatCard } from "./StatCard";

@@ -12,7 +12,7 @@
 import { useRef } from "react";
 import { m, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import NumberFlow from "@number-flow/react";
-import { MapPin } from "lucide-react";
+import { MapPin } from "@buleje/design-system/icons";
 import {
   AnimatedSearchBar,
   GeolocationPrompt,
@@ -71,7 +71,7 @@ export default function LandingHero({
             className="order-2 lg:order-1"
           >
             {/* Kicker geografico */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold uppercase tracking-wide mb-5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide mb-5">
               <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               Marketplace local en Pucallpa
             </span>
@@ -201,7 +201,7 @@ export default function LandingHero({
                   </span>
                 )}
               </div>
-              <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-500 mt-1.5 text-center">
+              <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-500 mt-1.5 text-center">
                 {stat.label}
               </p>
             </m.div>

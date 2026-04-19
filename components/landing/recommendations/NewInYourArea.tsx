@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, MapPin, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star } from "@buleje/design-system/icons";
 import { SectionHeader } from "@/components/ui-system";
 import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
 import { DoniaElena } from "@/components/ui-system/illustrations/pucallpa-locals";
@@ -132,7 +132,7 @@ export function NewInYourArea({ initialStores, className }: Props) {
                     />
                   )}
                   {/* Badge "Nuevo" */}
-                  <span className="absolute top-2 left-2 bg-[var(--color-primary)] text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                  <span className="absolute top-2 left-2 bg-[var(--color-primary)] text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
                     Nuevo
                   </span>
                 </div>
@@ -143,21 +143,21 @@ export function NewInYourArea({ initialStores, className }: Props) {
                   </h3>
 
                   {store.zone && (
-                    <span className="flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
+                    <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       <MapPin className="h-3 w-3 shrink-0" strokeWidth={1.75} />
                       {store.zone}
                     </span>
                   )}
 
                   {store.description && (
-                    <p className="text-[10px] text-[var(--text-tertiary)] line-clamp-2 leading-relaxed">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-clamp-2 leading-relaxed">
                       {store.description}
                     </p>
                   )}
 
                   <div className="mt-auto flex items-center justify-between pt-2">
                     {store.reviewCount > 0 ? (
-                      <span className="flex items-center gap-1 text-[10px] font-semibold text-[var(--text-secondary)]">
+                      <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
                         <Star className="h-3 w-3 fill-current" strokeWidth={1.5} />
                         {store.rating.toFixed(1)}
                         <span className="text-[var(--text-tertiary)]">
@@ -165,12 +165,12 @@ export function NewInYourArea({ initialStores, className }: Props) {
                         </span>
                       </span>
                     ) : (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         Sin resenas aun
                       </span>
                     )}
 
-                    <span className="text-[10px] font-semibold text-[var(--color-primary)] group-hover:underline">
+                    <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--color-primary)] group-hover:underline">
                       Ser primero
                     </span>
                   </div>

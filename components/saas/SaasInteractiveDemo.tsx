@@ -5,7 +5,7 @@ import {
   ShoppingCart, Package, BarChart3,
   Truck, Brain, Plus, Minus, Trash2,
   ChevronRight, Play, Sparkles, Check, ExternalLink,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Mini-App: POS Simulador ─────────────────────────────────────────────────
@@ -63,7 +63,7 @@ function POSMiniApp() {
   return (
     <div className="space-y-3">
       {/* Catalogo */}
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Toca para agregar</p>
+      <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider">Toca para agregar</p>
       <div className="grid grid-cols-3 gap-1.5">
         {CATALOG.map((p) => (
           <button
@@ -72,8 +72,8 @@ function POSMiniApp() {
             className="flex flex-col items-center gap-1 p-2 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/20 transition-all active:scale-95"
           >
             <span className="text-lg">{p.emoji}</span>
-            <span className="text-[9px] font-medium text-gray-600 dark:text-gray-400 truncate w-full text-center">{p.name.split(" ")[0]}</span>
-            <span className="text-[10px] font-bold text-teal-600">S/{p.price}</span>
+            <span className="text-[length:var(--ts-2xs)] font-medium text-gray-600 dark:text-gray-400 truncate w-full text-center">{p.name.split(" ")[0]}</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-teal-600">S/{p.price}</span>
           </button>
         ))}
       </div>
@@ -114,7 +114,7 @@ function POSMiniApp() {
                 <button
                   key={m}
                   onClick={() => handlePay(m)}
-                  className="py-2 rounded-lg text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-teal-600 hover:text-white transition-all active:scale-95"
+                  className="py-2 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-teal-600 hover:text-white transition-all active:scale-95"
                 >
                   {m}
                 </button>
@@ -130,7 +130,7 @@ function POSMiniApp() {
       )}
 
       {cart.length === 0 && !sold && (
-        <p className="text-center text-[10px] text-gray-400 py-4">Agrega productos tocando arriba</p>
+        <p className="text-center text-[length:var(--ts-2xs)] text-gray-400 py-4">Agrega productos tocando arriba</p>
       )}
     </div>
   );
@@ -152,7 +152,7 @@ function InventoryMiniApp() {
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Stock en tiempo real</p>
+      <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider">Stock en tiempo real</p>
       {items.map((item) => (
         <div key={item.id} className="bg-white dark:bg-gray-900 rounded-lg p-2.5 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-1.5">
@@ -167,7 +167,7 @@ function InventoryMiniApp() {
               {item.status !== "ok" && (
                 <button
                   onClick={() => restock(item.id)}
-                  className="px-2 py-0.5 rounded text-[9px] font-bold bg-teal-600 text-white hover:bg-teal-700 transition-colors active:scale-95"
+                  className="px-2 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-teal-600 text-white hover:bg-teal-700 transition-colors active:scale-95"
                 >
                   Reponer
                 </button>
@@ -206,7 +206,7 @@ function ReportsMiniApp() {
           <button
             key={p}
             onClick={() => setPeriod(p)}
-            className={cn("flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all", period === p ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-400")}
+            className={cn("flex-1 py-1.5 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", period === p ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-400")}
           >
             {p === "semana" ? "Semana" : "Mes"}
           </button>
@@ -238,7 +238,7 @@ function ReportsMiniApp() {
         ].map((kpi) => (
           <div key={kpi.label} className="bg-white dark:bg-gray-900 rounded-lg p-2 border border-gray-100 dark:border-gray-700 text-center">
             <p className="text-xs font-extrabold text-gray-900 dark:text-white">{kpi.value}</p>
-            <p className="text-[9px] text-gray-400">{kpi.label}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">{kpi.label}</p>
           </div>
         ))}
       </div>
@@ -271,7 +271,7 @@ function DeliveryMiniApp() {
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Toca para avanzar estado</p>
+      <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider">Toca para avanzar estado</p>
       {orders.map((o) => (
         <button
           key={o.id}
@@ -281,10 +281,10 @@ function DeliveryMiniApp() {
         >
           <div>
             <p className="text-xs font-medium text-gray-800 dark:text-gray-200">{o.client}</p>
-            <p className="text-[10px] text-gray-400">{o.id}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">{o.id}</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={cn("text-[10px] font-bold", o.color)}>{statusLabel[o.status]}</span>
+            <span className={cn("text-[length:var(--ts-2xs)] font-bold", o.color)}>{statusLabel[o.status]}</span>
             {o.status !== "entregado" && <ChevronRight className="h-3 w-3 text-gray-300" />}
             {o.status === "entregado" && <Check className="h-3 w-3 text-emerald-500" />}
           </div>
@@ -314,17 +314,17 @@ function AIMiniApp() {
       </div>
       {suggestions.map((s) => (
         <div key={s.id} className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-100 dark:border-gray-700 space-y-2">
-          <p className="text-[11px] text-gray-700 dark:text-gray-300">{s.text}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-700 dark:text-gray-300">{s.text}</p>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-emerald-600">{s.saving} ahorro</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600">{s.saving} ahorro</span>
             {accepted[s.id] ? (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+              <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-600">
                 <Check className="h-3 w-3" /> Aplicado
               </span>
             ) : (
               <button
                 onClick={() => setAccepted((p) => ({ ...p, [s.id]: true }))}
-                className="px-3 py-1 rounded-md text-[10px] font-bold bg-pink-600 text-white hover:bg-pink-700 transition-colors active:scale-95"
+                className="px-3 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold bg-pink-600 text-white hover:bg-pink-700 transition-colors active:scale-95"
               >
                 {s.action}
               </button>
@@ -473,7 +473,7 @@ export default function SaasInteractiveDemo() {
 
             {/* Links de navegacion */}
             <div className="space-y-2">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ver version completa</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider">Ver version completa</p>
               {active.links.map((link) => (
                 <a
                   key={link.href}
@@ -503,8 +503,8 @@ export default function SaasInteractiveDemo() {
             <div className="relative bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-2xl">
               {/* Status bar */}
               <div className="flex items-center justify-between px-3 py-1.5 mb-3">
-                <span className="text-[10px] font-semibold text-gray-500">9:41</span>
-                <span className="text-[10px] font-bold text-teal-600">Buleje ERP</span>
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500">9:41</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-teal-600">Buleje ERP</span>
                 <div className="flex gap-1">
                   <div className="w-3 h-1.5 rounded-sm bg-gray-300 dark:bg-gray-600" />
                   <div className="w-3 h-1.5 rounded-sm bg-gray-300 dark:bg-gray-600" />

@@ -39,7 +39,7 @@ export default function WizardStepNav({
   return (
     <nav aria-label="Pasos del registro" className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
           Paso {current} de {total}
         </p>
         <p className="text-xs font-semibold tabular-nums text-[var(--text-secondary)]">
@@ -92,7 +92,7 @@ export default function WizardStepNav({
               </span>
               <span
                 className={cn(
-                  "hidden text-[10px] font-semibold leading-tight sm:block",
+                  "hidden text-[length:var(--ts-2xs)] font-semibold leading-tight sm:block",
                   isCurrent
                     ? "text-[var(--text-primary)]"
                     : "text-[var(--text-tertiary)]",

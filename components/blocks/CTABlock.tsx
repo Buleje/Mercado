@@ -5,7 +5,7 @@
 "use client";
 
 import { z } from "zod";
-import { ArrowRight, Phone } from "lucide-react";
+import { ArrowRight, Phone } from "@buleje/design-system/icons";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const CTABlockSchema = z.object({

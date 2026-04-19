@@ -17,7 +17,7 @@
  * tokenizado del DS para mantener bundle liviano.
  */
 
-import { Star } from "lucide-react";
+import { Star } from "@buleje/design-system/icons";
 import type { CategoriaDef } from "@/lib/db/marketplace-catalog.db";
 
 export type CategoryFiltersState = {
@@ -59,7 +59,7 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">
+      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400">
         {title}
       </h3>
       <div className="space-y-2">{children}</div>

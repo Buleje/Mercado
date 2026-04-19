@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Bell } from "lucide-react";
+import { Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
@@ -171,7 +171,7 @@ export default function NotificationBell() {
         {totalBadge > 0 && (
           <span
             className={cn(
-              "absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white rounded-full px-1 shadow-sm",
+              "absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white rounded-full px-1 shadow-sm",
               criticalCount > 0 ? "bg-red-600 animate-pulse" : "bg-red-500",
               pulse && "animate-pulse"
             )}

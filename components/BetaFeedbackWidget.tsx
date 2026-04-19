@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Star, Send, CheckCircle2 } from "lucide-react";
+import { MessageSquare, X, Star, Send, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "buleje_beta_feedback_done";
@@ -76,7 +76,7 @@ export default function BetaFeedbackWidget() {
             <div className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               <span className="text-sm font-bold">Feedback Beta</span>
-              <span className="rounded-full px-1.5 py-0.5 bg-amber-400/30 text-amber-200 text-[9px] font-bold">v1 Beta</span>
+              <span className="rounded-full px-1.5 py-0.5 bg-amber-400/30 text-amber-200 text-[length:var(--ts-2xs)] font-bold">v1 Beta</span>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -158,7 +158,7 @@ export default function BetaFeedbackWidget() {
                 {sending ? "Enviando..." : "Enviar feedback"}
               </button>
 
-              <p className="text-[10px] text-muted text-center">
+              <p className="text-[length:var(--ts-2xs)] text-muted text-center">
                 Tus datos son anónimos · No aparece en ningún perfil público
               </p>
             </div>
@@ -180,7 +180,7 @@ export default function BetaFeedbackWidget() {
       >
         <MessageSquare className="h-4 w-4" />
         <span className="hidden sm:inline">Feedback</span>
-        <span className="rounded-full px-1.5 py-0.5 bg-amber-400/30 text-amber-200 text-[9px] font-bold">
+        <span className="rounded-full px-1.5 py-0.5 bg-amber-400/30 text-amber-200 text-[length:var(--ts-2xs)] font-bold">
           Beta
         </span>
       </button>

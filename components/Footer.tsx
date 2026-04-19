@@ -140,7 +140,7 @@ function WhatsAppContactSection({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div className="text-left">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/50 mb-2">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/50 mb-2">
               <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Atención directa
             </span>
@@ -156,12 +156,12 @@ function WhatsAppContactSection({
                 {hoursLabel}
               </span>
               {isOpenNow ? (
-                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">
+                <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-emerald-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Abierto
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/40">
                   <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
                   Cerrado
                 </span>
@@ -236,7 +236,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* ── Columna 1: Marketplace ── */}
           <nav aria-label="Marketplace">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
               Marketplace
             </h3>
             <ul className="space-y-2.5">
@@ -251,7 +251,7 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            <h4 className="mt-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-3">
+            <h4 className="mt-6 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-3">
               Categorías
             </h4>
             <ul className="space-y-2">
@@ -270,7 +270,7 @@ export default function Footer() {
 
           {/* ── Columna 2: Mi cuenta ── */}
           <nav aria-label="Mi cuenta">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
               Mi cuenta
             </h3>
             <ul className="space-y-2.5">
@@ -289,7 +289,7 @@ export default function Footer() {
 
           {/* ── Columna 3: Vendé en Buleje ── */}
           <nav aria-label="Vendé en Buleje">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
               Vendé en Buleje
             </h3>
             <ul className="space-y-2.5">
@@ -315,7 +315,7 @@ export default function Footer() {
 
           {/* ── Columna 4: Ayuda ── */}
           <nav aria-label="Ayuda">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
+            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-5">
               Ayuda
             </h3>
             <ul className="space-y-2.5">
@@ -354,7 +354,7 @@ export default function Footer() {
             <p className="text-white/50 text-sm leading-relaxed mb-3">
               {storeTheme?.description || hp.footerDescription}
             </p>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mb-4">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/70 mb-4">
               <MapPin className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
               Pucallpa · Ucayali
             </div>
@@ -362,7 +362,7 @@ export default function Footer() {
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-3 w-3 fill-white text-white" strokeWidth={1.5} aria-hidden />
               ))}
-              <span className="text-white/55 text-[11px] ml-1.5 tabular-nums">{hp.footerRating}</span>
+              <span className="text-white/55 text-[length:var(--ts-2xs)] ml-1.5 tabular-nums">{hp.footerRating}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <a
@@ -477,15 +477,15 @@ export default function Footer() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
+              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
                 <ShieldCheck className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
                 Sitio Seguro
               </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
+              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
                 <CreditCard className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
                 Yape · Plin
               </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
+              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10">
                 <Wallet className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
                 Efectivo OK
               </div>
@@ -498,7 +498,7 @@ export default function Footer() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-2">
-              <p className="flex items-center gap-1.5 text-[11px] text-white/35 tabular-nums">
+              <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
                 © {year} {storeTheme?.name || "Buleje"} · Hecho en Perú
                 <span className="mx-1">·</span>
                 <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
@@ -507,7 +507,7 @@ export default function Footer() {
               </p>
               <a
                 href="/about"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/55 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
               >
                 v1.0 beta
               </a>

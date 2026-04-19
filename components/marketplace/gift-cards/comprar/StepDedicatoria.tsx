@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "@buleje/design-system/icons";
 
 type Props = {
   message: string;
@@ -78,7 +78,7 @@ export default function StepDedicatoria({
                 key={idx}
                 type="button"
                 onClick={() => useSuggestion(s)}
-                className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-800"
+                className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[length:var(--ts-2xs)] text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-800"
               >
                 {s}
               </button>

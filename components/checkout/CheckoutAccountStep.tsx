@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { User, Phone, Loader2, ChevronRight } from "lucide-react";
+import { User, Phone, Loader2, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface PhoneValidation {

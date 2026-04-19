@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import Link from "next/link";
-import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "lucide-react";
+import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "@buleje/design-system/icons";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const BenefitsBlockSchema = z.object({

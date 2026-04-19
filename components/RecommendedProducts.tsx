@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Sparkles, Plus, ShoppingCart, Package } from "lucide-react";
+import { Sparkles, Plus, ShoppingCart, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
         )}
 
         {/* Badge de categoría */}
-        <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-white/90 dark:bg-black/50 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full backdrop-blur-sm leading-none">
+        <span className="absolute top-1.5 left-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-white/90 dark:bg-black/50 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full backdrop-blur-sm leading-none">
           {product.category}
         </span>
       </div>
@@ -92,7 +92,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
         </p>
 
         {product.unit && (
-          <p className="text-[10px] text-gray-400 dark:text-muted leading-none">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted leading-none">
             {product.unit}
           </p>
         )}
@@ -108,7 +108,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
             aria-label={`Agregar ${product.name} al carrito`}
             className={cn(
               "min-h-[44px] min-w-[44px] -mr-1 -mb-1 flex items-center justify-center gap-0.5",
-              "rounded-xl text-white text-[11px] font-bold",
+              "rounded-xl text-white text-[length:var(--ts-2xs)] font-bold",
               "transition-all duration-200 active:scale-90",
               justAdded
                 ? "bg-emerald-500 dark:bg-emerald-600"
@@ -116,7 +116,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
             )}
           >
             {justAdded ? (
-              <span className="text-[10px] px-1">✓</span>
+              <span className="text-[length:var(--ts-2xs)] px-1">✓</span>
             ) : (
               <Plus className="h-4 w-4" />
             )}
@@ -314,7 +314,7 @@ export default function RecommendedProducts({
 
       {/* Indicador de scroll (solo cuando hay más de 3 items) */}
       {recommendations.length > 3 && (
-        <p className="text-[10px] text-gray-300 dark:text-white/20 text-right mt-1.5 select-none">
+        <p className="text-[length:var(--ts-2xs)] text-gray-300 dark:text-white/20 text-right mt-1.5 select-none">
           Desliza para ver más →
         </p>
       )}

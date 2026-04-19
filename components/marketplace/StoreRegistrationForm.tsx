@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Zap,
   DollarSign,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
@@ -126,7 +126,7 @@ export default function StoreRegistrationForm() {
             Te avisaremos por WhatsApp cuando esté lista para vender.
           </p>
           <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-left space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-400">
               ¿Qué sigue?
             </p>
             <ol className="space-y-2.5">
@@ -140,7 +140,7 @@ export default function StoreRegistrationForm() {
                   key={i}
                   className="flex gap-3 text-sm text-gray-600 dark:text-gray-300"
                 >
-                  <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-extrabold tabular-nums">
+                  <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
                     {i + 1}
                   </span>
                   <span>{step}</span>

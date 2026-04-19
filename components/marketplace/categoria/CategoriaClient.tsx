@@ -24,7 +24,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import type { CategoriaDef, CatalogProduct } from "@/lib/db/marketplace-catalog.db";
 import CategoryHero from "./CategoryHero";
 import CategoryFilters, { type CategoryFiltersState } from "./CategoryFilters";

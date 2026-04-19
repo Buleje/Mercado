@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { TrendingDown, TrendingUp, X, AlertCircle } from "lucide-react";
+import { TrendingDown, TrendingUp, X, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────

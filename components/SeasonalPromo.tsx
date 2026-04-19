@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Tag, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Tag, ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
@@ -142,7 +142,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5">
               <Tag className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+              <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
                 Oferta de Temporada
               </span>
             </div>

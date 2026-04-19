@@ -1,7 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, ShoppingCart, Heart, Share2, Minus, Plus, Check } from "lucide-react";
+import { X, ShoppingCart, Heart, Share2, Minus, Plus, Check } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";

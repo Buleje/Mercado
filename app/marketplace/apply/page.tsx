@@ -243,7 +243,7 @@ export default function MarketplaceApplyPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header + progress */}
         <div className="mb-8 text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
             <Sparkles className="h-3 w-3" />
             Registro gratuito · 3 minutos
           </span>
@@ -411,7 +411,7 @@ export default function MarketplaceApplyPage() {
                                 strokeWidth={active ? 2 : 1.5}
                                 aria-hidden="true"
                               />
-                              <span className="text-[10px] font-bold">
+                              <span className="text-[length:var(--ts-2xs)] font-bold">
                                 {cat.id}
                               </span>
                             </button>
@@ -621,14 +621,14 @@ export default function MarketplaceApplyPage() {
                     {form.zone || "Zona"}
                   </p>
                   {form.category && (
-                    <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                    <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">
                       {form.category}
                     </span>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 line-clamp-3 min-h-[3rem]">
                     {form.description || "Tu descripción aparecerá acá — contale a los vecinos qué hace tu tienda especial."}
                   </p>
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px]">
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[length:var(--ts-2xs)]">
                     <span className="inline-flex items-center gap-1 text-amber-500 font-bold">
                       ★ Nueva
                     </span>
@@ -636,7 +636,7 @@ export default function MarketplaceApplyPage() {
                   </div>
                 </div>
               </m.div>
-              <p className="text-[11px] text-gray-400 mt-3 text-center">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-3 text-center">
                 Así va a verse tu tienda en el marketplace
               </p>
             </div>

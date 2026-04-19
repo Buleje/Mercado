@@ -36,7 +36,7 @@ export default function A11yPerfDemoPage() {
           style={{ background: "var(--brand-ink)" }}
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
               Ola 6 · Performance + A11y
             </p>
             <h1 className="text-fs-display text-white leading-[1.02]">
@@ -52,7 +52,7 @@ export default function A11yPerfDemoPage() {
         {/* Section 1 — Visually hidden */}
         <section className="py-12 border-b border-[var(--rule-base)]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
               01 · VisuallyHidden
             </p>
             <h2 className="text-fs-h2 mb-3">Labels invisibles para screen readers</h2>
@@ -80,7 +80,7 @@ export default function A11yPerfDemoPage() {
         {/* Section 2 — LiveRegion announce */}
         <section className="py-12 border-b border-[var(--rule-base)]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
               02 · LiveRegion + useAnnounce
             </p>
             <h2 className="text-fs-h2 mb-3">Anuncios dinámicos para SR</h2>
@@ -112,7 +112,7 @@ export default function A11yPerfDemoPage() {
         {/* Section 3 — Debounced search */}
         <section className="py-12 border-b border-[var(--rule-base)]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
               03 · useDebouncedValue (perf)
             </p>
             <h2 className="text-fs-h2 mb-3">Debounce search 300ms → INP mejora</h2>
@@ -120,7 +120,7 @@ export default function A11yPerfDemoPage() {
               Cada keystroke no dispara request. Sólo después de 300ms sin tipear. Evita flooding de API.
             </p>
             <div className="max-w-md">
-              <label htmlFor="demo-search" className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2">
+              <label htmlFor="demo-search" className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2">
                 Búsqueda
               </label>
               <div className="relative">
@@ -136,7 +136,7 @@ export default function A11yPerfDemoPage() {
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                 <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
                     Valor actual
                   </p>
                   <p className="font-mono text-[var(--text-primary)] tabular-nums truncate">
@@ -144,7 +144,7 @@ export default function A11yPerfDemoPage() {
                   </p>
                 </div>
                 <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
                     Debounced (300ms)
                   </p>
                   <p className="font-mono text-[var(--text-primary)] tabular-nums truncate">
@@ -159,7 +159,7 @@ export default function A11yPerfDemoPage() {
         {/* Section 4 — FocusTrap */}
         <section className="py-12 border-b border-[var(--rule-base)]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
               04 · FocusTrap
             </p>
             <h2 className="text-fs-h2 mb-3">Foco atrapado en modales</h2>
@@ -176,7 +176,7 @@ export default function A11yPerfDemoPage() {
             {trapOpen && (
               <FocusTrap active={trapOpen}>
                 <div className="mt-6 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-6 max-w-md">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
                     Panel con focus trap activo
                   </p>
                   <div className="space-y-2">
@@ -205,7 +205,7 @@ export default function A11yPerfDemoPage() {
         {/* Section 5 — Idle mount */}
         <section className="py-12 border-b border-[var(--rule-base)]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
               05 · useIdleMount (perf)
             </p>
             <h2 className="text-fs-h2 mb-3">Montaje diferido tras idle</h2>
@@ -216,14 +216,14 @@ export default function A11yPerfDemoPage() {
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 min-h-24">
               {idleReady ? (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--data-success)] mb-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--data-success)] mb-2">
                     Idle mounted
                   </p>
                   <p className="text-sm">Este componente se montó tras el idle del navegador.</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
                     Esperando idle…
                   </p>
                   <div className="skeleton-v4 h-4 w-full" />
@@ -236,7 +236,7 @@ export default function A11yPerfDemoPage() {
         {/* Section 6 — Focus ring test */}
         <section className="py-12">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
               06 · Focus ring global
             </p>
             <h2 className="text-fs-h2 mb-3">Keyboard navigation test</h2>

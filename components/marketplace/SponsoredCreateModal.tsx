@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useId } from "react";
-import { X, Loader2, AlertCircle } from "lucide-react";
+import { X, Loader2, AlertCircle } from "@buleje/design-system/icons";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";

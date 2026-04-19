@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ShoppingCart, Sparkles, Package } from "lucide-react";
+import { ArrowRight, ShoppingCart, Sparkles, Package } from "@buleje/design-system/icons";
 import type { Product, Category } from "@/data/products";
 import { useInView } from "@/hooks/use-in-view";
 import ProductSchema from "./ProductSchema";
@@ -17,7 +17,7 @@ function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: bo
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-50 gap-2">
         <Package className="h-8 w-8 text-gray-300" />
-        <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Sin imagen</span>
+        <span className="text-[length:var(--ts-2xs)] font-medium text-gray-400 uppercase tracking-wider">Sin imagen</span>
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function ProductsPreview() {
             >
               {/* Badge */}
               {product.badge && (
-                <span className="absolute top-2 left-2 z-10 bg-primary text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                <span className="absolute top-2 left-2 z-10 bg-primary text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
                   {product.badge}
                 </span>
               )}
@@ -180,11 +180,11 @@ export default function ProductsPreview() {
                   {product.name}
                 </h3>
                 <div className="flex items-center gap-1 mt-1.5">
-                  <span className="text-[10px] text-muted">desde</span>
+                  <span className="text-[length:var(--ts-2xs)] text-muted">desde</span>
                   <span className="text-sm sm:text-base font-extrabold text-primary">
                     S/{product.price.toFixed(2)}
                   </span>
-                  <span className="text-[10px] text-muted">/{product.unit}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-muted">/{product.unit}</span>
                 </div>
               </div>
             </Link>

@@ -377,7 +377,7 @@ export default function RegistroClient() {
                 onNavigate={handleNavigate}
               />
               <div className="mt-5 border-t border-[var(--rule-base)] pt-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
                   En este paso
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">

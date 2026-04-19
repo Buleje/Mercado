@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Check, AlertTriangle, Sparkles } from "lucide-react";
+import { X, Check, AlertTriangle, Sparkles } from "@buleje/design-system/icons";
 
 const BEFORE_ITEMS = [
   { text: "Apuntas ventas en un cuaderno", icon: <X className="h-3.5 w-3.5" /> },

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, X, Plus, Minus, ArrowRight } from "lucide-react";
+import { ShoppingBag, X, Plus, Minus, ArrowRight } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
@@ -55,13 +55,13 @@ export default function MarketplaceMiniCart() {
       >
         <div className="relative">
           <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-          <span className="absolute -top-2 -right-2 h-5 min-w-5 px-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-extrabold flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 h-5 min-w-5 px-1 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center">
             <NumberFlow value={totalItems > 99 ? 99 : totalItems} />
             {totalItems > 99 && <span>+</span>}
           </span>
         </div>
         <div className="flex flex-col items-start leading-none">
-          <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide">
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-300 uppercase tracking-wide">
             Mi carrito
           </span>
           <span className="text-sm font-extrabold tabular-nums">
@@ -143,7 +143,7 @@ export default function MarketplaceMiniCart() {
                       <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
                         {item.name}
                       </p>
-                      <p className="text-[10px] text-gray-400 truncate">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">
                         {item.storeName}
                       </p>
                       <div className="mt-1 flex items-center justify-between">

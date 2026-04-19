@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import { SectionHeader, Chip } from "@/components/ui-system";
 import { ProductCard } from "@/components/ProductCard";
 import { pickTopN, pickByCategory, type MockProduct } from "@/lib/recommendations/mock";
@@ -78,7 +78,7 @@ export function TopSellersToday({ initialProducts, className }: Props) {
               onClick={() => setActiveFilter(f.value)}
               aria-pressed={activeFilter === f.value}
               className={cn(
-                "shrink-0 inline-flex items-center h-8 px-3 rounded-full text-[11px] font-semibold border transition-all duration-150",
+                "shrink-0 inline-flex items-center h-8 px-3 rounded-full text-[length:var(--ts-2xs)] font-semibold border transition-all duration-150",
                 activeFilter === f.value
                   ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
                   : "bg-white dark:bg-gray-900 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"

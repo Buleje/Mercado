@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingCart, X } from "lucide-react";
+import { ShoppingCart, X } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
 

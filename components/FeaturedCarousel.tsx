@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from "react";
 import Image from "next/image";
-import { Star, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Star, Package, ShoppingCart, Minus, Plus } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
@@ -91,7 +91,7 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
                         <button onClick={() => updateQty(product.id, qty - 1)} className="h-5.5 w-5.5 sm:h-6 sm:w-6 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="text-white font-extrabold text-[11px] sm:text-xs min-w-4 text-center">{qty}</span>
+                        <span className="text-white font-extrabold text-[length:var(--ts-2xs)] sm:text-xs min-w-4 text-center">{qty}</span>
                         <button onClick={() => updateQty(product.id, qty + 1)} className="h-5.5 w-5.5 sm:h-6 sm:w-6 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Aumentar">
                           <Plus className="h-3 w-3" />
                         </button>

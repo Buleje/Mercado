@@ -13,7 +13,7 @@ import {
   Star,
   Package,
   Check,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 

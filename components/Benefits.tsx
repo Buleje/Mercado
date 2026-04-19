@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "lucide-react";
+import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { useSettings } from "@/contexts/settings-context";
@@ -149,7 +149,7 @@ export default function Benefits() {
                     </div>
                     <h3 className="text-base font-bold text-foreground mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted leading-relaxed">{benefit.description}</p>
-                    <p className="text-[10px] text-muted/60 mt-3 font-medium">Pasa el cursor para ver más →</p>
+                    <p className="text-[length:var(--ts-2xs)] text-muted/60 mt-3 font-medium">Pasa el cursor para ver más →</p>
                   </div>
                   {/* Dark mode version */}
                   <div className="hidden dark:block">

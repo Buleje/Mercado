@@ -10,7 +10,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
 

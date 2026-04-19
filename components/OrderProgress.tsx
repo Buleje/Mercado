@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition, useCallback } from "react";
-import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle, Star, Printer } from "lucide-react";
+import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle, Star, Printer } from "@buleje/design-system/icons";
 
 type TrackedOrder = {
   id: string;
@@ -189,7 +189,7 @@ export default function OrderProgress() {
               </div>
             </>
           )}
-          <button onClick={printReceipt} className="flex items-center gap-1.5 mx-auto text-[10px] text-muted hover:text-primary transition-colors">
+          <button onClick={printReceipt} className="flex items-center gap-1.5 mx-auto text-[length:var(--ts-2xs)] text-muted hover:text-primary transition-colors">
             <Printer className="h-3 w-3" /> Descargar recibo
           </button>
         </div>
@@ -341,7 +341,7 @@ export default function OrderProgress() {
                   <div className="pt-0.5">
                     <p className={`text-xs font-semibold ${done ? "text-foreground" : "text-muted"}`}>{step.label}</p>
                     {active && (
-                      <p className="text-[10px] text-primary flex items-center gap-1 mt-0.5">
+                      <p className="text-[length:var(--ts-2xs)] text-primary flex items-center gap-1 mt-0.5">
                         <Clock className="w-2.5 h-2.5" /> En progreso...
                       </p>
                     )}

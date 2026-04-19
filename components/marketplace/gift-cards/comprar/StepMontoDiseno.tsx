@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@buleje/design-system/icons";
 import {
   GIFT_CARD_DENOMINATIONS,
   GIFT_CARD_DESIGNS,
@@ -148,7 +148,7 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
             <GiftCardArtwork design={design} className="h-full w-full" />
           </div>
           <div className="border-t border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
               Vista previa
             </div>
             <div className="mt-1 flex items-baseline justify-between">

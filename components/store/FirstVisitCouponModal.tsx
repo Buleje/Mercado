@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { X, Gift, Copy, Check, ShoppingCart } from "lucide-react";
+import { X, Gift, Copy, Check, ShoppingCart } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 const STORAGE_KEY = "first-visit-coupon-shown";

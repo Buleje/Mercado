@@ -14,7 +14,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, LayoutGrid, List, Star, Plus } from "lucide-react";
+import { Search, LayoutGrid, List, Star, Plus } from "@buleje/design-system/icons";
 import { ProductPrice, ProductBadge } from "@buleje/design-system";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { cn } from "@/lib/utils";
@@ -68,7 +68,7 @@ function ProductTile({
               className="object-cover w-full h-full"
             />
           ) : (
-            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 text-center leading-tight px-1">
+            <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-gray-600 text-center leading-tight px-1">
               {product.productCategory}
             </span>
           )}
@@ -186,7 +186,7 @@ export default function StoreCatalog({
     >
       {/* Header */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
           Catálogo
         </p>
         <h2

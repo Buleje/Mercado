@@ -7,7 +7,7 @@
  * Muestra mini timeline horizontal + ETA + CTA al tracking completo.
  */
 import Link from "next/link";
-import { ArrowRight, Truck, ChefHat, Check, MapPin } from "lucide-react";
+import { ArrowRight, Truck, ChefHat, Check, MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export type MiniStatus = "confirmed" | "preparing" | "shipping" | "nearby" | "delivered";
@@ -57,11 +57,11 @@ export function OrderTrackingMini({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
               {storeName ? storeName : "Pedido"}
             </span>
             {etaMinutes != null && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary uppercase tracking-[0.14em]">
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-[0.14em]">
                 <Truck className="h-3 w-3" strokeWidth={2} />
                 Llega en {etaMinutes} min
               </span>
@@ -73,7 +73,7 @@ export function OrderTrackingMini({
         </div>
         <Link
           href={`/cuenta/pedidos/${encodeURIComponent(orderId)}/seguimiento`}
-          className="inline-flex items-center gap-1.5 h-9 rounded-lg bg-foreground text-white dark:text-background px-3 text-[11px] font-bold hover:opacity-90 transition-opacity shrink-0"
+          className="inline-flex items-center gap-1.5 h-9 rounded-lg bg-foreground text-white dark:text-background px-3 text-[length:var(--ts-2xs)] font-bold hover:opacity-90 transition-opacity shrink-0"
         >
           Ver seguimiento
           <ArrowRight className="h-3 w-3" strokeWidth={2} />

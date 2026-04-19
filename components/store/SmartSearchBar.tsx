@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Search, X, ShoppingCart, Loader2, Mic, MicOff } from "lucide-react";
+import { Search, X, ShoppingCart, Loader2, Mic, MicOff } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {

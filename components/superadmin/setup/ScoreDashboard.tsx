@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, CheckCircle2, ExternalLink, TrendingUp, CheckCheck, AlertTriangle, XCircle, MinusCircle } from "lucide-react";
+import { Bot, CheckCircle2, ExternalLink, TrendingUp, CheckCheck, AlertTriangle, XCircle, MinusCircle } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { calcScore, type ScoreSnapshot } from "@/lib/superadmin/setup-types";
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { X, Search, Plus, Loader2, Package } from "lucide-react";
+import { X, Search, Plus, Loader2, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { CompareProduct } from "@/contexts/compare-context";
 

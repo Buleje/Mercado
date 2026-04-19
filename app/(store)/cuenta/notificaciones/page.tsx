@@ -14,7 +14,7 @@ import {
   CheckCheck,
   ChevronRight,
   HelpCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { Kicker } from "@/components/ui-system/Kicker";
 import { EmptyState } from "@/components/ui-system/EmptyState";
@@ -164,7 +164,7 @@ function NotifCard({
             {isUnread && (
               <span className="h-2 w-2 rounded-full bg-[var(--brand-primary)] shrink-0" aria-label="No leído" />
             )}
-            <span className="text-[10px] text-[var(--text-tertiary)] whitespace-nowrap tabular-nums">
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] whitespace-nowrap tabular-nums">
               {formatTimeAgo(notification.timestamp)}
             </span>
           </div>
@@ -175,7 +175,7 @@ function NotifCard({
           <Link
             href={notification.actionUrl}
             className={cn(
-              "inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors",
+              "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-lg transition-colors",
               "bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/20"
             )}
           >
@@ -186,7 +186,7 @@ function NotifCard({
           {isUnread && (
             <button
               onClick={() => onMarkRead(notification.id)}
-              className="inline-flex items-center gap-1 text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
             >
               <CheckCheck className="h-3 w-3" />
               Marcar leído
@@ -301,7 +301,7 @@ function NotifSettingsSection({
 
         {/* Canales */}
         <div className="px-5 py-4 border-b border-[var(--rule-soft)]">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] mb-3">
             CANALES
           </p>
           <div className="space-y-1">
@@ -314,7 +314,7 @@ function NotifSettingsSection({
                   <row.Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                   <div>
                     <p className="text-sm text-[var(--text-primary)] font-medium">{row.label}</p>
-                    <p className="text-[11px] text-[var(--text-tertiary)]">{row.sublabel}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{row.sublabel}</p>
                   </div>
                 </div>
                 <ToggleSwitch
@@ -329,7 +329,7 @@ function NotifSettingsSection({
 
         {/* Por tipo */}
         <div className="px-5 py-4">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] mb-3">
             POR TIPO
           </p>
           <div className="space-y-1">
@@ -349,12 +349,12 @@ function NotifSettingsSection({
                   >
                     {row.label}
                     {row.disabled && (
-                      <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-[var(--text-tertiary)] opacity-70">
+                      <span className="ml-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] opacity-70">
                         requerido
                       </span>
                     )}
                   </p>
-                  <p className="text-[11px] text-[var(--text-tertiary)]">{row.sublabel}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{row.sublabel}</p>
                 </div>
                 <ToggleSwitch
                   checked={row.disabled ? true : settings.typePrefs[row.key as TypePrefKey]}
@@ -456,7 +456,7 @@ export default function NotificacionesPage() {
           {/* Breadcrumb */}
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[10px] text-white/35 mb-6"
+            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-6"
           >
             <Link href="/" className="hover:text-white/60 transition-colors">Inicio</Link>
             <span>/</span>
@@ -490,7 +490,7 @@ export default function NotificacionesPage() {
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="flex items-center gap-1 text-[11px] font-semibold text-white/40 hover:text-white/60 transition-colors"
+                className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-white/40 hover:text-white/60 transition-colors"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 Marcar todo leído
@@ -529,7 +529,7 @@ export default function NotificacionesPage() {
                   {count > 0 && (
                     <span
                       className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums leading-none",
+                        "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full tabular-nums leading-none",
                         isActive
                           ? "bg-white/20 text-white"
                           : tab.key === "sin-leer"

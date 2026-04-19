@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, MapPin, Home } from "lucide-react";
+import { CheckCircle2, MapPin, Home } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { SavedLocation } from "@/contexts/customer-context";
 

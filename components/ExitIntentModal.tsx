@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Gift, ArrowRight, ShoppingCart } from "lucide-react";
+import { X, Gift, ArrowRight, ShoppingCart } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { useCart } from "@/contexts/cart-context";
 import { useSettings } from "@/contexts/settings-context";

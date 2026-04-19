@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { Plus, ShoppingCart, TrendingUp, Loader2 } from "lucide-react";
+import { Plus, ShoppingCart, TrendingUp, Loader2 } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
@@ -188,7 +188,7 @@ export default function AlsoBoughtSection({
                 {product.name}
               </p>
               {product.reason && (
-                <p className="text-[10px] text-muted mt-0.5 line-clamp-1">
+                <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5 line-clamp-1">
                   {product.reason}
                 </p>
               )}

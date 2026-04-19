@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Package, RefreshCw, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Package, RefreshCw, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
             Riesgo de quiebre de stock
           </h2>
           {lastUpdated && (
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 hidden sm:inline">
               · actualizado {lastUpdated}
             </span>
           )}
@@ -239,7 +239,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
                     {/* Badge severidad */}
                     <span
                       className={cn(
-                        "shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                        "shrink-0 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase",
                         config.bgClass,
                         config.textClass
                       )}

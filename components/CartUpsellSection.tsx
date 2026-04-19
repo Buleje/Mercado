@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Sparkles, TrendingUp, Zap, Package } from "lucide-react";
+import { Plus, Sparkles, TrendingUp, Zap, Package } from "@buleje/design-system/icons";
 import { getProductSlug } from "@/data/products";
 import type { Product } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -105,7 +105,7 @@ export default function CartUpsellSection({
         <div className="bg-emerald-50/80 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
             <Zap className="h-3.5 w-3.5 text-emerald-600" />
-            <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-700 dark:text-emerald-400">
               Agrega uno y desbloquea delivery gratis
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function CartUpsellSection({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-medium">
                     S/{p.price.toFixed(2)} — ¡alcanzas delivery gratis!
                   </p>
                 </div>
@@ -145,7 +145,7 @@ export default function CartUpsellSection({
         <div className="bg-amber-50/80 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-800/30 p-3">
           <div className="flex items-center gap-1.5 mb-2">
             <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-            <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400">{combo.label}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-amber-700 dark:text-amber-400">{combo.label}</p>
           </div>
           <button
             onClick={() => onAddItem(combo.product)}
@@ -162,7 +162,7 @@ export default function CartUpsellSection({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{combo.product.name}</p>
-              <p className="text-[10px] text-amber-600 font-bold">S/{combo.product.price.toFixed(2)}/{combo.product.unit}</p>
+              <p className="text-[length:var(--ts-2xs)] text-amber-600 font-bold">S/{combo.product.price.toFixed(2)}/{combo.product.unit}</p>
             </div>
             <div className="h-7 w-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 group-hover:bg-amber-600 transition-colors">
               <Plus className="h-3.5 w-3.5" />
@@ -176,7 +176,7 @@ export default function CartUpsellSection({
         <div>
           <div className="flex items-center gap-1.5 mb-2">
             <TrendingUp className="h-3 w-3 text-gray-400" />
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider">
               También compran
             </p>
           </div>
@@ -199,11 +199,11 @@ export default function CartUpsellSection({
                   </div>
                   <div className="p-2.5">
                     {slug ? (
-                      <Link href={`/tienda/${slug}`} className="text-[11px] font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">
+                      <Link href={`/tienda/${slug}`} className="text-[length:var(--ts-2xs)] font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">
                         {s.name}
                       </Link>
                     ) : (
-                      <p className="text-[11px] font-semibold text-foreground line-clamp-1">{s.name}</p>
+                      <p className="text-[length:var(--ts-2xs)] font-semibold text-foreground line-clamp-1">{s.name}</p>
                     )}
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-xs font-extrabold text-primary">S/{s.price.toFixed(2)}</span>

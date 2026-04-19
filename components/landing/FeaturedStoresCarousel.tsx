@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
 import { DoniaElena, CuadernoFiadoReal } from "@/components/ui-system/illustrations/pucallpa-locals";

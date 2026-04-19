@@ -85,7 +85,7 @@ export default function PricingPage() {
               }`}
             >
               Anual
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[length:var(--ts-2xs)] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">
                 -20%
               </span>
             </button>

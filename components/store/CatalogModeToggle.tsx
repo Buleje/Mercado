@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { Heart } from "lucide-react";
+import { Heart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**

@@ -7,7 +7,7 @@
  * Holded style: sin saturación, sin emojis, borde sutil.
  */
 
-import { Truck, Wallet, RefreshCw } from "lucide-react";
+import { Truck, Wallet, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface PolicyCardProps {
@@ -37,7 +37,7 @@ export default function StorePoliciesBlock() {
     <section aria-labelledby="store-policies-heading" className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
           Políticas
         </p>
         <h2

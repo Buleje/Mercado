@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Trash2, AlertTriangle, Loader2 } from "@buleje/design-system/icons";
 
 interface DeleteConfirmModalProps {
   name: string;

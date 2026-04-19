@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { Percent, X, ShoppingCart } from "lucide-react";
+import { Percent, X, ShoppingCart } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { cn } from "@/lib/utils";
@@ -114,7 +114,7 @@ export default function VolumeDiscount() {
                   />
                 </div>
                 <span className={cn(
-                  "text-[10px] font-bold",
+                  "text-[length:var(--ts-2xs)] font-bold",
                   totalQty >= tier.min ? "text-primary" : "text-muted"
                 )}>
                   {tier.label}
@@ -123,7 +123,7 @@ export default function VolumeDiscount() {
             ))}
           </div>
 
-          <div className="mt-2 flex items-center gap-1 text-[10px] text-muted">
+          <div className="mt-2 flex items-center gap-1 text-[length:var(--ts-2xs)] text-muted">
             <ShoppingCart className="h-3 w-3" />
             <span>{totalQty} / {TIERS[TIERS.length - 1].min}+ productos</span>
           </div>

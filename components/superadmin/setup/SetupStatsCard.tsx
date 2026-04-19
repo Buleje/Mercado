@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Sparkles } from "lucide-react";
+import { Clock, Sparkles } from "@buleje/design-system/icons";
 
 interface Stats {
   total: number;

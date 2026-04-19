@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Package, ShoppingCart, CheckCircle2, TrendingUp } from "lucide-react";
+import { Users, Package, ShoppingCart, CheckCircle2, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface FunnelData {

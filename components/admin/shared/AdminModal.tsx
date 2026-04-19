@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
-import { X } from "lucide-react";
+import { X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 

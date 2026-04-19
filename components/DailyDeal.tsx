@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingCart, Package, Star, Clock } from "lucide-react";
+import { ShoppingCart, Package, Star, Clock } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 

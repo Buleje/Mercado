@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
-import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
+import { AlertTriangle, RefreshCw, ArrowLeft } from "@buleje/design-system/icons";
 
 export default function SuperAdminError({
   error,

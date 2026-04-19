@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Truck, Shield, Clock, CreditCard, Leaf, HeartHandshake } from "lucide-react";
+import { Truck, Shield, Clock, CreditCard, Leaf, HeartHandshake } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const TRUST_ITEMS = [

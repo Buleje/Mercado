@@ -1,7 +1,7 @@
 "use client";
 
 import { useInView } from "@/hooks/use-in-view";
-import { Award, Heart, Users, Calendar } from "lucide-react";
+import { Award, Heart, Users, Calendar } from "@buleje/design-system/icons";
 import Image from "next/image";
 
 const stats = [

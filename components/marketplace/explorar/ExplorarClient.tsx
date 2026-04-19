@@ -16,7 +16,7 @@
  */
 
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@buleje/design-system/icons";
 import ExplorarHero from "./ExplorarHero";
 import QuickAccessGrid from "./QuickAccessGrid";
 import RecommendationsStrip from "./RecommendationsStrip";
@@ -31,7 +31,7 @@ function FinalCTA() {
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-8 sm:p-12">
         <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             Para bodegueros
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.1]">

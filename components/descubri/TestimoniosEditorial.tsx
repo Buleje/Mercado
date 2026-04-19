@@ -58,7 +58,7 @@ export function TestimoniosEditorial() {
     <section className="border-b border-[var(--rule-base)] bg-[var(--surface-canvas)] py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="max-w-2xl space-y-3 mb-10 sm:mb-14">
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
             Lo que dicen los vecinos
           </span>
           <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold">
@@ -105,7 +105,7 @@ export function TestimoniosEditorial() {
                 &ldquo;{t.quote}&rdquo;
               </BodyText>
 
-              <span className="mt-auto inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              <span className="mt-auto inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
                 {t.feature}
               </span>
             </li>

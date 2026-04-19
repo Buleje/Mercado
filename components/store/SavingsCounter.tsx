@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PiggyBank, TrendingUp, Sparkles } from "lucide-react";
+import { PiggyBank, TrendingUp, Sparkles } from "@buleje/design-system/icons";
 
 type SavingsData = {
   monthTotal: number;

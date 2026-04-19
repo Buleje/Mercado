@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Star, Package, Truck } from "lucide-react";
+import { ShoppingCart, Star, Package, Truck } from "@buleje/design-system/icons";
 
 const ACTIVITIES = [
   { Icon: ShoppingCart, color: "#00B4A6", msg: "Ana M. de Yarinacocha acaba de pedir Arroz Costeño 5 kg" },

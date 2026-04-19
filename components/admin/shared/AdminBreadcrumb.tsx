@@ -1,5 +1,5 @@
 "use client";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Home } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface BreadcrumbItem {

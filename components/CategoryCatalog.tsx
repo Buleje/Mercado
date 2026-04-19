@@ -24,7 +24,7 @@ import {
   Package,
   Heart,
   ExternalLink,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { getProductSlug, categories } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import useProductAnalyticsTracking from "@/hooks/useProductAnalyticsTracking";
@@ -131,7 +131,7 @@ function ListProductRow({
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted">{product.unit}</p>
           {isLowStock && (
-            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
+            <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
               ¡Quedan {product.stock}!
             </span>
           )}
@@ -142,7 +142,7 @@ function ListProductRow({
           S/{product.price.toFixed(2)}
         </span>
         {isOutOfStock ? (
-          <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-full">
+          <span className="text-[length:var(--ts-2xs)] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-full">
             Agotado
           </span>
         ) : qty === 0 ? (

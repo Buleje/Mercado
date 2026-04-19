@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ArrowLeft, Trash2, ShoppingBag, Store as StoreIcon } from "lucide-react";
+import { Heart, ArrowLeft, Trash2, ShoppingBag, Store as StoreIcon } from "@buleje/design-system/icons";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import ShareWhatsAppButton from "@/components/marketplace/ShareWhatsAppButton";
@@ -144,7 +144,7 @@ export default function FavoritosClient() {
                   </p>
                   <Link
                     href={`/marketplace/${item.storeSlug}`}
-                    className="text-[10px] text-gray-400 hover:text-primary inline-flex items-center gap-1 mt-1"
+                    className="text-[length:var(--ts-2xs)] text-gray-400 hover:text-primary inline-flex items-center gap-1 mt-1"
                   >
                     <StoreIcon className="h-2.5 w-2.5" />
                     {item.storeName}

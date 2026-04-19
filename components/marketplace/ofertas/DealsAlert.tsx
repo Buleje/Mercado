@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Bell } from "lucide-react";
+import { Bell } from "@buleje/design-system/icons";
 
 export default function DealsAlert() {
   const [email, setEmail] = useState("");
@@ -31,7 +31,7 @@ export default function DealsAlert() {
         <div className="max-w-xl">
           <div className="flex items-center gap-2 mb-3">
             <Bell className="h-4 w-4 text-primary" strokeWidth={2} aria-hidden="true" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400">
               No te lo pierdas
             </span>
           </div>

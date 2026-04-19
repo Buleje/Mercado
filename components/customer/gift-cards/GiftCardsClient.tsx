@@ -74,7 +74,7 @@ export default function GiftCardsClient({ received, sent, usage }: Props) {
                   {t.label}
                   <span
                     className={[
-                      "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                      "ml-0.5 rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold",
                       isActive
                         ? "bg-white/20 text-white dark:bg-gray-900/30 dark:text-gray-900"
                         : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",

@@ -7,7 +7,7 @@
  */
 
 import Link from "next/link";
-import { Tag, Store, Clock } from "lucide-react";
+import { Tag, Store, Clock } from "@buleje/design-system/icons";
 import {
   BebidasVarias,
   VerduraFresca,
@@ -30,7 +30,7 @@ export default function OfertasHero({ summary }: OfertasHeroProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Breadcrumb */}
         <nav aria-label="Navegacion de ruta" className="mb-6">
-          <ol className="flex items-center gap-1.5 text-[11px] text-gray-400">
+          <ol className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-gray-400">
             <li>
               <Link href="/marketplace" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 Inicio
@@ -52,7 +52,7 @@ export default function OfertasHero({ summary }: OfertasHeroProps) {
         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8 lg:gap-16">
           {/* Left — texto editorial */}
           <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
               <Tag className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               Ofertas &middot; Esta semana
             </span>
@@ -69,7 +69,7 @@ export default function OfertasHero({ summary }: OfertasHeroProps) {
             </p>
 
             {/* Stats strip */}
-            <ul className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-gray-500 dark:text-gray-400">
+            <ul className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
               <li className="inline-flex items-center gap-1.5">
                 <Tag className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
                 <span>

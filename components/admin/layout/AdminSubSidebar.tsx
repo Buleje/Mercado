@@ -10,7 +10,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, X } from "@buleje/design-system/icons";
 import type { ComponentType } from "react";
 
 interface SubSidebarTab {

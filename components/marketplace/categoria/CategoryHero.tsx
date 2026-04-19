@@ -51,7 +51,7 @@ export default function CategoryHero({
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-center">
         <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             {categoria.kicker}
           </span>
           <h1

@@ -9,7 +9,7 @@
  */
 
 import Link from "next/link";
-import { ChevronRight, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, SlidersHorizontal } from "@buleje/design-system/icons";
 import type { SearchSortKey } from "./BuscarClient";
 
 const SORT_OPTIONS: Array<{ value: SearchSortKey; label: string }> = [

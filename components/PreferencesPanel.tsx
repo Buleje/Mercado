@@ -2,7 +2,7 @@
 
 import { usePreferences, exportPreferences, importPreferences, type UserPreferences } from "@/hooks/use-preferences";
 import { useTheme } from "@/contexts/theme-context";
-import { Settings, Download, Upload, RotateCcw } from "lucide-react";
+import { Settings, Download, Upload, RotateCcw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 

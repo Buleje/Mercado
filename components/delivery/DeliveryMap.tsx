@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Navigation, MapPin } from "lucide-react";
+import { Navigation, MapPin } from "@buleje/design-system/icons";
 
 interface DeliveryMapProps {
   destLat: number;

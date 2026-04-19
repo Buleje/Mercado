@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Star, Truck, Users } from "lucide-react";
+import { Heart, Star, Truck, Users } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 
 const MILESTONES = [

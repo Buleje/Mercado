@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, ShoppingBag, Clock, User } from "lucide-react";
+import { Copy, Check, ShoppingBag, Clock, User } from "@buleje/design-system/icons";
 import type { MockGiftCard } from "@/lib/mocks/gift-cards.mock";
 import { GIFT_CARD_DESIGNS } from "@/lib/mocks/gift-cards.mock";
 import GiftCardArtwork from "@/components/marketplace/gift-cards/shared/GiftCardArtwork";
@@ -68,7 +68,7 @@ export default function ReceivedGrid({ cards }: Props) {
             <div className="flex flex-1 flex-col gap-3 p-5">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                  <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                     {designLabel(card.design)} · {fmtDate(card.createdAt)}
                   </div>
                   <div className="mt-1 flex items-baseline gap-1">
@@ -94,7 +94,7 @@ export default function ReceivedGrid({ cards }: Props) {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                     {progress.toFixed(0)}% del saldo disponible
                   </p>
                 </div>
@@ -167,7 +167,7 @@ function StatusBadge({
   return (
     <span
       className={[
-        "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide",
         isUsable
           ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
           : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",

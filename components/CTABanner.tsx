@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, Truck, ShieldCheck, Clock, CreditCard, Flame } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, Clock, CreditCard, Flame } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import { trackCTAClick, trackWhatsAppClick } from "@/lib/analytics";
 import MorphingBlob from "@/components/ui/MorphingBlob";

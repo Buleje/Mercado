@@ -84,7 +84,7 @@ export function PathsByProfile() {
     <section className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="max-w-2xl space-y-3 mb-10 sm:mb-14">
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
             Empezá por aquí
           </span>
           <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold">
@@ -114,7 +114,7 @@ export function PathsByProfile() {
                   </div>
 
                   <div className="space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
                       {path.kicker}
                     </span>
                     <CardTitle className="text-[length:var(--ts-lg)] font-bold leading-tight">

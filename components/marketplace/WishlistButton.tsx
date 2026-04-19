@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { Heart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useWishlist, type WishlistItem } from "@/hooks/use-wishlist";
 

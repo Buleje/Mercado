@@ -127,7 +127,7 @@ const TIENDAS_DESTACADAS = [
 function SectionHeader({ label, title }: { label: string; title: string }) {
   return (
     <header className="mb-5 sm:mb-6">
-      <span className="inline-block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-1.5">
+      <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-1.5">
         {label}
       </span>
       <h2 className="text-xl sm:text-2xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
@@ -204,7 +204,7 @@ function TiendasDestacadas() {
                 <Illu size={64} strokeWidth={1.5} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-0.5">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-0.5">
                   {t.zone}
                 </p>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">
@@ -234,7 +234,7 @@ function InspirationStrip() {
             <PaicheEnOlla size={72} strokeWidth={1.5} />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 block mb-1">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 block mb-1">
               Inspiracion
             </span>
             <h2

@@ -6,7 +6,7 @@ import {
   X, CheckCheck, Bell, RefreshCw,
   AlertTriangle, Package, Clock,
   ShoppingCart, DollarSign, Calendar, Shield,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import NotificationItem from "./NotificationItem";
 import type {
@@ -159,16 +159,16 @@ function AlertItem({ alert, onNavigate }: { alert: ConsolidatedAlert; onNavigate
           {alert.description}
         </p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[11px] text-gray-400 dark:text-muted">
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
             {timeAgo(alert.timestamp)}
           </span>
-          <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", severity.badge)}>
+          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", severity.badge)}>
             {alert.severity === "critical" ? "Urgente" : alert.severity === "warning" ? "Atención" : "Info"}
           </span>
           {alert.action && (
             <button
               onClick={handleActionClick}
-              className="text-[11px] font-medium text-primary cursor-pointer hover:underline"
+              className="text-[length:var(--ts-2xs)] font-medium text-primary cursor-pointer hover:underline"
             >
               {alert.action.label} →
             </button>
@@ -443,7 +443,7 @@ export default function NotificationHub({
                   <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
                     Centro de Notificaciones
                   </h2>
-                  <p className="text-[10px] text-gray-400 dark:text-muted">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
                     Todo lo que necesitas saber en un solo lugar
                   </p>
                 </div>
@@ -497,7 +497,7 @@ export default function NotificationHub({
                     {tab.label}
                     {count > 0 && (
                       <span className={cn(
-                        "text-[9px] font-bold px-1 py-0 rounded-full min-w-3.5 text-center",
+                        "text-[length:var(--ts-2xs)] font-bold px-1 py-0 rounded-full min-w-3.5 text-center",
                         hubTab === tab.key ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-surface text-gray-600 dark:text-muted"
                       )}>
                         {count > 99 ? "99+" : count}
@@ -516,7 +516,7 @@ export default function NotificationHub({
                   {alerts.filter(a => a.severity === "critical").length > 0 && (
                     <div>
                       <div className="px-4 py-2 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30">
-                        <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" /> Urgente
                         </span>
                       </div>
@@ -530,7 +530,7 @@ export default function NotificationHub({
                   {alerts.filter(a => a.severity === "warning").length > 0 && (
                     <div>
                       <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30">
-                        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" /> Atención
                         </span>
                       </div>
@@ -543,13 +543,13 @@ export default function NotificationHub({
                   {/* Divider */}
                   {alerts.length > 0 && notifications.length > 0 && (
                     <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-y border-gray-100 dark:border-card-border flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">
                         Notificaciones recientes
                       </span>
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllRead}
-                          className="flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                          className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-primary hover:underline"
                         >
                           <CheckCheck className="h-3 w-3" />
                           Leer todo
@@ -581,7 +581,7 @@ export default function NotificationHub({
                     groups.map((group) => (
                       <div key={group.label}>
                         <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-100 dark:border-card-border">
-                          <span className="text-[11px] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider">
+                          <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider">
                             {group.label}
                           </span>
                         </div>
@@ -632,7 +632,7 @@ export default function NotificationHub({
             {/* Footer summary */}
             {alerts.length > 0 && (
               <div className="px-4 py-2.5 border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface/50 shrink-0">
-                <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center justify-between text-[length:var(--ts-2xs)]">
                   <div className="flex items-center gap-3">
                     {alerts.filter(a => a.severity === "critical").length > 0 && (
                       <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-bold">

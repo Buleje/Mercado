@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Users, ArrowUpRight } from "lucide-react";
+import { Clock, Users, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import RecipeModal, { type RecipeData } from "@/components/marketplace/RecipeModal";
 import { RECIPE_ILLUSTRATIONS } from "@/components/marketplace/RecipeIllustrations";
@@ -162,7 +162,7 @@ export default function MarketplaceRecipesWidget() {
       />
       <div className="flex items-end justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
             Cocina amazónica
           </p>
           <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -189,10 +189,10 @@ export default function MarketplaceRecipesWidget() {
             >
               {/* Hero: illustration line-art sobre off-white con número editorial */}
               <div className="relative aspect-[4/3] bg-gray-50 dark:bg-gray-950 overflow-hidden">
-                <span className="absolute top-3 left-4 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                <span className="absolute top-3 left-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
                   {String(idx + 1).padStart(2, "0")}
                 </span>
-                <span className="absolute top-3 right-4 text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                <span className="absolute top-3 right-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-gray-400">
                   {r.category}
                 </span>
                 {Illustration && (
@@ -213,7 +213,7 @@ export default function MarketplaceRecipesWidget() {
                   {r.description}
                 </p>
 
-                <div className="mt-4 flex items-center gap-4 text-[11px] text-gray-500 border-t border-gray-100 dark:border-gray-800 pt-3">
+                <div className="mt-4 flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-500 border-t border-gray-100 dark:border-gray-800 pt-3">
                   <span className="inline-flex items-center gap-1 tabular-nums">
                     <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                     {r.time}
@@ -222,7 +222,7 @@ export default function MarketplaceRecipesWidget() {
                     <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                     {r.servings}
                   </span>
-                  <span className="ml-auto text-[10px] font-bold text-gray-400 tabular-nums">
+                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-gray-400 tabular-nums">
                     {r.ingredients.length} ingr.
                   </span>
                 </div>

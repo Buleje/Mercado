@@ -54,12 +54,12 @@ export function PastLives({ lives }: PastLivesProps) {
               />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
 
-              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded bg-black/55 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded bg-black/55 backdrop-blur-sm px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-white">
                 Grabado
               </span>
 
               {live.durationMin && (
-                <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white tabular-nums">
+                <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-medium text-white tabular-nums">
                   {formatDuration(live.durationMin)}
                 </span>
               )}

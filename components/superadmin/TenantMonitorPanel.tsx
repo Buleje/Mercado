@@ -12,7 +12,7 @@ import {
   ShoppingCart,
   Users,
   Activity,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

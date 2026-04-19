@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import type { Deal } from "@/lib/mock-deals";
 import { useDealsCountdown } from "./useDealsCountdown";
 import {
@@ -41,17 +41,17 @@ const PAGE_SIZE = 12;
 
 function DealTimeLabel({ endsAt }: { endsAt: string }) {
   const { days, hours, minutes, expired } = useDealsCountdown(endsAt);
-  if (expired) return <span className="text-[10px] text-gray-400">Vencida</span>;
+  if (expired) return <span className="text-[length:var(--ts-2xs)] text-gray-400">Vencida</span>;
   if (days > 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
         <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
         Termina en {days}d {hours}h
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-400 font-semibold">
       <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
       {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")} restantes
     </span>
@@ -115,13 +115,13 @@ export default function DealsGrid({ deals }: DealsGridProps) {
               className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
             >
               {/* Badge descuento */}
-              <span className="absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+              <span className="absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary border border-primary/20">
                 -{deal.discountPct}%
               </span>
 
               {/* Flash badge */}
               {deal.isFlash && (
-                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
                   Flash
                 </span>
               )}
@@ -132,20 +132,20 @@ export default function DealsGrid({ deals }: DealsGridProps) {
               </div>
 
               <div className="p-3 sm:p-4">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-gray-400">
                   {deal.category}
                 </span>
                 <h3 className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
                   {deal.name}
                 </h3>
-                <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
+                <p className="mt-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 line-clamp-1">
                   {deal.storeName} &middot; {deal.unit}
                 </p>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="text-base font-extrabold text-gray-900 dark:text-white">
                     S/{deal.price.toFixed(2)}
                   </span>
-                  <span className="text-[11px] text-gray-400 line-through">
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 line-through">
                     S/{deal.previousPrice.toFixed(2)}
                   </span>
                 </div>

@@ -126,7 +126,7 @@ export default function SaasCTA() {
               {["ML", "CR", "RH", "JP"].map((initials, i) => (
                 <div
                   key={initials}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white shrink-0"
                   style={{
                     background: `hsl(${170 + i * 14}, 58%, ${36 + i * 5}%)`,
                     zIndex: 4 - i,

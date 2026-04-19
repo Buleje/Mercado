@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { MapPin, Clock, Phone } from "lucide-react";
+import { MapPin, Clock, Phone } from "@buleje/design-system/icons";
 import { useSettings } from "@/contexts/settings-context";
 
 // Maps day name (as stored in settings) to JS getDay() index (0 = Sunday)

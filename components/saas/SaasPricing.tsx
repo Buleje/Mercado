@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Crown, Building2, Globe, Check, ChevronDown } from "lucide-react";
+import { Zap, Crown, Building2, Globe, Check, ChevronDown } from "@buleje/design-system/icons";
 import { PLANS, PLAN_PRICES } from "@/lib/plans";
 
 // ─── Animation variants ───────────────────────────────────────────────────────

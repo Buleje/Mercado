@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Truck, Tag, Star, Sparkles } from "lucide-react";
+import { Clock, Truck, Tag, Star, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Chip definitions ──────────────────────────────────────────────────────── */

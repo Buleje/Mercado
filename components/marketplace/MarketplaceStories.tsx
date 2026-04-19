@@ -13,7 +13,7 @@ import {
   Clock,
   Percent,
   Heart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StoriesViewer, { type StorySlide } from "@/components/marketplace/StoriesViewer";
 

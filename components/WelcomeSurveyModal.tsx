@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Smartphone, Tablet, Monitor, X, ChevronRight, Sparkles, FlaskConical } from "lucide-react";
+import { Smartphone, Tablet, Monitor, X, ChevronRight, Sparkles, FlaskConical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "buleje_welcome_done";
@@ -98,7 +98,7 @@ export default function WelcomeSurveyModal() {
           <div className="flex justify-center mb-3">
             <div className="bg-white/20 rounded-2xl p-3 relative">
               <FlaskConical className="w-8 h-8 text-white" />
-              <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-900 text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-full leading-none shadow">Beta</span>
+              <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-900 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-full leading-none shadow">Beta</span>
             </div>
           </div>
           <h2 className="text-xl font-bold tracking-tight">

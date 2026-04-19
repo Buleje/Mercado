@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, startTransition } from "react";
-import { ShoppingBag, Users, Truck, Star } from "lucide-react";
+import { ShoppingBag, Users, Truck, Star } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import { useSettings } from "@/contexts/settings-context";
 

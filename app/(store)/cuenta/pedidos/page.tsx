@@ -13,7 +13,7 @@ import dynamic from "next/dynamic";
 import {
   Clock, CheckCircle2, Truck, XCircle, ChevronRight, ArrowLeft,
   ShoppingBag,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
@@ -175,21 +175,21 @@ function OrderListCard({ order }: { order: UiOrder }) {
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full",
+                  "inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   meta.tone,
                 )}
               >
                 <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
                 {meta.label}
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted truncate">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted truncate">
                 {order.storeName}
               </span>
             </div>
             <p className="text-sm font-semibold text-foreground truncate mt-0.5">
               #{order.id.slice(-8).toUpperCase()}
             </p>
-            <p className="text-[11px] text-muted truncate">
+            <p className="text-[length:var(--ts-2xs)] text-muted truncate">
               {order.itemsPreview}
             </p>
           </div>
@@ -197,7 +197,7 @@ function OrderListCard({ order }: { order: UiOrder }) {
             <span className="text-sm font-extrabold text-foreground tabular-nums">
               {fmtSoles(order.total)}
             </span>
-            <span className="text-[10px] text-muted">{fmtDate(order.createdAt)}</span>
+            <span className="text-[length:var(--ts-2xs)] text-muted">{fmtDate(order.createdAt)}</span>
           </div>
           <ChevronRight className="h-4 w-4 text-muted shrink-0" />
         </div>
@@ -235,7 +235,7 @@ export default function PedidosPage() {
             Volver a mi cuenta
           </Link>
           <div className="mt-4">
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
               Historial
             </span>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mt-1">
@@ -251,7 +251,7 @@ export default function PedidosPage() {
           <section aria-labelledby="active-orders-heading">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
                   En curso
                 </span>
                 <h2
@@ -294,7 +294,7 @@ export default function PedidosPage() {
           <section aria-labelledby="past-orders-heading">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
                   Historial
                 </span>
                 <h2

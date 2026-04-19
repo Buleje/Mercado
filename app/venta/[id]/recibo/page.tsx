@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Printer, ArrowLeft, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Loader2 } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 type Item = { name: string; price: number; quantity: number; unit: string };
@@ -108,22 +108,22 @@ export default function ReciboPOSPage() {
           <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
             <h1 className="text-base font-bold text-gray-900">{biz}</h1>
             {settings.businessAddress && (
-              <p className="text-[11px] text-gray-500 mt-0.5">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">
                 {settings.businessAddress}
               </p>
             )}
             {settings.businessPhone && (
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">
                 Tel: {settings.businessPhone}
               </p>
             )}
-            <p className="text-[11px] text-gray-400 mt-1.5">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
               TICKET DE VENTA
             </p>
           </div>
 
           {/* Info de la venta */}
-          <div className="grid grid-cols-2 gap-y-0.5 text-[11px] text-gray-600 mb-3">
+          <div className="grid grid-cols-2 gap-y-0.5 text-[length:var(--ts-2xs)] text-gray-600 mb-3">
             <span>Ticket:</span>
             <span className="text-right font-mono">
               #{sale.id.slice(0, 12).toUpperCase()}
@@ -139,7 +139,7 @@ export default function ReciboPOSPage() {
           </div>
 
           {/* Tabla de items */}
-          <table className="w-full text-[11px] mb-3">
+          <table className="w-full text-[length:var(--ts-2xs)] mb-3">
             <thead>
               <tr className="border-t border-b border-gray-200 text-gray-500">
                 <th className="text-left py-1 font-medium">Producto</th>
@@ -190,10 +190,10 @@ export default function ReciboPOSPage() {
 
           {/* Pie */}
           <div className="mt-4 text-center border-t border-dashed border-gray-300 pt-3">
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">
               ¡Gracias por su compra!
             </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
               {biz} — Pucallpa, Perú
             </p>
           </div>

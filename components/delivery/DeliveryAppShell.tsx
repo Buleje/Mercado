@@ -9,7 +9,7 @@ import {
   User,
   Wifi,
   WifiOff,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -195,7 +195,7 @@ export default function DeliveryAppShell({
                     className={`h-5 w-5 transition-transform ${active ? "scale-110" : ""}`}
                   />
                   <span
-                    className={`text-[10px] font-bold leading-none ${
+                    className={`text-[length:var(--ts-2xs)] font-bold leading-none ${
                       active ? "text-[#00B4A6]" : ""
                     }`}
                   >

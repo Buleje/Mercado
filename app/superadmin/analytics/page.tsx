@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import {
   DollarSign, CheckCircle2, Clock, TrendingUp, Package,
   AlertTriangle, XCircle, Loader2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });

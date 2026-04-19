@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, startTransition } from "react";
 import Image from "next/image";
-import { ShoppingBag, X, Star } from "lucide-react";
+import { ShoppingBag, X, Star } from "@buleje/design-system/icons";
 import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
@@ -175,7 +175,7 @@ export default function SocialProofToast() {
                 </p>
               </>
             )}
-            <p className="text-[10px] text-muted mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">
               hace {notification.minutesAgo} minutos
             </p>
           </div>

@@ -12,7 +12,7 @@
  */
 
 import Link from "next/link";
-import { ChevronRight, Clock, X } from "lucide-react";
+import { ChevronRight, Clock, X } from "@buleje/design-system/icons";
 import { useRecentViewed } from "@/hooks/use-recent-viewed";
 import {
   VerduraFresca,
@@ -50,7 +50,7 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
       {/* Header */}
       <div className="flex items-end justify-between gap-4 mb-6">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
             <Clock className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             Vuelve a ver
           </span>
@@ -104,13 +104,13 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
                     <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
                       {item.name}
                     </p>
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
+                    <p className="mt-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 line-clamp-1">
                       {item.storeName}
                     </p>
                     <p className="mt-1.5 text-base font-extrabold text-gray-900 dark:text-white">
                       S/{item.price.toFixed(2)}
                     </p>
-                    <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-primary">
+                    <span className="mt-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-primary">
                       Volver a ver
                       <ChevronRight className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
                     </span>

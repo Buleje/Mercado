@@ -59,7 +59,7 @@ export default function ProductBadges({ badges, details }: ProductBadgesProps) {
           <span
             key={badge}
             title={label}
-            className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full font-bold border ${INTENT_CLS[config.intent]}`}
+            className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] uppercase tracking-wide px-2 py-0.5 rounded-full font-bold border ${INTENT_CLS[config.intent]}`}
           >
             <Icon className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
             {label}

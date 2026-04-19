@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Share2 } from "lucide-react";
+import { Share2 } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { serializeCart } from "@/lib/marketplace/cart-sharing";
 
@@ -105,7 +105,7 @@ export default function ShareCartButton() {
       {isEmpty && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover/share:opacity-100 dark:bg-gray-700"
+          className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover/share:opacity-100 dark:bg-gray-700"
         >
           Agregá productos para compartir
           <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Home, ShoppingBag, Search, MapPin } from "lucide-react";
+import { Home, ShoppingBag, Search, MapPin } from "@buleje/design-system/icons";
 import type { Metadata } from "next";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";

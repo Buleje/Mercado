@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Clock, MessageCircle } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import { useSettings } from "@/contexts/settings-context";
 
@@ -157,7 +157,7 @@ export default function Contact() {
                     </div>
                     <p className="font-semibold text-foreground">{item.value}</p>
                     {"badge" in item && item.badge && (
-                      <span className={`inline-flex items-center gap-1 mt-2 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                      <span className={`inline-flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full ${
                         item.badge.status === "open"
                           ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                           : item.badge.status === "closing"

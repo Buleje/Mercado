@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import {
   ArrowLeft, Bell, Mail, Moon, Globe, Shield, Trash2,
   ChevronRight, Smartphone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
@@ -38,7 +38,7 @@ function ToggleRow({
         <div className="min-w-0">
           <p className="text-sm text-foreground">{label}</p>
           {sublabel && (
-            <p className="text-[11px] text-muted mt-0.5">{sublabel}</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{sublabel}</p>
           )}
         </div>
       </div>
@@ -138,7 +138,7 @@ function LinkRow({
           {label}
         </p>
         {sublabel && (
-          <p className="text-[11px] text-muted mt-0.5">{sublabel}</p>
+          <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{sublabel}</p>
         )}
       </div>
       <ChevronRight
@@ -190,7 +190,7 @@ export default function PreferenciasPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[10px] text-white/35 mb-5"
+            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-5"
           >
             <Link href="/" className="hover:text-white/60 transition-colors">
               Inicio
@@ -212,7 +212,7 @@ export default function PreferenciasPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
             </Link>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40">
                 TU CUENTA
               </span>
               <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[-0.02em]">
@@ -228,7 +228,7 @@ export default function PreferenciasPage() {
         {/* Seccion: Notificaciones */}
         <section aria-labelledby="notif-heading">
           <div className="mb-2 px-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
               NOTIFICACIONES
             </span>
           </div>
@@ -267,7 +267,7 @@ export default function PreferenciasPage() {
         {/* Seccion: Apariencia */}
         <section aria-labelledby="appearance-heading">
           <div className="mb-2 px-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
               APARIENCIA
             </span>
           </div>
@@ -299,7 +299,7 @@ export default function PreferenciasPage() {
         {/* Seccion: Privacidad */}
         <section aria-labelledby="privacy-heading">
           <div className="mb-2 px-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
               PRIVACIDAD
             </span>
           </div>

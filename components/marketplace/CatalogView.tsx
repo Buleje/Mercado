@@ -16,7 +16,7 @@ import {
   Check,
   Sparkles,
   TrendingUp,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useWishlist } from "@/hooks/use-wishlist";
@@ -181,17 +181,17 @@ function CatalogProductCard({
       {/* Badges */}
       <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1">
         {isOutOfStock && (
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-gray-500 shadow-sm">
+          <span className="rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-white bg-gray-500 shadow-sm">
             Agotado
           </span>
         )}
         {product.stock === 1 && !isOutOfStock && (
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-[var(--data-error)] shadow-sm">
+          <span className="rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-white bg-[var(--data-error)] shadow-sm">
             ¡Última!
           </span>
         )}
         {isLowStock && product.stock !== 1 && (
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white bg-[var(--data-warning)] shadow-sm">
+          <span className="rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-white bg-[var(--data-warning)] shadow-sm">
             ¡Solo {product.stock}!
           </span>
         )}
@@ -241,14 +241,14 @@ function CatalogProductCard({
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-300 gap-2">
             <Package className="h-10 w-10" />
-            <span className="text-[9px] font-medium text-gray-400 uppercase tracking-wider">
+            <span className="text-[length:var(--ts-2xs)] font-medium text-gray-400 uppercase tracking-wider">
               Sin imagen
             </span>
           </div>
         )}
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
-            <span className="bg-gray-600/90 text-white text-[10px] font-bold px-3 py-1 rounded-full">
+            <span className="bg-gray-600/90 text-white text-[length:var(--ts-2xs)] font-bold px-3 py-1 rounded-full">
               Agotado
             </span>
           </div>
@@ -263,7 +263,7 @@ function CatalogProductCard({
             {fmt(product.price)}
           </span>
           {product.unit && (
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
               /{product.unit}
             </span>
           )}
@@ -295,11 +295,11 @@ function CatalogProductCard({
               <StoreIcon className="h-2.5 w-2.5 text-primary" />
             </div>
           )}
-          <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate hover:text-primary transition-colors">
+          <span className="text-[length:var(--ts-2xs)] font-medium text-gray-500 dark:text-gray-400 truncate hover:text-primary transition-colors">
             {product.storeName}
           </span>
           {product.storeRating > 0 && (
-            <span className="flex items-center gap-0.5 text-[10px] text-amber-500 ml-auto shrink-0">
+            <span className="flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-amber-500 ml-auto shrink-0">
               <Star className="h-2.5 w-2.5 fill-current" />
               {product.storeRating.toFixed(1)}
             </span>
@@ -508,7 +508,7 @@ export default function CatalogView({
             key={cat.id}
             onClick={() => setProductCategory(cat.id)}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap border transition-all shrink-0",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-semibold whitespace-nowrap border transition-all shrink-0",
               productCategory === cat.id
                 ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
                 : "bg-white dark:bg-card text-gray-500 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-400"

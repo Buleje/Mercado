@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { m } from "framer-motion";
-import { Flame, TrendingUp, Star } from "lucide-react";
+import { Flame, TrendingUp, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WishlistButton from "@/components/marketplace/WishlistButton";
 
@@ -84,7 +84,7 @@ export default function MarketplaceTopToday() {
     >
       <div className="flex items-end justify-between gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
             Ranking {windowLabel === "7d" ? "semanal" : "diario"}
           </p>
           <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -141,7 +141,7 @@ export default function MarketplaceTopToday() {
             >
               <div className="relative rounded-xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500 transition-all">
                 {/* Ranking number editorial */}
-                <div className="absolute top-2 left-3 z-10 text-[11px] font-extrabold uppercase tracking-[0.2em] text-white mix-blend-difference">
+                <div className="absolute top-2 left-3 z-10 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.2em] text-white mix-blend-difference">
                   {String(idx + 1).padStart(2, "0")}
                 </div>
 
@@ -178,13 +178,13 @@ export default function MarketplaceTopToday() {
 
                   {/* Sold count minimal */}
                   {p.soldUnits != null && p.soldUnits > 0 ? (
-                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/95 dark:bg-gray-950/95 backdrop-blur border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[9px] font-bold uppercase tracking-wide tabular-nums">
+                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/95 dark:bg-gray-950/95 backdrop-blur border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide tabular-nums">
                       <Flame className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
                       {p.soldUnits} vend.
                     </span>
                   ) : (
                     p.badges.includes("best-seller") && (
-                      <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/95 dark:bg-gray-950/95 backdrop-blur border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[9px] font-bold uppercase tracking-wide">
+                      <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/95 dark:bg-gray-950/95 backdrop-blur border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
                         <Flame className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
                         Top
                       </span>
@@ -197,7 +197,7 @@ export default function MarketplaceTopToday() {
                   <p className="text-xs font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[2.25rem]">
                     {p.name}
                   </p>
-                  <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate mt-0.5">
                     {p.store.name}
                   </p>
 
@@ -207,7 +207,7 @@ export default function MarketplaceTopToday() {
                         S/{p.price.toFixed(2)}
                       </span>
                       {p.unit && (
-                        <span className="text-[10px] text-gray-400">/ {p.unit}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">/ {p.unit}</span>
                       )}
                     </div>
                     {p.avgRating > 0 && (

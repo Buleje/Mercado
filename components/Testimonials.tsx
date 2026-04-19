@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, startTransition, useRef } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Quote, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useReviews } from "@/contexts/reviews-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -68,7 +68,7 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
       )}
     >
       {item.isUser && isCenter && (
-        <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/8 px-2 py-0.5 rounded-full">
+        <span className="absolute top-3 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary bg-primary/8 px-2 py-0.5 rounded-full">
           Cliente verificado
         </span>
       )}

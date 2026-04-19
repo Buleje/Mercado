@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Download } from "lucide-react";
+import { Download } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface ExportButtonProps {

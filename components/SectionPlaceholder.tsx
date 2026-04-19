@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, ShoppingBag, Sparkles } from "lucide-react";
+import { Package, ShoppingBag, Sparkles } from "@buleje/design-system/icons";
 
 /**
  * Elegant empty state for store sections without content.

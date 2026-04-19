@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Store, Menu, X } from "lucide-react";
+import { Store, Menu, X } from "@buleje/design-system/icons";
 
 // ── Mobile hamburger nav for landing ──
 function MobileNav() {

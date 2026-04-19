@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check } from "@buleje/design-system/icons";
 import { GIFT_CARD_DESIGNS, type GiftCardDesign } from "@/lib/mocks/gift-cards.mock";
 import GiftCardArtwork from "./shared/GiftCardArtwork";
 
@@ -63,7 +63,7 @@ export default function DesignGallery({ initialDesign = "general", onSelect }: P
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {d.label}
                     </div>
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                    <div className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                       {d.description}
                     </div>
                   </div>

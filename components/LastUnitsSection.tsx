@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingCart, Minus, Plus, Package } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Package } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";

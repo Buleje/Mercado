@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 

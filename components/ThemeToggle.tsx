@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor } from "@buleje/design-system/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { cn } from "@/lib/utils";
 

@@ -221,7 +221,7 @@ export default function LoyaltyLevelBadge({
               <p className={cn("text-xs font-bold", meta.textColor)}>
                 Nivel {meta.label}
               </p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
                 {meta.maxPoints !== undefined
                   ? `${meta.minPoints} – ${meta.maxPoints} pts`
                   : `${meta.minPoints}+ pts`}
@@ -234,7 +234,7 @@ export default function LoyaltyLevelBadge({
             {meta.benefits.map((benefit) => (
               <li
                 key={benefit}
-                className="flex items-start gap-1.5 text-[11px] text-gray-600 dark:text-gray-300"
+                className="flex items-start gap-1.5 text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-300"
               >
                 <span
                   className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"

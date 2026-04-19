@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Loader2, TrendingUp, ArrowUpRight, ArrowDownRight } from "@buleje/design-system/icons";
 import type { GrowthEntry } from "./types";
 
 interface TenantGrowthTabProps {

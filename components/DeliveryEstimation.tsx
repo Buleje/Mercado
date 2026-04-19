@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Clock, MapPin, Truck, Package, CheckCircle2, Zap } from "lucide-react";
+import { Clock, MapPin, Truck, Package, CheckCircle2, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface DeliveryEstimationProps {
@@ -121,11 +121,11 @@ export default function DeliveryEstimation({
               <Truck className="h-4 w-4 text-primary" />
               <span className="text-sm font-extrabold text-foreground">{eta.primary}</span>
             </div>
-            <p className="text-[11px] text-muted leading-relaxed">{eta.secondary}</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted leading-relaxed">{eta.secondary}</p>
           </div>
           {/* Confidence indicator */}
           <div className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shrink-0",
+            "flex items-center gap-1 px-2 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0",
             eta.confidence === "high"
               ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
               : eta.confidence === "medium"
@@ -181,25 +181,25 @@ export default function DeliveryEstimation({
       {/* Extra info chips */}
       <div className="flex items-center gap-2 px-4 pb-3 flex-wrap">
         {slot && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
             <Clock className="h-3 w-3" />
             {slot.emoji} {slot.label}
           </span>
         )}
         {eta.isToday && deliverySlot === "lo-antes-posible" && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
             <Zap className="h-3 w-3" />
             Entrega express
           </span>
         )}
         {distanceKm != null && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
             <MapPin className="h-3 w-3" />
             {distanceKm.toFixed(1)} km
           </span>
         )}
         {orderCount != null && orderCount > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-full">
             <Package className="h-3 w-3" />
             {orderCount} pedido{orderCount > 1 ? "s" : ""} antes
           </span>

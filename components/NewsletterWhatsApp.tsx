@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { MessageCircle, CheckCircle, Gift, Zap, Shield } from "lucide-react";
+import { MessageCircle, CheckCircle, Gift, Zap, Shield } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export default function NewsletterWhatsApp() {
@@ -191,7 +191,7 @@ export default function NewsletterWhatsApp() {
                     Suscribirme por WhatsApp
                   </button>
 
-                  <p className="text-[11px] text-muted text-center leading-relaxed">
+                  <p className="text-[length:var(--ts-2xs)] text-muted text-center leading-relaxed">
                     🔒 Solo ofertas y novedades. Puedes cancelar cuando quieras.
                   </p>
                 </form>

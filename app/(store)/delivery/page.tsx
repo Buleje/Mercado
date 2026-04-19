@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Package, Truck } from "lucide-react";
+import { Package, Truck } from "@buleje/design-system/icons";
 
 // ── Mejora 13: Vista simplificada para el repartidor ────────────────────────
 
@@ -166,7 +166,7 @@ export default function DeliveryPage() {
           <Truck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           <div>
             <p className="font-bold text-sm">{driverName}</p>
-            <p className="text-[10px] text-white/70">{orders.length} entrega{orders.length !== 1 ? "s" : ""} pendiente{orders.length !== 1 ? "s" : ""}</p>
+            <p className="text-[length:var(--ts-2xs)] text-white/70">{orders.length} entrega{orders.length !== 1 ? "s" : ""} pendiente{orders.length !== 1 ? "s" : ""}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -226,7 +226,7 @@ export default function DeliveryPage() {
                         </a>
                       )}
                     </div>
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
+                    <span className={`text-[length:var(--ts-2xs)] font-extrabold px-2.5 py-1 rounded-full uppercase ${
                       order.status === "en_camino" || order.status === "delivering"
                         ? "bg-cyan-100 text-cyan-700"
                         : "bg-emerald-100 text-emerald-700"

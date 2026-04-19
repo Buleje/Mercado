@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Send, CheckCircle2, MessageCircle } from "lucide-react";
+import { X, Send, CheckCircle2, MessageCircle } from "@buleje/design-system/icons";
 
 interface AskQuestionModalProps {
   open: boolean;

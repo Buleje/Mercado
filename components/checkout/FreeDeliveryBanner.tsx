@@ -1,6 +1,6 @@
 "use client";
 
-import { Truck, Check } from "lucide-react";
+import { Truck, Check } from "@buleje/design-system/icons";
 
 interface FreeDeliveryBannerProps {
   currentTotal: number;

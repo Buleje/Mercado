@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 
 interface Props {

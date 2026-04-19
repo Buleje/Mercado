@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { CreditCard, ArrowLeft, Smartphone, Banknote, Plus } from "lucide-react";
+import { CreditCard, ArrowLeft, Smartphone, Banknote, Plus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
@@ -74,12 +74,12 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
               {method.label}
             </span>
             {method.isDefault && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
                 Preferido
               </span>
             )}
           </div>
-          <p className="text-[11px] text-muted mt-0.5">{method.detail}</p>
+          <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{method.detail}</p>
         </div>
         <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center shrink-0">
           {method.isDefault && (
@@ -112,7 +112,7 @@ export default function PagosPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[10px] text-white/35 mb-5"
+            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-5"
           >
             <Link href="/" className="hover:text-white/60 transition-colors">
               Inicio
@@ -134,7 +134,7 @@ export default function PagosPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
             </Link>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40">
                 TU CUENTA
               </span>
               <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[-0.02em]">

@@ -59,10 +59,10 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
       )}
     >
       <div className="flex items-center justify-between gap-3 mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
           Pedido {short}
         </span>
-        <span className="text-[11px] text-muted">{storeName}</span>
+        <span className="text-[length:var(--ts-2xs)] text-muted">{storeName}</span>
       </div>
 
       {isCanceled ? (
@@ -91,7 +91,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
         </>
       ) : (
         <>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted mb-1 block">
+          <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.18em] text-muted mb-1 block">
             {STATUS_LABEL[status]}
           </span>
           <h1
@@ -132,7 +132,7 @@ function ProgressBar({ status }: { status: TrackingStatus }) {
           style={{ width: `${Math.round(fraction * 100)}%` }}
         />
       </div>
-      <div className="mt-2 grid grid-cols-5 text-[10px] uppercase font-bold tracking-[0.18em] text-muted">
+      <div className="mt-2 grid grid-cols-5 text-[length:var(--ts-2xs)] uppercase font-bold tracking-[0.18em] text-muted">
         {order.map((s, i) => (
           <span
             key={s}

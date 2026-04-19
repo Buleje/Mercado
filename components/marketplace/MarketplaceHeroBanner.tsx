@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MapPin, Clock, ArrowUpRight } from "lucide-react";
+import { MapPin, Clock, ArrowUpRight } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -90,7 +90,7 @@ export default function MarketplaceHeroBanner() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               >
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                   <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
                   {slide.eyebrow}
                 </span>
@@ -140,7 +140,7 @@ export default function MarketplaceHeroBanner() {
                   aria-label={`Slide ${i + 1}`}
                   className="group flex items-center gap-2"
                 >
-                  <span className="text-[10px] font-bold tabular-nums text-gray-400">
+                  <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-gray-400">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span
@@ -159,7 +159,7 @@ export default function MarketplaceHeroBanner() {
           {/* Right column — editorial meta card */}
           <aside className="hidden lg:block">
             <div className="relative rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 noise-bg">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
                 Edición actual
               </div>
               <div className="mt-3 text-[120px] leading-none font-extrabold text-gray-900 dark:text-white tabular-nums tracking-tighter">
@@ -169,7 +169,7 @@ export default function MarketplaceHeroBanner() {
                 <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
                   {slide.eyebrow.split("·")[0].trim()}
                 </span>
-                <span className="text-[11px] text-gray-400 tabular-nums">
+                <span className="text-[length:var(--ts-2xs)] text-gray-400 tabular-nums">
                   {String(idx + 1)}/{SLIDES.length}
                 </span>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, CheckCircle2 } from "lucide-react";
+import { Clock, CheckCircle2 } from "@buleje/design-system/icons";
 
 export interface CheckoutDeliveryScheduleProps {
   deliverySlot: string;
@@ -34,7 +34,7 @@ export function CheckoutDeliverySchedule({
         <div className="space-y-3">
           <div className="grid md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
+              <label className="block text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
                 Fecha de entrega
               </label>
               <input
@@ -46,7 +46,7 @@ export function CheckoutDeliverySchedule({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
+              <label className="block text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
                 Hora preferida
               </label>
               <input
@@ -77,7 +77,7 @@ export function CheckoutDeliverySchedule({
               </p>
             </div>
           )}
-          <p className="text-[10px] text-gray-400 leading-relaxed">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 leading-relaxed">
             Horario de atencion: Lunes a Domingo de 8:00 AM a 8:00 PM
           </p>
           <button
@@ -93,7 +93,7 @@ export function CheckoutDeliverySchedule({
         </div>
       ) : (
         <>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-2">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mb-2">
             Cuando quieres recibir tu pedido?
           </p>
           <div className="flex flex-wrap gap-2">

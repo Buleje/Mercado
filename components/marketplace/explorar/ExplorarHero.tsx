@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Compass, Truck, Store, ShieldCheck } from "lucide-react";
+import { Search, Compass, Truck, Store, ShieldCheck } from "@buleje/design-system/icons";
 
 export default function ExplorarHero() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function ExplorarHero() {
     <section className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Compass className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             Explorar &middot; Todo el catalogo
           </span>
@@ -62,7 +62,7 @@ export default function ExplorarHero() {
           </form>
 
           {/* Trust strip — 4 chips minimalistas */}
-          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-gray-500 dark:text-gray-400">
+          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
             <li className="inline-flex items-center gap-1.5">
               <Truck className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
               Delivery en 25 min

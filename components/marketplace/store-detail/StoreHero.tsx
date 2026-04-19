@@ -11,7 +11,7 @@
  */
 
 import Link from "next/link";
-import { MapPin, Clock, Star, Truck, Phone, Heart } from "lucide-react";
+import { MapPin, Clock, Star, Truck, Phone, Heart } from "@buleje/design-system/icons";
 import {
   DoniaElena,
   BodegaAbriendo,
@@ -70,7 +70,7 @@ export default function StoreHero({
         {/* ── Left: editorial copy ─────────────────────────────────────────── */}
         <div className="max-w-2xl">
           {/* Kicker */}
-          <span className="inline-block text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-3">
+          <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-3">
             Bodega &middot; {category}
           </span>
 

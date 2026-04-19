@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { Zap, TrendingUp, Users, Star } from "lucide-react";
+import { Zap, TrendingUp, Users, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useInView } from "@/hooks/use-in-view";
 
@@ -56,7 +56,7 @@ export default function StoreStats() {
                   <p className="text-lg sm:text-xl font-extrabold text-foreground leading-none">
                     {stat.value}
                   </p>
-                  <p className="text-[11px] sm:text-xs text-muted leading-tight mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] sm:text-xs text-muted leading-tight mt-0.5">
                     {stat.label}
                   </p>
                 </div>

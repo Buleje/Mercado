@@ -5,7 +5,7 @@
 "use client";
 
 import { z } from "zod";
-import { Award, Heart, Users, Calendar } from "lucide-react";
+import { Award, Heart, Users, Calendar } from "@buleje/design-system/icons";
 import Image from "next/image";
 
 // ─── Schema & Types ─────────────────────────────────────

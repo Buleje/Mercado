@@ -6,7 +6,7 @@ import {
   Map, Receipt, Smartphone, Code,
   Crown, Palette, Boxes, MessageSquare, Zap,
   ExternalLink, Search, Heart, ChefHat,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 export const metadata: Metadata = {
   title: "Panel de Control | Buleje ERP",
@@ -153,7 +153,7 @@ function LinkCard({ item }: { item: LinkItem }) {
             {item.label}
           </p>
           {item.badge && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400">
+            <span className="px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400">
               {item.badge}
             </span>
           )}
@@ -256,7 +256,7 @@ export default function PanelPage() {
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Buleje ERP — Sistema de gestion integral para bodegas y minimarkets
           </p>
-          <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-1">
+          <p className="text-[length:var(--ts-2xs)] text-gray-300 dark:text-gray-600 mt-1">
             {totalLinks} paginas &middot; {SECTIONS.length} secciones &middot; Multi-tenant SaaS
           </p>
         </footer>

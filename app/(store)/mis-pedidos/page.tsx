@@ -9,7 +9,7 @@ import {
   ClipboardList, Search, RotateCcw, ChevronDown,
   ArrowLeft, ShoppingCart, Share2, MapPin, Phone,
   X, ChevronRight, Download,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
@@ -179,7 +179,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
               </div>
               <span
                 className={cn(
-                  "text-[9px] font-medium text-center leading-tight",
+                  "text-[length:var(--ts-2xs)] font-medium text-center leading-tight",
                   isCurrent
                     ? "text-primary font-bold"
                     : isCompleted
@@ -245,7 +245,7 @@ function OrderDetailModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-card z-10 px-5 pt-4 pb-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-muted">
               Pedido
             </span>
             <h2 className="text-base font-extrabold text-foreground leading-tight">
@@ -255,7 +255,7 @@ function OrderDetailModal({
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full",
+                "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                 st.cls
               )}
             >
@@ -275,7 +275,7 @@ function OrderDetailModal({
         <div className="px-5 py-4 space-y-5">
           {/* Timeline */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-3">
               SEGUIMIENTO
             </p>
             <OrderTimeline status={order.status} />
@@ -283,7 +283,7 @@ function OrderDetailModal({
 
           {/* Productos */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-3">
               PRODUCTOS
             </p>
             <div className="space-y-2">
@@ -311,7 +311,7 @@ function OrderDetailModal({
                     <p className="text-sm font-medium text-foreground truncate">
                       {item.name}
                     </p>
-                    <p className="text-[11px] text-muted">
+                    <p className="text-[length:var(--ts-2xs)] text-muted">
                       {item.quantity} {item.unit}
                     </p>
                   </div>
@@ -325,7 +325,7 @@ function OrderDetailModal({
 
           {/* Totales */}
           <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-2">
               RESUMEN
             </p>
             <div className="flex justify-between text-sm text-muted">
@@ -347,7 +347,7 @@ function OrderDetailModal({
           {/* Info entrega */}
           {order.deliveryAddress && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-2">
                 ENTREGA
               </p>
               <div className="flex items-start gap-2 text-sm text-muted">
@@ -355,7 +355,7 @@ function OrderDetailModal({
                 <div>
                   <p className="text-foreground font-medium">{order.deliveryAddress}</p>
                   {order.deliveryWindow && (
-                    <p className="text-[11px] text-muted mt-0.5">
+                    <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">
                       Ventana: {order.deliveryWindow}
                     </p>
                   )}
@@ -367,7 +367,7 @@ function OrderDetailModal({
           {/* Info repartidor (solo si en camino) */}
           {order.status === "en_camino" && order.courierName && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-muted mb-2">
                 REPARTIDOR
               </p>
               <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-100 dark:border-amber-800/30">
@@ -379,7 +379,7 @@ function OrderDetailModal({
                     {order.courierName}
                   </p>
                   {order.courierPhone && (
-                    <p className="text-[11px] text-muted">{order.courierPhone}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-muted">{order.courierPhone}</p>
                   )}
                 </div>
                 {order.courierPhone && (
@@ -398,7 +398,7 @@ function OrderDetailModal({
           )}
 
           {/* Fecha y datos extra */}
-          <div className="text-[11px] text-muted space-y-1">
+          <div className="text-[length:var(--ts-2xs)] text-muted space-y-1">
             <p>Pedido realizado el {fmtDateTime(order.createdAt)}</p>
             {order.paymentMethod && (
               <p>
@@ -507,7 +507,7 @@ function OrderCard({
               </span>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                  "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
                   st.cls
                 )}
               >
@@ -515,7 +515,7 @@ function OrderCard({
                 {st.label}
               </span>
             </div>
-            <p className="text-[11px] text-muted">
+            <p className="text-[length:var(--ts-2xs)] text-muted">
               {fmtDate(order.createdAt)}
               {order.paymentMethod && ` · ${order.paymentMethod === "yape" ? "Yape" : "Efectivo"}`}
             </p>
@@ -537,7 +537,7 @@ function OrderCard({
       {/* Body: productos preview */}
       <div className="px-4 pb-3">
         {order.storeName && (
-          <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted mb-2 block">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-muted mb-2 block">
             {order.storeName}
             {order.storeDistance ? ` · ${order.storeDistance}` : ""}
           </span>
@@ -567,7 +567,7 @@ function OrderCard({
             </div>
           ))}
           {extraCount > 0 && (
-            <p className="text-[10px] text-muted pl-9">
+            <p className="text-[length:var(--ts-2xs)] text-muted pl-9">
               +{extraCount} producto{extraCount > 1 ? "s" : ""} más
             </p>
           )}
@@ -816,7 +816,7 @@ export default function MisPedidosPage() {
           {/* Breadcrumb */}
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[10px] text-white/35 mb-6"
+            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-6"
           >
             <Link href="/" className="hover:text-white/60 transition-colors">
               Inicio
@@ -838,7 +838,7 @@ export default function MisPedidosPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
             </Link>
             <div className="flex-1">
-              <span className="inline-block text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-1">
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-1">
                 PEDIDOS
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-[-0.02em]">
@@ -854,7 +854,7 @@ export default function MisPedidosPage() {
                 <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">
                   {completedOrders.length}
                 </p>
-                <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
                   Realizados
                 </p>
               </div>
@@ -862,7 +862,7 @@ export default function MisPedidosPage() {
                 <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums tracking-tight">
                   {fmt(totalSpent)}
                 </p>
-                <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
                   Invertido
                 </p>
               </div>
@@ -875,7 +875,7 @@ export default function MisPedidosPage() {
                 >
                   {activeOrders.length}
                 </p>
-                <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-white/40 font-bold uppercase tracking-[0.18em] mt-1.5">
                   En curso
                 </p>
               </div>
@@ -936,7 +936,7 @@ export default function MisPedidosPage() {
                       ? "Tienes 1 pedido activo"
                       : `Tienes ${activeOrders.length} pedidos activos`}
                   </p>
-                  <p className="text-[11px] text-muted mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">
                     Pronto llegara a tu puerta
                   </p>
                 </div>
@@ -963,7 +963,7 @@ export default function MisPedidosPage() {
                     {count > 0 && (
                       <span
                         className={cn(
-                          "inline-flex items-center justify-center h-4.5 min-w-[1.125rem] px-1.5 rounded-full text-[10px] font-bold leading-none",
+                          "inline-flex items-center justify-center h-4.5 min-w-[1.125rem] px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold leading-none",
                           filter === key
                             ? "bg-white/25 text-white"
                             : "bg-gray-100 dark:bg-surface text-muted"

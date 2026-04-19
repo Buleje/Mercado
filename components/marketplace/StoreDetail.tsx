@@ -173,17 +173,17 @@ function ProductCard({
     >
       {/* Badges */}
       {isOutOfStock && (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
+        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
           Agotado
         </span>
       )}
       {!isOutOfStock && product.stock === 1 && (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-sm bg-red-500 animate-pulse">
+        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase text-white shadow-sm bg-red-500 animate-pulse">
           ¡Última unidad!
         </span>
       )}
       {isLowStock && product.stock !== 1 && (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-sm bg-amber-500 animate-pulse">
+        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase text-white shadow-sm bg-amber-500 animate-pulse">
           ¡Solo {product.stock}!
         </span>
       )}
@@ -207,13 +207,13 @@ function ProductCard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
-            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sin imagen</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sin imagen</span>
           </div>
         )}
 
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <span className="bg-gray-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-full">Agotado</span>
+            <span className="bg-gray-500/90 text-white text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-full">Agotado</span>
           </div>
         )}
       </div>
@@ -226,12 +226,12 @@ function ProductCard({
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {product.category && (
-            <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400 capitalize">
+            <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:bg-gray-800 dark:text-gray-400 capitalize">
               {product.category}
             </span>
           )}
           {product.stock > 0 && !isLowStock && (
-            <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+            <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               En stock
             </span>
           )}
@@ -244,15 +244,15 @@ function ProductCard({
                 {fmt(product.price)}
               </span>
               {product.unit && (
-                <span className="block text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">/{product.unit}</span>
+                <span className="block text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">/{product.unit}</span>
               )}
               {product.stock > 0 && !isLowStock && (
-                <span className="block text-[9px] font-semibold text-gray-400 mt-0.5">
+                <span className="block text-[length:var(--ts-2xs)] font-semibold text-gray-400 mt-0.5">
                   Stock: {product.stock} {product.unit ?? "und"}
                 </span>
               )}
               {isLowStock && (
-                <span className="block text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 animate-pulse">
+                <span className="block text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 mt-0.5 animate-pulse">
                   ⚠ ¡Solo quedan {product.stock}!
                 </span>
               )}
@@ -1252,7 +1252,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                     className="inline-flex min-h-11 flex-col items-center justify-center rounded-xl border border-white/40 px-4 py-2 backdrop-blur-sm transition-all duration-200 hover:bg-white/10"
                   >
                     <span className="text-sm font-bold text-white">Ver ofertas exclusivas</span>
-                    <span className="text-[10px] text-white/60">Promociones, combos y mas</span>
+                    <span className="text-[length:var(--ts-2xs)] text-white/60">Promociones, combos y mas</span>
                   </Link>
                 )}
               </div>

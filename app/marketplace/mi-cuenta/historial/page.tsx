@@ -7,7 +7,7 @@
  */
 
 import Link from "next/link";
-import { Clock, ChevronRight, X } from "lucide-react";
+import { Clock, ChevronRight, X } from "@buleje/design-system/icons";
 import { useRecentViewed } from "@/hooks/use-recent-viewed";
 import {
   VerduraFresca,
@@ -117,7 +117,7 @@ export default function HistorialPage() {
                     <p className="text-sm font-extrabold text-gray-900 dark:text-white">
                       S/{item.price.toFixed(2)}
                     </p>
-                    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary">
+                    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold text-primary">
                       Ver
                       <ChevronRight className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
                     </span>

@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@buleje/design-system/icons";
 import { CalendarioEntrega } from "@/components/ui-system/illustrations";
 
 export default function SubscriptionEmpty() {

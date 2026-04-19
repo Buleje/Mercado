@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
-import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, Star, FlaskConical, TrendingUp, RefreshCw, Tag, FileText, UserPlus, LogIn, AlertTriangle, LayoutDashboard, Truck } from "lucide-react";
+import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, Star, FlaskConical, TrendingUp, RefreshCw, Tag, FileText, UserPlus, LogIn, AlertTriangle, LayoutDashboard, Truck } from "@buleje/design-system/icons";
 import { useRouter } from "next/navigation";
 
 // ── Tipos admin quick-actions ────────────────────────────────────────────────
@@ -237,7 +237,7 @@ export default function CommandPalette() {
             aria-expanded={flatItems.length > 0}
           />
           <div className="flex items-center gap-1.5 shrink-0">
-            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px] font-mono text-gray-500">Ctrl+K</kbd>
+            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[length:var(--ts-2xs)] font-mono text-gray-500">Ctrl+K</kbd>
           </div>
           <button
             onClick={() => setIsOpen(false)}
@@ -252,7 +252,7 @@ export default function CommandPalette() {
         <div id="command-palette-results" className="max-h-[400px] overflow-y-auto" role="listbox" aria-label="Resultados de búsqueda">
           {!query && recentSearches.length > 0 && (
             <div className="p-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-2 flex items-center gap-2">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 px-3 py-2 flex items-center gap-2">
                 <Clock className="w-3 h-3" />
                 Búsquedas recientes
               </p>
@@ -280,7 +280,7 @@ export default function CommandPalette() {
             const config = CATEGORY_CONFIG[category];
             return (
               <div key={category} className="py-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-5 py-2 flex items-center gap-2">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-5 py-2 flex items-center gap-2">
                   {config?.icon}
                   {config?.label ?? category}
                 </p>
@@ -326,21 +326,21 @@ export default function CommandPalette() {
         <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-2.5 flex items-center justify-between text-xs text-gray-400">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px]">&#8593;&#8595;</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[length:var(--ts-2xs)]">&#8593;&#8595;</kbd>
               Navegar
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px]">&#9166;</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[length:var(--ts-2xs)]">&#9166;</kbd>
               Seleccionar
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px]">Esc</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[length:var(--ts-2xs)]">Esc</kbd>
               Cerrar
             </span>
           </div>
           <span className="flex items-center gap-1">
             <Command className="w-3 h-3" />
-            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px]">K</kbd>
+            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[length:var(--ts-2xs)]">K</kbd>
           </span>
         </div>
       </div>

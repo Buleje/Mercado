@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ShoppingBag, ArrowRight } from "lucide-react";
+import { ShoppingBag, ArrowRight } from "@buleje/design-system/icons";
 
 /**
  * Floating CTA button that appears only when the user scrolls

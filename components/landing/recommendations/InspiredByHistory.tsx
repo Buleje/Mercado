@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import { SectionHeader } from "@/components/ui-system";
 import { SkeletonProductCard } from "@/components/ui-system";
 import { ProductCard } from "@/components/ProductCard";

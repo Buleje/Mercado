@@ -16,7 +16,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Bell, ShoppingCart, Package, MessageSquare, Shield,
   CheckCheck, X,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 

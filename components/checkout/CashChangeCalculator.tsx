@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote } from "lucide-react";
+import { Banknote } from "@buleje/design-system/icons";
 
 export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
   const [selected, setSelected] = useState<number | null>(null);

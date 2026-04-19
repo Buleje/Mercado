@@ -74,7 +74,7 @@ function AnswerItem({
             {answer.userName}
           </span>
           {answer.isVendor && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
               Respuesta del vendedor
             </span>
           )}

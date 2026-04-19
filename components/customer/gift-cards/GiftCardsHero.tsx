@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus } from "@buleje/design-system/icons";
 import { MiniHero } from "@/components/customer/MiniHero";
 import { GiftCardIlustrada } from "@/components/ui-system/illustrations";
 

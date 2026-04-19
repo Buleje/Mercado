@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, TrendingUp, Clock, DollarSign } from "lucide-react";
+import { Calculator, TrendingUp, Clock, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export default function SaasSavingsCalculator() {
@@ -51,7 +51,7 @@ export default function SaasSavingsCalculator() {
                 onChange={(e) => setSalesPerDay(Number(e.target.value))}
                 className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer accent-teal-600"
               />
-              <div className="flex justify-between text-[10px] text-gray-400">
+              <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400">
                 <span>5</span><span>50</span><span>100</span><span>200</span>
               </div>
             </div>
@@ -70,7 +70,7 @@ export default function SaasSavingsCalculator() {
                 onChange={(e) => setEmployees(Number(e.target.value))}
                 className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer accent-teal-600"
               />
-              <div className="flex justify-between text-[10px] text-gray-400">
+              <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400">
                 <span>1</span><span>5</span><span>10</span><span>20</span>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function SaasSavingsCalculator() {
                 onChange={(e) => setWastePercent(Number(e.target.value))}
                 className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 appearance-none cursor-pointer accent-teal-600"
               />
-              <div className="flex justify-between text-[10px] text-gray-400">
+              <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400">
                 <span>1%</span><span>5%</span><span>10%</span><span>15%</span>
               </div>
             </div>

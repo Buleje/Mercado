@@ -39,7 +39,7 @@ export default function VenderSocialProof() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
           <div className="max-w-xl">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
               Bodegas que ya venden
             </p>
             <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
@@ -76,7 +76,7 @@ export default function VenderSocialProof() {
 
               <div className="grid grid-cols-2 gap-2 rounded-xl bg-[var(--surface-canvas)] p-3">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                     Rating
                   </p>
                   <p className="mt-0.5 flex items-center gap-1 text-sm font-bold tabular-nums text-[var(--text-primary)]">
@@ -88,7 +88,7 @@ export default function VenderSocialProof() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                     Pedidos
                   </p>
                   <p className="mt-0.5 text-sm font-bold tabular-nums text-[var(--text-primary)]">
@@ -97,7 +97,7 @@ export default function VenderSocialProof() {
                 </div>
               </div>
 
-              <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
+              <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
                 {s.streak}
               </p>
             </article>

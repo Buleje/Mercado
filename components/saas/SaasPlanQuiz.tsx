@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Sparkles, RotateCcw, Crown, Zap, Star, Gift } from "lucide-react";
+import { ChevronRight, Sparkles, RotateCcw, Crown, Zap, Star, Gift } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type Question = {

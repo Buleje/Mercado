@@ -5,7 +5,7 @@
  * Controla el estado de filtros del grid de deals.
  */
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DealCategory, DealSortKey, DealMinDiscount } from "./types";
 

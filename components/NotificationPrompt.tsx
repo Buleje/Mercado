@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
-import { Bell, X } from "lucide-react";
+import { Bell, X } from "@buleje/design-system/icons";
 
 const DISMISS_KEY = "buleje-notif-dismissed-until";
 

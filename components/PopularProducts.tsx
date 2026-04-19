@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "lucide-react";
+import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -106,7 +106,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
               >
                 {/* Rank badge — uniforme accent-soft para todos los top 6 */}
-                <div className="absolute top-2.5 left-2.5 z-10 rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-bold bg-[var(--accent-soft)] text-[var(--accent)]">
+                <div className="absolute top-2.5 left-2.5 z-10 rounded-full w-6 h-6 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--accent)]">
                   #{i + 1}
                 </div>
 
@@ -146,7 +146,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                   <div className="flex items-center justify-between gap-1">
                     <ProductPrice price={product.price} unit={product.unit} size="md" />
                     {isOutOfStock ? (
-                      <span className="text-[10px] font-bold text-gray-400 border border-gray-200 rounded-full px-2 py-1">Agotado</span>
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 border border-gray-200 rounded-full px-2 py-1">Agotado</span>
                     ) : qty > 0 ? (
                       <div className="flex items-center gap-0.5 bg-primary rounded-full px-1 py-1 shrink-0 sm:px-1.5">
                         <button onClick={() => updateQty(product.id, qty - 1)} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">

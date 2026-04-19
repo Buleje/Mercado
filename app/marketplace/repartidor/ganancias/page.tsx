@@ -11,7 +11,7 @@ import {
   TrendingUp,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 

@@ -20,7 +20,7 @@
 
 "use client";
 
-import { Info, TrendingUp } from "lucide-react";
+import { Info, TrendingUp } from "@buleje/design-system/icons";
 import { useState } from "react";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ export function CreditTransparencyBanner({
                 <li>Antigüedad como cliente (15%)</li>
                 <li>Puntos de lealtad (10%)</li>
               </ul>
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-[length:var(--ts-2xs)] text-slate-500">
                 Pagar a tiempo sube tu score. La explicación detallada con
                 tips personalizados estará disponible después de la migración
                 TD-030.

@@ -40,7 +40,7 @@ export default function CustomerJourneyDemoPage() {
         style={{ background: "var(--brand-ink)" }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
             Ola 5 · Customer journey primitives
           </p>
           <h1 className="text-fs-display text-white leading-[1.02]">
@@ -56,7 +56,7 @@ export default function CustomerJourneyDemoPage() {
       {/* QuickViewModal */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             01 · QuickViewModal
           </p>
           <h2 className="text-fs-h2 mb-3">Preview de producto sin salir del grid</h2>
@@ -101,7 +101,7 @@ export default function CustomerJourneyDemoPage() {
       {/* Order tracking timeline */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             02 · OrderTrackingTimeline
           </p>
           <h2 className="text-fs-h2 mb-6">Tracking visual post-pago</h2>
@@ -136,7 +136,7 @@ export default function CustomerJourneyDemoPage() {
       {/* Loyalty */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             03 · LoyaltyTierCard
           </p>
           <h2 className="text-fs-h2 mb-6">Fidelidad gamificada</h2>
@@ -150,7 +150,7 @@ export default function CustomerJourneyDemoPage() {
       {/* Order confirmation */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             04 · OrderConfirmationCard
           </p>
           <h2 className="text-fs-h2 mb-6">Confirmación post-pago</h2>
@@ -169,7 +169,7 @@ export default function CustomerJourneyDemoPage() {
       {/* Info sobre Yape (no demo completa porque requiere backend) */}
       <section className="py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             05 · YapeQRCheckout
           </p>
           <h2 className="text-fs-h2 mb-3">Yape QR embebido + captura auto-validada</h2>

@@ -65,7 +65,7 @@ export default function ChartsV2DemoPage() {
         style={{ background: "var(--brand-ink)" }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
             ADR-066 · Olas K + L · v7 dashboards densos
           </p>
           <h1 className="text-fs-display text-white leading-[1.02]">
@@ -81,7 +81,7 @@ export default function ChartsV2DemoPage() {
       {/* Compound charts */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             01 · BulejeComposedChart (bar + line + area · dual-axis)
           </p>
           <h2 className="text-fs-h2 mb-3">3 métricas correlacionadas en 1 chart</h2>
@@ -106,7 +106,7 @@ export default function ChartsV2DemoPage() {
       {/* Multi-series line */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             02 · BulejeMultiSeriesLine (hasta 5 series)
           </p>
           <h2 className="text-fs-h2 mb-6">Comparativa temporal · este año vs pasado vs promedio</h2>
@@ -131,7 +131,7 @@ export default function ChartsV2DemoPage() {
       {/* Stacked bar */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             03 · BulejeStackedBar
           </p>
           <h2 className="text-fs-h2 mb-6">Ventas × categoría × día (total + breakdown)</h2>
@@ -155,7 +155,7 @@ export default function ChartsV2DemoPage() {
       {/* Comparison overlay */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             04 · BulejeComparisonOverlay
           </p>
           <h2 className="text-fs-h2 mb-6">Esta semana vs semana pasada (con delta total)</h2>
@@ -176,7 +176,7 @@ export default function ChartsV2DemoPage() {
       {/* Radial progress */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             05 · BulejeRadialProgress (meta + actual + proyección + ETA)
           </p>
           <h2 className="text-fs-h2 mb-6">4 señales en 1 gauge</h2>
@@ -208,7 +208,7 @@ export default function ChartsV2DemoPage() {
       {/* KPI Cards */}
       <section className="py-12 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             06 · BulejeMetricHeroCard
           </p>
           <h2 className="text-fs-h2 mb-6">KPI hero con 3 sub-metrics + sparkline + delta matrix</h2>
@@ -234,7 +234,7 @@ export default function ChartsV2DemoPage() {
 
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             07 · BulejeKPIQuadCard (4 KPIs en 1 card)
           </p>
           <h2 className="text-fs-h2 mb-6">Cuatro métricas densas · reemplaza 4 cards separadas</h2>
@@ -251,7 +251,7 @@ export default function ChartsV2DemoPage() {
 
       <section className="py-12 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             08 · BulejeMetricTableCard (top rows + sparkline por fila)
           </p>
           <h2 className="text-fs-h2 mb-6">Ranking con trend inline por item</h2>
@@ -285,7 +285,7 @@ export default function ChartsV2DemoPage() {
 
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             09 · BulejeForecastCard (actual + proyección + meta + ETA)
           </p>
           <h2 className="text-fs-h2 mb-6">¿Voy a llegar a la meta?</h2>
@@ -317,7 +317,7 @@ export default function ChartsV2DemoPage() {
       {/* Footer */}
       <section className="py-10 text-center">
         <p className="text-xs text-[var(--text-tertiary)]">
-          ADR-066 Olas K + L · 5 compound charts + 5 KPI cards · integrado en <code className="ml-2 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[10px]">InicioDashboardV2</code>
+          ADR-066 Olas K + L · 5 compound charts + 5 KPI cards · integrado en <code className="ml-2 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">InicioDashboardV2</code>
         </p>
       </section>
     </main>

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { m, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import NumberFlow from "@number-flow/react";
-import { MapPin } from "lucide-react";
+import { MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   GeolocationPrompt,
@@ -84,7 +84,7 @@ export default function HeroParallax({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold uppercase tracking-wide mb-5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide mb-5">
             <MapPin className="h-3 w-3" />
             Pucallpa · Ucayali · Todo el Perú
           </span>
@@ -165,7 +165,7 @@ export default function HeroParallax({
                   <span className="text-gray-300 dark:text-gray-600">+</span>
                 )}
               </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-500 mt-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-500 mt-1.5">
                 {stat.label}
               </p>
             </m.div>

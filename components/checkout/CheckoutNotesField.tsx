@@ -48,7 +48,7 @@ export function CheckoutNotesField({
           ))}
         </div>
         <span
-          className={`text-[10px] font-semibold ${
+          className={`text-[length:var(--ts-2xs)] font-semibold ${
             notes.length > 180 ? "text-amber-500" : "text-gray-300"
           }`}
         >

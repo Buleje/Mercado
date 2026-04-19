@@ -682,7 +682,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       📈 Historial de precios
                     </p>
                     {isBestPrice && (
-                      <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-bold animate-pulse">
+                      <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[length:var(--ts-2xs)] font-bold animate-pulse">
                         🔥 Mejor precio
                       </span>
                     )}
@@ -731,7 +731,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       ))}
                     </svg>
                   </div>
-                  <div className="flex justify-between text-[10px] text-gray-400 mt-1.5">
+                  <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
                     <span>
                       {new Date(priceHistory[0].createdAt).toLocaleDateString("es-PE", {
                         day: "2-digit",
@@ -748,7 +748,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     </span>
                   </div>
                   {/* Price range summary */}
-                  <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400">
+                  <div className="mt-2 flex items-center gap-3 text-[length:var(--ts-2xs)] text-gray-400">
                     <span>Más bajo: <strong className="text-[#00B4A6]">S/{min.toFixed(2)}</strong></span>
                     <span className="text-gray-200 dark:text-gray-700">|</span>
                     <span>Más alto: <strong className="text-red-400">S/{max.toFixed(2)}</strong></span>
@@ -817,7 +817,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       />
                     )}
                     {rp.badge && (
-                      <span className="absolute top-2 left-2 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase text-white bg-primary">
+                      <span className="absolute top-2 left-2 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-white bg-primary">
                         {rp.badge}
                       </span>
                     )}

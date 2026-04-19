@@ -90,7 +90,7 @@ export default function StepPlan({ value, onChange }: StepPlanProps) {
               {/* Tag */}
               <span
                 className={cn(
-                  "inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em]",
+                  "inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em]",
                   plan.highlight
                     ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
                     : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",

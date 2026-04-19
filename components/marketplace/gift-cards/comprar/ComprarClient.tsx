@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@buleje/design-system/icons";
 import type { GiftCardDesign } from "@/lib/mocks/gift-cards.mock";
 import { GIFT_CARD_DESIGNS } from "@/lib/mocks/gift-cards.mock";
 import WizardStepper from "./WizardStepper";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import { getCategoryIcon } from "@/lib/category-icons";
 
@@ -66,7 +66,7 @@ export default function PopularCategories() {
                   <p className="text-xs sm:text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-300">
                     {cat.name}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-muted mt-1 font-medium">
+                  <p className="text-[length:var(--ts-2xs)] sm:text-xs text-muted mt-1 font-medium">
                     {cat.count}+ productos
                   </p>
                 </div>

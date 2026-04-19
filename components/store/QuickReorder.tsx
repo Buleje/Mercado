@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, ShoppingCart, X } from "lucide-react";
+import { RotateCcw, ShoppingCart, X } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useCustomer } from "@/contexts/customer-context";

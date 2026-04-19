@@ -11,7 +11,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDownUp, Store, TrendingDown, Loader2, Star } from "lucide-react";
+import { ArrowDownUp, Store, TrendingDown, Loader2, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface StorePrice {
@@ -162,7 +162,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                         <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">
                           {sp.storeName}
                           {isCheapest && (
-                            <span className="ml-1.5 text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                            <span className="ml-1.5 text-[length:var(--ts-2xs)] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold">
                               MEJOR PRECIO
                             </span>
                           )}
@@ -175,10 +175,10 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                             </span>
                           )}
                           {!sp.inStock && (
-                            <span className="text-[10px] text-red-500 font-semibold">Agotado</span>
+                            <span className="text-[length:var(--ts-2xs)] text-red-500 font-semibold">Agotado</span>
                           )}
                           {sp.deliveryAvailable && (
-                            <span className="text-[10px] text-primary font-semibold">Delivery</span>
+                            <span className="text-[length:var(--ts-2xs)] text-primary font-semibold">Delivery</span>
                           )}
                         </div>
                       </div>

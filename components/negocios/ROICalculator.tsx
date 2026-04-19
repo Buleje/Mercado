@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import NumberFlow from "@number-flow/react";
-import { TrendingUp, DollarSign, Clock, AlertTriangle } from "lucide-react";
+import { TrendingUp, DollarSign, Clock, AlertTriangle } from "@buleje/design-system/icons";
 
 /**
  * ROICalculator
@@ -31,7 +31,7 @@ export default function ROICalculator() {
     <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-950 border-y border-gray-200 dark:border-gray-800">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
             Calculadora ROI
           </p>
           <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -120,7 +120,7 @@ export default function ROICalculator() {
                     <p className="text-xs font-bold text-gray-900 dark:text-white">
                       + {row.label}
                     </p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{row.desc}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">{row.desc}</p>
                   </div>
                   <span className="text-base font-extrabold tabular-nums shrink-0 text-gray-900 dark:text-white">
                     S/
@@ -132,7 +132,7 @@ export default function ROICalculator() {
 
             {/* Total — card editorial dark */}
             <div className="relative rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 p-6 border border-gray-900 dark:border-gray-200">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500">
                 Beneficio neto estimado / mes
               </p>
               <div className="mt-2 flex items-baseline gap-3">

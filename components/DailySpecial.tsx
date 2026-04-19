@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { ShoppingCart, Timer } from "lucide-react";
+import { ShoppingCart, Timer } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice } from "@buleje/design-system";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";

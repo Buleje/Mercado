@@ -2,7 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 
 // ── SVG illustrations ─────────────────────────────────────────────────────────
 

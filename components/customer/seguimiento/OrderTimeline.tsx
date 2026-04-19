@@ -7,7 +7,7 @@
  * Check marks animados en pasos completados.
  * Dot pulsante en paso actual.
  */
-import { Check, Package, ChefHat, Truck, MapPin, CheckCircle2 } from "lucide-react";
+import { Check, Package, ChefHat, Truck, MapPin, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { TrackingStep, TrackingStatus } from "@/lib/mocks/order-tracking.mock";
 
@@ -48,7 +48,7 @@ export function OrderTimeline({ timeline, className }: Props) {
       )}
     >
       <div className="mb-5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
           Estado del pedido
         </span>
         <h2
@@ -108,12 +108,12 @@ export function OrderTimeline({ timeline, className }: Props) {
                   {step.label}
                 </p>
                 {timestamp && (
-                  <p className="text-[11px] text-muted font-semibold tabular-nums mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-muted font-semibold tabular-nums mt-0.5">
                     {timestamp}
                   </p>
                 )}
                 {isCurrent && (
-                  <p className="text-[11px] font-semibold text-primary mt-0.5 uppercase tracking-[0.14em]">
+                  <p className="text-[length:var(--ts-2xs)] font-semibold text-primary mt-0.5 uppercase tracking-[0.14em]">
                     En curso
                   </p>
                 )}

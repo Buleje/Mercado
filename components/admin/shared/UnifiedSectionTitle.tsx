@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**

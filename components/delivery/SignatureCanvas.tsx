@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
-import { Trash2, Check } from "lucide-react";
+import { Trash2, Check } from "@buleje/design-system/icons";
 
 interface SignatureCanvasProps {
   onConfirm: (dataUrl: string) => void;

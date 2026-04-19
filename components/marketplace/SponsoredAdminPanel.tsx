@@ -156,7 +156,7 @@ function BoostCard({
             {formatDate(boost.startDate)} – {formatDate(boost.endDate)}
           </p>
         </div>
-        <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0", status.className)}>
+        <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0", status.className)}>
           {status.label}
         </span>
       </div>
@@ -171,7 +171,7 @@ function BoostCard({
           <div key={label} className="text-center rounded-xl bg-gray-50 dark:bg-gray-800 py-2">
             <Icon className="h-3.5 w-3.5 text-gray-400 mx-auto mb-0.5" />
             <p className="text-xs font-bold text-gray-900 dark:text-white">{value}</p>
-            <p className="text-[9px] text-gray-400 dark:text-gray-500">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{label}</p>
           </div>
         ))}
       </div>
@@ -183,7 +183,7 @@ function BoostCard({
             Gasto: <strong className="text-gray-900 dark:text-white">{fmt(boost.spentPen)}</strong>
             {" "}/ {fmt(boost.maxBudgetPen)}
           </p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
             Puja: {fmt(boost.bidAmount)}/1000 · CTR: {ctr(boost.clicks, boost.impressions)}
           </p>
         </div>
@@ -334,7 +334,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       {["Producto", "Estado", "Fechas", "Impresiones", "Clicks", "Ventas", "Gasto / Max", "Acciones"].map((h) => (
-                        <th key={h} className="pb-2 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 pr-4 last:pr-0">
+                        <th key={h} className="pb-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 pr-4 last:pr-0">
                           {h}
                         </th>
                       ))}
@@ -349,12 +349,12 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                             <p className="font-semibold text-gray-900 dark:text-white line-clamp-1 max-w-36">
                               {b.productName}
                             </p>
-                            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
                               Puja: {fmt(b.bidAmount)} · CTR: {ctr(b.clicks, b.impressions)}
                             </p>
                           </td>
                           <td className="py-3 pr-4">
-                            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", status.className)}>
+                            <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", status.className)}>
                               {status.label}
                             </span>
                           </td>

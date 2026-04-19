@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Receipt, Store, CheckCircle2, XCircle } from "lucide-react";
+import { Receipt, Store, CheckCircle2, XCircle } from "@buleje/design-system/icons";
 import type { MockCupon } from "@/lib/mocks/cupones.mock";
 
 type Props = {
@@ -64,7 +64,7 @@ export default function CuponesHistorial({ cupones }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
                   <span className="truncate">{cupon.title}</span>
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     {cupon.code}
                   </span>
                 </div>

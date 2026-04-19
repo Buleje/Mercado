@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   X, Package, Loader2, Search, AlertTriangle,
   CheckCircle2, XCircle, ImageIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductItem {

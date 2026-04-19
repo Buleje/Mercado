@@ -555,7 +555,7 @@ export default function SignupPage() {
                       ].join(" ")}
                     >
                       {opt.highlight && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#f4a261] text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#f4a261] text-white text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
                           Popular
                         </span>
                       )}
@@ -563,7 +563,7 @@ export default function SignupPage() {
                       <p className="text-[#00B4A6] text-xs font-medium mt-0.5">{opt.price}</p>
                       <ul className="mt-1.5 space-y-0.5">
                         {opt.features.map((f) => (
-                          <li key={f} className="text-[10px] text-gray-500 dark:text-gray-400 flex items-start gap-1">
+                          <li key={f} className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 flex items-start gap-1">
                             <span className="text-[#00B4A6] shrink-0">·</span>
                             {f}
                           </li>

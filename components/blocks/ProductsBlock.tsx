@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star } from "@buleje/design-system/icons";
 import { products, categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 

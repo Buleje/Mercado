@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { WifiOff, Wifi } from "lucide-react";
+import { WifiOff, Wifi } from "@buleje/design-system/icons";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
 /**

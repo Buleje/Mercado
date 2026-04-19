@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, User, Phone, MapPin, Star, Trophy, LogOut, Package } from "lucide-react";
+import { X, User, Phone, MapPin, Star, Trophy, LogOut, Package } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 
 export default function UserAccountModal() {

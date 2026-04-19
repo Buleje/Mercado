@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag } from "lucide-react";
+import { ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag } from "@buleje/design-system/icons";
 import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import TenantPageTracker from "./_components/TenantPageTracker";

@@ -4,7 +4,7 @@
  * OrderItemsCard — Productos del pedido con miniaturas y cantidades.
  */
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { TrackingItem } from "@/lib/mocks/order-tracking.mock";
 
@@ -33,7 +33,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
             Productos
           </span>
           <h2
@@ -44,7 +44,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
           </h2>
         </div>
         {paymentMethod && (
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted bg-gray-50 dark:bg-surface rounded-full px-2 py-1">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-muted bg-gray-50 dark:bg-surface rounded-full px-2 py-1">
             {paymentMethod === "yape" ? "Yape" : "Efectivo"}
           </span>
         )}
@@ -74,7 +74,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
               <p className="text-sm font-semibold text-foreground truncate">
                 {item.name}
               </p>
-              <p className="text-[11px] text-muted mt-0.5 tabular-nums">
+              <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5 tabular-nums">
                 {item.quantity} {item.unit} · {fmtSoles(item.price)} c/u
               </p>
             </div>

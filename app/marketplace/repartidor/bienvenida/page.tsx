@@ -1,6 +1,6 @@
 "use client";
 
-import { Truck, CheckCircle, Clock, Phone, MapPin, Shield } from "lucide-react";
+import { Truck, CheckCircle, Clock, Phone, MapPin, Shield } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 const steps = [
@@ -55,7 +55,7 @@ export default function BienvenidaRepartidorPage() {
           <span className="inline-flex items-center justify-center h-12 w-12 rounded-lg border border-white/15 bg-white/5 text-white mb-6">
             <Truck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
-          <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-3">
+          <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-3">
             Onboarding repartidor
           </span>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-white leading-[1.05]">
@@ -77,7 +77,7 @@ export default function BienvenidaRepartidorPage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
                     Paso {s.n}
                   </span>
                   <h3 className="mt-2 text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">

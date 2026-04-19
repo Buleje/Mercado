@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { Clock, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight } from "@buleje/design-system/icons";
 import { useSettings } from "@/contexts/settings-context";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
 
@@ -26,7 +26,7 @@ function Digit({ value, label }: { value: number; label: string }) {
       <span className="bg-[var(--text-primary)] text-[var(--surface-canvas)] rounded-md px-2.5 py-1 text-lg sm:text-xl font-mono font-bold tabular-nums min-w-10 text-center">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-[10px] uppercase tracking-wider mt-1 text-[var(--text-tertiary)] font-medium">{label}</span>
+      <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider mt-1 text-[var(--text-tertiary)] font-medium">{label}</span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Truck, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Truck, Clock, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const DAYS_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];

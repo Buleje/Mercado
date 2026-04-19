@@ -10,7 +10,7 @@
  */
 
 import Link from "next/link";
-import { Zap } from "lucide-react";
+import { Zap } from "@buleje/design-system/icons";
 import type { Deal } from "@/lib/mock-deals";
 import { useDealsCountdown } from "./useDealsCountdown";
 import {

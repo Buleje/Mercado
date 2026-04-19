@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Clock, Hash, Copy, Check, CheckCircle2 } from "lucide-react";
+import { Clock, Hash, Copy, Check, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type PlinPaymentPanelProps = {

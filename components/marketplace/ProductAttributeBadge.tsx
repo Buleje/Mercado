@@ -134,7 +134,7 @@ export function ProductAttributeChip({
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
-        "text-[10px] font-bold uppercase tracking-[0.05em]",
+        "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.05em]",
         config.tone,
         className,
       )}

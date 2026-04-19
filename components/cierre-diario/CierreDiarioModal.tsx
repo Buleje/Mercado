@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X } from "@buleje/design-system/icons";
 import { useCierreDiario } from "./useCierreDiario";
 import CierrePaso1Caja from "./CierrePaso1Caja";
 import CierrePaso2Resumen from "./CierrePaso2Resumen";

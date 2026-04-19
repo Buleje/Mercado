@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, ShoppingCart, Users, Package, Bell, ArrowUpRight } from "lucide-react";
+import { TrendingUp, ShoppingCart, Users, Package, Bell, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const KPIS = [
@@ -48,14 +48,14 @@ function AnimatedKPI({ kpi }: { kpi: typeof KPIS[number] }) {
         <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", kpi.color)}>
           {kpi.icon}
         </div>
-        <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 flex items-center gap-0.5">
           <ArrowUpRight className="h-3 w-3" />{kpi.change}
         </span>
       </div>
       <p className="text-xl font-extrabold text-gray-900 dark:text-white">
         {kpi.prefix}{value.toLocaleString()}{kpi.suffix}
       </p>
-      <p className="text-[10px] text-gray-400 mt-0.5">{kpi.label}</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{kpi.label}</p>
     </div>
   );
 }
@@ -98,7 +98,7 @@ export default function SaasDashboardDemo() {
             <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Ventas mensuales</p>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">+23% vs anterior</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">+23% vs anterior</span>
               </div>
               <div className="flex items-end gap-1.5 h-32">
                 {CHART_DATA.map((val, i) => (
@@ -145,7 +145,7 @@ export default function SaasDashboardDemo() {
                   </div>
                 ))}
                 {visibleAlerts < ALERTS.length && (
-                  <div className="flex items-center gap-2 p-2 text-[10px] text-gray-300">
+                  <div className="flex items-center gap-2 p-2 text-[length:var(--ts-2xs)] text-gray-300">
                     <div className="h-2 w-2 rounded-full bg-gray-200 animate-pulse" />
                     Cargando alertas...
                   </div>

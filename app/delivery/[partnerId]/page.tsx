@@ -6,7 +6,7 @@ import {
   Package, CheckCircle, Truck, MapPin, Phone,
   Clock, DollarSign, RefreshCw, Navigation, ChevronRight,
   AlertCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -157,15 +157,15 @@ export default function DriverDashboardPage() {
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
               <p className="text-2xl font-bold">{data.stats.pending}</p>
-              <p className="text-[10px] text-teal-100 uppercase tracking-wider">Pendientes</p>
+              <p className="text-[length:var(--ts-2xs)] text-teal-100 uppercase tracking-wider">Pendientes</p>
             </div>
             <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
               <p className="text-2xl font-bold">{data.stats.todayDelivered}</p>
-              <p className="text-[10px] text-teal-100 uppercase tracking-wider">Entregados hoy</p>
+              <p className="text-[length:var(--ts-2xs)] text-teal-100 uppercase tracking-wider">Entregados hoy</p>
             </div>
             <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
               <p className="text-2xl font-bold">S/{data.stats.todayEarnings.toFixed(0)}</p>
-              <p className="text-[10px] text-teal-100 uppercase tracking-wider">Ganado hoy</p>
+              <p className="text-[length:var(--ts-2xs)] text-teal-100 uppercase tracking-wider">Ganado hoy</p>
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function DriverDashboardPage() {
                           <Icon className="h-3.5 w-3.5" />
                           {cfg.label}
                         </span>
-                        <span className="text-[10px] text-gray-400">{timeAgo(a.createdAt)}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{timeAgo(a.createdAt)}</span>
                       </div>
 
                       <div className="space-y-1.5">

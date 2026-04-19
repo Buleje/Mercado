@@ -12,7 +12,7 @@
  * de Google Maps API. Reemplazar con mapa real tras ADR-XXX si hace falta.
  */
 import { useState } from "react";
-import { Bike, Store, MapPin, Plus, Minus, Navigation } from "lucide-react";
+import { Bike, Store, MapPin, Plus, Minus, Navigation } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -93,7 +93,7 @@ export function DeliveryMapMock({
     >
       <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
             Ubicación en vivo
           </span>
           <h2
@@ -227,14 +227,14 @@ export function DeliveryMapMock({
 
         {/* Footer info sobre el mapa */}
         <div className="absolute left-3 bottom-3 right-3 flex items-center justify-between bg-white/95 dark:bg-card/95 backdrop-blur rounded-xl border border-gray-100 dark:border-card-border px-3 py-2">
-          <div className="flex items-center gap-2 text-[11px] text-foreground">
+          <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-foreground">
             <Navigation className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
             <span className="font-bold tabular-nums">
               {Math.round(p * 100)}%
             </span>
             <span className="text-muted hidden sm:inline">recorrido</span>
           </div>
-          <div className="text-[11px] text-muted truncate max-w-[60%]">
+          <div className="text-[length:var(--ts-2xs)] text-muted truncate max-w-[60%]">
             {driverName ? (
               <span className="font-semibold text-foreground">{driverName}</span>
             ) : (
@@ -246,7 +246,7 @@ export function DeliveryMapMock({
       </div>
 
       {/* Leyenda */}
-      <div className="px-5 py-3 sm:px-6 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center gap-4 text-[11px] text-muted">
+      <div className="px-5 py-3 sm:px-6 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center gap-4 text-[length:var(--ts-2xs)] text-muted">
         <span className="inline-flex items-center gap-1.5">
           <Store className="h-3 w-3 text-foreground" strokeWidth={2} />
           {storeLabel}

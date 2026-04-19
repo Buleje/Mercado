@@ -5,7 +5,7 @@ import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
   Eye, EyeOff, LogIn, AlertTriangle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 

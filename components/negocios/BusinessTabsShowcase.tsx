@@ -15,7 +15,7 @@ import {
   Clock,
   Users,
   Wallet,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface TabFeature {
@@ -43,7 +43,7 @@ function POSMockup() {
             Punto de Venta
           </span>
         </div>
-        <span className="text-[10px] font-bold text-emerald-600 inline-flex items-center gap-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 inline-flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-dot" />
           En vivo
         </span>
@@ -52,14 +52,14 @@ function POSMockup() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 p-4">
         <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-          <p className="text-[10px] text-gray-500 uppercase font-bold">Ventas hoy</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase font-bold">Ventas hoy</p>
           <p className="text-2xl font-extrabold text-gray-900 dark:text-white tabular-nums mt-1">
             S/
             <NumberFlow value={sales} format={{ maximumFractionDigits: 0 }} />
           </p>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-          <p className="text-[10px] text-gray-500 uppercase font-bold">Pedidos</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase font-bold">Pedidos</p>
           <p className="text-2xl font-extrabold text-gray-900 dark:text-white tabular-nums mt-1">
             <NumberFlow value={orders} />
           </p>
@@ -81,7 +81,7 @@ function POSMockup() {
               <p className="text-xs font-bold text-gray-900 dark:text-white">
                 {p.name}
               </p>
-              <p className="text-[10px] text-gray-500">{p.qty} vendidos</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">{p.qty} vendidos</p>
             </div>
             <span className="text-xs font-extrabold text-emerald-600 tabular-nums">
               S/{p.price.toFixed(2)}
@@ -116,7 +116,7 @@ function InventoryMockup() {
             Inventario
           </span>
         </div>
-        <span className="text-[10px] font-bold text-amber-600 inline-flex items-center gap-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 inline-flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />3 alertas
         </span>
       </div>
@@ -151,7 +151,7 @@ function InventoryMockup() {
                     style={{ width: `${Math.min(100, (p.stock / Math.max(p.min * 2, 1)) * 100)}%` }}
                   />
                 </div>
-                <span className="text-[10px] text-gray-500 tabular-nums shrink-0">
+                <span className="text-[length:var(--ts-2xs)] text-gray-500 tabular-nums shrink-0">
                   {p.stock}/{p.min * 2}
                 </span>
               </div>
@@ -194,11 +194,11 @@ function DeliveryMockup() {
               <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
                 {d.name}
               </p>
-              <p className="text-[10px] text-gray-500 truncate">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 truncate">
                 {d.dist} · {d.status}
               </p>
             </div>
-            <span className="text-[10px] font-extrabold text-blue-600 shrink-0 inline-flex items-center gap-0.5">
+            <span className="text-[length:var(--ts-2xs)] font-extrabold text-blue-600 shrink-0 inline-flex items-center gap-0.5">
               <Clock className="h-2.5 w-2.5" />
               {d.eta}
             </span>
@@ -223,14 +223,14 @@ function AnalyticsMockup() {
             Analytics
           </span>
         </div>
-        <span className="text-[10px] font-bold text-emerald-600 inline-flex items-center gap-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 inline-flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
           +32%
         </span>
       </div>
 
       <div className="p-4">
-        <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">
+        <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase font-bold mb-1">
           Ventas esta semana
         </p>
         <p className="text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">
@@ -247,26 +247,26 @@ function AnalyticsMockup() {
                   style={{ height: `${h}%` }}
                 />
               </div>
-              <span className="text-[9px] text-gray-400 font-bold">{days[i]}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 font-bold">{days[i]}</span>
             </div>
           ))}
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           <div>
-            <p className="text-[10px] text-gray-500">Ticket promedio</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">Ticket promedio</p>
             <p className="text-sm font-extrabold text-gray-900 dark:text-white tabular-nums">
               S/34
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-gray-500">Clientes</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">Clientes</p>
             <p className="text-sm font-extrabold text-gray-900 dark:text-white tabular-nums">
               248
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-gray-500">Margen</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">Margen</p>
             <p className="text-sm font-extrabold text-emerald-600 tabular-nums">
               28%
             </p>

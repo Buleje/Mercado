@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2 } from "lucide-react";
+import { Share2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface ShareProductButtonProps {

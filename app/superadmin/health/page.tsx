@@ -6,7 +6,7 @@ import {
   HeartPulse, Database, Globe, Server, RefreshCw,
   CheckCircle2, AlertTriangle, XCircle, Clock, Wifi, HardDrive,
   Activity, Timer,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import SAHealthScore from "@/components/superadmin/_shared/SAHealthScore";
 
 const TenantMonitorPanel = dynamic(() => import("@/components/superadmin/TenantMonitorPanel"), { ssr: false });

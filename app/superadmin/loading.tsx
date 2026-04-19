@@ -1,4 +1,4 @@
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "@buleje/design-system/icons";
 
 export default function SuperAdminLoading() {
   return (

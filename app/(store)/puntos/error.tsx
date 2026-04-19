@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { Trophy } from "@buleje/design-system/icons";
 
 export default function PuntosError({
   reset,
@@ -14,7 +14,7 @@ export default function PuntosError({
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-200 mb-4">
           <Trophy className="h-5 w-5" strokeWidth={1.5} />
         </div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
           Error
         </p>
         <h2 className="mt-1 text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-100">

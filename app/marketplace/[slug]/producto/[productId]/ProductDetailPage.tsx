@@ -18,7 +18,7 @@ import {
   Truck,
   Scale,
   Check,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCompare } from "@/contexts/compare-context";

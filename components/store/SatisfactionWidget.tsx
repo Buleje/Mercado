@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Star, X } from "lucide-react";
+import { Star, X } from "@buleje/design-system/icons";
 import { usePathname } from "next/navigation";
 
 type Rating = "bien" | "regular" | "mal";

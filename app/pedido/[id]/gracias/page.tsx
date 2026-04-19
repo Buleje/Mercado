@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import {
   CheckCircle2, Package, Clock, Share2, Star,
   ArrowRight, Smartphone, ShoppingBag,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 /**
  * /pedido/[id]/gracias — Order confirmation "thank you" page.

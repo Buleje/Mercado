@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, Mail, ArrowLeft } from "lucide-react";
+import { MessageCircle, Mail, ArrowLeft } from "@buleje/design-system/icons";
 
 type Props = {
   recipientName: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Check, Clock, MapPin, MessageCircle, ArrowRight, Gift } from "lucide-react";
+import { Check, Clock, MapPin, MessageCircle, ArrowRight, Gift } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PrimaryButton, IconBadge } from "@buleje/design-system";

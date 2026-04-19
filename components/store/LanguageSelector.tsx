@@ -12,7 +12,7 @@ import {
   useMemo,
 } from "react";
 import { cn } from "@/lib/utils";
-import { Globe } from "lucide-react";
+import { Globe } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { X, Store, ShoppingCart, TrendingDown, CheckCircle2, Package } from "lucide-react";
+import { X, Store, ShoppingCart, TrendingDown, CheckCircle2, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { CompareProductData } from "@/lib/db/marketplace-compare.db";
 

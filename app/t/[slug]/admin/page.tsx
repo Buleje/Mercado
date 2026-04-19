@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@buleje/design-system/icons";
 
 /**
  * /t/[slug]/admin — punto de entrada al panel admin de un tenant.

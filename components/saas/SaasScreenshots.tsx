@@ -8,7 +8,7 @@ import {
   Package,
   MessageCircle,
   Brain,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { LucideIcon } from "lucide-react";
 
 /* ─── Tab definitions ─── */
@@ -98,14 +98,14 @@ function MockDashboard() {
             key={kpi.label}
             className="rounded-xl p-3 border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019]"
           >
-            <p className="text-[10px] text-gray-400 dark:text-[rgba(240,244,241,0.4)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.4)] mb-1">
               {kpi.label}
             </p>
             <p className="text-base font-bold text-gray-900 dark:text-[#f0f4f1]">
               {kpi.value}
             </p>
             <span
-              className="text-[10px] font-semibold"
+              className="text-[length:var(--ts-2xs)] font-semibold"
               style={{ color: kpi.up ? "#00B4A6" : "#ef4444" }}
             >
               {kpi.up ? "▲ 12%" : "▼ 4%"}
@@ -137,7 +137,7 @@ function MockDashboard() {
                   }}
                 />
                 <span
-                  className="text-[9px] font-semibold"
+                  className="text-[length:var(--ts-2xs)] font-semibold"
                   style={{
                     color: isToday ? "#00B4A6" : "rgba(156,163,175,0.7)",
                   }}
@@ -163,7 +163,7 @@ function MockDashboard() {
                 className="flex justify-between items-center text-xs text-gray-700 dark:text-[rgba(240,244,241,0.7)]"
               >
                 <span>{row}</span>
-                <span className="text-[10px] text-gray-400 dark:text-[rgba(240,244,241,0.35)]">
+                <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.35)]">
                   hace 2 min
                 </span>
               </div>
@@ -208,11 +208,11 @@ function MockPOS() {
             >
               <ShoppingCart className="w-3.5 h-3.5" style={{ color: "#00B4A6" }} />
             </div>
-            <span className="text-[9px] font-medium text-gray-700 dark:text-[rgba(240,244,241,0.8)] text-center leading-tight">
+            <span className="text-[length:var(--ts-2xs)] font-medium text-gray-700 dark:text-[rgba(240,244,241,0.8)] text-center leading-tight">
               {p.name}
             </span>
             <span
-              className="text-[10px] font-bold"
+              className="text-[length:var(--ts-2xs)] font-bold"
               style={{ color: "#00B4A6" }}
             >
               {p.price}
@@ -233,7 +233,7 @@ function MockPOS() {
           ].map(({ item, price }) => (
             <div
               key={item}
-              className="text-[10px] text-gray-500 dark:text-[rgba(240,244,241,0.5)] flex justify-between"
+              className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[rgba(240,244,241,0.5)] flex justify-between"
             >
               <span>{item}</span>
               <span className="font-semibold">{price}</span>
@@ -241,12 +241,12 @@ function MockPOS() {
           ))}
         </div>
         <div className="border-t border-gray-100 dark:border-[rgba(15,118,110,0.15)] pt-2">
-          <div className="flex justify-between text-[10px] font-bold text-gray-700 dark:text-[rgba(240,244,241,0.85)] mb-2">
+          <div className="flex justify-between text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-[rgba(240,244,241,0.85)] mb-2">
             <span>Total</span>
             <span>S/ 40</span>
           </div>
           <div
-            className="rounded-lg text-center text-[11px] font-bold text-white py-2"
+            className="rounded-lg text-center text-[length:var(--ts-2xs)] font-bold text-white py-2"
             style={{
               background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
               boxShadow: "0 4px 12px -2px rgba(15,118,110,0.4)",
@@ -277,7 +277,7 @@ function MockInventario() {
             {["Producto", "Stock", "Mínimo", "Estado"].map((h) => (
               <th
                 key={h}
-                className="text-left py-2 px-3 text-gray-400 dark:text-[rgba(240,244,241,0.4)] font-semibold text-[10px] uppercase tracking-wide"
+                className="text-left py-2 px-3 text-gray-400 dark:text-[rgba(240,244,241,0.4)] font-semibold text-[length:var(--ts-2xs)] uppercase tracking-wide"
               >
                 {h}
               </th>
@@ -304,7 +304,7 @@ function MockInventario() {
               </td>
               <td className="py-2 px-3">
                 <span
-                  className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                  className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold"
                   style={{
                     background: r.ok
                       ? "rgba(15,118,110,0.12)"
@@ -356,10 +356,10 @@ function MockWhatsApp() {
           <MessageCircle className="w-3.5 h-3.5 text-white" />
         </div>
         <div>
-          <p className="text-[10px] font-bold text-gray-700 dark:text-[rgba(240,244,241,0.85)]">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-[rgba(240,244,241,0.85)]">
             Bot Buleje
           </p>
-          <p className="text-[9px] text-green-500">en línea</p>
+          <p className="text-[length:var(--ts-2xs)] text-green-500">en línea</p>
         </div>
       </div>
 
@@ -425,11 +425,11 @@ function MockAnalytics() {
           <span className="text-2xl font-black" style={{ color: "#00B4A6" }}>
             87
           </span>
-          <span className="text-[9px] text-gray-400 dark:text-[rgba(240,244,241,0.4)]">
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.4)]">
             / 100
           </span>
         </div>
-        <p className="text-[10px] text-gray-500 dark:text-[rgba(240,244,241,0.5)] text-center">
+        <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[rgba(240,244,241,0.5)] text-center">
           Salud del negocio
         </p>
       </div>
@@ -575,16 +575,16 @@ export default function SaasScreenshots() {
             {/* URL bar */}
             <div className="ml-3 flex-1 max-w-xs flex items-center gap-2 bg-white/50 dark:bg-[#0a0f0d]/40 rounded-md px-3 py-1">
               <span
-                className="text-[9px] font-semibold"
+                className="text-[length:var(--ts-2xs)] font-semibold"
                 style={{ color: "#00B4A6" }}
               >
                 https://
               </span>
-              <span className="text-[10px] text-gray-500 dark:text-[rgba(240,244,241,0.4)] truncate">
+              <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[rgba(240,244,241,0.4)] truncate">
                 bodega.app/{activeData.id}
               </span>
             </div>
-            <span className="ml-auto text-[10px] text-gray-400 dark:text-[rgba(240,244,241,0.3)] hidden sm:block">
+            <span className="ml-auto text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.3)] hidden sm:block">
               {activeData.label}
             </span>
           </div>

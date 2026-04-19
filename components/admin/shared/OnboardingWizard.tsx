@@ -11,7 +11,7 @@ import {
   ChevronRight,
   X,
   Rocket,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface OnboardingStep {

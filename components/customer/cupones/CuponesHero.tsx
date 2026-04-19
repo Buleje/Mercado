@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Percent } from "lucide-react";
+import { Percent } from "@buleje/design-system/icons";
 import { MiniHero } from "@/components/customer/MiniHero";
 import { CorazonLatiendo } from "@/components/ui-system/illustrations";
 

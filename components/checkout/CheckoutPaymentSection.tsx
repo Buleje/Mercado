@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   X,
   Gift,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { YapePaymentPanel } from "./YapePaymentPanel";
 import { CashChangeCalculator } from "./CashChangeCalculator";
@@ -126,7 +126,7 @@ export function CheckoutPaymentSection({
                 <span className="text-2xl">🚚</span>
               </m.div>
               <div className="flex-1">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-wider">
                   Entrega estimada
                 </p>
                 <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">
@@ -151,7 +151,7 @@ export function CheckoutPaymentSection({
                     transition={{ duration: 1.5, ease: "easeOut" }}
                   />
                 </div>
-                <div className="flex justify-between mt-1.5 text-[9px] font-semibold text-gray-400">
+                <div className="flex justify-between mt-1.5 text-[length:var(--ts-2xs)] font-semibold text-gray-400">
                   <span>Confirmado</span>
                   <span>Preparando</span>
                   <span>En camino</span>
@@ -238,7 +238,7 @@ export function CheckoutPaymentSection({
       {/* Totals */}
       <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm">
         <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">
             Resumen del pago
           </p>
         </div>
@@ -311,7 +311,7 @@ export function CheckoutPaymentSection({
                   S/{redemptionSoles} ({redemptionSoles * PTS_PER_SOL} pts)
                 </span>
               </div>
-              <p className="text-[10px] text-sky-500 dark:text-sky-400/70">
+              <p className="text-[length:var(--ts-2xs)] text-sky-500 dark:text-sky-400/70">
                 50 puntos = S/ 1 · Máximo S/{maxSoles} con tus puntos
               </p>
             </div>
@@ -528,7 +528,7 @@ export function CheckoutPaymentSection({
             <p className="text-sm font-extrabold text-violet-800 dark:text-violet-300">
               +{Math.floor(finalTotal / 10) * 5} puntos
             </p>
-            <p className="text-[11px] text-violet-500 dark:text-violet-400">
+            <p className="text-[length:var(--ts-2xs)] text-violet-500 dark:text-violet-400">
               Ganaras puntos por este pedido!
             </p>
           </div>

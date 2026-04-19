@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingCart, ArrowRight } from "lucide-react";
+import { ShoppingCart, ArrowRight } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
 
@@ -44,13 +44,13 @@ export default function StickyCartBar() {
           <div className="flex items-center gap-3">
             <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white/14 shrink-0">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-extrabold text-white shadow-sm">
+              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-secondary px-1 text-[length:var(--ts-2xs)] font-extrabold text-white shadow-sm">
                 {qty > 99 ? "99+" : qty}
               </span>
             </div>
             <div className="text-left min-w-0">
               <p className="text-sm font-bold leading-tight">Ver Carrito</p>
-              <p className="text-[11px] text-white/70">{qty} {qty === 1 ? "producto" : "productos"}</p>
+              <p className="text-[length:var(--ts-2xs)] text-white/70">{qty} {qty === 1 ? "producto" : "productos"}</p>
             </div>
           </div>
 

@@ -11,7 +11,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List } from "lucide-react";
+import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -223,14 +223,14 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted">{product.unit}</p>
           {isLowStock && (
-            <span className="text-[9px] font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded-full">¡Quedan {product.stock}!</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded-full">¡Quedan {product.stock}!</span>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <ProductPrice price={product.price} size="sm" />
         {isOutOfStock ? (
-          <span className="text-[10px] font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-2 py-1 rounded-full">Agotado</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-2 py-1 rounded-full">Agotado</span>
         ) : qty === 0 ? (
           <button
             onClick={(e) => { e.stopPropagation(); addItem(product); showToast(product.name, product.image); }}
@@ -607,7 +607,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             {/* Search History Dropdown */}
             {showHistory && !search && searchHistory.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg z-20 overflow-hidden">
-                <p className="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted">Búsquedas recientes</p>
+                <p className="px-3 pt-2.5 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Búsquedas recientes</p>
                 {searchHistory.map((term) => (
                   <button key={term} onClick={() => { setSearch(term); setShowHistory(false); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     <Clock className="h-3.5 w-3.5 text-muted shrink-0" />
@@ -707,7 +707,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 <List className="h-4 w-4" />
               </button>
               {/* Active count indicator */}
-              <span className="ml-1 pr-2 text-[10px] font-bold text-muted hidden sm:inline">
+              <span className="ml-1 pr-2 text-[length:var(--ts-2xs)] font-bold text-muted hidden sm:inline">
                 {viewMode === "grid" ? "Grid" : "Lista"}
               </span>
             </div>

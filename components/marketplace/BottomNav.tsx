@@ -16,7 +16,7 @@ import {
   LayoutGrid,
   ShoppingCart,
   User,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
@@ -226,7 +226,7 @@ export default function BottomNav() {
                         "absolute -top-1.5 -right-1.5",
                         "flex h-4 min-w-4 items-center justify-center",
                         "rounded-full bg-[var(--accent)] px-1",
-                        "text-[10px] font-black text-white leading-none",
+                        "text-[length:var(--ts-2xs)] font-black text-white leading-none",
                         "ring-1 ring-white dark:ring-gray-900"
                       )}
                     >
@@ -238,7 +238,7 @@ export default function BottomNav() {
                 {/* Label */}
                 <span
                   className={cn(
-                    "text-[10px] font-medium leading-tight tracking-tight",
+                    "text-[length:var(--ts-2xs)] font-medium leading-tight tracking-tight",
                     "transition-all duration-150",
                     isActive ? "font-semibold" : ""
                   )}

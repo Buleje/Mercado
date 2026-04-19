@@ -6,7 +6,7 @@ import {
   Circle,
   Clock,
   ExternalLink,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import {
   PRIORITY_CONFIG,
   type SetupItem,

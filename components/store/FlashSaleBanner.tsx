@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Zap, Clock } from "lucide-react";
+import { Zap, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface FlashItem {

@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { RefreshCw, Pause, Play } from "lucide-react";
+import { RefreshCw, Pause, Play } from "@buleje/design-system/icons";
 
 interface AutoRefreshControlProps {
   secondsLeft: number;

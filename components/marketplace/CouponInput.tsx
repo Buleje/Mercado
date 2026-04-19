@@ -20,7 +20,7 @@
  */
 
 import { useState, useCallback, type FormEvent } from "react";
-import { Ticket, Loader2, Check, X } from "lucide-react";
+import { Ticket, Loader2, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { ValidateCouponSchema } from "@/lib/validations/coupon-redeem.schema";
 

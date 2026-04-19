@@ -6,7 +6,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import Image from "next/image";
-import { Heart, ShoppingCart, Plus, Minus, Package, Trash2, ClipboardList, MessageCircle, Share2 } from "lucide-react";
+import { Heart, ShoppingCart, Plus, Minus, Package, Trash2, ClipboardList, MessageCircle, Share2 } from "@buleje/design-system/icons";
 
 export default function FavoritesSection() {
   const { favorites, toggle } = useFavorites();

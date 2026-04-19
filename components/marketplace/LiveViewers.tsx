@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface Props {

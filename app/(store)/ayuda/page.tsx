@@ -24,7 +24,7 @@ import {
   Store,
   Shield,
   Info,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";

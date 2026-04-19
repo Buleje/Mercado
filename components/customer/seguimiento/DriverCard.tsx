@@ -6,7 +6,7 @@
  * Avatar (iniciales), nombre, teléfono (botón WhatsApp + llamada),
  * vehículo (tipo + placa), rating y total de entregas.
  */
-import { Phone, MessageCircle, Star, Bike } from "lucide-react";
+import { Phone, MessageCircle, Star, Bike } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { TrackingDriver } from "@/lib/db/order-tracking.db";
 
@@ -54,7 +54,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
       )}
     >
       <div className="mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
           Tu repartidor
         </span>
         <h2
@@ -82,7 +82,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
           <p className="text-sm font-semibold text-foreground truncate">
             {driver.vehicle}
           </p>
-          <div className="flex items-center gap-3 mt-1 text-[11px] text-muted">
+          <div className="flex items-center gap-3 mt-1 text-[length:var(--ts-2xs)] text-muted">
             <span className="inline-flex items-center gap-1 tabular-nums">
               <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
               <strong className="text-foreground">{driver.rating.toFixed(1)}</strong>
@@ -114,7 +114,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
       )}
 
       {!hidePhone && (
-        <p className="mt-3 text-[11px] text-muted">
+        <p className="mt-3 text-[length:var(--ts-2xs)] text-muted">
           Puedes contactarlo al{" "}
           <span className="tabular-nums font-semibold text-foreground">
             {phoneLabel}

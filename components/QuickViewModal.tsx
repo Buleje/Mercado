@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Package, X, Heart, Star, ExternalLink } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Package, X, Heart, Star, ExternalLink } from "@buleje/design-system/icons";
 import { getProductSlug } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
@@ -321,7 +321,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                           ))}
                         </svg>
                       </div>
-                      <div className="flex justify-between text-[10px] text-gray-400 mt-1.5">
+                      <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
                         <span>{new Date(priceHistory[0].createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
                         <span className="font-semibold text-primary">S/{prices[prices.length - 1].toFixed(2)} actual</span>
                         <span>{new Date(priceHistory[priceHistory.length - 1].createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
@@ -387,7 +387,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         </div>
                       </div>
                       <p className="text-sm text-muted">{r.text}</p>
-                      <p className="text-[10px] text-muted mt-1">{new Date(r.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-muted mt-1">{new Date(r.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>
                     </div>
                   ))
                 )}

@@ -19,7 +19,7 @@ import {
   Tag,
   Zap,
   Gift,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
 
@@ -70,7 +70,7 @@ function StepIndicator({ current }: { current: Step }) {
             >
               <div
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black transition-colors",
+                  "flex h-7 w-7 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black transition-colors",
                   isActive
                     ? "bg-primary text-white shadow-md shadow-primary/30"
                     : isDone
@@ -84,7 +84,7 @@ function StepIndicator({ current }: { current: Step }) {
                   num
                 )}
               </div>
-              <span className="text-[11px] font-semibold hidden sm:inline">
+              <span className="text-[length:var(--ts-2xs)] font-semibold hidden sm:inline">
                 {label}
               </span>
             </div>
@@ -124,20 +124,20 @@ function MiniCartSummary({
           <div key={sid} className="space-y-1">
             <div className="flex items-center gap-1.5">
               <div
-                className="flex h-5 w-5 items-center justify-center rounded-md text-[9px] font-black text-white"
+                className="flex h-5 w-5 items-center justify-center rounded-md text-[length:var(--ts-2xs)] font-black text-white"
                 style={{ background: "linear-gradient(135deg,#00B4A6,#134e4a)" }}
               >
                 {g.storeName.slice(0, 1).toUpperCase()}
               </div>
-              <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-gray-400">
                 {g.storeName}
               </span>
-              <span className="ml-auto text-[11px] font-bold text-gray-900 dark:text-white">
+              <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-gray-900 dark:text-white">
                 {fmt(totalByStore[sid]?.total ?? 0)}
               </span>
             </div>
             {g.items.map((item) => (
-              <div key={`${item.storeId}-${item.productId}`} className="flex items-center gap-2 pl-6.5 text-[10px] text-gray-500 dark:text-gray-400">
+              <div key={`${item.storeId}-${item.productId}`} className="flex items-center gap-2 pl-6.5 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                 <span>{item.quantity}×</span>
                 <span className="truncate flex-1">{item.name}</span>
                 <span className="shrink-0">{fmt(item.price * item.quantity)}</span>
@@ -559,7 +559,7 @@ export default function MarketplaceCheckoutModal({
                   <h2 className="text-base font-bold text-gray-900 dark:text-white">
                     Finalizar compra
                   </h2>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                     {itemCount} {itemCount === 1 ? "producto" : "productos"}
                     {storeIds.length > 1 ? ` · ${storeIds.length} tiendas` : ""}
                   </p>
@@ -672,7 +672,7 @@ export default function MarketplaceCheckoutModal({
                           <Zap className="h-4 w-4" />
                           Comprar con un clic · {fmt(grandTotal)}
                         </button>
-                        <p className="text-[10px] text-center text-gray-400 dark:text-gray-500">
+                        <p className="text-[length:var(--ts-2xs)] text-center text-gray-400 dark:text-gray-500">
                           Pago en efectivo · Tus datos ya están guardados
                         </p>
                       </motion.div>
@@ -862,7 +862,7 @@ export default function MarketplaceCheckoutModal({
                         const couponR = couponResults[g.storeSlug];
                         return (
                           <div key={sid}>
-                            <span className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">
+                            <span className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-400 font-medium">
                               {g.storeName}
                             </span>
                             <div className="flex gap-1.5 mt-1">
@@ -1092,15 +1092,15 @@ export default function MarketplaceCheckoutModal({
                         </p>
                         <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
                           <li className="flex items-start gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[10px] font-bold text-[#6E2B8B]">1</span>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">1</span>
                             <span>Confirma aquí y te enviaremos el número de Yape</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[10px] font-bold text-[#6E2B8B]">2</span>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">2</span>
                             <span>Transfiere <strong>{fmt(finalTotal)}</strong> por Yape</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[10px] font-bold text-[#6E2B8B]">3</span>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">3</span>
                             <span>El vendedor verificará y preparará tu pedido</span>
                           </li>
                         </ol>
@@ -1114,19 +1114,19 @@ export default function MarketplaceCheckoutModal({
                         </p>
                         <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
                           <li className="flex items-start gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[10px] font-bold text-[#009ee3]">1</span>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[length:var(--ts-2xs)] font-bold text-[#009ee3]">1</span>
                             <span>Al confirmar, te redirigiremos a Mercado Pago</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[10px] font-bold text-[#009ee3]">2</span>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[length:var(--ts-2xs)] font-bold text-[#009ee3]">2</span>
                             <span>Elige: tarjeta, transferencia o saldo de Mercado Pago</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[10px] font-bold text-[#009ee3]">3</span>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[length:var(--ts-2xs)] font-bold text-[#009ee3]">3</span>
                             <span>El vendedor recibirá el pago y preparará tu pedido</span>
                           </li>
                         </ol>
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 flex items-center gap-1">
                           <Shield className="h-3 w-3" /> Pago 100% seguro con encriptación
                         </p>
                       </div>
@@ -1296,7 +1296,7 @@ export default function MarketplaceCheckoutModal({
                 </div>
 
                 {/* Trust badges */}
-                <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-gray-400 dark:text-gray-500">
+                <div className="flex items-center justify-center gap-4 mt-3 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
                   <span className="flex items-center gap-1">
                     <Shield className="h-3 w-3" /> Compra segura
                   </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Lock, CreditCard, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Lock, CreditCard, ShieldCheck } from "@buleje/design-system/icons";
 import type { GiftCardDesign } from "@/lib/mocks/gift-cards.mock";
 import GiftCardPreview from "./GiftCardPreview";
 

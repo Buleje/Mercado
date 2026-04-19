@@ -37,7 +37,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           </div>
         </div>
 
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
           Error interno
         </p>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
@@ -78,7 +78,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         </div>
 
         {error.digest && (
-          <p className="text-[10px] font-mono text-[var(--text-tertiary)] mt-4 opacity-60">
+          <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] mt-4 opacity-60">
             Código: {error.digest}
           </p>
         )}

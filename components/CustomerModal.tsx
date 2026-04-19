@@ -7,7 +7,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   X, MapPin, User, Home, Loader2,
   Pencil, Plus, CheckCircle2, Navigation, Maximize2, Trash2, Smartphone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
@@ -581,7 +581,7 @@ export default function CustomerModal() {
                                   {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-white fill-white" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-0.5">
+                                  <p className="text-[length:var(--ts-2xs)] font-bold text-muted uppercase tracking-wider mb-0.5">
                                     {loc.id === "default" ? "📍 Dirección principal" : `📍 Dirección ${locations.indexOf(loc) + 1}`}
                                   </p>
                                   <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>{loc.location}</p>
@@ -672,7 +672,7 @@ export default function CustomerModal() {
                             onChange={(e) => { const v = e.target.value; if (v) setBirthday(v.slice(5)); else setBirthday(""); }}
                             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                           />
-                          <p className="text-[10px] text-muted mt-1">🎂 Te daremos un 10% de descuento en tu cumpleaños</p>
+                          <p className="text-[length:var(--ts-2xs)] text-muted mt-1">🎂 Te daremos un 10% de descuento en tu cumpleaños</p>
                         </div>
                         <div className="flex gap-3">
                           {customer && (

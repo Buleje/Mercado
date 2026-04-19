@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, User, Phone, MapPin, Home, Award } from "lucide-react";
+import { CheckCircle2, User, Phone, MapPin, Home, Award } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { SavedLocation } from "@/contexts/customer-context";
 
@@ -95,7 +95,7 @@ export function CustomerVerifiedCard({
 
       {locations.length > 1 && (
         <div className="mt-3 px-3 pb-3">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
             Dirección de entrega
           </p>
           <div className="space-y-2">

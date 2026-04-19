@@ -15,7 +15,7 @@ import {
   RefreshCw,
   ClipboardList,
   AlertCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import SignatureCanvas from "@/components/delivery/SignatureCanvas";
 
 // Leaflet no funciona en SSR — carga lazy obligatoria

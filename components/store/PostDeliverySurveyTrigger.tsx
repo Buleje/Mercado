@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X } from "lucide-react";
+import { X } from "@buleje/design-system/icons";
 import PostDeliverySurvey from "./PostDeliverySurvey";
 import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
 import { PedidoLlegando } from "@/components/ui-system/illustrations/empty-states";

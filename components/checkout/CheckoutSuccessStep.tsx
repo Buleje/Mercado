@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { MapPin, ShoppingCart } from "lucide-react";
+import { MapPin, ShoppingCart } from "@buleje/design-system/icons";
 
 export interface CheckoutSuccessStepProps {
   orderId: string;
@@ -114,7 +114,7 @@ export function CheckoutSuccessStep({ orderId, onClose }: CheckoutSuccessStepPro
           transition={{ delay: 0.6 }}
           className="w-full max-w-sm"
         >
-          <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 relative">
+          <div className="flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-gray-500 relative">
             <div className="absolute top-3 left-[14%] right-[14%] h-0.5 bg-gray-200 dark:bg-gray-700" />
             <m.div
               className="absolute top-3 left-[14%] h-0.5 bg-emerald-500"
@@ -133,7 +133,7 @@ export function CheckoutSuccessStep({ orderId, onClose }: CheckoutSuccessStepPro
                 <span className={s.active ? "text-emerald-600 font-extrabold" : "text-gray-400"}>
                   {s.label}
                 </span>
-                {s.sub && <span className="text-[9px] text-gray-400">{s.sub}</span>}
+                {s.sub && <span className="text-[length:var(--ts-2xs)] text-gray-400">{s.sub}</span>}
               </div>
             ))}
           </div>

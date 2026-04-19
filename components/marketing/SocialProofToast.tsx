@@ -103,7 +103,7 @@ export default function SocialProofToast() {
                 {item.text}
               </p>
               {item.timeAgo && (
-                <p className="text-[10px] text-slate-400 mt-0.5">
+                <p className="text-[length:var(--ts-2xs)] text-slate-400 mt-0.5">
                   {item.timeAgo}
                 </p>
               )}

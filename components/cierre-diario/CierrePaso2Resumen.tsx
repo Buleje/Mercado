@@ -117,7 +117,7 @@ export default function CierrePaso2Resumen({
               <span className={`text-lg font-bold ${preview.fiados.vencidos > 0 ? "text-red-500" : "text-gray-600 dark:text-foreground"}`}>
                 {preview.fiados.vencidos}
                 {preview.fiados.vencidos > 0 && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400">
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400">
                     Pendiente
                   </span>
                 )}

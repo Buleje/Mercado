@@ -7,7 +7,7 @@ import {
   Clock, Truck, CreditCard, MapPin, ShoppingBag,
   Package, HelpCircle, Bot, User,
   Sparkles,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 
@@ -220,7 +220,7 @@ export default function LiveChatWidget() {
           </>
         )}
         {hasUnread && !open && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce">
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center animate-bounce">
             !
           </span>
         )}
@@ -253,12 +253,12 @@ export default function LiveChatWidget() {
                   {aiStatus?.hasAI ? (
                     <>
                       <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[11px] text-white/70 font-medium">IA activa · {aiStatus.activeProviderName}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-white/70 font-medium">IA activa · {aiStatus.activeProviderName}</span>
                     </>
                   ) : (
                     <>
                       <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      <span className="text-[11px] text-white/70 font-medium">Respuestas automáticas</span>
+                      <span className="text-[length:var(--ts-2xs)] text-white/70 font-medium">Respuestas automáticas</span>
                     </>
                   )}
                 </div>
@@ -309,7 +309,7 @@ export default function LiveChatWidget() {
                 )}>
                   <p className="whitespace-pre-line">{m.message}</p>
                   <p className={cn(
-                    "text-[10px] mt-1.5",
+                    "text-[length:var(--ts-2xs)] mt-1.5",
                     m.sender === "customer" ? "text-white/60" : "text-muted"
                   )}>
                     {m.sender === "bot" && "🤖 "}
@@ -347,7 +347,7 @@ export default function LiveChatWidget() {
           {/* Quick questions */}
           {messages.length === 0 && (
             <div className="px-3 pb-2 border-t border-gray-100 dark:border-card-border pt-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 px-1">Preguntas frecuentes</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 px-1">Preguntas frecuentes</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {contextProduct && (
                   <button
@@ -362,7 +362,7 @@ export default function LiveChatWidget() {
                   <button
                     key={q.text}
                     onClick={() => send(q.text)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold text-foreground bg-gray-50 dark:bg-surface hover:bg-primary/5 border border-gray-100 dark:border-card-border transition-colors text-left"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[length:var(--ts-2xs)] font-semibold text-foreground bg-gray-50 dark:bg-surface hover:bg-primary/5 border border-gray-100 dark:border-card-border transition-colors text-left"
                   >
                     <q.icon className={cn("h-3.5 w-3.5 shrink-0", q.color)} />
                     <span className="truncate">{q.text}</span>
@@ -379,7 +379,7 @@ export default function LiveChatWidget() {
                 <button
                   key={q.text}
                   onClick={() => send(q.text)}
-                  className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-primary/15 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                  className="text-[length:var(--ts-2xs)] font-semibold px-2.5 py-1 rounded-full border border-primary/15 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
                 >
                   {q.text}
                 </button>
@@ -417,7 +417,7 @@ export default function LiveChatWidget() {
 
           {/* Powered by */}
           <div className="px-3 pb-2 flex items-center justify-center">
-            <span className="text-[9px] text-muted/50 font-medium">
+            <span className="text-[length:var(--ts-2xs)] text-muted/50 font-medium">
               {aiStatus?.hasAI
                 ? `✨ IA: ${aiStatus.activeProviderName} · El equipo también responde`
                 : "⚠️ Sin API de IA · Solo respuestas automáticas básicas"}

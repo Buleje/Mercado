@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Clock, Users, ShoppingCart, Star, ArrowRight, ChefHat } from "lucide-react";
+import { Clock, Users, ShoppingCart, Star, ArrowRight, ChefHat } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 

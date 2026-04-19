@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { MessageCircle, X, Send, User, Store as StoreIcon } from "lucide-react";
+import { MessageCircle, X, Send, User, Store as StoreIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { usePublicChat } from "./hooks";
 
@@ -82,7 +82,7 @@ export default function ChatBubble({
             <MessageCircle className="h-6 w-6" />
             {unread > 0 && (
               <span
-                className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold"
+                className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[length:var(--ts-2xs)] font-bold"
                 aria-label={`${unread} mensajes sin leer`}
               >
                 {unread > 99 ? "99+" : unread}
@@ -110,7 +110,7 @@ export default function ChatBubble({
               </div>
               <div>
                 <div className="text-sm font-semibold">{storeName}</div>
-                <div className="text-[10px] opacity-80">
+                <div className="text-[length:var(--ts-2xs)] opacity-80">
                   {session ? "Conversación activa" : "Hablanos"}
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function ChatBubble({
               </div>
 
               {error && (
-                <div className="border-t border-red-200 bg-red-50 p-2 text-center text-[11px] text-red-700 dark:border-red-900 dark:bg-red-950">
+                <div className="border-t border-red-200 bg-red-50 p-2 text-center text-[length:var(--ts-2xs)] text-red-700 dark:border-red-900 dark:bg-red-950">
                   {error}
                 </div>
               )}
@@ -209,7 +209,7 @@ function StartForm({
       </p>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Tu nombre</span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase text-slate-500">Tu nombre</span>
         <input
           type="text"
           value={name}
@@ -222,7 +222,7 @@ function StartForm({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Teléfono (WhatsApp)</span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase text-slate-500">Teléfono (WhatsApp)</span>
         <input
           type="tel"
           value={phone}
@@ -236,7 +236,7 @@ function StartForm({
       </label>
 
       <label className="flex flex-1 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Tu mensaje</span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase text-slate-500">Tu mensaje</span>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -249,7 +249,7 @@ function StartForm({
       </label>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-2 text-[11px] text-red-700 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-md bg-red-50 p-2 text-[length:var(--ts-2xs)] text-red-700 dark:bg-red-950 dark:text-red-300">
           {error}
         </div>
       )}
@@ -276,7 +276,7 @@ function MessageRow({ msg }: { msg: import("./types").PublicMessageView }) {
   if (isSystem) {
     return (
       <div className="flex justify-center">
-        <span className="rounded-full bg-slate-200 px-3 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+        <span className="rounded-full bg-slate-200 px-3 py-0.5 text-[length:var(--ts-2xs)] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
           {msg.body}
         </span>
       </div>
@@ -306,7 +306,7 @@ function MessageRow({ msg }: { msg: import("./types").PublicMessageView }) {
         </div>
         <div
           className={cn(
-            "mt-0.5 text-[9px] text-slate-400",
+            "mt-0.5 text-[length:var(--ts-2xs)] text-slate-400",
             isBuyer ? "text-right" : "text-left",
           )}
         >

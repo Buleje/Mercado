@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { m } from "framer-motion";
-import { Leaf, MapPin } from "lucide-react";
+import { Leaf, MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface JungleProduct {
@@ -121,7 +121,7 @@ export default function MarketplaceJungleProducts() {
         <div className="relative p-6 sm:p-8">
           <div className="flex items-end justify-between gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
             <div>
-              <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+              <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
                 <MapPin className="h-3 w-3" strokeWidth={2} />
                 Pucallpa · Ucayali
               </p>
@@ -189,7 +189,7 @@ export default function MarketplaceJungleProducts() {
                         <Leaf className="h-10 w-10" strokeWidth={1.25} />
                       </div>
                     )}
-                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[9px] font-bold uppercase tracking-wide">
+                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
                       <Leaf className="h-2.5 w-2.5" strokeWidth={2} />
                       Selva
                     </span>
@@ -203,7 +203,7 @@ export default function MarketplaceJungleProducts() {
                         S/{p.price.toFixed(2)}
                       </span>
                       {p.unit && (
-                        <span className="text-[10px] text-gray-400 tabular-nums">/ {p.unit}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 tabular-nums">/ {p.unit}</span>
                       )}
                     </div>
                   </div>

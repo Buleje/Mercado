@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@buleje/design-system/icons";
 import { GiftCardIlustrada } from "@/components/ui-system/illustrations";
 
 type Props = {

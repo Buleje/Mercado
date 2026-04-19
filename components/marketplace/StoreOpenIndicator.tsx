@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 

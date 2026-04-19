@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Save, Printer, MessageCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Save, Printer, MessageCircle, CheckCircle, Loader2 } from "@buleje/design-system/icons";
 import type { PreviewData } from "./useCierreDiario";
 
 type Props = {

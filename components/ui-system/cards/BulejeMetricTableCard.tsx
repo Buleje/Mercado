@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BulejeSparkline } from "../charts/BulejeSparkline";
 

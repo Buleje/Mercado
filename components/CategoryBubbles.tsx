@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 import { useInView } from "@/hooks/use-in-view";

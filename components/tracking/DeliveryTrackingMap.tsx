@@ -9,7 +9,7 @@ import {
   CheckCircle,
   Bike,
   Package,
-  Navigation } from "lucide-react";
+  Navigation } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -342,7 +342,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
                   <StepIcon className="h-3.5 w-3.5" />
                 </div>
                 <span className={cn(
-                  "whitespace-nowrap text-[10px] font-medium",
+                  "whitespace-nowrap text-[length:var(--ts-2xs)] font-medium",
                   isActive ? "text-[#00B4A6]" : "text-gray-400 dark:text-gray-600",
                 )}>
                   {cfg.label}

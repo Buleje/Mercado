@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, Coins } from "lucide-react";
+import { Calculator, Coins } from "@buleje/design-system/icons";
 
 type Bill = { value: number; label: string; color: string };
 

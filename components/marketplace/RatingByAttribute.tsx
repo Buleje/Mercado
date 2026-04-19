@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Star, ThumbsUp, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, ThumbsUp, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
 
@@ -203,11 +203,11 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                       {review.name}
                     </span>
                     {review.verified && (
-                      <span className="text-[10px] font-semibold bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-semibold bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
                         Compra verificada
                       </span>
                     )}
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500 ml-auto">
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 ml-auto">
                       {timeAgo(review.date)}
                     </span>
                   </div>
@@ -220,17 +220,17 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                   {(review.qualityRating || review.priceRating || review.deliveryRating) && (
                     <div className="mt-2 flex flex-wrap gap-3">
                       {review.qualityRating && (
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                           Calidad: <strong>{review.qualityRating}</strong>/5
                         </span>
                       )}
                       {review.priceRating && (
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                           Precio: <strong>{review.priceRating}</strong>/5
                         </span>
                       )}
                       {review.deliveryRating && (
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                           Entrega: <strong>{review.deliveryRating}</strong>/5
                         </span>
                       )}

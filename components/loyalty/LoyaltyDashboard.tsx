@@ -239,7 +239,7 @@ function BalanceCard({ data, level }: BalanceCardProps) {
       {/* Métricas secundarias */}
       <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700/60 border-t border-gray-100 dark:border-gray-700/60">
         <div className="px-4 py-3 text-center">
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
             Total gastado
           </p>
           <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
@@ -248,7 +248,7 @@ function BalanceCard({ data, level }: BalanceCardProps) {
         </div>
         {data.creditBalance !== undefined && data.creditBalance > 0 ? (
           <div className="px-4 py-3 text-center">
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
               Crédito
             </p>
             <p className="text-sm font-bold text-[color:var(--color-primary)]">
@@ -257,7 +257,7 @@ function BalanceCard({ data, level }: BalanceCardProps) {
           </div>
         ) : (
           <div className="px-4 py-3 text-center">
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
               Teléfono
             </p>
             <p className="text-sm font-bold text-gray-800 dark:text-gray-100 tabular-nums">
@@ -511,11 +511,11 @@ function RewardCatalog({ rewards, currentPoints }: RewardCatalogProps) {
                   {formatPoints(reward.pointsCost)} pts
                 </p>
                 {canRedeem ? (
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">
                     Disponible
                   </span>
                 ) : (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
                     Faltan {formatPoints(missing)}
                   </span>
                 )}

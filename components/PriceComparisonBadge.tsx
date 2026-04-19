@@ -1,7 +1,7 @@
 "use client";
 
 import { useCachedData } from "@/hooks/use-cached-data";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface PriceComparisonBadgeProps {

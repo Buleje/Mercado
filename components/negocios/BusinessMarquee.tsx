@@ -1,6 +1,6 @@
 "use client";
 
-import { Store, ShieldCheck } from "lucide-react";
+import { Store, ShieldCheck } from "@buleje/design-system/icons";
 
 const LOGOS = [
   "Bodega El Amigo",

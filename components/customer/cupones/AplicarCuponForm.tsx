@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Loader2, CheckCircle2, AlertCircle } from "@buleje/design-system/icons";
 
 type Status =
   | { kind: "idle" }

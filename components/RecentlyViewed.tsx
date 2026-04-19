@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, startTransition } from "react";
 import Image from "next/image";
-import { Clock, ShoppingCart, Package, ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
+import { Clock, ShoppingCart, Package, ChevronLeft, ChevronRight, Minus, Plus, X } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import type { Product } from "@/data/products";

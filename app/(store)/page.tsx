@@ -391,7 +391,7 @@ function PaymentMethods() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-6 justify-between flex-wrap mb-8">
           <Kicker>Formas de pago aceptadas</Kicker>
-          <span className="text-[10px] font-bold text-gray-400 tabular-nums uppercase tracking-wider">
+          <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 tabular-nums uppercase tracking-wider">
             4 OPCIONES
           </span>
         </div>

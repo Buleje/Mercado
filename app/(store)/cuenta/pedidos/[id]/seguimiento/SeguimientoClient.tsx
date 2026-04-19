@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@buleje/design-system/icons";
 import { SeguimientoHero } from "@/components/customer/seguimiento/SeguimientoHero";
 import { OrderTimeline } from "@/components/customer/seguimiento/OrderTimeline";
 import { DeliveryMapMock } from "@/components/customer/seguimiento/DeliveryMapMock";

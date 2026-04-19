@@ -6,7 +6,7 @@ import {
   ChefHat, Search, Plus, Pencil, Trash2, Image as ImageIcon,
   ToggleLeft, ToggleRight, RefreshCw, AlertCircle,
   CheckCircle2, XCircle, X, Clock, Users, Loader2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

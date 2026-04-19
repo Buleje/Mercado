@@ -356,7 +356,7 @@ export default function SearchAutocomplete({
 
                   return (
                     <div key={type} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                      <div aria-hidden="true" className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
+                      <div aria-hidden="true" className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                         {TYPE_META[type].title}
                       </div>

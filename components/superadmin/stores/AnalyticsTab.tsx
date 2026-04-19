@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { BarChart3, ShoppingBag, Users, TrendingUp } from "lucide-react";
+import { BarChart3, ShoppingBag, Users, TrendingUp } from "@buleje/design-system/icons";
 import { StatCard } from "./StatCard";
 import type { StoreRow, MarketplaceOrder } from "./types";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { HelpCircle, Plus, Loader2, ChevronDown } from "lucide-react";
+import { HelpCircle, Plus, Loader2, ChevronDown } from "@buleje/design-system/icons";
 import type { MockQuestion } from "@/lib/mocks/product-qa.mock";
 import QuestionCard from "./QuestionCard";
 import AskQuestionModal from "./AskQuestionModal";

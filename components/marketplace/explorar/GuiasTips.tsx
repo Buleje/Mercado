@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import {
   EstanteVacio,
   CarniceriaFresca,
@@ -60,7 +60,7 @@ export default function GuiasTips() {
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
       <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
           Aprende
         </span>
         <h2
@@ -84,7 +84,7 @@ export default function GuiasTips() {
               </div>
 
               <div className="flex flex-col flex-1 p-5 sm:p-6">
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+                <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
                   <span>{g.kicker}</span>
                   <span aria-hidden="true">&middot;</span>
                   <span>{g.readingTime}</span>

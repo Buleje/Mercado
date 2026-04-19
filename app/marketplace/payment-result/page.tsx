@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, X, Clock, ShoppingBag, ArrowLeft } from "lucide-react";
+import { Check, X, Clock, ShoppingBag, ArrowLeft } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 function PaymentResultContent() {

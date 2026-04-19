@@ -2,7 +2,7 @@
 
 import { type FormEvent } from "react";
 import { m } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import type { SavedLocation, Customer } from "@/contexts/customer-context";
 import { CheckoutDeliverySchedule, CheckoutNotesField } from "..";
 import { CustomerVerifiedCard } from "../parts/CustomerVerifiedCard";

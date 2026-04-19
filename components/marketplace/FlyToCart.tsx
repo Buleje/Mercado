@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "@buleje/design-system/icons";
 
 /**
  * FlyToCart

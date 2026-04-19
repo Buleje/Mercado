@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, ArrowRight, Gift, Copy, Check, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ArrowRight, Gift, Copy, Check, ShieldAlert } from "@buleje/design-system/icons";
 
 export default function ConfirmacionClient() {
   const search = useSearchParams();

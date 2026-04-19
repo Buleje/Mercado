@@ -7,7 +7,7 @@
  * Cero emojis, dark-mode completo, accesible.
  */
 
-import { Star, ThumbsUp } from "lucide-react";
+import { Star, ThumbsUp } from "@buleje/design-system/icons";
 import type { MockStoreReview, MockStoreRatingSummary } from "@/lib/mock-store-reviews";
 import { cn } from "@/lib/utils";
 
@@ -85,7 +85,7 @@ function ReviewCard({ review }: { review: MockStoreReview }) {
               {review.authorName}
             </span>
             {review.verified && (
-              <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-0.5">
+              <span className="text-[length:var(--ts-2xs)] font-medium text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-0.5">
                 Compra verificada
               </span>
             )}
@@ -126,7 +126,7 @@ export default function StoreReviews({ summary, reviews }: StoreReviewsProps) {
     <section aria-labelledby="store-reviews-heading" className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
           Opiniones
         </p>
         <h2

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, startTransition } from "react";
-import { Copy, Check, Share2, Users, Star } from "lucide-react";
+import { Copy, Check, Share2, Users, Star } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
 

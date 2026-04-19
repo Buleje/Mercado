@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import Link from "next/link";
-import { ShoppingCart, ArrowRight, Truck, Star } from "lucide-react";
+import { ShoppingCart, ArrowRight, Truck, Star } from "@buleje/design-system/icons";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const HeroBlockSchema = z.object({

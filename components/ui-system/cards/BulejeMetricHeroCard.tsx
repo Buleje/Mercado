@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import NumberFlow from "@number-flow/react";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BulejeSparkline } from "../charts/BulejeSparkline";
 

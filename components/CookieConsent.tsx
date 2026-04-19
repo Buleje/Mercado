@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, X } from "lucide-react";
+import { Shield, X } from "@buleje/design-system/icons";
 
 const CONSENT_KEY = "buleje-cookie-consent";
 

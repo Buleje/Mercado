@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import {
   ChevronRight, Play, Loader2, CheckCircle, XCircle,
   Lock, Globe, ChevronDown, ChevronUp,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 

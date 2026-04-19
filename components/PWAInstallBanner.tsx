@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Smartphone, Download, Wifi, Zap } from "lucide-react";
+import { Smartphone, Download, Wifi, Zap } from "@buleje/design-system/icons";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;

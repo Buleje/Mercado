@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "@buleje/design-system/icons";
 import type { PlanId } from "@/lib/superadmin-types";
 
 interface PlanSelectProps {

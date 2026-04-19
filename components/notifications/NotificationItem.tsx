@@ -117,11 +117,11 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
             {notification.body}
           </p>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-[11px] text-gray-400 dark:text-muted">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
               {timeAgo(notification.createdAt)}
             </span>
             {notification.actionLabel && notification.actionUrl && (
-              <span className="text-[11px] font-medium text-primary hover:underline">
+              <span className="text-[length:var(--ts-2xs)] font-medium text-primary hover:underline">
                 {notification.actionLabel}
               </span>
             )}
@@ -132,13 +132,13 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                   e.stopPropagation();
                   setShowCobroExpress(!showCobroExpress);
                 }}
-                className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
               >
                 Cobrar
               </button>
             )}
             {cobroDone && (
-              <span className="text-[11px] font-bold text-emerald-600">Pago registrado</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600">Pago registrado</span>
             )}
           </div>
         </div>
@@ -154,12 +154,12 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
       {/* Mejora M-8: Cobro express inline panel */}
       {showCobroExpress && isFiadoVencido && (
         <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-l-4 border-l-emerald-400">
-          <p className="text-[11px] font-bold text-gray-600 dark:text-foreground mb-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-foreground mb-1.5">
             Registrar pago
           </p>
           <div className="flex gap-1.5">
             <div className="relative flex-1">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-bold">S/</span>
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[length:var(--ts-2xs)] font-bold">S/</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -195,7 +195,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                 setCobroLoading(false);
               }}
               disabled={cobroLoading || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-2.5 py-1.5 rounded-lg bg-[#00B4A6] text-white text-[10px] font-bold hover:bg-[#009690] transition-colors disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-lg bg-[#00B4A6] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009690] transition-colors disabled:opacity-50"
             >
               {cobroLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
             </button>

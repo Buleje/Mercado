@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingBag, X, Bell, AlertTriangle } from "lucide-react";
+import { ShoppingBag, X, Bell, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useAdminNotifications } from "@/hooks/use-admin-notifications";
 

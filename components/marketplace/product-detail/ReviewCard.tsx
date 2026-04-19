@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Star, ShieldCheck, ThumbsUp, User } from "lucide-react";
+import { Star, ShieldCheck, ThumbsUp, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { MockReview } from "@/lib/mocks/product-reviews.mock";
 

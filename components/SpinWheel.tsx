@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, startTransition, useCallback } from "react";
-import { Gift, X, Copy, Check } from "lucide-react";
+import { Gift, X, Copy, Check } from "@buleje/design-system/icons";
 
 const SEGMENTS = [
   { label: "5% OFF", color: "#ef4444", value: 5 },
@@ -259,7 +259,7 @@ export default function SpinWheel() {
                     <p className="text-xs text-muted animate-pulse">Generando tu cupón...</p>
                   ) : couponCode ? (
                     <div className="space-y-1.5">
-                      <p className="text-[10px] text-muted uppercase tracking-wider font-bold">Tu código de cupón</p>
+                      <p className="text-[length:var(--ts-2xs)] text-muted uppercase tracking-wider font-bold">Tu código de cupón</p>
                       <button
                         type="button"
                         onClick={async () => {
@@ -270,7 +270,7 @@ export default function SpinWheel() {
                         <span className="font-mono text-base font-extrabold text-primary tracking-wide">{couponCode}</span>
                         {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-primary/50" />}
                       </button>
-                      <p className="text-[10px] text-muted">Válido por 7 días · Úsalo en el checkout</p>
+                      <p className="text-[length:var(--ts-2xs)] text-muted">Válido por 7 días · Úsalo en el checkout</p>
                     </div>
                   ) : couponError ? (
                     <div className="space-y-2">

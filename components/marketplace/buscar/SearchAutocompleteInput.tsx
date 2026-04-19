@@ -121,7 +121,7 @@ function SuggestionTypeLabel({ type }: { type: Suggestion["type"] }) {
     store: "Tienda",
   };
   return (
-    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500">
+    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500">
       {labels[type]}
     </span>
   );

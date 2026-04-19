@@ -100,7 +100,7 @@ export default function CierrePaso1Caja({
                 </span>
               )}
               {cantidad > 0 && (
-                <span className="text-[10px] text-gray-500 dark:text-muted mt-1">
+                <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted mt-1">
                   = S/{subtotal.toFixed(2)}
                 </span>
               )}

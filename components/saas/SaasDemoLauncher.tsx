@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Store, ShoppingCart, BarChart3, Package,
   Users, Truck, Shield, CreditCard, BookOpen,
   Receipt, Brain,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Demo fijo permanente — siempre va a /t/demo ─────────────────────────────
@@ -91,15 +91,15 @@ export default function SaasDemoLauncher() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-black/30 rounded-xl p-3">
-                  <p className="text-[10px] text-gray-500 uppercase">Usuario</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase">Usuario</p>
                   <p className="text-sm font-mono font-bold text-white">demo</p>
                 </div>
                 <div className="bg-black/30 rounded-xl p-3">
-                  <p className="text-[10px] text-gray-500 uppercase">Clave</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase">Clave</p>
                   <p className="text-sm font-mono font-bold text-white">demo1234</p>
                 </div>
               </div>
-              <p className="text-[10px] text-gray-500 mt-2">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-2">
                 Demo permanente — los datos se mantienen siempre disponibles
               </p>
             </div>

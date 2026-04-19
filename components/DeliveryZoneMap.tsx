@@ -1,6 +1,6 @@
 "use client";
 
-import { Truck, CheckCircle2, MapPin, Clock } from "lucide-react";
+import { Truck, CheckCircle2, MapPin, Clock } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 
 const ZONES = [

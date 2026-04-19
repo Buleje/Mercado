@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Clock3, RotateCcw, ShoppingCart, Store } from "lucide-react";
+import { Clock3, RotateCcw, ShoppingCart, Store } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
@@ -128,7 +128,7 @@ export default function MarketplaceQuickReorder() {
     <section className="mt-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-card-border dark:bg-card sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-primary">
             <RotateCcw className="h-3.5 w-3.5" />
             Recompra en 1 toque
           </div>
@@ -140,7 +140,7 @@ export default function MarketplaceQuickReorder() {
             Tu última compra fue {formatRelativeDate(lastOrder.date).toLowerCase()}. Si era tu compra típica, la puedes volver a poner en el carrito con un solo clic.
           </p>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-gray-400">
             <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 dark:bg-gray-800">
               <ShoppingCart className="h-3.5 w-3.5 text-primary" />
               {totalUnits} unidade{totalUnits === 1 ? "" : "s"}

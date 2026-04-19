@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingBag, Package, Ticket, BarChart3, Palette } from "lucide-react";
+import { ShoppingBag, Package, Ticket, BarChart3, Palette } from "@buleje/design-system/icons";
 import { StoresTab } from "@/components/superadmin/stores/StoresTab";
 import { OrdersTab } from "@/components/superadmin/stores/OrdersTab";
 import { CouponsTab } from "@/components/superadmin/stores/CouponsTab";

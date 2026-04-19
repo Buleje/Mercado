@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { AlertCircle, Eye } from "lucide-react";
+import { AlertCircle, Eye } from "@buleje/design-system/icons";
 import { useEffect, useState } from "react";
 
 /**

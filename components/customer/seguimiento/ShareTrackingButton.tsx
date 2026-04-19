@@ -8,7 +8,7 @@
  * El link es /t/[tenant]/seguimiento/[token] — funciona sin login.
  */
 import { useState } from "react";
-import { Share2, Check, Loader2, MessageCircle, Copy } from "lucide-react";
+import { Share2, Check, Loader2, MessageCircle, Copy } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -78,7 +78,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
             Compartir
           </span>
           <h2
@@ -127,7 +127,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
       {status === "ready" && shareUrl && (
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface px-3 py-2">
-            <code className="text-[11px] text-foreground truncate flex-1 tabular-nums">
+            <code className="text-[length:var(--ts-2xs)] text-foreground truncate flex-1 tabular-nums">
               {shareUrl}
             </code>
             <button

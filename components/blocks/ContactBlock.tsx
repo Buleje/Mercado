@@ -5,7 +5,7 @@
 "use client";
 
 import { z } from "zod";
-import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Clock, MessageCircle } from "@buleje/design-system/icons";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const ContactBlockSchema = z.object({

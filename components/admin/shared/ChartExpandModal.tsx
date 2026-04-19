@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 
 interface Props {

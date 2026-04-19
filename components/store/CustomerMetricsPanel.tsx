@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   TrendingUp, ShoppingBag, Award, Tag, Star,
   Package, RefreshCw, Trophy, Zap, Heart,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 

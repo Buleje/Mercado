@@ -361,7 +361,7 @@ export default function MarketplaceChat({
                     >
                       <p className="leading-snug">{msg.message}</p>
                       <p
-                        className={`mt-0.5 text-right text-[10px] ${
+                        className={`mt-0.5 text-right text-[length:var(--ts-2xs)] ${
                           isCustomer ? "text-white/60" : "text-gray-400 dark:text-gray-500"
                         }`}
                       >

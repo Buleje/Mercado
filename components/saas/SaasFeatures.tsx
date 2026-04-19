@@ -7,7 +7,7 @@ import {
   DollarSign, Camera, Gift, ChevronDown, Tag, RefreshCw,
   MapPin, Truck, ShoppingCart, Search, Moon, Megaphone,
   Star, Mic, Calculator, AlertTriangle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { LucideIcon } from "lucide-react";
 
 type FilterPill = "Estrella" | "IA" | "Ventas" | "Stock" | "Todas";
@@ -143,7 +143,7 @@ function AccordionItem({ f, isOpen, onToggle, index }: { f: StarFeature; isOpen:
             <Icon className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-sm sm:text-base text-gray-900 dark:text-[#f0f4f1] truncate">{f.title}</span>
-          <span className="hidden sm:inline-flex shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: C_BG[f.category], color: C_TEXT[f.category] }}>
+          <span className="hidden sm:inline-flex shrink-0 text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: C_BG[f.category], color: C_TEXT[f.category] }}>
             {f.category}
           </span>
         </div>
@@ -165,16 +165,16 @@ function AccordionItem({ f, isOpen, onToggle, index }: { f: StarFeature; isOpen:
             <div className="px-4 sm:px-5 pb-5 pt-1 grid sm:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: C_TEXT[f.category] }}>Problema</p>
+                  <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-widest mb-1" style={{ color: C_TEXT[f.category] }}>Problema</p>
                   <p className="text-sm text-gray-600 dark:text-[rgba(240,244,241,0.65)] leading-relaxed">&ldquo;{f.problema}&rdquo;</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: C_TEXT[f.category] }}>Solución</p>
+                  <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-widest mb-1" style={{ color: C_TEXT[f.category] }}>Solución</p>
                   <p className="text-sm text-gray-700 dark:text-[rgba(240,244,241,0.82)] leading-relaxed">{f.solucion}</p>
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center rounded-xl py-5 px-4" style={{ background: "rgba(45,106,79,0.06)", border: "1px solid rgba(45,106,79,0.12)" }}>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-[rgba(240,244,241,0.45)] mb-2">Resultado</p>
+                <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-widest text-gray-400 dark:text-[rgba(240,244,241,0.45)] mb-2">Resultado</p>
                 <p className="font-extrabold tabular-nums leading-none mb-1" style={{ fontSize: "clamp(2rem,6vw,3rem)", color: C_TEXT[f.category] }}>
                   <AnimatedCounter num={f.num} prefix={f.prefix} suffix={f.suffix} active={isOpen} />
                 </p>
@@ -205,7 +205,7 @@ function MiniCard({ f, index }: { f: MiniFeature; index: number }) {
         <Icon className="w-3.5 h-3.5" style={{ color: f.border }} />
       </div>
       <p className="text-xs font-semibold text-gray-900 dark:text-[#f0f4f1] leading-tight">{f.title}</p>
-      <p className="text-[11px] text-gray-400 dark:text-[rgba(240,244,241,0.45)] leading-snug">{f.desc}</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.45)] leading-snug">{f.desc}</p>
     </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp } from "@buleje/design-system/icons";
 
 export default function ScrollToTop() {
   const [visible, setVisible] = useState(false);

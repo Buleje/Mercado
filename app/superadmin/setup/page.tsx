@@ -20,7 +20,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Filter, Wrench } from "lucide-react";
+import { Filter, Wrench } from "@buleje/design-system/icons";
 import {
   loadStatuses,
   saveStatuses,

@@ -66,7 +66,7 @@ function CartItemRow({
           {fmt(item.price)}
           {item.unit ? ` / ${item.unit}` : ""}
         </p>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
           Subtotal: {fmt(item.price * item.quantity)}
         </p>
       </div>
@@ -141,7 +141,7 @@ export function CartBadge({ onClick }: { onClick: () => void }) {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
-              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white"
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black text-white"
             >
               {itemCount > 99 ? "99+" : itemCount}
             </motion.span>
@@ -553,7 +553,7 @@ export default function MarketplaceCart({
                     {step === "cart" ? "Mi carrito" : step === "datos" ? "Datos de entrega" : step === "pago" ? "Método de pago" : "Confirmar pedido"}
                   </h2>
                   {itemCount > 0 && (
-                    <span className="text-[10px] font-semibold text-primary mt-0.5 block">
+                    <span className="text-[length:var(--ts-2xs)] font-semibold text-primary mt-0.5 block">
                       {itemCount} {itemCount === 1 ? "producto" : "productos"}
                       {storeIds.length > 1 ? ` · ${storeIds.length} tiendas` : ""}
                     </span>
@@ -564,7 +564,7 @@ export default function MarketplaceCart({
                 {!isEmpty && step === "cart" && (
                   <button
                     onClick={clearAll}
-                    className="text-[10px] font-semibold text-gray-400 underline-offset-2 hover:text-red-500 hover:underline dark:text-gray-500 dark:hover:text-red-400 transition-colors"
+                    className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 underline-offset-2 hover:text-red-500 hover:underline dark:text-gray-500 dark:hover:text-red-400 transition-colors"
                   >
                     Vaciar
                   </button>
@@ -600,12 +600,12 @@ export default function MarketplaceCart({
                           <div className={`flex-1 h-0.5 rounded-full ${isDone ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"}`} />
                         )}
                         <div className={`flex items-center gap-1.5 ${isActive ? "text-primary" : isDone ? "text-primary/70" : "text-gray-400 dark:text-gray-500"}`}>
-                          <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${
+                          <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black ${
                             isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
                           }`}>
                             {isDone ? "✓" : num}
                           </div>
-                          <span className="text-[10px] font-semibold hidden sm:inline">{label}</span>
+                          <span className="text-[length:var(--ts-2xs)] font-semibold hidden sm:inline">{label}</span>
                         </div>
                       </React.Fragment>
                     );
@@ -651,7 +651,7 @@ export default function MarketplaceCart({
                           <span className="text-sm">{r.success ? "✓" : "✗"}</span>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold truncate">{r.storeName}</p>
-                            {r.error && <p className="text-[10px] opacity-80 truncate">{r.error}</p>}
+                            {r.error && <p className="text-[length:var(--ts-2xs)] opacity-80 truncate">{r.error}</p>}
                           </div>
                         </div>
                       ))}
@@ -941,15 +941,15 @@ export default function MarketplaceCart({
                       </div>
                       <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
                         <li className="flex items-start gap-2">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[10px] font-bold text-[#6E2B8B]">1</span>
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">1</span>
                           <span>Confirma tu pedido aquí y recibirás el número de Yape del vendedor</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[10px] font-bold text-[#6E2B8B]">2</span>
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">2</span>
                           <span>Abre tu app de Yape y transfiere <strong>{fmt(finalTotal)}</strong></span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[10px] font-bold text-[#6E2B8B]">3</span>
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">3</span>
                           <span>El vendedor verificará el pago y preparará tu pedido</span>
                         </li>
                       </ol>
@@ -975,7 +975,7 @@ export default function MarketplaceCart({
 
                   {/* Datos del cliente */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Nombre</span>
                       <span className="font-medium text-gray-900 dark:text-white">{customerName}</span>
@@ -998,7 +998,7 @@ export default function MarketplaceCart({
 
                   {/* Método de pago */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
                     <div className="flex items-center gap-2">
                       {paymentMethod === "yape" ? (
                         <>
@@ -1022,7 +1022,7 @@ export default function MarketplaceCart({
 
                   {/* Productos por tienda */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
                       const couponR = couponResults[g.storeSlug];
@@ -1182,7 +1182,7 @@ export default function MarketplaceCart({
                     <div className="mt-2">
                       <ShareCartButton />
                     </div>
-                    <p className="mt-2 text-center text-[10px] text-gray-400 dark:text-gray-500">
+                    <p className="mt-2 text-center text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
                       Se crea un pedido separado por cada tienda
                     </p>
                   </>

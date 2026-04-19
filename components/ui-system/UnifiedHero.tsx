@@ -259,7 +259,7 @@ export function UnifiedHero({
                 ) : null}
                 <div className="flex flex-col">
                   {chip.sublabel ? (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       {chip.sublabel}
                     </span>
                   ) : null}

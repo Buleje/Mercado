@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Check } from "lucide-react";
+import { MapPin, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -144,7 +144,7 @@ export default function PucallpaZoneMap({ value, onChange, className }: Props) {
         </svg>
 
         {/* Leyenda */}
-        <p className="absolute bottom-2 left-3 right-3 text-[10px] text-gray-500 dark:text-gray-400 text-center">
+        <p className="absolute bottom-2 left-3 right-3 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 text-center">
           Tocá una zona del mapa o seleccioná abajo
         </p>
       </div>

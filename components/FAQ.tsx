@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, HelpCircle } from "lucide-react";
+import { ChevronDown, HelpCircle } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 
 const faqs = [

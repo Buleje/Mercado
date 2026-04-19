@@ -114,7 +114,7 @@ export function LiveChat({ initialMessages, hostName, active = true, liveId: _li
               >
                 {msg.user}
                 {msg.role === "host" && (
-                  <span className="ml-1 rounded bg-[var(--accent)]/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                  <span className="ml-1 rounded bg-[var(--accent)]/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] uppercase tracking-wide">
                     tienda
                   </span>
                 )}

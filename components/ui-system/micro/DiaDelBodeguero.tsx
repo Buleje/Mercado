@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles } from "@buleje/design-system/icons";
 import { DoniaElena } from "../illustrations/pucallpa-locals";
 
 /**

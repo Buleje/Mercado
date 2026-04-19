@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Search, ArrowRight, Package, Users, Zap, Loader2 } from "lucide-react";
+import { Search, ArrowRight, Package, Users, Zap, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { ComponentType } from "react";
 

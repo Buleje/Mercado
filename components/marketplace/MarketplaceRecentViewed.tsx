@@ -60,7 +60,7 @@ export default function MarketplaceRecentViewed() {
         <button
           type="button"
           onClick={clear}
-          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+          className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <X className="h-3 w-3" />
           Limpiar

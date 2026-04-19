@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { useModuleTabs } from "@/contexts/module-tabs-context";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export type Step = "cuenta" | "datos" | "pago" | "confirmar" | "exito";
@@ -52,7 +52,7 @@ export function StepBar({ current }: { current: Step }) {
             >
               <div
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black transition-all",
+                  "flex h-7 w-7 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black transition-all",
                   isActive
                     ? "bg-primary text-white shadow-md shadow-primary/30 scale-105"
                     : isDone
@@ -64,7 +64,7 @@ export function StepBar({ current }: { current: Step }) {
               </div>
               <span
                 className={cn(
-                  "text-[11px] font-semibold hidden sm:inline",
+                  "text-[length:var(--ts-2xs)] font-semibold hidden sm:inline",
                   isActive ? "font-bold" : ""
                 )}
               >

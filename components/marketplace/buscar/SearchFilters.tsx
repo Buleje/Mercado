@@ -18,7 +18,7 @@
  */
 
 import { useState } from "react";
-import { Star, ChevronDown } from "lucide-react";
+import { Star, ChevronDown } from "@buleje/design-system/icons";
 import type { StoreFacet, CategoryFacet } from "@/lib/db/marketplace-search.db";
 
 export type SearchFiltersState = {
@@ -55,7 +55,7 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500">
+      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500">
         {title}
       </h3>
       <div className="space-y-2">{children}</div>

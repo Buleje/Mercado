@@ -319,7 +319,7 @@ export default function CartSidebar() {
                     Tu Carrito{" "}
                     <span className="text-primary">({count})</span>
                   </h2>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${mode === "checkout" ? "text-primary" : "text-emerald-600"}`}>
+                  <span className={`text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${mode === "checkout" ? "text-primary" : "text-emerald-600"}`}>
                     {mode === "checkout" ? "Pedido en línea" : "Pedido por WhatsApp"}
                   </span>
                 </div>
@@ -407,7 +407,7 @@ export default function CartSidebar() {
                       <span className="text-xl">🎂</span>
                       <div>
                         <p className="text-xs font-bold text-pink-700 dark:text-pink-300">¡Feliz cumpleaños, {customer.name?.split(" ")[0]}!</p>
-                        <p className="text-[10px] text-pink-500 dark:text-pink-400">Tienes 10% de descuento hoy — aplica automático al pagar</p>
+                        <p className="text-[length:var(--ts-2xs)] text-pink-500 dark:text-pink-400">Tienes 10% de descuento hoy — aplica automático al pagar</p>
                       </div>
                     </div>
                   );
@@ -438,19 +438,19 @@ export default function CartSidebar() {
                         const itemStock = liveStock ?? (item as { stock?: number }).stock;
                         if (itemStock == null) return null;
                         if (itemStock === 0) return (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full mt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full mt-0.5">
                             <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                             Agotado — elimina del carrito
                           </span>
                         );
                         if (itemStock <= 3) return (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full mt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full mt-0.5">
                             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                             ¡Solo quedan {itemStock}!
                           </span>
                         );
                         if (itemStock <= 5) return (
-                          <p className="text-[10px] text-amber-500 font-semibold mt-0.5 flex items-center gap-1">
+                          <p className="text-[length:var(--ts-2xs)] text-amber-500 font-semibold mt-0.5 flex items-center gap-1">
                             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                             ¡Solo {itemStock} en stock!
                           </p>
@@ -460,7 +460,7 @@ export default function CartSidebar() {
                       {(item as { stock?: number }).stock != null &&
                         (item as { stock?: number }).stock! > 0 &&
                         item.quantity >= (item as { stock?: number }).stock! && (
-                          <p className="text-[10px] text-red-500 font-semibold mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-red-500 font-semibold mt-0.5">
                             Máximo disponible alcanzado
                           </p>
                         )}
@@ -520,7 +520,7 @@ export default function CartSidebar() {
                         onChange={e => setItemNote(item.id, e.target.value)}
                         placeholder="Nota: ej. sin cebolla, bien maduro…"
                         maxLength={80}
-                        className="mt-1.5 w-full text-[11px] text-gray-600 dark:text-muted placeholder:text-gray-300 bg-white dark:bg-surface border border-gray-100 dark:border-card-border rounded-lg px-2.5 py-1.5 outline-none focus:border-primary/40 transition-colors"
+                        className="mt-1.5 w-full text-[length:var(--ts-2xs)] text-gray-600 dark:text-muted placeholder:text-gray-300 bg-white dark:bg-surface border border-gray-100 dark:border-card-border rounded-lg px-2.5 py-1.5 outline-none focus:border-primary/40 transition-colors"
                       />
                     </div>
                   </div>
@@ -535,7 +535,7 @@ export default function CartSidebar() {
 
             {/* AB2: Cart reservation timer */}
                 {reserveTime && (
-                  <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-1.5 border border-amber-100 dark:border-amber-700/20">
+                  <div className="flex items-center justify-center gap-1.5 text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-1.5 border border-amber-100 dark:border-amber-700/20">
                     <Clock className="h-3 w-3" />
                     Tu carrito se reserva por <span className="font-bold tabular-nums">{reserveTime}</span>
                   </div>
@@ -567,7 +567,7 @@ export default function CartSidebar() {
                     <Gift className="h-4 w-4 text-violet-600 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-violet-700 dark:text-violet-300">¡Es tu primera compra! 🎉</p>
-                      <p className="text-[10px] text-violet-600 dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
+                      <p className="text-[length:var(--ts-2xs)] text-violet-600 dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
                     </div>
                   </div>
                 )}
@@ -589,7 +589,7 @@ export default function CartSidebar() {
                             Agrega <span className="text-amber-500 font-extrabold">S/{needed.toFixed(2)}</span> más para -{upcoming.discountPercent}%
                           </span>
                         </div>
-                        <span className="text-[11px] font-bold tabular-nums text-amber-600/70">
+                        <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-amber-600/70">
                           {pct.toFixed(0)}%
                         </span>
                       </div>
@@ -616,7 +616,7 @@ export default function CartSidebar() {
                               : "🎉 ¡Delivery gratis desbloqueado!"}
                           </span>
                         </div>
-                        <span className="text-[11px] font-bold tabular-nums" style={{ color: remaining > 0 ? "var(--color-muted)" : "var(--color-primary)" }}>
+                        <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums" style={{ color: remaining > 0 ? "var(--color-muted)" : "var(--color-primary)" }}>
                           {pct.toFixed(0)}%
                         </span>
                       </div>
@@ -666,18 +666,18 @@ export default function CartSidebar() {
                       value={loadCartCode}
                       onChange={e => { setLoadCartCode(e.target.value); setLoadCartMsg(""); }}
                       placeholder="Codigo lista..."
-                      className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-[11px] text-gray-700 dark:text-foreground outline-none focus:border-primary/40"
+                      className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-[length:var(--ts-2xs)] text-gray-700 dark:text-foreground outline-none focus:border-primary/40"
                     />
                     <button
                       onClick={loadSavedCart}
-                      className="px-2 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-bold hover:bg-primary/20 transition-colors shrink-0"
+                      className="px-2 py-1.5 rounded-lg bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold hover:bg-primary/20 transition-colors shrink-0"
                     >
                       Cargar
                     </button>
                   </div>
                 </div>
                 {loadCartMsg && (
-                  <p className={`text-[10px] font-semibold text-center ${loadCartMsg.includes("exito") ? "text-emerald-600" : "text-red-500"}`}>{loadCartMsg}</p>
+                  <p className={`text-[length:var(--ts-2xs)] font-semibold text-center ${loadCartMsg.includes("exito") ? "text-emerald-600" : "text-red-500"}`}>{loadCartMsg}</p>
                 )}
 
                 {/* Mejora 14: Delivery time estimate */}

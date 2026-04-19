@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { X, GitCompareArrows, Package, Star } from "lucide-react";
+import { X, GitCompareArrows, Package, Star } from "@buleje/design-system/icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCompare, type CompareItem } from "@/contexts/compare-context";
@@ -216,7 +216,7 @@ export default function ProductCompareDrawer() {
               ) : (
                 <>
                   {/* Filas de etiqueta */}
-                  <div className="mb-3 grid grid-cols-[80px_1fr] gap-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
+                  <div className="mb-3 grid grid-cols-[80px_1fr] gap-3 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
                     <span />
                     <div
                       className="grid gap-3"
@@ -231,7 +231,7 @@ export default function ProductCompareDrawer() {
                   {/* Columnas de productos */}
                   <div className="flex gap-3">
                     {/* Etiquetas de fila */}
-                    <div className="flex w-20 shrink-0 flex-col gap-3 pt-[136px] text-[10px] font-medium text-gray-400 dark:text-gray-600">
+                    <div className="flex w-20 shrink-0 flex-col gap-3 pt-[136px] text-[length:var(--ts-2xs)] font-medium text-gray-400 dark:text-gray-600">
                       <div className="h-[52px] leading-[1.4] flex items-start">Nombre</div>
                       <div className="h-5 flex items-center">Precio</div>
                       <div className="h-5 flex items-center">Tienda</div>

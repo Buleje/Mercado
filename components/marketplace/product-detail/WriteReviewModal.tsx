@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Star, Send, CheckCircle2 } from "lucide-react";
+import { X, Star, Send, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface WriteReviewModalProps {

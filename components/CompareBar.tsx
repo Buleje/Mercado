@@ -4,7 +4,7 @@ import { useCompare } from "@/contexts/compare-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import Image from "next/image";
-import { X, GitCompareArrows, Plus, Package, Trash2, Star } from "lucide-react";
+import { X, GitCompareArrows, Plus, Package, Trash2, Star } from "@buleje/design-system/icons";
 import { useStoreProducts } from "@/hooks/use-store-products";
 
 export default function CompareBar() {
@@ -140,10 +140,10 @@ function CompareModal() {
                     )}
                     {val}
                     {isBestPrice && items.length > 1 && (
-                      <span className="block text-[10px] text-emerald-500 font-bold mt-0.5">Más barato</span>
+                      <span className="block text-[length:var(--ts-2xs)] text-emerald-500 font-bold mt-0.5">Más barato</span>
                     )}
                     {isBestRating && items.length > 1 && (
-                      <span className="block text-[10px] text-amber-500 font-bold mt-0.5">Mejor valorado</span>
+                      <span className="block text-[length:var(--ts-2xs)] text-amber-500 font-bold mt-0.5">Mejor valorado</span>
                     )}
                   </div>
                 );

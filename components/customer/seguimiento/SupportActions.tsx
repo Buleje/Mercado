@@ -6,7 +6,7 @@
  * "Cancelar pedido" solo se muestra si aún no salió (status confirmed/preparing).
  */
 import { useState } from "react";
-import { Phone, XCircle, AlertCircle, MessageSquare, Check } from "lucide-react";
+import { Phone, XCircle, AlertCircle, MessageSquare, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { TrackingStatus } from "@/lib/mocks/order-tracking.mock";
 
@@ -49,7 +49,7 @@ export function SupportActions({
       )}
     >
       <div className="mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-muted">
           Ayuda
         </span>
         <h2
@@ -91,7 +91,7 @@ export function SupportActions({
       </div>
 
       <div className="pt-3 border-t border-gray-100 dark:border-card-border">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.14em] text-muted mb-2">
           Respuestas rápidas
         </p>
         <div className="flex flex-wrap gap-2">
@@ -103,7 +103,7 @@ export function SupportActions({
                 type="button"
                 onClick={() => handleIssue(it.key)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-8 rounded-full border px-3 text-[11px] font-semibold transition-colors",
+                  "inline-flex items-center gap-1.5 h-8 rounded-full border px-3 text-[length:var(--ts-2xs)] font-semibold transition-colors",
                   isSent
                     ? "bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300"
                     : "border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-card-border/80 text-foreground",
@@ -121,13 +121,13 @@ export function SupportActions({
             );
           })}
         </div>
-        <p className="mt-3 text-[11px] text-muted inline-flex items-start gap-1.5">
+        <p className="mt-3 text-[length:var(--ts-2xs)] text-muted inline-flex items-start gap-1.5">
           <AlertCircle className="h-3 w-3 mt-[2px] shrink-0" />
           Si marcaste algo, la tienda se pondrá en contacto contigo en minutos.
         </p>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-card-border flex items-center gap-2 text-[11px] text-muted">
+      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-card-border flex items-center gap-2 text-[length:var(--ts-2xs)] text-muted">
         <MessageSquare className="h-3 w-3 shrink-0" />
         <span>
           También puedes reportar cualquier problema por WhatsApp directo a {storeName}.

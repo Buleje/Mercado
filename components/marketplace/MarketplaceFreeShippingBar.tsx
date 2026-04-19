@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Truck, CheckCircle2 } from "lucide-react";
+import { Truck, CheckCircle2 } from "@buleje/design-system/icons";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -62,7 +62,7 @@ export default function MarketplaceFreeShippingBar() {
             )}
           </p>
 
-          <span className="text-[11px] font-bold tabular-nums">
+          <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums">
             <NumberFlow
               value={subtotal}
               format={{ style: "currency", currency: "PEN", minimumFractionDigits: 2 }}

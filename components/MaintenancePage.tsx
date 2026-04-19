@@ -1,4 +1,4 @@
-import { ShoppingBasket, Wrench } from "lucide-react";
+import { ShoppingBasket, Wrench } from "@buleje/design-system/icons";
 
 export default function MaintenancePage({ message }: { message?: string }) {
   return (

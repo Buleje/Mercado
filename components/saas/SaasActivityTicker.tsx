@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Store, ShoppingCart, Users, Zap } from "lucide-react";
+import { Store, ShoppingCart, Users, Zap } from "@buleje/design-system/icons";
 
 const ACTIVITIES = [
   { icon: <Store className="h-3 w-3" />, text: "Bodega Lima creo su tienda", color: "text-teal-600" },
@@ -43,7 +43,7 @@ export default function SaasActivityTicker() {
         </div>
         <div>
           <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">{activity.text}</p>
-          <p className="text-[10px] text-gray-400">Hace {(current % 9) + 1} min</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">Hace {(current % 9) + 1} min</p>
         </div>
       </div>
     </div>

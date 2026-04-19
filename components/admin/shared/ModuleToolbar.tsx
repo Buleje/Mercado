@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search } from "@buleje/design-system/icons";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * ModuleToolbar — Barra de herramientas estandarizada para módulos admin.

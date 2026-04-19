@@ -98,7 +98,7 @@ export default function ProductVariantSelector({
               >
                 {attrs.size}
                 {isOutOfStock && (
-                  <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold bg-red-500 text-white px-1 rounded-full leading-4">
+                  <span className="absolute -top-1.5 -right-1.5 text-[length:var(--ts-2xs)] font-bold bg-red-500 text-white px-1 rounded-full leading-4">
                     X
                   </span>
                 )}
@@ -123,7 +123,7 @@ export default function ProductVariantSelector({
             >
               {variant.name}
               {isOutOfStock && (
-                <span className="ml-1 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
                   Agotado
                 </span>
               )}

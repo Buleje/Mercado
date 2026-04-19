@@ -4,7 +4,7 @@
 
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Star, CheckCircle2 } from "lucide-react";
+import { MessageSquare, Star, CheckCircle2 } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

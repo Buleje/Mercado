@@ -465,7 +465,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               {/* Divider */}
               <div className="mb-5 flex items-center gap-4">
                 <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
-                <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-widest">
+                <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-widest">
                   o con tu celular
                 </span>
                 <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
@@ -708,7 +708,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
           )}
 
           {/* Aviso legal */}
-          <p className="mt-6 text-center text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
+          <p className="mt-6 text-center text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 leading-relaxed">
             Al continuar aceptas los{" "}
             <a
               href="/terminos"

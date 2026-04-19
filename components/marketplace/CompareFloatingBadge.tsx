@@ -1,6 +1,6 @@
 "use client";
 
-import { GitCompareArrows } from "lucide-react";
+import { GitCompareArrows } from "@buleje/design-system/icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCompare } from "@/contexts/compare-context";
 

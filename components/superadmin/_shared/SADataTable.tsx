@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown } from "@buleje/design-system/icons";
 import type { ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

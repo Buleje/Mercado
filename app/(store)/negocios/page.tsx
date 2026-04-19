@@ -24,7 +24,7 @@ import {
   ArrowUpRight,
   ChevronDown,
   MapPin,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import { cn } from "@/lib/utils";
 import { BodegaAbriendo, MotoRuta } from "@/components/ui-system/illustrations/contextual";
@@ -177,7 +177,7 @@ async function BulejeHeroServer() {
           {/* LEFT — content B2B */}
           <div className="order-2 lg:order-1">
             {/* Eyebrow autoridad */}
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white/55 mb-5">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-white/55 mb-5">
               <Store className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               Para dueños de bodega
             </span>
@@ -211,7 +211,7 @@ async function BulejeHeroServer() {
             </div>
 
             {/* Trust row — reduce fricción signup (Cialdini) */}
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-white/55">
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[length:var(--ts-2xs)] text-white/55">
               <span className="inline-flex items-center gap-1.5">
                 <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
                 14 días gratis
@@ -244,7 +244,7 @@ async function BulejeHeroServer() {
                   <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums tracking-tight">
                     {s.value}
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45 mt-1.5">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-white/45 mt-1.5">
                     {s.label}
                   </p>
                 </div>
@@ -295,7 +295,7 @@ async function MarketplaceReviewsServer() {
     <section className="py-16 sm:py-24 bg-primary/5">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Star className="h-3 w-3" strokeWidth={2} />
             Opiniones
           </span>
@@ -341,7 +341,7 @@ function HowBulejeWorks() {
     <section className="py-20 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 sm:mb-16 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Zap className="h-3 w-3" strokeWidth={2} />
             Así de fácil
           </span>
@@ -364,7 +364,7 @@ function HowBulejeWorks() {
                   <div className="h-9 w-9 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
                     <SIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
                     Paso {s.num}
                   </span>
                 </div>
@@ -404,7 +404,7 @@ function CategoriesSection() {
     <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Package className="h-3 w-3" strokeWidth={2} />
             Categorías
           </span>
@@ -462,7 +462,7 @@ function BulejeFeatures() {
     <section className="py-20 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Rocket className="h-3 w-3" strokeWidth={2} />
             Funcionalidades
           </span>
@@ -538,7 +538,7 @@ function PricingSection() {
     <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Wallet className="h-3 w-3" strokeWidth={2} />
             Planes
           </span>
@@ -558,11 +558,11 @@ function PricingSection() {
               )}
             >
               {p.popular && (
-                <span className="absolute -top-2.5 left-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-bold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full">
+                <span className="absolute -top-2.5 left-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full">
                   Popular
                 </span>
               )}
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
                 Plan
               </p>
               <h3 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -636,7 +636,7 @@ function ValueStackB2B() {
     <section className="py-20 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Zap className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             Por qué Buleje
           </span>
@@ -709,7 +709,7 @@ function BodegueroTestimonials() {
     <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Star className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             Casos reales
           </span>
@@ -739,12 +739,12 @@ function BodegueroTestimonials() {
                     <p className="text-sm font-bold text-gray-900 dark:text-white">
                       {t.name}
                     </p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
                       <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                       {t.role}
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap">
                     {t.stat}
                   </span>
                 </div>
@@ -774,7 +774,7 @@ function MarketplaceFAQ() {
     <section id="preguntas" className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <HelpCircle className="h-3 w-3" strokeWidth={2} />
             Preguntas frecuentes
           </span>
@@ -819,7 +819,7 @@ function ScheduleSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
               <Clock className="h-3 w-3" strokeWidth={2} />
               Horarios
             </span>
@@ -840,7 +840,7 @@ function ScheduleSection() {
             </div>
           </div>
           <div className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl p-8 border border-gray-900 dark:border-gray-200">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500 mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500 mb-3">
               Dueños de bodega
             </p>
             <h3 className="text-2xl font-extrabold tracking-tight mb-4">
@@ -869,7 +869,7 @@ function ContactSection() {
     <section id="contacto" className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
             <Mail className="h-3 w-3" strokeWidth={2} />
             Contacto
           </span>

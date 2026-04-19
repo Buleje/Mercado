@@ -1,6 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Star } from "@buleje/design-system/icons";
 import type { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 
 /**

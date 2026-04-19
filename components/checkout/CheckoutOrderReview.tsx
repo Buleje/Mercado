@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { MapPin, Home, ShoppingCart } from "lucide-react";
+import { MapPin, Home, ShoppingCart } from "@buleje/design-system/icons";
 
 interface CartItem {
   id: number;
@@ -52,7 +52,7 @@ export function CheckoutOrderReview({
               <MapPin className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-wider">
                 Entregaremos en
               </p>
               <p className="text-sm font-bold text-gray-800 dark:text-foreground mt-0.5 truncate">
@@ -160,7 +160,7 @@ export function CheckoutOrderReview({
                       S/{item.price.toFixed(2)} c/u
                     </span>
                     {item.note && (
-                      <span className="text-[10px] text-amber-500 truncate">
+                      <span className="text-[length:var(--ts-2xs)] text-amber-500 truncate">
                         📝 {item.note}
                       </span>
                     )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { MapPin, Plus, Trash2, Pencil, ArrowLeft, Home, Briefcase } from "lucide-react";
+import { MapPin, Plus, Trash2, Pencil, ArrowLeft, Home, Briefcase } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
@@ -86,30 +86,30 @@ function AddressCard({
               {addr.label}
             </span>
             {addr.isDefault && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
                 Principal
               </span>
             )}
           </div>
           <p className="text-sm text-foreground">{addr.address}</p>
-          <p className="text-[11px] text-muted mt-0.5">{addr.reference}</p>
+          <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{addr.reference}</p>
 
           <div className="flex items-center gap-2 mt-3">
             {!addr.isDefault && (
               <button
                 onClick={() => onSetDefault(addr.id)}
-                className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 Marcar como principal
               </button>
             )}
-            <button className="text-[11px] font-semibold text-muted hover:text-foreground transition-colors flex items-center gap-1">
+            <button className="text-[length:var(--ts-2xs)] font-semibold text-muted hover:text-foreground transition-colors flex items-center gap-1">
               <Pencil className="h-3 w-3" />
               Editar
             </button>
             <button
               onClick={() => onDelete(addr.id)}
-              className="text-[11px] font-semibold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
+              className="text-[length:var(--ts-2xs)] font-semibold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
             >
               <Trash2 className="h-3 w-3" />
               Eliminar
@@ -166,7 +166,7 @@ export default function DireccionesPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[10px] text-white/35 mb-5"
+            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-5"
           >
             <Link href="/" className="hover:text-white/60 transition-colors">
               Inicio
@@ -188,7 +188,7 @@ export default function DireccionesPage() {
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
             </Link>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40">
                 TU CUENTA
               </span>
               <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-[-0.02em]">

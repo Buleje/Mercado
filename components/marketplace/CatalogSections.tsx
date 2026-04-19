@@ -6,7 +6,7 @@ import {
   Flame,
   Award,
   Zap,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 

@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ZoomIn, X, Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, X, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface GalleryImage {
@@ -118,7 +118,7 @@ export default function ProductGallery({ images, productName, fallbackImage }: P
 
           {/* Contador mobile */}
           {showThumbs && (
-            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 sm:hidden text-[10px] font-medium bg-black/50 text-white px-2 py-0.5 rounded-full">
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 sm:hidden text-[length:var(--ts-2xs)] font-medium bg-black/50 text-white px-2 py-0.5 rounded-full">
               {activeIndex + 1} / {images.length}
             </span>
           )}

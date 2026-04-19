@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
-import { ArrowRight, Clock, Mail } from "lucide-react";
+import { ArrowRight, Clock, Mail } from "@buleje/design-system/icons";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";

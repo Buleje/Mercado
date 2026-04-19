@@ -13,7 +13,7 @@ import {
   Clock,
   DollarSign,
   Shield,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 type FormState = {
   name: string;

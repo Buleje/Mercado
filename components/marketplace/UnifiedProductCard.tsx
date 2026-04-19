@@ -12,7 +12,7 @@ import {
   GitCompareArrows,
   Check,
   Eye,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
@@ -125,11 +125,11 @@ function VariantBadge({
   if (variant === "flash") {
     return (
       <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-md">
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md">
           {discount ? `-${discount}%` : "OFERTA"}
         </span>
         {countdown && countdown !== "Expirado" && (
-          <span className="inline-flex items-center rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-mono font-bold text-white">
+          <span className="inline-flex items-center rounded-full bg-black/70 px-2 py-0.5 text-[length:var(--ts-2xs)] font-mono font-bold text-white">
             {countdown}
           </span>
         )}
@@ -139,7 +139,7 @@ function VariantBadge({
 
   if (variant === "liquidation") {
     return (
-      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-400 dark:bg-amber-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-md">
+      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-400 dark:bg-amber-500 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md">
         {stock !== undefined && stock > 0 ? `¡Solo ${stock}!` : "LIQUIDACION"}
       </span>
     );
@@ -276,12 +276,12 @@ export default function UnifiedProductCard({
             {fmt(product.price)}
           </span>
           {product.originalPrice && product.originalPrice > product.price && (
-            <span className="text-[10px] text-gray-400 line-through dark:text-muted">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400 line-through dark:text-muted">
               {fmt(product.originalPrice)}
             </span>
           )}
           {product.discount && product.discount > 0 && !product.originalPrice && (
-            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-500 dark:bg-red-950/30">
+            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-red-500 dark:bg-red-950/30">
               -{product.discount}%
             </span>
           )}
@@ -289,7 +289,7 @@ export default function UnifiedProductCard({
 
         {/* Tienda */}
         {product.storeName && (
-          <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted">
+          <div className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
             <StoreIcon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{product.storeName}</span>
             {product.storeRating !== undefined && product.storeRating > 0 && (
@@ -364,7 +364,7 @@ export default function UnifiedProductCard({
         {compareLimitMsg && (
           <p
             role="alert"
-            className="rounded-md bg-amber-50 px-2 py-1 text-center text-[10px] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+            className="rounded-md bg-amber-50 px-2 py-1 text-center text-[length:var(--ts-2xs)] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
           >
             Maximo 3 productos para comparar
           </p>

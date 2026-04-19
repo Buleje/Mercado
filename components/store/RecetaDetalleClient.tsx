@@ -8,7 +8,7 @@ import {
   ArrowLeft, Clock, Users, ChefHat, ShoppingCart, Check,
   Share2, Home, ChevronRight, Sparkles, Copy, Play,
   AlertTriangle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";

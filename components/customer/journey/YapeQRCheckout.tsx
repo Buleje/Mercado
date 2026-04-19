@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { Upload, Check, Copy, Smartphone, Loader2, X } from "lucide-react";
+import { Upload, Check, Copy, Smartphone, Loader2, X } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BTN } from "@/lib/copy";

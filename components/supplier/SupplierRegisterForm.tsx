@@ -355,7 +355,7 @@ export default function SupplierRegisterForm() {
           {submitting ? "Enviando…" : "Enviar solicitud"}
         </button>
 
-        <p className="text-[11px] text-center text-gray-400 dark:text-gray-500">
+        <p className="text-[length:var(--ts-2xs)] text-center text-gray-400 dark:text-gray-500">
           Al enviar aceptas que te contactemos por los medios indicados para
           coordinar la validación.
         </p>
@@ -395,7 +395,7 @@ function Field({
         )}
       </label>
       {children}
-      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-[length:var(--ts-2xs)] text-red-500">{error}</p>}
     </div>
   );
 }

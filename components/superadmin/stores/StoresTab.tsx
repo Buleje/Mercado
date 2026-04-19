@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShoppingBag, Package, Star, DollarSign, Search, RefreshCw } from "lucide-react";
+import { ShoppingBag, Package, Star, DollarSign, Search, RefreshCw } from "@buleje/design-system/icons";
 import { SADataTable } from "@/components/superadmin/_shared/SADataTable";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 import { PlanBadge } from "@/components/superadmin/_shared/SABadge";

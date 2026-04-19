@@ -16,7 +16,7 @@ import {
   Power,
   Pencil,
   Plus,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";

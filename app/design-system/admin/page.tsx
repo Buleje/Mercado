@@ -25,7 +25,7 @@ export default function AdminUXDemoPage() {
         style={{ background: "var(--brand-ink)" }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
             Ola 4 · Admin UX primitives
           </p>
           <h1 className="text-fs-display text-white leading-[1.02]">
@@ -41,7 +41,7 @@ export default function AdminUXDemoPage() {
       {/* Breadcrumb demo */}
       <section className="py-10 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             01 · BreadcrumbEditorial
           </p>
           <h2 className="text-fs-h2 mb-6">Breadcrumbs kicker-style</h2>
@@ -56,7 +56,7 @@ export default function AdminUXDemoPage() {
       {/* TodayHub — hub unificado Ola B ─────── */}
       <section className="py-12 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             ★ · TodayHub (ADR-064 Ola B)
           </p>
           <h2 className="text-fs-h2 mb-3">Hub unificado &ldquo;Hoy&rdquo;</h2>
@@ -71,7 +71,7 @@ export default function AdminUXDemoPage() {
       {/* Insight card demo */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             02 · AdminInsightCard
           </p>
           <h2 className="text-fs-h2 mb-6">Hero card del home admin</h2>
@@ -101,7 +101,7 @@ export default function AdminUXDemoPage() {
       {/* Onboarding checklist demo */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             03 · OnboardingChecklist
           </p>
           <h2 className="text-fs-h2 mb-6">Primeros pasos persistentes</h2>
@@ -132,7 +132,7 @@ export default function AdminUXDemoPage() {
       {/* UndoToast demo */}
       <section className="py-12 border-b border-[var(--rule-base)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             04 · UndoToast
           </p>
           <h2 className="text-fs-h2 mb-3">Destructive action con deshacer</h2>
@@ -158,7 +158,7 @@ export default function AdminUXDemoPage() {
       {/* QuickActionsFab demo instructions */}
       <section className="py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
             05 · QuickActionsFab
           </p>
           <h2 className="text-fs-h2 mb-3">FAB flotante con atajos</h2>

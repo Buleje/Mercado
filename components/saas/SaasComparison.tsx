@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, X } from "lucide-react";
+import { Check, X } from "@buleje/design-system/icons";
 
 interface Row {
   feature: string;
@@ -173,7 +173,7 @@ export default function SaasComparison() {
                         <span className="flex items-center gap-1">
                           {h}
                           <span
-                            className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black text-white"
+                            className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-black text-white"
                             style={{ background: "#f97316" }}
                           >
                             NUEVO

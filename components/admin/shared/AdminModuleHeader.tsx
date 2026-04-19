@@ -1,7 +1,7 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * AdminModuleHeader — Encabezado estándar para TODOS los módulos admin.

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { MapPin } from "lucide-react";
+import { MapPin } from "@buleje/design-system/icons";
 
 // Leaflet sólo se carga en el cliente (SSR desactivado)
 const DeliveryTrackingMap = dynamic(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Mail, Loader2, CheckCircle2, Copy } from "lucide-react";
+import { X, Mail, Loader2, CheckCircle2, Copy } from "@buleje/design-system/icons";
 
 interface InviteModalProps {
   tenantSlug: string;

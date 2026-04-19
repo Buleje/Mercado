@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "@buleje/design-system/icons";
 
 interface StatCardProps {
   icon: React.ReactNode;

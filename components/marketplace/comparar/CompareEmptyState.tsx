@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Package, ArrowRight } from "lucide-react";
+import { Package, ArrowRight } from "@buleje/design-system/icons";
 import { ComparandoTres } from "@/components/ui-system/illustrations";
 
 interface CompareEmptyStateProps {

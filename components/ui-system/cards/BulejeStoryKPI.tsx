@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import NumberFlow from "@number-flow/react";
-import { ArrowRight, Sparkles, AlertTriangle, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, Sparkles, AlertTriangle, Target, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { PrimaryButton } from "@buleje/design-system";
 import { BulejeSparkline } from "../charts/BulejeSparkline";

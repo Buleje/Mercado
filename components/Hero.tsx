@@ -2,7 +2,7 @@
 
 import { useEffect, useState, startTransition, useMemo } from "react";
 import Link from "next/link";
-import { ShoppingCart, MessageCircle, ArrowRight, Star, Clock, MapPin } from "lucide-react";
+import { ShoppingCart, MessageCircle, ArrowRight, Star, Clock, MapPin } from "@buleje/design-system/icons";
 import { trackCTAClick, trackWhatsAppClick } from "@/lib/analytics";
 import { useSettings } from "@/contexts/settings-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -200,7 +200,7 @@ export default function Hero() {
                       <span className="text-2xl leading-none group-hover:scale-110 transition-transform duration-200">
                         {getCategoryEmoji(label)}
                       </span>
-                      <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider text-center leading-tight group-hover:text-white/70 transition-colors">
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-white/50 uppercase tracking-wider text-center leading-tight group-hover:text-white/70 transition-colors">
                         {label}
                       </span>
                     </Link>
@@ -221,7 +221,7 @@ export default function Hero() {
                     style={{ scrollSnapAlign: "start" }}
                   >
                     <span className="text-base leading-none">{getCategoryEmoji(label)}</span>
-                    <span className="text-[11px] font-semibold text-white/50 whitespace-nowrap">{label}</span>
+                    <span className="text-[length:var(--ts-2xs)] font-semibold text-white/50 whitespace-nowrap">{label}</span>
                   </Link>
                 ))}
               </nav>

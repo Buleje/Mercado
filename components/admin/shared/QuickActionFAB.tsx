@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, type ComponentType } from "react";
-import { Plus, Receipt, PackagePlus, ClipboardCheck, BotMessageSquare } from "lucide-react";
+import { Plus, Receipt, PackagePlus, ClipboardCheck, BotMessageSquare } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 

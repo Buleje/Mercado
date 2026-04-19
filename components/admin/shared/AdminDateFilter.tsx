@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ import {
   Clock,
   DollarSign,
   ShoppingBag,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface WidgetData {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, Store, Search, ShoppingCart, UserCircle } from "lucide-react";
+import { Home, Store, Search, ShoppingCart, UserCircle } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
 
@@ -95,14 +95,14 @@ export default function MobileBottomNav() {
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 {isCart && totalQty > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[9px] font-bold bg-red-500 text-white rounded-full shadow-sm">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[length:var(--ts-2xs)] font-bold bg-red-500 text-white rounded-full shadow-sm">
                     {totalQty > 99 ? "99+" : totalQty}
                   </span>
                 )}
               </span>
 
               <span className={cn(
-                "text-[10px] leading-none transition-all",
+                "text-[length:var(--ts-2xs)] leading-none transition-all",
                 isActive ? "font-bold" : "font-medium"
               )}>
                 {item.label}

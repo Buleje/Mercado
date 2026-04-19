@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useToast } from "@/contexts/toast-context";
 

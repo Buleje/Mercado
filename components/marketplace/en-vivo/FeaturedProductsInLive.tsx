@@ -86,7 +86,7 @@ export function FeaturedProductsInLive({
                 />
                 {p.highlighted && (
                   <span
-                    className="absolute inset-x-0 top-0 text-[9px] font-bold uppercase tracking-wide bg-[var(--data-error)] text-white text-center py-0.5"
+                    className="absolute inset-x-0 top-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-[var(--data-error)] text-white text-center py-0.5"
                     aria-label="Destacado ahora"
                   >
                     Ahora

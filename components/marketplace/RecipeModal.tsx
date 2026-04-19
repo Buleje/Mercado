@@ -13,7 +13,7 @@ import {
   Pause,
   RotateCcw,
   ChefHat,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { RECIPE_ILLUSTRATIONS } from "@/components/marketplace/RecipeIllustrations";
 
@@ -141,7 +141,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                 )}
                 <div className="flex-1 min-w-0">
                   {recipe.category && (
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
                       {recipe.category}
                     </span>
                   )}
@@ -151,7 +151,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
                     {recipe.description}
                   </p>
-                  <div className="mt-3 flex items-center gap-4 text-[11px] text-gray-600 dark:text-gray-300">
+                  <div className="mt-3 flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-300">
                     <span className="inline-flex items-center gap-1 tabular-nums font-semibold">
                       <Clock className="h-3 w-3" strokeWidth={1.75} />
                       {recipe.time}
@@ -179,7 +179,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                   <ShoppingBag className="h-3.5 w-3.5" />
                   Ingredientes
                 </h3>
-                <span className="text-[11px] font-bold text-primary tabular-nums">
+                <span className="text-[length:var(--ts-2xs)] font-bold text-primary tabular-nums">
                   {checkedIng.size}/{recipe.ingredients.length}
                 </span>
               </div>
@@ -285,7 +285,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                                   e.stopPropagation();
                                   startTimer(i, step.timerMin!);
                                 }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[11px] font-bold hover:bg-amber-200 transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[length:var(--ts-2xs)] font-bold hover:bg-amber-200 transition-colors"
                               >
                                 <Clock className="h-3 w-3" />
                                 Iniciar timer {step.timerMin} min

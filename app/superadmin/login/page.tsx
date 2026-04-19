@@ -16,7 +16,7 @@ import {
   BarChart3,
   AlertTriangle,
   Building2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 /* ─── Estilos y animaciones ──────────────────────────────────────────────── */
 const STYLES = `

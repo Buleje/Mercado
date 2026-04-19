@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, ShieldCheck, Camera } from "lucide-react";
+import { Star, ShieldCheck, Camera } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export type BreakdownData = {

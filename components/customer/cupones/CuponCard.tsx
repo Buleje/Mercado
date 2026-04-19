@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Clock, Tag, Truck, Percent, DollarSign } from "lucide-react";
+import { Copy, Check, Clock, Tag, Truck, Percent, DollarSign } from "@buleje/design-system/icons";
 import type { MockCupon } from "@/lib/mocks/cupones.mock";
 
 type Props = {
@@ -74,7 +74,7 @@ export default function CuponCard({ cupon }: Props) {
           <div className="mt-2 text-2xl font-bold leading-none text-gray-900 dark:text-white">
             {discountLabel(cupon)}
           </div>
-          <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <div className="mt-1 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {cupon.category ?? "Cupon"}
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function CuponCard({ cupon }: Props) {
           </dl>
 
           {isUrgent && (
-            <p className="-mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+            <p className="-mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-amber-700 dark:text-amber-300">
               <Clock className="h-3 w-3" aria-hidden="true" />
               Solo quedan {days} {days === 1 ? "dia" : "dias"}
             </p>

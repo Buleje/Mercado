@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingCart, X, ArrowRight } from "lucide-react";
+import { ShoppingCart, X, ArrowRight } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/cart-context";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
@@ -85,7 +85,7 @@ export default function AbandonedCartRecovery() {
             </div>
             {/* Text */}
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-white/60 font-medium leading-none mb-0.5">¡No olvides tu pedido!</p>
+              <p className="text-[length:var(--ts-2xs)] text-white/60 font-medium leading-none mb-0.5">¡No olvides tu pedido!</p>
               <p className="text-sm font-extrabold text-white leading-none">S/{displayTotal.toFixed(2)} en tu carrito</p>
             </div>
             {/* CTA */}

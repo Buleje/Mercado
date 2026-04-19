@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Ticket, TrendingUp, DollarSign, ToggleLeft, ToggleRight } from "lucide-react";
+import { Ticket, TrendingUp, DollarSign, ToggleLeft, ToggleRight } from "@buleje/design-system/icons";
 import { SADataTable } from "@/components/superadmin/_shared/SADataTable";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 import type { SAColumn } from "@/components/superadmin/_shared/SADataTable";

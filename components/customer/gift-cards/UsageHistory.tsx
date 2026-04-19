@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, Store, Receipt } from "lucide-react";
+import { ShoppingBag, Store, Receipt } from "@buleje/design-system/icons";
 import type { MockGiftCardUsage } from "@/lib/mocks/gift-cards.mock";
 import GiftCardEmpty from "./GiftCardEmpty";
 
@@ -71,7 +71,7 @@ export default function UsageHistory({ usage }: Props) {
               <div className="text-sm font-bold text-gray-900 dark:text-white">
                 — S/ {u.amount.toFixed(2)}
               </div>
-              <div className="text-[11px] text-gray-500 dark:text-gray-400">
+              <div className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                 Resto: S/ {u.balanceAfter.toFixed(2)}
               </div>
             </div>

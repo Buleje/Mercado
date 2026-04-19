@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { ChevronRight, MapPin, Tag } from "lucide-react";
+import { ChevronRight, MapPin, Tag } from "@buleje/design-system/icons";
 import type { DealStore } from "@/lib/mock-deals";
 import {
   BodegaAbriendo,
@@ -44,7 +44,7 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
       <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
           Por tienda
         </span>
         <h2
@@ -74,18 +74,18 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
                   <h3 className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white line-clamp-1">
                     {store.name}
                   </h3>
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                     <MapPin className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                     {store.zone}
                   </p>
 
                   {/* Stats */}
                   <div className="mt-3 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
                       <Tag className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
                       {store.activeDeals} ofertas
                     </span>
-                    <span className="text-[10px] font-semibold text-gray-500">
+                    <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500">
                       Hasta -{store.maxDiscountPct}%
                     </span>
                   </div>

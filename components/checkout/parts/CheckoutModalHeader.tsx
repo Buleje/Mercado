@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { X, ShoppingCart } from "lucide-react";
+import { X, ShoppingCart } from "@buleje/design-system/icons";
 import type { StoreTheme } from "@/contexts/settings-context";
 
 /**

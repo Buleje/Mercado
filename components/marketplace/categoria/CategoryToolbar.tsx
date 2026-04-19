@@ -7,7 +7,7 @@
  * Estilo Holded: 1 rule-soft abajo, tipografia semibold, sin shadows.
  */
 
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@buleje/design-system/icons";
 
 export type CategorySortKey =
   | "relevance"

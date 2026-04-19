@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "@buleje/design-system/icons";
 import type { CartItem } from "@/contexts/cart-context";
 
 /**

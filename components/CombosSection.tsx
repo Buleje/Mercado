@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus } from "lucide-react";
+import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -189,7 +189,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
             <div>
               <span className="block text-xs text-muted line-through">S/{combo.originalTotal.toFixed(2)}</span>
               <span className="text-xl font-extrabold text-primary">S/{combo.comboPrice.toFixed(2)}</span>
-              <span className="block text-[10px] text-emerald-600 font-semibold">
+              <span className="block text-[length:var(--ts-2xs)] text-emerald-600 font-semibold">
                 Ahorras S/{(combo.originalTotal - combo.comboPrice).toFixed(2)}
               </span>
             </div>

@@ -13,7 +13,7 @@
 
 "use client";
 
-import { TrendingUp, Wallet, Shield } from "lucide-react";
+import { TrendingUp, Wallet, Shield } from "@buleje/design-system/icons";
 
 // ─── Props + tipos ────────────────────────────────────────────────────────────
 
@@ -155,7 +155,7 @@ export function CreditScoreCard({
             style={{ width: `${scorePercent}%` }}
           />
         </div>
-        <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-slate-400">
+        <div className="mt-1 flex justify-between text-[length:var(--ts-2xs)] uppercase tracking-wide text-slate-400">
           <span>0</span>
           <span>300</span>
           <span>500</span>
@@ -189,7 +189,7 @@ export function CreditScoreCard({
 
       {/* Barra de uso */}
       <div className="mt-3">
-        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between text-[length:var(--ts-2xs)] text-slate-500 dark:text-slate-400">
           <span>Uso actual</span>
           <span>
             {formatPEN(used)} / {formatPEN(limit)}
@@ -206,7 +206,7 @@ export function CreditScoreCard({
       {/* Mini-chart de evolución del score — se muestra si hay historial */}
       {history && history.length >= 2 && (
         <div className="mt-5">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+          <p className="mb-2 text-[length:var(--ts-2xs)] font-medium uppercase tracking-wide text-slate-400">
             Evolución
           </p>
           <MiniScoreChart history={history} />

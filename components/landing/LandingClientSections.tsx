@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MapPin, Navigation, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { MapPin, Navigation, ChevronLeft, ChevronRight as ChevronRightIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Geolocation prompt ── */
@@ -231,7 +231,7 @@ export function CategoriesGridClient({ categories }: { categories: CategoryDef[]
                   {cat.desc}
                 </p>
 
-                <span className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 inline-flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                <span className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 inline-flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                   <span>Explorar</span>
                   <ChevronRightIcon
                     className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
@@ -260,7 +260,7 @@ export function DiscountBanner() {
     <section className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-b border-gray-900 dark:border-gray-200">
       <div className="mx-auto max-w-7xl px-4 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500 shrink-0 hidden sm:inline">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500 shrink-0 hidden sm:inline">
             Nuevo cliente
           </span>
           <span className="h-3.5 w-px bg-white/20 dark:bg-gray-300 shrink-0 hidden sm:inline-block" />
@@ -268,7 +268,7 @@ export function DiscountBanner() {
             Primera compra con <span className="font-extrabold">10% de descuento</span>
             <span className="mx-2 text-white/40 dark:text-gray-400">·</span>
             Código{" "}
-            <code className="font-mono text-[11px] sm:text-xs px-1.5 py-0.5 rounded bg-white/10 dark:bg-gray-100 text-white dark:text-gray-900 tracking-wider">
+            <code className="font-mono text-[length:var(--ts-2xs)] sm:text-xs px-1.5 py-0.5 rounded bg-white/10 dark:bg-gray-100 text-white dark:text-gray-900 tracking-wider">
               BIENVENIDO
             </code>
           </p>

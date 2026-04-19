@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
-import { BellRing, ShoppingCart, X, Package } from "lucide-react";
+import { BellRing, ShoppingCart, X, Package } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 
 const STORAGE_KEY = "buleje-back-in-stock-notified";

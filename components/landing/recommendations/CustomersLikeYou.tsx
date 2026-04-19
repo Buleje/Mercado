@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Users } from "lucide-react";
+import { ChevronRight, Users } from "@buleje/design-system/icons";
 import { SectionHeader } from "@/components/ui-system";
 import { ProductCard } from "@/components/ProductCard";
 import { pickRandom, type MockProduct } from "@/lib/recommendations/mock";
@@ -43,7 +43,7 @@ function SocialBadge({ category }: SocialBadgeProps) {
   return (
     <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
       <Users className="h-3 w-3 text-[var(--color-primary)] shrink-0" strokeWidth={1.75} />
-      <span className="text-[9px] font-semibold text-[var(--text-secondary)] leading-tight">
+      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] leading-tight">
         {getSocialStat(category)}
       </span>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Keyboard, Search, ShoppingCart, Home, User, Package, Moon, HelpCircle } from "lucide-react";
+import { Keyboard, Search, ShoppingCart, Home, User, Package, Moon, HelpCircle } from "@buleje/design-system/icons";
 import { Modal, ModalHeader, ModalBody } from "./Modal";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/utils";

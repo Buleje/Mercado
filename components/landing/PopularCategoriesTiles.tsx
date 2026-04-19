@@ -93,7 +93,7 @@ export default function PopularCategoriesTiles() {
                     <p className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white">
                       {cat.label}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <p className="mt-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                       {cat.desc}
                     </p>
                   </div>

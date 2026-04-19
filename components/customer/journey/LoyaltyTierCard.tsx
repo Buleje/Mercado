@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import NumberFlow from "@number-flow/react";
-import { Star, Award, Trophy, Sparkles } from "lucide-react";
+import { Star, Award, Trophy, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { IconBadge } from "@buleje/design-system";
 

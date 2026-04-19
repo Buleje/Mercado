@@ -323,7 +323,7 @@ export default function MarketplaceNavbar() {
                       </span>
                     )}
                     {link.showNewBadge && (
-                      <span className="ml-0.5 inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                      <span className="ml-0.5 inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning)]">
                         {t("nav.new")}
                       </span>
                     )}
@@ -445,7 +445,7 @@ export default function MarketplaceNavbar() {
                           />
                           <span className="flex-1">{t("nav.favorites")}</span>
                           {wishlistCount > 0 && (
-                            <span className="text-[10px] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
                               {wishlistCount > 99 ? "99+" : wishlistCount}
                             </span>
                           )}
@@ -617,7 +617,7 @@ export default function MarketplaceNavbar() {
                         </span>
                       )}
                       {link.showNewBadge && (
-                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning)]">
                           {t("nav.new")}
                         </span>
                       )}
@@ -689,7 +689,7 @@ export default function MarketplaceNavbar() {
                     />
                     <span className="flex-1">{t("nav.favorites")}</span>
                     {wishlistCount > 0 && (
-                      <span className="text-[10px] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
                         {wishlistCount > 99 ? "99+" : wishlistCount}
                       </span>
                     )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check } from "@buleje/design-system/icons";
 
 type Props = {
   currentStep: 1 | 2 | 3 | 4;
@@ -37,7 +37,7 @@ export default function WizardStepper({ currentStep, stepTitles = DEFAULT_STEPS 
                 </span>
                 <span
                   className={[
-                    "mt-1.5 text-[11px] font-semibold uppercase tracking-wide",
+                    "mt-1.5 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide",
                     isCurrent || isDone
                       ? "text-gray-900 dark:text-white"
                       : "text-gray-400 dark:text-gray-600",

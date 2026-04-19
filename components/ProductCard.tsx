@@ -262,7 +262,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       {/* Y1+M11: Offer countdown with urgency */}
       {offerCountdown && !offerExpired && (
         <span className={cn(
-          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[9px] font-semibold shadow-sm flex items-center gap-0.5",
+          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-sm flex items-center gap-0.5",
           offerUrgent
             ? "bg-[var(--accent)] text-white"
             : "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -273,7 +273,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
       {/* U4: Selling fast badge with count */}
       {sellingFast && !isOutOfStock && (
-        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[9px] font-semibold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
+        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
           {soldCount >= 20 ? (
             <span className="flex items-center gap-0.5 bg-[var(--accent)] text-white rounded-full px-2 py-0.5">
               <Star className="h-3 w-3 fill-current" /> Popular
@@ -291,7 +291,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       )}
 
       {isOutOfStock && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
+        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
           Agotado
         </span>
       )}
@@ -391,7 +391,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
         {isOutOfStock && (
           <div className="absolute bottom-2 right-2 z-10">
-            <span className="bg-gray-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-full">Agotado</span>
+            <span className="bg-gray-500/90 text-white text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-full">Agotado</span>
           </div>
         )}
       </div>
@@ -399,7 +399,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-h-[9.5rem] sm:min-h-[10.5rem]">
         {/* Z1: Recently viewed badge */}
         {recentlyViewed && !isOutOfStock && (
-          <span className="text-[9px] font-semibold text-[var(--text-tertiary)] flex items-center gap-1 -mt-0.5 mb--0.5">
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] flex items-center gap-1 -mt-0.5 mb--0.5">
             <Eye className="h-3 w-3" strokeWidth={1.75} /> Lo viste hoy
           </span>
         )}
@@ -407,13 +407,13 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           <h3 className="font-semibold text-foreground text-xs sm:text-sm leading-tight line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h3>
-          <span className="mt-0.5 text-[10px] font-semibold text-primary/0 group-hover:text-primary/60 transition-colors leading-none inline-flex items-center gap-0.5">
+          <span className="mt-0.5 text-[length:var(--ts-2xs)] font-semibold text-primary/0 group-hover:text-primary/60 transition-colors leading-none inline-flex items-center gap-0.5">
             Ver detalles →
           </span>
         </Link>
 
         {product.description && (
-          <p className="text-[10px] text-muted leading-snug line-clamp-2 -mt-0.5">
+          <p className="text-[length:var(--ts-2xs)] text-muted leading-snug line-clamp-2 -mt-0.5">
             {product.description}
           </p>
         )}
@@ -435,7 +435,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 />
               ))}
             </div>
-            <span className="text-[10px] font-semibold text-[var(--text-secondary)]">
+            <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
               {product.rating.toFixed(1)}
               {product.reviewCount != null && <span className="ml-0.5">({product.reviewCount})</span>}
             </span>
@@ -444,7 +444,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
         {/* AA2: Bulk discount hint */}
         {product.unit === "und" && product.price <= 15 && !isOutOfStock && (
-          <span className="text-[9px] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
         )}
 
         <div>
@@ -459,7 +459,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                     unit={product.unit}
                     size="md"
                   />
-                  <span className="text-[10px] bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
+                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
                     -{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}%
                   </span>
                 </div>
@@ -468,18 +468,18 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
               )}
               {/* Stock indicator */}
               {product.stock != null && product.stock > 0 && !isLowStock && (
-                <span className="block text-[9px] font-semibold text-gray-400 dark:text-muted mt-0.5">
+                <span className="block text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted mt-0.5">
                   Stock: {product.stock} {product.unit}
                 </span>
               )}
               {isLowStock && (
-                <span className="block text-[9px] font-semibold text-[var(--accent)] mt-0.5">
+                <span className="block text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] mt-0.5">
                   Solo quedan {product.stock}
                 </span>
               )}
               {/* #30: Scarcity text below price */}
               {isScarcity && (
-                <span className="block text-[9px] font-semibold text-[var(--accent)] mt-0.5">
+                <span className="block text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] mt-0.5">
                   Solo quedan {product.stock}
                 </span>
               )}
@@ -487,7 +487,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 <Link
                   href={`/tienda/${getProductSlug(product)}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 text-[9px] font-semibold text-[var(--text-secondary)] mt-0.5 hover:text-[var(--accent)] transition-colors pointer-events-auto"
+                  className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] mt-0.5 hover:text-[var(--accent)] transition-colors pointer-events-auto"
                 >
                   <BellRing className="h-3 w-3" />
                   Avisarme cuando vuelva

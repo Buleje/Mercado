@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, startTransition } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { X, Package, Truck, CheckCircle2, Clock, ShoppingBag, MapPin, Phone, User, Receipt, Star, ArrowRight, Hash, CreditCard, Calendar } from "lucide-react";
+import { X, Package, Truck, CheckCircle2, Clock, ShoppingBag, MapPin, Phone, User, Receipt, Star, ArrowRight, Hash, CreditCard, Calendar } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -383,7 +383,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           <>
                             <span className="text-white/30">·</span>
                             <Calendar className="h-3 w-3 text-white/60" />
-                            <span className="text-[10px] text-white/60">
+                            <span className="text-[length:var(--ts-2xs)] text-white/60">
                               {new Date(order.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </>
@@ -429,7 +429,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           )}>
                             <StepIcon className={cn("w-4 h-4", done ? "text-white" : "text-white/35")} />
                           </div>
-                          <span className={cn("text-[9px] font-bold leading-tight text-center whitespace-nowrap", done ? "text-white" : "text-white/35")}>{step.label}</span>
+                          <span className={cn("text-[length:var(--ts-2xs)] font-bold leading-tight text-center whitespace-nowrap", done ? "text-white" : "text-white/35")}>{step.label}</span>
                         </div>
                         {i < STATUS_STEPS.length - 1 && (
                           <div className={cn("flex-1 h-0.5 mx-1 rounded-full transition-all duration-500", done && i < currentIdx ? "bg-white/60" : "bg-white/15")} />
@@ -470,16 +470,16 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         <ShoppingBag className="h-4 w-4 text-primary" />
                         <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Productos del pedido</span>
                       </div>
-                      <span className="text-[10px] font-semibold text-gray-400 dark:text-muted bg-gray-200 dark:bg-surface px-2 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted bg-gray-200 dark:bg-surface px-2 py-0.5 rounded-full">
                         {order.items.length} ítem{order.items.length !== 1 ? "s" : ""}
                       </span>
                     </div>
                     {/* Column headers */}
                     <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50/50 dark:bg-[#1a1f2e]/50 border-b border-gray-100 dark:border-card-border/50">
-                      <div className="col-span-6 sm:col-span-5 text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Producto</div>
-                      <div className="col-span-3 sm:col-span-2 text-[10px] font-bold text-gray-400 dark:text-muted uppercase text-center">Cant.</div>
-                      <div className="hidden sm:block col-span-2 text-[10px] font-bold text-gray-400 dark:text-muted uppercase text-right">P. Unit.</div>
-                      <div className="col-span-3 text-[10px] font-bold text-gray-400 dark:text-muted uppercase text-right">Subtotal</div>
+                      <div className="col-span-6 sm:col-span-5 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Producto</div>
+                      <div className="col-span-3 sm:col-span-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase text-center">Cant.</div>
+                      <div className="hidden sm:block col-span-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase text-right">P. Unit.</div>
+                      <div className="col-span-3 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase text-right">Subtotal</div>
                     </div>
                     {/* Rows */}
                     <div className="divide-y divide-gray-100 dark:divide-card-border/50">
@@ -497,7 +497,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             )}
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate leading-snug">{item.name}</p>
-                              <p className="text-[10px] text-gray-400 dark:text-muted">{item.unit}</p>
+                              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{item.unit}</p>
                             </div>
                           </div>
                           <div className="col-span-3 sm:col-span-2 text-center">
@@ -548,13 +548,13 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       </div>
                       <div>
                         <p className="text-xs font-bold text-white">{order.status === "en_camino" ? "🚚 Delivery en ruta" : "📍 Buleje"}</p>
-                        <p className="text-[10px] text-white/60">Buleje — Software ERP para Bodegas</p>
+                        <p className="text-[length:var(--ts-2xs)] text-white/60">Buleje — Software ERP para Bodegas</p>
                       </div>
                     </div>
                     {order.status === "en_camino" && (
                       <div className="flex items-center gap-1.5 bg-emerald-500/25 rounded-full px-2.5 py-1 border border-emerald-400/30">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-[10px] font-bold text-emerald-300">En vivo</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-300">En vivo</span>
                       </div>
                     )}
                   </div>
@@ -584,7 +584,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
                             <User className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
                           </div>
-                          <div><p className="text-[10px] text-gray-400 dark:text-muted">Nombre</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.name}</p></div>
+                          <div><p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Nombre</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.name}</p></div>
                         </div>
                       )}
                       {order.customer.phone && (
@@ -592,7 +592,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
                             <Phone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                          <div><p className="text-[10px] text-gray-400 dark:text-muted">Teléfono</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.phone}</p></div>
+                          <div><p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Teléfono</p><p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.phone}</p></div>
                         </div>
                       )}
                       {order.customer.location && (
@@ -601,7 +601,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             <MapPin className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 dark:text-muted">Dirección</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Dirección</p>
                             <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{order.customer.location}</p>
                             {order.customer.reference && <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Ref: {order.customer.reference}</p>}
                           </div>
@@ -653,7 +653,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         className="mt-5 w-full max-w-xs text-left rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden"
                       >
                         <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                          <p className="text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Resumen de entrega</p>
+                          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Resumen de entrega</p>
                         </div>
                         <div className="divide-y divide-gray-100 dark:divide-card-border/50">
                           {order.items.slice(0, 4).map((item, i) => (
@@ -662,7 +662,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                               <span className="text-xs font-bold text-gray-800 dark:text-foreground ml-2 shrink-0">S/{(item.price * (item.quantity ?? item.qty ?? 0)).toFixed(2)}</span>
                             </div>
                           ))}
-                          {order.items.length > 4 && <div className="px-3 py-1.5 text-center text-[10px] text-gray-400">+{order.items.length - 4} más</div>}
+                          {order.items.length > 4 && <div className="px-3 py-1.5 text-center text-[length:var(--ts-2xs)] text-gray-400">+{order.items.length - 4} más</div>}
                         </div>
                         {order.total && (
                           <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/20 flex justify-between">

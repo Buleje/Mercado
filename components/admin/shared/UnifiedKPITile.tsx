@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus } from "@buleje/design-system/icons";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 

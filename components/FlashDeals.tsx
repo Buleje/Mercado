@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
-import { Clock, ShoppingCart, Package, Minus, Plus } from "lucide-react";
+import { Clock, ShoppingCart, Package, Minus, Plus } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -159,7 +159,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
 
           {/* Countdown */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-[0.12em] mr-2">Termina en</span>
+            <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] uppercase tracking-[0.12em] mr-2">Termina en</span>
             <TimeBox value={pad(time.h)} label="Hrs" />
             <span className="text-lg font-bold text-[var(--text-tertiary)] -mt-3">:</span>
             <TimeBox value={pad(time.m)} label="Min" />
@@ -186,7 +186,7 @@ function TimeBox({ value, label }: { value: string; label: string }) {
       <span className="bg-[var(--text-primary)] text-[var(--surface-canvas)] font-mono text-base sm:text-lg font-bold tabular-nums px-2.5 py-1 rounded-md min-w-10 text-center">
         {value}
       </span>
-      <span className="text-[9px] uppercase tracking-wider text-[var(--text-tertiary)] mt-1 font-medium">{label}</span>
+      <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] mt-1 font-medium">{label}</span>
     </div>
   );
 }
@@ -196,7 +196,7 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
     <div className="group relative bg-[var(--surface-canvas)] rounded-xl overflow-hidden border border-[var(--rule-soft)] hover:border-[var(--rule-base)] transition-colors duration-200">
       {/* Discount badge — teal accent soft (no scarcity-red) */}
       {deal.discount > 0 && (
-        <div className="absolute top-1.5 left-1.5 z-10 bg-[var(--accent-soft)] text-[var(--accent)] rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+        <div className="absolute top-1.5 left-1.5 z-10 bg-[var(--accent-soft)] text-[var(--accent)] rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold tabular-nums">
           -{deal.discount}%
         </div>
       )}

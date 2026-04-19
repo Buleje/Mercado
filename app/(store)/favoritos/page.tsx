@@ -85,7 +85,7 @@ function WishlistProductCard({
         {/* Badge sin stock */}
         {!product.inStock && (
           <div className="absolute bottom-2 left-2 right-2">
-            <span className="w-full flex justify-center text-[10px] font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-1 rounded-md">
+            <span className="w-full flex justify-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-1 rounded-md">
               Sin stock
             </span>
           </div>
@@ -116,7 +116,7 @@ function WishlistProductCard({
         {/* Tienda */}
         <div className="flex items-center gap-1">
           <Store className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
-          <span className="text-[10px] text-[var(--text-tertiary)] truncate">{product.storeName}</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{product.storeName}</span>
         </div>
 
         <Link href={`/tienda/${product.id}`}>
@@ -127,7 +127,7 @@ function WishlistProductCard({
 
         <span className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
           S/{product.price.toFixed(2)}
-          <span className="text-[10px] font-normal text-[var(--text-tertiary)] ml-1">/{product.unit}</span>
+          <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)] ml-1">/{product.unit}</span>
         </span>
 
         <button
@@ -159,7 +159,7 @@ function SuggestionCard({ product }: { product: WishlistProduct }) {
       <div className="p-3 flex flex-col gap-1.5">
         <div className="flex items-center gap-1">
           <Store className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
-          <span className="text-[10px] text-[var(--text-tertiary)] truncate">{product.storeName}</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{product.storeName}</span>
         </div>
         <p className="text-xs font-semibold text-[var(--text-primary)] line-clamp-2 leading-snug">
           {product.name}
@@ -167,7 +167,7 @@ function SuggestionCard({ product }: { product: WishlistProduct }) {
         <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
           S/{product.price.toFixed(2)}
         </span>
-        <button className="flex items-center justify-center gap-1.5 w-full min-h-[34px] rounded-lg text-[11px] font-bold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/20 transition-colors">
+        <button className="flex items-center justify-center gap-1.5 w-full min-h-[34px] rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/20 transition-colors">
           <Heart className="h-3 w-3" />
           Guardar
         </button>
@@ -255,7 +255,7 @@ export default function FavoritosPage() {
           {/* Breadcrumb */}
           <nav
             aria-label="Migas de pan"
-            className="flex items-center gap-1.5 text-[10px] text-white/35 mb-6"
+            className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 mb-6"
           >
             <Link href="/" className="hover:text-white/60 transition-colors">Inicio</Link>
             <span>/</span>
@@ -397,18 +397,18 @@ export default function FavoritosPage() {
                 </button>
               ) : (
                 <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-lg px-3 py-1.5">
-                  <span className="text-[11px] text-red-600 dark:text-red-400 font-medium">
+                  <span className="text-[length:var(--ts-2xs)] text-red-600 dark:text-red-400 font-medium">
                     Confirmar?
                   </span>
                   <button
                     onClick={handleClearAll}
-                    className="text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline"
+                    className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 hover:underline"
                   >
                     Si, vaciar
                   </button>
                   <button
                     onClick={() => setShowConfirmClear(false)}
-                    className="text-[11px] font-medium text-gray-500 hover:underline"
+                    className="text-[length:var(--ts-2xs)] font-medium text-gray-500 hover:underline"
                   >
                     Cancelar
                   </button>

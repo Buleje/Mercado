@@ -10,7 +10,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, Package, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ function ProductCard({
             {product.productName}
           </p>
           {product.reason && (
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 line-clamp-2 leading-tight">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-1 line-clamp-2 leading-tight">
               {product.reason}
             </p>
           )}

@@ -7,7 +7,7 @@
  */
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import {
   VerduraFresca,
   CarniceriaFresca,
@@ -85,7 +85,7 @@ export default function OfertasFlash() {
     >
       <header className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
             Esta semana
           </span>
           <h2
@@ -114,7 +114,7 @@ export default function OfertasFlash() {
               className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
             >
               {/* Badge descuento */}
-              <span className="absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+              <span className="absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary border border-primary/20">
                 {oferta.discount}
               </span>
 
@@ -127,7 +127,7 @@ export default function OfertasFlash() {
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
                   {oferta.title}
                 </h3>
-                <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                   {oferta.subtitle}
                 </p>
               </div>

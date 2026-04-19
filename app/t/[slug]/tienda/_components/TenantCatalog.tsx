@@ -12,7 +12,7 @@ import {
   Store,
   PackageX,
   ChevronRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 /* ─── Tipos ───────────────────────────────────────────────────────────────── */
 interface Product {

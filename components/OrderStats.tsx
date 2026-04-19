@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Package, Users, Clock, CheckCircle2 } from "lucide-react";
+import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Package, Users, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface OrderStatsProps {

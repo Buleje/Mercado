@@ -52,7 +52,7 @@ export default function VenderFAQ() {
     <section className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 sm:py-24">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
             Preguntas frecuentes
           </p>
           <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">

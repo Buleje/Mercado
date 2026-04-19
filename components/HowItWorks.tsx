@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { ShoppingCart, CreditCard, Truck, ArrowRight } from "lucide-react";
+import { ShoppingCart, CreditCard, Truck, ArrowRight } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import { useTilt } from "@/hooks/use-tilt";
 

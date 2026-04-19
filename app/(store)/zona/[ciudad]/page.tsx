@@ -20,7 +20,7 @@ import { zones, findZone, getZoneFAQs } from "@/data/zones";
 import { getDistrictsForCity } from "@/data/districts";
 import { ProductsDB } from "@/lib/db/products.db";
 import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
-import { Package, ShoppingCart, Bike, CreditCard, FileText, BarChart3 } from "lucide-react";
+import { Package, ShoppingCart, Bike, CreditCard, FileText, BarChart3 } from "@buleje/design-system/icons";
 import {
   generateSoftwareApplicationLD,
   generateZoneLandingLD,

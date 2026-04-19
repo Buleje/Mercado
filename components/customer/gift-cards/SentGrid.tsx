@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, CheckCircle2, Send, User, MessageCircle, Mail } from "lucide-react";
+import { Clock, CheckCircle2, Send, User, MessageCircle, Mail } from "@buleje/design-system/icons";
 import type { MockGiftCard } from "@/lib/mocks/gift-cards.mock";
 import { GIFT_CARD_DESIGNS } from "@/lib/mocks/gift-cards.mock";
 import GiftCardArtwork from "@/components/marketplace/gift-cards/shared/GiftCardArtwork";
@@ -55,7 +55,7 @@ export default function SentGrid({ cards }: Props) {
             <div className="flex flex-1 flex-col gap-2">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                  <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                     {designLabel(card.design)} · {fmtDate(card.createdAt)}
                   </div>
                   <div className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">
@@ -63,12 +63,12 @@ export default function SentGrid({ cards }: Props) {
                   </div>
                 </div>
                 {isPending ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                     <Clock className="h-3 w-3" aria-hidden="true" />
                     Pendiente
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                     <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
                     Canjeada
                   </span>
@@ -84,7 +84,7 @@ export default function SentGrid({ cards }: Props) {
                 />
               </dl>
 
-              <div className="mt-auto flex items-center justify-between pt-2 text-[11px]">
+              <div className="mt-auto flex items-center justify-between pt-2 text-[length:var(--ts-2xs)]">
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 font-semibold text-gray-600 hover:text-gray-900 disabled:opacity-40 dark:text-gray-400 dark:hover:text-white"

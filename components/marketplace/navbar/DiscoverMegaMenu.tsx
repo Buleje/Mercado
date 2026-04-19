@@ -127,7 +127,7 @@ export default function DiscoverMegaMenu({
   if (variant === "mobile") {
     return (
       <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2 px-3 pb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-500 dark:text-gray-400">
           <Compass className="h-3 w-3" strokeWidth={1.75} aria-hidden />
           Descubrí
         </div>
@@ -147,7 +147,7 @@ export default function DiscoverMegaMenu({
               </span>
               <span className="flex-1">
                 <span className="block">{it.title}</span>
-                <span className="mt-0.5 block text-[11px] font-normal leading-snug text-gray-500 dark:text-gray-400">
+                <span className="mt-0.5 block text-[length:var(--ts-2xs)] font-normal leading-snug text-gray-500 dark:text-gray-400">
                   {it.description}
                 </span>
               </span>

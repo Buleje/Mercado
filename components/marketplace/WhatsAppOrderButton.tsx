@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── tipos ── */

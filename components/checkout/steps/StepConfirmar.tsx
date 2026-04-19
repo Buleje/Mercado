@@ -13,7 +13,7 @@ import {
   Shield,
   Truck,
   Star,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer } from "@/contexts/customer-context";
 import type { CheckoutState } from "../types";
@@ -106,7 +106,7 @@ export function StepConfirmar({
           <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">
             Revisa tu pedido
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-muted">
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
             Confirma que todo esté correcto antes de enviar
           </p>
         </div>
@@ -114,7 +114,7 @@ export function StepConfirmar({
 
       {/* Cliente */}
       <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-4 space-y-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400">
           Tus datos
         </p>
         <div className="flex items-start gap-2.5">
@@ -124,7 +124,7 @@ export function StepConfirmar({
               {displayName}
             </p>
             {state.customer.dni && (
-              <p className="text-[11px] text-gray-500 dark:text-muted">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
                 DNI: {state.customer.dni}
               </p>
             )}
@@ -144,14 +144,14 @@ export function StepConfirmar({
       {displayLocation && (
         <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400">
               Entregaremos en
             </p>
             {onEditAddress && (
               <button
                 type="button"
                 onClick={onEditAddress}
-                className="text-[10px] font-bold text-primary hover:underline"
+                className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline"
                 data-testid="confirmar-editar-direccion"
               >
                 Editar
@@ -165,7 +165,7 @@ export function StepConfirmar({
                 {displayLocation}
               </p>
               {displayReference && (
-                <p className="text-[11px] text-gray-500 dark:text-muted mt-0.5">
+                <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted mt-0.5">
                   Ref: {displayReference}
                 </p>
               )}
@@ -176,7 +176,7 @@ export function StepConfirmar({
 
       {/* Método de pago */}
       <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-4 space-y-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400">
           Método de pago
         </p>
         <div className="flex items-center gap-2.5">
@@ -189,7 +189,7 @@ export function StepConfirmar({
             {methodLabel}
           </p>
           {state.payment.method === "yape" && state.payment.yapeOpNumber && (
-            <span className="ml-auto text-[11px] text-gray-500 dark:text-muted font-mono">
+            <span className="ml-auto text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted font-mono">
               Op: {state.payment.yapeOpNumber}
             </span>
           )}
@@ -198,7 +198,7 @@ export function StepConfirmar({
 
       {/* Items */}
       <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-4 space-y-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400">
           {items.length} {items.length === 1 ? "producto" : "productos"}
         </p>
         <div className="space-y-1.5 max-h-40 overflow-y-auto">
@@ -328,7 +328,7 @@ export function StepConfirmarFooter({
         </button>
       </div>
 
-      <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-gray-400 dark:text-gray-500">
+      <div className="flex items-center justify-center gap-4 mt-3 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
         <span className="flex items-center gap-1">
           <Shield className="h-3 w-3" /> Compra segura
         </span>

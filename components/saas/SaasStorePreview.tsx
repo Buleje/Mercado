@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Store, ShoppingCart, Search, Star, ChevronRight, Sparkles, Package } from "lucide-react";
+import { Store, ShoppingCart, Search, Star, ChevronRight, Sparkles, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
@@ -120,16 +120,16 @@ export default function SaasStorePreview() {
                       <div className={cn("h-16 rounded-lg mb-2 flex items-center justify-center", p.img)}>
                         <Package className="h-6 w-6 text-gray-400/50" />
                       </div>
-                      <p className="text-[11px] font-semibold text-gray-800 dark:text-gray-200 truncate">{p.name}</p>
+                      <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-800 dark:text-gray-200 truncate">{p.name}</p>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs font-extrabold" style={{ color: color.primary }}>{p.price}</p>
                         <div className="flex items-center gap-0.5">
                           <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400" />
-                          <span className="text-[9px] text-gray-400">4.8</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400">4.8</span>
                         </div>
                       </div>
                       <button
-                        className="mt-1.5 w-full py-1 rounded-md text-[10px] font-bold text-white"
+                        className="mt-1.5 w-full py-1 rounded-md text-[length:var(--ts-2xs)] font-bold text-white"
                         style={{ backgroundColor: color.primary }}
                       >
                         Agregar

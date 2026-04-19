@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { m } from "framer-motion";
 import { useInView } from "@/hooks/use-in-view";
-import { Star, ShoppingCart, Tag } from "lucide-react";
+import { Star, ShoppingCart, Tag } from "@buleje/design-system/icons";
 
 const products = [
   {

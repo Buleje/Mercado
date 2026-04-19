@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, ChevronDown, Activity, Loader2 } from "lucide-react";
+import { Search, ChevronDown, Activity, Loader2 } from "@buleje/design-system/icons";
 
 interface ActivityLog {
   id: string;

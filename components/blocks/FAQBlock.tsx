@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { useState } from "react";
-import { ChevronDown, HelpCircle } from "lucide-react";
+import { ChevronDown, HelpCircle } from "@buleje/design-system/icons";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const FAQBlockSchema = z.object({

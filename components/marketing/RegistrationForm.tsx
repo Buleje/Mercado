@@ -8,7 +8,7 @@ import {
   Globe, BarChart2, Crown, AlertTriangle, ExternalLink,
   Package, Truck, Heart, UtensilsCrossed, ChevronDown, ChevronUp,
   Shield, Ticket,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { z } from "zod";
 import { PLANS, type PlanId, type PlanDef } from "@/lib/plans";
 import { STORE_TEMPLATES_LIST, type TemplateId } from "@/lib/store-templates";

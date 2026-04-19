@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { CheckSquare, Square, MoreHorizontal } from "lucide-react";
+import { CheckSquare, Square, MoreHorizontal } from "@buleje/design-system/icons";
 import type { LucideIcon } from "lucide-react";
 
 export interface BulkAction {

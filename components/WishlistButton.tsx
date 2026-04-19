@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Heart } from "lucide-react";
+import { Heart } from "@buleje/design-system/icons";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { cn } from "@/lib/utils";
 

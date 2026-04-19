@@ -6,7 +6,7 @@ import {
   BookOpen, AlertTriangle, DollarSign, Clock,
   Smartphone, Bell, Shield, Calculator,
   ArrowLeftRight, UserPlus, Package, Rocket,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { LucideIcon } from "lucide-react";
 
 // ---------------------------------------------------------------------------

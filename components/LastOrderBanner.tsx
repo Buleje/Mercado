@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Package } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -121,7 +121,7 @@ export default function LastOrderBanner() {
                 </a>
                 {avgFrequency && avgFrequency > 0 && (
                   <span className={cn(
-                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                    "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                     daysSince >= avgFrequency
                       ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
                       : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { Type, Sun, Moon, RotateCcw } from "lucide-react";
+import { Type, Sun, Moon, RotateCcw } from "@buleje/design-system/icons";
 import { useTheme } from "@/contexts/theme-context";
 
 const STORAGE_KEY = "buleje-a11y-prefs";
@@ -76,7 +76,7 @@ export default function AccessibilityBar() {
 
           {/* Font size */}
           <div>
-            <p className="text-[10px] text-muted uppercase tracking-wider mb-1.5">Tamaño de texto</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted uppercase tracking-wider mb-1.5">Tamaño de texto</p>
             <div className="flex gap-1">
               {FONT_SIZES.map((fs, i) => (
                 <button
@@ -98,7 +98,7 @@ export default function AccessibilityBar() {
 
           {/* Theme toggle */}
           <div>
-            <p className="text-[10px] text-muted uppercase tracking-wider mb-1.5">Tema</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted uppercase tracking-wider mb-1.5">Tema</p>
             <button
               type="button"
               onClick={toggleTheme}

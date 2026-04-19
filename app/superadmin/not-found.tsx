@@ -1,4 +1,4 @@
-import { ShieldX, ArrowLeft } from "lucide-react";
+import { ShieldX, ArrowLeft } from "@buleje/design-system/icons";
 
 export default function SuperAdminNotFound() {
   return (

@@ -185,7 +185,7 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
 
           {/* Contador mobile */}
           {showThumbs && (
-            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 sm:hidden text-[10px] font-medium bg-[var(--text-primary)]/50 text-[var(--surface-canvas)] px-2 py-0.5 rounded-full">
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 sm:hidden text-[length:var(--ts-2xs)] font-medium bg-[var(--text-primary)]/50 text-[var(--surface-canvas)] px-2 py-0.5 rounded-full">
               {activeIndex + 1} / {images.length}
             </span>
           )}

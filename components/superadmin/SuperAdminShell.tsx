@@ -27,7 +27,7 @@ import {
   Map as MapIcon,
   Cable,
   FileCheck,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

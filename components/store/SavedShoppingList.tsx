@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { List, Plus, Trash2, ShoppingCart, Edit3, Check, X, ChevronDown, ChevronRight } from "lucide-react";
+import { List, Plus, Trash2, ShoppingCart, Edit3, Check, X, ChevronDown, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

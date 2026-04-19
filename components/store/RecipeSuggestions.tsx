@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ChefHat, CheckCircle2, Circle, ShoppingCart, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { ChefHat, CheckCircle2, Circle, ShoppingCart, ChevronDown, ChevronUp, ArrowRight } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

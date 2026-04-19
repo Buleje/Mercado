@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star, User, MessageSquare, Send, CheckCircle } from "lucide-react";
+import { Star, User, MessageSquare, Send, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCachedData } from "@/hooks/use-cached-data";
 import { useCustomer } from "@/contexts/customer-context";

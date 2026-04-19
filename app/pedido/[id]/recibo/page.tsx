@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Printer, ArrowLeft, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Loader2 } from "@buleje/design-system/icons";
 import Link from "next/link";
 
 type Item = { name: string; price: number; quantity: number; unit: string };

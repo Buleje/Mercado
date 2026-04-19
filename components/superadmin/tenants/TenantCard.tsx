@@ -87,7 +87,7 @@ export function TenantCard({
       <div className="p-5 space-y-4">
         {/* Kicker: plan label + status pill, sin gradient */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)] font-semibold">
+          <span className="text-[length:var(--ts-2xs)] uppercase tracking-[0.12em] text-[var(--text-tertiary)] font-semibold">
             Plan {planLabel}
           </span>
           <div className="flex items-center gap-1.5">

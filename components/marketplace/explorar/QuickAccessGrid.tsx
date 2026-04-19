@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import type { ComponentType, SVGAttributes } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@buleje/design-system/icons";
 import {
   VerduraFresca,
   CarniceriaFresca,
@@ -109,7 +109,7 @@ export default function QuickAccessGrid() {
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
       <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
           Acceso rapido
         </span>
         <h2
@@ -128,7 +128,7 @@ export default function QuickAccessGrid() {
           >
             <div className="flex flex-col h-full">
               <div className="mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400">
                   {box.kicker}
                 </span>
                 <h3 className="mt-1 text-lg sm:text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">

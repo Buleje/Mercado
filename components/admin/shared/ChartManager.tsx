@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, type ReactNode } from "react";
-import { Plus, X, LayoutGrid } from "lucide-react";
+import { Plus, X, LayoutGrid } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "./AdminModal";
 

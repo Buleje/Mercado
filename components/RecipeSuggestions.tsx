@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus, ArrowRight } from "lucide-react";
+import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus, ArrowRight } from "@buleje/design-system/icons";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";

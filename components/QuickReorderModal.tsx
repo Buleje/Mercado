@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { X, Minus, Plus, RotateCcw, ShoppingCart, Package, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { X, Minus, Plus, RotateCcw, ShoppingCart, Package, TrendingUp, TrendingDown, AlertCircle } from "@buleje/design-system/icons";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 
@@ -137,7 +137,7 @@ export default function QuickReorderModal({
               <RotateCcw className="h-4.5 w-4.5 text-primary" />
               Volver a pedir
             </h3>
-            <p className="text-[11px] text-muted mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">
               Pedido #{orderId.slice(-6).toUpperCase()} · {orderDate}
             </p>
           </div>
@@ -154,14 +154,14 @@ export default function QuickReorderModal({
           <div className="flex gap-2">
             <button
               onClick={selectAll}
-              className="text-[11px] font-semibold text-primary hover:underline"
+              className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline"
             >
               Todos
             </button>
             <span className="text-gray-300">·</span>
             <button
               onClick={deselectAll}
-              className="text-[11px] font-semibold text-muted hover:underline"
+              className="text-[length:var(--ts-2xs)] font-semibold text-muted hover:underline"
             >
               Ninguno
             </button>
@@ -232,7 +232,7 @@ export default function QuickReorderModal({
                       </span>
                       {item.priceChanged && (
                         <span className={cn(
-                          "inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                          "inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full",
                           item.priceDiff > 0
                             ? "text-red-600 bg-red-50 dark:bg-red-950/30"
                             : "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
@@ -246,7 +246,7 @@ export default function QuickReorderModal({
                         </span>
                       )}
                       {!item.available && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
                           <AlertCircle className="h-3 w-3" />
                           No disponible
                         </span>

@@ -20,15 +20,15 @@ export function YapeInstructions({ finalTotal }: YapeInstructionsProps) {
       </div>
       <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
         <li className="flex items-start gap-2">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yape)]/10 text-[10px] font-bold text-[var(--brand-yape)]">1</span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yape)]/10 text-[length:var(--ts-2xs)] font-bold text-[var(--brand-yape)]">1</span>
           <span>Confirma tu pedido aquí y recibirás el número de Yape del vendedor</span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yape)]/10 text-[10px] font-bold text-[var(--brand-yape)]">2</span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yape)]/10 text-[length:var(--ts-2xs)] font-bold text-[var(--brand-yape)]">2</span>
           <span>Abre tu app de Yape y transfiere <strong>{fmt(finalTotal)}</strong></span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yape)]/10 text-[10px] font-bold text-[var(--brand-yape)]">3</span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yape)]/10 text-[length:var(--ts-2xs)] font-bold text-[var(--brand-yape)]">3</span>
           <span>El vendedor verificará el pago y preparará tu pedido</span>
         </li>
       </ol>

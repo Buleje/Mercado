@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, XCircle, Loader2, Mail, Building2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Mail, Building2 } from "@buleje/design-system/icons";
 
 interface InviteInfo {
   email: string;

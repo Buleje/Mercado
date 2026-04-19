@@ -69,10 +69,10 @@ export default function StepHorariosDelivery({
       {/* Horarios 7 días */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
             Horario semanal
           </p>
-          <span className="text-[11px] text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
             Marcá cerrado los días que descansás
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function StepHorariosDelivery({
                 />
               </div>
               {!h.abierto && (
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                   Cerrado
                 </span>
               )}
@@ -185,7 +185,7 @@ export default function StepHorariosDelivery({
           <span className="text-xs text-[var(--text-tertiary)]">por entrega</span>
         </div>
         <FieldError message={errors.tarifaDelivery} />
-        <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+        <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           El cliente lo paga aparte. Si querés delivery gratis, poné S/ 0.
         </p>
       </div>

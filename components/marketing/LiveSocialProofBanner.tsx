@@ -1,7 +1,7 @@
 "use client";
 
 import { useLiveStats } from "@/hooks/use-live-stats";
-import { Store, ShoppingBag, Flame } from "lucide-react";
+import { Store, ShoppingBag, Flame } from "@buleje/design-system/icons";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ export function LiveSocialProofBanner({
   return (
     <div
       className={cn(
-        "inline-flex items-center justify-center gap-x-3 gap-y-1 text-[11px] tabular-nums",
+        "inline-flex items-center justify-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] tabular-nums",
         layout === "stacked" ? "flex-col sm:flex-row" : "flex-row flex-wrap",
         textColor,
         className,

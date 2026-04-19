@@ -114,9 +114,9 @@ function StatCard({
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{label}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 font-bold uppercase tracking-wider">{label}</p>
           <p className="text-2xl font-extrabold text-gray-900 dark:text-white mt-1 tabular-nums">{value}</p>
-          {subtitle && <p className="text-[10px] text-gray-400 mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{subtitle}</p>}
         </div>
         <div className={cn("h-9 w-9 rounded-full flex items-center justify-center shrink-0")} style={{ backgroundColor: `${iconColor}15` }}>
           <Icon className="h-4 w-4" style={{ color: iconColor }} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Clock, Hash, Copy, Check, CheckCircle2 } from "lucide-react";
+import { Clock, Hash, Copy, Check, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 type YapePaymentPanelProps = {
@@ -129,7 +129,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
               <Copy className="h-5 w-5 text-purple-400 group-hover:text-purple-600 transition-colors" />
             )}
           </div>
-          <p className="text-[10px] text-purple-500 mt-0.5">{copied === "amount" ? "Copiado!" : "Toca para copiar"}</p>
+          <p className="text-[length:var(--ts-2xs)] text-purple-500 mt-0.5">{copied === "amount" ? "Copiado!" : "Toca para copiar"}</p>
         </button>
       </div>
 
@@ -155,7 +155,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
             <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
           )}
         </div>
-        <p className="text-[10px] text-purple-500 mt-1">
+        <p className="text-[length:var(--ts-2xs)] text-purple-500 mt-1">
           {yapeOpNumber.trim().length > 0 && !opEntered
             ? "El número de operación debe tener entre 6 y 20 dígitos"
             : "Encuéntralo en tu comprobante de Yape - Solo números"}

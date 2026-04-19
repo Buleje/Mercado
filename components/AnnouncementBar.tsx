@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { X, ChevronRight, Sparkles } from "lucide-react";
+import { X, ChevronRight, Sparkles } from "@buleje/design-system/icons";
 import { useSettings } from "@/contexts/settings-context";
 
 const FALLBACK_MESSAGES = [
@@ -47,18 +47,18 @@ function FirstPurchaseBanner() {
       style={{ zIndex: 61, padding: "8px 16px" }}
     >
       <div className="relative mx-auto max-w-7xl flex items-center justify-center gap-3 flex-wrap">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] hidden sm:inline">
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] hidden sm:inline">
           Nuevo cliente
         </span>
         <span className="h-3.5 w-px bg-white/20 shrink-0 hidden sm:inline-block" />
         <span className="text-[13px] font-medium text-[var(--surface-canvas)]">
           Primera compra con <strong className="font-semibold">10% de descuento</strong>
           <span className="mx-2 text-white/40">·</span>
-          Código <code className="font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] tracking-wider">BIENVENIDO</code>
+          Código <code className="font-mono text-[length:var(--ts-2xs)] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] tracking-wider">BIENVENIDO</code>
         </span>
         <button
           onClick={handleCopy}
-          className="px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/10 text-[11px] font-semibold transition-colors"
+          className="px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/10 text-[length:var(--ts-2xs)] font-semibold transition-colors"
         >
           {copied ? "Copiado" : "Copiar"}
         </button>

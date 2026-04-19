@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DollarSign, BarChart3, Settings, CheckCircle2, Loader2 } from "lucide-react";
+import { DollarSign, BarChart3, Settings, CheckCircle2, Loader2 } from "@buleje/design-system/icons";
 import type { PlatformSettings } from "@/lib/superadmin-types";
 import { DEFAULT_SETTINGS } from "@/lib/superadmin-types";
 

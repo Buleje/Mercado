@@ -584,7 +584,7 @@ export default function Header() {
             >
               {/* Sección navegación */}
               <div className="px-4 py-3 border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Navegación</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-widest">Navegación</p>
               </div>
               <div className="grid grid-cols-2 gap-1 p-2.5">
                 {inicioMenuItems.map((item) => {
@@ -601,7 +601,7 @@ export default function Header() {
                       </span>
                       <div>
                         <p className="font-extrabold tracking-tight text-sm text-foreground group-hover:text-primary">{item.label}</p>
-                        <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{item.desc}</p>
                       </div>
                     </a>
                   );
@@ -610,8 +610,8 @@ export default function Header() {
               {/* Sección categorías */}
               <div className="px-4 py-3 border-t border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
-                  <span className="text-[10px] text-muted font-medium">{filteredCategories.length} secciones</span>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-widest">Categorías</p>
+                  <span className="text-[length:var(--ts-2xs)] text-muted font-medium">{filteredCategories.length} secciones</span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1 p-2.5">
@@ -629,7 +629,7 @@ export default function Header() {
                       </span>
                       <div>
                         <p className="font-extrabold tracking-tight text-xs text-foreground group-hover:text-primary">{cat.label}</p>
-                        <p className="text-[10px] text-muted mt-0.5">{cat.desc}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{cat.desc}</p>
                       </div>
                     </Link>
                   );
@@ -737,7 +737,7 @@ export default function Header() {
                   })}
                   {/* Categorías dentro del menú inicio mobile */}
                   <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
-                    <p className="px-1 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Categorías</p>
+                    <p className="px-1 pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-[0.2em]">Categorías</p>
                     <div className="grid grid-cols-2 gap-2">
                       {filteredCategories.map((cat) => {
                         const CIcon = cat.icon;
@@ -907,7 +907,7 @@ export default function Header() {
                   {/* Sugerencias al escribir — con imagen, precio y stock */}
                   {suggestions.length > 0 && (
                     <div className="pt-2 pb-1">
-                      <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted">Sugerencias</p>
+                      <p className="px-4 pt-1 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Sugerencias</p>
                       {suggestions.map((item) => (
                         <button
                           key={item.id}
@@ -926,11 +926,11 @@ export default function Header() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
                               {(item.stock ?? 0) > 0 ? (
-                                <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", (item.stock ?? 0) <= 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400")}>
+                                <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full", (item.stock ?? 0) <= 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400")}>
                                   {(item.stock ?? 0) <= 5 ? `¡Solo ${item.stock}!` : "Disponible"}
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Agotado</span>
+                                <span className="text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Agotado</span>
                               )}
                             </div>
                           </div>
@@ -945,7 +945,7 @@ export default function Header() {
                       {/* Búsquedas recientes */}
                       {recentSearches.length > 0 && (
                         <div className="px-4 pt-3 pb-2 border-t border-gray-100 dark:border-card-border first:border-t-0">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">🔥 Recientes</p>
+                          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">🔥 Recientes</p>
                           <div className="flex flex-wrap gap-1.5">
                             {recentSearches.slice(0, 4).map(term => (
                               <button
@@ -962,7 +962,7 @@ export default function Header() {
 
                       {/* Categorías */}
                       <div className="px-4 pt-3 pb-3 border-t border-gray-100 dark:border-card-border first:border-t-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Categorías</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Categorías</p>
                         <div className="grid grid-cols-2 gap-1.5">
                           {filteredCategories.slice(0, 8).map(cat => {
                             const CIcon = cat.icon;
@@ -1183,7 +1183,7 @@ export default function Header() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 {_unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[length:var(--ts-2xs)] font-bold text-white">
                     {_unreadCount > 9 ? "9+" : _unreadCount}
                   </span>
                 )}
@@ -1229,7 +1229,7 @@ export default function Header() {
                       >
                         <p className="font-medium text-slate-700 dark:text-slate-200 text-xs">{n.title}</p>
                         <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 line-clamp-2">{n.body}</p>
-                        <p className="text-slate-400 text-[10px] mt-1">
+                        <p className="text-slate-400 text-[length:var(--ts-2xs)] mt-1">
                           {new Date(n.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
@@ -1260,7 +1260,7 @@ export default function Header() {
                   key={count}
                   aria-live="polite"
                   aria-atomic="true"
-                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md animate-[cartBadgeBounce_0.3s_ease-out]"
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[length:var(--ts-2xs)] font-bold text-white shadow-md animate-[cartBadgeBounce_0.3s_ease-out]"
                   style={{ minWidth: count > 9 ? "1.5rem" : undefined }}
                 >
                   {count > 99 ? "99+" : count}
@@ -1548,7 +1548,7 @@ export default function Header() {
               {/* Suggestions */}
               {suggestions.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3 space-y-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Sugerencias</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Sugerencias</p>
                   {suggestions.map((item) => (
                     <button
                       key={item.id}
@@ -1597,7 +1597,7 @@ export default function Header() {
               {/* AC4: Trending / recent searches */}
               {searchQuery.length === 0 && recentSearches.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">🔥 Búsquedas recientes</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">🔥 Búsquedas recientes</p>
                   <div className="flex flex-wrap gap-1.5">
                     {recentSearches.map(term => (
                       <button
@@ -1615,7 +1615,7 @@ export default function Header() {
               {/* Trending products — popular items being added to cart */}
               {searchQuery.length === 0 && trendingProducts.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
                     <Flame className="h-3 w-3 text-[var(--accent)]" strokeWidth={1.75} /> Productos populares ahora
                   </p>
                   <div className="space-y-1">
@@ -1630,7 +1630,7 @@ export default function Header() {
                         )}
                         <div className="flex-1 min-w-0">
                           <span className="font-semibold text-xs block truncate">{p.name}</span>
-                          <span className="text-[10px] text-muted">S/{p.price.toFixed(2)}</span>
+                          <span className="text-[length:var(--ts-2xs)] text-muted">S/{p.price.toFixed(2)}</span>
                         </div>
                         <Flame className="h-3 w-3 text-[var(--accent)] shrink-0" strokeWidth={1.75} />
                       </button>
@@ -1642,7 +1642,7 @@ export default function Header() {
               {/* Quick categories */}
               {searchQuery.length === 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Categorías populares</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Categorías populares</p>
                   <div className="flex flex-wrap gap-2">
                     {filteredCategories.map((cat) => {
                       const CIcon = cat.icon;

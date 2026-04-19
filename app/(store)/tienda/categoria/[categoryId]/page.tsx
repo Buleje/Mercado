@@ -14,7 +14,7 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { ProductGridSkeleton } from "@/components/LoadingSkeleton";
 import CategoryCatalogClient from "@/components/CategoryCatalogClient";
 import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
-import { Truck, CreditCard } from "lucide-react";
+import { Truck, CreditCard } from "@buleje/design-system/icons";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
@@ -239,7 +239,7 @@ async function CategoryPageContent({ params }: Props) {
                 `Todos los productos de ${cat.label}`}
               . Delivery gratis.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-[length:var(--ts-2xs)]">
               <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-full px-3 py-1 font-semibold text-white/75">
                 <Truck className="h-3 w-3" strokeWidth={1.75} />
                 Delivery gratis +S/50

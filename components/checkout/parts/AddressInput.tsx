@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { MapPin, Navigation, Loader2, Home } from "lucide-react";
+import { MapPin, Navigation, Loader2, Home } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { AddressState, UiState } from "../types";
 
@@ -99,7 +99,7 @@ export function AddressInput({
               />
               {address.location && (
                 <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">
                     Vista previa:
                   </p>
                   <p className="text-sm font-semibold text-primary">
@@ -147,7 +147,7 @@ export function AddressInput({
                 {ui.loadingGeo ? "Obteniendo ubicación..." : "Usar mi ubicación GPS"}
               </span>
               {!ui.loadingGeo && (
-                <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">
+                <span className="text-[length:var(--ts-2xs)] font-medium text-white/80 uppercase tracking-wide">
                   Preciso y rápido
                 </span>
               )}
@@ -203,7 +203,7 @@ export function AddressInput({
           </div>
           {ui.showRefSuggestions && ui.refSuggestions.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 uppercase tracking-wider">
                 Sugerencias de referencia:
               </p>
               {ui.refSuggestions.map((s, i) => (

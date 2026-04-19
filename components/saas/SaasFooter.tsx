@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle, Mail } from "lucide-react";
+import { MessageCircle, Mail } from "@buleje/design-system/icons";
 
 const FOOTER_LINKS = {
   producto: [

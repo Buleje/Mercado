@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { ShoppingCart, Plus, Minus, MessageCircle, Search, X } from "lucide-react";
+import { ShoppingCart, Plus, Minus, MessageCircle, Search, X } from "@buleje/design-system/icons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

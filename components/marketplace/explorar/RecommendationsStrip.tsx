@@ -7,7 +7,7 @@
  */
 
 import Link from "next/link";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight, MapPin } from "@buleje/design-system/icons";
 import {
   DoniaElena,
   BodegaAbriendo,
@@ -92,7 +92,7 @@ export default function RecommendationsStrip() {
     >
       <header className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
             Cerca tuyo
           </span>
           <h2
@@ -126,13 +126,13 @@ export default function RecommendationsStrip() {
                   <Ill size={88} strokeWidth={1.5} />
                 </div>
                 <div className="p-4">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
                     {store.category}
                   </span>
                   <h3 className="mt-1 text-sm font-extrabold tracking-tight text-gray-900 dark:text-white line-clamp-1">
                     {store.name}
                   </h3>
-                  <p className="mt-2 flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                  <p className="mt-2 flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                     <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                     {store.zona}
                     <span aria-hidden="true" className="mx-0.5">&middot;</span>

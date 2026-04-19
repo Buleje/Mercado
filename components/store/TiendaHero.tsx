@@ -21,7 +21,7 @@
  */
 
 import Link from "next/link";
-import { ShoppingBag, ShoppingCart } from "lucide-react";
+import { ShoppingBag, ShoppingCart } from "@buleje/design-system/icons";
 import { DoniaElena } from "@/components/ui-system/illustrations/pucallpa-locals";
 
 export interface TiendaHeroProps {

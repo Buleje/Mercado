@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, MapPin, Plus, Sparkles, Store as StoreIcon } from "lucide-react";
+import { Check, MapPin, Plus, Sparkles, Store as StoreIcon } from "@buleje/design-system/icons";
 import type { CartItem } from "@/hooks/use-marketplace-cart";
 import {
   buildCrossStoreComboSuggestions,
@@ -168,7 +168,7 @@ export function MarketplaceCrossStoreCombos({
           </p>
         </div>
         {preferredZone && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-primary dark:bg-gray-900/80">
+          <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-white/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-semibold text-primary dark:bg-gray-900/80">
             <MapPin className="h-3 w-3" />
             {preferredZone}
           </span>
@@ -205,7 +205,7 @@ export function MarketplaceCrossStoreCombos({
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-primary">
                           {suggestion.targetCategory}
                         </span>
                         <span className="text-xs font-bold text-primary">{fmt(suggestion.price)}</span>
@@ -215,7 +215,7 @@ export function MarketplaceCrossStoreCombos({
                         {suggestion.name}
                       </p>
 
-                      <p className="mt-1 line-clamp-2 text-[11px] text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 line-clamp-2 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
                         {suggestion.comboReason}
                       </p>
 

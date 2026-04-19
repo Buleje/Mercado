@@ -18,7 +18,7 @@ export default function ScarcityBadge({ stock, className }: ScarcityBadgeProps) 
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white bg-red-500 animate-pulse shadow-sm",
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-white bg-red-500 animate-pulse shadow-sm",
           className
         )}
       >
@@ -30,7 +30,7 @@ export default function ScarcityBadge({ stock, className }: ScarcityBadgeProps) 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white bg-secondary animate-pulse shadow-sm",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-white bg-secondary animate-pulse shadow-sm",
         className
       )}
     >

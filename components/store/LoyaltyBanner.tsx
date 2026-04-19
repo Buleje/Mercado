@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { Gift } from "lucide-react";
+import { Gift } from "@buleje/design-system/icons";
 
 interface LoyaltyBannerProps {
   points: number;

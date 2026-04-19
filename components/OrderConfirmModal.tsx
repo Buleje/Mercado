@@ -156,7 +156,7 @@ export default function OrderConfirmModal() {
                   <div className="rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-100 dark:border-card-border">
                       <ShoppingBag className="h-3.5 w-3.5 text-muted" />
-                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Resumen del pedido</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-muted uppercase tracking-wider">Resumen del pedido</p>
                     </div>
                     <div className="divide-y divide-gray-50 dark:divide-card-border max-h-32 overflow-y-auto">
                       {lastOrder.items.map((item, i) => (
