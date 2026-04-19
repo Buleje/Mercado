@@ -203,9 +203,10 @@ export default function CategoriaClient({
       />
 
       {/* Layout 2 columnas (sidebar + main) */}
+      {/* max-w-[1600px] (Ola 7) — secciones amplias para mas productos visibles */}
       <section
         aria-label={`Productos de ${categoria.label}`}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16"
+        className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-16"
       >
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-8">
           {/* Sidebar desktop */}
