@@ -15,11 +15,15 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
+
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
@@ -95,8 +99,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("[me/order-history] Error", { tenantId, error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("[me/order-history] Error", { tenantId, error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

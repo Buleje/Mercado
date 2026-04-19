@@ -61,9 +61,8 @@ export async function GET(req: NextRequest) {
       count: addresses.length,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("[me/addresses] GET error", { error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("[me/addresses] GET error", { error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
@@ -120,9 +119,8 @@ export async function POST(req: NextRequest) {
       message: "Direccion guardada",
     }, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("[me/addresses] POST error", { error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("[me/addresses] POST error", { error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
@@ -163,8 +161,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true, message: "Direccion eliminada" });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("[me/addresses] DELETE error", { error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("[me/addresses] DELETE error", { error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

@@ -22,6 +22,7 @@ import {
   CUSTOM_DOMAIN_PREFIX,
   DEFAULT_TENANT_ID,
 } from "./constants";
+import { getSessionPayload } from "@/lib/session";
 
 /**
  * Resolve a tenant slug from the incoming Host header.
@@ -70,10 +71,11 @@ export function resolveTenantFromHost(req: NextRequest): string {
  *
  * Priority (highest wins):
  *   1. Admin session JWT (`buleje-admin-sess`/legacy `bsm-admin-sess`) —
- *      canonical Tenant.id (CUID), always correct for DB queries.
- *   2. active-tenant cookie — set during impersonation/login with Tenant.id (CUID).
- *   3. Referer header — extracts slug from /t/[slug]/, useful for
- *      unauthenticated storefront browsing as last resort.
+ *      canonical Tenant.id (CUID). HMAC-verified via getSessionPayload()
+ *      before extracting tenantId (P0 #2 fix — forged cookies are rejected).
+ *   2. active-tenant cookie — set during login/impersonation with Tenant.id.
+ *   3. Referer header — extracts slug from /t/[slug]/, last resort for
+ *      unauthenticated storefront browsing.
  *
  * WHY JWT is highest: The Referer header extracts a *slug* (e.g. "demo"),
  * but DB records use the canonical Tenant.id (CUID). If Referer wins,
@@ -84,52 +86,20 @@ export function resolveTenantFromHost(req: NextRequest): string {
  * Returns the resolved tenant ID, or the input `baseTenant` if no fallback
  * produced a value.
  */
-/**
- * Multi-source tenant fallback usado cuando el host resuelve a "main".
- *
- * SECURITY NOTE (P0 #2 — PARCIALMENTE APLICADO):
- * El Source 1 (session cookie) idealmente debería verificarse con HMAC via
- * getSessionPayload() para prevenir tenant spoofing. Sin embargo, esa función
- * es async y el contrato de este módulo es síncrono (consumido directamente
- * en proxy.ts línea 53 sin await).
- *
- * El fix completo requiere:
- *   1. Hacer esta función async (ya preparada arriba con import de getSessionPayload)
- *   2. Agregar `await` en proxy.ts línea 53 (bloqueado por danger-zone hook —
- *      debe ser aplicado por security-squad via /security-squad agent)
- *
- * MITIGACIÓN ACTUAL: aunque no se verifica HMAC aquí, el tenantId extraído
- * de la cookie solo se usa para routing en el middleware. La autorización real
- * ocurre en requireAdmin() / requireCustomer() que SÍ verifican HMAC
- * (getSessionPayload) antes de ejecutar cualquier query de base de datos.
- * Un atacante que forge la cookie obtiene routing incorrecto pero NO acceso
- * a datos de otro tenant porque los API handlers tienen su propia verificación.
- *
- * TODO(security-squad P0 #2): make async + add await in proxy.ts:53
- */
-export function resolveTenantMultiSource(req: NextRequest, baseTenant: string): string {
+export async function resolveTenantMultiSource(req: NextRequest, baseTenant: string): Promise<string> {
   if (baseTenant !== DEFAULT_TENANT_ID) return baseTenant;
 
   // Source 1 (HIGHEST): Admin session JWT — canonical tenantId (CUID).
-  // SECURITY: decodifica sin verificar HMAC (limitación de contrato síncrono).
-  // Ver nota arriba sobre P0 #2 y la mitigación en requireAdmin/requireCustomer.
+  // SECURITY FIX (P0 #2): verifica HMAC via getSessionPayload() antes de
+  // extraer tenantId. Tokens con firma inválida o expirados son ignorados
+  // y el resolver cae al siguiente origen (Source 2 → Source 3).
   const sessionCookie =
     req.cookies.get("buleje-admin-sess")?.value ??
     req.cookies.get("bsm-admin-sess")?.value;
   if (sessionCookie) {
-    try {
-      const dotIdx = sessionCookie.lastIndexOf(".");
-      if (dotIdx > 0) {
-        const encoded = sessionCookie.slice(0, dotIdx);
-        const decoded = JSON.parse(
-          Buffer.from(encoded, "base64").toString(),
-        ) as { tenantId?: string };
-        if (decoded.tenantId && decoded.tenantId !== DEFAULT_TENANT_ID) {
-          return decoded.tenantId;
-        }
-      }
-    } catch {
-      /* ignore parse errors — malformed tokens stay as "main" */
+    const payload = await getSessionPayload(sessionCookie);
+    if (payload?.tenantId && payload.tenantId !== DEFAULT_TENANT_ID) {
+      return payload.tenantId;
     }
   }
 

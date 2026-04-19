@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest) {
   // We capture it only to audit potential injection attempts below.
   const clientSentTenantHeader = request.headers.get("x-tenant-id");
   const hostTenant = resolveTenantFromHost(request);
-  const tenantId = resolveTenantMultiSource(request, hostTenant);
+  const tenantId = await resolveTenantMultiSource(request, hostTenant);
 
   // Fire-and-forget injection-attempt audit (only if header mismatch on /api/*)
   auditCrossTenantHeader(request, pathname, clientSentTenantHeader, tenantId, requestId);

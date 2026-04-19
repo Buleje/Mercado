@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { randomBytes } from "crypto";
 import { z } from "zod";
 import { CouponsDB } from "@/lib/jsondb";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const SpinSchema = z.object({
   prize: z.string().min(1).max(50),
@@ -21,13 +23,17 @@ const VALID_PRIZES: Record<string, { type: "percent" | "fixed"; value: number; d
 };
 
 function generateCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "SPIN-";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+  // crypto.randomBytes: CSPRNG — seguro para tokens de cupón
+  return "SPIN-" + randomBytes(6).toString("base64url").slice(0, 8).toUpperCase();
 }
 
 export async function POST(req: NextRequest) {
+  // Rate-limit: STRICT = 10 req / 15 min por IP+tenant (prod) — previene farm de cupones
+  const limited = applyRateLimit(req, "STRICT", "coupons-spin");
+  if (limited) return limited;
+
+  // TODO(P2): tabla SpinAttempt para 1 giro/día por IP+phone
+
   try {
     const raw = await req.json();
     const parsed = SpinSchema.safeParse(raw);

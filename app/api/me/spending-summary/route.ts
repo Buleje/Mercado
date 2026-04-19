@@ -142,8 +142,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("[spending-summary] Error", { tenantId, error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("[spending-summary] Error", { tenantId, error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

@@ -77,9 +77,8 @@ export async function GET(req: NextRequest) {
       total: notifications.length,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.error("[me/notifications] Error", { tenantId, error: msg });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    logger.error("[me/notifications] Error", { tenantId, error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
@@ -126,8 +125,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Enviar { ids: [...] } o { all: true }" }, { status: 400 });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.error("[me/notifications] POST error", { tenantId, error: msg });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    logger.error("[me/notifications] POST error", { tenantId, error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
