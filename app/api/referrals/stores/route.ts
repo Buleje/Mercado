@@ -1,6 +1,8 @@
+import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     // Generar código único: BLJ-{slug truncado a 8 chars}-{4 chars random}
     const slugPart = auth.tenantId.replace(/-/g, "").slice(0, 8).toUpperCase();
-    const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const randomPart = randomBytes(3).toString("hex").slice(0, 4).toUpperCase();
     const referralCode = `BLJ-${slugPart}-${randomPart}`;
 
     // Verificar unicidad (muy improbable colisión, pero por seguridad)
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest) {
       `Codigo de referido generado: ${referralCode}`,
       auth.tenantId,
       auth.username
-    ).catch(() => {});
+    ).catch((err) => logger.error("[referrals/stores] logActivity failed", { error: String(err) }));
 
     return NextResponse.json({ referralCode, created: true }, { status: 201 });
   } catch {

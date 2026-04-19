@@ -33,14 +33,42 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 const DEFAULT_NEXT = "/marketplace/explorar";
 
 /**
- * Valida que la ruta `next` sea interna: empieza con "/" pero no con "//".
- * Rechaza URLs absolutas y schemes extraños.
+ * Valida que la ruta `next` sea estrictamente interna.
+ *
+ * Ataques conocidos que este check cierra:
+ * - `//evil.com`      → doble slash, host externo
+ * - `/\evil.com`      → backslash bypass (Firefox/IE resuelven como host externo)
+ * - `/\/evil.com`     → variante encoded
+ * - `http://evil.com` → scheme absoluto
+ *
+ * Estrategia: además de los prefix-checks rápidos, parsea con `new URL`
+ * usando un base ficticio y verifica que el host resultante siga siendo
+ * el base. Si el path "escapa" del base, es externo → false.
  */
 function isSafeInternalPath(path: string | null): path is string {
-  return Boolean(
-    path && path.startsWith("/") && !path.startsWith("//") &&
-      !path.includes("://"),
-  );
+  if (!path) return false;
+  if (!path.startsWith("/")) return false;
+  // Rechaza doble slash y backslash después del primer slash
+  if (/^\/[/\\]/.test(path)) return false;
+  // Rechaza schemes absolutos (http://, https://, javascript:, etc.)
+  if (path.includes("://")) return false;
+
+  // Validación estructural: el host normalizado por el parser debe
+  // coincidir con el base ficticio. Si path contiene un host real
+  // (p.ej. `/\evil.com`) el parser lo resuelve a un host distinto.
+  try {
+    const base = "http://internal.invalid";
+    const u = new URL(path, base);
+    if (u.host !== "internal.invalid") return false;
+    // El pathname debe corresponder solo a la parte de ruta del path
+    const expectedPathname = path.split("?")[0].split("#")[0];
+    if (u.pathname !== expectedPathname) return false;
+  } catch {
+    // URL no parseable → no es un path válido
+    return false;
+  }
+
+  return true;
 }
 
 export async function GET(req: NextRequest) {

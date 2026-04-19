@@ -19,6 +19,8 @@ import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+
 const AddressBody = z.object({
   location: z.string().min(3, "Direccion muy corta").max(300),
   reference: z.string().max(200).optional().default(""),

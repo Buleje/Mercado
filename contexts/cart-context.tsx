@@ -49,18 +49,16 @@ function playPopSound() {
   } catch { /* audio not available */ }
 }
 
-// ── Scoped BroadcastChannel (one per tenant slug) ────────────────────────────
-let _broadcastChannel: BroadcastChannel | null = null;
-let _broadcastSlug: string | null = null;
-function getBroadcastChannel(slug: string): BroadcastChannel | null {
+// ── Per-provider BroadcastChannel factory ───────────────────────────────────
+// Each CartProvider instantiates its own channel via useRef; the channel's
+// lifecycle follows the provider's (not a module-global singleton). This fixes
+// the bug where a marketplace layout with CartProvider tenantSlug="main" co-
+// existing with per-store providers would close each other's channels on
+// navigation, breaking multi-tab sync intermittently.
+function createBroadcastChannel(slug: string): BroadcastChannel | null {
   if (typeof window === "undefined" || !("BroadcastChannel" in window)) return null;
   try {
-    if (!_broadcastChannel || _broadcastSlug !== slug) {
-      if (_broadcastChannel) try { _broadcastChannel.close(); } catch { /* ok */ }
-      _broadcastChannel = new BroadcastChannel(`buleje-cart-sync-${slug}`);
-      _broadcastSlug = slug;
-    }
-    return _broadcastChannel;
+    return new BroadcastChannel(`buleje-cart-sync-${slug}`);
   } catch {
     return null;
   }
@@ -206,36 +204,56 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const [state, dispatch] = useReducer(reducer, defaultState);
   const hydratedRef = useRef(false);
   const slugRef = useRef(tenantSlug);
+  const channelRef = useRef<BroadcastChannel | null>(null);
 
   // Mantener slugRef sincronizado en un effect (no se puede mutar refs en render — react-hooks/refs)
   useEffect(() => {
     slugRef.current = tenantSlug;
   }, [tenantSlug]);
 
-  // Hydrate from localStorage after mount to avoid SSR/client mismatch
+  // Hydrate from localStorage when tenantSlug changes (and on mount).
+  // Deps [tenantSlug] — al cambiar de tienda, reset del state y abort del fetch
+  // para que no pise el carrito nuevo con datos de la tienda anterior.
   useEffect(() => {
-    const s = slugRef.current;
+    const s = tenantSlug;
+    hydratedRef.current = false;
+    dispatch({ type: "CLEAR" });
+    const controller = new AbortController();
+
     try {
       const saved = localStorage.getItem(sk(s, "cart"));
       const items = saved ? JSON.parse(saved) : [];
       if (Array.isArray(items) && items.length > 0) {
         dispatch({ type: "HYDRATE", payload: items });
 
-        // Validate cart items still exist in DB — remove stale/deleted products
-        fetch("/api/products?active=true")
+        /* cart-hydration-patch-v1 */
+        // Validate cart items still exist in DB — remove stale/deleted products.
+        //
+        // Endpoint: /api/marketplace/products/check-exists cruza stores (marketplace
+        // multi-tenant). El endpoint legacy /api/products?active=true solo devuelve
+        // productos del tenant "main" → borraba el carrito al hidratar si los items
+        // venían de otros stores. Bug 2026-04-19.
+        //
+        // Guard: si por alguna razón la respuesta no es confiable (empty, error),
+        // NUNCA borrar el carrito entero. Ver
+        // .github/instructions/state-management.instructions.md.
+        const idsQuery = items.map((i: CartItem) => i.id).join(",");
+        fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`, { signal: controller.signal })
           .then(r => r.ok ? r.json() : null)
-          .then(data => {
-            if (!data) return;
-            const products: { id: number }[] = Array.isArray(data) ? data : [];
-            const validIds = new Set(products.map((p: { id: number }) => p.id));
-            const validItems = items.filter((item: CartItem) => validIds.has(item.id));
+          .then((data: { existingIds?: number[]; missingIds?: number[] } | null) => {
+            if (!data || !Array.isArray(data.existingIds)) return;
+            const existing = new Set<number>(data.existingIds);
+            const validItems = items.filter((item: CartItem) => existing.has(item.id));
+
+            // Guard: preservar carrito si TODOS "desaparecerían" (señal dudosa).
+            if (validItems.length === 0 && items.length > 0) return;
+
             if (validItems.length !== items.length) {
-              // Some items were deleted — update cart
               dispatch({ type: "HYDRATE", payload: validItems });
               localStorage.setItem(sk(s, "cart"), JSON.stringify(validItems));
             }
           })
-          .catch(() => { /* silently ignore — cart stays as-is */ });
+          .catch(() => { /* silently ignore — cart stays as-is or fetch aborted */ });
       }
       if (localStorage.getItem(sk(s, "pending")) === "1") {
         dispatch({ type: "MARK_ORDER_PENDING" });
@@ -260,11 +278,16 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     } catch {}
     // Mark hydration complete AFTER all dispatches above
     hydratedRef.current = true;
-  }, []);
 
-  // Multi-tab cart sync with BroadcastChannel API
+    return () => { controller.abort(); };
+  }, [tenantSlug]);
+
+  // Multi-tab cart sync with BroadcastChannel API.
+  // Canal per-provider via channelRef; lifecycle atado al tenantSlug.
+  // Al cambiar slug: close() del canal anterior + re-instancia con slug nuevo.
   useEffect(() => {
-    const channel = getBroadcastChannel(slugRef.current);
+    const channel = createBroadcastChannel(tenantSlug);
+    channelRef.current = channel;
     if (!channel) return;
 
     // Listen to messages from other tabs (skip own messages to avoid self-echo loop)
@@ -298,8 +321,10 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
 
     return () => {
       channel.removeEventListener("message", handleMessage);
+      try { channel.close(); } catch { /* ok */ }
+      channelRef.current = null;
     };
-  }, []);
+  }, [tenantSlug]);
 
   // Persist to localStorage — only after hydration to prevent overwriting saved cart
   useEffect(() => {
@@ -314,8 +339,8 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
       localStorage.removeItem(sk(s, "cart-dismissed"));
     }
 
-    // Broadcast cart changes to other tabs (reuse shared channel)
-    const channel = getBroadcastChannel(s);
+    // Broadcast cart changes to other tabs (provider-scoped channel)
+    const channel = channelRef.current;
     if (channel) {
       try {
         channel.postMessage({ type: "CART_UPDATE", payload: state.items, tabId: TAB_ID });
@@ -399,8 +424,8 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     const s = slugRef.current;
     localStorage.setItem(sk(s, "pending"), state.hasPendingOrder ? "1" : "0");
 
-    // Broadcast pending status to other tabs (reuse shared channel)
-    const channel = getBroadcastChannel(s);
+    // Broadcast pending status to other tabs (provider-scoped channel)
+    const channel = channelRef.current;
     if (channel) {
       try {
         channel.postMessage({ type: "PENDING_STATUS", payload: state.hasPendingOrder, tabId: TAB_ID });

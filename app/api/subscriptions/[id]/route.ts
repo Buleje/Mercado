@@ -2,9 +2,12 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET    /api/subscriptions/[id]      — obtener una suscripción del cliente
@@ -38,6 +41,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
   const { tenantId, customerId: userId } = customer;

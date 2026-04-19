@@ -14,11 +14,17 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { ProductsDB } from "@/lib/db/products.db";
 import { slugify } from "@/data/products";
 import { logger } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
+
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 

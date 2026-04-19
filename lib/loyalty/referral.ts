@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
@@ -20,10 +21,8 @@ const REFERRAL_POINTS = 50;
 export function generateReferralCode(phone: string): string {
   const phoneSuffix = phone.replace(/\D/g, "").slice(-3);
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing O/0/I/1
-  let random = "";
-  for (let i = 0; i < 3; i++) {
-    random += chars[Math.floor(Math.random() * chars.length)];
-  }
+  const buf = randomBytes(3);
+  const random = Array.from(buf).map((b) => chars[b % chars.length]).join("");
   return `REF${phoneSuffix}${random}`;
 }
 

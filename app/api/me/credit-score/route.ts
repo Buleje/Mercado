@@ -12,13 +12,18 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { calculateCreditScore } from "@/lib/credit/scoring-engine";
 import { getAvailableCredit } from "@/lib/credit/installment-manager";
 import { prisma } from "@/lib/prisma";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
   if (!isFiadoDigitalPhase1Enabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

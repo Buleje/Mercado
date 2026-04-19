@@ -9,6 +9,7 @@
  *
  * In development, the current code is printed to the server console.
  */
+import { randomInt } from "crypto";
 import { logger } from "@/lib/logger";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 
@@ -172,7 +173,7 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
   // ── WhatsApp mode: random 6-digit code sent via WhatsApp ───────────────
   if (method === "whatsapp") {
     cleanExpiredChallenges();
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(100000 + randomInt(900000));
     const challengeId = crypto.randomUUID();
     whatsappChallenges.set(challengeId, {
       code,
@@ -200,7 +201,7 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
   const secret = getSecret();
   if (!secret) {
     // Fallback: generate a random code and log it (dev-only behavior)
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(100000 + randomInt(900000));
     logger.warn("[2FA] No TOTP secret configured — using random code fallback");
     if (process.env.NODE_ENV === "development") {
       logger.debug(`[2FA] Codigo de verificacion para ${username}: ${code}`);

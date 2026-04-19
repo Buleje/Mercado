@@ -2,9 +2,12 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET  /api/subscriptions          — lista del cliente autenticado
@@ -24,6 +27,13 @@ const CreateBody = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // Visitantes anónimos: 204 No Content en vez de 401 — evita ruido en consola
+  // del marketplace público. Solo aplica a GET (listar es idempotente y seguro).
+  // POST sigue devolviendo 401 via requireCustomer — mutar requiere auth.
+  if (!req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 

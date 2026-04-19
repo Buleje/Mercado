@@ -1,5 +1,7 @@
 import "server-only";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type {
   Customer as PCustomer,
   SavedLocation as PSavedLocation,
@@ -188,7 +190,7 @@ export const CustomersDB = {
     return mapCustomer(row);
   },
   async delete(phone: string): Promise<void> {
-    await prisma.customer.delete({ where: { phone: normalizePhone(phone) } }).catch(() => {});
+    await prisma.customer.delete({ where: { phone: normalizePhone(phone) } }).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));
   },
   async updateAiNotes(phone: string, aiNotes: string): Promise<void> {
     await prisma.customer.update({ where: { phone: normalizePhone(phone) }, data: { aiNotes, aiNotesDate: new Date() } });
@@ -209,8 +211,8 @@ export const CustomersDB = {
     const c = await prisma.customer.findUnique({ where: { phone: normalized }, select: { referralCode: true } });
     if (c?.referralCode) return c.referralCode;
     // Generate 6-char alphanumeric code
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    await prisma.customer.update({ where: { phone: normalized }, data: { referralCode: code } }).catch(() => {});
+    const code = randomBytes(6).toString("base64url").slice(0, 8).toUpperCase();
+    await prisma.customer.update({ where: { phone: normalized }, data: { referralCode: code } }).catch((err) => logger.error("[customers.db] referralCode assign failed", { error: String(err), phone: normalized }));
     return code;
   },
   /** Apply a referral code: credits 50 points to referrer, links referredBy */
@@ -290,7 +292,7 @@ export const ReviewsDB = {
     return mapReview(row);
   },
   async updateStatus(id: string, status: DbReview["status"]): Promise<void> {
-    await prisma.review.update({ where: { id }, data: { status } }).catch(() => {});
+    await prisma.review.update({ where: { id }, data: { status } }).catch((err) => logger.error("[customers.db] review status update failed", { error: String(err), id, status }));
   },
   async updateReply(id: string, adminReply: string | null): Promise<void> {
     await prisma.$executeRaw`
@@ -298,10 +300,10 @@ export const ReviewsDB = {
       SET "adminReply" = ${adminReply},
           "adminReplyDate" = ${adminReply != null ? new Date() : null}
       WHERE id = ${id}
-    `.catch(() => {});
+    `.catch((err) => logger.error("[customers.db] review adminReply update failed", { error: String(err), id }));
   },
   async delete(id: string): Promise<void> {
-    await prisma.review.delete({ where: { id } }).catch(() => {});
+    await prisma.review.delete({ where: { id } }).catch((err) => logger.error("[customers.db] review delete failed", { error: String(err), id }));
   },
 
   /** Aggregate ratings per product (approved reviews only) */
@@ -358,6 +360,6 @@ export const ShoppingListsDB = {
     return row ? mapShoppingList(row) : null;
   },
   async delete(id: string): Promise<void> {
-    await prisma.shoppingList.delete({ where: { id } }).catch(() => {});
+    await prisma.shoppingList.delete({ where: { id } }).catch((err) => logger.error("[customers.db] shoppingList delete failed", { error: String(err), id }));
   },
 };
