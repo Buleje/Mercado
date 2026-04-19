@@ -94,7 +94,7 @@ export default function AdminModal({
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">
               <div className="min-w-0">
                 {title && (
-                  <Dialog.Title className="font-display italic text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight truncate">
+                  <Dialog.Title className="font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight truncate">
                     {title}
                   </Dialog.Title>
                 )}

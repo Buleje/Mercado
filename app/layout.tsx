@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist, Fraunces } from "next/font/google";
+import { Geist, Instrument_Serif } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
 const GeistSans = Geist({
@@ -10,16 +10,16 @@ const GeistSans = Geist({
   preload: true,
 });
 
-// Display — Fraunces: serif editorial cálido con personalidad amazónica.
-// Uso: headers grandes (<h1>, <h2>), eyebrows, y empty states donde
-// queremos que el texto se sienta "impreso", no genérico AI.
-// axes: SOFT=50 (contornos suavizados) + opsz automático para tamaños.
-const FrauncesDisplay = Fraunces({
+// Display — Instrument Serif: serif contemporáneo con carácter editorial.
+// Menos florido que Fraunces italic, competente con las ilustraciones
+// line-art (paiche, tucán, doña elena). Regular weight 400.
+// Transmite: "diario independiente de barrio", no "logo de boutique".
+const InstrumentDisplay = Instrument_Serif({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
   preload: false,
-  weight: ["400", "500", "600", "700"],
+  weight: ["400"],
   style: ["normal", "italic"],
 });
 import "./globals.css";
@@ -209,7 +209,7 @@ export default async function RootLayout({
   const { ratingValue, ratingCount } = await getCachedReviewStats();
 
   return (
-    <html lang="es-PE" className={`${GeistSans.variable} ${FrauncesDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />

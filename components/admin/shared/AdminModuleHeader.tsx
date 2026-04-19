@@ -88,7 +88,7 @@ export default function AdminModuleHeader({
           {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
           <PageTitle
             as="h1"
-            className="font-display italic tracking-tight leading-[1.05]"
+            className="font-display tracking-tight leading-[1.05]"
           >
             {title}
           </PageTitle>

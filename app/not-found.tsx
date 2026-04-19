@@ -27,10 +27,10 @@ export default function NotFound() {
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
           Error 404
         </p>
-        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] italic">
+        <h1 className="font-display text-4xl sm:text-5xl font-normal tracking-[-0.02em] text-[var(--text-primary)]">
           El paiche se fue por otro río
         </h1>
-        <p className="mt-4 font-display text-lg text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto">
+        <p className="mt-4 text-lg text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto">
           La página que buscás no existe. Pero tu próxima compra sí —
           volvé al inicio o buscá lo que necesitás.
         </p>

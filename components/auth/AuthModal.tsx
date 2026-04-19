@@ -417,7 +417,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               B
             </div>
             <div className="text-center">
-              <h2 className="font-display text-3xl font-semibold italic text-gray-900 dark:text-white tracking-[-0.015em]">
+              <h2 className="font-display text-3xl font-semibold text-gray-900 dark:text-white tracking-[-0.015em]">
                 {step === "otp"
                   ? "Verificación"
                   : tab === "register"

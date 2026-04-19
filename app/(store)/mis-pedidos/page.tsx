@@ -841,7 +841,7 @@ export default function MisPedidosPage() {
               <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-white/40 mb-1">
                 PEDIDOS
               </span>
-              <h1 className="font-display text-3xl sm:text-4xl font-semibold italic text-white leading-tight tracking-[-0.02em]">
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white leading-tight tracking-[-0.02em]">
                 Todo tu historial
               </h1>
             </div>

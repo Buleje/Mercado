@@ -46,7 +46,7 @@ export const WelcomeHero = memo(function WelcomeHero({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-center">
         <div className="min-w-0">
           <Kicker>Tu bodega de confianza</Kicker>
-          <PageTitle id="welcome-heading" className="font-display italic mt-1">
+          <PageTitle id="welcome-heading" className="font-display mt-1">
             Bienvenida de vuelta, {firstName}
           </PageTitle>
           <div className="mt-3 flex flex-wrap items-center gap-2">

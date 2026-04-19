@@ -68,11 +68,16 @@
   --font-display-family: var(--font-display), ui-serif, Georgia, serif;
 }
 
-/* Utility class — display font editorial */
+/* Utility class — display font editorial.
+   Instrument Serif: regular weight 400, sin cursiva por default.
+   El italic se aplica SOLO cuando se agrega explícitamente la clase "italic".
+   Esto evita que todos los títulos se vean "cursivos florecidos" — el italic
+   queda reservado para acentos específicos. */
 .font-display {
   font-family: var(--font-display-family);
   font-optical-sizing: auto;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  font-weight: 400;
 }
 
 /* Noise texture — SVG data-URI + very low opacity.

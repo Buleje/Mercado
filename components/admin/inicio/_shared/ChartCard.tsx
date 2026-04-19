@@ -71,7 +71,7 @@ export function ChartCard({
             <Icon className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted shrink-0 mt-0.5" />
           )}
           <div className="min-w-0">
-            <CardTitle className="font-display text-base font-semibold italic text-[var(--text-primary)] dark:text-foreground truncate tracking-tight">
+            <CardTitle className="font-display text-base font-semibold text-[var(--text-primary)] dark:text-foreground truncate tracking-tight">
               {title}
             </CardTitle>
             {subtitle && (

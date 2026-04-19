@@ -95,7 +95,7 @@ export function BulejeLoader({
         </div>
       )}
 
-      <p className="font-display text-base italic text-[var(--text-secondary)] tabular-nums">
+      <p className="font-display text-base text-[var(--text-secondary)] tabular-nums">
         <span>{label}</span>
         <span className="inline-block w-6 text-left" aria-hidden>
           {dots}

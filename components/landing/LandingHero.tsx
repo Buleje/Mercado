@@ -77,7 +77,7 @@ export default function LandingHero({
             </span>
 
             {/* H1 calido + accion — tipografía editorial amazónica */}
-            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-semibold italic tracking-[-0.025em] text-gray-900 dark:text-white leading-[1.02]">
+            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-semibold tracking-[-0.025em] text-gray-900 dark:text-white leading-[1.02]">
               Tu mercado favorito,{" "}
               <span className="text-primary not-italic font-bold">ahora en tu celular</span>
             </h1>

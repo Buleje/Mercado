@@ -58,13 +58,11 @@ export function DashboardSectionHeader({
     >
       <div>
         {eyebrow && <Kicker className="mb-1.5">{eyebrow}</Kicker>}
-        <PageTitle className="font-display italic tracking-[var(--ls-tight)] leading-[1.05]">
+        <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05]">
           {titleAccent ? (
             <>
               {title}{" "}
-              <span className={cn("not-italic", accentClassName)}>
-                {titleAccent}
-              </span>
+              <span className={cn(accentClassName)}>{titleAccent}</span>
             </>
           ) : (
             title

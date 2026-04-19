@@ -11,6 +11,9 @@ import {
   LayoutList, Columns3, MapPin, HandCoins, Search, RefreshCw } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, ComposedChart } from "recharts";
 import { cn } from "@/lib/utils";
@@ -880,33 +883,22 @@ export default function FiadosModule() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
+  // ── Stats inline para el header ─────────────────────────────────
+  const activosCount = fiados.filter((f) => f.status === "ACTIVO").length;
+  const vencidosCount = fiados.filter((f) => f.status === "VENCIDO").length;
+
   return (
     <div className="space-y-6">
-      {/* ── Header estandar ──────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--accent-soft)] shrink-0">
-          <HandCoins className="w-5 h-5 text-[var(--data-success)]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <PageTitle className="text-xl font-bold text-[var(--text-primary)] truncate">
-            Fiados
-            {fiados.length > 0 && (() => {
-              const activos = fiados.filter(f => f.status === "ACTIVO").length;
-              const vencidos = fiados.filter(f => f.status === "VENCIDO").length;
-              return (
-                <span className="ml-2 text-xs font-bold text-[var(--text-secondary)] align-middle">
-                  {activos > 0 && <span className="text-[var(--data-success)]">{activos} activos</span>}
-                  {activos > 0 && vencidos > 0 && " · "}
-                  {vencidos > 0 && <span className="text-[var(--data-error)]">{vencidos} vencidos</span>}
-                </span>
-              );
-            })()}
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Creditos informales y cobranza
-            {totalSaldo > 0 && <> · Pendiente: <span className="font-bold text-[var(--data-error)]">{formatCurrency(totalSaldo)}</span></>}
-          </p>
-        </div>
+      <AdminModuleHeader
+        icon={HandCoins}
+        eyebrow="Clientes · Créditos informales"
+        title="Fiados"
+        description={
+          totalSaldo > 0
+            ? `Quiénes te deben y cuánto. Total pendiente: ${formatCurrency(totalSaldo)} — ${activosCount} activos, ${vencidosCount} vencidos.`
+            : `Créditos informales con tus clientes de confianza. Registrá, cobrá y evitá olvidos.`
+        }
+      >
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={() => setShowDebtorsMap(true)}
@@ -990,7 +982,7 @@ export default function FiadosModule() {
             Nuevo Fiado
           </button>
         </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* ── Tabs estandar (View modes) ─────────────────────────────── */}
       <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl w-fit">

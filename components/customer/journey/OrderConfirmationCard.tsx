@@ -73,7 +73,7 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-2">
           Pedido confirmado
         </p>
-        <h1 className="font-display text-4xl sm:text-5xl font-semibold italic tracking-[-0.015em] text-white leading-[1.05] mb-3">
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.015em] text-white leading-[1.05] mb-3">
           ¡Ya lo estamos preparando!
         </h1>
         <p className="text-white/65 text-sm sm:text-base leading-relaxed max-w-md mx-auto">

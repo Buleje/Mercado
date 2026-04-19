@@ -363,7 +363,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-1.5">
             Panel de control · {periodLabel}
           </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold italic tracking-[-0.02em] text-[var(--text-primary)] leading-[1.02]">
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] leading-[1.02]">
             {greeting}, <span className="text-[var(--accent)]">tu bodega</span>
           </h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
@@ -440,7 +440,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
               Margen bruto {periodLabel}
             </p>
             <p className={cn(
-              "font-display text-3xl sm:text-4xl font-semibold italic tabular-nums leading-none mt-1",
+              "font-display text-3xl sm:text-4xl font-semibold tabular-nums leading-none mt-1",
               data.margenHoy >= 30 ? "text-[var(--data-success)]" : data.margenHoy >= 15 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
             )}>
               {data.margenHoy.toFixed(1)}%

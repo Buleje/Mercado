@@ -50,7 +50,7 @@ export function EmptyState({
           {eyebrow}
         </p>
       )}
-      <h3 className="font-display mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)] max-w-sm italic">
+      <h3 className="font-display mt-2 text-2xl font-normal tracking-tight text-[var(--text-primary)] max-w-sm">
         {title}
       </h3>
       {description && (

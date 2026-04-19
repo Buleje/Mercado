@@ -293,7 +293,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           {/* Title — compact since search is in navbar now */}
           <div className="text-center mb-5">
             <m.h1
-              className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.02em] italic"
+              className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.02em]"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
