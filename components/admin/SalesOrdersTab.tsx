@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, PageTitle, SectionTitle } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   ShoppingBag, RefreshCw, Clock, CheckCircle, XCircle, Truck,
@@ -505,12 +506,16 @@ export default function SalesOrdersTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">Pedidos, caja y punto de venta</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={exportCSV} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Exportar CSV">
-            <Download className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-          <button onClick={exportExcel} className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Exportar Excel">
-            <FileSpreadsheet className="h-4 w-4 text-[var(--data-success)]" />
-          </button>
+          <AdminTooltip content="Descargar pedidos en formato CSV">
+            <button onClick={exportCSV} aria-label="Exportar CSV" className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+              <Download className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
+          </AdminTooltip>
+          <AdminTooltip content="Descargar pedidos en formato Excel (.xlsx)">
+            <button onClick={exportExcel} aria-label="Exportar Excel" className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+              <FileSpreadsheet className="h-4 w-4 text-[var(--data-success)]" />
+            </button>
+          </AdminTooltip>
           <button
             onClick={() => {
               const next = !soundEnabled;
@@ -610,9 +615,11 @@ export default function SalesOrdersTab() {
         </span>
 
         {/* Acciones */}
-        <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
-          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
+        <AdminTooltip content="Recargar pedidos">
+          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
+          </button>
+        </AdminTooltip>
 
         {/* Group by zone */}
         {viewMode === "list" && (

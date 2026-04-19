@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { Gauge, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, AlertTriangle, CheckCircle, ArrowUp, ArrowDown, BarChart3, Eye, Download, Star, RefreshCw } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -221,9 +222,11 @@ export default function ExecutiveDashboardTab() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar datos">
-            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
+          <AdminTooltip content="Recargar todos los KPIs del dashboard">
+            <button onClick={load} aria-label="Actualizar datos" className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+              <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
+          </AdminTooltip>
           {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", period === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
               {PERIOD_LABELS[p]}

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Users, Search, X, Download, Loader2, AlertCircle,
@@ -537,9 +538,11 @@ export default function CRMTab() {
         </span>
 
         {/* Acciones */}
-        <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
-          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
+        <AdminTooltip content="Recargar clientes desde la base de datos">
+          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
+          </button>
+        </AdminTooltip>
       </div>
 
       {/* Filtros secundarios: quick filter + frecuencia + tags */}

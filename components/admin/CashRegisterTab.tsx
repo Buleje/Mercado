@@ -11,6 +11,7 @@ import {
 import dynamic from "next/dynamic";
 import { CardTitle, EmptyState, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 
 const CashRegisterChart = dynamic(
@@ -538,9 +539,11 @@ export default function CashRegisterTab() {
               </div>
             )}
           </div>
-          <button onClick={fetchData} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors" title="Refrescar">
-            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
-          </button>
+          <AdminTooltip content="Refrescar datos de caja">
+            <button onClick={fetchData} aria-label="Refrescar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
+            </button>
+          </AdminTooltip>
           <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
             <button
               onClick={() => setView("current")}

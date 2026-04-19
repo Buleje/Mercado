@@ -1071,9 +1071,11 @@ export default function FiadosModule() {
         </span>
 
         {/* Reload */}
-        <button onClick={fetchFiados} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="Actualizar">
-          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
+        <AdminTooltip content="Recargar la lista de fiados">
+          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
+          </button>
+        </AdminTooltip>
       </div>
 
       {/* Stats, KPIs, Calendar, Risk Ranking, Projections */}
