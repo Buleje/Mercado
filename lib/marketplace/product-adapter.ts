@@ -31,7 +31,7 @@ export type RawMarketplaceProduct = {
   unit?: string | null;
   badge?: string;
   badges?: string[];
-  stock?: number;
+  stock?: number | null;
   rating?: number;
   avgRating?: number;
   storeRating?: number;
@@ -56,7 +56,7 @@ const VALID_BADGES: ReadonlySet<ProductCardBadge> = new Set<ProductCardBadge>([
 function normalizeBadge(
   raw: string | undefined,
   badges: string[] | undefined,
-  stock?: number,
+  stock?: number | null,
 ): ProductCardBadge | undefined {
   if (stock === 0) return "agotado";
   const candidate = raw ?? badges?.[0];
@@ -114,7 +114,7 @@ export function toProductCardShape(
     category: raw.category ?? undefined,
     unit: raw.unit ?? undefined,
     badge: normalizeBadge(raw.badge, raw.badges, raw.stock),
-    stock: raw.stock,
+    stock: raw.stock ?? undefined,
     rating,
     reviewCount: raw.reviewCount,
     storeSlug,

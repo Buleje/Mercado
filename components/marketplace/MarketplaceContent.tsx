@@ -49,6 +49,7 @@ import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
 // ── Home narrative modules (ENRICH-6) ────────────────────────────────────────
 import ParaVosSection from "@/components/marketplace/home/ParaVosSection";
+import OfertasDelDiaHero from "@/components/marketplace/home/OfertasDelDiaHero";
 import OfertasFlashSection from "@/components/marketplace/home/OfertasFlashSection";
 import LiveActivityFeed from "@/components/marketplace/home/LiveActivityFeed";
 import AhorraMasMegaSection from "@/components/marketplace/home/AhorraMasMegaSection";
@@ -424,6 +425,9 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
         </div>
       </section>
 
+      {/* ── Ofertas del dia: ProductCardHero (Ola 7) — 2 featured above-the-fold ── */}
+      <OfertasDelDiaHero />
+
       {/* ── Para vos: smart recommendations post-hero (ENRICH-6 Ola 3) ── */}
       <ParaVosSection />
 
@@ -448,7 +452,8 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
       <MarketplaceJungleProducts />
 
       {/* ── Filters + Grid ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      {/* max-w-[1600px] (Ola 7) — user pidio secciones amplias que abarquen todo el ancho */}
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Sticky filter cluster: se queda pegado arriba al scrollear (glassmorphism) */}
         <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 glass rounded-2xl mb-3">
         {/* Category pills — arriba de todo */}
