@@ -91,7 +91,7 @@ export function RecommendationsWidget({
     return (
       <section aria-label="Cargando recomendaciones" className="mt-8">
         <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}

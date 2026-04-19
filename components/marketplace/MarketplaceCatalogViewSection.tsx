@@ -9,7 +9,7 @@ import CatalogSections from "@/components/marketplace/CatalogSections";
 function CatalogSkeleton() {
   return (
     <div
-      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-6"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6"
       aria-busy="true"
       aria-label="Cargando catálogo..."
     >

@@ -5,6 +5,7 @@ import { Clock, Users, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import RecipeModal, { type RecipeData } from "@/components/marketplace/RecipeModal";
 import { RECIPE_ILLUSTRATIONS } from "@/components/marketplace/RecipeIllustrations";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 
 interface Recipe {
   id: string;
@@ -150,29 +151,17 @@ export default function MarketplaceRecipesWidget() {
   };
 
   return (
-    <section
+    <MarketplaceSection
       id="recetas"
-      aria-label="Recetas con productos del marketplace"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      kicker="Cocina amazónica"
+      title="Recetas de la selva"
+      subtitle="Armamos la lista de ingredientes por vos. Un click y al carrito."
     >
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(RECIPE_JSONLD) }}
       />
-      <div className="flex items-end justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-        <div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
-            Cocina amazónica
-          </p>
-          <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            Recetas de la selva
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md">
-            Armamos la lista de ingredientes por vos. Un click y al carrito.
-          </p>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {RECIPES.map((r, idx) => {
@@ -254,6 +243,6 @@ export default function MarketplaceRecipesWidget() {
         recipe={activeRecipe as RecipeData | null}
         onAddIngredientsToCart={handleAddIngredients}
       />
-    </section>
+    </MarketplaceSection>
   );
 }

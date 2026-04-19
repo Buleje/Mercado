@@ -6,6 +6,7 @@ import Image from "next/image";
 import { m } from "framer-motion";
 import { Leaf, MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import MarketplaceSection, { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 
 interface JungleProduct {
   storeProductId: string;
@@ -112,41 +113,32 @@ export default function MarketplaceJungleProducts() {
   if (items !== null && items.length === 0) return null;
 
   return (
-    <section
+    <MarketplaceSection
       id="selva"
-      aria-label="Productos de la selva amazónica"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      kicker="Pucallpa · Ucayali"
+      title="Productos de la selva"
+      subtitle="Del árbol al mercado: frutos, granos y especias cultivadas por productores de Ucayali."
+      actions={
+        <Link
+          href="/marketplace?vista=catalogo&q=selva"
+          className="text-xs font-bold text-gray-900 dark:text-white link-underline whitespace-nowrap"
+        >
+          Ver todos
+        </Link>
+      }
     >
-      <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-        <div className="relative p-6 sm:p-8">
-          <div className="flex items-end justify-between gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-            <div>
-              <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
-                <MapPin className="h-3 w-3" strokeWidth={2} />
-                Pucallpa · Ucayali
-              </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                Productos de la selva
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-xl">
-                Del árbol al mercado: frutos, granos y especias cultivadas por
-                productores de Ucayali.
-              </p>
-            </div>
-          </div>
-
-          {items === null ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-square rounded-xl skeleton-shimmer"
-                />
-              ))}
-            </div>
-          ) : (
-            <m.div
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+      {items === null ? (
+        <div className={MARKETPLACE_GRID}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square rounded-xl skeleton-shimmer"
+            />
+          ))}
+        </div>
+      ) : (
+        <m.div
+              className={MARKETPLACE_GRID}
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.15 }}
@@ -213,16 +205,6 @@ export default function MarketplaceJungleProducts() {
             </m.div>
           )}
 
-          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-            <Link
-              href="/marketplace?vista=catalogo&q=selva"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900 dark:text-white link-underline"
-            >
-              Ver todos los productos de la selva →
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
+    </MarketplaceSection>
   );
 }

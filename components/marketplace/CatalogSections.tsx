@@ -78,18 +78,20 @@ function Section({
 
   return (
     <div className="mb-10">
-      <div className="flex items-center gap-2.5 mb-4">
-        <span
-          className={cn(
-            "inline-flex items-center justify-center h-8 w-8 rounded-xl",
-            accentColor
-          )}
-        >
-          {icon}
-        </span>
-        <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">
-          {title}
-        </h2>
+      <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-2.5">
+          <span
+            className={cn(
+              "inline-flex items-center justify-center h-8 w-8 rounded-xl",
+              accentColor
+            )}
+          >
+            {icon}
+          </span>
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-foreground">
+            {title}
+          </h2>
+        </div>
       </div>
       {children}
     </div>
@@ -105,7 +107,7 @@ function SectionSkeleton() {
         <div className="h-8 w-8 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
         <div className="h-5 w-40 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
@@ -172,7 +174,7 @@ export default function CatalogSections() {
   }
 
   const gridCols =
-    "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3";
+    "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
 
   return (
     <div className="mt-8 space-y-2">

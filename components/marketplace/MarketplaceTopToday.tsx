@@ -7,6 +7,7 @@ import { m } from "framer-motion";
 import { Flame, TrendingUp, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WishlistButton from "@/components/marketplace/WishlistButton";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 
 interface TopProduct {
   storeProductId: string;
@@ -77,31 +78,20 @@ export default function MarketplaceTopToday() {
   if (error || (items !== null && items.length === 0)) return null;
 
   return (
-    <section
+    <MarketplaceSection
       id="top-today"
-      aria-label="Lo más pedido hoy"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8"
-    >
-      <div className="flex items-end justify-between gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-        <div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-gray-400">
-            Ranking {windowLabel === "7d" ? "semanal" : "diario"}
-          </p>
-          <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            Lo más pedido {windowLabel === "7d" ? "esta semana" : "hoy"}
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Los productos que los vecinos están comprando ahora mismo
-          </p>
-        </div>
+      kicker={`Ranking ${windowLabel === "7d" ? "semanal" : "diario"}`}
+      title={`Lo más pedido ${windowLabel === "7d" ? "esta semana" : "hoy"}`}
+      subtitle="Los productos que los vecinos están comprando ahora mismo"
+      actions={
         <Link
           href="/marketplace?vista=catalogo&sort=popular"
-          className="text-xs font-bold text-gray-900 dark:text-white link-underline whitespace-nowrap shrink-0"
+          className="text-xs font-bold text-gray-900 dark:text-white link-underline whitespace-nowrap"
         >
-          Ver todo →
+          Ver todo
         </Link>
-      </div>
-
+      }
+    >
       {items === null ? (
         <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -227,6 +217,6 @@ export default function MarketplaceTopToday() {
           ))}
         </m.div>
       )}
-    </section>
+    </MarketplaceSection>
   );
 }

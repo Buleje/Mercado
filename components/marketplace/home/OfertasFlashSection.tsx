@@ -15,12 +15,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Clock,
-  Zap,
 } from "@buleje/design-system/icons";
-import { CardTitle, Caption, Kicker } from "@buleje/design-system";
+import { Caption } from "@buleje/design-system";
 import { MOCK_DEALS, type Deal } from "@/lib/mock-deals";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
+import MarketplaceSection, { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 
 function useCountdown(target: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -88,34 +88,16 @@ export default function OfertasFlashSection() {
   if (flashDeals.length === 0) return null;
 
   return (
-    <section
-      aria-labelledby="ofertas-flash-title"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-    >
-      <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
-            <Zap className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <Kicker className="text-[var(--text-tertiary)]">Ofertas flash</Kicker>
-            <CardTitle
-              id="ofertas-flash-title"
-              className="text-[length:var(--ts-lg)]"
-            >
-              Termina pronto: hasta -40% en productos seleccionados
-            </CardTitle>
-            {!expired && (
-              <Caption className="mt-0.5 inline-flex items-center gap-1.5 text-[var(--text-tertiary)]">
-                <Clock className="h-3 w-3" aria-hidden />
-                Cierra en{" "}
-                <span className="tabular-nums font-semibold text-[var(--text-secondary)]">
-                  {pad(hours)}:{pad(minutes)}:{pad(seconds)}
-                </span>
-              </Caption>
-            )}
-          </div>
-        </div>
+    <MarketplaceSection
+      id="ofertas-flash"
+      kicker="Ofertas flash"
+      title="Termina pronto: hasta -40% en productos seleccionados"
+      subtitle={
+        !expired
+          ? undefined
+          : undefined
+      }
+      actions={
         <Link
           href="/marketplace/ofertas"
           className={cn(
@@ -126,10 +108,21 @@ export default function OfertasFlashSection() {
           Ver todas las ofertas
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
-      </div>
+      }
+    >
+      {/* Countdown badge — debajo del header del wrapper */}
+      {!expired && (
+        <Caption className="mb-4 inline-flex items-center gap-1.5 text-[var(--text-tertiary)]">
+          <Clock className="h-3 w-3" aria-hidden />
+          Cierra en{" "}
+          <span className="tabular-nums font-semibold text-[var(--text-secondary)]">
+            {pad(hours)}:{pad(minutes)}:{pad(seconds)}
+          </span>
+        </Caption>
+      )}
 
       {/* Desktop grid */}
-      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className={`hidden sm:grid ${MARKETPLACE_GRID}`}>
         {flashDeals.map((d, i) => (
           <UnifiedProductCard
             key={d.id}
@@ -143,7 +136,7 @@ export default function OfertasFlashSection() {
       </div>
 
       {/* Mobile horizontal scroll */}
-      <div className="sm:hidden -mx-4 px-4 flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory">
+      <div className="sm:hidden -mx-4 px-4 flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
         {flashDeals.map((d, i) => (
           <div key={d.id} className="shrink-0 w-[200px] snap-start">
             <UnifiedProductCard
@@ -156,6 +149,6 @@ export default function OfertasFlashSection() {
           </div>
         ))}
       </div>
-    </section>
+    </MarketplaceSection>
   );
 }
