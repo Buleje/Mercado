@@ -1,9 +1,42 @@
 "use client";
 
-import Link from "next/link";
+/**
+ * MarketplaceRecentViewed — Carousel horizontal de productos vistos
+ * recientemente (persistidos en localStorage via useRecentViewed).
+ *
+ * Ola 7: migrado al primitivo ProductCardCompact del DS. Antes usaba un
+ * tile local con Link + Image inline; ahora consume el primitivo canonico
+ * para consistencia visual con Para vos / Comparados / Top hoy.
+ */
+
 import Image from "next/image";
-import { Clock, X } from "lucide-react";
+import {
+  ProductCardCompact,
+  type ProductCardProduct,
+} from "@buleje/design-system";
+import { Clock, X } from "@buleje/design-system/icons";
 import { useRecentViewed } from "@/hooks/use-recent-viewed";
+
+// Renderer Next/Image inyectado al primitivo del DS para optimizacion.
+function nextImage({
+  src,
+  alt,
+  className,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+}) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className={className}
+      sizes="(max-width: 640px) 40vw, 180px"
+    />
+  );
+}
 
 export default function MarketplaceRecentViewed() {
   const { items, clear } = useRecentViewed();
@@ -13,57 +46,51 @@ export default function MarketplaceRecentViewed() {
   return (
     <section
       aria-label="Productos vistos recientemente"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center">
+          <div className="h-7 w-7 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center">
             <Clock className="h-4 w-4" aria-hidden="true" />
           </div>
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">
             Seguiste viendo
           </h3>
         </div>
         <button
           type="button"
           onClick={clear}
-          className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-400 hover:text-red-500"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <X className="h-3 w-3" />
           Limpiar
         </button>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        {items.map((it) => (
-          <Link
-            key={`${it.storeSlug}-${it.productId}`}
-            href={`/marketplace/${it.storeSlug}?p=${it.productId}`}
-            className="shrink-0 w-36 group"
-          >
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 group-hover:border-primary/40 transition-all">
-              {it.image ? (
-                <Image
-                  src={it.image}
-                  alt={it.name}
-                  fill
-                  sizes="144px"
-                  className="object-cover group-hover:scale-105 transition-transform"
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center text-gray-300">
-                  <Clock className="h-8 w-8" />
-                </div>
-              )}
+      {/* ProductCardCompact (Ola 7) — carousel horizontal recent viewed */}
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory">
+        {items.map((it) => {
+          const product: ProductCardProduct = {
+            id: it.productId,
+            name: it.name,
+            price: it.price,
+            image: it.image ?? null,
+            storeSlug: it.storeSlug,
+            storeName: it.storeName,
+            href: `/marketplace/${it.storeSlug}?p=${it.productId}`,
+          };
+          return (
+            <div
+              key={`${it.storeSlug}-${it.productId}`}
+              className="shrink-0 snap-start"
+            >
+              <ProductCardCompact
+                product={product}
+                renderImage={it.image ? nextImage : undefined}
+              />
             </div>
-            <p className="mt-2 text-xs font-bold text-gray-800 dark:text-gray-100 line-clamp-2 leading-tight">
-              {it.name}
-            </p>
-            <p className="text-[11px] font-extrabold text-gray-900 dark:text-white mt-0.5">
-              S/{it.price.toFixed(2)}
-            </p>
-          </Link>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

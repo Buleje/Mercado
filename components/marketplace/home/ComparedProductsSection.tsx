@@ -3,18 +3,27 @@
 /**
  * ComparedProductsSection — Cross-sell al comparador /marketplace/comparar.
  *
- * Muestra 4 productos "populares en comparacion" con badge "En comparacion"
- * y CTA al comparador completo. Data es mock local; cuando exista tabla de
- * metricas de uso del comparador se reemplaza por fetch a endpoint real.
+ * Muestra 4 productos "populares en comparacion" con un CTA al comparador
+ * completo. Data es mock local; cuando exista tabla de metricas de uso del
+ * comparador se reemplaza por fetch a endpoint real.
+ *
+ * Ola 7: migrado al primitivo ProductCardCompact del DS. Antes usaba un
+ * ComparedCard local con link al comparador; ahora usa el primitivo
+ * canonico con `href` custom apuntando al comparador (`/marketplace/comparar?q=...`).
  */
 
 import Link from "next/link";
 import {
+  CardTitle,
+  Caption,
+  Kicker,
+  ProductCardCompact,
+  type ProductCardProduct,
+} from "@buleje/design-system";
+import {
   ArrowRight,
   GitCompareArrows,
 } from "@buleje/design-system/icons";
-import { CardTitle, Caption, Kicker } from "@buleje/design-system";
-import { cn } from "@/lib/utils";
 
 type ComparedProduct = {
   id: string;
@@ -65,69 +74,22 @@ const PRODUCTS: ComparedProduct[] = [
   },
 ];
 
-const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-
-function ComparedCard({ product }: { product: ComparedProduct }) {
-  return (
-    <Link
-      href={product.href}
-      className={cn(
-        "group flex flex-col rounded-xl border border-[var(--rule-base)]",
-        "bg-white dark:bg-gray-900 overflow-hidden transition-colors",
-        "hover:border-[var(--rule-strong)]",
-      )}
-    >
-      <div className="relative aspect-square bg-[var(--surface-sunken)] flex items-center justify-center">
-        <span
-          className={cn(
-            "absolute top-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5",
-            "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-            "bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
-            "border border-[var(--rule-base)]",
-          )}
-        >
-          <GitCompareArrows className="h-3 w-3" aria-hidden />
-          En comparacion
-        </span>
-        <span
-          className="text-[length:var(--ts-2xl)] font-extrabold text-[var(--text-tertiary)]/30 tracking-tight"
-          aria-hidden
-        >
-          {product.category.slice(0, 3).toUpperCase()}
-        </span>
-      </div>
-      <div className="p-3">
-        <Caption className="text-[var(--text-tertiary)] uppercase tracking-wide">
-          {product.category}
-        </Caption>
-        <h3 className="mt-0.5 text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] leading-tight line-clamp-2 h-10">
-          {product.name}
-        </h3>
-        <div className="mt-2 flex items-baseline gap-1.5">
-          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Desde
-          </span>
-          <span className="text-[length:var(--ts-base)] font-extrabold text-[var(--text-primary)] tabular-nums">
-            {fmt(product.priceFrom)}
-          </span>
-        </div>
-        <div className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          {product.stores} tiendas · {product.comparedToday} comparaciones hoy
-        </div>
-      </div>
-    </Link>
-  );
+function comparedToCard(p: ComparedProduct): ProductCardProduct {
+  return {
+    id: p.id,
+    name: p.name,
+    price: p.priceFrom,
+    image: null,
+    category: p.category,
+    href: p.href,
+  };
 }
 
 export default function ComparedProductsSection() {
   return (
     <section
       aria-labelledby="compared-title"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6"
     >
       <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-start gap-3 min-w-0">
@@ -154,26 +116,21 @@ export default function ComparedProductsSection() {
         </div>
         <Link
           href="/marketplace/comparar"
-          className={cn(
-            "inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold",
-            "text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors",
-          )}
+          className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Comparar con otros
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </div>
 
-      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ProductCardCompact (Ola 7) — carousel horizontal de comparados */}
+      <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2">
         {PRODUCTS.map((p) => (
-          <ComparedCard key={p.id} product={p} />
-        ))}
-      </div>
-
-      <div className="sm:hidden -mx-4 px-4 flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory">
-        {PRODUCTS.map((p) => (
-          <div key={p.id} className="shrink-0 w-[160px] snap-start">
-            <ComparedCard product={p} />
+          <div key={p.id} className="shrink-0 snap-start">
+            <ProductCardCompact product={comparedToCard(p)} />
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] px-2 w-[160px] sm:w-[180px]">
+              {p.stores} tiendas · {p.comparedToday} comparaciones hoy
+            </p>
           </div>
         ))}
       </div>
