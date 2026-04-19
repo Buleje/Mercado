@@ -43,8 +43,12 @@ export const metadata: Metadata = {
 
 // ── Dynamic sections ──
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-const MarketplaceNavbar = dynamic(
-  () => import("@/components/marketplace/MarketplaceNavbar"),
+// LandingHeader — nav comercial pre-auth (conversion flow).
+// Reemplaza MarketplaceNavbar en la landing `/` para separar:
+//   - Landing → conversion (registro/login via AuthModal)
+//   - Marketplace post-auth → transaccion (cart, wishlist, order status)
+const LandingHeader = dynamic(
+  () => import("@/components/landing/LandingHeader"),
   { ssr: true }
 );
 
@@ -457,7 +461,7 @@ export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
-      <MarketplaceNavbar />
+      <LandingHeader />
       <DiscountBanner />
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
