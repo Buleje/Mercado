@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
 import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
@@ -91,8 +91,8 @@ function Skeleton({ className = "" }: { className?: string }) {
 
 function ProductCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="h-40 rounded-t-2xl bg-gray-200 dark:bg-gray-800" />
+    <div className="animate-pulse rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div className="aspect-[1/1] rounded-t-xl bg-gray-200 dark:bg-gray-800" />
       <div className="p-3 space-y-2">
         <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
         <div className="h-3 w-1/2 rounded bg-gray-200 dark:bg-gray-800" />
@@ -104,13 +104,12 @@ function ProductCardSkeleton() {
 
 // ---------- product card ----------
 
-function ProductCard({
+function ProductCardWrapper({
   product,
   storeId,
   storeName,
   storeSlug,
-  storeZone,
-  onAdded,
+  index,
   highlighted,
   vacationMode,
 }: {
@@ -118,197 +117,35 @@ function ProductCard({
   storeId: string;
   storeName: string;
   storeSlug: string;
-  storeZone?: string;
-  onAdded: (productName: string) => void;
+  index?: number;
   highlighted?: boolean;
   vacationMode?: boolean;
 }) {
-  const [justAdded, setJustAdded] = useState(false);
-  const [imgError, setImgError] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const { addItemWithUndo } = useCartWithUndo();
-  const { byStore, updateQuantity, removeItem } = useMarketplaceCart();
-
-  // Find current qty in cart
-  const cartItems = byStore[storeId]?.items ?? [];
-  const cartItem = cartItems.find((i) => i.productId === product.id);
-  const qty = cartItem?.quantity ?? 0;
-
-  const handleAdd = () => {
-    addItemWithUndo({
-      category: product.category,
-      image: product.image,
-      storeId,
-      storeName,
-      storeSlug,
-      storeZone,
-      storeProductId: product.storeProductId,
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      unit: product.unit,
-    });
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 1500);
-  };
-
-  const handleDecrement = () => {
-    if (qty <= 1) {
-      removeItem(storeId, product.id);
-    } else {
-      updateQuantity(storeId, product.id, qty - 1);
-    }
-  };
-
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-
-  const isOutOfStock = product.stock === 0 || !!vacationMode;
-  const isLowStock = !isOutOfStock && product.stock > 0 && product.stock <= 5;
+  const effectiveStock = vacationMode ? 0 : product.stock;
 
   return (
-    <article
-      id={`product-card-${product.id}`}
-      className={`group relative flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 ${isOutOfStock ? "opacity-60" : ""}`}
-    >
-      {/* Badges */}
-      {isOutOfStock && (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
-          Agotado
-        </span>
-      )}
-      {!isOutOfStock && product.stock === 1 && (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase text-white shadow-sm bg-red-500 animate-pulse">
-          ¡Última unidad!
-        </span>
-      )}
-      {isLowStock && product.stock !== 1 && (
-        <span className="absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase text-white shadow-sm bg-amber-500 animate-pulse">
-          ¡Solo {product.stock}!
-        </span>
-      )}
-
-      {/* Image — aspect-square with hover zoom */}
-      <div className="relative aspect-square bg-gray-50 dark:bg-gray-800 overflow-hidden shrink-0">
-        {product.image && !imgError ? (
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className={`object-cover group-hover:scale-110 transition-all duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-slate-100 via-emerald-50 to-indigo-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-300 gap-2">
-            <div className="h-16 w-16 rounded-2xl bg-white/80 dark:bg-gray-900/40 ring-1 ring-white/70 dark:ring-gray-700/70 flex items-center justify-center shadow-sm">
-              <svg aria-hidden="true" className="h-8 w-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-            <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sin imagen</span>
-          </div>
-        )}
-
-        {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <span className="bg-gray-500/90 text-white text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-full">Agotado</span>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex min-h-38 flex-1 flex-col gap-1.5 p-2.5 sm:min-h-42 sm:p-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm leading-tight line-clamp-2">
-          {product.name}
-        </h3>
-
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {product.category && (
-            <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:bg-gray-800 dark:text-gray-400 capitalize">
-              {product.category}
-            </span>
-          )}
-          {product.stock > 0 && !isLowStock && (
-            <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-              En stock
-            </span>
-          )}
-        </div>
-
-        <div className="mt-auto pt-1">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <span className="text-base sm:text-lg font-extrabold text-primary leading-none">
-                {fmt(product.price)}
-              </span>
-              {product.unit && (
-                <span className="block text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">/{product.unit}</span>
-              )}
-              {product.stock > 0 && !isLowStock && (
-                <span className="block text-[length:var(--ts-2xs)] font-semibold text-gray-400 mt-0.5">
-                  Stock: {product.stock} {product.unit ?? "und"}
-                </span>
-              )}
-              {isLowStock && (
-                <span className="block text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 mt-0.5 animate-pulse">
-                  ⚠ ¡Solo quedan {product.stock}!
-                </span>
-              )}
-            </div>
-
-            {/* Add to cart / Quantity stepper */}
-            {qty === 0 ? (
-              <button
-                onClick={handleAdd}
-                disabled={isOutOfStock}
-                className={`flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  justAdded ? "bg-green-600 scale-95" : "bg-primary hover:bg-primary/90"
-                }`}
-                aria-label={`Agregar ${product.name}`}
-              >
-                {justAdded ? (
-                  <span className="text-sm font-bold">✓</span>
-                ) : (
-                  <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                )}
-              </button>
-            ) : (
-              <div className="flex items-center bg-primary rounded-2xl overflow-hidden shadow-md shrink-0">
-                <button
-                  onClick={handleDecrement}
-                  className="flex items-center justify-center h-10 w-8 sm:h-11 sm:w-9 text-white hover:bg-primary/80 transition-colors"
-                  aria-label="Reducir"
-                >
-                  <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
-                  </svg>
-                </button>
-                <span className="w-7 sm:w-8 text-center text-xs sm:text-sm font-bold text-white">
-                  {qty}
-                </span>
-                <button
-                  onClick={handleAdd}
-                  className="flex items-center justify-center h-10 w-8 sm:h-11 sm:w-9 text-white hover:bg-primary/80 transition-colors"
-                  aria-label="Aumentar"
-                >
-                  <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
+    <div id={`product-card-${product.id}`} className="relative">
+      <UnifiedProductCard
+        index={index ?? 0}
+        product={{
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          category: product.category ?? undefined,
+          unit: product.unit,
+          stock: effectiveStock,
+          storeId,
+          storeName,
+          storeSlug,
+          storeProductId: product.storeProductId,
+        }}
+        href={`/marketplace/${storeSlug}`}
+      />
       {highlighted && (
-        <div className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(37,99,235,0.15)] animate-pulse" />
+        <div className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(37,99,235,0.15)] animate-pulse" />
       )}
-    </article>
+    </div>
   );
 }
 
@@ -319,16 +156,12 @@ function RelatedProducts({
   storeId,
   storeName,
   storeSlug,
-  storeZone,
-  onAdded,
   vacationMode,
 }: {
   products: StoreProduct[];
   storeId: string;
   storeName: string;
   storeSlug: string;
-  storeZone?: string;
-  onAdded: (name: string) => void;
   vacationMode?: boolean;
 }) {
   const { byStore } = useMarketplaceCart();
@@ -363,15 +196,14 @@ function RelatedProducts({
         </h2>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {related.map((p) => (
-          <ProductCard
+        {related.map((p, i) => (
+          <ProductCardWrapper
             key={`rel-${p.id}`}
             product={p}
             storeId={storeId}
             storeName={storeName}
             storeSlug={storeSlug}
-            storeZone={storeZone}
-            onAdded={onAdded}
+            index={i}
             vacationMode={vacationMode}
           />
         ))}
@@ -1429,15 +1261,14 @@ export default function StoreDetail({ slug }: { slug: string }) {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((p) => (
-              <ProductCard
+            {products.map((p, i) => (
+              <ProductCardWrapper
                 key={p.id}
                 product={p}
                 storeId={store?.id ?? slug}
                 storeName={store?.name ?? "Tienda"}
                 storeSlug={store?.slug ?? slug}
-                storeZone={store?.zone}
-                onAdded={(name) => showToast(`${name} agregado al carrito`)}
+                index={i}
                 highlighted={highlightedProductId === p.id}
                 vacationMode={store?.vacationMode}
               />
@@ -1450,8 +1281,6 @@ export default function StoreDetail({ slug }: { slug: string }) {
             storeId={store?.id ?? slug}
             storeName={store?.name ?? "Tienda"}
             storeSlug={store?.slug ?? slug}
-            storeZone={store?.zone}
-            onAdded={(name) => showToast(`${name} agregado al carrito`)}
             vacationMode={store?.vacationMode}
           />
         </>

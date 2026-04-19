@@ -7,11 +7,9 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Sparkles, Package, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
+import { Sparkles, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -25,83 +23,18 @@ interface RecommendedProduct {
   storeSlug?: string;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
   return (
     <div className="w-40 shrink-0 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden animate-pulse">
-      <div className="aspect-square bg-gray-100 dark:bg-gray-800" />
+      <div className="aspect-[1/1] bg-gray-100 dark:bg-gray-800" />
       <div className="p-2.5 space-y-1.5">
         <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/4" />
         <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
         <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded w-full" />
       </div>
     </div>
-  );
-}
-
-// ── ProductCard ───────────────────────────────────────────────────────────────
-
-function ProductCard({
-  product,
-  index,
-}: {
-  product: RecommendedProduct;
-  index: number;
-}) {
-  const [imgError, setImgError] = useState(false);
-  const href = product.storeSlug
-    ? `/marketplace/${product.storeSlug}`
-    : `/marketplace`;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(index * 0.06, 0.5) }}
-      className="w-40 shrink-0"
-    >
-      <Link
-        href={href}
-        className="group block rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-250"
-      >
-        {/* Imagen */}
-        <div className="relative aspect-square bg-gray-50 dark:bg-gray-800 overflow-hidden">
-          {product.productImage && !imgError ? (
-            <Image
-              src={product.productImage}
-              alt={product.productName}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="160px"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-gray-300 dark:text-gray-600">
-              <Package className="h-8 w-8" />
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="p-2.5">
-          <p className="text-sm font-bold text-primary leading-none">
-            {fmt(product.price)}
-          </p>
-          <p className="text-xs font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2 mt-1 min-h-8">
-            {product.productName}
-          </p>
-          {product.reason && (
-            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-1 line-clamp-2 leading-tight">
-              {product.reason}
-            </p>
-          )}
-        </div>
-      </Link>
-    </motion.div>
   );
 }
 
@@ -239,7 +172,22 @@ export default function PersonalizedRecommendations() {
         >
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            : products.map((p, i) => <ProductCard key={p.productId} product={p} index={i} />)
+            : products.map((p, i) => (
+                <div key={p.productId} className="w-40 shrink-0">
+                  <UnifiedProductCard
+                    index={i}
+                    product={{
+                      id: parseInt(p.productId, 10) || i,
+                      name: p.productName,
+                      price: p.price,
+                      image: p.productImage,
+                      storeSlug: p.storeSlug,
+                      description: p.reason || undefined,
+                    }}
+                    href={p.storeSlug ? `/marketplace/${p.storeSlug}` : "/marketplace"}
+                  />
+                </div>
+              ))
           }
         </div>
 
