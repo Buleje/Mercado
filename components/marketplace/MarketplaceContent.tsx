@@ -63,6 +63,19 @@ type ViewMode = "tiendas" | "catalogo";
 
 const MAX_PRICE_LIMIT = 500;
 
+/**
+ * SHOW_SECONDARY_HOME_SECTIONS — toggle de densidad del home.
+ *
+ * Feynman: con `false`, el cliente ve las secciones CORE (ofertas del día,
+ * recomendaciones, top de hoy, tiendas). Las secciones secundarias (feed
+ * real-time, mega ahorra, asistente, vender, flash duplicado) se mueven a
+ * /descubri accesible con un CTA al final. Evita que el cliente se pierda
+ * en 17+ secciones apiladas.
+ *
+ * Cambiar a `true` si el negocio quiere ir a full-feature display.
+ */
+const SHOW_SECONDARY_HOME_SECTIONS = false;
+
 const DEFAULT_FILTERS: MarketplaceFiltersState = {
   minPrice: 0,
   maxPrice: MAX_PRICE_LIMIT,
@@ -439,11 +452,11 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
       {/* ── Buleje en Vivo: widget si hay transmisión activa ── */}
       <LiveNowWidget />
 
-      {/* ── Ofertas flash con countdown ── */}
-      <OfertasFlashSection />
+      {/* ── Ofertas flash con countdown (secundaria — redundante con OfertasDelDia) ── */}
+      {SHOW_SECONDARY_HOME_SECTIONS && <OfertasFlashSection />}
 
-      {/* ── Feed de actividad real-time (mock) ── */}
-      <LiveActivityFeed />
+      {/* ── Feed de actividad real-time (secundaria — ruido visual) ── */}
+      {SHOW_SECONDARY_HOME_SECTIONS && <LiveActivityFeed />}
 
       {/* ── Lo más pedido hoy (carrusel horizontal con ranking) ── */}
       <MarketplaceTopToday />
@@ -565,10 +578,9 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          AHORRA MAS CON BULEJE
-          Mega-section triple: Socio + Bodega al Mes + Cupones.
+          AHORRA MAS CON BULEJE — mega-section secundaria, condicional
           ══════════════════════════════════════════════════════════════════ */}
-      <AhorraMasMegaSection />
+      {SHOW_SECONDARY_HOME_SECTIONS && <AhorraMasMegaSection />}
 
       {/* ── Recetas de la selva (widget con ingredientes al carrito) ── */}
       <MarketplaceRecipesWidget />
@@ -582,14 +594,29 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
       {/* ── Gift Cards: regalá la bodega del barrio ── */}
       <GiftCardsBanner />
 
-      {/* ── Preguntale al asistente (cross-sell a /asistente) ── */}
-      <AsistenteHomeBanner />
+      {/* ── Preguntale al asistente (secundaria — cross-sell) ── */}
+      {SHOW_SECONDARY_HOME_SECTIONS && <AsistenteHomeBanner />}
 
       {/* ── Productos vistos recientemente (local storage) ── */}
       <MarketplaceRecentViewed />
 
-      {/* ── Vende en Buleje (B2B mini CTA) ── */}
-      <VenderMiniCTA />
+      {/* ── Vende en Buleje (secundaria — redundante con CTA Register abajo) ── */}
+      {SHOW_SECONDARY_HOME_SECTIONS && <VenderMiniCTA />}
+
+      {/* ── CTA a /descubri — compensa las secciones secundarias ocultas ── */}
+      {!SHOW_SECONDARY_HOME_SECTIONS && (
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+          <p className="text-sm text-[var(--text-tertiary)] mb-3">
+            ¿Querés más? Explorá lo que hay en el ecosistema Buleje.
+          </p>
+          <Link
+            href="/descubri"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+          >
+            Descubrí más
+          </Link>
+        </section>
+      )}
 
       {/* ── CTA: Register Your Store ── */}
       <section className="bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)] py-12 sm:py-16">

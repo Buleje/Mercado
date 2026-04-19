@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCustomer } from "@/contexts/customer-context";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { LastOrderBanner } from "@/components/marketplace/mi-cuenta/LastOrderBanner";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,10 @@ export default function MiCuentaPage() {
 
   return (
     <div>
+      {/* "Comprar de nuevo" — atajo 1-click al último pedido.
+          Sólo aparece si el cliente ya tiene historial. */}
+      <LastOrderBanner />
+
       <h2 className="mb-4 text-base font-medium text-gray-700 dark:text-gray-300">
         Resumen
       </h2>

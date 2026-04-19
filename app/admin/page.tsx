@@ -299,11 +299,20 @@ function AdminPage() {
 
         {/* KPI banner — muestra Ventas hoy · Pedidos pendientes · Stock crítico.
             Siempre visible al inicio del main content para que el dueño tenga
-            el pulso del negocio sin buscar. Oculto automáticamente si el API
-            falla (degradación silenciosa). */}
+            el pulso del negocio sin buscar. Clickeable: lleva al tab relevante.
+            Oculto en presentación y en degradación silenciosa si API falla. */}
         {!presentationMode && (
           <div className="px-4 pt-4 sm:px-6 lg:px-8">
-            <AdminKPIBanner />
+            <AdminKPIBanner
+              onNavigate={(key) => {
+                const tabMap = {
+                  sales: "plata",
+                  orders: "pedidos",
+                  inventory: "inventario",
+                } as const;
+                navigateTab(tabMap[key] as Tab);
+              }}
+            />
           </div>
         )}
 

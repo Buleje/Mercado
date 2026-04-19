@@ -100,12 +100,28 @@ export default function PedidosPage() {
 
   if (error) {
     return (
-      <div
-        role="alert"
-        className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"
-      >
-        {error}
-      </div>
+      <EmptyState
+        eyebrow="Conexión"
+        title="No pudimos cargar tus pedidos"
+        description={error}
+        action={
+          <button
+            type="button"
+            onClick={() => customer?.phone && fetchOrders(customer.phone)}
+            className="inline-flex items-center rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Reintentar
+          </button>
+        }
+        secondaryAction={
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+          >
+            Ir al marketplace
+          </Link>
+        }
+      />
     );
   }
 
