@@ -13,32 +13,9 @@ import {
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
+import { RecipeImagePlaceholder } from "@buleje/design-system";
 import { PaicheEnOlla } from "@/components/ui-system/illustrations/pucallpa-locals";
 import { CorazonLatiendo } from "@/components/ui-system/illustrations/contextual";
-import { CanastaVacia, OllaVacia } from "@/components/ui-system/illustrations/empty-states";
-
-/**
- * Rotation deterministica de ilustraciones para cards sin imagen.
- * Componente — no retorna componentes dinamicos para evitar
- * react-hooks/static-components lint rule.
- */
-function RecipeFallbackIllustration({
-  id,
-  size = 180,
-  className,
-}: {
-  id: string;
-  size?: number;
-  className?: string;
-}) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  const pick = Math.abs(hash) % 4;
-  if (pick === 0) return <PaicheEnOlla size={size} strokeWidth={1.5} className={className} />;
-  if (pick === 1) return <OllaVacia size={size} strokeWidth={1.5} className={className} />;
-  if (pick === 2) return <CorazonLatiendo size={size} strokeWidth={1.5} className={className} />;
-  return <CanastaVacia size={size} strokeWidth={1.5} className={className} />;
-}
 
 // ── Types ──────────────────────────────────────────────────
 type Ingrediente = {
@@ -91,10 +68,11 @@ const DIFICULTAD_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
 };
 
 // ── Skeleton ───────────────────────────────────────────────
-function RecetaSkeleton({ tall }: { tall?: boolean }) {
+function RecetaSkeleton({ tall: _tall }: { tall?: boolean }) {
   return (
     <div className="rounded-2xl overflow-hidden animate-pulse bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)]">
-      <div className={cn("bg-gray-200 dark:bg-gray-700", tall ? "h-64" : "h-48")} />
+      {/* aspect-[4/3] — canonical RECIPE_CARD_RATIO (ADR-075 Fase 5) */}
+      <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-700" />
       <div className="p-5 space-y-3">
         <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
@@ -140,9 +118,8 @@ function RecetaCard({
   const inView = useInView(cardRef);
 
   const dif = DIFICULTAD_LABELS[receta.dificultad || ""] || null;
-  // Variable aspect ratio based on category
-  const isWide = receta.categoria === "Bebidas" || receta.categoria === "Sopas";
-  const aspectClass = isWide ? "aspect-[16/10]" : "aspect-[4/3]";
+  // Aspect ratio canonical 4/3 — token RECIPE_CARD_RATIO (ADR-075 Fase 5)
+  const aspectClass = "aspect-[4/3]";
 
   return (
     <motion.div
@@ -166,14 +143,12 @@ function RecetaCard({
                 className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
               />
             ) : (
-              /* Illustrative fallback rotando 4 ilustraciones deterministicas */
-              <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface-sunken)]">
-                <RecipeFallbackIllustration
-                  id={receta.id}
-                  size={180}
-                  className="text-[var(--text-tertiary)] opacity-70"
-                />
-              </div>
+              /* Placeholder canonical — RecipeImagePlaceholder DS (ADR-075 Fase 5) */
+              <RecipeImagePlaceholder
+                recipeId={receta.id}
+                name={receta.nombre}
+                className="absolute inset-0 rounded-none"
+              />
             )}
 
             {/* Category kicker corner (editorial, sin emoji) */}
@@ -787,13 +762,12 @@ function RecetaListItem({
               />
             </div>
           ) : (
-            <div className="h-full min-h-30 flex items-center justify-center bg-[var(--surface-sunken)]">
-              <RecipeFallbackIllustration
-                id={receta.id}
-                size={80}
-                className="text-[var(--text-tertiary)] opacity-70"
-              />
-            </div>
+            /* Placeholder canonical — RecipeImagePlaceholder DS (ADR-075 Fase 5) */
+            <RecipeImagePlaceholder
+              recipeId={receta.id}
+              name={receta.nombre}
+              className="h-full min-h-30 rounded-none"
+            />
           )}
         </Link>
 

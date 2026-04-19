@@ -196,6 +196,18 @@ export const motion = {
  */
 export const STORE_CARD_RATIO = "4/3" as const;
 
+// ── Recipe card layout (ADR-075 Fase 5) ──────────────────────────────────────
+/**
+ * Aspect ratio canonical de RecipeCardCanonical.
+ * Mismo ratio que StoreCardCanonical para uniformidad visual en el marketplace.
+ * Usar este token en lugar de hardcodear "4/3" en los consumidores.
+ *
+ * @example
+ *   import { RECIPE_CARD_RATIO } from "@buleje/design-system/tokens";
+ *   <div className={`aspect-[${RECIPE_CARD_RATIO}]`}>...</div>
+ */
+export const RECIPE_CARD_RATIO = "4/3" as const;
+
 // ── Product card layout sizes (Ola 7 / B1) ─────────────────────────────────────
 /**
  * Dimensiones canonicas de los 3 primitivos de ProductCard. Usar estos tokens
