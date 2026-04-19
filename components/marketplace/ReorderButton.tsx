@@ -22,7 +22,7 @@ interface ReorderButtonProps {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Convierte un slug a nombre legible ("bodega-san-martin" → "Bodega San Martin") */
+/** Convierte un slug a nombre legible ("bodega-san-martin" → "Buleje") */
 function slugToName(slug: string): string {
   return slug
     .split("-")

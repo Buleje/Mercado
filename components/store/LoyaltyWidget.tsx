@@ -608,7 +608,7 @@ export function LoyaltyWidget({
         )}
         {isGold && (
           <p className="text-center text-xs font-semibold text-yellow-600 dark:text-yellow-400 border-t border-border pt-3">
-            Eres cliente VIP de Bodega San Martin. Gracias por tu fidelidad.
+            Eres cliente VIP de Buleje. Gracias por tu fidelidad.
           </p>
         )}
       </div>

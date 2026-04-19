@@ -89,7 +89,7 @@ export const LIVES_MOCK: LiveSession[] = [
       "Acabamos de recibir la pesca de la madrugada. Paiche fresco, doncella entera y filetes. El señor Mauro te enseña cómo escoger el mejor pescado.",
     status: "live",
     category: "Pescados frescos",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     storeSlug: "bodega-san-martin",
     thumbnail:
       "https://images.unsplash.com/photo-1535591273668-578e31182c4f?w=800&q=80&auto=format&fit=crop",
@@ -107,7 +107,7 @@ export const LIVES_MOCK: LiveSession[] = [
         unit: "kg",
         storeId: "store-001",
         storeSlug: "bodega-san-martin",
-        storeName: "Bodega San Martín",
+        storeName: "Buleje",
         highlighted: true,
       },
       {
@@ -121,7 +121,7 @@ export const LIVES_MOCK: LiveSession[] = [
         unit: "kg",
         storeId: "store-001",
         storeSlug: "bodega-san-martin",
-        storeName: "Bodega San Martín",
+        storeName: "Buleje",
       },
       {
         id: "lp-003",
@@ -134,7 +134,7 @@ export const LIVES_MOCK: LiveSession[] = [
         unit: "kg",
         storeId: "store-001",
         storeSlug: "bodega-san-martin",
-        storeName: "Bodega San Martín",
+        storeName: "Buleje",
       },
     ],
     chat: [
@@ -189,7 +189,7 @@ export const LIVES_MOCK: LiveSession[] = [
       "Costillas, bistec, cecina regional. Todo recién cortado frente a cámara para que veas la calidad.",
     status: "upcoming",
     category: "Carnes",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     storeSlug: "bodega-san-martin",
     thumbnail:
       "https://images.unsplash.com/photo-1588347818121-1ff6bd5c88eb?w=800&q=80&auto=format&fit=crop",
@@ -239,7 +239,7 @@ export const LIVES_MOCK: LiveSession[] = [
     description: "Grabación clásica. Mango, piña y plátano de chacra.",
     status: "past",
     category: "Frutas de temporada",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     storeSlug: "bodega-san-martin",
     thumbnail:
       "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=800&q=80&auto=format&fit=crop",
@@ -256,7 +256,7 @@ export const LIVES_MOCK: LiveSession[] = [
     description: "Paiche, doncella, boquichico. Selección del lunes.",
     status: "past",
     category: "Pescados frescos",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     storeSlug: "bodega-san-martin",
     thumbnail:
       "https://images.unsplash.com/photo-1526470498-9ae73c665de8?w=800&q=80&auto=format&fit=crop",

@@ -125,7 +125,7 @@ function mapRedemptionRow(row: any): DbGiftCardUsage {
     orderNumber: row.orderId ?? null, // no hay separacion aun; orderId = orderNumber
     amount: toNumOrZero(row.amountRedeemed),
     balanceAfter: 0, // computado en el join — la query lo llena si corresponde
-    storeName: "Bodega San Martin",
+    storeName: "Buleje",
     createdAt:
       row.redeemedAt instanceof Date
         ? row.redeemedAt.toISOString()

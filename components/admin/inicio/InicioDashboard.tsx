@@ -351,8 +351,37 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
 
   const periodLabel = PERIOD_LABELS[dateRange.preset] ?? "del periodo";
 
+  // Greeting contextual — franja horaria del día para personalizar.
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Buen día" : hour < 19 ? "Buenas tardes" : "Buenas noches";
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* ── Editorial Header — presencia tipográfica + contexto ── */}
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 border-b border-[var(--rule-soft)]">
+        <div>
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-1.5">
+            Panel de control · {periodLabel}
+          </p>
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold italic tracking-[-0.02em] text-[var(--text-primary)] leading-[1.02]">
+            {greeting}, <span className="text-[var(--accent)]">tu bodega</span>
+          </h1>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            {lastUpdated
+              ? `Última actualización: ${new Date(lastUpdated).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
+              : "Cargando datos en tiempo real…"}
+          </p>
+        </div>
+        <button
+          onClick={() => void load()}
+          className="inline-flex items-center gap-1.5 self-start sm:self-end px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-strong)] transition-colors"
+          aria-label="Actualizar datos"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Actualizar
+        </button>
+      </header>
+
       {/* ── KPI Hero Row (6 big cards) ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KPICard
@@ -403,15 +432,25 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
         />
       </div>
 
-      {/* ── Margen bar ── */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 ">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Margen bruto {periodLabel}</span>
+      {/* ── Margen bar — card editorial ── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 noise-texture-bg">
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              Margen bruto {periodLabel}
+            </p>
+            <p className={cn(
+              "font-display text-3xl sm:text-4xl font-semibold italic tabular-nums leading-none mt-1",
+              data.margenHoy >= 30 ? "text-[var(--data-success)]" : data.margenHoy >= 15 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+            )}>
+              {data.margenHoy.toFixed(1)}%
+            </p>
+          </div>
           <span className={cn(
-            "text-sm font-extrabold",
-            data.margenHoy >= 30 ? "text-[var(--data-success)]" : data.margenHoy >= 15 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+            "text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full",
+            data.margenHoy >= 30 ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning)]" : "bg-[var(--data-error-50)] text-[var(--data-error)]"
           )}>
-            {data.margenHoy.toFixed(1)}%
+            {data.margenHoy >= 30 ? "Excelente" : data.margenHoy >= 15 ? "Aceptable" : "Revisar"}
           </span>
         </div>
         <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
@@ -489,10 +528,10 @@ function KPICard({
         )}
       </div>
 
-      <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none tracking-tight">
+      <p className="font-display text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] dark:text-foreground leading-none tracking-[-0.02em] tabular-nums">
         {value}
       </p>
-      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted leading-tight">
+      <p className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)] dark:text-muted leading-tight">
         {label}
       </p>
       {subtitle && (

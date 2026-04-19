@@ -379,7 +379,7 @@ export default function MarketplaceApplyPage() {
                         type="text"
                         value={form.storeName}
                         onChange={(e) => update("storeName", e.target.value)}
-                        placeholder="Ej: Bodega San Martín"
+                        placeholder="Ej: Buleje"
                         autoFocus
                         className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent text-lg font-semibold text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
                       />

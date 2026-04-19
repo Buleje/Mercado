@@ -229,7 +229,7 @@ export const MOCK_DASHBOARD: CustomerDashboardData = {
       id: "act_05",
       kind: "order_delivered",
       title: "Pedido #ABC002 entregado",
-      detail: "Bodega San Martin - gracias por tu compra",
+      detail: "Buleje - gracias por tu compra",
       timestamp: daysAgo(2),
       href: "/cuenta/pedidos",
     },

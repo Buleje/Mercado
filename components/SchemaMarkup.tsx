@@ -8,17 +8,25 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
 
   const localBusinessSchema = {
     "@context": "https://schema.org",
-    "@type": "GroceryStore",
-    "@id": "https://www.buleje.pe/#grocery-store",
+    "@type": "OnlineStore",
+    "@id": "https://www.buleje.pe/#online-store",
     name: "Buleje",
-    alternateName: "Buleje - Tienda Virtual de Abarrotes",
+    alternateName: [
+      "Buleje Marketplace",
+      "Buleje Perú",
+      "Marketplace de Bodegas del Perú",
+    ],
     description:
-      "Tienda virtual de abarrotes. Venta online de bebidas, golosinas, carne, pollo, productos de limpieza y artículos de consumo diario. Delivery rápido. Pago con Yape o efectivo.",
+      "Marketplace de bodegas, minimarkets y tiendas de barrio en todo el Perú. Compra online con delivery rápido en tu ciudad. Paga con Yape, Plin o efectivo. Originado en Pucallpa, operando a nivel nacional.",
     url: "https://www.buleje.pe",
     telephone: "+51916409675",
     email: "contacto@buleje.pe",
     foundingDate: "2011",
-    slogan: "Tu bodega de confianza — delivery rápido, pago fácil",
+    foundingLocation: {
+      "@type": "Place",
+      name: "Pucallpa, Ucayali, Perú",
+    },
+    slogan: "Tu bodega de confianza en todo el Perú — delivery rápido, pago fácil",
     knowsLanguage: "es",
     address: {
       "@type": "PostalAddress",
@@ -35,15 +43,25 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     },
     areaServed: [
       {
+        "@type": "Country",
+        name: "Perú",
+        sameAs: "https://es.wikipedia.org/wiki/Per%C3%BA",
+      },
+      {
         "@type": "City",
         name: "Pucallpa",
         sameAs: "https://es.wikipedia.org/wiki/Pucallpa",
       },
-      { "@type": "AdministrativeArea", name: "Callería" },
-      { "@type": "AdministrativeArea", name: "Yarinacocha" },
-      { "@type": "AdministrativeArea", name: "Manantay" },
-      { "@type": "AdministrativeArea", name: "Campo Verde" },
-      { "@type": "AdministrativeArea", name: "Nueva Requena" },
+      { "@type": "City", name: "Lima" },
+      { "@type": "City", name: "Arequipa" },
+      { "@type": "City", name: "Trujillo" },
+      { "@type": "City", name: "Cusco" },
+      { "@type": "City", name: "Chiclayo" },
+      { "@type": "City", name: "Iquitos" },
+      { "@type": "City", name: "Piura" },
+      { "@type": "City", name: "Tarapoto" },
+      { "@type": "AdministrativeArea", name: "Ucayali" },
+      { "@type": "AdministrativeArea", name: "Lima Metropolitana" },
     ],
     openingHoursSpecification: [
       {
@@ -121,10 +139,10 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     makesOffer: {
       "@type": "Offer",
       name: "Delivery gratis en compras desde S/50",
-      description: "Entrega gratuita a domicilio para pedidos desde S/50.",
+      description: "Entrega gratuita a domicilio para pedidos desde S/50 en ciudades habilitadas del Perú.",
       eligibleRegion: {
-        "@type": "Place",
-        name: "Ucayali, Perú",
+        "@type": "Country",
+        name: "Perú",
       },
     },
     contactPoint: {

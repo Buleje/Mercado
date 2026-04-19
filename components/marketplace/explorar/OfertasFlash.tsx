@@ -63,7 +63,7 @@ const OFERTAS: OfertaCard[] = [
     id: "of-5",
     title: "Detergente Ace 4.5kg",
     discount: "-18%",
-    subtitle: "Bodega San Martin",
+    subtitle: "Buleje",
     Illustration: LimpiezaDomicilio,
     href: "/marketplace?categoria=limpieza",
   },

@@ -193,7 +193,7 @@ export const MOCK_GIFT_CARD_USAGE: MockGiftCardUsage[] = [
     orderNumber: "BUL-881",
     amount: 30,
     balanceAfter: 20,
-    storeName: "Bodega San Martin",
+    storeName: "Buleje",
     createdAt: "2026-04-01T10:00:00Z",
   },
   {

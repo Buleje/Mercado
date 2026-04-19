@@ -685,7 +685,7 @@ function BodegueroTestimonials() {
     {
       quote: "Desde que abrí mi tienda en Buleje, vendo 40% más. Los vecinos piden por WhatsApp y ya no tengo que atender cola tras cola.",
       name: "Doña Elena",
-      role: "Bodega San Martín · Callería",
+      role: "Buleje · Callería",
       stat: "+40% ventas primer mes",
       Illustration: DoniaElena,
     },

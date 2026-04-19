@@ -77,7 +77,7 @@ export interface TrackingSnapshot {
 
 // ── Fixture base ──────────────────────────────────────────────────────────
 // Coordenadas aproximadas Pucallpa centro → Yarinacocha.
-const STORE_LOC = { lat: -8.38, lng: -74.55, label: "Bodega San Martín · Jr. Ucayali 342" };
+const STORE_LOC = { lat: -8.38, lng: -74.55, label: "Buleje · Jr. Ucayali 342" };
 const DEST_LOC = { lat: -8.34, lng: -74.58, label: "Jr. Sucre 345 · Yarinacocha" };
 
 function interp(a: number, b: number, t: number) {
@@ -179,7 +179,7 @@ export function makeMockTracking(
     total: 45.5,
     paymentMethod: "yape",
     createdAt: new Date(now - 32 * 60 * 1000).toISOString(),
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     storeLocation: STORE_LOC,
     destinationLocation: DEST_LOC,
     driverLocation: {

@@ -133,7 +133,7 @@ export const MOCK_EXCLUSIVE_OFFERS: MockExclusiveOffer[] = [
     regularPrice: 21.0,
     socioPrice: 17.9,
     unit: "pack",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
   },
   {
     productId: "p_004",
@@ -153,7 +153,7 @@ export const MOCK_EXCLUSIVE_OFFERS: MockExclusiveOffer[] = [
     regularPrice: 17.5,
     socioPrice: 14.9,
     unit: "bolsa",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
   },
   {
     productId: "p_006",

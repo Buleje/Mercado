@@ -1,7 +1,7 @@
 /**
  * lib/billing/enforcement.ts
  *
- * Funciones de enforcement de límites de plan para el SaaS Bodega San Martín.
+ * Funciones de enforcement de límites de plan para el SaaS Buleje.
  * Úsalas en Route Handlers y Server Actions antes de crear recursos.
  *
  * Diseño:

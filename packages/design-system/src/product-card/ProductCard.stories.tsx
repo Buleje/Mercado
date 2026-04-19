@@ -18,7 +18,7 @@ const sampleProduct: ProductCardProduct = {
   unit: "x 500ml",
   rating: 4.6,
   reviewCount: 127,
-  storeName: "Bodega San Martin",
+  storeName: "Buleje",
   storeSlug: "san-martin",
   stock: 42,
 };

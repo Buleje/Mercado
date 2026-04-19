@@ -1,7 +1,7 @@
 /**
  * lib/billing/plans.ts
  *
- * Definición canónica de los planes de suscripción Stripe para Bodega San Martín SaaS.
+ * Definición canónica de los planes de suscripción Stripe para Buleje SaaS.
  * Precios en céntimos de soles (PEN): 4900 = S/49.00.
  *
  * Este archivo es client-safe: no importa nada de server-only.
@@ -48,7 +48,7 @@ export interface BillingPlan {
 // ─── Definición de planes ─────────────────────────────────────────────────────
 
 /**
- * Planes del SaaS Bodega San Martín.
+ * Planes del SaaS Buleje.
  *
  * Los stripePriceId se resuelven en tiempo de servidor desde:
  *   STRIPE_STARTER_PRICE_ID  → plan starter

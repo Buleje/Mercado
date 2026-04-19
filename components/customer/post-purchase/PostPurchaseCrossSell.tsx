@@ -38,12 +38,12 @@ interface PostPurchaseCrossSellProps {
 }
 
 const DEFAULT_PRODUCTS: CrossSellProduct[] = [
-  { id: 301, name: "Aceite Primor 1L", price: 12.5, image: null, unit: "1 L", storeName: "Bodega San Martín", storeSlug: "san-martin" },
-  { id: 302, name: "Arroz Costeño 5kg", price: 28.9, image: null, unit: "5 kg", storeName: "Bodega San Martín", storeSlug: "san-martin" },
-  { id: 303, name: "Azúcar Rubia 1kg", price: 4.2, image: null, unit: "1 kg", storeName: "Bodega San Martín", storeSlug: "san-martin" },
-  { id: 304, name: "Leche Gloria 400g", price: 3.8, image: null, unit: "400 g", storeName: "Bodega San Martín", storeSlug: "san-martin" },
-  { id: 305, name: "Fideos Don Vittorio 500g", price: 3.1, image: null, unit: "500 g", storeName: "Bodega San Martín", storeSlug: "san-martin" },
-  { id: 306, name: "Atún Florida en aceite", price: 5.5, image: null, unit: "170 g", storeName: "Bodega San Martín", storeSlug: "san-martin" },
+  { id: 301, name: "Aceite Primor 1L", price: 12.5, image: null, unit: "1 L", storeName: "Buleje", storeSlug: "san-martin" },
+  { id: 302, name: "Arroz Costeño 5kg", price: 28.9, image: null, unit: "5 kg", storeName: "Buleje", storeSlug: "san-martin" },
+  { id: 303, name: "Azúcar Rubia 1kg", price: 4.2, image: null, unit: "1 kg", storeName: "Buleje", storeSlug: "san-martin" },
+  { id: 304, name: "Leche Gloria 400g", price: 3.8, image: null, unit: "400 g", storeName: "Buleje", storeSlug: "san-martin" },
+  { id: 305, name: "Fideos Don Vittorio 500g", price: 3.1, image: null, unit: "500 g", storeName: "Buleje", storeSlug: "san-martin" },
+  { id: 306, name: "Atún Florida en aceite", price: 5.5, image: null, unit: "170 g", storeName: "Buleje", storeSlug: "san-martin" },
 ];
 
 export default function PostPurchaseCrossSell({

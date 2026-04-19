@@ -1,7 +1,7 @@
 /**
  * lib/integrations/sunat.ts
  *
- * Facade pública de integración SUNAT/Nubefact para el ERP Bodega San Martín.
+ * Facade pública de integración SUNAT/Nubefact para el ERP Buleje.
  *
  * Responsabilidades:
  *  - Exponer funciones de alto nivel (emitirBoleta, consultarEstado, anularBoleta)

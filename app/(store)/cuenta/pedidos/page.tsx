@@ -41,7 +41,7 @@ interface UiOrder {
 const MOCK: UiOrder[] = [
   {
     id: "BSM-2026-04-18-0042",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     createdAt: new Date(Date.now() - 32 * 60_000).toISOString(),
     total: 45.5,
     status: "en_camino",
@@ -51,7 +51,7 @@ const MOCK: UiOrder[] = [
   },
   {
     id: "BSM-2026-04-17-0031",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
     total: 22.9,
     status: "confirmado",
@@ -69,7 +69,7 @@ const MOCK: UiOrder[] = [
   },
   {
     id: "BSM-2026-04-10-0019",
-    storeName: "Bodega San Martín",
+    storeName: "Buleje",
     createdAt: new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString(),
     total: 12.5,
     status: "cancelado",

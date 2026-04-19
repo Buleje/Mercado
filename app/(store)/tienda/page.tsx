@@ -196,7 +196,7 @@ export default async function TiendaPage() {
             CTAs + identidad local. Reemplaza el hero editorial frio. */}
         <TiendaHero
           slug={tenantSlug}
-          storeName="Bodega San Martin"
+          storeName="Buleje"
           productCount={initialProducts.length}
         />
 

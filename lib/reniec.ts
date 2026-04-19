@@ -107,7 +107,7 @@ async function lookupWithElDni(dni: string): Promise<ReniecPerson | null> {
   const pageRes = await fetch("https://eldni.com/pe/buscar-por-dni", {
     method: "GET",
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; BodegaSanMartin/1.0)",
+      "User-Agent": "Mozilla/5.0 (compatible; Buleje/1.0)",
       Accept: "text/html",
     },
     cache: "no-store",
@@ -135,7 +135,7 @@ async function lookupWithElDni(dni: string): Promise<ReniecPerson | null> {
   const postRes = await fetch("https://eldni.com/pe/buscar-por-dni", {
     method: "POST",
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; BodegaSanMartin/1.0)",
+      "User-Agent": "Mozilla/5.0 (compatible; Buleje/1.0)",
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "text/html",
       Cookie: cookieHeader,

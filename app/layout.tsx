@@ -45,30 +45,41 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.buleje.pe"),
   title: {
     default:
-      "Buleje — Software ERP para Bodegas y Tiendas del Peru | Inventario, POS, Delivery",
+      "Buleje — Marketplace y ERP para Bodegas de Todo el Perú | Delivery, Inventario, POS",
     template: "%s | Buleje",
   },
   description:
-    "Buleje: software ERP para bodegas y tiendas de todo el Peru. Inventario en tiempo real, punto de venta POS, delivery, fiado digital y facturacion SUNAT. Yape y efectivo. Empieza gratis.",
+    "Buleje: marketplace de bodegas y software ERP para tiendas de todo el Perú. Comprá con delivery rápido o gestioná tu bodega con inventario en tiempo real, POS, fiado digital y facturación SUNAT. Originado en Pucallpa, disponible en Lima, Arequipa, Trujillo, Cusco, Chiclayo, Iquitos y más. Yape, Plin y efectivo.",
   keywords: [
+    // Marketplace nacional
+    "marketplace bodegas peru",
+    "bodegas online peru",
+    "delivery abarrotes peru",
+    "comprar bodega lima",
+    "bodegas arequipa delivery",
+    "tiendas online trujillo",
+    "bodegas cusco",
+    "delivery pucallpa",
+    // ERP / software
     "software para bodegas",
     "ERP tienda peru",
-    "sistema inventario bodega",
+    "sistema inventario bodega peru",
     "punto de venta bodega",
     "software delivery tienda",
-    "facturacion electronica bodega",
-    "Buleje ERP",
+    "facturacion electronica bodega sunat",
     "app bodega peru",
-    "gestion inventario tienda",
     "sistema ventas bodega",
     "software bodega gratis",
-    "POS para bodegas",
+    "POS para bodegas peru",
     "fiado digital bodega",
-    "tienda online bodega peru",
+    "tienda online bodega",
     "software minimarket peru",
-    "sistema bodega Yape",
-    "delivery bodega app",
-    "control stock tienda",
+    "sistema bodega Yape Plin",
+    "control stock tienda peru",
+    // Brand + origen
+    "Buleje",
+    "Buleje Peru",
+    "Buleje Pucallpa",
   ],
   authors: [{ name: "Buleje" }],
   creator: "Buleje",
@@ -84,23 +95,23 @@ export const metadata: Metadata = {
     url: "https://www.buleje.pe",
     siteName: "Buleje",
     title:
-      "Buleje — Software ERP para Bodegas y Tiendas del Peru",
+      "Buleje — Marketplace y ERP para Bodegas de Todo el Perú",
     description:
-      "Sistema completo para tu bodega: inventario, ventas POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo. Disponible en todo el Peru.",
+      "Marketplace + sistema completo para bodegas del Perú. Comprá con delivery rápido o gestioná tu tienda: inventario, POS, fiado digital y facturación SUNAT. Yape, Plin, efectivo. Originado en Pucallpa, disponible en todo el país.",
     images: [
       {
         url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "Buleje — Software ERP para Bodegas y Tiendas del Peru",
+        alt: "Buleje — Marketplace y ERP para Bodegas de Todo el Perú",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Buleje — Software para Bodegas del Peru",
+    title: "Buleje — Bodegas del Perú en tu celular",
     description:
-      "Inventario, POS, delivery, fiado digital y facturacion SUNAT. Todo en un solo sistema. Empieza gratis.",
+      "Marketplace + ERP de bodegas peruanas. Delivery rápido o gestioná tu tienda. Yape, Plin, efectivo. Disponible en todo el Perú.",
     images: ["/api/og"],
   },
   robots: process.env.VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "development"

@@ -69,7 +69,7 @@ export const MOCK_CUPONES: MockCupon[] = [
     userId: "user_me",
     code: "VECINO15",
     title: "S/ 15 de descuento",
-    description: "En Bodega San Martin",
+    description: "En Buleje",
     discountType: "fixed",
     discountValue: 15,
     minPurchase: 80,
@@ -77,7 +77,7 @@ export const MOCK_CUPONES: MockCupon[] = [
     status: "disponible",
     usedAt: null,
     orderNumber: null,
-    storeName: "Bodega San Martin",
+    storeName: "Buleje",
     category: "Tienda",
   },
   {
@@ -111,7 +111,7 @@ export const MOCK_CUPONES: MockCupon[] = [
     status: "usado",
     usedAt: "2026-04-10T14:22:00Z",
     orderNumber: "BUL-812",
-    storeName: "Bodega San Martin",
+    storeName: "Buleje",
     category: "Cumpleanos",
   },
   {

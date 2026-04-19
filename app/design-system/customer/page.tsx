@@ -93,7 +93,7 @@ export default function CustomerJourneyDemoPage() {
             onFavoriteToggle={() => setFavOn(!favOn)}
             isFavorite={favOn}
             onShare={() => console.log("share")}
-            storeName="Bodega San Martín"
+            storeName="Buleje"
           />
         </div>
       </section>

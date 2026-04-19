@@ -36,7 +36,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n_002",
     type: "oferta",
     title: "Oferta del día — Arroz al 15% dcto",
-    body: "Bodega San Martín tiene Arroz Costeño 1 kg a S/3.80 solo hasta las 6 PM.",
+    body: "Buleje tiene Arroz Costeño 1 kg a S/3.80 solo hasta las 6 PM.",
     timestamp: now - 2 * hr,
     read: false,
     actionUrl: "/tienda",
@@ -125,7 +125,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "n_011",
     type: "tienda",
-    title: "Bodega San Martín tiene nuevos productos",
+    title: "Buleje tiene nuevos productos",
     body: "Abrieron su sección de frutas y verduras frescas. Producto del día: plátanos de Pucallpa.",
     timestamp: now - 12 * day,
     read: true,

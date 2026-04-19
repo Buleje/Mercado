@@ -70,7 +70,7 @@ const PLATFORMS: readonly PlatformDef[] = [
   {
     id: "tienda",
     name: "Tienda pública principal",
-    description: "Storefront de Bodega San Martín.",
+    description: "Storefront de Buleje.",
     href: "/tienda",
     icon: Store,
   },

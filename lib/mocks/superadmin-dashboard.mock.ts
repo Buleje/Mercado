@@ -119,7 +119,7 @@ export function buildSparkline(current: number, trend: "up" | "flat" | "down" = 
 export const TOP_STORES_MOCK: TopStore[] = [
   {
     id: "bodega-san-martin",
-    name: "Bodega San Martín",
+    name: "Buleje",
     slug: "bodega-san-martin",
     plan: "enterprise",
     gmv: 48_520,
@@ -190,7 +190,7 @@ function relativeISO(daysAgo: number, hoursAgo = 0): string {
 export const LATEST_ACTIVE_TENANTS: LatestActiveTenant[] = [
   {
     id: "t1",
-    name: "Bodega San Martín",
+    name: "Buleje",
     slug: "bodega-san-martin",
     plan: "enterprise",
     ordersThisMonth: 342,

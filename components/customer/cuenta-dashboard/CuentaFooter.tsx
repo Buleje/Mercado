@@ -30,7 +30,7 @@ export const CuentaFooter = memo(function CuentaFooter({
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <BodyText className="font-semibold">Buleje - Bodega San Martin</BodyText>
+          <BodyText className="font-semibold">Buleje - Buleje</BodyText>
           <Caption className="block mt-0.5 text-[var(--text-tertiary)]">
             Tu bodega de confianza en Pucallpa
           </Caption>

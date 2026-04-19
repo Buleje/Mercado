@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     url.searchParams.set("fields", "product_name,product_name_es,brands,image_front_small_url,image_url,categories_tags,quantity,code");
 
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": "BodegaSanMartin/1.0 (contact@buleje.pe)" },
+      headers: { "User-Agent": "Buleje/1.0 (contact@buleje.pe)" },
       signal: AbortSignal.timeout(5000),
     });
 
