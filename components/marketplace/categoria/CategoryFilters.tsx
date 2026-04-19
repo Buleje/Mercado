@@ -18,7 +18,7 @@
  */
 
 import { Star } from "@buleje/design-system/icons";
-import type { CategoriaDef } from "@/lib/db/marketplace-catalog.db";
+import type { CategoriaDef } from "@/lib/constants/marketplace-categories";
 
 export type CategoryFiltersState = {
   subCategoria: string | null;

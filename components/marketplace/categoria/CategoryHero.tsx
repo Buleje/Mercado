@@ -8,7 +8,7 @@
  * Spacing 8pt grid, tipografia extrabold tracking-tight, color canvas.
  */
 
-import type { CategoriaDef } from "@/lib/db/marketplace-catalog.db";
+import type { CategoriaDef } from "@/lib/constants/marketplace-categories";
 import {
   LimpiezaDomicilio,
   BodegaAbriendo,

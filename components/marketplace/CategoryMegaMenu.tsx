@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { CATEGORIAS, type CategoriaDef } from "@/lib/db/marketplace-catalog.db";
+import { CATEGORIAS, type CategoriaDef } from "@/lib/constants/marketplace-categories";
 
 // ── Tipo exportado para el trigger ──────────────────────────────────────────
 export type CategoryMegaMenuProps = {

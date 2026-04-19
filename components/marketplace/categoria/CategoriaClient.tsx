@@ -25,7 +25,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
-import type { CategoriaDef, CatalogProduct } from "@/lib/db/marketplace-catalog.db";
+import type { CategoriaDef, CatalogProduct } from "@/lib/constants/marketplace-categories";
 import CategoryHero from "./CategoryHero";
 import CategoryFilters, { type CategoryFiltersState } from "./CategoryFilters";
 import CategoryToolbar, { type CategorySortKey } from "./CategoryToolbar";

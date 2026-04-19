@@ -19,7 +19,7 @@ import { toProductCardShape } from "@/lib/marketplace/product-adapter";
 import type {
   CatalogProduct,
   CategoriaDef,
-} from "@/lib/db/marketplace-catalog.db";
+} from "@/lib/constants/marketplace-categories";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 
 interface CategoryProductGridProps {
