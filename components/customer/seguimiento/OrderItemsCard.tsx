@@ -60,7 +60,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
               {item.image ? (
                 <Image
                   src={item.image}
-                  alt=""
+                  alt={item.name}
                   width={48}
                   height={48}
                   className="h-full w-full object-cover"

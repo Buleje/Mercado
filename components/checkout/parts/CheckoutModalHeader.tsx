@@ -29,13 +29,13 @@ export function CheckoutModalHeader({
           {storeTheme?.logo ? (
             <Image
               src={storeTheme.logo}
-              alt=""
+              alt={`Logo de ${businessName || "tienda"}`}
               fill
               sizes="48px"
               className="object-cover"
             />
           ) : (
-            <ShoppingCart className="h-6 w-6 text-white" />
+            <ShoppingCart className="h-6 w-6 text-white" aria-hidden />
           )}
         </div>
         <div>
