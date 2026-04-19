@@ -13,7 +13,8 @@
     "./typography": "./src/typography.tsx",
     "./layout": "./src/layout.tsx",
     "./feedback": "./src/feedback.tsx",
-    "./data-display": "./src/data-display.tsx"
+    "./data-display": "./src/data-display.tsx",
+    "./product-card": "./src/product-card/index.ts"
   },
   "peerDependencies": {
     "react": "^19",

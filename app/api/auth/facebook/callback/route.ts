@@ -120,11 +120,21 @@ export async function GET(req: NextRequest) {
       provider: "facebook",
     });
 
+    // ── Resolver destino post-login ──
+    // Prioridad: cookie `oauth-redirect` (ruta interna guardada en /api/auth/facebook)
+    //           > /marketplace/explorar (default — landing -> explorar)
+    const redirectCookie = req.cookies.get("oauth-redirect")?.value ?? "";
+    const safeRedirect =
+      redirectCookie.startsWith("/") && !redirectCookie.startsWith("//")
+        ? redirectCookie
+        : "/marketplace/explorar";
+
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const response = NextResponse.redirect(
-      new URL("/?oauth=success&provider=facebook", baseUrl),
-    );
+    const redirectUrl = new URL(safeRedirect, baseUrl);
+    redirectUrl.searchParams.set("oauth", "success");
+    redirectUrl.searchParams.set("provider", "facebook");
+    const response = NextResponse.redirect(redirectUrl);
 
     // Set customer session cookie
     response.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token, {
@@ -138,6 +148,7 @@ export async function GET(req: NextRequest) {
     // Clear OAuth cookies
     response.cookies.set("oauth-state", "", { maxAge: 0, path: "/" });
     response.cookies.set("oauth-tenant", "", { maxAge: 0, path: "/" });
+    response.cookies.set("oauth-redirect", "", { maxAge: 0, path: "/" });
 
     logger.info("[oauth/facebook] Customer session created", {
       phone: customer.phone,

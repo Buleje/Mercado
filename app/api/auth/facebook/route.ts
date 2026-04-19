@@ -12,6 +12,10 @@ import { logger } from "@/lib/logger";
  *
  * Requires the "oauth-facebook" feature flag to be enabled for the tenant.
  * Tenant is resolved from the x-tenant-id header (injected by middleware).
+ *
+ * Query params:
+ *   ?redirect=<ruta-interna>  — destino post-callback (p. ej. /cuenta/pedidos).
+ *                               Si se omite, el callback usa /marketplace/explorar.
  */
 export async function GET(req: NextRequest) {
   const tenantId =
@@ -30,7 +34,16 @@ export async function GET(req: NextRequest) {
   const state = crypto.randomUUID();
   const url = getFacebookAuthUrl(state);
 
-  logger.debug("[oauth/facebook] Redirecting to Facebook consent", { tenantId });
+  // Capturar el destino post-login — solo aceptamos rutas internas ("/*").
+  // Open-redirect safe: rechazamos "//..." y URLs absolutas.
+  const rawRedirect = req.nextUrl.searchParams.get("redirect") ?? "";
+  const safeRedirect =
+    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "";
+
+  logger.debug("[oauth/facebook] Redirecting to Facebook consent", {
+    tenantId,
+    hasRedirect: safeRedirect.length > 0,
+  });
 
   const response = NextResponse.redirect(url);
   response.cookies.set("oauth-state", state, {
@@ -49,6 +62,17 @@ export async function GET(req: NextRequest) {
     maxAge: 600,
     path: "/",
   });
+
+  // Persist optional post-login redirect so the callback can honor it.
+  if (safeRedirect.length > 0) {
+    response.cookies.set("oauth-redirect", safeRedirect, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 600,
+      path: "/",
+    });
+  }
 
   return response;
 }

@@ -184,3 +184,19 @@ export const motion = {
     bounce: "var(--ease-bounce)",
   },
 } as const;
+
+// ── Product card layout sizes (Ola 7 / B1) ─────────────────────────────────────
+/**
+ * Dimensiones canonicas de los 3 primitivos de ProductCard. Usar estos tokens
+ * para mantener consistencia visual entre `ProductCardHero`, `ProductCardGrid`
+ * y `ProductCardCompact`. Cambiar aqui propaga a todos los cards del catalogo.
+ *
+ * @example
+ *   import { productCardSizes } from "@buleje/design-system/tokens";
+ *   <div style={{ minHeight: productCardSizes.hero.minHeight }}>...</div>
+ */
+export const productCardSizes = {
+  hero: { minHeight: "420px", imageAspect: "4/5" },
+  grid: { minHeight: "340px", imageAspect: "1/1" },
+  compact: { minWidth: "180px", minHeight: "260px" },
+} as const;
