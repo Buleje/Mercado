@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireDriver } from "@/lib/auth/driver-session";
 
 /**
  * GET /api/delivery/driver/[partnerId]/earnings
@@ -6,7 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
  * Returns earnings, delivery count and assignment history for a specific driver.
  * Query: ?period=hoy|semana|mes (default: semana)
  *
- * Public endpoint — accessed via unique link sent to the driver.
+ * Auth: Bearer <driverToken> or ?driverToken=<token>
+ * Token issued via signDriverToken(tenantId, partnerId) — scoped per driver + tenant.
  */
 export async function GET(
   req: NextRequest,
@@ -19,9 +21,13 @@ export async function GET(
 
   const { prisma } = await import("@/lib/prisma");
 
+  const guard = await requireDriver(req, partnerId, prisma);
+  if (guard instanceof NextResponse) return guard;
+  const { tenantId } = guard;
+
   try {
     const partner = await prisma.deliveryPartner.findUnique({
-      where: { id: partnerId },
+      where: { id: partnerId, tenantId },
       select: { id: true, name: true, rating: true, zone: true, vehicleType: true },
     });
 
@@ -47,6 +53,7 @@ export async function GET(
     const assignments = await prisma.deliveryAssignment.findMany({
       where: {
         partnerId,
+        tenantId,
         createdAt: { gte: from },
       },
       select: {

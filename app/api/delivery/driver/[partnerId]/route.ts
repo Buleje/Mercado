@@ -3,17 +3,23 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { requireDriver } from "@/lib/auth/driver-session";
+import { logActivity } from "@/lib/activity-logger";
 
 // GET /api/delivery/driver/[partnerId] — driver sees their assigned deliveries
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ partnerId: string }> }
 ) {
   const { partnerId } = await params;
 
+  const guard = await requireDriver(req, partnerId, prisma);
+  if (guard instanceof NextResponse) return guard;
+  const { tenantId } = guard;
+
   try {
     const partner = await prisma.deliveryPartner.findUnique({
-      where: { id: partnerId },
+      where: { id: partnerId, tenantId },
       select: { id: true, name: true, phone: true, isActive: true },
     });
 
@@ -22,7 +28,7 @@ export async function GET(
     }
 
     const assignments = await prisma.deliveryAssignment.findMany({
-      where: { partnerId },
+      where: { partnerId, tenantId },
       include: {
         order: {
           select: {
@@ -98,16 +104,11 @@ export async function PATCH(
 ) {
   const { partnerId } = await params;
 
-  try {
-    // Validate partner exists and is active
-    const partner = await prisma.deliveryPartner.findUnique({
-      where: { id: partnerId },
-      select: { id: true, isActive: true },
-    });
-    if (!partner || !partner.isActive) {
-      return NextResponse.json({ error: "Repartidor no encontrado" }, { status: 404 });
-    }
+  const guard = await requireDriver(req, partnerId, prisma);
+  if (guard instanceof NextResponse) return guard;
+  const { tenantId } = guard;
 
+  try {
     let raw: unknown;
     try { raw = await req.json(); } catch {
       return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
@@ -119,7 +120,7 @@ export async function PATCH(
     }
 
     const assignment = await prisma.deliveryAssignment.findUnique({
-      where: { id: parsed.data.assignmentId },
+      where: { id: parsed.data.assignmentId, tenantId },
     });
     if (!assignment || assignment.partnerId !== partnerId) {
       return NextResponse.json({ error: "Asignación no encontrada" }, { status: 404 });
@@ -141,6 +142,17 @@ export async function PATCH(
         ...(parsed.data.status === "delivered" && { deliveredAt: new Date() }),
       },
     });
+
+    // Audit trail — fire-and-forget
+    logActivity(
+      "delivery.assignment.status_changed",
+      "DeliveryAssignment",
+      `${assignment.status} → ${parsed.data.status} (partner: ${partnerId})`,
+      parsed.data.assignmentId,
+      partnerId,
+      undefined,
+      tenantId,
+    ).catch((err) => logger.error("[delivery/driver] logActivity failed", { error: String(err), partnerId }));
 
     return NextResponse.json({ data: updated, message: `Estado actualizado a "${parsed.data.status}"` });
   } catch (err) {

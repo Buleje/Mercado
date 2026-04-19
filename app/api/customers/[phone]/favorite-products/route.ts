@@ -3,25 +3,42 @@ import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { requireAdmin } from "@/lib/require-admin";
 
 // GET /api/customers/[phone]/favorite-products
 // Top 5 productos mas comprados por el cliente (ventas POS + orders)
+// Admin-only: requiere sesion valida con tenantId canonico del JWT.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
+  // Auth primero — antes del rate-limit para no gastar cuota en anonimos
+  const auth = await requireAdmin(req, ["admin", "cajero", "manager"]);
+  if (auth instanceof NextResponse) return auth;
+
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`fav-products:${ip}`, 20, 60);
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
   const { phone } = await params;
   const normalized = normalizePhone(phone);
+  const tenantId = auth.tenantId;
 
   try {
-    // Aggregate from SaleItems (POS sales)
+    // Oracle defense: verificar que el customer existe en este tenant antes de exponer datos.
+    // Devuelve 404 uniforme tanto si no existe como si pertenece a otro tenant (no revela existencia).
+    const customer = await prisma.customer.findFirst({
+      where: { phone: normalized, tenantId },
+      select: { phone: true },
+    });
+    if (!customer) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Aggregate from SaleItems (POS sales) — filtrado por tenantId
     const saleItems = await prisma.saleItem.findMany({
       where: {
-        sale: { customerPhone: normalized },
+        sale: { customerPhone: normalized, tenantId },
       },
       select: {
         productId: true,
@@ -32,11 +49,12 @@ export async function GET(
       },
     });
 
-    // Aggregate from OrderItems (online orders) — exclude cancelled
+    // Aggregate from OrderItems (online orders) — filtrado por tenantId, excluir cancelados
     const orderItems = await prisma.orderItem.findMany({
       where: {
         order: {
           customerPhone: normalized,
+          tenantId,
           status: { not: "cancelado" },
         },
       },
