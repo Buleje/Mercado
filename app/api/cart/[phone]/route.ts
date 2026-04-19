@@ -21,12 +21,16 @@ function notFound(): NextResponse {
  * Validate the phone param and the `?token=` query string. Returns the
  * normalized phone on success or null on any auth/shape failure. Callers
  * must translate a null result into a 404 response.
+ *
+ * tenantId is read from the `active-tenant` cookie set by middleware —
+ * the same value that was in scope when the token was originally signed.
  */
 function authorize(req: NextRequest, rawPhone: string): string | null {
   const clean = rawPhone.replace(/\D/g, "");
   if (clean.length < 6) return null;
+  const tenantId = req.cookies.get("active-tenant")?.value ?? "main";
   const token = req.nextUrl.searchParams.get("token");
-  if (!verifyCartToken(clean, token)) return null;
+  if (!verifyCartToken(tenantId, clean, token)) return null;
   return clean;
 }
 

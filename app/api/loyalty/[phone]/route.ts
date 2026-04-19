@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireCustomer } from "@/lib/auth/require-customer";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ const AUTO_DISCOUNT_TIERS = [
   { minPurchases: 0, percent: 0, label: "Nuevo" },
 ];
 
-// -- GET /api/loyalty/[phone] -- public, rate-limited -------------------------
+// -- GET /api/loyalty/[phone] -- autenticado, solo el propio customer ---------
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
@@ -23,15 +24,29 @@ export async function GET(
   const { allowed } = rateLimit(`loyalty-get:${ip}`, 60, 60);
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
+  // Requiere sesion de customer activa
+  const customer = await requireCustomer(req);
+  if (customer instanceof NextResponse) return customer;
+
   const { phone } = await params;
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  const requestedPhone = normalizePhone(phone);
+
+  // Ownership check: el customerId en sesion ES el phone normalizado del Customer
+  if (!customer.customerId || normalizePhone(customer.customerId) !== requestedPhone) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // tenantId viene de la sesion (ya validado por requireCustomer vs x-tenant-id header)
+  const tenantId = customer.tenantId;
+
   try {
-    const data = await LoyaltyDB.getByPhone(normalizePhone(phone));
+    const data = await LoyaltyDB.getByPhone(requestedPhone);
+    // Defensa oracle: 404 uniforme si no existe (no revela 401/403 por existencia)
     if (!data) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
 
     // Count total orders for auto-discount calculation
     const totalOrders = await prisma.order.count({
-      where: { tenantId, customerPhone: normalizePhone(phone) },
+      where: { tenantId, customerPhone: requestedPhone },
     }).catch(() => 0);
 
     // Find current and next auto-discount tier

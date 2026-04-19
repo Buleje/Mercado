@@ -36,9 +36,20 @@ import { GET, DELETE } from "@/app/api/cart/[phone]/route";
 import { signCartToken } from "@/lib/auth/cart-token";
 
 const PHONE = "987654321";
+const TENANT = "main";
 
 function paramsFor(phone: string): Promise<{ phone: string }> {
   return Promise.resolve({ phone });
+}
+
+/** Build a NextRequest with the active-tenant cookie already set. */
+function makeRequest(
+  url: string,
+  init?: ConstructorParameters<typeof NextRequest>[1],
+): NextRequest {
+  const req = new NextRequest(url, init);
+  req.cookies.set("active-tenant", TENANT);
+  return req;
 }
 
 describe("/api/cart/[phone] — RED-009 auth gate", () => {
@@ -49,7 +60,7 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
   });
 
   it("returns 404 when the request is unauthenticated (no token)", async () => {
-    const req = new NextRequest(`http://localhost/api/cart/${PHONE}`);
+    const req = makeRequest(`http://localhost/api/cart/${PHONE}`);
     const res = await GET(req, { params: paramsFor(PHONE) });
 
     expect(res.status).toBe(404);
@@ -57,7 +68,7 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
   });
 
   it("returns the saved cart on an authenticated GET", async () => {
-    const token = signCartToken(PHONE);
+    const token = signCartToken(TENANT, PHONE);
     const savedItems = [
       { id: 1, name: "Coca-Cola 500ml", price: 3.5, quantity: 2 },
       { id: 2, name: "Pan francés", price: 0.4, quantity: 10 },
@@ -70,7 +81,7 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
       updatedAt,
     });
 
-    const req = new NextRequest(
+    const req = makeRequest(
       `http://localhost/api/cart/${PHONE}?token=${token}`,
     );
     const res = await GET(req, { params: paramsFor(PHONE) });
@@ -84,10 +95,10 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
   });
 
   it("clears the saved cart on an authenticated DELETE", async () => {
-    const token = signCartToken(PHONE);
+    const token = signCartToken(TENANT, PHONE);
     mockDeleteMany.mockResolvedValue({ count: 1 });
 
-    const req = new NextRequest(
+    const req = makeRequest(
       `http://localhost/api/cart/${PHONE}?token=${token}`,
       { method: "DELETE" },
     );

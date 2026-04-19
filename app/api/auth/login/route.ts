@@ -97,32 +97,6 @@ export async function POST(req: Request) {
     });
   } catch { /* DB unavailable */ }
 
-  // Step 2b: If no users found in resolved tenant and username is specified,
-  // search globally — the user might be logging in at /admin/login without a tenant context
-  if (dbUsers.length === 0 && username) {
-    try {
-      dbUsers = await prisma.adminUser.findMany({
-        where: { active: true, username },
-        select: { username: true, passwordHash: true, role: true, name: true, tenantId: true, onboardingCompletedAt: true },
-      });
-      // If found, resolve the user's actual tenant
-      if (dbUsers.length > 0) {
-        const userTenantId = dbUsers[0].tenantId;
-        // Resolve the user's tenantId to the actual Tenant record
-        const userTenant = await prisma.tenant.findFirst({
-          where: { OR: [{ id: userTenantId }, { slug: userTenantId }] },
-          select: { id: true, slug: true },
-        });
-        if (userTenant) {
-          tenantId = userTenant.id;
-          possibleTenantIds = [...new Set([userTenant.id, userTenant.slug])];
-        } else {
-          tenantId = userTenantId;
-        }
-      }
-    } catch { /* DB unavailable */ }
-  }
-
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash, u.username)) {
       // Always use the canonical Tenant ID (CUID) for the session
@@ -190,6 +164,7 @@ export async function POST(req: Request) {
     // Settings DB unavailable — skip this fallback
   }
 
+  logger.warn("[auth/login] Failed authentication attempt", { username, tenantId });
   return NextResponse.json({ error: "incorrect credentials" }, { status: 401 });
   } catch (e) {
     logger.error("[auth/login] Unhandled error", { err: e instanceof Error ? e.message : String(e) });
