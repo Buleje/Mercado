@@ -50,7 +50,7 @@ export default function LandingHero({
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden bg-white dark:bg-gray-950"
+      className="relative overflow-hidden noise-texture-bg bg-white dark:bg-gray-950"
     >
       {/* Accent sutil — un solo blob, no capas saturadas multiples */}
       <m.div
@@ -76,10 +76,10 @@ export default function LandingHero({
               Marketplace local en Pucallpa
             </span>
 
-            {/* H1 calido + accion */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            {/* H1 calido + accion — tipografía editorial amazónica */}
+            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-semibold italic tracking-[-0.025em] text-gray-900 dark:text-white leading-[1.02]">
               Tu mercado favorito,{" "}
-              <span className="text-primary">ahora en tu celular</span>
+              <span className="text-primary not-italic font-bold">ahora en tu celular</span>
             </h1>
 
             {/* Subtitle calido */}
