@@ -83,6 +83,11 @@ export {
   type ProductPriceProps,
 } from "./store";
 
+// ── Canonical store primitives — marketplace (ADR-075 Ola marketplace) ──────
+export { StoreImagePlaceholder, type StoreImagePlaceholderProps } from "./store-image-placeholder";
+export { StoreCardCanonical, type StoreCardCanonicalProps } from "./store-card";
+// STORE_CARD_RATIO se re-exporta automaticamente via `export * from "./tokens"` abajo.
+
 // ── Canonical product cards (Ola 7 — 3 tamanos estrategicos) ────────────────
 // Ver packages/design-system/src/product-card/index.ts para docs + ejemplos.
 export {
