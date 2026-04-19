@@ -18,6 +18,8 @@ import {
   XCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useUndoToast } from "@/components/admin/shared/UndoToast";
 
 type Role = "admin" | "cajero" | "almacenero";
 
@@ -65,6 +67,8 @@ const EMPTY_FORM: FormData = {
 };
 
 export default function TeamTab() {
+  const { confirm } = useConfirm();
+  const { showUndo } = useUndoToast();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -145,10 +149,16 @@ export default function TeamTab() {
   };
 
   const handleDelete = async (u: AdminUser) => {
-    if (!confirm(`¿Eliminar al usuario "${u.name}"?`)) return;
+    const ok = await confirm({
+      title: "¿Eliminar usuario?",
+      description: `"${u.name}" perderá acceso al panel inmediatamente. Sus registros de actividad se mantienen.`,
+      intent: "danger",
+      confirmLabel: "Eliminar acceso",
+    });
+    if (!ok) return;
     const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE" });
     if (res.ok) {
-      showToast("Usuario eliminado");
+      showUndo({ message: `Usuario "${u.name}" eliminado`, duration: 5000 });
       fetchUsers();
     } else {
       showToast("No se pudo eliminar", false);

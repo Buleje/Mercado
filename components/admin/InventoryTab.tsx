@@ -13,6 +13,8 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import Image from "next/image";
 import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -181,6 +183,8 @@ function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplic
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function InventoryTab() {
+  const { confirm } = useConfirm();
+  const { showUndo } = useUndoToast();
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [movements, setMovements] = useState<DbInventoryMovement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -409,8 +413,21 @@ export default function InventoryTab() {
   };
 
   const deleteProduct = async (id: number) => {
-    if (!confirm("¿Eliminar este producto permanentemente?")) return;
+    const product = products.find((p) => p.id === id);
+    const name = product?.name ?? "producto";
+    const ok = await confirm({
+      title: "¿Eliminar producto?",
+      description: `"${name}" se eliminará permanentemente. Esta acción no se puede deshacer desde la interfaz.`,
+      intent: "danger",
+      confirmLabel: "Eliminar",
+    });
+    if (!ok) return;
     await fetch(`/api/products/${id}`, { method: "DELETE" });
+    showUndo({
+      message: `Producto "${name}" eliminado`,
+      detail: "Si fue un error, contacta soporte para restauración.",
+      duration: 6000,
+    });
     load();
   };
 

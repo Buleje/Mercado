@@ -4,6 +4,8 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Ticket, Plus, Trash2, Check, X, Loader2, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useUndoToast } from "@/components/admin/shared/UndoToast";
 
 type Coupon = {
   id: string; code: string; description: string;
@@ -49,6 +51,8 @@ function getActiveStoreId(): string | null {
 }
 
 export default function CouponsTab() {
+  const { confirm } = useConfirm();
+  const { showUndo } = useUndoToast();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -125,8 +129,17 @@ export default function CouponsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar cupón?")) return;
+    const c = coupons.find((x) => x.id === id);
+    const code = c?.code ?? "cupón";
+    const ok = await confirm({
+      title: "¿Eliminar cupón?",
+      description: `El cupón "${code}" dejará de estar disponible para nuevas compras.`,
+      intent: "danger",
+      confirmLabel: "Eliminar",
+    });
+    if (!ok) return;
     await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+    showUndo({ message: `Cupón "${code}" eliminado`, duration: 5000 });
     load();
   };
 

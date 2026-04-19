@@ -1,8 +1,34 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Search, ArrowRight, Package, Users, Zap, Loader2 } from "@buleje/design-system/icons";
+import { Search, ArrowRight, Package, Users, Zap, Loader2, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { ComponentType } from "react";
+
+const RECENT_KEY = "admin:cmdk:recent";
+const RECENT_MAX = 5;
+
+function loadRecent(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, RECENT_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const current = loadRecent().filter((x) => x !== id);
+    const next = [id, ...current].slice(0, RECENT_MAX);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    // silencioso
+  }
+}
 
 interface CommandItem {
   id: string;
@@ -22,12 +48,13 @@ interface AdminCommandPaletteProps {
 
 // Lucide icons for dynamic categories (Producto / Cliente / Accion)
 const DYN_ICONS: Record<string, React.ReactNode> = {
+  Recientes: <Clock className="h-3 w-3" />,
   Producto: <Package className="h-3 w-3" />,
   Cliente:  <Users className="h-3 w-3" />,
   Accion:   <Zap className="h-3 w-3" />,
 };
 
-const CATEGORY_ORDER = ["Accion", "Negocio", "Inventario", "Dinero", "Documento", "Sistema", "Producto", "Cliente"];
+const CATEGORY_ORDER = ["Recientes", "Accion", "Negocio", "Inventario", "Dinero", "Documento", "Sistema", "Producto", "Cliente"];
 
 export default function AdminCommandPalette({ items }: AdminCommandPaletteProps) {
   const [open, setOpen]             = useState(false);
@@ -36,8 +63,10 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
   const [dynProducts, setDynProducts] = useState<CommandItem[]>([]);
   const [dynCustomers, setDynCustomers] = useState<CommandItem[]>([]);
   const [searching, setSearching]   = useState(false);
+  const [recentIds, setRecentIds]   = useState<string[]>([]);
   const inputRef  = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // ── Ctrl+K / Cmd+K toggle ──────────────────────────────────────────────────
   useEffect(() => {
@@ -60,6 +89,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       setSelectedIdx(0);
       setDynProducts([]);
       setDynCustomers([]);
+      setRecentIds(loadRecent());
     }
   }, [open]);
 
@@ -120,16 +150,25 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
   }, [query]);
 
   // ── Resultados filtrados (estaticos + dinamicos) ───────────────────────────
+  // Con query vacia: recientes primero, luego resto. Con query: fuzzy-ish match.
   const filtered = useMemo<CommandItem[]>(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items.slice(0, 16);
+    if (!q) {
+      const recentSet = new Set(recentIds);
+      const recentItems = recentIds
+        .map((id) => items.find((i) => i.id === id))
+        .filter((x): x is CommandItem => Boolean(x))
+        .map((i) => ({ ...i, category: "Recientes" }));
+      const rest = items.filter((i) => !recentSet.has(i.id));
+      return [...recentItems, ...rest].slice(0, 16);
+    }
     const staticFiltered = items.filter(i =>
       i.label.toLowerCase().includes(q) ||
       i.category.toLowerCase().includes(q) ||
       (i.subtitle && i.subtitle.toLowerCase().includes(q))
     );
     return [...staticFiltered, ...dynProducts, ...dynCustomers].slice(0, 20);
-  }, [items, query, dynProducts, dynCustomers]);
+  }, [items, query, dynProducts, dynCustomers, recentIds]);
 
   // ── Agrupado por categoria ─────────────────────────────────────────────────
   const grouped = useMemo(() => {
@@ -155,12 +194,21 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       e.preventDefault();
       setSelectedIdx(prev => Math.max(prev - 1, 0));
     } else if (e.key === "Enter" && filtered[selectedIdx]) {
-      filtered[selectedIdx].onSelect();
+      const item = filtered[selectedIdx];
+      pushRecent(item.id);
+      item.onSelect();
       setOpen(false);
     }
   }, [filtered, selectedIdx]);
 
   useEffect(() => { setSelectedIdx(0); }, [filtered]);
+
+  // Auto-scroll selected into view cuando navegas con flechas
+  useEffect(() => {
+    if (!resultsRef.current) return;
+    const el = resultsRef.current.querySelector<HTMLElement>(`[data-cmdk-idx="${selectedIdx}"]`);
+    el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedIdx]);
 
   if (!open) return null;
 
@@ -198,7 +246,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
         </div>
 
         {/* Results */}
-        <div className="max-h-80 overflow-y-auto py-2">
+        <div ref={resultsRef} className="max-h-80 overflow-y-auto py-2">
           {filtered.length === 0 && !searching ? (
             <div className="text-center py-8 text-sm text-[var(--text-tertiary)]">
               <Search className="h-6 w-6 mx-auto mb-2 opacity-30" />
@@ -223,7 +271,8 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                   return (
                     <button
                       key={item.id}
-                      onClick={() => { item.onSelect(); setOpen(false); }}
+                      data-cmdk-idx={idx}
+                      onClick={() => { pushRecent(item.id); item.onSelect(); setOpen(false); }}
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
                         idx === selectedIdx

@@ -25,7 +25,7 @@ interface UndoToastData {
   id: number;
   message: string;
   detail?: string;
-  onUndo: () => void;
+  onUndo?: () => void;
   duration: number;
   startedAt: number;
 }
@@ -33,7 +33,8 @@ interface UndoToastData {
 interface ShowUndoParams {
   message: string;
   detail?: string;
-  onUndo: () => void;
+  /** Si se omite, el toast actúa como notificación de éxito sin botón undo. */
+  onUndo?: () => void;
   /** ms. Default 5000. */
   duration?: number;
 }
@@ -76,7 +77,7 @@ export function UndoToastProvider({ children }: { children: ReactNode }) {
     (id: number) => {
       const toast = toasts.find((t) => t.id === id);
       if (toast) {
-        toast.onUndo();
+        toast.onUndo?.();
         dismiss(id);
       }
     },
@@ -155,14 +156,16 @@ function UndoToastItem({
         <p className="text-sm font-semibold truncate">{toast.message}</p>
         {toast.detail && <p className="text-xs text-[var(--surface-canvas)]/70 truncate mt-0.5">{toast.detail}</p>}
       </div>
-      <button
-        type="button"
-        onClick={onUndo}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-canvas)]/10 hover:bg-[var(--surface-canvas)]/20 transition-colors"
-      >
-        <Undo2 className="h-3.5 w-3.5" strokeWidth={2} />
-        Deshacer
-      </button>
+      {toast.onUndo && (
+        <button
+          type="button"
+          onClick={onUndo}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-canvas)]/10 hover:bg-[var(--surface-canvas)]/20 transition-colors"
+        >
+          <Undo2 className="h-3.5 w-3.5" strokeWidth={2} />
+          Deshacer
+        </button>
+      )}
       <button
         type="button"
         onClick={onDismiss}

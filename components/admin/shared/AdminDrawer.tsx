@@ -55,7 +55,7 @@ export function AdminDrawer({
           aria-describedby={description ? undefined : undefined}
           className={cn(
             "fixed top-0 right-0 bottom-0 z-50",
-            "bg-[var(--surface-canvas)] shadow-2xl outline-none",
+            "bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] outline-none",
             "flex flex-col",
             "data-[state=open]:animate-drawer-slide-in",
             "w-full",
