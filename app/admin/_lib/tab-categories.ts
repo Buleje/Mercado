@@ -258,105 +258,120 @@ export type TabCategory = {
   tabs: Tab[];
 };
 
-// ── Sidebar modules v5 — reorganized by Jobs-to-Be-Done (ADR-064) ───────────
+// ── Sidebar modules v6 — reorganized by FUNCTIONAL AREA (2026-04-18) ────────
 //
-// Antes: 17 categorías planas (rompía Miller's Law 7±2).
-// Ahora: 5 hubs JTBD que agrupan los 35 tabs existentes por OUTCOME del usuario,
-// no por feature. Research: Shopify admin unified 2026, Linear UI refresh, IA Authority 2026.
+// Antes (v5): metáforas ambiguas — "Cobrar", "Crecer", "Conocer". El dueño
+// no sabía dónde buscar (¿"plata" está en Cobrar o en Conocer?).
 //
-// Jobs cubiertos por hub:
-//   01 Hoy     → "Ver cómo va mi negocio ahora"
-//   02 Operar  → "Hacer vender y reponer stock"
-//   03 Cobrar  → "Cobrar, facturar, ver la plata"
-//   04 Crecer  → "Traer y retener clientes"
-//   05 Conocer → "Saber qué funciona y optimizar"
+// Ahora (v6): nombres FUNCIONALES directos — el dueño lee el label y sabe
+// exactamente qué hay adentro. Agrupación por AREA DE NEGOCIO, no por
+// outcome ni metáfora.
 //
-// Mi Tienda + Config quedan como secundarios (dropdown o footer).
+// 7 categorías (Miller's Law 7±2):
+//   01 Inicio              → Dashboard + IA
+//   02 Ventas              → POS, pedidos, facturación, documentos de venta
+//   03 Compras             → Pedidos a proveedor, contratos
+//   04 Productos e inventario → Catálogo + stock
+//   05 Clientes            → CRM, fiados, préstamos, chat, soporte
+//   06 Gráficos            → Analytics, forecast, rendimiento, finanzas
+//   07 Marketplace         → Tienda online, delivery, subs, gift cards, socio, lives
+//
+// Mi Tienda (personalización) + Config quedan como módulos separados.
 export const BASIC_MODULES: TabCategory[] = [
-  // ── 01 · HOY ─────────────────────────────────────
-  // Overview diario + IA + metas. Lo que abre el dueño al empezar el día.
+  // ── 01 · INICIO ──────────────────────────────────
+  // Lo primero que ve el dueño al entrar. Overview + IA + metas.
   {
-    id: "hoy",
-    label: "Hoy",
+    id: "inicio",
+    label: "Inicio",
     icon: Gauge,
     tabs: [
       "vendor-dashboard",
+      "asistente-ia",
       "ai-command",
       "sugerencias-ia",
-      "asistente-ia",
       "metas-logros",
     ],
   },
 
-  // ── 02 · OPERAR ──────────────────────────────────
-  // Día a día de vender, stockear, reponer. POS + catálogo + inventario.
+  // ── 02 · VENTAS ──────────────────────────────────
+  // Todo lo que entra plata: POS, pedidos, facturación SUNAT, documentos.
   {
-    id: "operar",
-    label: "Operar",
-    icon: Warehouse,
+    id: "ventas",
+    label: "Ventas",
+    icon: Receipt,
     tabs: [
       "ventas-caja",
       "pedidos",
-      "productos",
-      "inventario",
-      "compras",
-    ],
-  },
-
-  // ── 03 · COBRAR ──────────────────────────────────
-  // Dinero entrante + créditos + facturación SUNAT + documentos fiscales.
-  {
-    id: "cobrar",
-    label: "Cobrar",
-    icon: Wallet,
-    tabs: [
-      "plata",
-      "fiados",
-      "prestamos",
       "facturacion",
       "cotizaciones",
       "guias-remision",
       "notas-credito",
+    ],
+  },
+
+  // ── 03 · COMPRAS ─────────────────────────────────
+  // Pedidos a proveedor + contratos (lo que sale de la caja hacia arriba).
+  {
+    id: "compras",
+    label: "Compras",
+    icon: PackagePlus,
+    tabs: [
+      "compras",
       "contratos",
     ],
   },
 
-  // ── 04 · CRECER ──────────────────────────────────
-  // CRM + marketplace + canales + comunicación con clientes.
+  // ── 04 · PRODUCTOS E INVENTARIO ──────────────────
+  // El catálogo + el stock. Lo físico del negocio.
   {
-    id: "crecer",
-    label: "Crecer",
-    icon: Heart,
+    id: "productos-inventario",
+    label: "Productos e inventario",
+    icon: Warehouse,
     tabs: [
-      "clientes",
-      "marketplace",
-      "marketplace-chat",
-      "delivery-partners",
-      "delivery-live",
+      "productos",
+      "inventario",
     ],
   },
 
-  // ── 05 · CONOCER ─────────────────────────────────
-  // Analytics + forecast + rendimiento. El "saber" estratégico.
+  // ── 05 · CLIENTES ────────────────────────────────
+  // CRM + créditos informales + préstamos + comunicación.
   {
-    id: "conocer",
-    label: "Conocer",
+    id: "clientes",
+    label: "Clientes",
+    icon: Heart,
+    tabs: [
+      "clientes",
+      "fiados",
+      "prestamos",
+      "marketplace-chat",
+      "support-inbox",
+    ],
+  },
+
+  // ── 06 · GRÁFICOS ────────────────────────────────
+  // Visión estratégica: analytics, forecast, finanzas, rendimiento técnico.
+  {
+    id: "graficos",
+    label: "Gráficos",
     icon: BarChart3,
     tabs: [
       "analytics-pro",
       "forecasting",
+      "plata",
       "rendimiento",
-      "support-inbox",
-      "colas",
-      "auditoria",
     ],
   },
-  // ── 06 · MARKETPLACE-OPS (ENRICH-5 bridges) ───────────
+
+  // ── 07 · MARKETPLACE ─────────────────────────────
+  // Toda la operación del marketplace público + delivery + lives.
   {
     id: "marketplace-ops",
     label: "Marketplace",
     icon: Store,
     tabs: [
+      "marketplace",
+      "delivery-partners",
+      "delivery-live",
       "subscriptions",
       "gift-cards-admin",
       "socio-members",

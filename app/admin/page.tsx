@@ -25,7 +25,6 @@ import {
 } from "./_hooks";
 
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
-import { AdminKPIBanner } from "@/components/admin/AdminKPIBanner";
 import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminNavigation } from "./_components/AdminNavigation";
@@ -297,24 +296,10 @@ function AdminPage() {
           }}
         />
 
-        {/* KPI banner — muestra Ventas hoy · Pedidos pendientes · Stock crítico.
-            Siempre visible al inicio del main content para que el dueño tenga
-            el pulso del negocio sin buscar. Clickeable: lleva al tab relevante.
-            Oculto en presentación y en degradación silenciosa si API falla. */}
-        {!presentationMode && (
-          <div className="px-4 pt-4 sm:px-6 lg:px-8">
-            <AdminKPIBanner
-              onNavigate={(key) => {
-                const tabMap = {
-                  sales: "plata",
-                  orders: "pedidos",
-                  inventory: "inventario",
-                } as const;
-                navigateTab(tabMap[key] as Tab);
-              }}
-            />
-          </div>
-        )}
+        {/* AdminKPIBanner removido 2026-04-18 — se mostraba en cada módulo
+            y el dueño lo encontraba repetitivo. El banner sigue disponible en
+            components/admin/AdminKPIBanner.tsx si se quiere usar en un tab
+            específico (p. ej. solo en "Inicio"), no globalmente. */}
 
         <AdminMainContent
           tab={tab}
