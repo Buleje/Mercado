@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
 import JsonLd from "@/components/JsonLd";
+import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -108,12 +109,11 @@ export default async function MarketplacePage(props: {
   searchParams: Promise<SearchParams>;
 }) {
   const searchParams = await props.searchParams;
+  const zona = (searchParams.zona as string) || null;
   const hasFilters =
-    !!searchParams.zona || !!searchParams.categoria || !!searchParams.buscar;
+    !!zona || !!searchParams.categoria || !!searchParams.buscar;
 
   // Server-side prefetch de stores para eliminar skeleton flash del first paint.
-  // Solo lo pasamos cuando NO hay filtros — para requests con filtros, el cliente
-  // hace fetch correcto con los params (behavior previo).
   const initialStores = hasFilters
     ? undefined
     : await getInitialMarketplaceStores();
@@ -123,6 +123,40 @@ export default async function MarketplacePage(props: {
       <JsonLd data={websiteSchema} />
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={collectionSchema} />
+
+      {/* ItemList JSON-LD — rich results de Google (lista numerada en SERP).
+          Solo si tenemos stores reales pre-fetcheadas (no en filtros). */}
+      {initialStores && initialStores.length > 0 && (
+        <ItemListJsonLd
+          name={
+            zona
+              ? `Bodegas y tiendas en ${zona.charAt(0).toUpperCase() + zona.slice(1)}`
+              : "Bodegas y tiendas del marketplace Buleje"
+          }
+          description={
+            zona
+              ? `${initialStores.length} bodegas con delivery en ${zona}, Perú.`
+              : `${initialStores.length} tiendas peruanas con delivery rápido.`
+          }
+          url={`${BASE_URL}/marketplace${zona ? `?zona=${encodeURIComponent(zona)}` : ""}`}
+          itemType="Store"
+          items={initialStores.slice(0, 20).map((store, i) => ({
+            position: i + 1,
+            name: store.name,
+            url: `${BASE_URL}/marketplace/${store.slug}`,
+            image: store.logo ?? undefined,
+            description: store.description ?? undefined,
+            aggregateRating:
+              store.reviewCount > 0
+                ? {
+                    ratingValue: store.rating,
+                    reviewCount: store.reviewCount,
+                  }
+                : undefined,
+          }))}
+        />
+      )}
+
       <MarketplaceContent initialStores={initialStores} />
     </>
   );
