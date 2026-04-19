@@ -66,6 +66,10 @@ type NavLink = {
   matchEquals?: string;
   matchPrefix?: string;
   discover?: true;
+  /** Dot rojo pulsante si hay live activo (poll /api/lives/active). */
+  showLiveDot?: true;
+  /** Badge "Nuevo" en warning token. */
+  showNewBadge?: true;
 };
 
 const PRIMARY_LINKS: readonly NavLink[] = [
@@ -100,14 +104,43 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     labelKey: "nav.live",
     icon: Radio,
     matchPrefix: "/marketplace/en-vivo",
+    showLiveDot: true,
   },
   {
     href: "/marketplace/ofertas",
     labelKey: "nav.offers",
     icon: Tag,
     matchPrefix: "/marketplace/ofertas",
+    showNewBadge: true,
   },
 ] as const;
+
+/** Poll `/api/lives/active` cada 60s — dot rojo pulsante si hay live activo. */
+function useActiveLivePoll(): boolean {
+  const [hasActive, setHasActive] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const fetchActive = async () => {
+      try {
+        const res = await fetch("/api/lives/active", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as { data?: { active?: unknown[] } };
+        if (cancelled) return;
+        const activeCount = Array.isArray(json?.data?.active) ? json.data!.active!.length : 0;
+        setHasActive(activeCount > 0);
+      } catch {
+        /* fire-and-forget, sin ruido */
+      }
+    };
+    fetchActive();
+    const id = setInterval(fetchActive, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+  return hasActive;
+}
 
 /** Sticky: surface token + blur + shadow cuando scroll > 40px. */
 function useScrolledPastThreshold(px: number = 40): boolean {
@@ -136,6 +169,7 @@ export default function MarketplaceNavbar() {
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
   const { t } = useLocale();
   const scrolled = useScrolledPastThreshold(40);
+  const hasActiveLive = useActiveLivePoll();
 
   const handleOpenCart = useCallback(() => setCartOpen(true), []);
   const handleCloseCart = useCallback(() => setCartOpen(false), []);
@@ -251,6 +285,20 @@ export default function MarketplaceNavbar() {
                   >
                     <LinkIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
                     <span>{t(link.labelKey)}</span>
+                    {link.showLiveDot && hasActiveLive && (
+                      <span
+                        aria-label={t("nav.liveNow")}
+                        className="relative ml-0.5 inline-flex h-1.5 w-1.5"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error)] opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-error)]" />
+                      </span>
+                    )}
+                    {link.showNewBadge && (
+                      <span className="ml-0.5 inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                        {t("nav.new")}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -492,7 +540,21 @@ export default function MarketplaceNavbar() {
                     )}
                   >
                     <LinkIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                    {t(link.labelKey)}
+                    <span className="flex-1">{t(link.labelKey)}</span>
+                    {link.showLiveDot && hasActiveLive && (
+                      <span
+                        aria-label={t("nav.liveNow")}
+                        className="relative inline-flex h-2 w-2"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error)] opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error)]" />
+                      </span>
+                    )}
+                    {link.showNewBadge && (
+                      <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--data-warning)]">
+                        {t("nav.new")}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

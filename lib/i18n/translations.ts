@@ -54,6 +54,8 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "nav.lightMode": { es: "Modo claro", en: "Light mode", shi: "Pakoi" },
   "nav.live": { es: "En Vivo", en: "Live", shi: "Kikini" },
   "nav.offers": { es: "Ofertas", en: "Offers", shi: "Rawe" },
+  "nav.new": { es: "Nuevo", en: "New", shi: "Bena" },
+  "nav.liveNow": { es: "Transmisión en vivo activa", en: "Live broadcast active", shi: "Kikini iki" },
   "nav.notifications": { es: "Notificaciones", en: "Notifications", shi: "Yoiti" },
   "nav.subscriptions": { es: "Suscripciones", en: "Subscriptions", shi: "Jene kirika" },
 
