@@ -945,7 +945,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <div className="flex items-center gap-2">
                     <div className="relative h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden">
                       {draft.logo ? (
-                        <Image src={draft.logo} alt="" fill sizes="36px" className="object-cover" unoptimized={draft.logo.startsWith("data:")} />
+                        <Image src={draft.logo} alt={`Logo de ${draft.storeName || "la tienda"}`} fill sizes="36px" className="object-cover" unoptimized={draft.logo.startsWith("data:")} />
                       ) : (
                         <span className="text-sm font-extrabold text-white">{draft.storeName.slice(0, 2).toUpperCase()}</span>
                       )}

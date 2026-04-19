@@ -513,7 +513,7 @@ function SectionEditorModal({
                   <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
                     <div className="relative h-9 w-9 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
-                        <Image src={p.image} alt="" fill className="object-cover" sizes="36px" />
+                        <Image src={p.image} alt={p.name} fill className="object-cover" sizes="36px" />
                       ) : (
                         <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-4 w-4" /></div>
                       )}
@@ -571,7 +571,7 @@ function SectionEditorModal({
                   >
                     <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
-                        <Image src={p.image} alt="" fill className="object-cover" sizes="32px" />
+                        <Image src={p.image} alt={p.name} fill className="object-cover" sizes="32px" />
                       ) : (
                         <div className="h-full flex items-center justify-center text-[var(--text-tertiary)]"><Package className="h-4 w-4" /></div>
                       )}

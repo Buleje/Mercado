@@ -2088,7 +2088,7 @@ export default function POSView() {
                   <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-card-border p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success)]/40 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product.image ? (
-                        <Image src={item.product.image} alt="" width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
+                        <Image src={item.product.image} alt={item.product.name} width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
                       ) : (
                         <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />

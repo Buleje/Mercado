@@ -282,7 +282,7 @@ function ProductFormModal({
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0"
                     >
                       {r.image ? (
-                        <Image src={r.image} alt="" width={40} height={40} className="rounded-lg object-cover bg-gray-100 shrink-0" />
+                        <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover bg-gray-100 shrink-0" />
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-[var(--text-tertiary)]" />

@@ -624,7 +624,7 @@ export default function PromotionsTab() {
                       {/* Image preview */}
                       {p.imageUrl && (
                         <div className="relative w-14 h-14 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden shrink-0">
-                          <Image src={p.imageUrl} alt="" fill className="object-cover" sizes="56px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          <Image src={p.imageUrl} alt={p.name} fill className="object-cover" sizes="56px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -828,7 +828,7 @@ export default function PromotionsTab() {
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {detailPromo.imageUrl && (
                 <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-accent h-48">
-                  <Image src={detailPromo.imageUrl} alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  <Image src={detailPromo.imageUrl} alt={detailPromo.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 </div>
               )}
               <div className="flex flex-wrap gap-2">

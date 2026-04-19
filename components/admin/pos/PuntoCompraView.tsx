@@ -1096,7 +1096,7 @@ export default function PuntoCompraView() {
                       {item.product.image ? (
                         <Image
                           src={item.product.image}
-                          alt=""
+                          alt={item.product.name}
                           fill
                           className="object-cover rounded-lg z-10"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
