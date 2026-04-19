@@ -111,7 +111,7 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     labelKey: "nav.offers",
     icon: Tag,
     matchPrefix: "/marketplace/ofertas",
-    showNewBadge: true,
+    // badge "Nuevo" removido 2026-04-18 — llevaba meses, ya no aporta señal.
   },
 ] as const;
 

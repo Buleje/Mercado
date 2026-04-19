@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import ReorderButton from "@/components/marketplace/ReorderButton";
+import { EmptyState } from "@/components/ui-system/EmptyState";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -111,17 +113,29 @@ export default function PedidosPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Aun no tienes pedidos registrados.
-        </p>
-        <a
-          href="/marketplace"
-          className="mt-3 inline-block text-sm font-medium text-[#2d6a4f] hover:underline dark:text-[#52b788]"
-        >
-          Explorar tiendas
-        </a>
-      </div>
+      <EmptyState
+        eyebrow="Pedidos"
+        title="Aún no tienes pedidos"
+        description="Cuando compres en una tienda, tu pedido aparecerá acá con su estado actualizado en tiempo real."
+        action={
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Explorar tiendas
+          </Link>
+        }
+        secondaryAction={
+          !customer?.phone && (
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            >
+              Iniciar sesión
+            </Link>
+          )
+        }
+      />
     );
   }
 

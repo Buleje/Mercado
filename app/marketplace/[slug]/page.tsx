@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
+import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 import {
   MOCK_STORE_REVIEWS,
@@ -156,6 +157,19 @@ export default async function StoreDetailPage({ params }: Props) {
         rating={store.rating ?? 0}
         reviewCount={store.reviewCount}
       />
+
+      {/* Breadcrumbs — orienta al cliente sobre dónde está y cómo volver. */}
+      <div className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { label: "Marketplace", href: "/marketplace" },
+            ...(store.zone
+              ? [{ label: store.zone, href: `/marketplace?zona=${encodeURIComponent(store.zone)}` }]
+              : []),
+            { label: store.name },
+          ]}
+        />
+      </div>
 
       <StoreDetailClient
         store={store}

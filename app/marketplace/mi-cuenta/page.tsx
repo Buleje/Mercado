@@ -2,49 +2,60 @@
 
 import Link from "next/link";
 import { useCustomer } from "@/contexts/customer-context";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface StatCard {
   label: string;
-  value: string;
+  value: string;        // número real, o "—" si no tenemos dato confiable
   href: string;
   description: string;
 }
 
-// ── Mock stats (PR-2 los conecta a DB real) ───────────────────────────────────
-
-const MOCK_STATS: StatCard[] = [
-  {
-    label: "Pedidos",
-    value: "12",
-    href: "/marketplace/mi-cuenta/pedidos",
-    description: "Ver historial",
-  },
-  {
-    label: "Favoritos",
-    value: "5",
-    href: "/marketplace/mi-cuenta/favoritos",
-    description: "Ver guardados",
-  },
-  {
-    label: "Cupones activos",
-    value: "2",
-    href: "/marketplace/mi-cuenta/cupones",
-    description: "Ver cupones",
-  },
-  {
-    label: "Direcciones",
-    value: "3",
-    href: "/marketplace/mi-cuenta/direcciones",
-    description: "Gestionar",
-  },
-];
-
 // ── Page ──────────────────────────────────────────────────────────────────────
+//
+// Las tarjetas que SÍ tienen dato confiable en el cliente muestran número real:
+//   - Favoritos (useWishlist — localStorage)
+//   - Direcciones (useCustomer — perfil local)
+// Las que requieren fetch al server (pedidos, cupones) muestran "—" hasta
+// cablear PR-2. NO mostramos números ficticios (rompe confianza del cliente).
 
 export default function MiCuentaPage() {
   const { customer } = useCustomer();
+  const { items: wishlistItems } = useWishlist();
+
+  const favoritesCount = wishlistItems.length;
+  const addressesCount = customer?.locations?.length ?? 0;
+
+  const stats: StatCard[] = [
+    {
+      label: "Pedidos",
+      value: "—",
+      href: "/marketplace/mi-cuenta/pedidos",
+      description: "Ver tu historial",
+    },
+    {
+      label: "Favoritos",
+      value: String(favoritesCount),
+      href: "/marketplace/mi-cuenta/favoritos",
+      description:
+        favoritesCount > 0 ? "Ver guardados" : "Aún sin guardados",
+    },
+    {
+      label: "Cupones",
+      value: "—",
+      href: "/marketplace/mi-cuenta/cupones",
+      description: "Ver disponibles",
+    },
+    {
+      label: "Direcciones",
+      value: String(addressesCount),
+      href: "/marketplace/mi-cuenta/direcciones",
+      description:
+        addressesCount > 0 ? "Gestionar" : "Agregar una dirección",
+    },
+  ];
 
   return (
     <div>
@@ -53,13 +64,13 @@ export default function MiCuentaPage() {
       </h2>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {MOCK_STATS.map((stat) => (
+        {stats.map((stat) => (
           <Link
             key={stat.href}
             href={stat.href}
             className="group rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600 dark:hover:bg-gray-800"
           >
-            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
               {stat.value}
             </p>
             <p className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-300">
