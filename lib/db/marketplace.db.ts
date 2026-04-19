@@ -213,7 +213,10 @@ export const MarketplaceStoresDB = {
     const baseSlug = slugify(params.name);
 
     // Si ya existe el slug, agregar sufijo del tenantId real
-    const existing = await prisma.store.findUnique({ where: { slug: baseSlug } });
+    const existing = await prisma.store.findUnique({
+      where: { slug: baseSlug },
+      select: { id: true },
+    });
     const slug = existing ? `${baseSlug}-${params.tenantId.slice(-6)}` : baseSlug;
 
     const store = await prisma.store.create({
@@ -304,7 +307,16 @@ export const MarketplaceStoresDB = {
     const cacheKey = `marketplace:stores:slug:${slug}`;
 
     return getOrSet(cacheKey, 300, async () => {
-      const s = await prisma.store.findUnique({ where: { slug } });
+      // select explícito: evita columnas del schema que la DB aún no tiene
+      // (lat, lng, vacationMode, vacationMessage — migration 20260411 pending).
+      const s = await prisma.store.findUnique({
+        where: { slug },
+        select: {
+          id: true, tenantId: true, slug: true, name: true, description: true,
+          logo: true, banner: true, category: true, zone: true, rating: true,
+          reviewCount: true, isPublished: true, commission: true, createdAt: true,
+        },
+      });
       if (!s || !s.isPublished) return null;
 
       return {
@@ -330,7 +342,14 @@ export const MarketplaceStoresDB = {
    * Buscar la tienda de un tenant específico (para auth de vendedor).
    */
   async getByTenantId(tenantId: string): Promise<DbStore | null> {
-    const s = await prisma.store.findFirst({ where: { tenantId } });
+    const s = await prisma.store.findFirst({
+      where: { tenantId },
+      select: {
+        id: true, tenantId: true, slug: true, name: true, description: true,
+        logo: true, banner: true, category: true, zone: true, rating: true,
+        reviewCount: true, isPublished: true, commission: true, createdAt: true,
+      },
+    });
     if (!s) return null;
 
     return {
@@ -490,7 +509,10 @@ export const MarketplaceStoreProductsDB = {
     const searchIds = possibleTenantIds ?? [tenantId];
 
     // 1. Find the store for this tenant — search by all possible IDs
-    let store = await prisma.store.findFirst({ where: { tenantId: { in: searchIds } } });
+    let store = await prisma.store.findFirst({
+      where:  { tenantId: { in: searchIds } },
+      select: { id: true, tenantId: true, slug: true, name: true, isPublished: true },
+    });
     if (!store) {
       // Auto-create store from tenant settings
       const settings = await prisma.settings.findFirst({ where: { tenantId: { in: searchIds } } });
@@ -504,7 +526,10 @@ export const MarketplaceStoreProductsDB = {
         || `tienda-${tenantId.slice(0, 8)}`;
 
       // Ensure slug is unique
-      const existingSlug = await prisma.store.findUnique({ where: { slug } });
+      const existingSlug = await prisma.store.findUnique({
+        where: { slug },
+        select: { id: true },
+      });
       const finalSlug = existingSlug ? `${slug}-${Date.now().toString(36)}` : slug;
 
       store = await prisma.store.create({
