@@ -1,0 +1,28 @@
+// ─── EventDeadLetter — DLQ persistente ───────────────────────────────────────
+//
+// Pegar dentro del bloque de modelos en prisma/schema.prisma
+// Migration sugerida: 20260420_add_event_dead_letter
+//
+// Antes de correr la migration:
+//   1. Asegurate de que DIRECT_URL apunte a Supabase directo (no pooler)
+//   2. Correr desde una red con acceso DNS a db.*.supabase.co
+//
+// Comando exacto:
+//   DATABASE_URL="$DIRECT_URL" npx prisma migrate dev --name add_event_dead_letter
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EventDeadLetter {
+  id           String    @id @default(cuid())
+  tenantId     String
+  eventType    String
+  eventPayload Json
+  occurredAt   DateTime
+  failedAt     DateTime  @default(now())
+  attemptCount Int       @default(1)
+  lastError    String
+  handlerName  String
+  resolvedAt   DateTime?
+
+  @@index([tenantId, resolvedAt])
+  @@index([eventType, resolvedAt])
+}

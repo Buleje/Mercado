@@ -1,0 +1,30 @@
+// SCHEMA-PROPOSAL.prisma
+//
+// Migration name: 20260420_add_domain_event_log
+//
+// Add this model to prisma/schema.prisma.
+// Then run:
+//
+//   npx prisma migrate dev --name 20260420_add_domain_event_log
+//
+// For production (requires DIRECT_URL):
+//   npx prisma migrate deploy
+//
+// Note: the @@unique([aggregateId, version]) constraint enforces optimistic
+// concurrency at the DB level — a duplicate version insert will throw P2002.
+
+model DomainEventLog {
+  id            String   @id @default(cuid())
+  tenantId      String
+  aggregateType String   // "order" | "payment" | "stock"
+  aggregateId   String
+  eventType     String   // "OrderCreated" | "PaymentSettled" | "StockReserved" | ...
+  payload       Json
+  version       Int      // version del aggregate tras aplicar este event (1-based)
+  occurredAt    DateTime @default(now())
+  actorId       String?  // userId quien disparo el evento (null = sistema)
+
+  @@index([tenantId, aggregateType, aggregateId, version])
+  @@index([tenantId, eventType, occurredAt])
+  @@unique([aggregateId, version])
+}

@@ -6,6 +6,9 @@ import { logActivity } from "@/lib/activity-logger";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { PrismaOrderRepository } from "@/lib/db/adapters/prisma-order-repository";
+
+const orderRepo = new PrismaOrderRepository();
 
 // ── Valid marketplace order status transitions ────────────────────────────────
 
@@ -33,29 +36,12 @@ export async function GET(
 
   const { id } = await params;
 
-  const order = await prisma.order.findFirst({
-    where: { id, source: "marketplace", tenantId: auth.tenantId, deletedAt: null },
-    include: { items: true },
-  });
-
-  if (!order) {
+  const dto = await orderRepo.findByIdDto(auth.tenantId, id, { source: "marketplace" });
+  if (!dto) {
     return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
   }
 
-  return NextResponse.json({
-    data: {
-      ...order,
-      total: Number(order.total),
-      couponDiscount: order.couponDiscount != null ? Number(order.couponDiscount) : null,
-      discountAmount: order.discountAmount != null ? Number(order.discountAmount) : null,
-      totalCogs: order.totalCogs != null ? Number(order.totalCogs) : null,
-      items: order.items.map((i) => ({
-        ...i,
-        price: Number(i.price),
-        costPrice: i.costPrice != null ? Number(i.costPrice) : null,
-      })),
-    },
-  });
+  return NextResponse.json({ data: dto });
 }
 
 // ── PATCH /api/marketplace/orders/[id] — update status ────────────────────────
@@ -164,7 +150,7 @@ export async function PATCH(
       `${notification.emoji} *${notification.title}*\n\n${notification.body}\n\n` +
       `📋 Pedido: #${order.id.slice(-8)}\n💰 Total: S/${order.total.toFixed(2)}`,
       { tenantId: auth.tenantId, context: "marketplace-order-status-change" },
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/orders/[id]] whatsapp failed", { error: String(err) }));
   }
 
   // Log activity (fire-and-forget)
@@ -205,7 +191,7 @@ export async function PATCH(
         `🎟️ Usa tu cupón *${couponCode}* para obtener *5% de descuento* en tu próxima compra.\n` +
         `⏰ Válido por 15 días.`,
         { tenantId: auth.tenantId, context: "marketplace-order-return-coupon" },
-      ).catch(() => {});
+      ).catch((err) => logger.error("[marketplace/orders/[id]] coupon whatsapp failed", { error: String(err), tenantId: auth.tenantId }));
     }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
   }
 
