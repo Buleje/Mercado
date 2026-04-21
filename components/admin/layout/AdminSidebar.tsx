@@ -254,41 +254,47 @@ export function AdminSidebar({
     return result;
   }, [visibleCategories, categoryOrder, hiddenCategories]);
 
-  /* 3 temas: cristal (color fuerte del logo — teal sólido), dark (zinc),
-     light (blanco neutro). 'shaded' es alias legacy → cristal.
-     Cristal NO es transparente: usa bg-primary sólido con texto blanco
-     como fondo del sidebar, reflejando el color principal de la marca. */
+  /* 3 temas editoriales del sidebar:
+     - cristal: slate-900 profundo con acento teal (inspirado en iOS/Linear)
+     - dark:    zinc-950 minimalista con texto zinc-300
+     - light:   blanco neutro con bordes rule-soft
+     Paleta cristal rediseñada — es oscura pero con tinte teal en bordes
+     y highlights, NO un bloque de teal plano que se veia saturado. */
   const themeClasses = React.useMemo(() => {
     switch (sidebarTheme) {
       case "shaded": // alias legacy → cristal
       case "cristal":
         return {
-          /* Fondo primary fuerte (mismo tono que el logo Buleje). */
-          bg: "bg-primary dark:bg-primary-dark",
-          text: "text-white/85",
-          /* Hover sutil — apenas aclara el fondo. NO se pone oscuro. */
-          hover: "hover:bg-white/10 hover:text-white",
-          border: "border-white/10",
-          activeItem: "bg-white/15 text-white font-semibold",
-          headerBorder: "border-white/10",
+          /* Slate-900 con tinte teal sutil en el borde y header.
+             Fondo profundo que no compite con el contenido pero que
+             respira la identidad de marca via bordes y active state. */
+          bg: "bg-[#0b1f2b] dark:bg-[#050e15]",
+          text: "text-white/70",
+          /* Hover con tinte del accent primary (bajo alpha, no invasivo). */
+          hover: "hover:bg-white/[0.06] hover:text-white",
+          /* Borde sutil con tinte teal para evocar la marca. */
+          border: "border-white/[0.08]",
+          /* Active: highlight teal claro + text-white + font-semibold.
+             No es el fondo invasivo anterior, es una barra y un tinte. */
+          activeItem: "bg-primary/15 text-white font-semibold",
+          headerBorder: "border-white/[0.08]",
         };
       case "dark":
         return {
-          bg: "bg-zinc-900",
-          text: "text-zinc-300",
-          /* Dark mode: hover MUY sutil, no oscuro puro. */
+          bg: "bg-zinc-950",
+          text: "text-zinc-400",
           hover: "hover:bg-white/[0.06] hover:text-white",
-          border: "border-white/[0.08]",
+          border: "border-white/[0.06]",
           activeItem: "bg-white/[0.08] text-white",
-          headerBorder: "border-white/[0.08]",
+          headerBorder: "border-white/[0.06]",
         };
       default: // light
         return {
           bg: "bg-white dark:bg-card",
           text: "text-[var(--text-secondary)]",
-          hover: "hover:bg-[var(--surface-sunken)]/40",
+          hover: "hover:bg-[var(--surface-sunken)]/40 hover:text-[var(--text-primary)]",
           border: "border-[var(--rule-soft)] dark:border-card-border",
-          activeItem: "bg-gray-50 dark:bg-zinc-800/50",
+          activeItem: "bg-[var(--accent-soft)] text-primary font-semibold",
           headerBorder: "border-[var(--rule-soft)] dark:border-card-border",
         };
     }
@@ -443,14 +449,14 @@ export function AdminSidebar({
 
   return (
     <>
-      {/* Desktop permanent sidebar */}
+      {/* Desktop permanent sidebar — siempre desde top:0 para abarcar
+          toda la altura. Banner de impersonation fue removido. */}
       <aside className={cn(
-        "hidden md:flex fixed left-0 bottom-0 z-40 flex-col transition-[width] duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
+        "hidden md:flex fixed left-0 top-0 bottom-0 z-40 flex-col transition-[width] duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
         themeClasses.bg,
         themeClasses.border,
         effectiveCompact ? "w-[60px]" : "w-[260px]",
-        presentationMode && "hidden!",
-        isSuperAdminImpersonating ? "top-10" : "top-0"
+        presentationMode && "hidden!"
       )}>
         {/* ── Header: tenant + user ── */}
         {/* ── Configurator overlay (replaces sidebar content when active) ── */}
@@ -471,7 +477,7 @@ export function AdminSidebar({
         {/* Normal sidebar content (hidden when configMode) */}
         {(!configMode || effectiveCompact) && (<>
         <div className={cn(
-          "flex items-center gap-3 h-16 border-b transition-all duration-[var(--dur-base)]",
+          "flex items-center gap-3 h-16 border-b transition-all duration-[var(--dur-base)] shrink-0",
           themeClasses.headerBorder,
           effectiveCompact ? "px-3 justify-center" : "px-4"
         )}>
@@ -481,19 +487,39 @@ export function AdminSidebar({
               alt={activeTenantName ?? "Logo"}
               width={36}
               height={36}
-              className="h-9 w-9 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-card-border shrink-0"
+              className={cn(
+                "h-9 w-9 rounded-xl object-cover shrink-0",
+                sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
+                  ? "ring-2 ring-white/10"
+                  : "ring-2 ring-gray-100 dark:ring-card-border",
+              )}
             />
           ) : (
-            <div className="h-9 w-9 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] flex items-center justify-center shrink-0">
+            <div className={cn(
+              "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+              sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
+                ? "bg-white/10 text-white"
+                : "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
+            )}>
               <BulejeMark size={20} strokeWidth={1.75} />
             </div>
           )}
           {!effectiveCompact && (
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm leading-tight truncate">
+              <p className={cn(
+                "font-bold text-sm leading-tight truncate",
+                sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
+                  ? "text-white"
+                  : "text-[var(--text-primary)] dark:text-foreground",
+              )}>
                 {activeTenantName ?? "Mi Bodega"}
               </p>
-              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted leading-tight mt-0.5">
+              <p className={cn(
+                "text-[length:var(--ts-xs)] leading-tight mt-0.5",
+                sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded"
+                  ? "text-white/60"
+                  : "text-[var(--text-tertiary)] dark:text-muted",
+              )}>
                 <span className="capitalize">{userName}</span>
                 {" · "}
                 <span className="uppercase text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success)]">{userRole}</span>

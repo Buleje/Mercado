@@ -43,22 +43,21 @@ export function SidebarFlyout({
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  /* Paleta del flyout coherente con el sidebar. */
+  /* Paleta del flyout coherente con el sidebar cristal (slate profundo). */
   const themeStyles = {
     cristal: {
-      /* Flyout blanco sobre sidebar primary — mejor legibilidad que
-         flotar otro primary encima. */
-      bg: "bg-white dark:bg-[var(--surface-raised)]",
-      arrow: "bg-white dark:bg-[var(--surface-raised)] border-primary/20",
-      border: "border-primary/25 shadow-lg shadow-primary/10",
-      header: "bg-primary/5 dark:bg-primary/10",
-      divider: "border-primary/10",
-      activeBg: "bg-primary text-white",
-      inactiveText: "text-[var(--text-secondary)]",
-      hoverBg: "hover:bg-primary/5 dark:hover:bg-white/[0.04] hover:text-primary",
+      /* Flyout blanco crisp que flota sobre el sidebar oscuro cristal. */
+      bg: "bg-white dark:bg-[#0f2532]",
+      arrow: "bg-white dark:bg-[#0f2532] border-[var(--rule-soft)] dark:border-white/10",
+      border: "border-[var(--rule-base)] dark:border-white/10 shadow-xl",
+      header: "bg-[var(--surface-sunken)] dark:bg-white/[0.03]",
+      divider: "border-[var(--rule-soft)] dark:border-white/[0.06]",
+      activeBg: "bg-primary/10 dark:bg-primary/20 text-primary font-semibold",
+      inactiveText: "text-[var(--text-secondary)] dark:text-white/70",
+      hoverBg: "hover:bg-[var(--surface-sunken)] dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] dark:hover:text-white",
       indicator: "bg-primary",
-      activeIcon: "text-white",
-      inactiveIcon: "text-[var(--text-tertiary)]",
+      activeIcon: "text-primary",
+      inactiveIcon: "text-[var(--text-tertiary)] dark:text-white/50",
     },
     dark: {
       bg: "bg-zinc-900",
