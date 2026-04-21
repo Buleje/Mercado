@@ -222,12 +222,9 @@ function AdminPage() {
 
   return (
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-background" data-admin-shell="true">
-      <AdminImpersonationBanner
-        visible={isSuperAdminImpersonating}
-        tenantName={activeTenantName}
-        tenantSlug={activeTenantSlug}
-        onExit={handleExitImpersonation}
-      />
+      {/* AdminImpersonationBanner removido — el chip tenant del topbar
+          ya indica el negocio administrado. Salir de impersonation se
+          hace desde el menu de usuario. */}
 
       {/* AdminTenantBar removido — el chip tenant ahora vive dentro del
           AdminTopHeader al lado de la busqueda global (mas compacto). */}

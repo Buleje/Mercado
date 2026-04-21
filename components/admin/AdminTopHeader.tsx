@@ -101,14 +101,15 @@ export function AdminTopHeader({
         </button>
 
         {/* Chip de tenant activo — reemplaza la barra superior gruesa.
-            Muestra el nombre del negocio administrado + link rapido a tienda. */}
+            Dark mode: usa bg-white/5 + border-white/20 para contraste.
+            Texto en claro (primary) en light, en claro (gray-100) en dark. */}
         {tenantSlug && (
           <Link
             href={`/t/${tenantSlug}/tienda`}
             target="_blank"
             rel="noopener noreferrer"
             title="Abrir tienda en nueva pestaña"
-            className="hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20 text-xs font-semibold text-primary transition-colors shrink-0"
+            className="hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
           >
             <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
             <span className="truncate max-w-[120px]">{tenantName || tenantSlug}</span>

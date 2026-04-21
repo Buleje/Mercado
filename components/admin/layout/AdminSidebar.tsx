@@ -254,28 +254,33 @@ export function AdminSidebar({
     return result;
   }, [visibleCategories, categoryOrder, hiddenCategories]);
 
-  /* 3 temas: cristal (acento teal del proyecto), dark, light.
-     'shaded' conservado como alias de 'cristal' para compat de localStorage. */
+  /* 3 temas: cristal (color fuerte del logo — teal sólido), dark (zinc),
+     light (blanco neutro). 'shaded' es alias legacy → cristal.
+     Cristal NO es transparente: usa bg-primary sólido con texto blanco
+     como fondo del sidebar, reflejando el color principal de la marca. */
   const themeClasses = React.useMemo(() => {
     switch (sidebarTheme) {
       case "shaded": // alias legacy → cristal
       case "cristal":
         return {
-          bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-          text: "text-[var(--text-secondary)] dark:text-zinc-300",
-          hover: "hover:bg-white/60 dark:hover:bg-white/[0.04]",
-          border: "border-[var(--data-success)]/15 dark:border-[var(--data-success)]/25",
-          activeItem: "bg-white/80 dark:bg-white/[0.06] text-primary",
-          headerBorder: "border-[var(--data-success)]/15 dark:border-[var(--data-success)]/25",
+          /* Fondo primary fuerte (mismo tono que el logo Buleje). */
+          bg: "bg-primary dark:bg-primary-dark",
+          text: "text-white/85",
+          /* Hover sutil — apenas aclara el fondo. NO se pone oscuro. */
+          hover: "hover:bg-white/10 hover:text-white",
+          border: "border-white/10",
+          activeItem: "bg-white/15 text-white font-semibold",
+          headerBorder: "border-white/10",
         };
       case "dark":
         return {
           bg: "bg-zinc-900",
           text: "text-zinc-300",
-          hover: "hover:bg-zinc-800",
-          border: "border-zinc-800",
-          activeItem: "bg-zinc-800",
-          headerBorder: "border-zinc-800",
+          /* Dark mode: hover MUY sutil, no oscuro puro. */
+          hover: "hover:bg-white/[0.06] hover:text-white",
+          border: "border-white/[0.08]",
+          activeItem: "bg-white/[0.08] text-white",
+          headerBorder: "border-white/[0.08]",
         };
       default: // light
         return {
@@ -722,12 +727,11 @@ export function AdminSidebar({
                     </span>
                   )}
                 </button>
-                {/* Tooltip menu — aparece al instante al hover del icono en
-                    modo compact. Estilo editorial con sombra sutil + arrow
-                    para indicar origen. */}
+                {/* Menu lateral al hover — aparece al instante con el nombre
+                    del modulo. Estilo card editorial, NO tooltip oscuro. */}
                 <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity duration-100 z-50">
-                  <div className="relative bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-semibold rounded-md px-2.5 py-1.5 whitespace-nowrap shadow-lg">
-                    <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-[var(--text-primary)]" />
+                  <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-semibold rounded-lg px-3 py-2 whitespace-nowrap shadow-lg border border-[var(--rule-base)] dark:border-white/10">
+                    <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
                     {label}
                   </div>
                 </div>
