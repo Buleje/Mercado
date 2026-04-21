@@ -51,6 +51,7 @@ import POSCrossSell from "@/components/admin/pos/POSCrossSell";
 import POSCartDetail from "@/components/admin/pos/POSCartDetail";
 import POSVoiceInput from "@/components/admin/pos/POSVoiceInput";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
+import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const YapeQRPayment = dynamic(() => import("@/components/admin/YapeQRPayment"), { ssr: false });
@@ -1558,13 +1559,7 @@ export default function POSView() {
         </div>
       )}
 
-      {/* Breadcrumb de seccion */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <ShoppingBasket className="h-3 w-3" strokeWidth={2} aria-hidden />
-        <span>Ventas</span>
-        <span className="text-[var(--text-tertiary)]/60">·</span>
-        <span className="text-[var(--text-secondary)]">Punto de venta</span>
-      </div>
+      <SectionBreadcrumb icon={ShoppingBasket} section="Ventas" page="Punto de venta" />
 
       {/* Toolbar unificada — estado a la izquierda, acciones a la derecha. */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

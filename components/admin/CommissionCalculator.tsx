@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
@@ -142,13 +143,7 @@ export default function CommissionCalculator() {
   /* ── Render ── */
   return (
     <div className="space-y-4">
-      {/* Breadcrumb de seccion */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <DollarSign className="h-3 w-3" strokeWidth={2} aria-hidden />
-        <span>Ventas</span>
-        <span className="text-[var(--text-tertiary)]/60">·</span>
-        <span className="text-[var(--text-secondary)]">Comisiones</span>
-      </div>
+      <SectionBreadcrumb icon={DollarSign} section="Ventas" page="Comisiones" />
 
       {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3">

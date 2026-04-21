@@ -8,6 +8,7 @@ import {
   Banknote, Coins, Info, RefreshCw, ExternalLink, PlusCircle,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -347,13 +348,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb — contexto de seccion */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Calculator className="h-3 w-3" strokeWidth={2} aria-hidden />
-        <span>Ventas</span>
-        <span className="text-[var(--text-tertiary)]/60">·</span>
-        <span className="text-[var(--text-secondary)]">Cuadre</span>
-      </div>
+      <SectionBreadcrumb icon={Calculator} section="Ventas" page="Cuadre" />
 
       {/* Toolbar — acciones alineadas a la derecha */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">

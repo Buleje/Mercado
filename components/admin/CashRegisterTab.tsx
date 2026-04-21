@@ -13,6 +13,7 @@ import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/desig
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 const CashRegisterChart = dynamic(
   () => import("./cash-register/CashRegisterChart"),
@@ -498,13 +499,7 @@ export default function CashRegisterTab() {
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb de seccion */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Calculator className="h-3 w-3" strokeWidth={2} aria-hidden />
-        <span>Ventas</span>
-        <span className="text-[var(--text-tertiary)]/60">·</span>
-        <span className="text-[var(--text-secondary)]">Caja registradora</span>
-      </div>
+      <SectionBreadcrumb icon={Calculator} section="Ventas" page="Caja registradora" />
 
       {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
       <div className="flex items-center justify-end flex-wrap gap-3">

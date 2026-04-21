@@ -958,6 +958,30 @@ body {
   }
 }
 
+/* ── Sticky toolbar utility — modulos con listas largas ─────────────────
+ * Mantiene el toolbar del modulo visible al hacer scroll en tablas
+ * extensas (Pedidos, Fiados, Productos, Inventario). El top respeta el
+ * AdminTopHeader sticky (que tiene z-40 y ~48px de altura).
+ * Uso: `className="module-sticky-toolbar"` en el contenedor del toolbar.
+ */
+.module-sticky-toolbar {
+  position: sticky;
+  top: 48px; /* altura del AdminTopHeader */
+  z-index: 20;
+  background: var(--surface-canvas);
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  padding: 0.5rem 0.75rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+.module-sticky-toolbar.is-stuck {
+  border-bottom-color: var(--rule-soft);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.02);
+}
+
 /* ── Modal backdrop unificado ───────────────────────────────────────────
  * Overlay BLANCO semi-opaco (no negro). Fija el modal en el centro y
  * difumina el contenido de fondo sin oscurecer la pantalla — sensacion

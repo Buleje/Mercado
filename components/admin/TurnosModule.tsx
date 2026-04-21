@@ -12,6 +12,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
+import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -375,13 +376,7 @@ export default function TurnosModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Breadcrumb de seccion */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Clock className="h-3 w-3" strokeWidth={2} aria-hidden />
-        <span>Ventas</span>
-        <span className="text-[var(--text-tertiary)]/60">·</span>
-        <span className="text-[var(--text-secondary)]">Turnos</span>
-      </div>
+      <SectionBreadcrumb icon={Clock} section="Ventas" page="Turnos" />
 
       {/* Header — solo badge de estado. La meta se edita desde el aside
           "Meta del turno" cuando no hay turno, o desde el card de turno

@@ -21,6 +21,7 @@ import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 const FiadoFormModal = dynamic(() => import("./fiados/FiadoFormModal"), { ssr: false });
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
@@ -951,14 +952,7 @@ export default function FiadosModule() {
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb / section reference — muestra el contexto del modulo
-          dentro de la navegacion general del admin. */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <HandCoins className="h-3 w-3" strokeWidth={2} aria-hidden />
-        <span>Ventas</span>
-        <span className="text-[var(--text-tertiary)]/60">·</span>
-        <span className="text-[var(--text-secondary)]">Fiados</span>
-      </div>
+      <SectionBreadcrumb icon={HandCoins} section="Ventas" page="Fiados" />
 
       {/* Fila 1 — Acciones del modulo. Compact, sin tabs de vista (solo Lista). */}
       <div className="flex flex-wrap items-center gap-3">
