@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin, Search, RefreshCw } from "@buleje/design-system/icons";
+  LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -24,7 +24,6 @@ import { csrfHeaders } from "@/lib/csrf-client";
 const FiadoFormModal = dynamic(() => import("./fiados/FiadoFormModal"), { ssr: false });
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
-const CobranzaInteligente = dynamic(() => import("./fiados/CobranzaInteligente"), { ssr: false });
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -352,11 +351,6 @@ export default function FiadosModule() {
   // UX: Table density (Mejora 20)
   const [tableDensity, setTableDensity] = useState<"compact" | "normal" | "wide">(() => {
     try { return (localStorage.getItem("table-density") as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
-  });
-
-  // Mejora 17 (ronda 3): Kanban view for fiados
-  const [fiadosViewMode, setFiadosViewMode] = useState<"list" | "kanban" | "libreta" | "cobranza">(() => {
-    try { return (localStorage.getItem("fiados-view-mode") as "list" | "kanban" | "libreta" | "cobranza") || "list"; } catch { return "list"; }
   });
 
   // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel
@@ -948,13 +942,6 @@ export default function FiadosModule() {
     exportToExcel(rows, `deudores-${fecha}`, "Deudores");
   };
 
-  const VIEW_MODES = [
-    { id: "list" as const, label: "Lista" },
-    { id: "kanban" as const, label: "Kanban" },
-    { id: "libreta" as const, label: "Libreta" },
-    { id: "cobranza" as const, label: "Cobranza" },
-  ];
-
   const STATUS_FILTERS = [
     { key: "" as const, label: "Todos" },
     { key: "ACTIVO" as const, label: "Activo" },
@@ -964,26 +951,18 @@ export default function FiadosModule() {
 
   return (
     <div className="space-y-4">
-      {/* Fila 1 — View tabs + Acciones. Compact, sin titulos redundantes. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-0.5 p-0.5 bg-[var(--surface-sunken)] rounded-lg">
-          {VIEW_MODES.map(m => (
-            <button
-              key={m.id}
-              onClick={() => { setFiadosViewMode(m.id); try { localStorage.setItem("fiados-view-mode", m.id); } catch {} }}
-              className={cn(
-                "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
-                fiadosViewMode === m.id
-                  ? "bg-white text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+      {/* Breadcrumb / section reference — muestra el contexto del modulo
+          dentro de la navegacion general del admin. */}
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <HandCoins className="h-3 w-3" strokeWidth={2} aria-hidden />
+        <span>Ventas</span>
+        <span className="text-[var(--text-tertiary)]/60">·</span>
+        <span className="text-[var(--text-secondary)]">Fiados</span>
+      </div>
 
-        {/* Total pendiente — chips inline, sin mr-auto gore */}
+      {/* Fila 1 — Acciones del modulo. Compact, sin tabs de vista (solo Lista). */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Total pendiente — chips inline */}
         {totalSaldo > 0 && (
           <div className="flex items-center gap-2 text-xs ml-1">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendiente</span>
@@ -1064,235 +1043,11 @@ export default function FiadosModule() {
       {/* Stats, KPIs, Calendar, Risk Ranking, Projections */}
       <FiadoStats fiados={fiados} loading={loading} totalSaldo={totalSaldo} tendenciaMorosidad={tendenciaMorosidad} proyeccionCobro={proyeccionCobro} fiadoMasAntiguo={fiadoMasAntiguo} pagosEstaSemana={pagosEstaSemana} mejorPagadorMes={mejorPagadorMes} openDetail={openDetail} search={search} setSearch={setSearch} setSelected={setSelected} statusFilter={statusFilter} setStatusFilter={setStatusFilter} FiadoTendenciaCobro={FiadoTendenciaCobro} />
 
-      {/* Cobranza Inteligente — escalado automático + descuentos */}
-      {fiadosViewMode === "cobranza" && <CobranzaInteligente />}
-
-      {/* Vista Libreta Digital — inspirada en la libreta de papel, pero
-          con paleta del admin (sin amarillo chillon, sin border-dashed). */}
-      {fiadosViewMode === "libreta" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-[var(--text-tertiary)]">Una tarjeta por cliente con sus fiados abiertos — hojea con el scroll horizontal.</p>
-            <button
-              onClick={() => setShowQuickFiado(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> Anotar fiado
-            </button>
-          </div>
-
-          {libretaClientes.length === 0 ? (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] rounded-xl py-12 px-4 text-center">
-              <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
-                <FileText className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
-              </div>
-              <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Libreta vacia</p>
-              <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">No hay fiados activos. Usa &quot;Anotar fiado&quot; para registrar el primero.</p>
-            </div>
-          ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar" style={{ scrollBehavior: "smooth" }}>
-              {libretaClientes.map((cliente, idx) => (
-                <div
-                  key={cliente.customerId}
-                  className="snap-center shrink-0 w-[320px] sm:w-[360px] rounded-xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden"
-                >
-                  {/* Encabezado de pagina — header limpio */}
-                  <div className="px-4 pt-4 pb-3 border-b border-[var(--rule-soft)]">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-[var(--text-primary)] text-sm truncate">{cliente.nombre}</span>
-                      <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] shrink-0">{idx + 1} / {libretaClientes.length}</span>
-                    </div>
-                    <FiadoReliabilityBadge customerId={cliente.customerId} fiados={fiados} />
-                  </div>
-
-                  {/* Lineas de la libreta */}
-                  <div className="px-4 py-3 space-y-0" style={{ backgroundImage: "repeating-linear-gradient(transparent, transparent 27px, #d4a57355 27px, #d4a57355 28px)", backgroundSize: "100% 28px" }}>
-                    {cliente.fiados.map((f) => {
-                      const fechaCorta = new Date(f.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" });
-                      return (
-                        <div key={f.id} className="flex items-baseline justify-between font-mono text-sm leading-7 cursor-pointer hover:bg-[var(--surface-sunken)] px-1.5 rounded transition-colors" onClick={() => openDetail(f)}>
-                          <span className="text-[var(--text-secondary)] truncate max-w-[200px]">
-                            <span className="text-[var(--text-tertiary)] text-xs">{fechaCorta}</span>
-                            <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
-                            {f.descripcion || "fiado"}
-                          </span>
-                          <span className="font-bold text-[var(--text-primary)] shrink-0 ml-2">S/ {f.total.toFixed(0)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Totales — tipografia limpia, tokens coherentes */}
-                  <div className="px-4 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60">
-                    <div className="flex justify-between font-mono text-xs text-[var(--text-secondary)]">
-                      <span>Total prestado</span>
-                      <span className="font-semibold">S/ {cliente.fiados.reduce((s, f) => s + f.total, 0).toFixed(0)}</span>
-                    </div>
-                    {cliente.totalPagado > 0 && (
-                      <div className="flex justify-between font-mono text-xs text-[var(--data-success)] mt-0.5">
-                        <span>Pagado</span>
-                        <span className="font-semibold">&minus; S/ {cliente.totalPagado.toFixed(0)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-mono mt-2 pt-2 border-t border-[var(--rule-soft)]">
-                      <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">Debe</span>
-                      <span className="font-bold text-[var(--data-error)] text-base">S/ {cliente.totalDeuda.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Modal de fiado rapido — paleta neutra coherente con el resto */}
-          {showQuickFiado && (
-            <div className="modal-backdrop flex items-center justify-center p-4" onClick={() => setShowQuickFiado(false)}>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] rounded-xl max-w-sm w-full p-5 space-y-3" onClick={e => e.stopPropagation()}>
-                <div className="flex items-start gap-3 mb-1">
-                  <div className="h-9 w-9 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                    <FileText className="h-4.5 w-4.5 text-primary" strokeWidth={1.75} aria-hidden />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="text-base font-bold text-[var(--text-primary)]">Anotar en la libreta</CardTitle>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Registro rapido sin validaciones.</p>
-                  </div>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Nombre del cliente"
-                  value={quickFiadoForm.nombre}
-                  onChange={e => setQuickFiadoForm({ ...quickFiadoForm, nombre: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
-                  autoFocus
-                />
-                <input
-                  type="text"
-                  placeholder="Producto (ej: arroz 5kg, leche)"
-                  value={quickFiadoForm.producto}
-                  onChange={e => setQuickFiadoForm({ ...quickFiadoForm, producto: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
-                />
-                <input
-                  type="number"
-                  placeholder="Monto S/"
-                  value={quickFiadoForm.monto}
-                  onChange={e => setQuickFiadoForm({ ...quickFiadoForm, monto: e.target.value })}
-                  step="0.50"
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm font-bold text-right font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
-                />
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => setShowQuickFiado(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 transition-colors">Cancelar</button>
-                  <button onClick={handleQuickFiado} disabled={quickFiadoCreating || !quickFiadoForm.nombre.trim() || !quickFiadoForm.monto} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
-                    {quickFiadoCreating ? "Anotando..." : "Anotar"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Mejora 17 (ronda 3): Kanban view de fiados */}
-      {fiadosViewMode === "kanban" && (() => {
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const in7days = new Date(now);
-        in7days.setDate(in7days.getDate() + 7);
-        const ago60days = new Date(now);
-        ago60days.setDate(ago60days.getDate() - 60);
-
-        const activos = fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO");
-
-        const cols = [
-          {
-            key: "aldia", label: "Al dia", bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success)]/30", headerBg: "bg-[var(--accent-soft)]",
-            items: activos.filter(f => {
-              if (!f.fechaVence) return true;
-              const v = new Date(f.fechaVence); v.setHours(0, 0, 0, 0);
-              return v > in7days;
-            }),
-          },
-          {
-            key: "porvencer", label: "Por vencer", bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning)]", headerBg: "bg-yellow-100",
-            items: activos.filter(f => {
-              if (!f.fechaVence) return false;
-              const v = new Date(f.fechaVence); v.setHours(0, 0, 0, 0);
-              return v >= now && v <= in7days;
-            }),
-          },
-          {
-            key: "vencido", label: "Vencido", bg: "bg-[var(--data-error-50)]", border: "border-[var(--data-error)]", headerBg: "bg-red-100",
-            items: activos.filter(f => {
-              if (!f.fechaVence) return false;
-              const v = new Date(f.fechaVence); v.setHours(0, 0, 0, 0);
-              return v < now && v >= ago60days;
-            }),
-          },
-          {
-            key: "bloqueado", label: "Bloqueado", bg: "bg-gray-100", border: "border-gray-400", headerBg: "bg-gray-200",
-            items: activos.filter(f => {
-              if (!f.fechaVence) return false;
-              const v = new Date(f.fechaVence); v.setHours(0, 0, 0, 0);
-              return v < ago60days;
-            }),
-          },
-        ];
-
-        return (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 overflow-x-auto">
-            {cols.map(col => (
-              <div key={col.key} className={cn("rounded-xl border-2 min-w-[200px]", col.bg, col.border)}>
-                <div className={cn("px-3 py-2 rounded-t-lg flex items-center justify-between", col.headerBg)}>
-                  <span className="text-xs font-extrabold text-[var(--text-primary)]">{col.label}</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-white/60 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{col.items.length}</span>
-                </div>
-                <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
-                  {col.items.length === 0 ? (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center py-4">Sin fiados</p>
-                  ) : [...col.items].sort((a, b) => b.saldo - a.saldo).map(f => {
-                    const diasCreado = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
-                    const diasVence = f.fechaVence ? Math.floor((new Date(f.fechaVence).getTime() - Date.now()) / 86400000) : null;
-                    return (
-                      <div key={f.id} className="bg-white rounded-lg border border-[var(--rule-base)] p-2.5  hover:shadow-sm transition-shadow cursor-pointer" onClick={() => openDetail(f)}>
-                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
-                        <p className={cn("text-sm font-extrabold font-mono mt-0.5", col.key === "vencido" || col.key === "bloqueado" ? "text-[var(--data-error)]" : col.key === "porvencer" ? "text-[var(--data-warning)]" : "text-primary")}>{formatCurrency(f.saldo)}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-                          {diasVence !== null ? (diasVence > 0 ? `vence en ${diasVence}d` : `vencido hace ${Math.abs(diasVence)}d`) : `hace ${diasCreado} dias`}
-                        </p>
-                        <div className="flex gap-1.5 mt-2">
-                          <button
-                            onClick={e => { e.stopPropagation(); openDetail(f); }}
-                            className="flex-1 text-[length:var(--ts-2xs)] font-bold text-center py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                          >
-                            Cobrar
-                          </button>
-                          {f.customerId && (
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                const nombre = f.customerName || f.customerId;
-                                const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${f.saldo.toFixed(2)} en Buleje.`;
-                                const cleanPhone = f.customerId.replace(/\D/g, "");
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
-                              }}
-                              className="text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
+      {/* Unica vista: lista. Se eliminaron Cobranza/Libreta/Kanban por
+          duplicar info de FiadoStats sin aportar valor. */}
 
       {/* UX Mejora 20: Density toggle */}
-      {fiadosViewMode === "list" && <div className="flex items-center gap-1 mb-2">
+      {<div className="flex items-center gap-1 mb-2">
         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mr-1">Densidad:</span>
         {(["compact", "normal", "wide"] as const).map(d => (
           <button
@@ -1306,7 +1061,7 @@ export default function FiadosModule() {
       </div>}
 
       {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns */}
-      {fiadosViewMode === "list" && <div className={cn("bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
+      {<div className={cn("bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <LoadingState />
         ) : error ? (
