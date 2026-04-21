@@ -7,6 +7,7 @@ import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
   User, ChevronLeft, ChevronRight, X, ShoppingCart, Download,
   Printer, Trophy, CreditCard, TrendingUp, CalendarDays, BarChart3, Timer,
+  Banknote,
 } from "@buleje/design-system/icons";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
@@ -367,6 +368,10 @@ export default function TurnosModule() {
       </div>
     );
   }
+
+  // Ultimo turno cerrado (primer item del historial con cierreEfectivo).
+  // Sirve para mostrar contexto en el panel lateral de "No hay turno abierto".
+  const ultimoTurno = historial.find(t => t.cierreEfectivo != null) ?? null;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -773,43 +778,48 @@ export default function TurnosModule() {
           </div>
         </div>
       ) : (
-        /* Open turno card */
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-6 sm:p-8">
-          <div className="max-w-sm mx-auto text-center space-y-5">
-            <div className="h-16 w-16 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center mx-auto">
-              <Clock className="h-8 w-8 text-[#00B4A6]" />
+        <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 sm:p-6">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                <Clock className="h-5 w-5 text-primary" strokeWidth={1.75} aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-base font-bold text-[var(--text-primary)]">No hay turno abierto</CardTitle>
+                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Abre un turno para empezar a registrar ventas.</p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-1">No hay turno abierto</CardTitle>
-              <p className="text-sm text-[var(--text-tertiary)]">Ingresa el efectivo inicial para comenzar</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Cajero asignado</label>
+                <select
+                  value={selectedCajero}
+                  onChange={e => setSelectedCajero(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="">Yo mismo (usuario actual)</option>
+                  {cajeros.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                  ))}
+                </select>
+                {cajerosLoading && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Cargando cajeros...</p>}
+              </div>
+              <div>
+                <label className="block text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Efectivo inicial</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={efectivoInicial}
+                  onChange={e => setEfectivoInicial(e.target.value)}
+                  placeholder="S/ 0.00"
+                  className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 text-right font-mono"
+                />
+              </div>
             </div>
-            {/* Cajero selector */}
-            <div>
-              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1 text-left">Cajero asignado</label>
-              <select
-                value={selectedCajero}
-                onChange={e => setSelectedCajero(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
-              >
-                <option value="">Yo mismo (usuario actual)</option>
-                {cajeros.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
-                ))}
-              </select>
-              {cajerosLoading && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Cargando cajeros...</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1 text-left">Efectivo inicial (S/)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={efectivoInicial}
-                onChange={e => setEfectivoInicial(e.target.value)}
-                placeholder="0.00"
-                className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
-              />
-              <div className="flex flex-wrap gap-1.5 mt-2 justify-center">
+            <div className="mt-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Montos rapidos</p>
+              <div className="flex flex-wrap gap-1.5">
                 {[100, 200, 300, 500].map(amount => {
                   const active = parseFloat(efectivoInicial || "0") === amount;
                   return (
@@ -818,7 +828,7 @@ export default function TurnosModule() {
                       type="button"
                       onClick={() => setEfectivoInicial(String(amount))}
                       className={cn(
-                        "px-3 py-1 rounded-md text-xs font-bold border transition-colors",
+                        "px-3 py-1.5 rounded-md text-xs font-bold border transition-colors",
                         active
                           ? "bg-primary text-white border-primary"
                           : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
@@ -833,12 +843,46 @@ export default function TurnosModule() {
             <button
               onClick={handleAbrir}
               disabled={opening}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
+              className="mt-5 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
-              {opening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-              Abrir Turno
+              {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={1.75} aria-hidden />}
+              Abrir turno
             </button>
           </div>
+          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-col gap-3">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Ultimo turno cerrado</p>
+              {ultimoTurno ? (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-bold text-[var(--text-primary)] truncate">{ultimoTurno.adminUserId || "Sin asignar"}</p>
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <CalendarDays className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                    {new Date(ultimoTurno.cerroEn || ultimoTurno.abrioEn).toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "short" })}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <DollarSign className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                    Ventas <span className="font-bold text-[var(--data-success)]">{formatCurrency(ultimoTurno.ventasTotal)}</span>
+                  </div>
+                  {ultimoTurno.cierreEfectivo != null ? (
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                      <Banknote className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                      Cierre <span className="font-bold text-[var(--text-primary)]">{formatCurrency(ultimoTurno.cierreEfectivo)}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--text-tertiary)]">Aun no hay turnos cerrados. Este sera el primero.</p>
+              )}
+            </div>
+            <div className="border-t border-[var(--rule-soft)] pt-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Meta del turno</p>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-[var(--data-warning)]" strokeWidth={1.75} aria-hidden />
+                <p className="text-sm font-bold text-[var(--text-primary)] font-mono">{formatCurrency(metaVentas)}</p>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Editable desde el boton Meta del header.</p>
+            </div>
+          </aside>
         </div>
       )}
 
