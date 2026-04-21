@@ -164,14 +164,18 @@ export function AdminSidebar({
     };
   }, [activeTenantSlug]);
 
-  // ── Sidebar theme (persisted in localStorage) ──
+  /* Tema del sidebar: 3 opciones persistidas en localStorage.
+     - "cristal": paleta de marca Buleje (teal accent). Default moderno.
+     - "light": neutro blanco, minimalista.
+     - "dark": fondo zinc-900 para uso prolongado / modo oscuro.
+     "shaded" se conserva como alias legacy → cristal. */
   const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
-    if (typeof window === "undefined") return "dark";
+    if (typeof window === "undefined") return "cristal";
     try {
       const stored = localStorage.getItem("admin-sidebar-theme");
-      if (stored === "light" || stored === "shaded" || stored === "dark") return stored;
+      if (stored === "light" || stored === "dark" || stored === "cristal" || stored === "shaded") return stored;
     } catch { /* ignore */ }
-    return "dark";
+    return "cristal";
   });
 
   const updateTheme = React.useCallback((theme: SidebarTheme) => {
@@ -250,17 +254,19 @@ export function AdminSidebar({
     return result;
   }, [visibleCategories, categoryOrder, hiddenCategories]);
 
-  // ── Theme CSS classes ──
+  /* 3 temas: cristal (acento teal del proyecto), dark, light.
+     'shaded' conservado como alias de 'cristal' para compat de localStorage. */
   const themeClasses = React.useMemo(() => {
     switch (sidebarTheme) {
-      case "shaded":
+      case "shaded": // alias legacy → cristal
+      case "cristal":
         return {
-          bg: "bg-gray-50 dark:bg-zinc-800",
+          bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
           text: "text-[var(--text-secondary)] dark:text-zinc-300",
-          hover: "hover:bg-gray-100 dark:hover:bg-zinc-700",
-          border: "border-[var(--rule-base)] dark:border-zinc-700",
-          activeItem: "bg-gray-100 dark:bg-zinc-700/50",
-          headerBorder: "border-[var(--rule-base)] dark:border-zinc-700",
+          hover: "hover:bg-white/60 dark:hover:bg-white/[0.04]",
+          border: "border-[var(--data-success)]/15 dark:border-[var(--data-success)]/25",
+          activeItem: "bg-white/80 dark:bg-white/[0.06] text-primary",
+          headerBorder: "border-[var(--data-success)]/15 dark:border-[var(--data-success)]/25",
         };
       case "dark":
         return {
@@ -357,18 +363,22 @@ export function AdminSidebar({
     setFlyoutPosition({ top: rect.top });
   }, [hoveredCategory]);
 
+  /* Delays agresivos para UX responsiva. 300ms / 500ms eran lentos y
+     rompian el sentido de "accion inmediata" al pasar el mouse. Ahora:
+     open = 80ms (casi instantaneo), close = 60ms (permite cruzar a otro
+     item sin flicker). */
   const handleCategoryMouseEnter = React.useCallback((categoryId: string) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
       setHoveredCategory(categoryId);
-    }, 300);
+    }, 80);
   }, []);
 
   const handleCategoryMouseLeave = React.useCallback(() => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
       setHoveredCategory(null);
-    }, 150);
+    }, 60);
   }, []);
 
   const handleFlyoutMouseEnter = React.useCallback(() => {
@@ -378,7 +388,7 @@ export function AdminSidebar({
   const handleFlyoutMouseLeave = React.useCallback(() => {
     hoverTimerRef.current = setTimeout(() => {
       setHoveredCategory(null);
-    }, 150);
+    }, 60);
   }, []);
 
   // Cleanup timer on unmount
@@ -593,7 +603,7 @@ export function AdminSidebar({
                       const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
                       if (!tipText) return null;
                       return (
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity delay-500 z-50">
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-100 delay-[80ms] z-50">
                           <div className="relative bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded-lg px-3 py-2 max-w-[200px] leading-relaxed">
                             <div className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-900 dark:border-r-zinc-700" />
                             {tipText}
@@ -707,9 +717,14 @@ export function AdminSidebar({
                     </span>
                   )}
                 </button>
-                {/* Tooltip on hover in compact mode */}
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity z-50">
-                  {label}
+                {/* Tooltip menu — aparece al instante al hover del icono en
+                    modo compact. Estilo editorial con sombra sutil + arrow
+                    para indicar origen. */}
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity duration-100 z-50">
+                  <div className="relative bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-semibold rounded-md px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                    <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-[var(--text-primary)]" />
+                    {label}
+                  </div>
                 </div>
               </div>
             );
@@ -905,6 +920,7 @@ export function AdminSidebar({
             onClose={() => setHoveredCategory(null)}
             onMouseEnter={handleFlyoutMouseEnter}
             onMouseLeave={handleFlyoutMouseLeave}
+            theme={sidebarTheme === "shaded" ? "cristal" : sidebarTheme === "dark" ? "dark" : sidebarTheme === "light" ? "light" : "cristal"}
           />
         );
       })()}

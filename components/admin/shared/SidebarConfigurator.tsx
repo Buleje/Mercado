@@ -25,7 +25,12 @@ import type { Tab } from "@/app/admin/_lib/tabs.types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type SidebarTheme = "light" | "shaded" | "dark";
+/* Themes del sidebar admin.
+ * - "light": blanco neutro
+ * - "dark": fondo zinc-900
+ * - "cristal": paleta de marca Buleje (teal accent) — default
+ * - "shaded": alias legacy de "cristal" (compat localStorage) */
+export type SidebarTheme = "light" | "dark" | "cristal" | "shaded";
 
 type SidebarConfiguratorProps = {
   /** All available categories (BASIC_MODULES + TIENDA_MODULE etc.) */
@@ -328,12 +333,12 @@ export default function SidebarConfigurator({
           Tema
         </label>
         <select
-          value={draftTheme}
+          value={draftTheme === "shaded" ? "cristal" : draftTheme}
           onChange={e => setDraftTheme(e.target.value as SidebarTheme)}
           className="w-full bg-zinc-700 text-zinc-200 text-[length:var(--ts-sm)] rounded-lg px-3 py-2 border border-zinc-600 focus:outline-none focus:ring-2 focus:ring-[var(--data-success)]/40"
         >
+          <option value="cristal">Cristal (marca)</option>
           <option value="light">Claro</option>
-          <option value="shaded">Sombreado</option>
           <option value="dark">Oscuro</option>
         </select>
       </div>

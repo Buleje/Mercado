@@ -4,6 +4,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+export type FlyoutTheme = "light" | "dark" | "cristal";
+
 interface SidebarFlyoutProps {
   category: { id: string; label: string; tabs: string[] };
   tabs: Array<{
@@ -17,6 +19,8 @@ interface SidebarFlyoutProps {
   onClose: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  /** Tema heredado del sidebar. Default: cristal. */
+  theme?: FlyoutTheme;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -29,6 +33,7 @@ export function SidebarFlyout({
   onClose,
   onMouseEnter,
   onMouseLeave,
+  theme = "cristal",
 }: SidebarFlyoutProps) {
   const [visible, setVisible] = React.useState(false);
 
@@ -37,6 +42,49 @@ export function SidebarFlyout({
     const raf = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  /* Paleta del flyout coherente con el sidebar. */
+  const themeStyles = {
+    cristal: {
+      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+      arrow: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/20 dark:border-[var(--data-success)]/30",
+      border: "border-[var(--data-success)]/20 dark:border-[var(--data-success)]/30",
+      header: "bg-white/60 dark:bg-white/[0.03]",
+      divider: "border-[var(--data-success)]/15 dark:border-[var(--data-success)]/20",
+      activeBg: "bg-white/80 dark:bg-white/[0.08] text-primary",
+      inactiveText: "text-[var(--text-secondary)]",
+      hoverBg: "hover:bg-white/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]",
+      indicator: "bg-primary",
+      activeIcon: "text-primary",
+      inactiveIcon: "text-[var(--text-tertiary)]",
+    },
+    dark: {
+      bg: "bg-zinc-900",
+      arrow: "bg-zinc-900 border-zinc-800",
+      border: "border-zinc-800",
+      header: "bg-zinc-800/50",
+      divider: "border-zinc-800",
+      activeBg: "bg-zinc-800 text-white",
+      inactiveText: "text-zinc-300",
+      hoverBg: "hover:bg-zinc-800/40 hover:text-white",
+      indicator: "bg-[var(--data-success)]",
+      activeIcon: "text-[var(--data-success)]",
+      inactiveIcon: "text-zinc-500",
+    },
+    light: {
+      bg: "bg-white dark:bg-card",
+      arrow: "bg-white dark:bg-card border-[var(--rule-soft)]",
+      border: "border-[var(--rule-soft)]",
+      header: "bg-gray-50 dark:bg-zinc-800/50",
+      divider: "border-[var(--rule-soft)]",
+      activeBg: "bg-[var(--accent-soft)] text-primary",
+      inactiveText: "text-[var(--text-secondary)]",
+      hoverBg: "hover:bg-gray-50 dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)]",
+      indicator: "bg-primary",
+      activeIcon: "text-primary",
+      inactiveIcon: "text-[var(--text-tertiary)]",
+    },
+  }[theme];
 
   return (
     <div
@@ -47,7 +95,9 @@ export function SidebarFlyout({
         zIndex: 100,
       }}
       className={cn(
-        "bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 min-w-[220px] overflow-hidden",
+        "rounded-xl border min-w-[220px] overflow-hidden shadow-lg",
+        themeStyles.bg,
+        themeStyles.border,
         "transition-all duration-[var(--dur-fast)]",
         visible
           ? "opacity-100 translate-x-0"
@@ -58,18 +108,21 @@ export function SidebarFlyout({
     >
       {/* Arrow pointing left */}
       <div
-        className="absolute top-6 -left-[6px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-b border-[var(--rule-soft)] dark:border-zinc-800 rotate-45"
+        className={cn(
+          "absolute top-6 -left-[6px] w-3 h-3 border-l border-b rotate-45",
+          themeStyles.arrow,
+        )}
       />
 
       {/* Header */}
-      <div className="bg-gray-50 dark:bg-zinc-800/50 px-4 py-2">
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">
+      <div className={cn("px-4 py-2", themeStyles.header)}>
+        <span className={cn("text-sm font-semibold", themeStyles.inactiveText)}>
           {category.label}
         </span>
       </div>
 
       {/* Divider */}
-      <div className="border-t border-[var(--rule-soft)] dark:border-zinc-800" />
+      <div className={cn("border-t", themeStyles.divider)} />
 
       {/* Tab options */}
       <div className="py-1">
@@ -85,18 +138,17 @@ export function SidebarFlyout({
               className={cn(
                 "relative w-full flex items-center gap-2.5 px-4 py-2 text-[length:var(--ts-sm)] font-medium transition-colors",
                 isActive
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
-                  : "text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)] dark:hover:text-gray-200"
+                  ? themeStyles.activeBg
+                  : cn(themeStyles.inactiveText, themeStyles.hoverBg),
               )}
             >
-              {/* Active indicator bar */}
               {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-[var(--accent-soft)] rounded-r-full" />
+                <span className={cn("absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full", themeStyles.indicator)} />
               )}
               <Icon
                 className={cn(
                   "h-4 w-4 shrink-0",
-                  isActive ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]"
+                  isActive ? themeStyles.activeIcon : themeStyles.inactiveIcon,
                 )}
               />
               <span className="truncate">{label}</span>

@@ -53,9 +53,13 @@ export function AdminMainContent({
       aria-label="Contenido del modulo activo"
       className={cn(
         "flex-1 mx-auto w-full pb-24 sm:pb-8",
-        presentationMode ? "max-w-full px-4 py-4" : "max-w-[1600px]",
+        presentationMode
+          ? "max-w-full px-4 py-4"
+          : compactMode
+            ? "max-w-[1920px]" /* en compact modo, usar casi todo el viewport */
+            : "max-w-[1600px]",
         compactMode && !presentationMode
-          ? "px-2 sm:px-3 py-2 sm:py-4"
+          ? "px-2 sm:px-4 py-2 sm:py-4"
           : !presentationMode
             ? "px-3 sm:px-6 py-4 sm:py-8"
             : "",
