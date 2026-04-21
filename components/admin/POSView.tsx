@@ -9,7 +9,20 @@ import {
   Star, Clock, History, Percent, Info, Printer,
   Volume2, VolumeX, MessageCircle, Send, RotateCcw,
   ChevronDown, ChevronRight, ShoppingCart, Settings,
+  Leaf, UtensilsCrossed, Boxes, Droplets, Sparkles,
 } from "@buleje/design-system/icons";
+
+// Mapeo de id de categoria → icono Lucide. Reemplaza los emojis originales
+// por iconografia profesional coherente con el resto del admin.
+const CATEGORY_ICONS: Record<string, typeof Package> = {
+  "todos": ShoppingBasket,
+  "frutas-verduras": Leaf,
+  "abarrotes": Package,
+  "carnes": UtensilsCrossed,
+  "lacteos": Boxes,
+  "bebidas": Droplets,
+  "limpieza": Sparkles,
+};
 import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
@@ -959,22 +972,9 @@ export default function POSView() {
   const [stockAlert, setStockAlert] = useState<{ message: string; type: "warning" | "danger"; actionLabel?: string; actionFn?: () => void } | null>(null);
   const [showZeroStockConfirm, setShowZeroStockConfirm] = useState<Product | null>(null);
 
-  // Mejora 9: Frequent products refresh key
+  // Mejora 9: Frequent products refresh key (aún usado por handleAddFromSearch
+  // para invalidar la caché cuando se elimina el accordion de "Más vendidos").
   const [frequentRefreshKey, setFrequentRefreshKey] = useState(0);
-
-  // FIX 3: Secciones colapsables (minimizadas por defecto)
-  const [showFrequent, setShowFrequent] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("pos-show-frequent") === "true";
-  });
-  const [showRapidos, setShowRapidos] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("pos-show-rapidos") === "true";
-  });
-  const [showRecientes, setShowRecientes] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("pos-show-recientes") === "true";
-  });
 
   // Mejora: Idle screen
   const [isIdle, setIsIdle] = useState(false);
@@ -1772,147 +1772,35 @@ export default function POSView() {
                 onAddToCart={handleAddFromSearch}
               />
             </div>
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide scroll-smooth snap-x pb-1">
-              {categories.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setCategory(c.id)}
-                  className={cn(
-                    "snap-start shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
-                    category === c.id
-                      ? "bg-primary text-white "
-                      : "bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                  )}
-                >
-                  {c.emoji} {c.label}
-                </button>
-              ))}
+            {/* Categorias — cards grandes, sin emojis, iconos Lucide.
+                Reemplaza chips pequeños + acordeones "Más vendidos/Rápidos/Favoritos"
+                que generaban ruido visual. El selector de categoría es la
+                herramienta principal para filtrar el grid. */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
+              {categories.map(c => {
+                const Icon = CATEGORY_ICONS[c.id] ?? Package;
+                const active = category === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setCategory(c.id)}
+                    aria-pressed={active}
+                    className={cn(
+                      "snap-start shrink-0 flex flex-col items-center justify-center gap-1.5 w-[92px] h-[80px] rounded-xl border transition-all duration-[var(--dur-fast)]",
+                      active
+                        ? "bg-primary text-white border-primary shadow-sm"
+                        : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+                    <span className="text-[length:var(--ts-2xs)] font-semibold leading-tight text-center px-1 truncate max-w-full">
+                      {c.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-
-          {/* Mejora 9: Frequent Products — colapsable */}
-          <div className="px-3 pt-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
-            <button
-              onClick={() => { setShowFrequent(v => { const nv = !v; localStorage.setItem("pos-show-frequent", String(nv)); return nv; }); }}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground w-full pb-2"
-            >
-              {showFrequent ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              <span>Mas vendidos hoy</span>
-            </button>
-            {showFrequent && (
-              <div className="pb-2">
-                <POSFrequentProducts
-                  onAddToCart={handleAddFromSearch}
-                  refreshKey={frequentRefreshKey}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Mejora 1R2: Cajero Favorites grid — colapsable */}
-          <div className="px-3 pt-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
-            <button
-              onClick={() => { setShowRapidos(v => { const nv = !v; localStorage.setItem("pos-show-rapidos", String(nv)); return nv; }); }}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground w-full pb-2"
-            >
-              {showRapidos ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              <span>Mis Rapidos</span>
-            </button>
-            {showRapidos && (
-              <div className="pb-2">
-                <POSCajeroFavorites products={products} onAddToCart={addToCart} />
-              </div>
-            )}
-          </div>
-
-          {/* Favorites & Recents — colapsable */}
-          {(favorites.length > 0 || recentProducts.length > 0) && (
-            <div className="px-3 pt-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
-              <button
-                onClick={() => { setShowRecientes(v => { const nv = !v; localStorage.setItem("pos-show-recientes", String(nv)); return nv; }); }}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground w-full pb-2"
-              >
-                {showRecientes ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                <span>Favoritos y Recientes</span>
-                <span className="text-[var(--text-tertiary)] dark:text-muted">({favorites.length + recentProducts.length})</span>
-              </button>
-              {showRecientes && (
-                <div className="pb-2 space-y-2">
-                  {favorites.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Star className="h-3.5 w-3.5 text-[var(--data-warning)]" />
-                        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Favoritos</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
-                        {favorites.map(id => {
-                          const p = products.find(pr => pr.id === id);
-                          if (!p) return null;
-                          const outOfStock = p.stock != null && p.stock <= 0;
-                          return (
-                            <button
-                              key={id}
-                              onClick={() => !outOfStock && addToCart(p)}
-                              disabled={outOfStock}
-                              className={cn(
-                                "group relative shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
-                                outOfStock
-                                  ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
-                                  : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:border-primary hover:bg-primary/5"
-                              )}
-                            >
-                              <span className="truncate max-w-24">{p.name}</span>
-                              <span className="text-primary font-bold">{fmt(p.price)}</span>
-                              <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => { e.stopPropagation(); toggleFavorite(id); }}
-                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggleFavorite(id); } }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                              >
-                                <X className="h-3 w-3 text-[var(--text-tertiary)] hover:text-[var(--data-error)]" />
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  {recentProducts.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Clock className="h-3.5 w-3.5 text-[var(--data-success)]" />
-                        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Recientes</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
-                        {recentProducts.slice(0, 6).map(id => {
-                          const p = products.find(pr => pr.id === id);
-                          if (!p) return null;
-                          const outOfStock = p.stock != null && p.stock <= 0;
-                          return (
-                            <button
-                              key={id}
-                              onClick={() => !outOfStock && addToCart(p)}
-                              disabled={outOfStock}
-                              className={cn(
-                                "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
-                                outOfStock
-                                  ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
-                                  : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)]/50 dark:hover:bg-[var(--accent-soft)]"
-                              )}
-                            >
-                              <span className="truncate max-w-24">{p.name}</span>
-                              <span className="text-primary font-bold">{fmt(p.price)}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto p-3">
