@@ -375,24 +375,15 @@ export default function TurnosModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Solo badge de estado — sin titulo redundante */}
-          {turnoActivo ? (
-            <span className="text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1 rounded-full">Turno abierto</span>
-          ) : !loading && (
-            <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2.5 py-1 rounded-full">Sin turno</span>
-          )}
-        </div>
-        {/* Mejora M3: Boton configurar meta */}
-        <button
-          onClick={() => { setShowMetaConfig(!showMetaConfig); setMetaInput(String(metaVentas)); }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-        >
-          <Trophy className="h-3.5 w-3.5 text-[var(--data-warning)]" />
-          Meta: {formatCurrency(metaVentas)}
-        </button>
+      {/* Header — solo badge de estado. La meta ahora se edita desde el
+          aside "Meta del turno" cuando no hay turno, o desde el card de
+          turno activo. Evita la duplicacion de controles en pantalla. */}
+      <div className="flex items-center">
+        {turnoActivo ? (
+          <span className="text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1 rounded-full">Turno abierto</span>
+        ) : !loading && (
+          <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2.5 py-1 rounded-full">Sin turno</span>
+        )}
       </div>
       {/* Mejora M3: Config meta inline */}
       <AnimatePresence>
@@ -876,11 +867,19 @@ export default function TurnosModule() {
             </div>
             <div className="border-t border-[var(--rule-soft)] pt-3">
               <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Meta del turno</p>
-              <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-[var(--data-warning)]" strokeWidth={1.75} aria-hidden />
-                <p className="text-sm font-bold text-[var(--text-primary)] font-mono">{formatCurrency(metaVentas)}</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Trophy className="h-4 w-4 text-[var(--data-warning)] shrink-0" strokeWidth={1.75} aria-hidden />
+                  <p className="text-sm font-bold text-[var(--text-primary)] font-mono truncate">{formatCurrency(metaVentas)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowMetaConfig(!showMetaConfig); setMetaInput(String(metaVentas)); }}
+                  className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline shrink-0"
+                >
+                  {showMetaConfig ? "Cerrar" : "Editar"}
+                </button>
               </div>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Editable desde el boton Meta del header.</p>
             </div>
           </aside>
         </div>
@@ -932,9 +931,15 @@ export default function TurnosModule() {
         }));
         const bestCajero = cajeros.length > 0 ? cajeros.reduce((a, b) => a.ventasPorHora > b.ventasPorHora ? a : b).name : "";
 
+        // Evita renderizar secciones vacías que solo agregan ruido visual.
+        const hasWeekData = weekMap.size > 0;
+        const hasProductividadData = cajeros.length >= 2;
+
+        if (!hasWeekData && !hasProductividadData) return null;
+
         return (
           <>
-            {/* Calendario Semanal */}
+            {hasWeekData ? (
             <div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-primary" />
@@ -972,12 +977,13 @@ export default function TurnosModule() {
                 </div>
               </div>
             </div>
+            ) : null}
 
-            {/* Productividad por cajero */}
+            {hasProductividadData ? (
             <div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-[var(--data-warning)]" />
-                Productividad por Cajero
+                Productividad por cajero
               </CardTitle>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                 {cajeros.length <= 1 && cajeros.length === 1 ? (
@@ -1025,6 +1031,7 @@ export default function TurnosModule() {
                 )}
               </div>
             </div>
+            ) : null}
           </>
         );
       })()}
