@@ -121,7 +121,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ej: Ofertas del día"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
           </div>

@@ -147,7 +147,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
     >
       {/* Titulo */}
       <div className="mb-3 flex items-center gap-2">
-        <Clock className="h-5 w-5 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
+        <Clock className="h-5 w-5 text-primary dark:text-[#3a8a65]" aria-hidden="true" />
         <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">Reloj de Turno</SectionTitle>
       </div>
 
@@ -167,7 +167,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
 
       {/* Estado actual */}
       {todayEntry && (
-        <div className="mb-3 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 px-3 py-2 text-sm">
+        <div className="mb-3 rounded-lg bg-primary/10 dark:bg-primary/20 px-3 py-2 text-sm">
           <p className="text-[var(--text-secondary)]">
             Entrada: <span className="font-semibold">{todayEntry.entry}</span>
             {todayEntry.exit && (
@@ -189,10 +189,10 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold",
             "transition-colors duration-[var(--dur-fast)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             hasEntry
               ? "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
-              : "bg-[#00B4A6] text-white hover:bg-[#235c42] dark:bg-[#00B4A6] dark:hover:bg-[#3a8a65]"
+              : "bg-primary text-white hover:bg-[#235c42] dark:bg-primary dark:hover:bg-[#3a8a65]"
           )}
           aria-label="Marcar entrada"
         >
@@ -207,10 +207,10 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold",
             "transition-colors duration-[var(--dur-fast)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-warning)]",
             !hasEntry || hasExit
               ? "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
-              : "bg-[#f97316] text-white hover:bg-[#e08c4a]"
+              : "bg-[var(--data-warning)] text-white hover:bg-[#e08c4a]"
           )}
           aria-label="Marcar salida"
         >
@@ -237,7 +237,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {week.map((entry) => (
-                  <tr key={entry.date} className={entry.date === today ? "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10" : ""}>
+                  <tr key={entry.date} className={entry.date === today ? "bg-primary/5 dark:bg-primary/10" : ""}>
                     <td className="px-2 py-1.5 text-[var(--text-secondary)]">{dayLabel(entry.date)}</td>
                     <td className="px-2 py-1.5 text-center font-mono text-[var(--text-secondary)]">{entry.entry}</td>
                     <td className="px-2 py-1.5 text-center font-mono text-[var(--text-secondary)]">{entry.exit ?? "—"}</td>
@@ -250,7 +250,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
                   <td colSpan={3} className="px-2 py-1.5 text-right text-xs font-semibold text-[var(--text-secondary)]">
                     Total semanal
                   </td>
-                  <td className="px-2 py-1.5 text-right font-mono text-xs font-bold text-[#00B4A6] dark:text-[#3a8a65]">
+                  <td className="px-2 py-1.5 text-right font-mono text-xs font-bold text-primary dark:text-[#3a8a65]">
                     {fmtHours(totalWeekHours)}
                   </td>
                 </tr>

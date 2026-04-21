@@ -96,7 +96,7 @@ export default function OrderTimeline({
                       : isCompleted
                         ? "border-[var(--data-success)]/30 bg-[var(--accent-soft)] text-white"
                         : isCurrent
-                          ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
+                          ? "border-[var(--data-warning)] bg-[var(--data-warning)]/10 text-[var(--data-warning)]"
                           : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                   )}
                 >
@@ -124,7 +124,7 @@ export default function OrderTimeline({
                     : isCompleted
                       ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                       : isCurrent
-                        ? "text-[#f97316]"
+                        ? "text-[var(--data-warning)]"
                         : "text-[var(--text-tertiary)]"
                 )}>
                   {step.label}
@@ -174,7 +174,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus(nextAction)}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#009690] disabled:opacity-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50 transition-colors"
           >
             {updating ? (
               <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -73,11 +73,11 @@ export function RoutesList({
               aria-pressed={isSelected}
               className={cn(
                 "w-full rounded-xl border p-3 text-left transition",
-                "hover:border-[#00B4A6]/60 hover:bg-[#00B4A6]/5",
-                "focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/60",
+                "hover:border-primary/60 hover:bg-primary/5",
+                "focus:outline-none focus:ring-2 focus:ring-primary/60",
                 "dark:border-slate-700 dark:bg-slate-800/40",
                 isSelected
-                  ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/10"
+                  ? "border-primary bg-primary/10 dark:bg-primary/10"
                   : "border-slate-200 bg-white",
               )}
             >
@@ -132,7 +132,7 @@ export function RoutesList({
                     aria-label={`Progreso de la ruta: ${progressPct}%`}
                   >
                     <div
-                      className="h-full rounded-full bg-[#00B4A6] transition-all"
+                      className="h-full rounded-full bg-primary transition-all"
                       style={{ width: `${progressPct}%` }}
                     />
                   </div>

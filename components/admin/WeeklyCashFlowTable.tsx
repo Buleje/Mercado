@@ -165,7 +165,7 @@ export default function WeeklyCashFlowTable() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <BarChart2 className="w-5 h-5 text-[#00B4A6]" />
+          <BarChart2 className="w-5 h-5 text-primary" />
           <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Flujo de Caja Semanal
           </SectionTitle>
@@ -207,7 +207,7 @@ export default function WeeklyCashFlowTable() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 col-span-2 sm:col-span-1">
           <p className="text-xs text-[var(--text-tertiary)]">Ventas semana</p>
-          <p className="text-xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+          <p className="text-xl font-bold text-primary dark:text-primary">
             {fmt(totals.sales)}
           </p>
         </div>
@@ -297,7 +297,7 @@ export default function WeeklyCashFlowTable() {
                     className={cn(
                       "px-3 py-3 text-right font-medium text-[var(--text-tertiary)]",
                       currentWeek[i] === new Date().toISOString().split("T")[0] &&
-                        "text-[#00B4A6] dark:text-[#2dd4bf]"
+                        "text-primary dark:text-primary"
                     )}
                   >
                     <div>{d}</div>

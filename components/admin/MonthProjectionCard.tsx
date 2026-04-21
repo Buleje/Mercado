@@ -132,7 +132,7 @@ export default function MonthProjectionCard() {
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
       {/* Header */}
-      <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
+      <div className="bg-primary px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">Proyeccion de Cierre</span>
@@ -204,15 +204,15 @@ export default function MonthProjectionCard() {
                         className={cn(
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
-                            ? "bg-[#f97316] dark:bg-[var(--data-warning)]"
-                            : "bg-[#00B4A6] dark:bg-[var(--accent-soft)]"
+                            ? "bg-[var(--data-warning)] dark:bg-[var(--data-warning)]"
+                            : "bg-primary dark:bg-[var(--accent-soft)]"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
                         title={`Dia ${d.label}: ${fmt(d.total)}`}
                       />
                       <span className={cn(
                         "text-[length:var(--ts-2xs)]",
-                        isToday ? "text-[#f97316] font-semibold" : "text-[var(--text-tertiary)]"
+                        isToday ? "text-[var(--data-warning)] font-semibold" : "text-[var(--text-tertiary)]"
                       )}>
                         {d.label}
                       </span>

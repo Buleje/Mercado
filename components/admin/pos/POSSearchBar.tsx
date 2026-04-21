@@ -190,7 +190,7 @@ export default function POSSearchBar({
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
                     outOfStock && "opacity-50",
-                    isFirstHighlight && "ring-2 ring-[#00B4A6] bg-[#00B4A6]/5"
+                    isFirstHighlight && "ring-2 ring-primary bg-primary/5"
                   )}
                 >
                   <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 relative">
@@ -222,7 +222,7 @@ export default function POSSearchBar({
                         </span>
                       )}
                       {p.updatedAt && (nowTs - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[#f97316] px-1 py-0.5 rounded">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-warning)] px-1 py-0.5 rounded">
                           Nuevo precio
                         </span>
                       )}

@@ -214,7 +214,7 @@ export default function ExpiringBatchesAlert() {
             <div className="px-4 py-2.5 border-t border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
               <a
                 href="/admin?tab=inventario-almacenes"
-                className="flex items-center gap-1 text-xs font-semibold text-[#00B4A6] dark:text-[var(--data-success)] hover:underline"
+                className="flex items-center gap-1 text-xs font-semibold text-primary dark:text-[var(--data-success)] hover:underline"
               >
                 Ver todos los lotes
                 <ChevronRight className="h-3.5 w-3.5" />

@@ -23,7 +23,7 @@ export function VendorRecentSales({ sales }: Props) {
     return (
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-[#00B4A6]" />
+          <Receipt className="h-5 w-5 text-primary" />
           Ventas recientes de hoy
         </CardTitle>
         <div className="text-center py-8">
@@ -44,7 +44,7 @@ export function VendorRecentSales({ sales }: Props) {
   return (
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
-        <Receipt className="h-5 w-5 text-[#00B4A6]" />
+        <Receipt className="h-5 w-5 text-primary" />
         Ventas recientes de hoy
       </CardTitle>
 
@@ -66,7 +66,7 @@ export function VendorRecentSales({ sales }: Props) {
               <span className="text-xs text-[var(--text-tertiary)]">{paymentLabel(sale.paymentMethod)}</span>
             </div>
             <div className="shrink-0">
-              <p className="font-bold text-sm text-[#00B4A6]">
+              <p className="font-bold text-sm text-primary">
                 S/ {sale.total.toFixed(2)}
               </p>
             </div>

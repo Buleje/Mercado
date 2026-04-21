@@ -159,8 +159,8 @@ export default function ReporteMensualTab() {
     <div className="space-y-6 p-1">
       {/* Título */}
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-[#00B4A6]/10">
-          <FileText className="h-5 w-5 text-[#00B4A6]" />
+        <div className="p-2 rounded-xl bg-primary/10">
+          <FileText className="h-5 w-5 text-primary" />
         </div>
         <div>
           <SectionTitle className="font-bold text-[var(--text-primary)]">Reporte Mensual</SectionTitle>
@@ -180,7 +180,7 @@ export default function ReporteMensualTab() {
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {MONTH_NAMES.map((name, i) => (
               <option key={i + 1} value={i + 1}>
@@ -200,7 +200,7 @@ export default function ReporteMensualTab() {
             max={2030}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -211,7 +211,7 @@ export default function ReporteMensualTab() {
             "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors",
             loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-[#00B4A6] hover:bg-[#1e4d38]",
+              : "bg-primary hover:bg-[#1e4d38]",
           )}
         >
           {loading ? (
@@ -306,7 +306,7 @@ export default function ReporteMensualTab() {
                 <button
                   onClick={() => handleDownload(entry.year, entry.month)}
                   disabled={loadingHist}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-[#00B4A6] border border-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-primary border border-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                   title="Descargar PDF"
                 >
                   <Download className="h-3.5 w-3.5" />

@@ -389,7 +389,7 @@ export default function OrderEmailTemplates() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Mail className="w-5 h-5 text-[#00B4A6] dark:text-[#4ade80]" />
+        <Mail className="w-5 h-5 text-primary dark:text-[#4ade80]" />
         <div>
           <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Templates de Email
@@ -409,7 +409,7 @@ export default function OrderEmailTemplates() {
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
               activeTab === t.id
-                ? "border-[#00B4A6] text-[#00B4A6] dark:border-[#4ade80] dark:text-[#4ade80]"
+                ? "border-primary text-primary dark:border-[#4ade80] dark:text-[#4ade80]"
                 : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
             )}
           >

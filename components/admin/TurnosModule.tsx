@@ -1241,7 +1241,7 @@ export default function TurnosModule() {
                       value={cierreEfectivo}
                       onChange={e => setCierreEfectivo(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 text-center text-lg font-bold"
                     />
                   </div>
 
@@ -1263,7 +1263,7 @@ export default function TurnosModule() {
                       onChange={e => setCierreNotas(e.target.value)}
                       placeholder="Observaciones del turno..."
                       rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                     />
                   </div>
                 </div>

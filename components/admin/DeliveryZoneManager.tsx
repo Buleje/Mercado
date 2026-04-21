@@ -108,7 +108,7 @@ function ZoneMap({ zones }: { zones: DeliveryZone[] }) {
 
       {/* Store dot */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full bg-[#00B4A6] border-2 border-white dark:border-[var(--rule-base)] flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full bg-primary border-2 border-white dark:border-[var(--rule-base)] flex items-center justify-center">
           <MapPin size={10} className="text-white" />
         </div>
       </div>
@@ -141,12 +141,12 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
 
   if (editing) {
     return (
-      <tr className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10">
+      <tr className="bg-primary/5 dark:bg-primary/10">
         <td className="px-3 py-2">
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            className="w-full px-2 py-1 text-sm rounded border border-[#00B4A6] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+            className="w-full px-2 py-1 text-sm rounded border border-primary bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </td>
         <td className="px-3 py-2">
@@ -158,7 +158,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
               step={0.5}
               value={draft.radiusKm}
               onChange={(e) => setDraft({ ...draft, radiusKm: parseFloat(e.target.value) || 0 })}
-              className="w-20 px-2 py-1 text-sm rounded border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+              className="w-20 px-2 py-1 text-sm rounded border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <span className="text-xs text-[var(--text-secondary)]">km</span>
           </div>
@@ -172,7 +172,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
               step={0.5}
               value={draft.fee}
               onChange={(e) => setDraft({ ...draft, fee: parseFloat(e.target.value) || 0 })}
-              className="w-20 px-2 py-1 text-sm rounded border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+              className="w-20 px-2 py-1 text-sm rounded border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         </td>
@@ -188,7 +188,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
           <div className="flex items-center gap-1">
             <button
               onClick={handleSave}
-              className="p-1.5 rounded-lg bg-[#00B4A6] text-white hover:bg-[#235c42] transition-colors"
+              className="p-1.5 rounded-lg bg-primary text-white hover:bg-[#235c42] transition-colors"
               aria-label="Guardar"
             >
               <Check size={13} />
@@ -220,7 +220,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
       <td className="px-3 py-2.5 text-sm text-[var(--text-secondary)]">{zone.radiusKm} km</td>
       <td className="px-3 py-2.5 text-sm text-[var(--text-secondary)]">
         {zone.fee === 0 ? (
-          <span className="text-[#00B4A6] dark:text-[var(--data-success)] font-medium">Gratis</span>
+          <span className="text-primary dark:text-[var(--data-success)] font-medium">Gratis</span>
         ) : (
           `S/ ${zone.fee.toFixed(2)}`
         )}
@@ -230,7 +230,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
           onClick={() => onChange({ ...zone, active: !zone.active })}
           className={cn(
             "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-[var(--dur-base)]",
-            zone.active ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+            zone.active ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
           )}
           role="switch"
           aria-checked={zone.active}
@@ -247,7 +247,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setEditing(true)}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
             aria-label="Editar"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -350,7 +350,7 @@ export default function DeliveryZoneManager() {
               "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
               saved
                 ? "bg-[var(--accent-soft)] text-white"
-                : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
+                : "bg-primary hover:bg-[#235c42] text-white",
               saving && "opacity-70 cursor-not-allowed"
             )}
           >
@@ -370,7 +370,7 @@ export default function DeliveryZoneManager() {
         {/* Visual map */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-4 flex items-center gap-2">
-            <MapPin size={14} className="text-[#00B4A6]" />
+            <MapPin size={14} className="text-primary" />
             Vista de cobertura
           </h4>
           <ZoneMap zones={zones} />
@@ -385,7 +385,7 @@ export default function DeliveryZoneManager() {
             <h4 className="text-sm font-medium text-[var(--text-secondary)]">Configuracion de zonas</h4>
             <button
               onClick={addZone}
-              className="flex items-center gap-1 text-xs text-[#00B4A6] hover:text-[#235c42] font-medium"
+              className="flex items-center gap-1 text-xs text-primary hover:text-[#235c42] font-medium"
             >
               <Plus size={13} />
               Agregar zona

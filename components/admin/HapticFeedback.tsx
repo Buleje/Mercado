@@ -186,7 +186,7 @@ export default function HapticFeedback() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Vibrate className="w-5 h-5 text-[#00B4A6]" />
+        <Vibrate className="w-5 h-5 text-primary" />
         <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
           Vibracion Haptica
         </SectionTitle>
@@ -204,13 +204,13 @@ export default function HapticFeedback() {
         className={cn(
           "rounded-xl border p-5 flex items-center justify-between gap-4 transition-all",
           haptic.enabled
-            ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
+            ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
         )}
       >
         <div className="flex items-center gap-3">
           {haptic.enabled ? (
-            <Volume2 className="w-6 h-6 text-[#00B4A6] dark:text-[#2dd4bf] shrink-0" />
+            <Volume2 className="w-6 h-6 text-primary dark:text-primary shrink-0" />
           ) : (
             <VolumeX className="w-6 h-6 text-[var(--text-tertiary)] shrink-0" />
           )}
@@ -230,9 +230,9 @@ export default function HapticFeedback() {
         <button
           onClick={() => haptic.toggle()}
           className={cn(
-            "relative w-12 h-6 rounded-full transition-colors duration-[var(--dur-base)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:ring-offset-2",
+            "relative w-12 h-6 rounded-full transition-colors duration-[var(--dur-base)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
             haptic.enabled
-              ? "bg-[#00B4A6] dark:bg-[#2dd4bf]"
+              ? "bg-primary dark:bg-primary"
               : "bg-gray-200 dark:bg-gray-700"
           )}
           aria-label="Toggle vibración"
@@ -264,8 +264,8 @@ export default function HapticFeedback() {
               className={cn(
                 "rounded-xl border p-3 text-left transition-all",
                 lastTest === label
-                  ? "border-[#00B4A6] bg-[#00B4A6]/10 scale-95"
-                  : "border-[var(--rule-base)] hover:border-[#00B4A6]/40 hover:bg-gray-50 dark:hover:bg-gray-750",
+                  ? "border-primary bg-primary/10 scale-95"
+                  : "border-[var(--rule-base)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-750",
                 (!haptic.enabled || !haptic.isSupported) &&
                   "opacity-50 cursor-not-allowed"
               )}
@@ -275,7 +275,7 @@ export default function HapticFeedback() {
                   {label}
                 </span>
                 {lastTest === label && (
-                  <Check className="w-3.5 h-3.5 text-[#00B4A6] dark:text-[#2dd4bf]" />
+                  <Check className="w-3.5 h-3.5 text-primary dark:text-primary" />
                 )}
               </div>
               <p className="text-xs text-[var(--text-tertiary)] font-mono">{desc}</p>
@@ -293,14 +293,14 @@ export default function HapticFeedback() {
         <div className="space-y-2 text-xs font-mono text-[var(--text-secondary)]">
           <div className="rounded-lg bg-[var(--surface-sunken)] px-3 py-2">
             <p className="text-[var(--text-tertiary)]">{"// Hook"}</p>
-            <p className="text-[#00B4A6] dark:text-[#2dd4bf]">{"import { useHaptic } from './HapticFeedback';"}</p>
+            <p className="text-primary dark:text-primary">{"import { useHaptic } from './HapticFeedback';"}</p>
             <p className="mt-1">{"const { vibrateSuccess } = useHaptic();"}</p>
             <p>{"vibrateSuccess(); // al completar una venta"}</p>
           </div>
 
           <div className="rounded-lg bg-[var(--surface-sunken)] px-3 py-2">
             <p className="text-[var(--text-tertiary)]">{"// Wrapper de componente"}</p>
-            <p className="text-[#00B4A6] dark:text-[#2dd4bf]">{"import { HapticWrapper } from './HapticFeedback';"}</p>
+            <p className="text-primary dark:text-primary">{"import { HapticWrapper } from './HapticFeedback';"}</p>
             <p className="mt-1">{"<HapticWrapper event=\"success\">"}</p>
             <p>{"  <Button>Cobrar</Button>"}</p>
             <p>{"</HapticWrapper>"}</p>

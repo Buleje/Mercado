@@ -30,7 +30,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-2 min-w-0">
-            <Package className="h-4 w-4 text-[#00B4A6] shrink-0" />
+            <Package className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
               <CardTitle className="text-xs font-bold text-[var(--text-primary)] truncate">
                 Seleccionar lote
@@ -67,12 +67,12 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 className={cn(
                   "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all",
                   "border border-[var(--rule-base)] dark:border-card-border",
-                  "hover:border-[#00B4A6] hover:bg-[#00B4A6]/5 dark:hover:bg-[#00B4A6]/10",
+                  "hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 )}
               >
                 {/* Badge */}
-                <span className="shrink-0 h-8 w-8 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-xs font-bold">
+                <span className="shrink-0 h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
                   {lot.icon}
                 </span>
 
@@ -88,7 +88,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
 
                 {/* Price */}
                 <div className="text-right shrink-0">
-                  <p className="text-xs font-bold font-mono text-[#00B4A6]">
+                  <p className="text-xs font-bold font-mono text-primary">
                     S/{totalPrice.toFixed(2)}
                   </p>
                   {savingsPct > 0 && (

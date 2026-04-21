@@ -79,7 +79,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{formatDate(d.fecha, "full")}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ventas</span>
-        <span className="font-mono font-medium text-[#00B4A6]">S/ {d.total.toFixed(2)}</span>
+        <span className="font-mono font-medium text-primary">S/ {d.total.toFixed(2)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Media 7d</span>

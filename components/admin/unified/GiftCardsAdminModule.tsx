@@ -359,7 +359,7 @@ export default function GiftCardsAdminModule() {
       >
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Emitir manual
@@ -429,7 +429,7 @@ export default function GiftCardsAdminModule() {
                 onClick={() => {
                   navigator.clipboard.writeText(issuedCode).catch(() => {});
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-primary-dark transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
               >
                 Copiar
               </button>
@@ -456,7 +456,7 @@ export default function GiftCardsAdminModule() {
             placeholder="Buscar por destinatario, código o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
@@ -517,7 +517,7 @@ export default function GiftCardsAdminModule() {
                     <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
                       {fmt(c.amount)}
                     </td>
-                    <td className="px-4 py-3 text-right text-[#00B4A6] font-bold hidden lg:table-cell">
+                    <td className="px-4 py-3 text-right text-primary font-bold hidden lg:table-cell">
                       {fmt(c.balance)}
                     </td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">
@@ -535,7 +535,7 @@ export default function GiftCardsAdminModule() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setSelected(c)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
                           title="Ver detalles"
                         >
                           <Eye className="h-4 w-4" />

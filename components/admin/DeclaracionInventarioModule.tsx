@@ -211,7 +211,7 @@ export default function DeclaracionInventarioModule() {
     <div className="space-y-4 sm:space-y-6">
       {/* Header — Mejora 20 */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center ">
+        <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center ">
           <BarChart3 className="h-5 w-5" />
         </div>
         <div>
@@ -277,7 +277,7 @@ export default function DeclaracionInventarioModule() {
         return (
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
             <div className="flex items-center gap-2 mb-2">
-              <Package className="h-5 w-5 text-[#00B4A6]" />
+              <Package className="h-5 w-5 text-primary" />
               <p className="text-sm font-bold text-[var(--text-secondary)]">Tu inventario</p>
             </div>
             <p className={cn("text-3xl font-mono font-bold", isDown ? "text-[var(--data-error)]" : "text-[var(--text-primary)]")}>
@@ -306,14 +306,14 @@ export default function DeclaracionInventarioModule() {
               type="date"
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              className="pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+              className="pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>
         <button
           onClick={handleGenerar}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
           Generar Declaración
@@ -363,7 +363,7 @@ export default function DeclaracionInventarioModule() {
           {/* Actions */}
           <div className="flex gap-2">
             <button onClick={handleExport}
-              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors">
+              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
               <span className="inline-flex items-center gap-2"><Download className="h-4 w-4" /> Descargar para mi Contador</span>
               <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-secondary)]">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
             </button>
@@ -458,7 +458,7 @@ export default function DeclaracionInventarioModule() {
                   {/* Category header */}
                   <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-[#00B4A6]" />
+                      <Layers className="h-4 w-4 text-primary" />
                       <span className="font-bold text-sm text-[var(--text-primary)]">{category}</span>
                       <span className="text-xs text-[var(--text-tertiary)]">({productItems.length} productos)</span>
                     </div>
@@ -511,10 +511,10 @@ export default function DeclaracionInventarioModule() {
           className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
+            <BarChart3 className="h-4 w-4 text-primary" />
             <span className="text-sm font-bold text-[var(--text-primary)]">Declaraciones anteriores</span>
             {historial.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
             )}
           </div>
           <span className="text-xs text-[var(--text-tertiary)]">{showHistorial ? "Ocultar" : "Mostrar"}</span>
@@ -560,7 +560,7 @@ export default function DeclaracionInventarioModule() {
                           <td className="px-4 py-2 text-center">
                             <button
                               onClick={() => setComparingIdx(comparingIdx === realIdx ? null : realIdx)}
-                              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[#00B4A6] transition-colors"
+                              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors"
                               title="Comparar"
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -585,7 +585,7 @@ export default function DeclaracionInventarioModule() {
           </div>
           <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin declaraciones</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Genera un snapshot de tu inventario actual</p>
-          <button onClick={handleGenerar} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#009690]">Generar declaración</button>
+          <button onClick={handleGenerar} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Generar declaración</button>
         </div>
       )}
     </div>

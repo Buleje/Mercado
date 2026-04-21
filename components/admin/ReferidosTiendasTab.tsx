@@ -113,7 +113,7 @@ export default function ReferidosTiendasTab() {
               key={kpi.label}
               className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-center"
             >
-              <p className="text-2xl font-bold text-[#00B4A6]">{kpi.value}</p>
+              <p className="text-2xl font-bold text-primary">{kpi.value}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">{kpi.label}</p>
             </div>
           ))}
@@ -131,7 +131,7 @@ export default function ReferidosTiendasTab() {
 
         {data?.referralCode ? (
           <div className="flex items-center gap-3">
-            <div className="flex-1 font-mono text-lg font-bold tracking-widest text-[#00B4A6] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-4 py-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 select-all">
+            <div className="flex-1 font-mono text-lg font-bold tracking-widest text-primary bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-4 py-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 select-all">
               {data.referralCode}
             </div>
             <button
@@ -151,7 +151,7 @@ export default function ReferidosTiendasTab() {
           <button
             onClick={generateCode}
             disabled={generating}
-            className="w-full py-2.5 px-4 rounded-lg bg-[#00B4A6] hover:bg-[#009690] text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 px-4 rounded-lg bg-primary hover:bg-primary-dark text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {generating ? "Generando..." : "Generar mi codigo de referido"}
           </button>
@@ -213,7 +213,7 @@ export default function ReferidosTiendasTab() {
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-[#00B4A6] dark:text-[var(--data-success)] font-medium text-xs">
+                    <td className="px-5 py-3 text-primary dark:text-[var(--data-success)] font-medium text-xs">
                       {t.reward}
                     </td>
                   </tr>

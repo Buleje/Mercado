@@ -99,7 +99,7 @@ export default function ShiftHandover() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-[#00B4A6]" />
+          <ClipboardList className="w-5 h-5 text-primary" />
           <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Entrega de Turno
           </SectionTitle>
@@ -113,7 +113,7 @@ export default function ShiftHandover() {
               className={cn(
                 "px-3 py-1 rounded-md text-sm font-medium transition-colors",
                 view === v
-                  ? "bg-[#00B4A6] text-white"
+                  ? "bg-primary text-white"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
               )}
             >
@@ -125,9 +125,9 @@ export default function ShiftHandover() {
 
       {/* Notas del turno anterior */}
       {lastHandover && view === "current" && (
-        <div className="rounded-xl border border-[#f97316]/40 bg-[#f97316]/5 dark:bg-[#f97316]/5 p-4">
+        <div className="rounded-xl border border-[var(--data-warning)]/40 bg-[var(--data-warning)]/5 dark:bg-[var(--data-warning)]/5 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-4 h-4 text-[#f97316]" />
+            <Clock className="w-4 h-4 text-[var(--data-warning)]" />
             <p className="text-sm font-medium text-[var(--text-primary)]">
               Notas del turno anterior —{" "}
               <span className="font-bold">{lastHandover.cashierName}</span>
@@ -171,7 +171,7 @@ export default function ShiftHandover() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <p className="text-xs text-[var(--text-tertiary)] mb-1">Ventas del turno</p>
-                <p className="text-2xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+                <p className="text-2xl font-bold text-primary dark:text-primary">
                   {fmt(todayStats.total)}
                 </p>
               </div>
@@ -245,7 +245,7 @@ export default function ShiftHandover() {
               value={cashierName}
               onChange={(e) => setCashierName(e.target.value)}
               placeholder="Ej: Maria Lopez"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -258,14 +258,14 @@ export default function ShiftHandover() {
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
               placeholder="Ej: Queda poco azucar, hay un pedido pendiente de Juan, la impresora falla..."
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
           </div>
 
           <button
             onClick={handleClose}
             disabled={!cashierName.trim()}
-            className="w-full py-2.5 rounded-lg bg-[#00B4A6] hover:bg-[#235c43] text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 rounded-lg bg-primary hover:bg-[#235c43] text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cerrar turno y guardar notas
           </button>
@@ -306,7 +306,7 @@ export default function ShiftHandover() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-[#00B4A6] dark:text-[#2dd4bf]">
+                    <span className="text-sm font-semibold text-primary dark:text-primary">
                       {fmt(h.totalSales)}
                     </span>
                     {expandedId === h.id ? (
@@ -329,7 +329,7 @@ export default function ShiftHandover() {
                       </div>
                     </div>
                     {h.notes && (
-                      <div className="rounded-lg bg-[#f97316]/5 border border-[#f97316]/20 px-3 py-2">
+                      <div className="rounded-lg bg-[var(--data-warning)]/5 border border-[var(--data-warning)]/20 px-3 py-2">
                         <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Notas</p>
                         <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">
                           {h.notes}

@@ -310,7 +310,7 @@ export default function POSCustomerSearch({
                       setAbonoLoading(false);
                     }}
                     disabled={abonoLoading || !abonoMonto || Number(abonoMonto) <= 0}
-                    className="px-2.5 py-1.5 rounded-lg bg-[#00B4A6] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009690] transition-colors disabled:opacity-50"
+                    className="px-2.5 py-1.5 rounded-lg bg-primary text-white text-[length:var(--ts-2xs)] font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
                   >
                     {abonoLoading ? "..." : "Confirmar"}
                   </button>
@@ -343,7 +343,7 @@ export default function POSCustomerSearch({
             {loyaltyPoints >= 100 && !showRedeemSlider && (
               <button
                 onClick={() => { setShowRedeemSlider(true); setRedeemAmount(Math.min(100, loyaltyPoints)); }}
-                className="w-full text-[length:var(--ts-2xs)] font-bold text-[#00B4A6] hover:underline py-0.5 flex items-center justify-center gap-1"
+                className="w-full text-[length:var(--ts-2xs)] font-bold text-primary hover:underline py-0.5 flex items-center justify-center gap-1"
               >
                 <Star className="h-3 w-3" /> Canjear puntos
               </button>
@@ -437,7 +437,7 @@ export default function POSCustomerSearch({
                     price: i.price,
                   })));
                 }}
-                className="mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[#00B4A6] hover:underline"
+                className="mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-primary hover:underline"
               >
                 <RotateCcw className="h-3 w-3" />
                 Repetir pedido

@@ -267,10 +267,10 @@ export default function MarginWaterfallChart() {
               const barWidth = Math.max(2, (Math.abs(product.marginPct) / maxMarginPct) * 100);
               const barColor =
                 product.marginPct > 20
-                  ? "bg-[#00B4A6]"
+                  ? "bg-primary"
                   : product.marginPct > 10
-                  ? "bg-[#f97316]"
-                  : "bg-[#e63946]";
+                  ? "bg-[var(--data-warning)]"
+                  : "bg-[var(--data-error)]";
 
               return (
                 <div key={product.productId} className="flex items-center gap-2 group">
@@ -280,7 +280,7 @@ export default function MarginWaterfallChart() {
                         {product.name}
                       </span>
                       <span
-                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-[#00B4A6]" : product.marginPct > 10 ? "text-[#f97316]" : "text-[#e63946]")}
+                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-primary" : product.marginPct > 10 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}
                         style={{ fontVariantNumeric: "tabular-nums" }}
                       >
                         {product.marginPct.toFixed(1)}%

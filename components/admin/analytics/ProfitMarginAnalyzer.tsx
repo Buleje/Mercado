@@ -149,9 +149,9 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
     <div className="flex flex-col gap-4 text-sm">
       {/* Summary row */}
       <div className="flex gap-2">
-        <div className="flex-1 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
+        <div className="flex-1 rounded-lg bg-primary/10 dark:bg-primary/20 border border-primary/30 p-2 text-center">
           <p className="text-xs text-[var(--text-tertiary)]">Margen prom. ponderado</p>
-          <p className="text-base font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmtPct(avgWeightedMargin)}</p>
+          <p className="text-base font-bold text-primary dark:text-primary">{fmtPct(avgWeightedMargin)}</p>
         </div>
         <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
           <p className="text-xs text-[var(--text-tertiary)]">Productos analizados</p>
@@ -210,7 +210,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
             className={cn(
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "best"
-                ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                ? "bg-primary text-white border-primary"
                 : "text-[var(--text-secondary)] border-[var(--rule-base)]"
             )}
           >
@@ -244,7 +244,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
                   className={cn(
                     "text-sm font-bold",
                     p.margin >= 30
-                      ? "text-[#00B4A6] dark:text-[#2dd4bf]"
+                      ? "text-primary dark:text-primary"
                       : p.margin >= 15
                       ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                       : "text-[var(--data-error)] dark:text-[var(--data-error)]"

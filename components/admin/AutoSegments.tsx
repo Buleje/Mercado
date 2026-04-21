@@ -112,7 +112,7 @@ export default function AutoSegments() {
         label: "Regular",
         description: "Entre S/100 y S/500 al mes",
         icon: ShoppingCart,
-        color: "text-[#00B4A6] dark:text-[var(--data-success)]",
+        color: "text-primary dark:text-[var(--data-success)]",
         bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
         border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
       },
@@ -287,7 +287,7 @@ export default function AutoSegments() {
                               </p>
                               <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
                             </div>
-                            <span className="ml-2 shrink-0 text-sm font-semibold text-[#00B4A6]">
+                            <span className="ml-2 shrink-0 text-sm font-semibold text-primary">
                               {fmt(c.totalSpent ?? 0)}
                             </span>
                           </div>

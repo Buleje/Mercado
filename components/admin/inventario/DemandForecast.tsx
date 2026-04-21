@@ -183,7 +183,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Comprar cuando llegues a</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[#f97316]">{data.reorderPoint}</span>
+            <span className="text-xl font-bold text-[var(--data-warning)]">{data.reorderPoint}</span>
             <span className="text-xs text-[var(--text-secondary)]">unidades</span>
           </div>
           <div className="text-xs text-[var(--text-secondary)] mt-1">Buffer de 1 semana</div>
@@ -192,7 +192,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Pronostico proximos 7 dias</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[#00B4A6]">~{data.forecastNext7}</span>
+            <span className="text-xl font-bold text-primary">~{data.forecastNext7}</span>
             <span className="text-xs text-[var(--text-secondary)]">unidades</span>
           </div>
           <div className="text-xs text-[var(--text-secondary)] mt-1">Semanal: {data.weeklyAvg}</div>

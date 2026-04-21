@@ -39,7 +39,7 @@ export function ThreadsList({
             className={cn(
               "rounded-lg px-3 py-1 text-xs font-medium transition",
               statusFilter === s
-                ? "bg-[#00B4A6] text-white"
+                ? "bg-primary text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
             )}
           >
@@ -82,7 +82,7 @@ export function ThreadsList({
                       "w-full border-l-4 p-3 text-left transition",
                       "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60",
                       isSelected
-                        ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/10"
+                        ? "border-primary bg-primary/10 dark:bg-primary/10"
                         : "border-transparent",
                     )}
                   >
@@ -116,7 +116,7 @@ export function ThreadsList({
                       <div className="mt-1 flex items-start gap-1">
                         <span className="flex-1 truncate text-xs text-slate-600 dark:text-slate-400">
                           {thread.lastSenderType === "seller" && (
-                            <span className="text-[#00B4A6]">Vos: </span>
+                            <span className="text-primary">Vos: </span>
                           )}
                           {thread.lastMessageText}
                         </span>

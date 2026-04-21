@@ -85,7 +85,7 @@ const SEED_HISTORY: NotificationRecord[] = [
 function NotifPreview({ title, body, url }: { title: string; body: string; url?: string }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-800">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#00B4A6]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
         <Bell className="h-4 w-4 text-white" />
       </div>
       <div className="flex-1 min-w-0">
@@ -96,7 +96,7 @@ function NotifPreview({ title, body, url }: { title: string; body: string; url?:
           {body || "Cuerpo del mensaje..."}
         </p>
         {url && (
-          <p className="mt-0.5 text-xs text-[#00B4A6] truncate">{url}</p>
+          <p className="mt-0.5 text-xs text-primary truncate">{url}</p>
         )}
       </div>
       <span className="shrink-0 text-xs text-[var(--text-tertiary)]">ahora</span>
@@ -208,7 +208,7 @@ export default function PushNotificationManager() {
                   onChange={(e) => setSegment(e.target.value as SendSegment)}
                   className={cn(
                     "w-full appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-3 pr-8 text-sm",
-                    "text-[var(--text-primary)] outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                    "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                     "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   )}
                 >
@@ -238,7 +238,7 @@ export default function PushNotificationManager() {
                 placeholder="Ej: Ofertas de fin de semana"
                 className={cn(
                   "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
@@ -258,7 +258,7 @@ export default function PushNotificationManager() {
                 placeholder="Escribe el cuerpo de la notificación..."
                 className={cn(
                   "w-full resize-none rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
@@ -277,7 +277,7 @@ export default function PushNotificationManager() {
                 placeholder="/tienda, /ofertas, https://..."
                 className={cn(
                   "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
@@ -300,7 +300,7 @@ export default function PushNotificationManager() {
                   ? "bg-[var(--accent-soft)]"
                   : sendState === "error"
                   ? "bg-[var(--data-error)]"
-                  : "bg-[#00B4A6] hover:bg-[#245a40]",
+                  : "bg-primary hover:bg-[#245a40]",
                 "disabled:opacity-40"
               )}
             >
@@ -386,7 +386,7 @@ export default function PushNotificationManager() {
                           {n.body}
                         </p>
                         {n.url && (
-                          <p className="text-xs text-[#00B4A6] truncate">{n.url}</p>
+                          <p className="text-xs text-primary truncate">{n.url}</p>
                         )}
                       </div>
                       <span
@@ -417,7 +417,7 @@ export default function PushNotificationManager() {
                         {n.sent} enviadas
                       </span>
                       {openRate && (
-                        <span className="flex items-center gap-1 text-[#00B4A6] dark:text-[var(--data-success)]">
+                        <span className="flex items-center gap-1 text-primary dark:text-[var(--data-success)]">
                           <Eye className="h-3 w-3" />
                           {n.opened} abiertas ({openRate}%)
                         </span>

@@ -200,7 +200,7 @@ export function TouchGesturesDemo() {
     <div className="space-y-6">
       <div
         ref={ref}
-        className="rounded-lg border-2 border-dashed border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
+        className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 dark:bg-primary/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
       >
         <p className="text-sm font-medium text-[var(--text-secondary)] text-center">
           Area de prueba — toca aqui desde un movil o tablet
@@ -209,7 +209,7 @@ export function TouchGesturesDemo() {
           Swipe / Long press / Doble tap
         </p>
         {lastGesture && (
-          <div className="mt-4 px-4 py-2 rounded-full bg-[#00B4A6] text-white text-sm font-semibold animate-pulse">
+          <div className="mt-4 px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold animate-pulse">
             {lastGesture}
           </div>
         )}
@@ -235,7 +235,7 @@ export function TouchGesturesDemo() {
               key={prop}
               className="grid grid-cols-[auto_1fr_2fr] gap-3 items-center py-1 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0"
             >
-              <span className="text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">{prop}</span>
+              <span className="text-primary dark:text-primary font-semibold">{prop}</span>
               <span className="text-[var(--text-tertiary)]">{type}</span>
               <span className="text-[var(--text-tertiary)] font-sans">{desc}</span>
             </div>

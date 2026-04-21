@@ -38,7 +38,7 @@ function CustomTooltip({
   return (
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
       <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{label}</p>
-      <p className="text-[#00B4A6] font-bold">{formatSolesTooltip(payload[0].value)}</p>
+      <p className="text-primary font-bold">{formatSolesTooltip(payload[0].value)}</p>
     </div>
   );
 }
@@ -61,10 +61,10 @@ export function VendorWeeklyChart({ data }: Props) {
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-1">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-[#00B4A6]" />
+          <TrendingUp className="h-5 w-5 text-primary" />
           Ingresos — últimos 7 días
         </CardTitle>
-        <span className="text-sm font-extrabold text-[#00B4A6]">
+        <span className="text-sm font-extrabold text-primary">
           S/ {weekTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
         </span>
       </div>
@@ -94,10 +94,10 @@ export function VendorWeeklyChart({ data }: Props) {
 
       <div className="flex gap-4 mt-3 text-xs text-[var(--text-secondary)] dark:text-muted">
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#00B4A6] inline-block" /> Hoy
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> Hoy
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#f97316] inline-block" /> Mejor día
+          <span className="w-2.5 h-2.5 rounded-sm bg-[var(--data-warning)] inline-block" /> Mejor día
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] inline-block" /> Otros días

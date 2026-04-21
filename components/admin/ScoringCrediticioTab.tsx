@@ -268,7 +268,7 @@ export default function ScoringCrediticioTab() {
     <div className="space-y-5 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[#00B4A6]" style={{ backgroundColor: "#00B4A6" }}>
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-primary" style={{ backgroundColor: "#00B4A6" }}>
           <Shield className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
@@ -298,7 +298,7 @@ export default function ScoringCrediticioTab() {
                 "px-3 h-8 rounded-full text-xs font-medium transition-all",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 isActive
-                  ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-[#00B4A6] text-white"
+                  ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-primary text-white"
                   : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
             >
@@ -317,7 +317,7 @@ export default function ScoringCrediticioTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-10 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+          className="w-full pl-9 pr-4 h-10 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
         />
       </div>
 

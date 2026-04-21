@@ -228,7 +228,7 @@ export default function SupplierComparator() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -239,7 +239,7 @@ export default function SupplierComparator() {
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
         <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
   }
@@ -249,7 +249,7 @@ export default function SupplierComparator() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
             <Users className="h-5 w-5" />
           </div>
           <div>
@@ -273,7 +273,7 @@ export default function SupplierComparator() {
           value={productFilter}
           onChange={e => setProductFilter(e.target.value)}
           placeholder="Buscar proveedor o producto..."
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="flex items-center gap-1.5">
           <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
@@ -284,7 +284,7 @@ export default function SupplierComparator() {
               className={cn(
                 "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all",
                 sortBy === s
-                  ? "bg-[#00B4A6] text-white"
+                  ? "bg-primary text-white"
                   : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-white/10",
               )}
             >
@@ -324,7 +324,7 @@ export default function SupplierComparator() {
                       className={cn(
                         "cursor-pointer transition-colors",
                         selectedId === s.id
-                          ? "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
+                          ? "bg-primary/5 dark:bg-primary/10"
                           : "hover:bg-gray-50 dark:hover:bg-white/5",
                       )}
                     >
@@ -368,7 +368,7 @@ export default function SupplierComparator() {
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={e => { e.stopPropagation(); handleCreateOC(s); }}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
                           title="Crear orden de compra"
                         >
                           <ShoppingCart className="h-3 w-3" /> OC
@@ -401,7 +401,7 @@ export default function SupplierComparator() {
             <div className="px-4 pb-4 space-y-2.5 mt-1">
               {[
                 { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-[var(--accent-soft)]" },
-                { label: "Precio", value: selectedSupplier.scorePrecio, icon: DollarSign, color: "bg-[#00B4A6]" },
+                { label: "Precio", value: selectedSupplier.scorePrecio, icon: DollarSign, color: "bg-primary" },
                 { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-[var(--accent-soft)]" },
                 { label: "Variedad", value: selectedSupplier.scoreVariedad, icon: Package, color: "bg-[var(--text-primary)]" },
                 { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning)]" },
@@ -421,7 +421,7 @@ export default function SupplierComparator() {
             <div className="px-4 pb-4">
               <button
                 onClick={() => handleCreateOC(selectedSupplier)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors min-h-[40px]"
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors min-h-[40px]"
               >
                 <ShoppingCart className="h-4 w-4" /> Crear Orden de Compra
               </button>

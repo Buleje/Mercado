@@ -40,7 +40,7 @@ function MiniWidget({ stats }: { stats: DailyStats }) {
   const pct = Math.min(100, (stats.salesTotal / stats.dailyGoal) * 100);
 
   return (
-    <div className="w-full rounded-xl bg-[#00B4A6] p-4 text-white">
+    <div className="w-full rounded-xl bg-primary p-4 text-white">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-medium text-[var(--data-success)]">Buleje</span>
         <span className="text-xs text-[var(--data-success)]">hoy</span>
@@ -53,7 +53,7 @@ function MiniWidget({ stats }: { stats: DailyStats }) {
 
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/20">
         <div
-          className="h-full rounded-full bg-[#f97316] transition-all duration-[var(--dur-slower)]"
+          className="h-full rounded-full bg-[var(--data-warning)] transition-all duration-[var(--dur-slower)]"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -201,7 +201,7 @@ export default function SalesWidgetPreview() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-            <TrendingUp className="h-3.5 w-3.5 text-[#00B4A6]" />
+            <TrendingUp className="h-3.5 w-3.5 text-primary" />
             Ventas hoy
           </div>
           {loading ? (
@@ -215,7 +215,7 @@ export default function SalesWidgetPreview() {
 
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-            <ShoppingBag className="h-3.5 w-3.5 text-[#00B4A6]" />
+            <ShoppingBag className="h-3.5 w-3.5 text-primary" />
             Pedidos
           </div>
           <p className="text-lg font-bold text-[var(--text-primary)]">
@@ -225,7 +225,7 @@ export default function SalesWidgetPreview() {
 
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-            <Target className="h-3.5 w-3.5 text-[#f97316]" />
+            <Target className="h-3.5 w-3.5 text-[var(--data-warning)]" />
             Meta
           </div>
           <p
@@ -234,7 +234,7 @@ export default function SalesWidgetPreview() {
               pct >= 100
                 ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
                 : pct >= 60
-                ? "text-[#f97316]"
+                ? "text-[var(--data-warning)]"
                 : "text-[var(--text-primary)]"
             )}
           >
@@ -268,7 +268,7 @@ export default function SalesWidgetPreview() {
               }}
               className={cn(
                 "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-                "text-[var(--text-primary)] outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
+                "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                 "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               )}
             />
@@ -278,7 +278,7 @@ export default function SalesWidgetPreview() {
         {/* Instructions */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-[#00B4A6]" />
+            <Smartphone className="h-5 w-5 text-primary" />
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               Agregar a pantalla de inicio (PWA)
             </p>
@@ -292,8 +292,8 @@ export default function SalesWidgetPreview() {
                 className={cn(
                   "w-full rounded-xl border p-4 text-left transition",
                   activeStep === i
-                    ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                    : "border-[var(--rule-base)] bg-white hover:border-[#00B4A6]/30 dark:border-[var(--rule-base)] dark:bg-gray-900"
+                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                    : "border-[var(--rule-base)] bg-white hover:border-primary/30 dark:border-[var(--rule-base)] dark:bg-gray-900"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ export default function SalesWidgetPreview() {
                     className={cn(
                       "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                       activeStep === i
-                        ? "bg-[#00B4A6] text-white"
+                        ? "bg-primary text-white"
                         : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]"
                     )}
                   >
@@ -342,7 +342,7 @@ export default function SalesWidgetPreview() {
 
           {/* Quick action */}
           <button
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.open(window.location.origin, "_blank");

@@ -110,7 +110,7 @@ export default function DeliveryTimeSlots() {
           disabled={saving}
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
-            saved ? "bg-[var(--accent-soft)] text-white" : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
+            saved ? "bg-[var(--accent-soft)] text-white" : "bg-primary hover:bg-[#235c42] text-white",
             saving && "opacity-70 cursor-not-allowed"
           )}
         >
@@ -127,7 +127,7 @@ export default function DeliveryTimeSlots() {
             className={cn(
               "rounded-xl border p-4 transition-all duration-[var(--dur-fast)]",
               slot.active
-                ? "border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 dark:border-[#00B4A6]/40"
+                ? "border-primary/30 bg-primary/5 dark:bg-primary/10 dark:border-primary/40"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] opacity-60"
             )}
           >
@@ -135,7 +135,7 @@ export default function DeliveryTimeSlots() {
               <div className="flex items-center gap-2">
                 <Clock
                   size={15}
-                  className={cn(slot.active ? "text-[#00B4A6]" : "text-[var(--text-tertiary)]")}
+                  className={cn(slot.active ? "text-primary" : "text-[var(--text-tertiary)]")}
                 />
                 <span
                   className={cn(
@@ -152,7 +152,7 @@ export default function DeliveryTimeSlots() {
                 onClick={() => toggleSlot(slot.id)}
                 className={cn(
                   "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-[var(--dur-base)]",
-                  slot.active ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+                  slot.active ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
                 )}
                 role="switch"
                 aria-checked={slot.active}
@@ -186,7 +186,7 @@ export default function DeliveryTimeSlots() {
                   value={slot.maxOrders}
                   disabled={!slot.active}
                   onChange={(e) => setMaxOrdersDirect(slot.id, parseInt(e.target.value) || 1)}
-                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <button
                   onClick={() => setMaxOrders(slot.id, 1)}
@@ -238,8 +238,8 @@ export function DeliverySlotPicker({ value, onChange, className }: DeliverySlotP
           className={cn(
             "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-[var(--dur-fast)]",
             value === slot.id
-              ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-[var(--data-success)]"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[#00B4A6]/50 hover:bg-[#00B4A6]/5"
+              ? "border-primary bg-primary/10 dark:bg-primary/20 text-primary dark:text-[var(--data-success)]"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/50 hover:bg-primary/5"
           )}
         >
           <span className="text-sm font-medium">{slot.label}</span>

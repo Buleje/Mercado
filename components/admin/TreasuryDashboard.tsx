@@ -337,11 +337,11 @@ export default function TreasuryDashboard() {
           </div>
           <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-[#00B4A6]" />
+              <span className="h-2 w-2 rounded-full bg-primary" />
               Ingresos
             </span>
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-[#f97316]" />
+              <span className="h-2 w-2 rounded-full bg-[var(--data-warning)]" />
               Gastos
             </span>
           </div>
@@ -390,7 +390,7 @@ export default function TreasuryDashboard() {
         {/* Tabla de vencimientos */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-4 w-4 text-[#f97316]" />
+            <Calendar className="h-4 w-4 text-[var(--data-warning)]" />
             <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Próximos vencimientos</SectionTitle>
             <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingPayables.length} pendientes</span>
           </div>
@@ -442,7 +442,7 @@ export default function TreasuryDashboard() {
         {/* Tabla de cobranzas */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="h-4 w-4 text-[#00B4A6]" />
+            <DollarSign className="h-4 w-4 text-primary" />
             <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Cobranzas pendientes (fiados)</SectionTitle>
             <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingFiados.length} clientes</span>
           </div>

@@ -106,7 +106,7 @@ function SalesBar({
         <p className="text-xs font-semibold text-[var(--text-primary)]">
           {month.label}
         </p>
-        <p className="text-xs text-[#00B4A6]">{fmt(month.total)}</p>
+        <p className="text-xs text-primary">{fmt(month.total)}</p>
         {compareVal !== undefined && (
           <p className="text-xs text-[var(--text-tertiary)]">Ant: {fmt(compareVal)}</p>
         )}
@@ -124,7 +124,7 @@ function SalesBar({
         <div
           className={cn(
             "relative w-full rounded-t-sm transition-all",
-            month.total > (compareVal ?? 0) ? "bg-[#00B4A6]" : "bg-[#f97316]"
+            month.total > (compareVal ?? 0) ? "bg-primary" : "bg-[var(--data-warning)]"
           )}
           style={{ height: `${Math.max(pct, 2)}%` }}
         />
@@ -249,7 +249,7 @@ export default function SeasonalityInsights() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-[#00B4A6]" />
+          <Calendar className="h-5 w-5 text-primary" />
           <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
             Análisis de estacionalidad
           </CardTitle>
@@ -267,7 +267,7 @@ export default function SeasonalityInsights() {
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium transition first:rounded-l-lg last:rounded-r-lg",
                   view === v
-                    ? "bg-[#00B4A6] text-white"
+                    ? "bg-primary text-white"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
                 )}
               >
@@ -283,7 +283,7 @@ export default function SeasonalityInsights() {
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-4 flex flex-wrap items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-sm bg-[#00B4A6]" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-primary" />
               <span className="text-[var(--text-secondary)]">{currentYear}</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -291,7 +291,7 @@ export default function SeasonalityInsights() {
               <span className="text-[var(--text-secondary)]">{currentYear - 1}</span>
             </div>
             <div className="ml-auto flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-sm bg-[#f97316]" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-[var(--data-warning)]" />
               <span className="text-[var(--text-secondary)]">Menor que año anterior</span>
             </div>
           </div>
@@ -381,9 +381,9 @@ export default function SeasonalityInsights() {
 
       {/* Notable insights */}
       {notable.length > 0 && (
-        <div className="rounded-xl border border-[#f97316]/30 bg-[#f97316]/5 p-5 dark:bg-[#f97316]/10">
+        <div className="rounded-xl border border-[var(--data-warning)]/30 bg-[var(--data-warning)]/5 p-5 dark:bg-[var(--data-warning)]/10">
           <div className="mb-3 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[#f97316]" />
+            <AlertTriangle className="h-4 w-4 text-[var(--data-warning)]" />
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               Alertas de estacionalidad
             </p>
@@ -391,7 +391,7 @@ export default function SeasonalityInsights() {
           <div className="flex flex-col gap-2">
             {notable.map((p) => (
               <div key={p.month} className="flex items-center gap-2 text-sm">
-                <ChevronRight className="h-3.5 w-3.5 text-[#f97316]" />
+                <ChevronRight className="h-3.5 w-3.5 text-[var(--data-warning)]" />
                 <span className="text-[var(--text-secondary)]">{p.recommendation}</span>
                 <span
                   className={cn(

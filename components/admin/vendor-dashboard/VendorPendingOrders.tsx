@@ -36,7 +36,7 @@ export function VendorPendingOrders({ orders }: Props) {
     return (
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
-          <Package className="h-5 w-5 text-[#f97316]" />
+          <Package className="h-5 w-5 text-[var(--data-warning)]" />
           Pedidos sin atender
         </CardTitle>
         <div className="text-center py-8">
@@ -58,15 +58,15 @@ export function VendorPendingOrders({ orders }: Props) {
     <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
-          <Package className="h-5 w-5 text-[#f97316]" />
+          <Package className="h-5 w-5 text-[var(--data-warning)]" />
           Pedidos sin atender
-          <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#f97316] text-white text-xs font-bold">
+          <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning)] text-white text-xs font-bold">
             {orders.length}
           </span>
         </CardTitle>
         <Link
           href="/admin?tab=pedidos"
-          className="text-xs font-semibold text-[#00B4A6] hover:underline"
+          className="text-xs font-semibold text-primary hover:underline"
         >
           Ver todos
         </Link>

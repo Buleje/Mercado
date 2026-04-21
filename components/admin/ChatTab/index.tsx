@@ -64,7 +64,7 @@ export default function ChatTab() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
         <div>
           <PageTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
-            <MessageCircle className="h-6 w-6 text-[#00B4A6]" />
+            <MessageCircle className="h-6 w-6 text-primary" />
             Chat con clientes
           </PageTitle>
           <p className="text-xs text-slate-500">
@@ -73,7 +73,7 @@ export default function ChatTab() {
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#00B4A6]/10 px-3 py-1 font-semibold text-[#00B4A6]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
             <MessageCircle className="h-3.5 w-3.5" />
             {threads.length} hilos
           </span>
@@ -122,7 +122,7 @@ export default function ChatTab() {
                   <div className="text-[length:var(--ts-xs)] text-slate-500">
                     <a
                       href={`tel:${selectedThread.customerPhone}`}
-                      className="underline underline-offset-2 hover:text-[#00B4A6]"
+                      className="underline underline-offset-2 hover:text-primary"
                     >
                       {selectedThread.customerPhone}
                     </a>

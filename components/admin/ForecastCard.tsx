@@ -127,7 +127,7 @@ export default function ForecastCard({ className }: Props) {
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full relative" style={{ height: "48px" }}>
                       <div
-                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-[#00B4A6]/70 dark:bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
+                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-primary/70 dark:bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
                         style={{ height: `${Math.max(pct, 4)}%` }}
                       />
                     </div>

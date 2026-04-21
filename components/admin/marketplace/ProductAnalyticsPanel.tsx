@@ -141,7 +141,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                 days === r.value
-                  ? "bg-[#00B4A6] text-white"
+                  ? "bg-primary text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
@@ -166,7 +166,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Visitas totales"
               value={data!.totalViews.toLocaleString()}
               icon={Eye}
-              color="bg-[#00B4A6]"
+              color="bg-primary"
             />
             <KpiCard
               label="Clicks totales"
@@ -178,7 +178,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Tasa de conversión"
               value={`${data!.conversionRate}%`}
               icon={TrendingUp}
-              color="bg-[#f97316]"
+              color="bg-[var(--data-warning)]"
             />
             <KpiCard
               label="Ingresos"

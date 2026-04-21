@@ -123,7 +123,7 @@ export default function ProfitLossAutoCard() {
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
       {/* Header */}
-      <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
+      <div className="bg-primary px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">Estado de Resultados</span>

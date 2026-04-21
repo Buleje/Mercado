@@ -85,7 +85,7 @@ function calcularVuelto(monto: number): string {
 const DENOM_VISUAL: Record<number, { color: string; shape: "rect" | "circle"; label: string }> = {
   200: { color: "bg-[var(--accent-muted)] text-white", shape: "rect", label: "S/200" },
   100: { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/100" },
-  50:  { color: "bg-[#f97316] text-white", shape: "rect", label: "S/50" },
+  50:  { color: "bg-[var(--data-warning)] text-white", shape: "rect", label: "S/50" },
   20:  { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/20" },
   10:  { color: "bg-[var(--data-warning)] text-white", shape: "rect", label: "S/10" },
   5:   { color: "bg-[var(--data-warning)] text-[var(--data-warning)]", shape: "circle", label: "S/5" },
@@ -539,7 +539,7 @@ export default function POSPaymentModal({
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Redondear:</span>
                 {uniq.map(o => (
                   <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                    className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[#00B4A6] hover:text-white transition-colors">
+                    className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary hover:text-white transition-colors">
                     S/{o.val}
                   </button>
                 ))}

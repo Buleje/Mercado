@@ -198,7 +198,7 @@ export default function SmartReorderCard({ className }: Props) {
                 className={cn(
                   "w-full flex sm:grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 items-start sm:items-center p-3 rounded-xl border transition-colors text-left",
                   isSelected
-                    ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10"
+                    ? "border-primary/40 bg-primary/5 dark:border-primary/30 dark:bg-primary/10"
                     : "border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card",
                 )}
               >
@@ -206,7 +206,7 @@ export default function SmartReorderCard({ className }: Props) {
                 <div className="flex items-start gap-2 min-w-0">
                   <div className="shrink-0 mt-0.5">
                     {isSelected
-                      ? <CheckSquare className="w-4 h-4 text-[#00B4A6]" />
+                      ? <CheckSquare className="w-4 h-4 text-primary" />
                       : <Square className="w-4 h-4 text-[var(--text-tertiary)] dark:text-muted" />
                     }
                   </div>
@@ -260,7 +260,7 @@ export default function SmartReorderCard({ className }: Props) {
               {selected.size > 0 && (
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                   <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{selected.size}</span> producto{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""} —{" "}
-                  <span className="font-bold text-[#00B4A6] dark:text-[var(--data-success)]">{formatCurrency(totalSelected)}</span>
+                  <span className="font-bold text-primary dark:text-[var(--data-success)]">{formatCurrency(totalSelected)}</span>
                 </p>
               )}
             </div>
@@ -273,7 +273,7 @@ export default function SmartReorderCard({ className }: Props) {
                   ? "bg-[var(--accent-soft)] text-white"
                   : selected.size === 0
                     ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
-                    : "bg-[#00B4A6] hover:bg-[#009690] text-white",
+                    : "bg-primary hover:bg-primary-dark text-white",
               )}
             >
               {creating ? (

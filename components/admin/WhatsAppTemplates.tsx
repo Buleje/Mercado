@@ -169,7 +169,7 @@ export default function WhatsAppTemplates() {
         {!creating && (
           <button
             onClick={() => { setCreating(true); setEditingId(null); setNewName(""); setNewText(""); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Nueva plantilla
           </button>
@@ -187,14 +187,14 @@ export default function WhatsAppTemplates() {
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Nombre (ej: Recordatorio pago)"
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <textarea
             value={newText}
             onChange={e => setNewText(e.target.value)}
             placeholder="Mensaje. Usa {nombre}, {monto}, etc. para variables"
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
           />
           {newText && (
             <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface text-xs text-[var(--text-secondary)] leading-relaxed">
@@ -212,7 +212,7 @@ export default function WhatsAppTemplates() {
             <button
               onClick={handleSaveNew}
               disabled={!newName.trim() || !newText.trim()}
-              className="px-4 py-2 rounded-lg text-xs font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingId ? "Guardar cambios" : "Crear plantilla"}
             </button>
@@ -236,7 +236,7 @@ export default function WhatsAppTemplates() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleEdit(template)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[#00B4A6] hover:bg-[var(--surface-sunken)] transition-colors"
+                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-sunken)] transition-colors"
                     title="Editar"
                   >
                     <Pencil className="h-3.5 w-3.5" />

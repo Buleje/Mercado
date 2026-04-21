@@ -147,7 +147,7 @@ function ResolveModal({
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder={decision === "aprobado" ? "Todo correcto, proceder..." : "Motivo del rechazo..."}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="flex justify-end gap-2">
@@ -161,7 +161,7 @@ function ResolveModal({
             onClick={() => onConfirm(note)}
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors",
-              decision === "aprobado" ? "bg-[#00B4A6] hover:bg-[#245a41]" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]"
+              decision === "aprobado" ? "bg-primary hover:bg-primary-dark" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]"
             )}
           >
             {decision === "aprobado" ? "Confirmar aprobacion" : "Confirmar rechazo"}
@@ -198,7 +198,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             value={local.purchaseThreshold}
             min={0}
             onChange={e => setLocal(c => ({ ...c, purchaseThreshold: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -212,7 +212,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             min={0}
             max={100}
             onChange={e => setLocal(c => ({ ...c, priceChangeThreshold: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -225,7 +225,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             className={cn(
               "w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
               local.requireDeleteApproval
-                ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
+                ? "border-primary bg-primary/10 text-primary dark:text-[#4a9e78]"
                 : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
             )}
           >
@@ -239,7 +239,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
           onClick={handleSave}
           className={cn(
             "px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors",
-            saved ? "bg-[var(--accent-soft)]" : "bg-[#00B4A6] hover:bg-[#245a41]"
+            saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark"
           )}
         >
           {saved ? "Guardado" : "Guardar configuracion"}
@@ -332,7 +332,7 @@ export default function ApprovalWorkflow() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)] leading-snug">{item.description}</p>
                   {item.amount !== undefined && (
-                    <p className="text-sm text-[#00B4A6] dark:text-[#4a9e78] font-semibold mt-0.5">{fmt(item.amount)}</p>
+                    <p className="text-sm text-primary dark:text-[#4a9e78] font-semibold mt-0.5">{fmt(item.amount)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -354,7 +354,7 @@ export default function ApprovalWorkflow() {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setResolving({ item, decision: "aprobado" })}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Aprobar

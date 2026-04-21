@@ -181,7 +181,7 @@ export default function BulkInvoiceGenerator() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
+        <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
           <FileText className="h-5 w-5" />
         </div>
         <div>
@@ -199,7 +199,7 @@ export default function BulkInvoiceGenerator() {
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -208,7 +208,7 @@ export default function BulkInvoiceGenerator() {
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -221,7 +221,7 @@ export default function BulkInvoiceGenerator() {
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize",
                     invoiceType === t
-                      ? "bg-white dark:bg-card text-[#00B4A6] "
+                      ? "bg-white dark:bg-card text-primary "
                       : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -233,7 +233,7 @@ export default function BulkInvoiceGenerator() {
           <button
             onClick={fetchOrders}
             disabled={loadingOrders || !dateFrom || !dateTo}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 transition-colors min-h-[40px]"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors min-h-[40px]"
           >
             {loadingOrders
               ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -297,11 +297,11 @@ export default function BulkInvoiceGenerator() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-[var(--text-secondary)]">Generando documentos...</p>
-            <span className="text-sm font-bold text-[#00B4A6]">{progress}%</span>
+            <span className="text-sm font-bold text-primary">{progress}%</span>
           </div>
           <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#00B4A6] rounded-full transition-all duration-[var(--dur-base)]"
+              className="h-full bg-primary rounded-full transition-all duration-[var(--dur-base)]"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -317,10 +317,10 @@ export default function BulkInvoiceGenerator() {
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleAll}
-                className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[#00B4A6] transition-colors min-h-[36px]"
+                className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-primary transition-colors min-h-[36px]"
               >
                 {selected.size === orders.length
-                  ? <CheckSquare className="h-4 w-4 text-[#00B4A6]" />
+                  ? <CheckSquare className="h-4 w-4 text-primary" />
                   : <Square className="h-4 w-4" />}
                 {selected.size === orders.length ? "Deseleccionar todo" : "Seleccionar todo"}
               </button>
@@ -333,7 +333,7 @@ export default function BulkInvoiceGenerator() {
               <button
                 onClick={handleGenerate}
                 disabled={selected.size === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 transition-colors min-h-[36px]"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors min-h-[36px]"
               >
                 <FileText className="h-3.5 w-3.5" />
                 Generar {selected.size} {invoiceType === "boleta" ? "boleta" : "factura"}{selected.size !== 1 ? "s" : ""}
@@ -363,7 +363,7 @@ export default function BulkInvoiceGenerator() {
                   >
                     <td className="px-4 py-2.5">
                       {selected.has(order.id)
-                        ? <CheckSquare className="h-4 w-4 text-[#00B4A6]" />
+                        ? <CheckSquare className="h-4 w-4 text-primary" />
                         : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />}
                     </td>
                     <td className="px-4 py-2.5">

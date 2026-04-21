@@ -376,7 +376,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
               format === 'simple'
-                ? "bg-[#00B4A6] text-white"
+                ? "bg-primary text-white"
                 : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
             )}
           >
@@ -388,7 +388,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
               format === 'completo'
-                ? "bg-[#00B4A6] text-white"
+                ? "bg-primary text-white"
                 : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
             )}
           >
@@ -412,7 +412,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       className={cn(
                         "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                         form.tipoPersona === t
-                          ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                          ? "bg-primary text-white border-primary"
                           : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
@@ -458,7 +458,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         {dniLoading ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
                         ) : (
-                          <Search className="h-3.5 w-3.5 text-[#00B4A6]" />
+                          <Search className="h-3.5 w-3.5 text-primary" />
                         )}
                       </button>
                     )}
@@ -512,7 +512,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         className={cn(
                           "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                           form.tipoPersona === t
-                            ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                            ? "bg-primary text-white border-primary"
                             : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
@@ -551,7 +551,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                           {dniLoading ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
                           ) : (
-                            <Search className="h-3.5 w-3.5 text-[#00B4A6]" />
+                            <Search className="h-3.5 w-3.5 text-primary" />
                           )}
                         </button>
                       )}
@@ -710,7 +710,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     onClick={() => set('creditoActivo', !form.creditoActivo)}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                      form.creditoActivo ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+                      form.creditoActivo ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
                     )}
                   >
                     <span className={cn(
@@ -749,7 +749,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         onClick={() => set('alertasWhatsapp', !form.alertasWhatsapp)}
                         className={cn(
                           "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                          form.alertasWhatsapp ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+                          form.alertasWhatsapp ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
                         )}
                       >
                         <span className={cn(
@@ -820,7 +820,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#009690] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {saving ? 'Guardando...' : isEdit ? 'Guardar cliente' : format === 'simple' ? 'Crear cliente' : 'Guardar cliente'}

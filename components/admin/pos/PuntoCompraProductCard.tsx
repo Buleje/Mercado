@@ -44,7 +44,7 @@ export default memo(function PuntoCompraProductCard({
         "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
         isOutOfStock
           ? "opacity-60 cursor-not-allowed"
-          : "cursor-pointer hover:shadow-sm hover:border-[#00B4A6]/50 hover:scale-[1.02]",
+          : "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
       )}
     >
       {/* Badge AGOTADO / REPONER */}
@@ -68,7 +68,7 @@ export default memo(function PuntoCompraProductCard({
       {inCart > 0 && (
         <span
           aria-label={`${inCart} en canasta`}
-          className="absolute top-2 right-2 h-5 w-5 rounded-full bg-[#00B4A6] text-white text-xs flex items-center justify-center font-bold z-10"
+          className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold z-10"
         >
           {inCart > 99 ? "99+" : inCart}
         </span>
@@ -93,7 +93,7 @@ export default memo(function PuntoCompraProductCard({
         ) : (
           <div
             aria-hidden="true"
-            className="h-20 w-20 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 flex items-center justify-center text-[#00B4A6] font-bold text-xl"
+            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-bold text-xl"
           >
             {displayName.charAt(0).toUpperCase()}
           </div>

@@ -62,8 +62,8 @@ export default function ModuleTooltip({
           <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-black/10 dark:shadow-black/30 border border-[var(--rule-base)] dark:border-white/10 px-4 py-3 min-w-[220px] max-w-[280px]">
             {/* Module name with icon */}
             <div className="flex items-center gap-2 mb-1.5">
-              <Icon className="h-4 w-4 text-[#00B4A6] dark:text-[var(--data-success)] shrink-0" />
-              <span className="text-sm font-bold text-[#00B4A6] dark:text-[var(--data-success)] leading-tight">
+              <Icon className="h-4 w-4 text-primary dark:text-[var(--data-success)] shrink-0" />
+              <span className="text-sm font-bold text-primary dark:text-[var(--data-success)] leading-tight">
                 {label}
               </span>
             </div>

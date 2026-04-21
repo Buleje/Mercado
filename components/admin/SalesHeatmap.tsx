@@ -49,7 +49,7 @@ function heatColor(value: number, max: number): string {
   if (max === 0 || value === 0) return "bg-[var(--surface-sunken)]";
   const ratio = value / max;
   if (ratio >= 0.85) return "bg-[#007A72]";
-  if (ratio >= 0.65) return "bg-[#00B4A6]";
+  if (ratio >= 0.65) return "bg-primary";
   if (ratio >= 0.45) return "bg-[#33C4B8]";
   if (ratio >= 0.25) return "bg-[#74c69d]";
   return "bg-[#b7e4c7] dark:bg-[#007A72]/40";
@@ -137,7 +137,7 @@ export default function SalesHeatmap() {
                 className={cn(
                   "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
                   period === p
-                    ? "bg-[#00B4A6] text-white"
+                    ? "bg-primary text-white"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 )}
               >
@@ -156,7 +156,7 @@ export default function SalesHeatmap() {
 
       {/* Best slot insight */}
       {bestCell && bestCell.amount > 0 && (
-        <div className="rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 px-5 py-3 text-sm text-[#00B4A6] dark:text-[var(--data-success)]">
+        <div className="rounded-xl border border-primary/30 bg-primary/5 px-5 py-3 text-sm text-primary dark:text-[var(--data-success)]">
           Hora pico: <strong>{bestCell.day} {hourLabel(bestCell.hour)}</strong> &mdash;{" "}
           {formatCurrency(bestCell.amount)} en {bestCell.value} venta{bestCell.value !== 1 ? "s" : ""}
         </div>
@@ -226,7 +226,7 @@ export default function SalesHeatmap() {
       <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <span>Menos ventas</span>
         <div className="flex gap-1">
-          {["bg-[var(--surface-sunken)]", "bg-[#b7e4c7]", "bg-[#74c69d]", "bg-[#33C4B8]", "bg-[#00B4A6]", "bg-[#007A72]"].map((cls, i) => (
+          {["bg-[var(--surface-sunken)]", "bg-[#b7e4c7]", "bg-[#74c69d]", "bg-[#33C4B8]", "bg-primary", "bg-[#007A72]"].map((cls, i) => (
             <div key={i} className={cn("h-4 w-6 rounded", cls)} />
           ))}
         </div>

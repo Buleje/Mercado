@@ -122,7 +122,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4 text-[#00B4A6]" />
+            <ShoppingCart className="h-4 w-4 text-primary" />
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
               Crear pedido de cliente
             </CardTitle>
@@ -151,7 +151,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-[#00B4A6] text-white rounded-lg text-xs font-medium hover:bg-[#009690] transition-colors"
+                className="mt-4 px-6 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark transition-colors"
               >
                 Cerrar
               </button>
@@ -164,8 +164,8 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                   Cliente
                 </label>
                 {selectedCustomer ? (
-                  <div className="flex items-center gap-2 p-2 bg-[#00B4A6]/10 rounded-xl">
-                    <User className="h-4 w-4 text-[#00B4A6] shrink-0" />
+                  <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-xl">
+                    <User className="h-4 w-4 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-[var(--text-primary)] truncate">
                         {selectedCustomer.name}
@@ -244,7 +244,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         className={cn(
                           "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors",
                           checked
-                            ? "bg-[#00B4A6]/10 border border-[#00B4A6]/30"
+                            ? "bg-primary/10 border border-primary/30"
                             : "bg-gray-50 dark:bg-white/5 border border-transparent",
                         )}
                       >
@@ -252,7 +252,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                           className={cn(
                             "h-4 w-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors",
                             checked
-                              ? "bg-[#00B4A6] border-[#00B4A6] text-white"
+                              ? "bg-primary border-primary text-white"
                               : "border-[var(--rule-base)] dark:border-gray-600",
                           )}
                         >
@@ -280,7 +280,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                 <span className="text-xs font-medium text-[var(--text-secondary)]">
                   Total seleccionado
                 </span>
-                <span className="text-sm font-bold font-mono text-[#00B4A6]">
+                <span className="text-sm font-bold font-mono text-primary">
                   S/{selectedTotal.toFixed(2)}
                 </span>
               </div>
@@ -299,7 +299,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                 disabled={submitting || !selectedCustomer || selectedItems.size === 0}
                 className={cn(
                   "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors",
-                  "bg-[#00B4A6] hover:bg-[#009690] text-white",
+                  "bg-primary hover:bg-primary-dark text-white",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 )}

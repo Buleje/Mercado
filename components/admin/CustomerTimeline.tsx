@@ -74,9 +74,9 @@ const EVENT_CONFIG: Record<
 > = {
   order: {
     icon: ShoppingCart,
-    color: "text-[#00B4A6]",
-    bg: "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20",
-    dot: "bg-[#00B4A6]",
+    color: "text-primary",
+    bg: "bg-primary/10 dark:bg-primary/20",
+    dot: "bg-primary",
   },
   review: {
     icon: Star,
@@ -193,7 +193,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00B4A6] text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
           <User className="h-5 w-5" />
         </div>
         <div>
@@ -209,7 +209,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
-          <p className="text-lg font-bold text-[#00B4A6]">
+          <p className="text-lg font-bold text-primary">
             {fmt(summary.totalSpent)}
           </p>
           <p className="text-xs text-[var(--text-tertiary)]">
@@ -217,13 +217,13 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
           </p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
-          <p className="text-lg font-bold text-[#00B4A6]">
+          <p className="text-lg font-bold text-primary">
             {summary.orderCount}
           </p>
           <p className="text-xs text-[var(--text-tertiary)]">Compras</p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
-          <p className="text-lg font-bold text-[#00B4A6]">
+          <p className="text-lg font-bold text-primary">
             {summary.firstOrderDate
               ? `${daysSince(summary.firstOrderDate)}d`
               : "—"}
@@ -234,7 +234,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p
-            className="truncate text-sm font-bold text-[#00B4A6]"
+            className="truncate text-sm font-bold text-primary"
             title={summary.topProduct ?? "—"}
           >
             {summary.topProduct ?? "—"}
@@ -293,7 +293,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
                       </div>
                       <div className="shrink-0 text-right">
                         {ev.amount !== undefined && (
-                          <p className="font-semibold text-[#00B4A6]">
+                          <p className="font-semibold text-primary">
                             {fmt(ev.amount)}
                           </p>
                         )}

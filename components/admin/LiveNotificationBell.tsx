@@ -211,11 +211,11 @@ export default function LiveNotificationBell() {
             "relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
             "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
             open && "bg-teal-50 dark:bg-teal-900/30",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           )}
         >
           {isConnected ? (
-            <Bell className={cn("h-5 w-5", open ? "text-[#00B4A6]" : "text-[var(--text-secondary)]")} />
+            <Bell className={cn("h-5 w-5", open ? "text-primary" : "text-[var(--text-secondary)]")} />
           ) : (
             <BellOff className="h-5 w-5 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
           )}
@@ -242,7 +242,7 @@ export default function LiveNotificationBell() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-[#00B4A6]" />
+                <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-bold text-[var(--text-primary)]">Tiempo real</span>
                 {unreadCount > 0 && (
                   <span className="bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full">
@@ -254,7 +254,7 @@ export default function LiveNotificationBell() {
                 <button
                   type="button"
                   onClick={markAllRead}
-                  className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-teal-400 transition-colors"
+                  className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-teal-400 transition-colors"
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
                   Leer todas

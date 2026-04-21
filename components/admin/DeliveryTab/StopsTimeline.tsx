@@ -119,7 +119,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
                 <Phone className="h-3.5 w-3.5" />
                 <a
                   href={`tel:${stop.customerPhone}`}
-                  className="underline underline-offset-2 hover:text-[#00B4A6]"
+                  className="underline underline-offset-2 hover:text-primary"
                 >
                   {stop.customerPhone}
                 </a>
@@ -160,7 +160,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
                   type="button"
                   onClick={() => handleAction(stop.id, "delivered")}
                   disabled={isBusy}
-                  className="inline-flex items-center gap-1 rounded-md bg-[#00B4A6] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#00B4A6]/90 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Entregado

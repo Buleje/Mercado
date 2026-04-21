@@ -88,7 +88,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias de meta cumplida esta semana",
     maxProgress: 5,
     iconSymbol: "G",
-    colorUnlocked: "text-[#00B4A6] dark:text-[var(--data-success)]",
+    colorUnlocked: "text-primary dark:text-[var(--data-success)]",
     colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30",
   },
 ];
@@ -318,7 +318,7 @@ export default function AchievementBadges({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Award className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
+          <Award className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Logros del empleado
@@ -335,7 +335,7 @@ export default function AchievementBadges({
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
               editMode
-                ? "bg-[#00B4A6] text-white"
+                ? "bg-primary text-white"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-600"
             )}
           >
@@ -348,7 +348,7 @@ export default function AchievementBadges({
       <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-3">
         <div className="flex justify-between text-xs mb-2">
           <span className="text-[var(--text-tertiary)]">Progreso total</span>
-          <span className="font-semibold text-[#00B4A6] dark:text-[var(--data-success)]">
+          <span className="font-semibold text-primary dark:text-[var(--data-success)]">
             {Math.round((unlockedCount / BADGE_DEFINITIONS.length) * 100)}%
           </span>
         </div>

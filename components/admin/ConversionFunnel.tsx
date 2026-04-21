@@ -66,15 +66,15 @@ async function fetchFunnelData(): Promise<FunnelStage[]> {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const STAGE_COLORS = [
-  "bg-[#00B4A6]",
+  "bg-primary",
   "bg-[#33C4B8]",
   "bg-[#2dd4bf]",
   "bg-[#74c69d]",
 ];
 
 const STAGE_TEXT = [
-  "text-[#00B4A6] dark:text-[#74c69d]",
-  "text-[#33C4B8] dark:text-[#2dd4bf]",
+  "text-primary dark:text-[#74c69d]",
+  "text-[#33C4B8] dark:text-primary",
   "text-[#2dd4bf]",
   "text-[#74c69d]",
 ];
@@ -204,7 +204,7 @@ export default function ConversionFunnel() {
         {/* Overall conversion */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <p className="text-xs text-[var(--text-tertiary)]">Conversion total</p>
-          <p className="text-2xl font-bold text-[#00B4A6] dark:text-[var(--data-success)] mt-1">
+          <p className="text-2xl font-bold text-primary dark:text-[var(--data-success)] mt-1">
             {current.stages[0]?.value > 0
               ? `${Math.round(((current.stages[current.stages.length - 1]?.value ?? 0) / current.stages[0].value) * 100)}%`
               : "—"}

@@ -151,7 +151,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                 "rounded-xl border-2 p-3 text-left transition-all hover:shadow-sm",
                 style.bg,
                 style.border,
-                filterSegment === seg && "ring-2 ring-offset-1 ring-[#00B4A6] dark:ring-offset-gray-900"
+                filterSegment === seg && "ring-2 ring-offset-1 ring-primary dark:ring-offset-gray-900"
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
@@ -181,7 +181,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
               className={cn(
                 "px-2 py-0.5 rounded text-xs border transition-colors",
                 sortKey === k
-                  ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                  ? "bg-primary text-white border-primary"
                   : "bg-white dark:bg-card text-[var(--text-secondary)] border-[var(--rule-base)]"
               )}
             >
@@ -244,7 +244,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                     {c.R === 999 ? "--" : c.R}
                   </td>
                   <td className="px-2 py-2 text-right font-mono text-[var(--text-secondary)]">{c.F}</td>
-                  <td className="px-2 py-2 text-right font-mono font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
+                  <td className="px-2 py-2 text-right font-mono font-medium text-primary dark:text-primary">
                     {fmt(c.M)}
                   </td>
                 </tr>

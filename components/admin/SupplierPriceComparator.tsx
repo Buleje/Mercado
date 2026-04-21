@@ -140,7 +140,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-[#00B4A6]" />
+          <ShoppingCart className="w-5 h-5 text-primary" />
           <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Comparador de Precios por Proveedor
           </SectionTitle>
@@ -159,7 +159,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Filtrar por nombre de producto..."
-        className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+        className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       {/* Estados */}

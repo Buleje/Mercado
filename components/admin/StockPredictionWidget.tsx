@@ -143,7 +143,7 @@ export default function StockPredictionWidget() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-[#00B4A6]" />
+          <Package className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground dark:text-foreground">
             Prediccion de agotamiento de stock
           </span>

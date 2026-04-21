@@ -576,7 +576,7 @@ function SaleCompleteModal({
           transition={{ delay: 0.3 }}
           className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3 space-y-0.5"
         >
-          <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-xl text-[#00B4A6]" style={{ color: "#00B4A6" }}>
+          <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-xl text-primary" style={{ color: "#00B4A6" }}>
             {fmt(animatedTotal)}
           </p>
           {lastSaleDetails && (
@@ -781,7 +781,7 @@ function ShiftSummaryWidget() {
     >
       <div className="px-4 py-2 flex items-center gap-3 text-xs">
         <span className="text-[var(--text-secondary)] dark:text-muted">&#9201; {timeStr}</span>
-        <span className="font-bold text-[#00B4A6]" style={{ color: "#00B4A6" }}>S/{(data.totalVentas ?? 0).toFixed(0)}</span>
+        <span className="font-bold text-primary" style={{ color: "#00B4A6" }}>S/{(data.totalVentas ?? 0).toFixed(0)}</span>
         <span className="text-[var(--text-secondary)] dark:text-muted">&#128203; {data.cantidadVentas ?? 0}</span>
       </div>
       {expanded && (
@@ -1696,7 +1696,7 @@ export default function POSView() {
                   {/* Devolucion */}
                   <button
                     onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
-                    className="w-full flex items-center gap-2 text-xs font-bold text-[#f97316] hover:bg-[#f97316]/5 px-3 py-2 rounded-lg transition-colors"
+                    className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-warning)] hover:bg-[var(--data-warning)]/5 px-3 py-2 rounded-lg transition-colors"
                   >
                     <History className="h-4 w-4 rotate-180" /> Devolucion
                   </button>
@@ -2129,7 +2129,7 @@ export default function POSView() {
               <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground">{cartCount} items</span>
               <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)] dark:text-foreground">S/ {cartTotal.toFixed(2)}</span>
             </div>
-            <button onClick={() => setShowPayment(true)} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-semibold text-sm">
+            <button onClick={() => setShowPayment(true)} className="bg-primary text-white px-6 py-2.5 rounded-lg font-semibold text-sm">
               Cobrar
             </button>
           </div>
@@ -2170,7 +2170,7 @@ export default function POSView() {
                           <span className="text-[var(--data-success)] font-bold text-xs shrink-0">x{item.qty}</span>
                           <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">{(item.selected || item.matches[0]).name}</span>
                         </div>
-                        <span className="text-sm font-bold text-[#00B4A6] shrink-0">S/{((item.selected || item.matches[0]).price * item.qty).toFixed(2)}</span>
+                        <span className="text-sm font-bold text-primary shrink-0">S/{((item.selected || item.matches[0]).price * item.qty).toFixed(2)}</span>
                       </div>
                     ) : item.matches.length > 1 ? (
                       <div>
@@ -2182,7 +2182,7 @@ export default function POSView() {
                               onClick={() => {
                                 setWaParsedItems(prev => prev.map((p, i) => i === idx ? { ...p, selected: m } : p));
                               }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] hover:border-[#00B4A6] hover:text-[#00B4A6] transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] hover:border-primary hover:text-primary transition-colors"
                             >
                               {m.name} · S/{m.price.toFixed(2)}
                             </button>
@@ -2201,7 +2201,7 @@ export default function POSView() {
                   return (
                     <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-bold text-[var(--text-primary)]">Total estimado: <span className="text-[#00B4A6]">S/{total.toFixed(2)}</span></span>
+                        <span className="text-sm font-bold text-[var(--text-primary)]">Total estimado: <span className="text-primary">S/{total.toFixed(2)}</span></span>
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{resolved.length}/{waParsedItems.length} items</span>
                       </div>
                       <button
@@ -2217,7 +2217,7 @@ export default function POSView() {
                           setWaParsedItems([]);
                         }}
                         disabled={resolved.length === 0}
-                        className="w-full py-3 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <ShoppingBasket className="h-4 w-4" /> Agregar todo al carrito
                       </button>

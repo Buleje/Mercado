@@ -176,7 +176,7 @@ function GaugeArc({ pct }: { pct: number }) {
         strokeLinecap="round"
         strokeDasharray={`${dash} ${half}`}
         className={cn(
-          clamped >= 100 ? "stroke-[#00B4A6]" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-[var(--data-warning)]" : "stroke-[var(--data-error)]"
+          clamped >= 100 ? "stroke-primary" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-[var(--data-warning)]" : "stroke-[var(--data-error)]"
         )}
       />
     </svg>
@@ -264,7 +264,7 @@ function KpiCard({
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slower)]",
-              pct >= 100 ? "bg-[#00B4A6]" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
+              pct >= 100 ? "bg-primary" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-[var(--data-warning)]" : "bg-[var(--data-error)]"
             )}
             style={{ width: `${Math.min(pct, 100)}%` }}
           />
@@ -282,15 +282,15 @@ function KpiCard({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
-              className="flex-1 rounded border border-[#00B4A6] px-2 py-0.5 text-xs text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none"
+              className="flex-1 rounded border border-primary px-2 py-0.5 text-xs text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none"
             />
-            <button onClick={save} className="text-[#00B4A6]"><Check className="h-3.5 w-3.5" /></button>
+            <button onClick={save} className="text-primary"><Check className="h-3.5 w-3.5" /></button>
             <button onClick={() => setEditing(false)} className="text-[var(--text-tertiary)]"><X className="h-3.5 w-3.5" /></button>
           </div>
         ) : (
           <button
             onClick={() => { setDraft(String(goal)); setEditing(true); }}
-            className="text-xs font-medium text-[#00B4A6] dark:text-[var(--data-success)] hover:underline"
+            className="text-xs font-medium text-primary dark:text-[var(--data-success)] hover:underline"
           >
             {fmtValue(goal, def.unit)}
           </button>

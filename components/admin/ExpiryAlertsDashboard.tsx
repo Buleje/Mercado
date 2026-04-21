@@ -272,7 +272,7 @@ export default function ExpiryAlertsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -283,7 +283,7 @@ export default function ExpiryAlertsDashboard() {
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
         <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
   }

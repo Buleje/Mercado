@@ -54,12 +54,12 @@ function OCProgressBar({ status }: { status: string }) {
             <div key={step} className="flex items-center" style={{ flex: idx < 3 ? 1 : 0 }}>
               <div className={cn(
                 "w-3.5 h-3.5 rounded-full shrink-0 transition-colors",
-                isCancelled ? "bg-[var(--data-error)]" : completed ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+                isCancelled ? "bg-[var(--data-error)]" : completed ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
               )} />
               {idx < 3 && (
                 <div className={cn(
                   "h-1 flex-1 transition-colors",
-                  isCancelled ? "bg-[var(--data-error)]" : (!isCancelled && step < currentStep) ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+                  isCancelled ? "bg-[var(--data-error)]" : (!isCancelled && step < currentStep) ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
                 )} />
               )}
             </div>
@@ -68,7 +68,7 @@ function OCProgressBar({ status }: { status: string }) {
       </div>
       <div className="flex justify-between px-0">
         {labels.map((label, idx) => (
-          <span key={idx} className={cn("text-[length:var(--ts-2xs)] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-[#00B4A6] dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} style={{ width: idx < 3 ? undefined : "auto" }}>
+          <span key={idx} className={cn("text-[length:var(--ts-2xs)] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-primary dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} style={{ width: idx < 3 ? undefined : "auto" }}>
             {label}
           </span>
         ))}

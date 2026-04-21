@@ -246,7 +246,7 @@ export default function VentasHeatmap() {
                   <div
                     key={hour}
                     className={cn(
-                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#00B4A6] hover:shadow-sm",
+                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-primary hover:shadow-sm",
                       getColor(avgTotal, maxValue)
                     )}
                     onMouseEnter={(e) => {
@@ -275,7 +275,7 @@ export default function VentasHeatmap() {
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
                   <span>Promedio</span>
-                  <span className="font-mono font-medium text-[#00B4A6]">S/ {(cell?.avgTotal ?? 0).toFixed(0)}</span>
+                  <span className="font-mono font-medium text-primary">S/ {(cell?.avgTotal ?? 0).toFixed(0)}</span>
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
                   <span>Ventas</span>

@@ -69,7 +69,7 @@ export function MessageComposer({
           maxLength={4000}
           className={cn(
             "flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm",
-            "focus:border-[#00B4A6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20",
+            "focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20",
             "dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900",
             "disabled:cursor-not-allowed disabled:opacity-60",
           )}
@@ -83,7 +83,7 @@ export function MessageComposer({
           disabled={disabled || sending || !body.trim()}
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-full transition",
-            "bg-[#00B4A6] text-white hover:bg-[#00B4A6]/90 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+            "bg-primary text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40",
             "disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700",
           )}
           aria-label="Enviar mensaje"

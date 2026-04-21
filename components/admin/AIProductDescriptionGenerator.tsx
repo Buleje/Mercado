@@ -108,7 +108,7 @@ export default function AIProductDescriptionGenerator({
   return (
     <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-[#00B4A6]" />
+        <Sparkles className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-foreground dark:text-foreground">
           Generador de descripcion con IA
         </span>
@@ -135,7 +135,7 @@ export default function AIProductDescriptionGenerator({
           disabled={loading || !productName.trim()}
           className={cn(
             "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-            "bg-[#00B4A6] text-white hover:bg-[#009690] disabled:opacity-50 disabled:cursor-not-allowed"
+            "bg-primary text-white hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >
           {loading ? (
@@ -160,7 +160,7 @@ export default function AIProductDescriptionGenerator({
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               used
                 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] cursor-default"
-                : "border border-[#00B4A6] text-[#00B4A6] hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20"
+                : "border border-primary text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
             )}
           >
             <Check className="h-3.5 w-3.5" />

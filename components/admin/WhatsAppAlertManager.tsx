@@ -112,7 +112,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
     <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]">
       <div className="flex items-center gap-3 min-w-0">
         {enabled ? (
-          <Bell className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />
+          <Bell className="w-4 h-4 text-primary flex-shrink-0" />
         ) : (
           <BellOff className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
         )}
@@ -135,7 +135,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
           onClick={onToggle}
           className={cn(
             "relative w-11 h-6 rounded-full transition-colors flex-shrink-0",
-            enabled ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+            enabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
           )}
         >
           <span
@@ -213,7 +213,7 @@ export default function WhatsAppAlertManager() {
             value={config.phone}
             onChange={(e) => setConfig((p) => ({ ...p, phone: e.target.value }))}
             placeholder="51999999999"
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
 
@@ -229,7 +229,7 @@ export default function WhatsAppAlertManager() {
             onChange={(e) =>
               setConfig((p) => ({ ...p, bigSaleThreshold: Number(e.target.value) }))
             }
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
 
@@ -282,8 +282,8 @@ export default function WhatsAppAlertManager() {
           className={cn(
             "w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
             saved
-              ? "bg-[#00B4A6] text-white"
-              : "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf] hover:bg-[#00B4A6]/20"
+              ? "bg-primary text-white"
+              : "bg-primary/10 text-primary dark:text-primary hover:bg-primary/20"
           )}
         >
           <Save className="w-4 h-4" />

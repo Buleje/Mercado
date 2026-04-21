@@ -198,7 +198,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             className={cn(
               "flex-1 text-xs py-1 rounded-md font-medium transition-colors",
               view === key
-                ? "bg-white dark:bg-gray-600 text-[#00B4A6] dark:text-[#2dd4bf] "
+                ? "bg-white dark:bg-gray-600 text-primary dark:text-primary "
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
             )}
           >
@@ -210,7 +210,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
       {/* Total */}
       <div className="text-center">
         <p className="text-xs text-[var(--text-tertiary)]">Total del periodo</p>
-        <p className="text-lg font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(totalRevenue)}</p>
+        <p className="text-lg font-bold text-primary dark:text-primary">{fmt(totalRevenue)}</p>
       </div>
 
       {/* Category view */}
@@ -310,7 +310,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
           </div>
           <p className="text-xs text-[var(--text-tertiary)] text-center mt-2">
             Hora pico:{" "}
-            <span className="font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
+            <span className="font-medium text-primary dark:text-primary">
               {HOUR_LABELS[byHour.indexOf(Math.max(...byHour))]}
             </span>
           </p>

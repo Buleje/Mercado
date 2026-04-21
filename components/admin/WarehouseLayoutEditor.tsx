@@ -152,7 +152,7 @@ export default function WarehouseLayoutEditor() {
             onClick={handleSave}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white transition",
-              saved ? "bg-[var(--accent-soft)]" : "bg-[#00B4A6] hover:bg-[#009690]"
+              saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark"
             )}
           >
             <Save className="h-4 w-4" />
@@ -173,12 +173,12 @@ export default function WarehouseLayoutEditor() {
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar categoria (ej: Bebidas)..."
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
           />
         </div>
         <button
           onClick={handleSearch}
-          className="rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009690]"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
         >
           Buscar
         </button>
@@ -193,9 +193,9 @@ export default function WarehouseLayoutEditor() {
       </div>
 
       {highlight && (
-        <div className="flex items-center gap-2 rounded-lg bg-[#00B4A6]/10 px-4 py-2.5 dark:bg-[#00B4A6]/20">
-          <Grid3X3 className="h-4 w-4 text-[#00B4A6]" />
-          <p className="text-sm font-medium text-[#00B4A6] dark:text-[var(--data-success)]">
+        <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2.5 dark:bg-primary/20">
+          <Grid3X3 className="h-4 w-4 text-primary" />
+          <p className="text-sm font-medium text-primary dark:text-[var(--data-success)]">
             Las celdas resaltadas contienen: {highlight}
           </p>
         </div>
@@ -227,7 +227,7 @@ export default function WarehouseLayoutEditor() {
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                 selectedCat === cat.name
-                  ? "ring-2 ring-[#00B4A6] ring-offset-1"
+                  ? "ring-2 ring-primary ring-offset-1"
                   : "hover:opacity-80",
                 cat.color,
                 "border-transparent"
@@ -264,7 +264,7 @@ export default function WarehouseLayoutEditor() {
                     ? catColor(cell.category)
                     : "border-dashed border-[var(--rule-base)] bg-gray-50 text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",
                   isHighlighted &&
-                    "ring-4 ring-[#f97316] ring-offset-1",
+                    "ring-4 ring-[var(--data-warning)] ring-offset-1",
                   !cell.category && "border-[var(--rule-base)]"
                 )}
               >
@@ -295,7 +295,7 @@ export default function WarehouseLayoutEditor() {
               setRows(r);
               setCells((prev) => buildGrid(r, cols, prev));
             }}
-            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function WarehouseLayoutEditor() {
               setCols(c);
               setCells((prev) => buildGrid(rows, c, prev));
             }}
-            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
       </div>

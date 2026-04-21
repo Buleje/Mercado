@@ -538,7 +538,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month2]}</p>
-          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-[var(--text-tertiary)]" : "text-[#f97316]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-warning)]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{monthComparisonData.count2} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">

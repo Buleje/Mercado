@@ -73,16 +73,16 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ingresos</span>
-        <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(d.ingresos)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrency(d.ingresos)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Egresos</span>
-        <span className="font-mono font-medium text-[#e63946]">{formatCurrency(d.egresos)}</span>
+        <span className="font-mono font-medium text-[var(--data-error)]">{formatCurrency(d.egresos)}</span>
       </p>
       <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Balance</span>
-          <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(d.balance)}</span>
+          <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-primary" : "text-[var(--data-error)]")}>{formatCurrency(d.balance)}</span>
         </p>
       </div>
     </div>

@@ -84,7 +84,7 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
         className={cn(
           "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
           isSeller
-            ? "bg-[#00B4A6] text-white"
+            ? "bg-primary text-white"
             : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
         )}
         aria-hidden
@@ -98,7 +98,7 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
           className={cn(
             "rounded-xl px-4 py-2 text-sm leading-relaxed",
             isSeller
-              ? "rounded-br-sm bg-[#00B4A6] text-white"
+              ? "rounded-br-sm bg-primary text-white"
               : "rounded-bl-sm bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
           )}
         >

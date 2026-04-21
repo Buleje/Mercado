@@ -1224,7 +1224,7 @@ function FinanzasDashboard() {
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
-            <div className="h-2 w-2 rounded-full bg-[#e63946]" />
+            <div className="h-2 w-2 rounded-full bg-[var(--data-error)]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoria</p>
             <div className="flex-1" />
             {gastosPieFilter && (
@@ -1275,7 +1275,7 @@ function FinanzasDashboard() {
         {/* Donut derecha: Metodos de pago */}
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-2 w-2 rounded-full bg-[#00B4A6]" />
+            <div className="h-2 w-2 rounded-full bg-primary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por Metodo de Pago</p>
           </div>
           {paymentMethods.length > 0 ? (

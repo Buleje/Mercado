@@ -154,7 +154,7 @@ export default function CashFlowProjection() {
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
       {/* Header */}
-      <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
+      <div className="bg-primary px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingDown className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">Flujo de Caja Proyectado</span>

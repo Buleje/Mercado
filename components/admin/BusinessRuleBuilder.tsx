@@ -164,7 +164,7 @@ export default function BusinessRuleBuilder() {
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             atLimit || showForm
               ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)] cursor-not-allowed"
-              : "bg-[#00B4A6] text-white hover:bg-[#245a41]"
+              : "bg-primary text-white hover:bg-primary-dark"
           )}
         >
           <Plus className="w-4 h-4" />
@@ -191,7 +191,7 @@ export default function BusinessRuleBuilder() {
               <select
                 value={form.conditionType}
                 onChange={e => setForm(f => ({ ...f, conditionType: e.target.value as ConditionType, conditionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 {CONDITION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -205,7 +205,7 @@ export default function BusinessRuleBuilder() {
                     onChange={e => setForm(f => ({ ...f, conditionValue: e.target.value }))}
                     placeholder={conditionMeta.placeholder}
                     className={cn(
-                      "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+                      "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
                       errors.conditionValue ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
                     )}
                   />
@@ -223,7 +223,7 @@ export default function BusinessRuleBuilder() {
               <select
                 value={form.actionType}
                 onChange={e => setForm(f => ({ ...f, actionType: e.target.value as ActionType, actionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 {ACTION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -236,7 +236,7 @@ export default function BusinessRuleBuilder() {
                   onChange={e => setForm(f => ({ ...f, actionValue: e.target.value }))}
                   placeholder={actionMeta.valuePlaceholder}
                   className={cn(
-                    "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+                    "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
                     errors.actionValue ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 />
@@ -254,7 +254,7 @@ export default function BusinessRuleBuilder() {
             </button>
             <button
               onClick={handleAdd}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
             >
               Guardar regla
             </button>
@@ -307,10 +307,10 @@ export default function BusinessRuleBuilder() {
                 <button
                   onClick={() => handleToggle(rule.id)}
                   title={rule.enabled ? "Desactivar" : "Activar"}
-                  className="text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[#4a9e78] transition-colors"
+                  className="text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#4a9e78] transition-colors"
                 >
                   {rule.enabled
-                    ? <ToggleRight className="w-5 h-5 text-[#00B4A6] dark:text-[#4a9e78]" />
+                    ? <ToggleRight className="w-5 h-5 text-primary dark:text-[#4a9e78]" />
                     : <ToggleLeft className="w-5 h-5" />
                   }
                 </button>

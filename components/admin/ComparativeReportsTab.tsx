@@ -181,7 +181,7 @@ export default function ComparativeReportsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -192,7 +192,7 @@ export default function ComparativeReportsTab() {
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-8 w-8 text-[var(--data-error)]" />
         <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
       </div>
     );
   }
@@ -202,7 +202,7 @@ export default function ComparativeReportsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
@@ -220,7 +220,7 @@ export default function ComparativeReportsTab() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   comparison === opt
-                    ? "bg-white dark:bg-card text-[#00B4A6] "
+                    ? "bg-white dark:bg-card text-primary "
                     : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground",
                 )}
               >

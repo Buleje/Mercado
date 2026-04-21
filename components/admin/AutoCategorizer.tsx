@@ -102,7 +102,7 @@ export default function AutoCategorizer({ productName, onSuggest }: AutoCategori
       <button
         type="button"
         onClick={() => onSuggest(match.name)}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
       >
         <Check className="w-3 h-3" />
         Usar

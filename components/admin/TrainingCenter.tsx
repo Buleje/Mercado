@@ -157,7 +157,7 @@ export default function TrainingCenter() {
           <input
             value={user}
             onChange={(e) => setUser(e.target.value.trim() || "empleado")}
-            className="rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-1.5 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+            className="rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-1.5 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             placeholder="Tu nombre"
           />
         </div>
@@ -180,7 +180,7 @@ export default function TrainingCenter() {
           <span
             className={cn(
               "text-sm font-semibold",
-              allDone ? "text-[var(--data-warning)]" : "text-[#00B4A6]"
+              allDone ? "text-[var(--data-warning)]" : "text-primary"
             )}
           >
             {progress} de {total} completados
@@ -190,7 +190,7 @@ export default function TrainingCenter() {
           <div
             className={cn(
               "h-full transition-all duration-[var(--dur-slow)]",
-              allDone ? "bg-[var(--data-warning)]" : "bg-[#00B4A6]"
+              allDone ? "bg-[var(--data-warning)]" : "bg-primary"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -273,7 +273,7 @@ export default function TrainingCenter() {
                   <ol className="space-y-3">
                     {tutorial.steps.map((step) => (
                       <li key={step.id} className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00B4A6]/10 text-xs font-bold text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-[var(--data-success)]">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary dark:bg-primary/20 dark:text-[var(--data-success)]">
                           {step.id}
                         </span>
                         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
@@ -291,7 +291,7 @@ export default function TrainingCenter() {
                       "mt-4 w-full rounded-lg py-2 text-sm font-semibold transition",
                       isDone
                         ? "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
-                        : "bg-[#00B4A6] text-white hover:bg-[#009690]"
+                        : "bg-primary text-white hover:bg-primary-dark"
                     )}
                   >
                     {isDone

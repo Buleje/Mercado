@@ -374,7 +374,7 @@ export default function CRMTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">CRM, fidelizacion y seguimiento</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button onClick={() => setShowNewClientModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-white transition-colors bg-[#00B4A6]" style={{ backgroundColor: "#00B4A6" }}>
+          <button onClick={() => setShowNewClientModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-white transition-colors bg-primary" style={{ backgroundColor: "#00B4A6" }}>
             <UserPlus className="h-4 w-4" /> Nuevo Cliente
           </button>
           <button

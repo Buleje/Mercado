@@ -93,7 +93,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
   return (
     <div className="space-y-2 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
-        <Boxes className="h-3 w-3 text-[#f97316]" />
+        <Boxes className="h-3 w-3 text-[var(--data-warning)]" />
         <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
           {bundles.length} paquete{bundles.length !== 1 ? "s" : ""} disponible{bundles.length !== 1 ? "s" : ""}
         </span>
@@ -125,7 +125,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
                 )}
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs font-bold font-mono text-[#00B4A6]">
+                <p className="text-xs font-bold font-mono text-primary">
                   S/{bundle.price.toFixed(2)}
                 </p>
                 {savings > 0 && (
@@ -169,7 +169,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               }
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                "bg-[#f97316] hover:bg-[#e8954f] text-white",
+                "bg-[var(--data-warning)] hover:bg-[#e8954f] text-white",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f97316]",
               )}
             >

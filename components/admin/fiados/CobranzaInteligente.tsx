@@ -263,12 +263,12 @@ function ModalDescuento({
                     </p>
                     <p className="text-xs text-[var(--text-tertiary)]">
                       {op.sub} → solo paga{" "}
-                      <span className="font-bold text-[#00B4A6]">
+                      <span className="font-bold text-primary">
                         S/{montoFinal}
                       </span>
                     </p>
                   </div>
-                  <span className="text-lg font-extrabold text-[#00B4A6]">
+                  <span className="text-lg font-extrabold text-primary">
                     -{op.desc}%
                   </span>
                 </div>
@@ -384,7 +384,7 @@ export default function CobranzaInteligente() {
         <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">{error}</p>
         <button
           onClick={fetchFiados}
-          className="text-xs text-[#00B4A6] hover:underline font-semibold"
+          className="text-xs text-primary hover:underline font-semibold"
         >
           Reintentar
         </button>
@@ -406,7 +406,7 @@ export default function CobranzaInteligente() {
         </div>
         <button
           onClick={fetchFiados}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[#00B4A6] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-primary border border-primary/30 hover:bg-primary/10 transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -420,7 +420,7 @@ export default function CobranzaInteligente() {
           value={`S/${totalPorCobrar.toFixed(2)}`}
           sub={`${fiados.length} clientes pendientes`}
           icon={DollarSign}
-          colorClass="bg-[#00B4A6]/10 text-[#00B4A6]"
+          colorClass="bg-primary/10 text-primary"
         />
         <KpiCard
           label="En nivel 1"
@@ -487,7 +487,7 @@ export default function CobranzaInteligente() {
           className={cn(
             "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
             filtroNivel === 0
-              ? "bg-[#00B4A6] text-white"
+              ? "bg-primary text-white"
               : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] hover:bg-gray-200"
           )}
         >
@@ -516,7 +516,7 @@ export default function CobranzaInteligente() {
       {/* Tabla de cobranza */}
       {fiadosFiltrados.length === 0 ? (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center">
-          <TrendingUp className="h-10 w-10 text-[#00B4A6]/40 mx-auto mb-2" />
+          <TrendingUp className="h-10 w-10 text-primary/40 mx-auto mb-2" />
           <p className="text-sm font-bold text-[var(--text-tertiary)]">
             {fiados.length === 0
               ? "No hay fiados vencidos pendientes"
@@ -690,7 +690,7 @@ export default function CobranzaInteligente() {
                           {f.nivel >= 2 && (
                             <button
                               onClick={() => setModalDescuento(f)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                               title="Ofrecer descuento por pronto pago"
                             >
                               <Gift className="h-3 w-3" />

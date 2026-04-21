@@ -138,9 +138,9 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
     <div className="flex flex-col gap-4 text-sm">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
+        <div className="rounded-lg bg-primary/10 dark:bg-primary/20 border border-primary/30 p-2 text-center">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">CLV promedio</p>
-          <p className="text-base font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(avgCLV)}</p>
+          <p className="text-base font-bold text-primary dark:text-primary">{fmt(avgCLV)}</p>
         </div>
         <div className="rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Clientes con datos</p>
@@ -170,7 +170,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
               className={cn(
                 "flex-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors",
                 filterTier === tier
-                  ? cn(style.bg, style.text, style.border, "ring-2 ring-offset-1 ring-[#00B4A6]")
+                  ? cn(style.bg, style.text, style.border, "ring-2 ring-offset-1 ring-primary")
                   : cn(style.bg, style.text, style.border)
               )}
             >
@@ -260,7 +260,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
                     <td className="px-2 py-1.5 text-right text-[var(--text-secondary)]">
                       {c.orderCount}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+                    <td className="px-2 py-1.5 text-right font-bold text-primary dark:text-primary">
                       {fmt(c.clv)}
                     </td>
                   </tr>

@@ -296,7 +296,7 @@ export default function AgentsDashboardTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Activity className="h-6 w-6 text-[#00B4A6]" />
+            <Activity className="h-6 w-6 text-primary" />
             Dashboard de Agentes
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -393,7 +393,7 @@ export default function AgentsDashboardTab() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4 text-[#00B4A6]" />
+                        <Server className="h-4 w-4 text-primary" />
                         <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">
                           {DOMAIN_LABELS[agent.domain]}
                         </span>
@@ -482,7 +482,7 @@ export default function AgentsDashboardTab() {
                 disabled={executing}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50",
-                  "bg-[#00B4A6] hover:bg-[#009690] dark:bg-[#00B4A6] dark:hover:bg-[#3a7d5e]"
+                  "bg-primary hover:bg-primary-dark dark:bg-primary dark:hover:bg-[#3a7d5e]"
                 )}
               >
                 {executing ? (
@@ -738,7 +738,7 @@ export default function AgentsDashboardTab() {
 
 const PRIORITY_LABELS: Record<TaskPriority, { label: string; color: string }> = {
   critical: { label: "Crítica",  color: "text-[var(--data-error)] font-bold" },
-  high:     { label: "Alta",     color: "text-[#f97316] font-semibold" },
+  high:     { label: "Alta",     color: "text-[var(--data-warning)] font-semibold" },
   normal:   { label: "Normal",   color: "text-[var(--text-secondary)]" },
   low:      { label: "Baja",     color: "text-[var(--text-tertiary)]" },
 };

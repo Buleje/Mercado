@@ -200,7 +200,7 @@ function BannerForm({
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-[#245a41] transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
         >
           Guardar banner
         </button>
@@ -290,7 +290,7 @@ export default function BannerEditor() {
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             creating
               ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 cursor-not-allowed"
-              : "bg-primary text-white hover:bg-[#245a41]"
+              : "bg-primary text-white hover:bg-primary-dark"
           )}
         >
           <Plus className="w-4 h-4" />

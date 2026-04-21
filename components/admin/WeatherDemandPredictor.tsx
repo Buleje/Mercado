@@ -87,7 +87,7 @@ function getConditionLabel(c: WeatherCondition): string {
 }
 
 function WeatherIcon({ condition, className }: { condition: WeatherCondition; className?: string }) {
-  if (condition === "hot") return <Sun className={cn("text-[#f97316]", className)} />;
+  if (condition === "hot") return <Sun className={cn("text-[var(--data-warning)]", className)} />;
   if (condition === "rainy") return <CloudRain className={cn("text-[var(--data-success)]", className)} />;
   if (condition === "cold") return <Wind className={cn("text-[var(--data-info)]", className)} />;
   return <Sun className={cn("text-[var(--data-warning)]", className)} />;
@@ -95,7 +95,7 @@ function WeatherIcon({ condition, className }: { condition: WeatherCondition; cl
 
 const PRIORITY_STYLES: Record<string, string> = {
   high: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
-  medium: "bg-[#f97316]/10 text-[#f97316]",
+  medium: "bg-[var(--data-warning)]/10 text-[var(--data-warning)]",
   low: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
 };
 
@@ -173,7 +173,7 @@ export default function WeatherDemandPredictor() {
                 <p className="text-sm text-[var(--text-tertiary)]">
                   {weather.description}
                   {usingMock && (
-                    <span className="ml-2 text-xs text-[#f97316]">(datos estimados)</span>
+                    <span className="ml-2 text-xs text-[var(--data-warning)]">(datos estimados)</span>
                   )}
                 </p>
               </>
@@ -212,7 +212,7 @@ export default function WeatherDemandPredictor() {
                 className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Thermometer className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />
+                  <Thermometer className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="font-semibold text-[var(--text-primary)] text-sm truncate">
                       {sug.product}

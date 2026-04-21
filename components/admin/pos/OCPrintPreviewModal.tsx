@@ -215,7 +215,7 @@ export default function OCPrintPreviewModal({
             )}
             <div className="flex justify-between text-lg font-bold border-t dark:border-[var(--rule-base)] pt-2 dark:text-white">
               <span>TOTAL</span>
-              <span className="font-mono text-[#00B4A6]">S/{total.toFixed(2)}</span>
+              <span className="font-mono text-primary">S/{total.toFixed(2)}</span>
             </div>
           </div>
 
@@ -266,7 +266,7 @@ export default function OCPrintPreviewModal({
                 }
               }
             }}
-            className="flex-1 py-2 bg-[#00B4A6] text-white rounded-lg text-sm font-medium hover:bg-[#009690] transition-colors"
+            className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
           >
             Imprimir
           </button>

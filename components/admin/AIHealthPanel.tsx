@@ -101,8 +101,8 @@ export default function AIHealthPanel() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <div className="relative">
-          <div className="h-16 w-16 rounded-full border-4 border-[#00B4A6]/20 border-t-[#00B4A6] animate-spin" />
-          <Heart className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-[#00B4A6] animate-pulse" />
+          <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-[#00B4A6] animate-spin" />
+          <Heart className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-primary animate-pulse" />
         </div>
         <p className="text-sm text-[var(--text-tertiary)]">Revisando sistemas de IA...</p>
       </div>
@@ -116,7 +116,7 @@ export default function AIHealthPanel() {
         <p className="text-sm text-[var(--data-error)]">Error al verificar: {error}</p>
         <button
           onClick={fetchHealth}
-          className="flex items-center gap-2 px-4 py-2 bg-[#00B4A6] text-white rounded-lg hover:bg-[#009e92] transition-colors text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#009e92] transition-colors text-sm"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -276,7 +276,7 @@ export default function AIHealthPanel() {
 
       {/* ── Activity pulse bar (animated) ──────────────────────────────── */}
       <div className="flex items-center justify-center gap-2 py-3">
-        <Activity className="h-4 w-4 text-[#00B4A6] animate-pulse" />
+        <Activity className="h-4 w-4 text-primary animate-pulse" />
         <span className="text-xs text-[var(--text-tertiary)]">
           Última verificación: {new Date(data.timestamp).toLocaleTimeString("es-PE")}
         </span>

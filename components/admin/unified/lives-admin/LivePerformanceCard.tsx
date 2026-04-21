@@ -48,7 +48,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
       onClick={onClick}
       className={cn(
         "w-full text-left bg-white border border-gray-200 rounded-2xl p-4 shadow-sm",
-        onClick && "hover:border-[#00B4A6]/40 hover:shadow-md transition-all"
+        onClick && "hover:border-primary/40 hover:shadow-md transition-all"
       )}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -88,7 +88,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
             <DollarSign className="h-3 w-3" />
             <span className="text-[length:var(--ts-2xs)] uppercase tracking-wide font-bold">Ventas</span>
           </div>
-          <p className="text-sm font-extrabold text-[#00B4A6] tabular-nums">{fmt(live.revenue)}</p>
+          <p className="text-sm font-extrabold text-primary tabular-nums">{fmt(live.revenue)}</p>
         </div>
       </div>
     </button>

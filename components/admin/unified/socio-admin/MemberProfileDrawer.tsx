@@ -150,10 +150,10 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Wallet className="h-4 w-4 text-[#00B4A6]" />
+                <Wallet className="h-4 w-4 text-primary" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cashback</p>
               </div>
-              <p className="text-xl font-extrabold text-[#00B4A6]">{fmt(member.totalCashback)}</p>
+              <p className="text-xl font-extrabold text-primary">{fmt(member.totalCashback)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">

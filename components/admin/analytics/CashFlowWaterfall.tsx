@@ -169,7 +169,7 @@ export default function CashFlowWaterfall({
       <div className="flex gap-2">
         <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Entradas</p>
-          <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+          <p className="text-sm font-bold text-primary dark:text-primary">
             {fmt(initialBalance + cashSales + digitalSales)}
           </p>
         </div>
@@ -183,7 +183,7 @@ export default function CashFlowWaterfall({
           className={cn(
             "flex-1 rounded-lg border p-2 text-center",
             isPositiveFinal
-              ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border-[#00B4A6]/30"
+              ? "bg-primary/10 dark:bg-primary/20 border-primary/30"
               : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border-[var(--data-error)] dark:border-[var(--data-error)]"
           )}
         >
@@ -191,7 +191,7 @@ export default function CashFlowWaterfall({
           <p
             className={cn(
               "text-sm font-bold",
-              isPositiveFinal ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              isPositiveFinal ? "text-primary dark:text-primary" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}
           >
             {fmt(finalBalance?.value ?? 0)}
@@ -258,7 +258,7 @@ export default function CashFlowWaterfall({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-[#00B4A6]" style={{ backgroundColor: "#00B4A6" }} />
+          <span className="w-3 h-3 rounded-sm bg-primary" style={{ backgroundColor: "#00B4A6" }} />
           Entradas
         </div>
         <div className="flex items-center gap-1">

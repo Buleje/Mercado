@@ -95,7 +95,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
     >
       {/* Encabezado */}
       <div className="mb-3 flex items-center gap-2">
-        <ClipboardList className="h-5 w-5 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
+        <ClipboardList className="h-5 w-5 text-primary dark:text-[#3a8a65]" aria-hidden="true" />
         <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">
           Apertura del dia
         </SectionTitle>
@@ -110,7 +110,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
           <span>
             <span className="font-semibold text-[var(--text-primary)]">{done}</span> de {total} completados
           </span>
-          <span className="font-semibold text-[#00B4A6] dark:text-[#3a8a65]">{pct}%</span>
+          <span className="font-semibold text-primary dark:text-[#3a8a65]">{pct}%</span>
         </div>
         <div
           className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
@@ -123,7 +123,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slow)]",
-              allDone ? "bg-[#f97316]" : "bg-[#00B4A6]"
+              allDone ? "bg-[var(--data-warning)]" : "bg-primary"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -141,14 +141,14 @@ export function OpeningChecklist({ className }: { className?: string }) {
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm",
                 "transition-colors duration-[var(--dur-fast)]",
                 item.done
-                  ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
+                  ? "bg-primary/10 dark:bg-primary/20"
                   : "bg-gray-50 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-700",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               )}
               aria-pressed={item.done}
             >
               {item.done ? (
-                <CheckCircle className="h-4 w-4 flex-shrink-0 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
+                <CheckCircle className="h-4 w-4 flex-shrink-0 text-primary dark:text-[#3a8a65]" aria-hidden="true" />
               ) : (
                 <Circle className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
               )}
@@ -170,12 +170,12 @@ export function OpeningChecklist({ className }: { className?: string }) {
       {/* Felicitacion */}
       {allDone && (
         <div
-          className="mt-4 flex items-center gap-2 rounded-lg bg-[#f97316]/20 px-3 py-2"
+          className="mt-4 flex items-center gap-2 rounded-lg bg-[var(--data-warning)]/20 px-3 py-2"
           role="status"
           aria-live="polite"
         >
-          <PartyPopper className="h-4 w-4 flex-shrink-0 text-[#f97316]" aria-hidden="true" />
-          <p className="text-sm font-medium text-[#c07040] dark:text-[#f97316]">
+          <PartyPopper className="h-4 w-4 flex-shrink-0 text-[var(--data-warning)]" aria-hidden="true" />
+          <p className="text-sm font-medium text-[#c07040] dark:text-[var(--data-warning)]">
             Excelente — la tienda esta lista para abrir
           </p>
         </div>

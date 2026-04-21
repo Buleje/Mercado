@@ -238,7 +238,7 @@ function SubscriptionList({
             placeholder="Buscar por cliente, teléfono o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
@@ -371,7 +371,7 @@ function PlansTab({ plans }: { plans: PlanCatalog[] }) {
           >
             <div className="flex items-center justify-between mb-3">
               <CardTitle className="font-extrabold text-[var(--text-primary)] text-lg">{p.label}</CardTitle>
-              <Package className="h-5 w-5 text-[#00B4A6]" />
+              <Package className="h-5 w-5 text-primary" />
             </div>
             <p className="text-3xl font-extrabold text-[var(--text-primary)] mb-1">{fmt(p.monthlyPrice)}</p>
             <p className="text-xs text-[var(--text-secondary)] mb-4">al mes</p>
@@ -384,7 +384,7 @@ function PlansTab({ plans }: { plans: PlanCatalog[] }) {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[var(--text-secondary)]">Suscripciones activas</span>
-                <span className="font-bold text-[#00B4A6]">{p.activeSubs}</span>
+                <span className="font-bold text-primary">{p.activeSubs}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[var(--text-secondary)]">Ingresos mes</span>

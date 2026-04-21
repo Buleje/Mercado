@@ -59,7 +59,7 @@ function ConfirmModal({
       <div className="bg-[var(--surface-raised)] rounded-xl p-6 w-full max-w-sm">
         <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-2">Confirmar cambios</CardTitle>
         <p className="text-sm text-[var(--text-secondary)] mb-6">
-          Se aplicarán <span className="font-semibold text-[#00B4A6]">{changeCount}</span> cambios a productos.
+          Se aplicarán <span className="font-semibold text-primary">{changeCount}</span> cambios a productos.
           Esta acción no se puede deshacer.
         </p>
         <div className="flex gap-3">
@@ -73,7 +73,7 @@ function ConfirmModal({
           <button
             onClick={onConfirm}
             disabled={applying}
-            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {applying && <Loader2 className="h-4 w-4 animate-spin" />}
             Confirmar
@@ -297,7 +297,7 @@ export default function BulkPriceEditorTab() {
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -309,7 +309,7 @@ export default function BulkPriceEditorTab() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           {categories.map((c) => (
             <option key={c} value={c}>{c === "todas" ? "Todas las categorías" : c}</option>
@@ -321,14 +321,14 @@ export default function BulkPriceEditorTab() {
           placeholder="Precio mín"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <input
           type="number"
           placeholder="Precio máx"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
 
         <div className="flex gap-2 ml-auto">
@@ -348,7 +348,7 @@ export default function BulkPriceEditorTab() {
           <button
             onClick={() => changeCount > 0 && setShowConfirm(true)}
             disabled={changeCount === 0}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
           >
             Aplicar cambios {changeCount > 0 && `(${changeCount})`}
           </button>
@@ -359,7 +359,7 @@ export default function BulkPriceEditorTab() {
       {progress > 0 && (
         <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#00B4A6] transition-all duration-[var(--dur-base)]"
+            className="h-full bg-primary transition-all duration-[var(--dur-base)]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -467,7 +467,7 @@ export default function BulkPriceEditorTab() {
                             });
                           }
                         }}
-                        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -480,7 +480,7 @@ export default function BulkPriceEditorTab() {
                           const v = parseInt(e.target.value);
                           if (!isNaN(v)) applyChange(p.id, "stock", v);
                         }}
-                        className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -490,7 +490,7 @@ export default function BulkPriceEditorTab() {
                         aria-label="Alternar activo"
                       >
                         {(ch.active ?? p.active) ? (
-                          <ToggleRight className="h-6 w-6 text-[#00B4A6]" />
+                          <ToggleRight className="h-6 w-6 text-primary" />
                         ) : (
                           <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />
                         )}

@@ -216,7 +216,7 @@ export default function ChurnPrediction() {
             className={cn(
               "rounded-xl border p-4 text-left transition",
               filterRisk === r
-                ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
+                ? "border-primary bg-primary/5 dark:bg-primary/10"
                 : "border-[var(--rule-base)] bg-white hover:border-[var(--rule-base)] dark:bg-gray-900"
             )}
           >
@@ -248,7 +248,7 @@ export default function ChurnPrediction() {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                   filterRisk === r
-                    ? "bg-[#00B4A6] text-white"
+                    ? "bg-primary text-white"
                     : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-[var(--text-tertiary)] dark:hover:bg-gray-700"
                 )}
               >

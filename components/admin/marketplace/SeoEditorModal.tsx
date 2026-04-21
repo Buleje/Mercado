@@ -53,7 +53,7 @@ function TagInput({
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] min-h-[44px] focus-within:ring-2 focus-within:ring-[#00B4A6]">
+    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] min-h-[44px] focus-within:ring-2 focus-within:ring-primary">
       {tags.map((tag) => (
         <span
           key={tag}
@@ -215,7 +215,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaTitle}
                   onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary",
                     errors.metaTitle
                       ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
                       : "border-[var(--rule-base)]"
@@ -245,7 +245,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaDescription}
                   onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
+                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none",
                     errors.metaDescription
                       ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
                       : "border-[var(--rule-base)]"
@@ -282,7 +282,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   type="text"
                   value={form.ogImage}
                   onChange={(e) => setForm((f) => ({ ...f, ogImage: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="https://..."
                 />
               </div>
@@ -305,7 +305,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar

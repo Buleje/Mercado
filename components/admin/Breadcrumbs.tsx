@@ -66,7 +66,7 @@ export default function Breadcrumbs({
         onClick={onNavigateHome}
         className={cn(
           "flex items-center gap-1 shrink-0",
-          "text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[var(--data-success)]",
+          "text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[var(--data-success)]",
           "transition-colors duration-[var(--dur-fast)] rounded px-1 py-0.5"
         )}
         aria-label="Volver al panel principal"
@@ -83,7 +83,7 @@ export default function Breadcrumbs({
         <button
           onClick={onNavigateModule}
           className={cn(
-            "text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[var(--data-success)]",
+            "text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[var(--data-success)]",
             "transition-colors duration-[var(--dur-fast)] text-xs rounded px-1 py-0.5 truncate max-w-[120px] sm:max-w-none"
           )}
         >

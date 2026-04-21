@@ -200,8 +200,8 @@ export default function CustomerImporter() {
           className={cn(
             "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging
-              ? "border-[#00B4A6] bg-[#00B4A6]/5"
-              : "border-[var(--rule-base)] hover:border-[#00B4A6]"
+              ? "border-primary bg-primary/5"
+              : "border-[var(--rule-base)] hover:border-primary"
           )}
         >
           <Users className="h-10 w-10 text-[var(--text-tertiary)]" />
@@ -281,7 +281,7 @@ export default function CustomerImporter() {
               className={cn(
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 valid.length > 0
-                  ? "bg-[#00B4A6] text-white hover:bg-[#235c43]"
+                  ? "bg-primary text-white hover:bg-[#235c43]"
                   : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
@@ -297,10 +297,10 @@ export default function CustomerImporter() {
       {/* Importing */}
       {step === "importing" && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="font-medium text-[var(--text-secondary)]">Importando clientes...</p>
           <div className="w-full max-w-sm bg-[var(--surface-sunken)] rounded-full h-3">
-            <div className="bg-[#00B4A6] h-3 rounded-full transition-all duration-[var(--dur-base)]" style={{ width: `${progress}%` }} />
+            <div className="bg-primary h-3 rounded-full transition-all duration-[var(--dur-base)]" style={{ width: `${progress}%` }} />
           </div>
           <p className="text-sm text-[var(--text-secondary)]">{progress}% completado</p>
         </div>
@@ -338,7 +338,7 @@ export default function CustomerImporter() {
             </div>
           )}
 
-          <button onClick={reset} className="px-5 py-2 rounded-lg text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#235c43] transition-colors">
+          <button onClick={reset} className="px-5 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-[#235c43] transition-colors">
             Importar otro archivo
           </button>
         </div>

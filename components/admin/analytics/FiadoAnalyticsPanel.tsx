@@ -79,7 +79,7 @@ function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{payload[0].name}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(payload[0].value)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrency(payload[0].value)}</span>
       </p>
     </div>
   );
@@ -96,16 +96,16 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.mes}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Cobrados</span>
-        <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(d.cobrados)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrency(d.cobrados)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Nuevos</span>
-        <span className="font-mono font-medium text-[#e63946]">{formatCurrency(d.nuevos)}</span>
+        <span className="font-mono font-medium text-[var(--data-error)]">{formatCurrency(d.nuevos)}</span>
       </p>
       <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
-          <span className={cn("font-mono font-bold", neto >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(neto)}</span>
+          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error)]")}>{formatCurrency(neto)}</span>
         </p>
       </div>
     </div>

@@ -181,7 +181,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
             className={cn(
               "rounded-lg border px-2 py-1.5 text-left transition-all",
               meta.bg,
-              activeQuadrant === q && "ring-2 ring-offset-1 ring-[#00B4A6]"
+              activeQuadrant === q && "ring-2 ring-offset-1 ring-primary"
             )}
             style={{ borderColor: meta.color + "60" }}
           >
@@ -262,7 +262,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
                 <span
                   className={cn(
                     "font-medium",
-                    p.growth >= 0 ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+                    p.growth >= 0 ? "text-primary dark:text-primary" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
                   )}
                 >
                   {fmtPct(p.growth)}

@@ -122,7 +122,7 @@ export default function MoneyLeakDetector() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-[#00B4A6]" />
+          <ShieldAlert className="w-5 h-5 text-primary" />
           <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
             Detector de Fugas de Dinero
           </SectionTitle>
@@ -130,7 +130,7 @@ export default function MoneyLeakDetector() {
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#2dd4bf] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           Actualizar
@@ -247,7 +247,7 @@ export default function MoneyLeakDetector() {
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-[var(--dur-slow)]",
-                          cat.isLeak ? "bg-[var(--data-error)] dark:bg-[var(--data-error)]" : "bg-[#00B4A6] dark:bg-[#2dd4bf]"
+                          cat.isLeak ? "bg-[var(--data-error)] dark:bg-[var(--data-error)]" : "bg-primary dark:bg-primary"
                         )}
                         style={{ width: `${barCurrent}%` }}
                       />

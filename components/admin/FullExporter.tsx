@@ -224,7 +224,7 @@ export default function FullExporter() {
             "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors",
             bulkStatus === "loading"
               ? "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
-              : "bg-[#00B4A6] text-white hover:bg-[#235c43]"
+              : "bg-primary text-white hover:bg-[#235c43]"
           )}
         >
           {bulkStatus === "loading" ? (
@@ -249,8 +249,8 @@ export default function FullExporter() {
               className="flex items-center justify-between rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#00B4A6]/10">
-                  <Icon className="h-5 w-5 text-[#00B4A6]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium text-[var(--text-primary)]">{mod.label}</p>
@@ -276,7 +276,7 @@ export default function FullExporter() {
                     ? "bg-[var(--surface-sunken)] cursor-not-allowed"
                     : st.status === "done"
                     ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
-                    : "bg-[var(--surface-sunken)] hover:bg-[#00B4A6]/10"
+                    : "bg-[var(--surface-sunken)] hover:bg-primary/10"
                 )}
               >
                 {st.status === "loading" ? (

@@ -957,7 +957,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           "transition-colors min-h-[44px]", // touch target
           isApplied
             ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)] cursor-default"
-            : "bg-[#2d6a4f] hover:bg-[#245a41] active:bg-[#1d4a36] text-white",
+            : "bg-[#2d6a4f] hover:bg-primary-dark active:bg-[#1d4a36] text-white",
           "disabled:opacity-60 disabled:cursor-not-allowed",
         )}
         aria-label={isApplied ? "Precio aplicado" : `Aplicar precio sugerido para ${s.productName}`}

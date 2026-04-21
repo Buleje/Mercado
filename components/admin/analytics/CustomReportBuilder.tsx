@@ -389,7 +389,7 @@ export default function CustomReportBuilder({
           <button
             onClick={() => setStep(2)}
             disabled={selectedMetrics.length === 0}
-            className="mt-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+            className="mt-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
           >
             Siguiente: Periodo
           </button>
@@ -448,7 +448,7 @@ export default function CustomReportBuilder({
             </button>
             <button
               onClick={() => setStep(3)}
-              className="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
             >
               Siguiente: Filtros
             </button>
@@ -501,7 +501,7 @@ export default function CustomReportBuilder({
             </button>
             <button
               onClick={() => setStep(4)}
-              className="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
             >
               Ver reporte
             </button>
@@ -530,7 +530,7 @@ export default function CustomReportBuilder({
             <button
               onClick={exportPDF}
               disabled={reportRows.length === 0 || exporting}
-              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {exporting ? "Generando PDF..." : "Exportar PDF"}
             </button>
@@ -595,7 +595,7 @@ export default function CustomReportBuilder({
               <button
                 onClick={saveTemplate}
                 disabled={!templateName.trim()}
-                className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 Guardar
               </button>

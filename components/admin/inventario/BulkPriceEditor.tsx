@@ -235,7 +235,7 @@ export default function BulkPriceEditor() {
                     type="checkbox"
                     checked={filtered.length > 0 && filtered.every(p => p.selected)}
                     onChange={selectAllFiltered}
-                    className="w-4 h-4 rounded border-[var(--rule-base)] text-[#00B4A6] focus:ring-[#00B4A6]"
+                    className="w-4 h-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                   />
                 </th>
                 <th className="py-2 px-2 text-left text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
@@ -263,7 +263,7 @@ export default function BulkPriceEditor() {
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.id)}
-                        className="w-4 h-4 rounded border-[var(--rule-base)] text-[#00B4A6] focus:ring-[#00B4A6]"
+                        className="w-4 h-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                       />
                     </td>
                     <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground truncate max-w-[200px]">{p.name}</td>
@@ -313,7 +313,7 @@ export default function BulkPriceEditor() {
             </span>
             <button
               onClick={() => setShowActions(!showActions)}
-              className="text-sm text-[#00B4A6] font-medium hover:underline"
+              className="text-sm text-primary font-medium hover:underline"
             >
               {showActions ? 'Ocultar acciones' : 'Acciones masivas'}
             </button>
@@ -333,7 +333,7 @@ export default function BulkPriceEditor() {
                 <button
                   onClick={subirPorcentaje}
                   disabled={!pctInput}
-                  className="flex-1 px-3 py-1.5 bg-[#00B4A6] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#009690] transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors"
                 >
                   Subir %
                 </button>
@@ -359,7 +359,7 @@ export default function BulkPriceEditor() {
                 <button
                   onClick={igualarMargen}
                   disabled={!marginInput}
-                  className="flex-1 px-3 py-1.5 bg-[#f97316] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#e8964f] transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-[var(--data-warning)] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#e8964f] transition-colors"
                 >
                   Igualar margen
                 </button>
@@ -379,7 +379,7 @@ export default function BulkPriceEditor() {
 
       {/* Save bar */}
       {changedProducts.length > 0 && (
-        <div className="bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-xl p-4 space-y-3">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm text-[var(--text-primary)] dark:text-muted">
               <strong>{changedProducts.length}</strong> productos se actualizaran
@@ -392,7 +392,7 @@ export default function BulkPriceEditor() {
             <button
               onClick={guardarCambios}
               disabled={saving}
-              className="px-6 py-2 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
+              className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {saving ? 'Guardando...' : 'Aplicar cambios'}
             </button>

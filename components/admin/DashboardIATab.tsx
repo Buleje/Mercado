@@ -407,8 +407,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20">
-            <GreetingIcon className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20">
+            <GreetingIcon className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
           </div>
           <div>
             <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{greetingText}</SectionTitle>
@@ -475,7 +475,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                   />
                   <button
                     onClick={() => { const v = Number(goalInput); if (v > 0) { setDailyGoal(v); localStorage.setItem("bodega-daily-goal", String(v)); } setEditingGoal(false); }}
-                    className="text-xs font-semibold text-[#00B4A6] hover:underline"
+                    className="text-xs font-semibold text-primary hover:underline"
                   >OK</button>
                 </div>
               ) : (
@@ -526,7 +526,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                   </span>
                   <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#00B4A6] dark:bg-[var(--accent-soft)] rounded-full transition-all duration-[var(--dur-base)]"
+                      className="h-full bg-primary dark:bg-[var(--accent-soft)] rounded-full transition-all duration-[var(--dur-base)]"
                       style={{ width: `${(h.total / hourlyMax) * 100}%` }}
                     />
                   </div>
@@ -557,7 +557,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                   </span>
                   <div className="w-full relative group" style={{ height: "100px" }}>
                     <div
-                      className="absolute bottom-0 left-1 right-1 rounded-t-md bg-[#00B4A6] dark:bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
+                      className="absolute bottom-0 left-1 right-1 rounded-t-md bg-primary dark:bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
                       style={{ height: `${Math.max(pct, 2)}%` }}
                     />
                   </div>
@@ -592,7 +592,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#f97316] rounded-full transition-all duration-[var(--dur-slow)]"
+                          className="h-full bg-[var(--data-warning)] rounded-full transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${barPct}%` }}
                         />
                       </div>
@@ -734,13 +734,13 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void handleAsk(); }}
             placeholder="Preguntame sobre tu negocio..."
-            className="flex-1 bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg px-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-colors"
+            className="flex-1 bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg px-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             disabled={chatLoading}
           />
           <button
             onClick={() => void handleAsk()}
             disabled={chatLoading || !question.trim()}
-            className="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 text-white transition-colors"
+            className="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary hover:bg-primary-dark disabled:opacity-50 text-white transition-colors"
           >
             {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -803,7 +803,7 @@ function KPICard({
     <div className={cn("bg-white dark:bg-card rounded-xl border p-4 transition-colors", alertBorder)} title={tooltip}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</span>
-        <Icon className="w-4 h-4 text-[#00B4A6] dark:text-[var(--data-success)] shrink-0" />
+        <Icon className="w-4 h-4 text-primary dark:text-[var(--data-success)] shrink-0" />
       </div>
       <p className={cn("text-xl font-extrabold", alertValue)}>{value}</p>
       {renderTrend()}

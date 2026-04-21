@@ -104,7 +104,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
       >
         <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center">
               <Radio className="h-4 w-4" />
             </div>
             <CardTitle className="font-extrabold text-[var(--text-primary)]">Programar transmisión</CardTitle>
@@ -131,7 +131,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ej: Ofertas de fin de semana"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
           </div>
@@ -143,7 +143,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Describe qué verán los espectadores"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
             />
           </div>
 
@@ -154,7 +154,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </div>
             <div className="space-y-1.5">
@@ -163,7 +163,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </div>
           </div>
@@ -175,7 +175,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
             <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
               {filteredProducts.map((p) => {
@@ -187,13 +187,13 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
                     onClick={() => toggleProduct(p.id)}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors",
-                      selected && "bg-[#00B4A6]/5"
+                      selected && "bg-primary/5"
                     )}
                   >
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0",
-                        selected ? "border-[#00B4A6] bg-[#00B4A6]" : "border-gray-300"
+                        selected ? "border-primary bg-primary" : "border-gray-300"
                       )}>
                         {selected && <Check className="h-3 w-3 text-white" />}
                       </div>
@@ -219,7 +219,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             </button>
             <button
               type="submit"
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-primary-dark transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
               <Save className="h-4 w-4" />
               Programar

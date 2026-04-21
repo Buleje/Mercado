@@ -343,7 +343,7 @@ export default function ExcelProductImporter() {
           <button
             onClick={handleDownloadTemplate}
             disabled={downloadingTemplate}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-[#00B4A6] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/5 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 transition-colors disabled:opacity-50"
             title="Descargar plantilla Excel"
           >
             <Download className="h-4 w-4" />
@@ -371,8 +371,8 @@ export default function ExcelProductImporter() {
           className={cn(
             "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging
-              ? "border-[#00B4A6] bg-[#00B4A6]/5"
-              : "border-[var(--rule-base)] hover:border-[#00B4A6] dark:hover:border-[#00B4A6]"
+              ? "border-primary bg-primary/5"
+              : "border-[var(--rule-base)] hover:border-primary dark:hover:border-primary"
           )}
         >
           <Upload className="h-10 w-10 text-[var(--text-tertiary)]" />
@@ -398,7 +398,7 @@ export default function ExcelProductImporter() {
       {step === "mapping" && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 space-y-5">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#00B4A6]" />
+            <FileText className="h-5 w-5 text-primary" />
             <span className="font-medium text-[var(--text-primary)]">{fileName}</span>
             <span className="text-sm text-[var(--text-secondary)]">· {rawRows.length} filas detectadas</span>
           </div>
@@ -425,7 +425,7 @@ export default function ExcelProductImporter() {
                 <select
                   value={columnMap[key]}
                   onChange={(e) => setColumnMap((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">-- No mapear --</option>
                   {headers.map((h) => (
@@ -443,7 +443,7 @@ export default function ExcelProductImporter() {
               className={cn(
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 columnMap.nombre && columnMap.precio
-                  ? "bg-[#00B4A6] text-white hover:bg-[#235c43]"
+                  ? "bg-primary text-white hover:bg-[#235c43]"
                   : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
@@ -537,7 +537,7 @@ export default function ExcelProductImporter() {
               className={cn(
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 validCount > 0
-                  ? "bg-[#00B4A6] text-white hover:bg-[#235c43]"
+                  ? "bg-primary text-white hover:bg-[#235c43]"
                   : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
@@ -556,11 +556,11 @@ export default function ExcelProductImporter() {
       {/* Importing progress */}
       {step === "importing" && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="font-medium text-[var(--text-secondary)]">Importando productos...</p>
           <div className="w-full max-w-sm bg-[var(--surface-sunken)] rounded-full h-3">
             <div
-              className="bg-[#00B4A6] h-3 rounded-full transition-all duration-[var(--dur-slow)]"
+              className="bg-primary h-3 rounded-full transition-all duration-[var(--dur-slow)]"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -594,7 +594,7 @@ export default function ExcelProductImporter() {
 
           <button
             onClick={reset}
-            className="px-5 py-2 rounded-lg text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#235c43] transition-colors"
+            className="px-5 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-[#235c43] transition-colors"
           >
             Importar otro archivo
           </button>

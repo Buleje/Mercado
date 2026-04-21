@@ -148,7 +148,7 @@ function OfferModal({
               value={form.productName}
               onChange={(e) => setForm((p) => ({ ...p, productName: e.target.value }))}
               placeholder="Nombre del producto"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
           </div>
@@ -162,7 +162,7 @@ function OfferModal({
                 step={0.5}
                 value={form.regularPrice}
                 onChange={(e) => setForm((p) => ({ ...p, regularPrice: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </div>
             <div className="space-y-1.5">
@@ -173,7 +173,7 @@ function OfferModal({
                 step={0.5}
                 value={form.socioPrice}
                 onChange={(e) => setForm((p) => ({ ...p, socioPrice: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ function OfferModal({
               onClick={() => setForm((p) => ({ ...p, active: !p.active }))}
               className={cn(
                 "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                form.active ? "bg-[#00B4A6]" : "bg-gray-300"
+                form.active ? "bg-primary" : "bg-gray-300"
               )}
             >
               <span className={cn(
@@ -210,7 +210,7 @@ function OfferModal({
             </button>
             <button
               type="submit"
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-primary-dark transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
               <Save className="h-4 w-4" />
               Guardar
@@ -266,7 +266,7 @@ export function ExclusiveOffersTab() {
         </p>
         <button
           onClick={() => setModal({ open: true, offer: null })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nueva oferta
@@ -304,7 +304,7 @@ export function ExclusiveOffersTab() {
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell line-through">
                       {fmt(o.regularPrice)}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-[#00B4A6]">
+                    <td className="px-4 py-3 text-right font-bold text-primary">
                       {fmt(o.socioPrice)}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -328,7 +328,7 @@ export function ExclusiveOffersTab() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setModal({ open: true, offer: o })}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="h-4 w-4" />

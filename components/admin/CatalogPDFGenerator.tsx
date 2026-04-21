@@ -192,7 +192,7 @@ export default function CatalogPDFGenerator() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               >
                 <option value="todas">Todas las categorias</option>
                 {categories.map((c) => (
@@ -221,9 +221,9 @@ export default function CatalogPDFGenerator() {
 
         {/* Stats */}
         <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-800">
-          <Package className="h-4 w-4 text-[#00B4A6]" />
+          <Package className="h-4 w-4 text-primary" />
           <span className="text-sm text-[var(--text-secondary)]">
-            <span className="font-semibold text-[#00B4A6]">
+            <span className="font-semibold text-primary">
               {filtered.length}
             </span>{" "}
             productos en el catalogo
@@ -234,14 +234,14 @@ export default function CatalogPDFGenerator() {
       {/* Preview */}
       {showPreview && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
-          <div className="rounded-t-xl bg-[#00B4A6] p-4 text-center text-white">
+          <div className="rounded-t-xl bg-primary p-4 text-center text-white">
             <p className="text-lg font-bold">Buleje</p>
             <p className="text-xs opacity-80">Catalogo de Productos — Pucallpa, Peru</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#f97316]/20">
+                <tr className="bg-[var(--data-warning)]/20">
                   <th className="px-4 py-2 text-left font-semibold text-[var(--text-secondary)]">
                     Producto
                   </th>
@@ -273,7 +273,7 @@ export default function CatalogPDFGenerator() {
                     <td className="px-4 py-2 text-[var(--text-tertiary)]">
                       {p.category ?? "—"}
                     </td>
-                    <td className="px-4 py-2 text-right font-medium text-[#00B4A6]">
+                    <td className="px-4 py-2 text-right font-medium text-primary">
                       {fmt(p.price)}
                     </td>
                     <td className="px-4 py-2 text-center">
@@ -299,7 +299,7 @@ export default function CatalogPDFGenerator() {
               </p>
             )}
           </div>
-          <div className="rounded-b-xl bg-[#00B4A6] p-3 text-center text-xs text-white opacity-80">
+          <div className="rounded-b-xl bg-primary p-3 text-center text-xs text-white opacity-80">
             Buleje | Jr. Ucayali, Pucallpa | WhatsApp: +51 900 000
             000 | Lun-Dom 7am-10pm
           </div>
@@ -311,7 +311,7 @@ export default function CatalogPDFGenerator() {
         <button
           onClick={handleGeneratePDF}
           disabled={generating || filtered.length === 0}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50"
         >
           {generating ? (
             <Loader2 className="h-4 w-4 animate-spin" />

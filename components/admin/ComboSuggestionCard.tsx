@@ -82,7 +82,7 @@ export default function ComboSuggestionCard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShoppingBag className="h-4 w-4 text-[#00B4A6]" />
+          <ShoppingBag className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground dark:text-foreground">
             Combos sugeridos
           </span>
@@ -155,7 +155,7 @@ export default function ComboSuggestionCard() {
           onClick={handleCreateCombo}
           className={cn(
             "w-full flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-            "bg-[#00B4A6] text-white hover:bg-[#009690]"
+            "bg-primary text-white hover:bg-primary-dark"
           )}
         >
           Crear combo

@@ -114,7 +114,7 @@ export default function VolumePricingEditor({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="h-6 w-6 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+        <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function VolumePricingEditor({
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             {productName}
             {wholesalePrice != null && (
-              <span className="ml-2 text-[#00B4A6] font-medium">
+              <span className="ml-2 text-primary font-medium">
                 Precio base mayorista: S/ {wholesalePrice.toFixed(2)}
               </span>
             )}
@@ -178,7 +178,7 @@ export default function VolumePricingEditor({
                       step={1}
                       value={tier.minQty}
                       onChange={(e) => handleChangeTier(i, "minQty", e.target.value)}
-                      className="w-24 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                      className="w-24 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </td>
                   {/* Descuento % */}
@@ -191,7 +191,7 @@ export default function VolumePricingEditor({
                         step={0.5}
                         value={tier.discount}
                         onChange={(e) => handleChangeTier(i, "discount", e.target.value)}
-                        className="w-20 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-20 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <span className="text-[var(--text-tertiary)] text-xs">%</span>
                     </div>
@@ -202,7 +202,7 @@ export default function VolumePricingEditor({
                       className={cn(
                         "font-medium text-sm",
                         tier.discount > 0
-                          ? "text-[#00B4A6]"
+                          ? "text-primary"
                           : "text-[var(--text-tertiary)]",
                       )}
                     >
@@ -241,7 +241,7 @@ export default function VolumePricingEditor({
         if (!best || best.discount <= 0) return null;
         const resultingPrice = (wholesalePrice * (1 - best.discount / 100)).toFixed(2);
         return (
-          <div className="p-3 rounded-lg bg-[#00B4A6]/10 border border-[#00B4A6]/20 text-xs text-[#00B4A6] dark:text-[var(--data-success)]">
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary dark:text-[var(--data-success)]">
             Si compran {best.minQty}+, pagan{" "}
             <strong>S/ {resultingPrice}</strong>{" "}
             en vez de S/ {wholesalePrice.toFixed(2)}
@@ -260,7 +260,7 @@ export default function VolumePricingEditor({
       <div className="flex items-center gap-3 pt-1">
         <button
           onClick={handleAddTier}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#00B4A6] text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-primary hover:bg-primary/10 transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Agregar tramo
@@ -275,7 +275,7 @@ export default function VolumePricingEditor({
               ? "bg-[var(--accent-soft)]"
               : saving
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#00B4A6] hover:bg-[#1e4d38]",
+                : "bg-primary hover:bg-[#1e4d38]",
           )}
         >
           {saving ? (

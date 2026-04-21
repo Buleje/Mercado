@@ -222,7 +222,7 @@ export default function StaleProductAlert() {
                     className={cn(
                       "rounded-md px-2 py-0.5 text-xs transition",
                       sortBy === s
-                        ? "bg-[#00B4A6] text-white"
+                        ? "bg-primary text-white"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
                     )}
                   >

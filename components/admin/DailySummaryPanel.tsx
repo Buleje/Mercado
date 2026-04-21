@@ -92,7 +92,7 @@ export default function DailySummaryPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
-          <BarChart3 className="h-5 w-5 text-[#00B4A6]" />
+          <BarChart3 className="h-5 w-5 text-primary" />
           <SectionTitle className="text-base font-bold text-[var(--text-primary)]">Resumen del día</SectionTitle>
           <span className="text-xs text-[var(--text-tertiary)] ml-1">{data.date}</span>
           {lwSales > 0 && (
@@ -166,7 +166,7 @@ export default function DailySummaryPanel() {
           label="Clientes nuevos"
           value={data.newCustomers}
           alert={false}
-          color="text-[#00B4A6]"
+          color="text-primary"
         />
       </div>
 
@@ -176,7 +176,7 @@ export default function DailySummaryPanel() {
         {hours.length > 0 && (
           <div className="sm:col-span-2 rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
             <div className="flex items-center gap-1.5 mb-2.5">
-              <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
+              <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-[var(--text-secondary)]">Ventas por hora</span>
               {lwOrders > 0 && (
                 <span className={`text-[length:var(--ts-2xs)] ml-auto font-medium ${
@@ -200,9 +200,9 @@ export default function DailySummaryPanel() {
                     <div
                       className={`w-full rounded-t-sm transition-all duration-[var(--dur-base)] ${
                         isCurrent
-                          ? "bg-[#00B4A6]"
+                          ? "bg-primary"
                           : hasSales
-                          ? "bg-[#00B4A6]/40 group-hover:bg-[#00B4A6]/70"
+                          ? "bg-primary/40 group-hover:bg-primary/70"
                           : "bg-gray-200 dark:bg-gray-700"
                       }`}
                       style={{ height: `${Math.max(pct, 2)}%` }}
@@ -223,7 +223,7 @@ export default function DailySummaryPanel() {
         {/* Top Products */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <Package className="h-4 w-4 text-[#00B4A6]" />
+            <Package className="h-4 w-4 text-primary" />
             <span className="text-xs font-bold text-[var(--text-secondary)]">Top productos</span>
           </div>
           {data.topProducts.length === 0 ? (
@@ -274,7 +274,7 @@ export default function DailySummaryPanel() {
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#00B4A6] transition-all duration-[var(--dur-slow)]"
+                        className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

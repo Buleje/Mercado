@@ -146,7 +146,7 @@ export default function MorningSummaryModal() {
 
               <button
                 onClick={handleClose}
-                className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-lg px-5 py-3 font-bold hover:bg-[#009690] transition-all"
+                className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-lg px-5 py-3 font-bold hover:bg-primary-dark transition-all"
               >
                 <Sun className="h-4 w-4" />
                 Comenzar el dia

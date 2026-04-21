@@ -169,7 +169,7 @@ function RankRow({
           "font-bold text-lg",
           cashier.rank === 1
             ? "text-[var(--data-warning)] dark:text-[var(--data-warning)]"
-            : "text-[#00B4A6] dark:text-[var(--data-success)]"
+            : "text-primary dark:text-[var(--data-success)]"
         )}>
           {fmt(cashier.totalRevenue)}
         </p>
@@ -252,7 +252,7 @@ export default function CashierRanking() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
+          <Users className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Ranking del dia
@@ -270,7 +270,7 @@ export default function CashierRanking() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#00B4A6] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+            "text-primary dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -290,7 +290,7 @@ export default function CashierRanking() {
             key={stat.label}
             className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center"
           >
-            <div className="flex justify-center text-[#00B4A6] dark:text-[var(--data-success)] mb-1">
+            <div className="flex justify-center text-primary dark:text-[var(--data-success)] mb-1">
               {stat.icon}
             </div>
             <p className="font-bold text-lg text-[var(--text-primary)]">{stat.value}</p>

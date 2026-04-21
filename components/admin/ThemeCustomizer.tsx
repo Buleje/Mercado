@@ -139,7 +139,7 @@ function ColorField({
           if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
         }}
         maxLength={7}
-        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
       />
     </div>
   );
@@ -297,7 +297,7 @@ export default function ThemeCustomizer() {
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
                     activePreset === preset.id
-                      ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
+                      ? "border-primary bg-primary/10 text-primary dark:text-[#4a9e78]"
                       : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                   )}
                 >
@@ -357,7 +357,7 @@ export default function ThemeCustomizer() {
               disabled={saving}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-70",
-                saved ? "bg-[var(--accent-soft)]" : "bg-[#00B4A6] hover:bg-[#245a41]"
+                saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark"
               )}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}

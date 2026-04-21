@@ -404,8 +404,8 @@ function ProductsDashboard() {
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-3 justify-center">
           <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
-          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
-          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" /> 10-25%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error)]" /> {"<"}10%</span>
         </div>
       </div>
 

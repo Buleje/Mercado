@@ -504,7 +504,7 @@ export default function CustomerGeoMap({ className }: Props) {
               <div className="flex-1 bg-primary-light" />
               <div className="flex-1 bg-[#2dd4bf]" />
               <div className="flex-1 bg-secondary" />
-              <div className="flex-1 bg-[#e63946]" />
+              <div className="flex-1 bg-[var(--data-error)]" />
             </div>
             <span className="text-[var(--text-tertiary)]">Alto</span>
           </div>

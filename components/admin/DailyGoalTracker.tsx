@@ -129,9 +129,9 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
                   className={cn(
                     "w-full rounded-t transition-all duration-[var(--dur-slow)]",
                     isCurrent
-                      ? "bg-[#f97316]"
+                      ? "bg-[var(--data-warning)]"
                       : b.revenue > 0
-                      ? "bg-[#00B4A6] dark:bg-[#2dd4bf]"
+                      ? "bg-primary dark:bg-primary"
                       : "bg-[var(--surface-sunken)]"
                   )}
                   style={{ height: `${Math.max(heightPct, b.revenue > 0 ? 8 : 2)}%` }}
@@ -142,7 +142,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
               <span className={cn(
                 "text-[length:var(--ts-2xs)] leading-none",
                 isCurrent
-                  ? "text-[#f97316] font-bold"
+                  ? "text-[var(--data-warning)] font-bold"
                   : "text-[var(--text-tertiary)]"
               )}>
                 {b.label}
@@ -236,9 +236,9 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
     pct >= 100
       ? "text-[var(--data-success)] dark:text-[var(--data-success)]"
       : pct >= 80
-      ? "text-[#00B4A6] dark:text-[var(--data-success)]"
+      ? "text-primary dark:text-[var(--data-success)]"
       : pct >= 50
-      ? "text-[#f97316]"
+      ? "text-[var(--data-warning)]"
       : "text-[var(--data-error)] dark:text-[var(--data-error)]";
 
   return (
@@ -246,7 +246,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Target className="w-5 h-5 text-[#00B4A6] dark:text-[var(--data-success)]" />
+          <Target className="w-5 h-5 text-primary dark:text-[var(--data-success)]" />
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
               Meta del dia
@@ -264,7 +264,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#00B4A6] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+            "text-primary dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -349,7 +349,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
                 </div>
                 <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-3 text-center">
                   <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Vendido</p>
-                  <p className="font-bold text-[#00B4A6] dark:text-[var(--data-success)]">{fmt(totalToday)}</p>
+                  <p className="font-bold text-primary dark:text-[var(--data-success)]">{fmt(totalToday)}</p>
                 </div>
               </div>
             )}
@@ -361,11 +361,11 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
       {!loading && hourlyBuckets.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-[#00B4A6] dark:text-[var(--data-success)]" />
+            <TrendingUp className="w-4 h-4 text-primary dark:text-[var(--data-success)]" />
             <span className="text-sm font-medium text-[var(--text-secondary)]">
               Actividad por hora
             </span>
-            <span className="ml-auto text-xs text-[#f97316]">
+            <span className="ml-auto text-xs text-[var(--data-warning)]">
               hora actual
             </span>
           </div>

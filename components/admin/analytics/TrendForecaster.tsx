@@ -138,15 +138,15 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
           <p
             className={cn(
               "text-sm font-bold",
-              trendDir === "up" ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
+              trendDir === "up" ? "text-primary dark:text-primary" : "text-[var(--data-error)] dark:text-[var(--data-error)]"
             )}
           >
             {trendDir === "up" ? "Al alza" : "A la baja"}
           </p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
+        <div className="flex-1 rounded-lg bg-primary/10 dark:bg-primary/20 border border-primary/30 p-2 text-center">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Proyeccion proxima semana</p>
-          <p className="text-xs font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+          <p className="text-xs font-bold text-primary dark:text-primary">
             {fmt(forecastRange.min)} — {fmt(forecastRange.max)}
           </p>
         </div>
@@ -155,15 +155,15 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
       {/* Legend */}
       <div className="flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-[#f97316]" style={{ backgroundColor: "#f97316" }} />
+          <span className="w-3 h-3 rounded-sm bg-[var(--data-warning)]" style={{ backgroundColor: "#f97316" }} />
           Ventas reales
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm opacity-40 bg-[#00B4A6]" style={{ backgroundColor: "#00B4A6" }} />
+          <span className="w-3 h-3 rounded-sm opacity-40 bg-primary" style={{ backgroundColor: "#00B4A6" }} />
           Proyeccion
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#00B4A6]" />
+          <span className="w-2 h-2 rounded-full bg-primary" />
           Media movil 7d
         </div>
       </div>
@@ -191,7 +191,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                   <div
                     className={cn(
                       "w-full rounded-t-sm transition-all duration-[var(--dur-base)]",
-                      pt.isForecast ? "opacity-40 border-t border-[#00B4A6]" : "opacity-90"
+                      pt.isForecast ? "opacity-40 border-t border-primary" : "opacity-90"
                     )}
                     style={{
                       height: `${heightPct}%`,
@@ -212,7 +212,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
             return (
               <div key={`ma-${pt.date}`} className="flex-1 relative" style={{ height: "220px" }}>
                 <div
-                  className="absolute w-1 h-1 rounded-full bg-[#00B4A6] left-1/2 -translate-x-1/2"
+                  className="absolute w-1 h-1 rounded-full bg-primary left-1/2 -translate-x-1/2"
                   style={{ bottom: `${dotBottom}%` }}
                 />
               </div>
@@ -229,7 +229,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                   className={cn(
                     "text-[length:var(--ts-2xs)] leading-none",
                     pt.isForecast
-                      ? "text-[#00B4A6] dark:text-[#2dd4bf] font-medium"
+                      ? "text-primary dark:text-primary font-medium"
                       : "text-[var(--text-tertiary)]"
                   )}
                 >
@@ -245,19 +245,19 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
       </div>
 
       {/* Weekly forecast detail */}
-      <div className="rounded-lg bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 p-2">
+      <div className="rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20 p-2">
         <p className="text-xs text-[var(--text-secondary)] font-medium mb-1">Proyeccion diaria (proxima semana)</p>
         <div className="grid grid-cols-7 gap-0.5">
           {points.filter((p) => p.isForecast).map((pt) => (
             <div key={pt.date} className="text-center">
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{pt.label.slice(0, 5)}</p>
-              <p className="text-[length:var(--ts-2xs)] font-medium text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(pt.actual)}</p>
+              <p className="text-[length:var(--ts-2xs)] font-medium text-primary dark:text-primary">{fmt(pt.actual)}</p>
             </div>
           ))}
         </div>
-        <div className="mt-1 pt-1 border-t border-[#00B4A6]/20 flex justify-between text-xs">
+        <div className="mt-1 pt-1 border-t border-primary/20 flex justify-between text-xs">
           <span className="text-[var(--text-tertiary)]">Total proyectado:</span>
-          <span className="font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(weekForecastTotal)}</span>
+          <span className="font-bold text-primary dark:text-primary">{fmt(weekForecastTotal)}</span>
         </div>
       </div>
     </div>
