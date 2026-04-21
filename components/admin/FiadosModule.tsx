@@ -1471,7 +1471,8 @@ export default function FiadosModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
+              style={{ zIndex: 40 }}
               onClick={() => setSelected(null)}
             />
             <m.div

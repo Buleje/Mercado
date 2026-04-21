@@ -217,12 +217,12 @@ function ModalDescuento({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="modal-backdrop flex items-center justify-center p-4">
       <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <div className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-[#00B4A6]" />
+            <Gift className="h-5 w-5 text-primary" />
             <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">
               Ofrecer descuento
             </SectionTitle>

@@ -958,6 +958,35 @@ body {
   }
 }
 
+/* ── Modal backdrop unificado ───────────────────────────────────────────
+ * Reemplaza los `bg-black/40 backdrop-blur-sm` ad-hoc repartidos en
+ * 30+ modales del admin. Efecto mas suave (slate en vez de negro puro)
+ * + blur menor para evitar el "rayado" que aparecia sobre contenido con
+ * franjas / tablas / charts.
+ * Uso: `className="modal-backdrop"` en el overlay fijo del modal.
+ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(15 23 42 / 0.28); /* slate-900 con 28% vs negro puro 40% */
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: modal-backdrop-in 160ms ease-out;
+}
+@media (prefers-color-scheme: dark) {
+  .modal-backdrop {
+    background: rgb(0 0 0 / 0.5);
+  }
+}
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop { animation: none; }
+}
+
 /* ── Mejora 18: Button loading indicator for admin panel ───────────────── */
 [data-admin-shell] button[disabled],
 [data-admin-shell="true"] button[disabled] {

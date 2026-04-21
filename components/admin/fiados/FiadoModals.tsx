@@ -112,7 +112,8 @@ export default function FiadoModals({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
+              style={{ zIndex: 60 }}
               onClick={() => setShowPago(false)}
             />
             <m.div
@@ -220,7 +221,8 @@ export default function FiadoModals({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
+              style={{ zIndex: 60 }}
               onClick={() => setShowCobroMasivo(false)}
             />
             <m.div
@@ -318,7 +320,8 @@ export default function FiadoModals({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
+              style={{ zIndex: 70 }}
               onClick={() => setShowRecibo(false)}
             />
             <m.div
@@ -424,7 +427,8 @@ export default function FiadoModals({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
+              style={{ zIndex: 70 }}
               onClick={() => setShowCompromiso(false)}
             />
             <m.div
@@ -622,7 +626,8 @@ export default function FiadoModals({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
+              style={{ zIndex: 70 }}
               onClick={() => setShowDebtorsMap(false)}
             />
             <m.div
