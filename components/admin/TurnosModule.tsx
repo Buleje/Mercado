@@ -488,8 +488,12 @@ export default function TurnosModule() {
                 Equipo de Cajeros
               </CardTitle>
               {cajeroStats.length === 0 ? (
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-8 text-center">
-                  <p className="text-[var(--text-tertiary)] text-sm">Sin datos de cajeros. Abre turnos para ver estadisticas.</p>
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-10 px-4 text-center">
+                  <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
+                    <User className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+                  </div>
+                  <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin datos de cajeros</p>
+                  <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Cierra al menos un turno para ver el ranking y estadisticas por cajero.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -510,8 +514,13 @@ export default function TurnosModule() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5">
-                              {c.name}
-                              {isTop && <span className="text-[var(--data-warning)] text-xs">TOP</span>}
+                              <span className="truncate">{c.name}</span>
+                              {isTop && (
+                                <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)] bg-[var(--data-warning-50)] px-1.5 py-0.5 rounded shrink-0">
+                                  <Trophy className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />
+                                  Top
+                                </span>
+                              )}
                             </p>
                             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{c.id}</p>
                           </div>
@@ -580,7 +589,7 @@ export default function TurnosModule() {
                             )}>
                               <td className="px-4 py-3 text-center">
                                 {isTop ? (
-                                  <span className="text-[var(--data-warning)] text-sm">&#127942;</span>
+                                  <Trophy className="h-3.5 w-3.5 text-[var(--data-warning)] inline-block" strokeWidth={1.75} aria-hidden />
                                 ) : (
                                   <span className="text-xs text-[var(--text-tertiary)] font-bold">{i + 1}</span>
                                 )}
