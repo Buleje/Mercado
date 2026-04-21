@@ -1,5 +1,4 @@
 "use client";
-import { SectionTitle } from "@buleje/design-system";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
@@ -143,15 +142,8 @@ export default function CommissionCalculator() {
   /* ── Render ── */
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-[#00B4A6]" />
-          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
-            Calculadora de Comisiones
-          </SectionTitle>
-        </div>
-
+      {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           <select
             value={period}

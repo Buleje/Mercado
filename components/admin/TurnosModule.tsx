@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -373,21 +373,12 @@ export default function TurnosModule() {
       {/* Header — Mejora 20 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center ">
-            <Clock className="h-5 w-5" />
-          </div>
-          <div>
-            <PageTitle className="text-xl font-bold text-[var(--text-primary)]">
-              Turnos
-              {/* Mejora 20 (R3): Badge de estado */}
-              {turnoActivo ? (
-                <span className="ml-2 text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2 py-0.5 rounded-full align-middle">Turno abierto</span>
-              ) : !loading && (
-                <span className="ml-2 text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2 py-0.5 rounded-full align-middle">Sin turno</span>
-              )}
-            </PageTitle>
-            <p className="text-sm text-[var(--text-secondary)]">Gestión de turnos y rendimiento del equipo</p>
-          </div>
+          {/* Solo badge de estado — sin titulo redundante */}
+          {turnoActivo ? (
+            <span className="text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1 rounded-full">Turno abierto</span>
+          ) : !loading && (
+            <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2.5 py-1 rounded-full">Sin turno</span>
+          )}
         </div>
         {/* Mejora M3: Boton configurar meta */}
         <button

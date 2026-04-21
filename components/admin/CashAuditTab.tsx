@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, PageTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import {
   Calculator, Download, X, Eye,
@@ -338,15 +338,9 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <Calculator className="h-6 w-6 text-primary" /> Cuadrar la Caja
-            <ModuleTooltip />
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Cuenta el dinero, compara con lo esperado y cierra el turno</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          <ModuleTooltip />
           {onNavigateToTurnos && (
             <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" /> Ir a Turnos

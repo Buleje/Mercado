@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -8,10 +8,9 @@ import {
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin, HandCoins, Search, RefreshCw } from "@buleje/design-system/icons";
+  LayoutList, Columns3, MapPin, Search, RefreshCw } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
@@ -888,102 +887,97 @@ export default function FiadosModule() {
   const activosCount = fiados.filter((f) => f.status === "ACTIVO").length;
   const vencidosCount = fiados.filter((f) => f.status === "VENCIDO").length;
 
+  // Handlers extraidos para pasar a ModuleActionMenu
+  const handleImprimirListaCobro = () => {
+    const deudores = fiados
+      .filter(f => f.status === "ACTIVO" || f.status === "VENCIDO")
+      .sort((a, b) => b.saldo - a.saldo);
+    if (deudores.length === 0) return;
+
+    const fecha = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const totalCobrar = deudores.reduce((s, f) => s + f.saldo, 0);
+
+    const lines = deudores.map((f, i) => {
+      const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
+      const phone = f.customerId || "";
+      const displayPhone = phone.length > 3 ? phone.slice(0, 3) + "XXXXXX" : phone;
+      return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${f.saldo.toFixed(2)} · ${diasPasados} dias [ ]`;
+    });
+
+    const content = [
+      "═══════════════════════════════════════",
+      `LISTA DE COBRO — ${fecha}`,
+      "Buleje",
+      "═══════════════════════════════════════",
+      "",
+      ...lines,
+      "",
+      "───────────────────────────────────────",
+      `Total por cobrar: S/ ${totalCobrar.toFixed(2)} (${deudores.length} clientes)`,
+      "[ ] = marcar cuando se cobre",
+      "───────────────────────────────────────",
+    ].join("\n");
+
+    const printWin = window.open("", "_blank", "width=420,height=600");
+    if (printWin) {
+      printWin.document.write(`<html><head><title>Lista de Cobro</title><style>body{font-family:monospace;font-size:12px;white-space:pre-wrap;padding:20px;line-height:1.6;}@media print{body{padding:10px;}}</style></head><body>${content}</body></html>`);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => printWin.print(), 300);
+    }
+  };
+
+  const handleExportarDeudores = () => {
+    const deudores = fiados
+      .filter(f => f.status === "ACTIVO" || f.status === "VENCIDO")
+      .sort((a, b) => b.saldo - a.saldo);
+    if (deudores.length === 0) return;
+    const rows = deudores.map(f => {
+      const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
+      return {
+        Nombre: f.customerName || f.customerId,
+        "Teléfono": f.customerId,
+        "Monto original (S/)": Number(f.total.toFixed(2)),
+        "Saldo pendiente (S/)": Number(f.saldo.toFixed(2)),
+        "Fecha inicio": new Date(f.createdAt).toLocaleDateString("es-PE"),
+        "Días": diasPasados,
+        Estado: f.status === "VENCIDO" ? "Vencido" : "Activo",
+      };
+    });
+    const fecha = new Date().toISOString().slice(0, 10);
+    exportToExcel(rows, `deudores-${fecha}`, "Deudores");
+  };
+
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        icon={HandCoins}
-        eyebrow="Clientes · Créditos informales"
-        title="Fiados"
-        description={
-          totalSaldo > 0
-            ? `Quiénes te deben y cuánto. Total pendiente: ${formatCurrency(totalSaldo)} — ${activosCount} activos, ${vencidosCount} vencidos.`
-            : `Créditos informales con tus clientes de confianza. Registrá, cobrá y evitá olvidos.`
-        }
-      >
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button
-            onClick={() => setShowDebtorsMap(true)}
-            className="p-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors" title="Mapa deudores"
-          >
-            <MapPin className="h-4 w-4 text-[var(--data-success)]" />
-          </button>
-          <button
-            onClick={() => {
-              const deudores = fiados
-                .filter(f => f.status === "ACTIVO" || f.status === "VENCIDO")
-                .sort((a, b) => b.saldo - a.saldo);
-              if (deudores.length === 0) return;
-
-              const fecha = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-              const totalCobrar = deudores.reduce((s, f) => s + f.saldo, 0);
-
-              const lines = deudores.map((f, i) => {
-                const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
-                const phone = f.customerId || "";
-                const displayPhone = phone.length > 3 ? phone.slice(0, 3) + "XXXXXX" : phone;
-                return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${f.saldo.toFixed(2)} · ${diasPasados} dias [ ]`;
-              });
-
-              const content = [
-                "═══════════════════════════════════════",
-                `LISTA DE COBRO — ${fecha}`,
-                "Buleje",
-                "═══════════════════════════════════════",
-                "",
-                ...lines,
-                "",
-                "───────────────────────────────────────",
-                `Total por cobrar: S/ ${totalCobrar.toFixed(2)} (${deudores.length} clientes)`,
-                "[ ] = marcar cuando se cobre",
-                "───────────────────────────────────────",
-              ].join("\n");
-
-              const printWin = window.open("", "_blank", "width=420,height=600");
-              if (printWin) {
-                printWin.document.write(`<html><head><title>Lista de Cobro</title><style>body{font-family:monospace;font-size:12px;white-space:pre-wrap;padding:20px;line-height:1.6;}@media print{body{padding:10px;}}</style></head><body>${content}</body></html>`);
-                printWin.document.close();
-                printWin.focus();
-                setTimeout(() => printWin.print(), 300);
-              }
-            }}
-            className="p-2 rounded-lg bg-[var(--data-warning-50)] hover:bg-[var(--data-warning-100)] transition-colors" title="Lista de cobro"
-          >
-            <Printer className="h-4 w-4 text-[var(--data-warning)]" />
-          </button>
-          <button
-            onClick={() => {
-              const deudores = fiados
-                .filter(f => f.status === "ACTIVO" || f.status === "VENCIDO")
-                .sort((a, b) => b.saldo - a.saldo);
-              if (deudores.length === 0) return;
-              const rows = deudores.map(f => {
-                const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
-                return {
-                  Nombre: f.customerName || f.customerId,
-                  "Teléfono": f.customerId,
-                  "Monto original (S/)": Number(f.total.toFixed(2)),
-                  "Saldo pendiente (S/)": Number(f.saldo.toFixed(2)),
-                  "Fecha inicio": new Date(f.createdAt).toLocaleDateString("es-PE"),
-                  "Días": diasPasados,
-                  Estado: f.status === "VENCIDO" ? "Vencido" : "Activo",
-                };
-              });
-              const fecha = new Date().toISOString().slice(0, 10);
-              exportToExcel(rows, `deudores-${fecha}`, "Deudores");
-            }}
-            className="p-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors" title="Exportar deudores"
-          >
-            <Download className="h-4 w-4 text-[var(--data-success)]" />
-          </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Nuevo Fiado
-          </button>
-        </div>
-      </AdminModuleHeader>
+      {/* Toolbar (sin titulo redundante — el nav ya indica Fiados).
+          Saldo pendiente inline + Opciones dropdown + CTA Nuevo Fiado */}
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        {totalSaldo > 0 && (
+          <span className="text-xs font-semibold text-[var(--text-tertiary)] mr-auto">
+            Total pendiente: <span className="text-[var(--text-primary)] font-bold">{formatCurrency(totalSaldo)}</span>
+            <span className="mx-1.5">·</span>
+            <span className="text-[var(--data-success)]">{activosCount} activos</span>
+            <span className="mx-1.5">·</span>
+            <span className="text-[var(--data-error)]">{vencidosCount} vencidos</span>
+          </span>
+        )}
+        <ModuleActionMenu
+          label="Opciones"
+          items={[
+            { label: "Mapa de deudores", icon: MapPin, onClick: () => setShowDebtorsMap(true), description: "Ver ubicacion de quienes te deben" },
+            { label: "Lista de cobro", icon: Printer, onClick: handleImprimirListaCobro, description: "Imprimir hoja de ruta diaria" },
+            { label: "Exportar deudores", icon: Download, onClick: handleExportarDeudores, description: "Excel con saldos y dias", dividerBefore: true },
+          ]}
+        />
+        <button
+          onClick={() => setShowNew(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Nuevo Fiado
+        </button>
+      </div>
 
       {/* ── Tabs estandar (View modes) ─────────────────────────────── */}
       <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl w-fit">

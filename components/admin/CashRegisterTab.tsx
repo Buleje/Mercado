@@ -9,8 +9,7 @@ import {
   Settings, Smartphone, CreditCard, Camera,
 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
-import { CardTitle, EmptyState, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -499,13 +498,10 @@ export default function CashRegisterTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" /> Caja Registradora
-          <ModuleTooltip />
-        </SectionTitle>
+      {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
+      <div className="flex items-center justify-end flex-wrap gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          <ModuleTooltip />
           {/* Mejora 12: Tolerancia configurable */}
           <div className="relative">
             <button

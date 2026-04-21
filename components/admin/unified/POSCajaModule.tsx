@@ -12,7 +12,6 @@ import {
   Banknote, History, ArrowRight, Clock, BarChart3, Maximize2, X,
   Brain, Users, AlertTriangle } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import FavStar from "@/components/admin/shared/FavStar";
 import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
 import DashboardSkeleton from "@/components/admin/shared/DashboardSkeleton";
@@ -953,37 +952,30 @@ export default function POSCajaModule() {
     <div className="space-y-4">
       <OfflineIndicator />
 
-      <AdminModuleHeader
-        title="Ventas & Caja"
-        description="Punto de venta, turnos y cobranza"
-        icon={ShoppingCart}
-      >
-        {/* Badge de turno */}
+      {/* Toolbar slim — badge de turno + Cerrar/Abrir Turno (sin titulo redundante, el nav ya lo indica) */}
+      <div className="hidden sm:flex items-center justify-end gap-2">
         <span className={cn(
-          "px-3 py-1 rounded-full text-xs font-bold hidden sm:inline-flex",
+          "px-3 py-1 rounded-full text-xs font-bold inline-flex",
           turnoAbierto ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]"
         )}>
           {turnoAbierto ? "Turno abierto" : "Sin turno"}
         </span>
-        {/* Botón Cerrar/Abrir Turno contextual (desktop) */}
-        <div className="hidden sm:block">
-          {turnoAbierto ? (
-            <button
-              onClick={handleOpenCloseModal}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error)] transition-colors"
-            >
-              Cerrar Turno
-            </button>
-          ) : (
-            <button
-              onClick={() => setSub("turnos")}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
-            >
-              Abrir Turno
-            </button>
-          )}
-        </div>
-      </AdminModuleHeader>
+        {turnoAbierto ? (
+          <button
+            onClick={handleOpenCloseModal}
+            className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error)] transition-colors"
+          >
+            Cerrar Turno
+          </button>
+        ) : (
+          <button
+            onClick={() => setSub("turnos")}
+            className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          >
+            Abrir Turno
+          </button>
+        )}
+      </div>
 
       <AdminTabBar
         tabs={TABS.map(t => ({

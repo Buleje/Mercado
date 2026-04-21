@@ -8,7 +8,7 @@ import {
   Receipt, Package, Maximize2, Minimize2,
   Star, Clock, History, Percent, Info, Printer,
   Volume2, VolumeX, MessageCircle, Send, RotateCcw,
-  ChevronDown, ChevronRight, ShoppingCart,
+  ChevronDown, ChevronRight, ShoppingCart, Settings,
 } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
@@ -1576,14 +1576,11 @@ export default function POSView() {
         )}
       </div>
 
-      {/* Header */}
+      {/* Toolbar (sin titulo redundante — el nav ya indica POS) */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h2 className={cn("font-extrabold text-[var(--text-primary)] dark:text-foreground", expanded ? "text-xl sm:text-2xl" : "text-lg sm:text-xl")}>Punto de Venta</h2>
-            <ModuleTooltip />
-          </div>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{products.length} productos disponibles</p>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-semibold text-[var(--text-tertiary)]">{products.length} productos</span>
+          <ModuleTooltip />
         </div>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:justify-end">
           {cashRegisterOpen === false && (
@@ -1652,77 +1649,77 @@ export default function POSView() {
           {/* ── Separador ── */}
           <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
 
-          {/* ── Grupo 2: Acciones ── */}
-          <button
-            onClick={() => setShowWhatsAppOrder(true)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--data-success)] border border-[var(--data-success)]/30 hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
-          >
-            <MessageCircle className="h-4 w-4" /> <span className="hidden sm:inline">Pedido WA</span>
-          </button>
-          {/* Mejora QW-11c: Repetir ultima venta */}
-          {(() => {
-            try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
-            return (
-              <button
-                onClick={() => {
-                  try {
-                    const raw = localStorage.getItem("pos-last-sale-items");
-                    if (!raw) return;
-                    const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
-                    if (cart.length > 0 && !window.confirm("Reemplazar carrito actual?")) return;
-                    const newCart: CartItem[] = [];
-                    const skipped: string[] = [];
-                    for (const item of items) {
-                      const found = products.find(p => p.id === item.productId);
-                      if (!found || (found.stock != null && found.stock <= 0)) { skipped.push(item.name); continue; }
-                      newCart.push({ product: found, quantity: item.quantity });
-                    }
-                    if (newCart.length > 0) setCart(newCart);
-                    if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
-                  } catch { /* ignore */ }
-                }}
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
-              >
-                <RotateCcw className="h-4 w-4" /> <span className="hidden sm:inline">Repetir</span>
-              </button>
-            );
-          })()}
-
-          {/* ── Separador ── */}
-          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
-
-          {/* ── Grupo 3: Vista ── */}
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-primary)] dark:text-foreground border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
-            title="Atajos de teclado: F1=Buscar, F2=Cobrar, F3=Vaciar, F4=Historial"
-          >
-            <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Historial</span>
-            <kbd className="ml-0.5 text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded hidden sm:inline">F4</kbd>
-          </button>
-
-          {/* ── Dropdown "Mas" para botones poco usados ── */}
+          {/* ── Dropdown "Opciones" consolidado — acciones secundarias + preferencias ── */}
           <div className="relative">
             <button
               onClick={() => setShowMoreTools(v => !v)}
-              className="flex items-center gap-1 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-2.5 py-2 rounded-lg transition-colors"
-              title="Mas herramientas"
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+              title="Opciones del POS"
             >
-              &#8943; <span className="hidden sm:inline">Mas</span>
+              <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
             </button>
             {showMoreTools && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[180px] space-y-1">
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-lg">
+                  {/* Pedido por WhatsApp */}
+                  <button
+                    onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
+                    className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success)] hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Pedido por WhatsApp
+                  </button>
+                  {/* Historial */}
+                  <button
+                    onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
+                    className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <History className="h-4 w-4" /> Historial de ventas
+                    <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded">F4</kbd>
+                  </button>
+                  {/* Repetir ultima venta — condicional */}
+                  {(() => {
+                    try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
+                    return (
+                      <button
+                        onClick={() => {
+                          try {
+                            const raw = localStorage.getItem("pos-last-sale-items");
+                            if (!raw) return;
+                            const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
+                            if (cart.length > 0 && !window.confirm("Reemplazar carrito actual?")) return;
+                            const newCart: CartItem[] = [];
+                            const skipped: string[] = [];
+                            for (const item of items) {
+                              const found = products.find(p => p.id === item.productId);
+                              if (!found || (found.stock != null && found.stock <= 0)) { skipped.push(item.name); continue; }
+                              newCart.push({ product: found, quantity: item.quantity });
+                            }
+                            if (newCart.length > 0) setCart(newCart);
+                            if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
+                          } catch { /* ignore */ }
+                          setShowMoreTools(false);
+                        }}
+                        className="w-full flex items-center gap-2 text-xs font-bold text-primary hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
+                      >
+                        <RotateCcw className="h-4 w-4" /> Repetir ultima venta
+                      </button>
+                    );
+                  })()}
+                  {/* Devolucion */}
                   <button
                     onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
                     className="w-full flex items-center gap-2 text-xs font-bold text-[#f97316] hover:bg-[#f97316]/5 px-3 py-2 rounded-lg transition-colors"
                   >
                     <History className="h-4 w-4 rotate-180" /> Devolucion
                   </button>
-                  <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1.5">
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Tamano fuente</span>
+
+                  {/* Separador */}
+                  <div className="h-px bg-[var(--rule-soft)] my-1.5" />
+
+                  {/* Tamano fuente */}
+                  <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1">
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wider">Tamano fuente</span>
                   </div>
                   <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 mx-2">
                     {(["normal", "large", "xlarge"] as const).map(size => (
@@ -1739,6 +1736,7 @@ export default function POSView() {
                       </button>
                     ))}
                   </div>
+                  {/* Sonido */}
                   <button
                     onClick={() => { toggleSound(); setShowMoreTools(false); }}
                     className={cn(
@@ -1964,7 +1962,7 @@ export default function POSView() {
                       )}
                     >
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 dark:bg-surface mb-1.5 relative">
-                        <Image src={p.image} alt={p.name} fill sizes="120px" className="object-cover" loading="lazy" />
+                        <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="120px" className="object-cover" loading="lazy" />
                         <span
                           role="button"
                           tabIndex={0}
