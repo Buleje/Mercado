@@ -493,7 +493,7 @@ export default function TurnosModule() {
             {/* 1. Grid de cajeros */}
             <div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <User className="h-4 w-4 text-[#00B4A6]" />
+                <User className="h-4 w-4 text-primary" />
                 Equipo de Cajeros
               </CardTitle>
               {cajeroStats.length === 0 ? (
@@ -548,7 +548,7 @@ export default function TurnosModule() {
                         {/* Mini performance bar */}
                         <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                           <div
-                            className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning)]" : "bg-[#00B4A6]")}
+                            className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning)]" : "bg-primary")}
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
@@ -625,7 +625,7 @@ export default function TurnosModule() {
             {chartData.length > 0 && (
               <div>
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
+                  <BarChart3 className="h-4 w-4 text-primary" />
                   Ventas por Cajero (este mes)
                 </CardTitle>
                 <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-4">
@@ -682,7 +682,7 @@ export default function TurnosModule() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-[#00B4A6]" />
+                <Clock className="h-4 w-4 text-primary" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Turnos del mes</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{turnosMesCount}</p>
@@ -937,7 +937,7 @@ export default function TurnosModule() {
             {/* Calendario Semanal */}
             <div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-[#00B4A6]" />
+                <CalendarDays className="h-4 w-4 text-primary" />
                 Calendario Semanal
               </CardTitle>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
@@ -976,7 +976,7 @@ export default function TurnosModule() {
             {/* Productividad por cajero */}
             <div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#f97316]" />
+                <BarChart3 className="h-4 w-4 text-[var(--data-warning)]" />
                 Productividad por Cajero
               </CardTitle>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
@@ -1451,7 +1451,7 @@ export default function TurnosModule() {
                       </p>
                       <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-3">
                         <div
-                          className="h-3 rounded-full bg-[#00B4A6] transition-all"
+                          className="h-3 rounded-full bg-primary transition-all"
                           style={{ width: `${Math.min(100, porcentaje)}%` }}
                         />
                       </div>
@@ -1585,7 +1585,7 @@ export default function TurnosModule() {
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
                   >
                     Cerrar
                   </button>

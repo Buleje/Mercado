@@ -158,7 +158,7 @@ export default function CommissionCalculator() {
             className={cn(
               "p-1.5 rounded-lg border transition-colors",
               showSettings
-                ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6]"
+                ? "border-primary bg-primary/10 text-primary"
                 : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-750"
             )}
           >
@@ -192,7 +192,7 @@ export default function CommissionCalculator() {
                 step={0.5}
                 value={defaultRate}
                 onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <span className="text-sm text-[var(--text-secondary)]">%</span>
             </div>
@@ -221,7 +221,7 @@ export default function CommissionCalculator() {
                           [s.cashierId]: Number(e.target.value),
                         }))
                       }
-                      className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                      className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <span className="text-sm text-[var(--text-secondary)]">%</span>
                   </div>
@@ -253,7 +253,7 @@ export default function CommissionCalculator() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-[#00B4A6]" />
+              <Users className="w-4 h-4 text-primary" />
               <p className="text-xs text-[var(--text-tertiary)]">Cajeros activos</p>
             </div>
             <p className="text-2xl font-bold text-[var(--text-primary)]">
@@ -262,15 +262,15 @@ export default function CommissionCalculator() {
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <p className="text-xs text-[var(--text-tertiary)] mb-1">Ventas totales</p>
-            <p className="text-2xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+            <p className="text-2xl font-bold text-primary dark:text-primary">
               {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
             </p>
           </div>
-          <div className="rounded-xl border border-[#f97316] dark:border-[#f97316]/40 bg-[#f97316]/5 dark:bg-[#f97316]/5 p-4">
+          <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning)]/5 dark:bg-[var(--data-warning)]/5 p-4">
             <p className="text-xs text-[var(--text-tertiary)] mb-1">
               Total a pagar en comisiones
             </p>
-            <p className="text-2xl font-bold text-[#f97316]">{fmt(totalCommissions)}</p>
+            <p className="text-2xl font-bold text-[var(--data-warning)]">{fmt(totalCommissions)}</p>
           </div>
         </div>
       )}
@@ -284,7 +284,7 @@ export default function CommissionCalculator() {
             </p>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs text-[#00B4A6] dark:text-[#2dd4bf] hover:underline"
+              className="flex items-center gap-1.5 text-xs text-primary dark:text-primary hover:underline"
             >
               <Download className="w-3.5 h-3.5" />
               Exportar CSV
@@ -328,7 +328,7 @@ export default function CommissionCalculator() {
                   <td className="px-4 py-2.5 text-right text-[var(--text-tertiary)]">
                     {s.rate}%
                   </td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-[#f97316]">
+                  <td className="px-4 py-2.5 text-right font-semibold text-[var(--data-warning)]">
                     {fmt(s.commission)}
                   </td>
                 </tr>
@@ -342,7 +342,7 @@ export default function CommissionCalculator() {
                   {summaries.reduce((s, c) => s + c.saleCount, 0)}
                 </td>
                 <td className="px-4 py-2.5" />
-                <td className="px-4 py-2.5 text-right text-[#f97316] text-base">
+                <td className="px-4 py-2.5 text-right text-[var(--data-warning)] text-base">
                   {fmt(totalCommissions)}
                 </td>
               </tr>
