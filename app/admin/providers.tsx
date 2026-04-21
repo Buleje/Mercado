@@ -45,15 +45,31 @@ export function AdminProviders({ children }: { children: React.ReactNode }) {
     !FAB_EXCLUDED_PATHS.some((p) => pathname?.startsWith(p)) &&
     !FAB_EXCLUDED_TABS.has(activeTab);
 
-  // Keyboard shortcuts help modal — Ctrl+? / Cmd+?
+  // Keyboard shortcuts help modal — `?` solo (sin modificador) o Ctrl/Cmd+?
+  // Detecta tambien si el foco esta en un input/textarea/contenteditable
+  // para no interceptar el `?` escrito en formularios.
   const [showShortcuts, setShowShortcuts] = useState(false);
   const toggleShortcuts = useCallback(() => setShowShortcuts((v) => !v), []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + ? — siempre abre
       if ((e.ctrlKey || e.metaKey) && (e.key === "?" || e.key === "/")) {
         e.preventDefault();
         toggleShortcuts();
+        return;
+      }
+      // `?` solo — abre solo si no estas escribiendo en un input
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement | null;
+        const isTyping =
+          target?.tagName === "INPUT" ||
+          target?.tagName === "TEXTAREA" ||
+          target?.isContentEditable;
+        if (!isTyping) {
+          e.preventDefault();
+          toggleShortcuts();
+        }
       }
     };
     document.addEventListener("keydown", handler);

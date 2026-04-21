@@ -949,10 +949,12 @@ export default function POSCajaModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <OfflineIndicator />
 
-      {/* Toolbar slim — badge de turno + Cerrar/Abrir Turno (sin titulo redundante, el nav ya lo indica) */}
+      {/* Toolbar slim — badge de turno + Cerrar/Abrir Turno.
+          Breadcrumbs los maneja cada sub-modulo individualmente para cubrir
+          tambien los accesos standalone (ej. /admin?tab=fiados). */}
       <div className="hidden sm:flex items-center justify-end gap-2">
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-bold inline-flex",

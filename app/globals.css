@@ -1020,6 +1020,24 @@ body {
 [data-admin-shell="true"] {
   transition: background-color 0.3s ease;
 }
+/* Transiciones coordinadas para sidebar y flyout al cambiar tema.
+   Incluye bg, color y border para evitar flicker en los 3 temas. */
+[data-admin-shell] aside,
+[data-admin-shell] nav,
+[data-admin-shell] [role="menu"],
+[data-admin-shell] .admin-sidebar-flyout {
+  transition: background-color 180ms ease-out, color 180ms ease-out, border-color 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  body,
+  [data-admin-shell],
+  [data-admin-shell] aside,
+  [data-admin-shell] nav,
+  [data-admin-shell] [role="menu"],
+  [data-admin-shell] .admin-sidebar-flyout {
+    transition: none !important;
+  }
+}
 
 /* ── Mejora 16: Uniform padding for admin modules ─────────────────────────── */
 [data-admin-shell] .module-wrapper {

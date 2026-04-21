@@ -1558,8 +1558,15 @@ export default function POSView() {
         </div>
       )}
 
-      {/* Toolbar unificada — estado a la izquierda, acciones a la derecha.
-          Evita duplicar el indicador de turno: POSCajaModule ya tiene su propio badge. */}
+      {/* Breadcrumb de seccion */}
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <ShoppingBasket className="h-3 w-3" strokeWidth={2} aria-hidden />
+        <span>Ventas</span>
+        <span className="text-[var(--text-tertiary)]/60">·</span>
+        <span className="text-[var(--text-secondary)]">Punto de venta</span>
+      </div>
+
+      {/* Toolbar unificada — estado a la izquierda, acciones a la derecha. */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5 min-w-0 text-xs text-[var(--text-tertiary)]">
           <span className={cn("w-1.5 h-1.5 rounded-full", posOffline.isOnline ? "bg-[var(--data-success)]" : "bg-[var(--data-error)] animate-pulse")} aria-hidden />

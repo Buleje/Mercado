@@ -375,9 +375,17 @@ export default function TurnosModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header — solo badge de estado. La meta ahora se edita desde el
-          aside "Meta del turno" cuando no hay turno, o desde el card de
-          turno activo. Evita la duplicacion de controles en pantalla. */}
+      {/* Breadcrumb de seccion */}
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <Clock className="h-3 w-3" strokeWidth={2} aria-hidden />
+        <span>Ventas</span>
+        <span className="text-[var(--text-tertiary)]/60">·</span>
+        <span className="text-[var(--text-secondary)]">Turnos</span>
+      </div>
+
+      {/* Header — solo badge de estado. La meta se edita desde el aside
+          "Meta del turno" cuando no hay turno, o desde el card de turno
+          activo. Evita duplicacion de controles. */}
       <div className="flex items-center">
         {turnoActivo ? (
           <span className="text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1 rounded-full">Turno abierto</span>
