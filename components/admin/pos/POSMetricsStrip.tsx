@@ -97,22 +97,10 @@ export default function POSMetricsStrip() {
     );
   }
 
-  // No active turno (API responded successfully with turnoActivo: false)
+  // No active turno — no renderizar strip redundante.
+  // La barra superior de POSCajaModule ya muestra "Sin turno" + CTA "Abrir Turno".
   if (!data || !data.turnoActivo) {
-    return (
-      <div className="h-9 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-b border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 flex items-center justify-center gap-2 px-4">
-        <Clock className="h-3.5 w-3.5 text-[var(--data-warning)]" />
-        <span className="text-xs font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)]">
-          Sin turno activo
-        </span>
-        <a
-          href="/admin#turnos"
-          className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] underline hover:no-underline ml-1"
-        >
-          Abrir turno
-        </a>
-      </div>
-    );
+    return null;
   }
 
   const items = [

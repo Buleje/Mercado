@@ -1558,28 +1558,15 @@ export default function POSView() {
         </div>
       )}
 
-      {/* Mejora QW-3: Indicador de conexion sticky + Mejora QW-11b: Turno */}
-      <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] justify-end flex-wrap">
-        <span className={cn("w-2 h-2 rounded-full", posOffline.isOnline ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)] animate-pulse")} />
-        <span className={posOffline.isOnline ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]"}>
-          {posOffline.isOnline ? "En linea" : "Sin conexion"}
-        </span>
-        {cashRegisterOpen && (
-          <span className="inline-flex items-center gap-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] rounded-full px-3 py-1 font-bold">
-            <Clock className="h-3 w-3" /> Turno activo
-          </span>
-        )}
-        {cashRegisterOpen === false && (
-          <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 rounded-full px-3 py-1">
-            Sin turno activo
-          </span>
-        )}
-      </div>
-
-      {/* Toolbar (sin titulo redundante — el nav ya indica POS) */}
+      {/* Toolbar unificada — estado a la izquierda, acciones a la derecha.
+          Evita duplicar el indicador de turno: POSCajaModule ya tiene su propio badge. */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs font-semibold text-[var(--text-tertiary)]">{products.length} productos</span>
+        <div className="flex items-center gap-2.5 min-w-0 text-xs text-[var(--text-tertiary)]">
+          <span className={cn("w-1.5 h-1.5 rounded-full", posOffline.isOnline ? "bg-[var(--data-success)]" : "bg-[var(--data-error)] animate-pulse")} aria-hidden />
+          <span className="font-semibold">{products.length} productos</span>
+          {!posOffline.isOnline && (
+            <span className="text-[var(--data-error)] font-bold">· Sin conexión</span>
+          )}
           <ModuleTooltip />
         </div>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:justify-end">
