@@ -161,13 +161,19 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+        aria-expanded={open}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors"
       >
-        <span className="flex items-center gap-2 font-bold text-[var(--text-primary)] dark:text-foreground text-sm">
-          <Coins className="h-4 w-4 text-primary" />
-          Conteo de efectivo manual
+        <span className="flex items-center gap-2.5 text-[var(--text-primary)] dark:text-foreground">
+          <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+            <Coins className="h-4 w-4 text-primary" strokeWidth={1.75} aria-hidden />
+          </div>
+          <div className="text-left">
+            <span className="block font-bold text-sm">Conteo de efectivo manual</span>
+            <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Contador por denominacion para validar caja en vivo</span>
+          </div>
         </span>
-        <PlusCircle className={cn("h-4 w-4 text-primary transition-transform", open && "rotate-45")} />
+        <PlusCircle className={cn("h-4 w-4 text-primary transition-transform shrink-0", open && "rotate-45")} strokeWidth={1.75} aria-hidden />
       </button>
 
       {open && (
@@ -336,40 +342,63 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
     return { totalAudits, conformes, totalShortage, totalSurplus };
   }, [audits]);
 
+  // Conteo de integridad de cuadres — % conformes vs total
+  const pctConformes = stats.totalAudits > 0 ? Math.round((stats.conformes / stats.totalAudits) * 100) : 0;
+
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-4">
+      {/* Breadcrumb — contexto de seccion */}
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <Calculator className="h-3 w-3" strokeWidth={2} aria-hidden />
+        <span>Ventas</span>
+        <span className="text-[var(--text-tertiary)]/60">·</span>
+        <span className="text-[var(--text-secondary)]">Cuadre</span>
+      </div>
+
+      {/* Toolbar — acciones alineadas a la derecha */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <ModuleTooltip />
           {onNavigateToTurnos && (
             <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
-              <ExternalLink className="h-4 w-4" /> Ir a Turnos
+              <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Ir a Turnos
             </button>
           )}
-          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} strokeWidth={1.75} aria-hidden />
           </button>
           <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <Download className="h-4 w-4" /> Descargar
+            <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Descargar
           </button>
         </div>
       </div>
 
+      {/* KPI cards — jerarquia de color coherente:
+          - Totales / Tasa = neutral (no tiene semantica emocional)
+          - Conformes / Sobrantes = success (positivo)
+          - Faltantes = error (negativo) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Cuadres totales", value: String(stats.totalAudits), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Calculator },
-          { label: "Conformes", value: String(stats.conformes), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
-          { label: "Total faltantes", value: fmt(stats.totalShortage), color: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: TrendingDown },
-          { label: "Total sobrantes", value: fmt(stats.totalSurplus), color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
-        ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
-            <Icon className={cn("h-5 w-5 mt-0.5", color)} />
-            <div>
-              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
-              <p className={cn("text-xl font-extrabold", color)}>{value}</p>
+          { label: "Cuadres totales", value: String(stats.totalAudits), tone: "neutral" as const, icon: Calculator },
+          { label: "Conformes", value: `${stats.conformes}${stats.totalAudits > 0 ? ` · ${pctConformes}%` : ""}`, tone: "success" as const, icon: CheckCircle2 },
+          { label: "Total faltantes", value: fmt(stats.totalShortage), tone: "error" as const, icon: TrendingDown },
+          { label: "Total sobrantes", value: fmt(stats.totalSurplus), tone: "success" as const, icon: TrendingUp },
+        ].map(({ label, value, tone, icon: Icon }) => {
+          const tones = {
+            neutral: { bg: "bg-white dark:bg-card border border-[var(--rule-base)]", color: "text-[var(--text-primary)]", iconColor: "text-[var(--text-secondary)]" },
+            success: { bg: "bg-[var(--accent-soft)] border border-[var(--data-success)]/20 dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success)]", iconColor: "text-[var(--data-success)]" },
+            error: { bg: "bg-[var(--data-error-50)] border border-[var(--data-error)]/20 dark:bg-red-950/30", color: "text-[var(--data-error)]", iconColor: "text-[var(--data-error)]" },
+          }[tone];
+          return (
+            <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", tones.bg)}>
+              <Icon className={cn("h-5 w-5 mt-0.5", tones.iconColor)} strokeWidth={1.75} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] truncate">{label}</p>
+                <p className={cn("text-xl font-extrabold mt-0.5 tabular-nums", tones.color)}>{value}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Cash Counter */}
