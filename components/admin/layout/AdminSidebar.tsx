@@ -358,6 +358,22 @@ export function AdminSidebar({
   const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const categoryRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
 
+  // ── Tooltip de nombre de modulo (compact mode). Usa position:fixed
+  //    para escapar del overflow del nav interno.
+  const [compactTooltip, setCompactTooltip] = React.useState<
+    { y: number; label: string; tip?: string } | null
+  >(null);
+
+  const handleCompactHover = React.useCallback((btn: HTMLElement | null, label: string, tip?: string) => {
+    if (!effectiveCompact || !btn) return;
+    const r = btn.getBoundingClientRect();
+    setCompactTooltip({ y: r.top + r.height / 2, label, tip });
+  }, [effectiveCompact]);
+
+  const handleCompactLeave = React.useCallback(() => {
+    setCompactTooltip(null);
+  }, []);
+
   const [flyoutPosition, setFlyoutPosition] = React.useState<{ top: number } | null>(null);
   React.useEffect(() => {
     if (!hoveredCategory) {
@@ -550,11 +566,16 @@ export function AdminSidebar({
                     <button
                       ref={(el) => { categoryRefs.current[category.id] = el; }}
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
-                      onMouseEnter={() => {
+                      onMouseEnter={(e) => {
                         if (!isSingleTab) handleCategoryMouseEnter(category.id);
+                        // Compact: mostrar tooltip lateral con nombre + tip opcional
+                        const tipTabId = isSingleTab ? catTabs[0] : catTabs[0];
+                        const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
+                        handleCompactHover(e.currentTarget, displayLabel, tipText);
                       }}
                       onMouseLeave={() => {
                         if (!isSingleTab) handleCategoryMouseLeave();
+                        handleCompactLeave();
                       }}
                       onClick={() => {
                         if (isSingleTab) {
@@ -607,15 +628,18 @@ export function AdminSidebar({
                       )}
                     </button>
 
-                    {/* Tooltip with tip preview on hover (expanded mode only) */}
-                    {(() => {
+                    {/* Tooltip expanded — tip largo solo en modo expandido.
+                        El tooltip de nombre para compact se renderiza
+                        globalmente via compactTooltip state (escapa del
+                        overflow clip del nav). */}
+                    {!effectiveCompact && (() => {
                       const tipTabId = isSingleTab ? catTabs[0] : catTabs[0];
                       const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
                       if (!tipText) return null;
                       return (
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-100 delay-[80ms] z-50">
-                          <div className="relative bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded-lg px-3 py-2 max-w-[200px] leading-relaxed">
-                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-900 dark:border-r-zinc-700" />
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-100 delay-[60ms] z-50">
+                          <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 max-w-[220px] leading-relaxed shadow-lg border border-[var(--rule-base)] dark:border-white/10">
+                            <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
                             {tipText}
                           </div>
                         </div>
@@ -703,38 +727,35 @@ export function AdminSidebar({
             );
           })}
 
-          {/* Icon-only in compact/focus mode */}
+          {/* Icon-only in compact/focus mode.
+              Tooltip lateral se renderiza globalmente via compactTooltip state
+              (position:fixed, escapa del overflow clip del nav). */}
           {effectiveCompact && filteredTabs.map(({ id, label, icon: Icon }) => {
             const alertCount = alerts[id] ?? 0;
+            const isActive = tab === id;
             return (
-              <div key={id} className="relative group/tip">
+              <div key={id} className="relative">
                 <button
                   data-tour-tab={id}
                   onClick={() => navigateTab(id)}
-                  title={label}
+                  onMouseEnter={(e) => handleCompactHover(e.currentTarget, label)}
+                  onMouseLeave={handleCompactLeave}
+                  aria-label={label}
                   className={cn(
                     "relative w-full flex items-center justify-center rounded-lg transition-all mb-0.5 px-0 py-2.5",
-                    tab === id
-                      ? "bg-gray-50 dark:bg-zinc-800/50 text-[var(--data-success)]"
-                      : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]/40 hover:text-[var(--text-secondary)]"
+                    isActive
+                      ? cn(themeClasses.activeItem)
+                      : cn(themeClasses.text, themeClasses.hover),
                   )}
                 >
-                  {tab === id && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--accent-soft)]" />}
-                  <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)] group-hover/tip:scale-110" />
+                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
+                  <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)]" />
                   {alertCount > 0 && (
                     <span className="absolute top-1 right-1 text-[length:var(--ts-2xs)] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-[var(--data-error)] text-white leading-none animate-pulse">
                       {alertCount > 9 ? "9+" : alertCount}
                     </span>
                   )}
                 </button>
-                {/* Menu lateral al hover — aparece al instante con el nombre
-                    del modulo. Estilo card editorial, NO tooltip oscuro. */}
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity duration-100 z-50">
-                  <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-semibold rounded-lg px-3 py-2 whitespace-nowrap shadow-lg border border-[var(--rule-base)] dark:border-white/10">
-                    <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
-                    {label}
-                  </div>
-                </div>
               </div>
             );
           })}
@@ -863,6 +884,23 @@ export function AdminSidebar({
         </div>
         </>)}
       </aside>
+
+      {/* Tooltip lateral para iconos en modo compact — position:fixed
+          para escapar el overflow clip del nav. Card blanca con arrow. */}
+      {effectiveCompact && compactTooltip && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{ left: 70, top: compactTooltip.y, transform: "translateY(-50%)" }}
+        >
+          <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 shadow-lg border border-[var(--rule-base)] dark:border-white/10 min-w-[140px] max-w-[240px]">
+            <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
+            <div className="font-semibold whitespace-nowrap">{compactTooltip.label}</div>
+            {compactTooltip.tip && (
+              <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 leading-relaxed">{compactTooltip.tip}</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Sidebar category flyout panel — only for multi-tab categories */}
       {!effectiveCompact && sidebarFlyout && (() => {
