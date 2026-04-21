@@ -1,6 +1,18 @@
 import "server-only";
 
 import { logger } from "@/lib/logger";
+import { getBreaker } from "@/lib/circuit-breaker/registry";
+import { CircuitOpenError } from "@/lib/circuit-breaker/breaker";
+
+// Circuit breaker para WhatsApp — si el upstream falla repetido, abrimos el
+// circuito y evitamos llamadas inútiles por 30s. Protege la UX del checkout
+// cuando Meta API está caída.
+const whatsappBreaker = getBreaker("whatsapp", {
+  failureThreshold: 5,
+  resetTimeoutMs: 30_000,
+  halfOpenMaxCalls: 2,
+  timeoutMs: 8_000,
+});
 
 /**
  * WhatsApp notification templates for order status changes.
@@ -274,7 +286,15 @@ export async function sendWhatsAppQueued(
       context: meta.context,
     });
   }
-  // Fallback — direct send with retry
-  const ok = await sendWhatsAppTextWithRetry(phone, message);
-  return { queued: false, jobId: ok ? "direct" : undefined };
+  // Fallback — direct send con circuit breaker protegiendo WhatsApp upstream.
+  try {
+    const ok = await whatsappBreaker.exec(() => sendWhatsAppTextWithRetry(phone, message));
+    return { queued: false, jobId: ok ? "direct" : undefined };
+  } catch (err) {
+    if (err instanceof CircuitOpenError) {
+      logger.warn("[whatsapp] circuit open — skipping send", { tenantId: meta.tenantId, context: meta.context });
+      return { queued: false, jobId: undefined };
+    }
+    throw err;
+  }
 }

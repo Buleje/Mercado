@@ -48,7 +48,7 @@ export function VendorLowStockList({ products }: Props) {
         {products.map((p) => (
           <li key={p.id} className="py-3 flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-[var(--surface-sunken)] shrink-0">
-              {p.image ? (
+              {p.image && typeof p.image === "string" && p.image.trim().length > 0 ? (
                 <Image
                   src={p.image}
                   alt={p.name}

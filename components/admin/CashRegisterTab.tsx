@@ -13,6 +13,7 @@ import { CardTitle, EmptyState, LoadingState, SectionTitle, WarningAlert } from 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const CashRegisterChart = dynamic(
   () => import("./cash-register/CashRegisterChart"),
@@ -345,7 +346,7 @@ export default function CashRegisterTab() {
     try {
       await fetch("/api/cash-registers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "open", openingAmount: Number(openAmount) || 0, notes: openNotes || undefined }),
       });
       setShowOpen(false);
@@ -364,7 +365,7 @@ export default function CashRegisterTab() {
     try {
       await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "close", closingAmount: Number(closeAmount) || 0, notes: closeNotes || undefined }),
       });
       setShowClose(false);
@@ -386,7 +387,7 @@ export default function CashRegisterTab() {
     try {
       await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           action: "movement",
           type: mvType,
@@ -422,7 +423,7 @@ export default function CashRegisterTab() {
       
       await fetch("/api/cash-movements", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           cashRegisterId: currentRegister.id,
           type: "arqueo",
@@ -469,7 +470,7 @@ export default function CashRegisterTab() {
 
       await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           action: "close",
           closingAmount: guiadoTotal,

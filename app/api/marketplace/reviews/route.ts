@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ReviewsMarketplaceDB } from "@/lib/db/reviews.db";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
@@ -35,6 +36,10 @@ const CreateBody = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Rate limit: anti-spam reviews (10 / 15min / IP)
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-reviews-create");
+  if (rl) return rl;
+
   if (!isFeatureEnabled("marketplace-reviews-public")) {
     return NextResponse.json(
       { error: "Reviews temporalmente no disponibles" },

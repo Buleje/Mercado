@@ -145,6 +145,7 @@ export default function UnifiedProductCard({
       price: product.price,
       image: product.image ?? null,
       unit: product.unit ?? null,
+      description: product.description ?? null,
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -174,11 +175,12 @@ export default function UnifiedProductCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
+      whileHover={{ y: -4 }}
       className={cn(
         "group relative flex w-full flex-col overflow-hidden rounded-xl",
-        "border border-gray-100 bg-white dark:border-card-border dark:bg-card",
-        "transition-all duration-300",
-        "hover:-translate-y-0.5 hover:shadow-md hover:border-gray-200 dark:hover:border-card-border",
+        "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
+        "transition-[border-color,box-shadow,transform] duration-200",
+        "hover:border-[var(--accent)]/40 hover:shadow-[0_8px_24px_-12px_rgba(0,180,166,0.18)]",
         isOutOfStock && "opacity-70",
       )}
       onMouseEnter={onMouseEnter}
@@ -187,13 +189,13 @@ export default function UnifiedProductCard({
       {/* ── Zona imagen ──────────────────────────────────────────────────────── */}
       <div className="relative">
         <Link href={productHref} className="block">
-          <div className="relative aspect-square overflow-hidden rounded-t-xl bg-[var(--surface-sunken)] dark:bg-surface">
+          <div className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800">
             {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
               />
             ) : (
@@ -202,13 +204,13 @@ export default function UnifiedProductCard({
           </div>
         </Link>
 
-        {/* Badges top-left — apilados verticalmente */}
-        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+        {/* Badges top-left — pill alto contraste para oferta visible al instante */}
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5">
           {/* Rank badge (variant top) */}
           {variant === "top" && rank !== undefined && (
             <span
               className={cn(
-                "inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black border border-[var(--rule-base)]",
+                "inline-flex h-7 w-7 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black shadow-sm",
                 rankColors[rank] ?? rankColors[3],
               )}
               aria-label={`Posicion ${rank}`}
@@ -217,16 +219,28 @@ export default function UnifiedProductCard({
             </span>
           )}
 
-          {/* Oferta / liquidacion badge */}
-          {showOfertaBadge && variant !== "top" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+          {/* Discount % badge — RESALTADO: fondo accent solido + sombra */}
+          {product.discount != null && product.discount > 0 && variant !== "top" && (
+            <span
+              className="inline-flex items-center justify-center rounded-md px-2 py-1 text-[length:var(--ts-xs)] font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md"
+              aria-label={`${product.discount}% de descuento`}
+            >
+              -{product.discount}%
+            </span>
+          )}
+
+          {/* Liquidacion / Oferta badge — text label adicional */}
+          {showOfertaBadge && variant !== "top" && product.discount == null && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md"
+            >
               {ofertaLabel}
             </span>
           )}
 
           {/* Timer badge (flash) */}
           {variant === "flash" && countdown && countdown !== "Expirado" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-bold tabular-nums bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm">
               <Timer className="h-3 w-3" aria-hidden />
               {countdown}
             </span>
@@ -234,15 +248,15 @@ export default function UnifiedProductCard({
 
           {/* Peruano badge */}
           {product.isPeruvian && (
-            <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)]">
               PERUANO
             </span>
           )}
         </div>
 
-        {/* Acciones top-right — heart + compare, siempre visibles */}
-        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
-          {/* Heart favorito */}
+        {/* Acciones top-right — heart + compare, aparecen en hover */}
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+          {/* Quick view (heart slot) */}
           <button
             type="button"
             onClick={(e) => {
@@ -250,10 +264,10 @@ export default function UnifiedProductCard({
               e.stopPropagation();
               setQuickViewOpen(true);
             }}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-sm transition-colors hover:border-gray-300 dark:hover:border-gray-600"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm transition-colors hover:border-gray-400 dark:hover:border-gray-500"
             aria-label={`Ver rapido ${product.name}`}
           >
-            <Heart className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" strokeWidth={1.75} aria-hidden />
+            <Heart className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" strokeWidth={1.75} aria-hidden />
           </button>
 
           {/* Compare */}
@@ -267,10 +281,10 @@ export default function UnifiedProductCard({
             aria-label={inCompare ? `Quitar ${product.name} de la comparacion` : `Comparar ${product.name}`}
             aria-pressed={inCompare}
             className={cn(
-              "inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition-colors",
+              "inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition-colors backdrop-blur-sm",
               inCompare
                 ? "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]"
-                : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600",
+                : "bg-white/95 dark:bg-gray-900/95 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500",
             )}
           >
             <GitCompareArrows className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -279,75 +293,88 @@ export default function UnifiedProductCard({
 
         {/* Overlay agotado */}
         {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-t-xl">
-            <span className="rounded-full bg-gray-800/80 px-3 py-1 text-[length:var(--ts-2xs)] font-bold text-white">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+            <span className="rounded-full bg-gray-800/90 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white">
               Agotado
             </span>
           </div>
         )}
       </div>
 
-      {/* ── Contenido ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        {/* Nombre */}
+      {/* ── Contenido ──────────────────────────────────────────────────────────
+          Layout compacto para 6 cols/row a xl. Carrito AGRANDADO (h-12) y
+          descripcion resaltada con font-medium + pill background. */}
+      <div className="flex flex-1 flex-col p-3">
+        {/* Nombre — text-sm font-semibold, 2 lineas */}
         <Link href={productHref}>
-          <p className="line-clamp-2 text-xs font-bold leading-snug text-gray-900 dark:text-foreground group-hover:text-[var(--accent)] transition-colors">
+          <h3 className="text-[length:var(--ts-sm)] font-semibold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] group-hover:text-[var(--accent)] transition-colors">
             {product.name}
-          </p>
+          </h3>
         </Link>
 
-        {/* "Ver detalles →" link */}
-        <Link
-          href={productHref}
-          className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] hover:underline"
-        >
-          Ver detalles &rarr;
-        </Link>
-
-        {/* Descripcion (opcional) */}
+        {/* Descripcion — resaltada con font-medium, color secondary, leading generoso */}
         {product.description && (
-          <p className="line-clamp-2 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted leading-snug">
+          <p className="mt-1.5 text-[length:var(--ts-xs)] font-medium leading-relaxed text-[var(--text-secondary)] line-clamp-2">
             {product.description}
           </p>
         )}
 
-        {/* Tienda */}
+        {/* Tienda — text-xs */}
         {product.storeName && (
-          <div className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-            <StoreIcon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+          <div className="mt-1.5 flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+            <StoreIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
             <span className="truncate">{product.storeName}</span>
           </div>
         )}
 
-        {/* Precio + CTA circular */}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
-          <div>
-            {/* Precio tachado original */}
+        {/* Precio + CTA circular — precio RESALTADO + ahorro visible */}
+        <div className="mt-auto pt-3 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            {/* Precio tachado + ahorro: si hay descuento, mostrar fila pre-precio */}
             {product.originalPrice && product.originalPrice > product.price && (
-              <span className="block text-[length:var(--ts-2xs)] text-gray-400 line-through dark:text-muted">
-                {fmt(product.originalPrice)}
-              </span>
+              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-through tabular-nums">
+                  {fmt(product.originalPrice)}
+                </span>
+                <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)]">
+                  Ahorra {fmt(product.originalPrice - product.price)}
+                </span>
+              </div>
             )}
-            {/* Precio actual */}
-            <div className="flex items-baseline gap-1">
-              <span className="text-base font-extrabold text-gray-900 dark:text-foreground leading-none">
+            {/* Precio actual — XL black + accent si tiene oferta */}
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span
+                className={cn(
+                  "text-2xl font-black leading-none tabular-nums tracking-[-0.02em]",
+                  product.originalPrice && product.originalPrice > product.price
+                    ? "text-[var(--accent)]"
+                    : "text-[var(--text-primary)]",
+                )}
+              >
                 {fmt(product.price)}
               </span>
               {product.unit && (
-                <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-                  / {product.unit}
+                <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] tabular-nums">
+                  /{product.unit}
                 </span>
               )}
             </div>
-            {/* Stock */}
+            {/* Stock — pill mini si stock bajo (urgencia), texto sino */}
             {product.stock != null && product.stock > 0 && (
-              <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-                Stock: {product.stock} {product.unit ?? "unidad"}
+              <span
+                className={cn(
+                  "mt-1 inline-flex items-center text-[length:var(--ts-2xs)] font-bold",
+                  product.stock <= 5
+                    ? "text-[var(--accent)] uppercase tracking-wider"
+                    : "text-[var(--text-tertiary)] font-medium normal-case tracking-normal",
+                )}
+              >
+                {product.stock <= 5 ? `Solo ${product.stock} en stock` : `Stock: ${product.stock}`}
               </span>
             )}
           </div>
 
-          {/* CTA circular teal */}
+          {/* CTA circular AGRANDADO h-12 w-12 + icono h-5 w-5 — resalta la accion */}
           <button
             type="button"
             onClick={handleAdd}
@@ -358,18 +385,18 @@ export default function UnifiedProductCard({
                 : `Agregar ${product.name} al carrito`
             }
             className={cn(
-              "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+              "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-200 ring-1",
               isOutOfStock
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                 : justAdded
-                  ? "bg-emerald-500 text-white scale-90"
-                  : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-sm",
+                  ? "bg-emerald-500 text-white scale-90 ring-emerald-600/30"
+                  : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
             )}
           >
             {justAdded ? (
-              <Check className="h-4 w-4" aria-hidden />
+              <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             ) : (
-              <ShoppingCart className="h-4 w-4" aria-hidden />
+              <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
             )}
           </button>
         </div>
@@ -378,7 +405,7 @@ export default function UnifiedProductCard({
         {compareLimitMsg && (
           <p
             role="alert"
-            className="rounded-md bg-amber-50 px-2 py-1 text-center text-[length:var(--ts-2xs)] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+            className="mt-2 rounded-md bg-amber-50 px-2 py-1 text-center text-[length:var(--ts-xs)] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
           >
             Maximo 3 productos para comparar
           </p>

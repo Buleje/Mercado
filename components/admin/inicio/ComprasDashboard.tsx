@@ -12,7 +12,11 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const ComprasCharts = dynamic(() => import("./ComprasCharts"), { ssr: false });
-import { DashboardSectionHeader } from "./_shared";
+const ComprasAdvancedCharts = dynamic(
+  () => import("./ComprasAdvancedCharts").then((m) => ({ default: m.ComprasAdvancedCharts })),
+  { ssr: false },
+);
+import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -168,7 +172,7 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
     };
   }, [raw, dateRange]);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
@@ -207,8 +211,11 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
         </div>
       )}
 
-      {/* ── Charts ── */}
+      {/* ── Charts base (diarias, mensual, top prov, estado cuentas, por vencer, histórico) ── */}
       <ComprasCharts data={data} />
+
+      {/* ── Charts especializados (pareto, salud, anual, mix, waterfall, comparativa) ── */}
+      <ComprasAdvancedCharts />
     </div>
   );
 }

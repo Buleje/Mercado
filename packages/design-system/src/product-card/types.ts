@@ -38,4 +38,10 @@ export interface ProductCardActions {
   onQuickView?: (p: ProductCardProduct) => void;
   onAddToFavorites?: (p: ProductCardProduct) => void;
   onCompare?: (p: ProductCardProduct) => void;
+  /**
+   * Cantidad actual de este producto en el carrito del cliente.
+   * Si > 0, la card muestra un badge contador sobre el botón de agregar.
+   * El caller debe consultar el carrito y pasar el valor — la card es pura.
+   */
+  quantityInCart?: number;
 }

@@ -10,7 +10,8 @@ import {
   ArrowUp, ArrowDown, Trophy, Edit3,
   Beaker, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard } from "@buleje/design-system/icons";
 import { CardTitle, ErrorAlert, WarningAlert } from "@buleje/design-system";
-import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { PeriodFilter } from "@buleje/design-system/dashboard";
+import type { DateRange, Period as DSPeriod } from "@buleje/design-system/dashboard";
 import { cn, exportToCSV } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { OrderStats } from "@/components/OrderStats";
@@ -24,6 +25,7 @@ const DashboardInventarioSection = dynamic(() => import("./dashboard/DashboardIn
 const DashboardClientesSection = dynamic(() => import("./dashboard/DashboardClientesSection"), { ssr: false, loading: S });
 const DashboardComprasCajaSection = dynamic(() => import("./dashboard/DashboardComprasCajaSection"), { ssr: false, loading: S });
 const DailySummaryPanel = dynamic(() => import("./DailySummaryPanel"), { ssr: false, loading: S });
+const DashboardOverviewCharts = dynamic(() => import("./dashboard/DashboardOverviewCharts").then(m => ({ default: m.DashboardOverviewCharts })), { ssr: false, loading: S });
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,7 +41,9 @@ interface Order {
 interface Payable { id: string; supplierId: string; supplierName: string; amount: number; paidAmount: number; status: string; dueDate: string; }
 interface Review { id: string; name: string; rating: number; text: string; date: string; }
 
-type Period = "hoy" | "semana" | "mes" | "todo";
+// Period amplificado — "todo" mantenido por compatibilidad con helpers internos,
+// "año" y "custom" son nuevas opciones del filtro DS.
+type Period = "hoy" | "semana" | "mes" | "todo" | "año" | "custom";
 type Section = "resumen" | "ventas" | "productos" | "inventario" | "clientes" | "compras" | "caja";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,12 +58,18 @@ function fmtDateFull(iso: string) {
 function _fmtTime(iso: string) {
   try { return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; }
 }
-function inPeriod(dateStr: string, period: Period): boolean {
+function inPeriod(dateStr: string, period: Period, dateRange?: { from: string; to: string }): boolean {
   if (period === "todo") return true;
   const d = new Date(dateStr), now = new Date();
   if (period === "hoy") return d.toDateString() === now.toDateString();
   if (period === "semana") { const w = new Date(now); w.setDate(w.getDate() - 7); return d >= w; }
   if (period === "mes") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  if (period === "año") return d.getFullYear() === now.getFullYear();
+  if (period === "custom" && dateRange?.from && dateRange?.to) {
+    const from = new Date(dateRange.from + "T00:00:00");
+    const to   = new Date(dateRange.to   + "T23:59:59");
+    return d >= from && d <= to;
+  }
   return true;
 }
 function inPrevPeriod(dateStr: string, period: Period): boolean {
@@ -95,6 +105,7 @@ export default function DashboardTab() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>("mes");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: "", to: "" });
   const [section, setSection] = useState<Section>("resumen");
   const { setTheme } = useTheme();
 
@@ -264,10 +275,11 @@ export default function DashboardTab() {
   // ── Stats ──────────────────────────────────────────────────────────────
 
   const st = useMemo(() => {
-    const fOrders = orders.filter(o => o.status !== "cancelado" && inPeriod(o.createdAt, period));
-    const cancelled = orders.filter(o => o.status === "cancelado" && inPeriod(o.createdAt, period));
-    const fSales = sales.filter(s => inPeriod(s.createdAt, period));
-    const fPurchases = purchases.filter(p => inPeriod(p.createdAt ?? "", period));
+    const dr = period === "custom" ? dateRange : undefined;
+    const fOrders = orders.filter(o => o.status !== "cancelado" && inPeriod(o.createdAt, period, dr));
+    const cancelled = orders.filter(o => o.status === "cancelado" && inPeriod(o.createdAt, period, dr));
+    const fSales = sales.filter(s => inPeriod(s.createdAt, period, dr));
+    const fPurchases = purchases.filter(p => inPeriod(p.createdAt ?? "", period, dr));
 
     const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
     const orderRev = fOrders.reduce((a,o) => a+o.total,0);
@@ -856,7 +868,7 @@ export default function DashboardTab() {
       sparklineRevenue,sparklineOrders,sparklineAvgTicket,sparklineProfit,
       cohortData,retentionMetrics,crossSellRecommendations,
     };
-  }, [products,orders,sales,customers,purchases,payables,suppliers,reviews,period]);
+  }, [products,orders,sales,customers,purchases,payables,suppliers,reviews,period,dateRange]);
 
   const [showExport, setShowExport] = useState(false);
 
@@ -1394,18 +1406,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           <p className={cn("text-[var(--text-tertiary)] dark:text-muted", fullscreen ? "text-sm" : "text-xs")}>Buleje</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className={cn("flex items-center bg-gray-100 dark:bg-accent rounded-lg p-0.5")}>
-            {(["hoy","semana","mes","todo"] as Period[]).map(p => (
-              <button key={p} onClick={()=>setPeriod(p)}
-                className={cn("px-2.5 py-1 rounded-md font-semibold transition-all",
-                  fullscreen ? "text-sm" : "text-xs",
-                  period===p?"text-[var(--text-primary)] dark:text-foreground ":"text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
-                )}
-                style={period===p?{background:"var(--color-card, white)"}:undefined}>
-                {p==="hoy"?"Hoy":p==="semana"?"7d":p==="mes"?"Mes":"Todo"}
-              </button>
-            ))}
-          </div>
+          <PeriodFilter
+            value={period === "todo" ? "año" : period}
+            onChange={(p) => setPeriod(p === "año" ? "año" : p)}
+            includeCustom
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            className={fullscreen ? "text-sm" : ""}
+          />
           {/* Fullscreen toggle */}
           <button
             onClick={() => setFullscreen(v => !v)}
@@ -1452,11 +1460,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
             )}
           </div>
-          <AdminTooltip content="Recargar todas las métricas del dashboard">
-            <button onClick={load} aria-label="Actualizar" className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            </button>
-          </AdminTooltip>
+          <button onClick={load} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors" title="Actualizar">
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          </button>
           {/* N2 — WA daily summary */}
           <a
             href={(() => {
@@ -2540,7 +2546,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             completedOrders={st.completedOrdersCount}
             averageOrderValue={st.ticketProm}
             conversionRate={st.conversionRate}
-            periodLabel={period === "hoy" ? "hoy" : period === "semana" ? "esta semana" : period === "mes" ? "este mes" : "todo"}
+            periodLabel={period === "hoy" ? "hoy" : period === "semana" ? "esta semana" : period === "mes" ? "este mes" : period === "año" ? "este año" : period === "custom" ? "período" : "todo"}
             previousPeriodComparison={
               period !== "todo" && st.dVentas !== null
                 ? {
@@ -2551,16 +2557,27 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             }
           />
 
+          {/* ── 6 Overview Charts (DS primitives) ── */}
+          <DashboardOverviewCharts
+            period={(period === "todo" ? "año" : period) as DSPeriod}
+            dateRange={period === "custom" ? dateRange : undefined}
+            orders={orders}
+            sales={sales}
+            purchases={purchases}
+            products={products}
+            customers={customers}
+          />
+
           <div className="grid lg:grid-cols-5 gap-3">
-            <div className="lg:col-span-3 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
+            <div className="lg:col-span-3 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">Ventas por día</p>
               {st.daily.length === 0 ? <Empty /> : (
                 <div className="relative h-32">
                   <svg viewBox={`0 0 ${st.daily.length * 50} 120`} className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGradSmall" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#00B4A6" stopOpacity="0" />
+                        <stop offset="0%" stopColor="var(--data-success)" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="var(--data-success)" stopOpacity="0" />
                       </linearGradient>
                     </defs>
                     <path d={
@@ -2571,10 +2588,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     } fill="url(#areaGradSmall)" />
                     <polyline
                       points={st.daily.map(([,v],i) => `${i*50+25},${100-((v/(st.maxDaily||1))*85)}`).join(' ')}
-                      fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
+                      fill="none" stroke="var(--data-success)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {st.daily.map(([,v],i) => (
-                      <circle key={i} cx={i*50+25} cy={100-((v/(st.maxDaily||1))*85)} r="2.5" fill="#00B4A6" stroke="white" strokeWidth="1.5" />
+                      <circle key={i} cx={i*50+25} cy={100-((v/(st.maxDaily||1))*85)} r="2.5" fill="var(--data-success)" stroke="white" strokeWidth="1.5" />
                     ))}
                   </svg>
                   <div className="flex justify-between px-0.5">

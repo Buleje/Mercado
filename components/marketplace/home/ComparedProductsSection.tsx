@@ -13,17 +13,10 @@
  */
 
 import Link from "next/link";
-import {
-  CardTitle,
-  Caption,
-  Kicker,
-  ProductCardCompact,
-  type ProductCardProduct,
-} from "@buleje/design-system";
-import {
-  ArrowRight,
-  GitCompareArrows,
-} from "@buleje/design-system/icons";
+import { ArrowRight } from "@buleje/design-system/icons";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
 type ComparedProduct = {
   id: string;
@@ -72,48 +65,40 @@ const PRODUCTS: ComparedProduct[] = [
     stores: 5,
     href: "/marketplace/comparar?q=detergente-ariel-1kg",
   },
+  {
+    id: "panetela-san-jorge",
+    name: "Panetela San Jorge 900 g",
+    category: "Abarrotes",
+    comparedToday: 54,
+    priceFrom: 12.5,
+    stores: 4,
+    href: "/marketplace/comparar?q=panetela-san-jorge",
+  },
+  {
+    id: "gaseosa-inca-kola-3l",
+    name: "Inca Kola 3 L",
+    category: "Bebidas",
+    comparedToday: 41,
+    priceFrom: 10.9,
+    stores: 9,
+    href: "/marketplace/comparar?q=inca-kola-3l",
+  },
 ];
 
-function comparedToCard(p: ComparedProduct): ProductCardProduct {
-  return {
-    id: p.id,
-    name: p.name,
-    price: p.priceFrom,
-    image: null,
-    category: p.category,
-    href: p.href,
-  };
+function hashId(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
 }
 
 export default function ComparedProductsSection() {
   return (
-    <section
-      aria-labelledby="compared-title"
-      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6"
-    >
-      <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
-            <GitCompareArrows
-              className="h-4 w-4 text-[var(--text-secondary)]"
-              aria-hidden
-            />
-          </div>
-          <div className="min-w-0">
-            <Kicker className="text-[var(--text-tertiary)]">
-              Populares en el comparador
-            </Kicker>
-            <CardTitle
-              id="compared-title"
-              className="text-[length:var(--ts-lg)]"
-            >
-              Productos comparados por tus vecinos
-            </CardTitle>
-            <Caption className="mt-0.5 text-[var(--text-tertiary)]">
-              Mira como varia el precio del mismo producto en distintas bodegas.
-            </Caption>
-          </div>
-        </div>
+    <MarketplaceSection
+      id="compared"
+      kicker="Populares en el comparador"
+      title="Productos comparados por tus vecinos"
+      subtitle="Mira como varia el precio del mismo producto en distintas bodegas."
+      actions={
         <Link
           href="/marketplace/comparar"
           className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -121,19 +106,25 @@ export default function ComparedProductsSection() {
           Comparar con otros
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
-      </div>
-
-      {/* ProductCardCompact (Ola 7) — carousel horizontal de comparados */}
-      <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2">
-        {PRODUCTS.map((p) => (
-          <div key={p.id} className="shrink-0 snap-start">
-            <ProductCardCompact product={comparedToCard(p)} />
-            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] px-2 w-[160px] sm:w-[180px]">
-              {p.stores} tiendas · {p.comparedToday} comparaciones hoy
-            </p>
-          </div>
+      }
+    >
+      <HorizontalCarousel ariaLabel="Productos comparados por tus vecinos">
+        {PRODUCTS.map((p, i) => (
+          <UnifiedProductCard
+            key={p.id}
+            index={i}
+            href={p.href}
+            product={{
+              id: hashId(p.id),
+              name: p.name,
+              price: p.priceFrom,
+              category: p.category,
+              image: null,
+              description: `${p.stores} tiendas · ${p.comparedToday} comparaciones hoy`,
+            }}
+          />
         ))}
-      </div>
-    </section>
+      </HorizontalCarousel>
+    </MarketplaceSection>
   );
 }

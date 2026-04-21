@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useCallback, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { X } from "@buleje/design-system/icons";
 import { useCierreDiario } from "./useCierreDiario";
 import CierrePaso1Caja from "./CierrePaso1Caja";

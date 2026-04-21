@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import LazyLoad from "@/components/LazyLoad";
 import { SectionSkeleton } from "@/components/LoadingSkeleton";
 
-const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewed"),    { ssr: false });
+const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewedSingleTenant"),    { ssr: false });
 const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"),  { ssr: false });
 const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"), { ssr: false });
 

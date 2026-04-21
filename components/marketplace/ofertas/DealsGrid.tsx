@@ -1,58 +1,48 @@
 "use client";
 
 /**
- * DealsGrid — Grid 4 cols de ProductCards con badge "-X%" teal soft.
- * Pagination simple (client-side). No requiere backend.
+ * DealsGrid — Grid responsive de cards de deals con badges + paginacion.
+ *
+ * Estilo Buleje: tokens estrictos, badges accent solido para descuento,
+ * precio XL black + tachado original + ahorro pill, hover translate-y.
  */
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, Package, Clock } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 import type { Deal } from "@/lib/mock-deals";
 import { useDealsCountdown } from "./useDealsCountdown";
-import {
-  VerduraFresca,
-  CarniceriaFresca,
-  LacteosRefresh,
-  BebidasVarias,
-  LimpiezaDomicilio,
-  PaicheEnOlla,
-  FrascoEstrellas,
-} from "@/components/ui-system/illustrations";
-import type { ComponentType, SVGAttributes } from "react";
-
-type IllComp = ComponentType<{
-  size?: number;
-  strokeWidth?: number;
-  className?: string;
-} & SVGAttributes<SVGSVGElement>>;
-
-const CAT_ILL: Record<string, IllComp> = {
-  abarrotes: LacteosRefresh,
-  frescos: VerduraFresca,
-  bebidas: BebidasVarias,
-  limpieza: LimpiezaDomicilio,
-  lacteos: LacteosRefresh,
-  farmacia: PaicheEnOlla,
-  carnes: CarniceriaFresca,
-};
+import ExplorarSectionHeader from "@/components/marketplace/explorar/ExplorarSectionHeader";
 
 const PAGE_SIZE = 12;
 
+const pen = new Intl.NumberFormat("es-PE", {
+  style: "currency",
+  currency: "PEN",
+});
+
 function DealTimeLabel({ endsAt }: { endsAt: string }) {
   const { days, hours, minutes, expired } = useDealsCountdown(endsAt);
-  if (expired) return <span className="text-[length:var(--ts-2xs)] text-gray-400">Vencida</span>;
+  if (expired) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+        Vencida
+      </span>
+    );
+  }
   if (days > 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
-        <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
+        <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
         Termina en {days}d {hours}h
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-400 font-semibold">
-      <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)] uppercase tracking-wider">
+      <Clock className="h-3 w-3" strokeWidth={2} aria-hidden />
       {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")} restantes
     </span>
   );
@@ -72,18 +62,17 @@ export default function DealsGrid({ deals }: DealsGridProps) {
     return (
       <section
         aria-label="Sin resultados"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8"
       >
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-[var(--text-secondary)] mb-4" aria-hidden="true">
-            <FrascoEstrellas size={160} />
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] mb-4">
+            <Package className="h-9 w-9" strokeWidth={1.25} aria-hidden />
           </div>
-          <p className="text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+          <p className="text-lg font-black tracking-tight text-[var(--text-primary)]">
             Sin ofertas con esos filtros
           </p>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
-            Probá cambiando la categoría o el rango de descuento. Volvé pronto
-            — todos los días hay ofertas nuevas.
+            Proba cambiando la categoria o el rango de descuento. Volve pronto — todos los dias hay ofertas nuevas.
           </p>
         </div>
       </section>
@@ -93,63 +82,65 @@ export default function DealsGrid({ deals }: DealsGridProps) {
   return (
     <section
       aria-labelledby="deals-grid-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8"
     >
-      <div className="flex items-center justify-between mb-4">
-        <h2 id="deals-grid-heading" className="sr-only">
-          Todas las ofertas
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          <span className="font-semibold text-gray-900 dark:text-white">{deals.length}</span>{" "}
-          {deals.length === 1 ? "oferta" : "ofertas"}
-        </p>
-      </div>
+      <ExplorarSectionHeader
+        kicker="Catalogo de ofertas"
+        title="Todas las ofertas"
+        subtitle={`${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtra por categoria o rebaja minima arriba.`}
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {paginated.map((deal) => {
-          const Ill = CAT_ILL[deal.category] ?? LacteosRefresh;
+          const ahorro = deal.previousPrice - deal.price;
           return (
             <Link
               key={deal.id}
               href={`/marketplace/${deal.storeSlug}`}
-              className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
+              className="group relative block rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5 transition-all duration-300 motion-reduce:hover:translate-y-0"
             >
-              {/* Badge descuento */}
-              <span className="absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary border border-primary/20">
+              {/* Badge descuento — accent solido */}
+              <span className="absolute top-2 left-2 z-10 inline-flex items-center justify-center rounded-md px-2 py-1 text-[length:var(--ts-xs)] font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md">
                 -{deal.discountPct}%
               </span>
 
-              {/* Flash badge */}
+              {/* Flash badge (top-right) — solo para deals con isFlash */}
               {deal.isFlash && (
-                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--surface-canvas)]">
                   Flash
                 </span>
               )}
 
-              {/* Ilustracion */}
-              <div className="aspect-square bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
-                <Ill size={80} strokeWidth={1.5} />
+              {/* Placeholder imagen */}
+              <div className="relative aspect-square bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)]">
+                <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                  <Package className="h-10 w-10" strokeWidth={1.25} aria-hidden />
+                </span>
               </div>
 
+              {/* Info */}
               <div className="p-3 sm:p-4">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-gray-400">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   {deal.category}
-                </span>
-                <h3 className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
+                </p>
+                <h3 className="mt-0.5 text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
                   {deal.name}
                 </h3>
-                <p className="mt-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 line-clamp-1">
+                <p className="mt-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-clamp-1">
                   {deal.storeName} &middot; {deal.unit}
                 </p>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-base font-extrabold text-gray-900 dark:text-white">
-                    S/{deal.price.toFixed(2)}
+                <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-through tabular-nums">
+                    {pen.format(deal.previousPrice)}
                   </span>
-                  <span className="text-[length:var(--ts-2xs)] text-gray-400 line-through">
-                    S/{deal.previousPrice.toFixed(2)}
+                  <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)]">
+                    Ahorra {pen.format(ahorro)}
                   </span>
                 </div>
-                <div className="mt-1.5">
+                <p className="mt-0.5 text-xl font-black tabular-nums tracking-[-0.02em] text-[var(--accent)] leading-none">
+                  {pen.format(deal.price)}
+                </p>
+                <div className="mt-2 pt-2 border-t border-[var(--rule-soft)]">
                   <DealTimeLabel endsAt={deal.endsAt} />
                 </div>
               </div>
@@ -158,41 +149,57 @@ export default function DealsGrid({ deals }: DealsGridProps) {
         })}
       </div>
 
-      {/* Paginacion */}
+      {/* Paginacion — botones tokenizados */}
       {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
+        <div className="mt-10 flex items-center justify-center gap-2">
           <button
+            type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
             aria-label="Pagina anterior"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            className={cn(
+              "inline-flex h-10 w-10 items-center justify-center rounded-lg",
+              "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
+              "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              "disabled:opacity-40 disabled:pointer-events-none",
+              "transition-colors",
+            )}
           >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
           </button>
 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
+              type="button"
               onClick={() => setPage(n)}
               aria-label={`Pagina ${n}`}
               aria-current={page === n ? "page" : undefined}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
+              className={cn(
+                "inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold transition-colors tabular-nums",
                 page === n
-                  ? "bg-primary text-white"
-                  : "border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
-              }`}
+                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
+                  : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+              )}
             >
               {n}
             </button>
           ))}
 
           <button
+            type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             aria-label="Pagina siguiente"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            className={cn(
+              "inline-flex h-10 w-10 items-center justify-center rounded-lg",
+              "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
+              "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              "disabled:opacity-40 disabled:pointer-events-none",
+              "transition-colors",
+            )}
           >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
           </button>
         </div>
       )}

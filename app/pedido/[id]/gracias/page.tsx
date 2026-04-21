@@ -79,6 +79,11 @@ export default function GraciasPage() {
   const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
+    // Marca la primera compra completada — desbloquea el InstallPrompt post-compra
+    try {
+      localStorage.setItem("buleje-first-purchase", "1");
+    } catch { /* ignore quota/disabled storage */ }
+
     // Fetch basic order info
     (async () => {
       try {

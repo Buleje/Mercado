@@ -9,6 +9,7 @@ import { useSettings } from "@/contexts/settings-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 
 // compute flash deal defaults – daily deals that reset every day at midnight
 function getEndOfDay(): Date {
@@ -168,13 +169,13 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
           </div>
         </div>
 
-        {/* Deal Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* Deal Cards — single row carousel con drag + barra mini */}
+        <HorizontalCarousel ariaLabel="Ofertas relámpago" itemWidthClass="w-[200px] sm:w-[220px] shrink-0 snap-start">
           {deals.map((deal) => {
             const qty = items.find(i => i.id === deal.id)?.quantity ?? 0;
             return <DealCard key={deal.id} deal={deal} qty={qty} onAdd={() => { addItem(deal); showToast(deal.name, deal.image); }} onDec={() => updateQty(deal.id, qty - 1)} onInc={() => updateQty(deal.id, qty + 1)} />;
           })}
-        </div>
+        </HorizontalCarousel>
       </div>
     </section>
   );

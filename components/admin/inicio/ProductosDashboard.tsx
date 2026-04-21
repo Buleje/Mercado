@@ -12,7 +12,11 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const ProductosCharts = dynamic(() => import("./ProductosCharts"), { ssr: false });
-import { DashboardSectionHeader } from "./_shared";
+const ProductosAdvancedCharts = dynamic(
+  () => import("./ProductosAdvancedCharts").then((m) => ({ default: m.ProductosAdvancedCharts })),
+  { ssr: false },
+);
+import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -217,7 +221,7 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
     };
   }, [raw, dateRange]);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
@@ -263,8 +267,11 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
         )}
       </div>
 
-      {/* ── Charts ── */}
+      {/* ── Charts base (top 10, ABC, categorías, stock, zombies, afinidades) ── */}
       <ProductosCharts data={data} />
+
+      {/* ── Charts especializados (BCG, rotación/margen, top-5 evolution, comparativa, heatmap, margen cat) ── */}
+      <ProductosAdvancedCharts />
     </div>
   );
 }

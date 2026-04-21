@@ -40,6 +40,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Shadow duplicates audit (non-blocking)
+        # Lista archivos .ts/.tsx con mismo basename en rutas distintas.
+        # Visto en prod: RecentlyViewed shadowed entre components/ y components/store/
+        # causaba que fixes se aplicaran al archivo equivocado.
+        # Warning-only hasta tener baseline — subir a exit 1 en una PR dedicada.
+        run: node scripts/find-duplicates.mjs
+        continue-on-error: true
+
       - name: Type check (tsc --noEmit)
         run: npx tsc --noEmit
 
@@ -52,6 +60,17 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # ── E2E tests selectivos (admin bulk + checkout) ────────────────────
+      # Solo specs criticos para no inflar tiempo de CI. Previenen regresion
+      # del bug CSRF 2026-04-20 (bulk-clear-images) y del flujo checkout.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        continue-on-error: true
+
+      - name: E2E — admin bulk + checkout
+        run: npx playwright test e2e/admin-bulk-images.spec.ts e2e/checkout-multistep.spec.ts --reporter=list
+        continue-on-error: true  # non-blocking hasta tener baseline verde
 
   evals:
     name: Run Evals (28 critical zone tests)

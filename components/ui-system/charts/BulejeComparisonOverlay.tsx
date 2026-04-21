@@ -110,7 +110,7 @@ export const BulejeComparisonOverlay = memo(function BulejeComparisonOverlay({
         </span>
       </div>
 
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} minWidth={0}>
         <AreaChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
           <defs>
             <linearGradient id="current-gradient" x1="0" y1="0" x2="0" y2="1">

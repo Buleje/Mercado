@@ -12,7 +12,11 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const CajaCharts = dynamic(() => import("./CajaCharts"), { ssr: false });
-import { DashboardSectionHeader } from "./_shared";
+const CajaAdvancedCharts = dynamic(
+  () => import("./CajaAdvancedCharts").then((m) => ({ default: m.CajaAdvancedCharts })),
+  { ssr: false },
+);
+import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -196,7 +200,7 @@ export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
     };
   }, [raw, dateRange]);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
@@ -240,8 +244,11 @@ export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
         </div>
       </div>
 
-      {/* ── Charts ── */}
+      {/* ── Charts base (flujo 14d, tendencia mensual, por hora, método, ratio, waterfall) ── */}
       <CajaCharts data={data} />
+
+      {/* ── Charts especializados (runway, pareto pagos, evolución métodos, comparativa, margen trend, balance acumulado) ── */}
+      <CajaAdvancedCharts />
     </div>
   );
 }

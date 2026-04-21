@@ -6,8 +6,7 @@ import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
-
-export const dynamic = "force-dynamic";
+// Next 16: sin segment configs. Las routes son dynamic por default con cookies/headers.
 
 /**
  * GET    /api/subscriptions/[id]      — obtener una suscripción del cliente

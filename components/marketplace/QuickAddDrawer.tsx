@@ -8,13 +8,29 @@ import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useQuickAdd } from "@/contexts/quick-add-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { getProductSlug } from "@/data/products";
 
 const MAX_QTY = 20;
 
+/**
+ * Meta inyectada por CategoryProductGrid cuando el product viene del
+ * marketplace multi-store (y no del catálogo single-tenant). Si está
+ * presente, agregamos al carrito marketplace en vez de al carrito tenant.
+ */
+type WithStoreMeta = {
+  _bulejeStoreMeta?: {
+    storeId: string;
+    storeName: string;
+    storeSlug: string;
+    storeProductId: string;
+  };
+};
+
 export default function QuickAddDrawer() {
   const { product, isOpen, close } = useQuickAdd();
   const { addItem } = useCart();
+  const { addItem: addMarketplaceItem } = useMarketplaceCart();
   const { showToast } = useToast();
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
@@ -40,7 +56,26 @@ export default function QuickAddDrawer() {
   const handleAdd = () => {
     if (!product || adding) return;
     setAdding(true);
-    for (let i = 0; i < qty; i++) addItem(product);
+    const meta = (product as WithStoreMeta)._bulejeStoreMeta;
+    if (meta) {
+      // Producto viene del marketplace multi-store — agregá al cart global
+      // (hooks/use-marketplace-cart) con meta de la tienda.
+      addMarketplaceItem({
+        storeId: meta.storeId,
+        storeName: meta.storeName,
+        storeSlug: meta.storeSlug,
+        storeProductId: meta.storeProductId,
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: qty,
+        image: product.image ?? null,
+        unit: product.unit ?? null,
+      });
+    } else {
+      // Catálogo single-tenant — usamos el cart-context.
+      for (let i = 0; i < qty; i++) addItem(product);
+    }
     showToast(`${qty}× ${product.name}`, product.image);
     setTimeout(() => {
       close();

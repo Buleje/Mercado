@@ -12,6 +12,7 @@ import {
   getSupabaseBrowser,
   isSupabaseAuthConfigured,
 } from "@/lib/supabase/client";
+import { useCustomer } from "@/contexts/customer-context";
 
 // ---------------------------------------------------------------------------
 // Tipos de respuesta de la API
@@ -42,12 +43,23 @@ export function useAuthModal() {
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
+//
+// 2026-04-21 — Modal unificado: ya NO hay tabs login/registro. Siempre se
+// muestra el flujo completo (Google · Facebook · DNI + Nombre + Phone).
+// Si el cliente ya existe (lookup por teléfono), los campos se pre-llenan.
 type Tab = "login" | "register";
 type Step = "phone" | "otp";
 
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
+  /**
+   * Nombre pre-llenado (típicamente del flow OAuth — Google/Facebook ya
+   * sabe el nombre del usuario; solo falta el celular para crear el
+   * Customer). Si está presente, el modal abre con un copy distinto:
+   * "Casi listo — solo falta tu celular".
+   */
+  initialName?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,11 +104,27 @@ function FacebookIcon() {
 // ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
-export function AuthModal({ open, onClose }: AuthModalProps) {
-  const [tab, setTab] = useState<Tab>("login");
+export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
+  // Tab unificada — siempre "register" semánticamente para que el OTP verify
+  // procese name + DNI cuando el customer aún no existe. Si ya existe, el
+  // backend ignora los campos y devuelve { isNew: false } igualmente.
+  const tab: Tab = "register";
+
+  // Sincroniza el customer con el context + localStorage tras login OK
+  // (sin esto el navbar no muestra iniciales y /checkout/auth no detecta sesión)
+  const { register: registerCustomer } = useCustomer();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
+
+  // Si initialName cambia (por OAuth completion), refrescamos el state.
+  useEffect(() => {
+    if (initialName && initialName.trim() && !name) {
+      setName(initialName);
+    }
+    // intencional: solo cuando initialName cambia
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialName]);
   const [dni, setDni] = useState("");
   const [dniLoading, setDniLoading] = useState(false);
   const [dniError, setDniError] = useState<string | null>(null);
@@ -231,10 +259,9 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
       showToast("Ingresa un número de celular válido (9 dígitos).");
       return;
     }
-    if (tab === "register" && !name.trim()) {
-      showToast("Ingresa tu nombre completo para registrarte.");
-      return;
-    }
+    // Nombre ahora es OPCIONAL: si el customer ya existe el backend lo
+    // ignora y devuelve el name actual; si es nuevo y queda vacío, queda
+    // como "Cliente" hasta que lo edite en su perfil. UX rápida pedida.
     setLoading(true);
     try {
       const res = await fetch("/api/auth/otp/send", {
@@ -282,6 +309,20 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         showToast(data.error ?? "Código incorrecto. Intenta de nuevo.");
         return;
       }
+
+      // Persistir en CustomerContext → actualiza nav (iniciales + nombre)
+      // y deja listo el localStorage para futuras visitas.
+      if (data.customer) {
+        const cleanDni = dni.replace(/\D/g, "");
+        registerCustomer({
+          name: data.customer.name,
+          phone: data.customer.phone,
+          ...(cleanDni.length === 8 ? { dni: cleanDni } : {}),
+          location: "",
+          reference: "",
+        });
+      }
+
       showToast(
         data.isNew
           ? `¡Bienvenido, ${data.customer?.name ?? ""}!`
@@ -293,7 +334,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [otpCode, normalizedPhone, name, dni, tab, showToast, onClose]);
+  }, [otpCode, normalizedPhone, name, dni, tab, showToast, onClose, registerCustomer]);
 
   const handleResendOtp = useCallback(() => {
     setOtpCode("");
@@ -340,15 +381,40 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     void signInWithSupabase("facebook");
   }, [oauthReady, signInWithSupabase]);
 
-  const handleTabChange = useCallback((newTab: Tab) => {
-    setTab(newTab);
-    setStep("phone");
-    setOtpCode("");
-    setDni("");
-    setName("");
-    setDniError(null);
-    setDniVerified(false);
-  }, []);
+  // handleTabChange eliminado — modal unificado, sin tabs.
+
+  // ── Phone lookup: si el customer ya existe (por phone), pre-llena name+dni.
+  // Llamamos al verify endpoint en modo "lookup-only" para no enviar OTP.
+  // 2026-04-21 — UX rápida pedida por el negocio.
+  useEffect(() => {
+    if (normalizedPhone.length < 9) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/auth/customer-lookup?phone=${encodeURIComponent(normalizedPhone)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          ok?: boolean;
+          customer?: { name?: string; dni?: string };
+        };
+        if (cancelled || !data.ok || !data.customer) return;
+        if (data.customer.name && !name.trim()) setName(data.customer.name);
+        if (data.customer.dni && !dni.trim()) setDni(data.customer.dni);
+        if (data.customer.name) setDniVerified(true);
+      } catch {
+        // silent — el campo queda vacío, el usuario rellena manualmente
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // intencional: solo re-evaluar al cambiar el phone normalizado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [normalizedPhone]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -369,7 +435,12 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         "transition-opacity duration-300",
         visible ? "opacity-100" : "opacity-0 pointer-events-none",
       ].join(" ")}
-      aria-hidden={!open}
+      // inert en vez de aria-hidden: cuando el modal cierra y el botón X aún
+      // tiene focus, aria-hidden en el ancestor dispara warning "Blocked
+      // aria-hidden on element because its descendant retained focus".
+      // inert prohíbe interacción Y oculta para AT sin ese problema.
+      // Fix 2026-04-19 — ver consola /marketplace con modal cerrando.
+      inert={!open}
     >
       <div
         role="dialog"
@@ -388,13 +459,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         ].join(" ")}
       >
         {/* ── Gradient header decoration ── */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-br from-emerald-600 via-emerald-500 to-indigo-600 opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-32 bg-gray-900 dark:bg-gray-800 opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
 
         {/* Toast */}
         {toast && (
           <div
             role="alert"
-            className="absolute inset-x-4 top-4 z-10 rounded-2xl bg-linear-to-r from-emerald-600 to-indigo-600 px-4 py-3 text-center text-sm font-medium text-white shadow-lg shadow-emerald-500/25 animate-[fadeIn_0.3s_ease-out]"
+            className="absolute inset-x-4 top-4 z-10 rounded-2xl bg-[var(--accent)] px-4 py-3 text-center text-sm font-medium text-white shadow-lg shadow-emerald-500/25 animate-[fadeIn_0.3s_ease-out]"
           >
             {toast}
           </div>
@@ -413,29 +484,31 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         <div className="relative px-6 pb-8 pt-8 sm:px-8">
           {/* ── Logo + título ── */}
           <div className="mb-7 flex flex-col items-center gap-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-indigo-600 text-white text-2xl font-black shadow-xl shadow-emerald-500/30 ring-4 ring-white dark:ring-gray-900">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-2xl font-black shadow-md ring-4 ring-white dark:ring-gray-900">
               B
             </div>
             <div className="text-center">
               <h2 className="font-display text-3xl font-semibold text-gray-900 dark:text-white tracking-[-0.015em]">
                 {step === "otp"
                   ? "Verificación"
-                  : tab === "register"
-                    ? "Crea tu cuenta"
-                    : "¡Hola de nuevo!"}
+                  : initialName
+                    ? `¡Hola, ${initialName.split(" ")[0]}!`
+                    : "Crea tu cuenta"}
               </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {step === "otp"
                   ? "Ingresa el código que te enviamos"
-                  : tab === "register"
-                    ? "Regístrate y empezá a comprar en tu barrio"
-                    : "Volvé a tu bodega de confianza"}
+                  : initialName
+                    ? "Casi listo — solo falta tu celular para terminar"
+                    : "Regístrate y empezá a comprar en tu barrio"}
               </p>
             </div>
           </div>
 
-          {/* ── Botones sociales primero (paso phone) ── */}
-          {step === "phone" && (
+          {/* ── Botones sociales primero (paso phone) ──
+              Si el usuario viene de OAuth (initialName presente), ocultamos
+              los botones — ya está logueado, solo falta su celular. */}
+          {step === "phone" && !initialName && (
             <>
               <div className="space-y-2.5 mb-5">
                 <button
@@ -453,7 +526,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   onClick={handleFacebook}
                   disabled={!oauthReady}
                   title={oauthReady ? undefined : "Configuración pendiente"}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#166FE5] hover:shadow-md hover:shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm"
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm"
                 >
                   <FacebookIcon />
                   {oauthReady
@@ -471,125 +544,21 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
               </div>
 
-              {/* Tabs */}
-              <div className="mb-5 flex rounded-2xl bg-gray-100 dark:bg-gray-800 p-1">
-                <button
-                  onClick={() => handleTabChange("login")}
-                  className={[
-                    "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all min-h-11",
-                    tab === "login"
-                      ? "bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
-                  ].join(" ")}
-                >
-                  Iniciar sesión
-                </button>
-                <button
-                  onClick={() => handleTabChange("register")}
-                  className={[
-                    "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all min-h-11",
-                    tab === "register"
-                      ? "bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
-                  ].join(" ")}
-                >
-                  Registrarse
-                </button>
-              </div>
+              {/* Tabs login/register eliminados (2026-04-21) — flujo
+                  unificado: el modal siempre muestra los mismos campos.
+                  Si el customer ya existe (lookup por teléfono), los
+                  campos vienen pre-llenados via useEffect debajo. */}
             </>
           )}
 
-          {/* ── Paso 1: Formulario de teléfono ── */}
+          {/* ── Paso 1: Formulario simplificado (phone primero) ──
+              Cambio 2026-04-21: solo se requiere el celular. Si el customer
+              ya existe, el nombre se autollena vía /api/auth/customer-lookup.
+              Si NO existe (cliente nuevo), aparece el campo Nombre debajo. */}
           {step === "phone" && (
             <div className="space-y-3.5">
-              {/* Campo DNI — solo en registro */}
-              {tab === "register" && (
-                <div>
-                  <label
-                    htmlFor="auth-dni"
-                    className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
-                  >
-                    <Shield className="h-3.5 w-3.5" />
-                    DNI
-                    <span className="ml-auto font-normal normal-case tracking-normal text-gray-400 dark:text-gray-500">
-                      Autocompleta tu nombre
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="auth-dni"
-                      type="text"
-                      value={dni}
-                      onChange={(e) => setDni(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                      placeholder="12345678"
-                      inputMode="numeric"
-                      maxLength={8}
-                      className={[
-                        "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 pr-12 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
-                        dniVerified
-                          ? "border-green-400 dark:border-green-500 ring-2 ring-green-400/20"
-                          : dniError
-                            ? "border-red-400 dark:border-red-500 ring-2 ring-red-400/20"
-                            : "border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
-                      ].join(" ")}
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {dniLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
-                      ) : dniVerified ? (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      ) : dni.length > 0 ? (
-                        <Search className="h-4 w-4 text-gray-400" />
-                      ) : null}
-                    </div>
-                  </div>
-                  {dniError && (
-                    <p className="mt-1 text-xs text-red-500 dark:text-red-400">{dniError}</p>
-                  )}
-                  {dniVerified && (
-                    <p className="mt-1 text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-                      <span>✓</span> Nombre encontrado automáticamente
-                    </p>
-                  )}
-                </div>
-              )}
 
-              {/* Campo nombre — solo en registro */}
-              {tab === "register" && (
-                <div>
-                  <label
-                    htmlFor="auth-name"
-                    className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
-                  >
-                    <User className="h-3.5 w-3.5" />
-                    Nombre completo
-                  </label>
-                  <input
-                    id="auth-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      if (dniVerified) setDniVerified(false);
-                    }}
-                    placeholder="Tu nombre completo"
-                    autoComplete="name"
-                    readOnly={dniVerified}
-                    className={[
-                      "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
-                      dniVerified
-                        ? "border-green-400/50 dark:border-green-500/30 bg-green-50 dark:bg-green-900/20 cursor-default"
-                        : "border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
-                    ].join(" ")}
-                  />
-                </div>
-              )}
-
-              {/* Celular */}
+              {/* Celular — campo principal y único en el primer paso */}
               <div>
                 <label
                   htmlFor="auth-phone"
@@ -616,23 +585,65 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 </div>
               </div>
 
+              {/* Nombre — aparece solo si:
+                  - El phone tiene 9+ dígitos Y
+                  - El backend NO encontró un customer (dniVerified=false) Y
+                  - el campo está vacío
+                  Si es returning customer, el nombre ya viene autollenado. */}
+              {normalizedPhone.length >= 9 && (
+                <div>
+                  <label
+                    htmlFor="auth-name"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+                  >
+                    <User className="h-3.5 w-3.5" />
+                    Nombre completo
+                    {dniVerified && (
+                      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-[10px] font-bold text-green-700 dark:text-green-300">
+                        ✓ Autollenado
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    id="auth-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (dniVerified) setDniVerified(false);
+                    }}
+                    placeholder={dniVerified ? "" : "Tu nombre completo (opcional)"}
+                    autoComplete="name"
+                    className={[
+                      "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
+                      dniVerified
+                        ? "border-green-400/50 dark:border-green-500/30 bg-green-50 dark:bg-green-900/20"
+                        : "border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
+                    ].join(" ")}
+                  />
+                  {!dniVerified && (
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      Si ya compraste antes, el nombre se llenará solo. Si sos nuevo, escribilo.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Botón enviar OTP */}
               <button
                 onClick={() => {
                   void handleSendOtp();
                 }}
                 disabled={loading}
-                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-emerald-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full min-h-12 rounded-2xl bg-[var(--accent)] px-4 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Enviando...
                   </span>
-                ) : tab === "login" ? (
-                  "Enviar código"
                 ) : (
-                  "Crear cuenta"
+                  "Continuar"
                 )}
               </button>
             </div>
@@ -683,7 +694,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   void handleVerifyOtp();
                 }}
                 disabled={loading || otpCode.length !== 6}
-                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-emerald-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full min-h-12 rounded-2xl bg-[var(--accent)] px-4 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">

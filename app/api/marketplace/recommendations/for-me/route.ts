@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { getRecommendedForCustomer } from "@/lib/recommendations/product-similarity";
 import { logger } from "@/lib/logger";
 
@@ -23,6 +24,8 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const anon = anonymousGate(req);
+  if (anon) return anon;
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   // Auth — requiere sesión de customer

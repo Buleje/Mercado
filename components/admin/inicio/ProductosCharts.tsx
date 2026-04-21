@@ -1,211 +1,323 @@
 "use client";
 
 /**
- * ProductosCharts — pattern unificado:
- *  - Row 2 (FULL): Top 20 productos por ingresos (BarChart horizontal)
- *  - Row 3: Pareto ABC + Productos sin movimiento
- *  - Row 4: MicroDonut categoria + MicroList margenes altos + MicroGauge cobertura cat
+ * ProductosCharts — charts base del módulo Productos.
+ *
+ * Rediseñado con DashboardSection + primitivas Buleje DS + DraggableSections.
  */
 
-import {
-  BarChart, Bar, ComposedChart, Line,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
-} from "recharts";
-import {
-  BarChart3, Target, Package, ShoppingBasket, Link2, Layers, TrendingUp,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import type { ProductosData } from "./ProductosDashboard";
-import {
-  ChartCard, ChartTooltip, CHART_TOKENS,
-  MicroDonut, MicroList, MicroGauge,
-} from "./_shared";
+import { BulejeComposedChart } from "@/components/ui-system/charts";
+import { DashboardSection, MicroList } from "./_shared";
+import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { Link2 } from "@buleje/design-system/icons";
 
-const T = CHART_TOKENS;
+function fmtS(v: number) {
+  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+}
+function fmtU(v: number) {
+  return `${v.toLocaleString("es-PE")} u`;
+}
 
 export default function ProductosCharts({ data }: { data: ProductosData }) {
-  // Categorias para donut
-  const categoriasData = data.ventasPorCategoria.map((c) => ({
-    name: c.nombre, value: c.total, color: c.color,
-  }));
+  const topIngresos = useMemo(() => {
+    const total = data.topProductos.reduce((s, p) => s + p.ingresos, 0);
+    const utilidad = data.topProductos.reduce((s, p) => s + p.utilidad, 0);
+    const margenAvg = total > 0 ? Math.round((utilidad / total) * 100) : 0;
+    const unidades = data.topProductos.reduce((s, p) => s + p.unidades, 0);
+    return { total, utilidad, margenAvg, unidades };
+  }, [data.topProductos]);
 
-  // Top 5 productos por ingresos (margenes altos como proxy)
-  const top5Productos = data.topProductos.slice(0, 5).map((p) => ({
-    name: p.nombre,
+  const paretoKpis = useMemo(() => {
+    const total = data.paretoData.length;
+    const top80 = data.paretoData.filter((p) => p.acumulado <= 80).length;
+    return { top80, total };
+  }, [data.paretoData]);
+
+  const topProductosRows = data.topProductos.slice(0, 10).map((p) => ({
+    name: p.nombre.length > 22 ? p.nombre.slice(0, 21) + "…" : p.nombre,
     value: p.ingresos,
-    label: `S/ ${p.ingresos >= 1000 ? `${(p.ingresos / 1000).toFixed(1)}k` : p.ingresos.toFixed(0)}`,
-    sublabel: `${p.unidades} uds`,
+    label: `${fmtS(p.ingresos)} · ${p.unidades}u`,
+    sublabel: `Util. ${fmtS(p.utilidad)}`,
   }));
 
-  // Cobertura categorias = (claseA + claseB) / total
-  const totalClasificados = data.claseA + data.claseB + data.claseC;
-  const coberturaPct = totalClasificados > 0
-    ? ((data.claseA + data.claseB) / totalClasificados) * 100
-    : 0;
+  const sinMovRows = data.productosSinMov.slice(0, 10).map((p) => ({
+    name: p.nombre.length > 22 ? p.nombre.slice(0, 21) + "…" : p.nombre,
+    value: (p.stock ?? 0) * p.precio,
+    label: `${fmtU(p.stock ?? 0)} · ${fmtS((p.stock ?? 0) * p.precio)}`,
+    sublabel: p.categoria,
+  }));
 
-  return (
-    <div className="space-y-4">
-      {/* ── Row 2: FULL-WIDTH — Top 20 productos ── */}
-      <ChartCard
-        title="Performance de productos — top 10 por ingresos"
-        Icon={TrendingUp}
-        height={380}
-        subtitle="Ingreso, utilidad y unidades vendidas"
-        isEmpty={data.topProductos.length === 0}
-        emptyText="Sin ventas en el periodo"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.topProductos.slice(0, 10)} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
-            <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-            <YAxis type="category" dataKey="nombre" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} width={130} />
-            <Tooltip content={<ChartTooltip prefix="S/" />} />
-            <Bar dataKey="ingresos" name="Ingresos" radius={[0, 6, 6, 0]} barSize={22}>
-              {data.topProductos.slice(0, 10).map((_, i) => (
-                <Cell key={i} fill={i < 3 ? T.brand : T.blue} opacity={i < 3 ? 1 : 0.6} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      {/* ── Row 3: 2 secondary charts ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Analisis Pareto ABC (80/20)"
-          Icon={Target}
-          height={280}
-          subtitle="Concentracion de ingresos por producto"
-          badge={
-            <div className="flex items-center gap-2 text-[length:var(--ts-2xs)]">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: T.brand }} />A</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: T.blue }} />B</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />C</span>
-            </div>
-          }
-          isEmpty={data.paretoData.length === 0}
-          emptyText="Sin datos suficientes"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data.paretoData} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="nombre" tick={{ fontSize: 8, fill: T.tickFill }} axisLine={false} tickLine={false} angle={-35} textAnchor="end" height={50} interval={0} />
-              <YAxis yAxisId="left" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Bar yAxisId="left" dataKey="ingresos" name="Ingresos" radius={[4, 4, 0, 0]}>
-                {data.paretoData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Bar>
-              <Line yAxisId="right" type="monotone" dataKey="acumulado" name="% Acum" stroke={T.amber} strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="Productos sin movimiento"
-          Icon={Package}
-          height={280}
-          subtitle="Sin ventas en el periodo"
-          isEmpty={data.productosSinMov.length === 0}
-          emptyText="Todos rotaron"
-          EmptyIcon={Package}
-        >
-          <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
-            {data.productosSinMov.map((p, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-foreground truncate leading-tight">{p.nombre}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight">{p.categoria}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.stock} uds</span>
-                  <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] tabular-nums">S/ {p.precio.toFixed(2)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      </div>
-
-      {/* ── Row 4: 3 micro-insights ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard
-          title="Distribucion por categoria"
-          Icon={ShoppingBasket}
-          height={220}
-          isEmpty={categoriasData.length === 0}
-          emptyText="Sin ventas"
-        >
-          <MicroDonut
-            data={categoriasData}
-            centerLabel={String(data.productosActivos)}
-            centerSubLabel="productos"
-            tooltipFormatter={(v) => `S/ ${v.toFixed(2)}`}
-          />
-        </ChartCard>
-
-        <ChartCard
-          title="Top 5 productos por ingresos"
-          Icon={Layers}
-          height={220}
-          isEmpty={top5Productos.length === 0}
-          emptyText="Sin ventas"
-        >
-          <MicroList items={top5Productos} barColor={T.brand} showRank />
-        </ChartCard>
-
-        <ChartCard
-          title="Cobertura de catalogo"
-          Icon={Target}
-          height={220}
-          subtitle={`${data.claseA} A · ${data.claseB} B · ${data.claseC} C`}
-        >
-          <MicroGauge
-            value={coberturaPct}
-            max={100}
-            centerLabel={`${coberturaPct.toFixed(0)}%`}
-            centerSubLabel="A+B del top"
-            footerText={
-              coberturaPct >= 60
-                ? "Buena concentracion"
-                : coberturaPct >= 40
-                  ? "Concentracion media"
-                  : "Catalogo disperso"
-            }
-          />
-        </ChartCard>
-      </div>
-
-      {/* ── Row opcional: Afinidades ── */}
-      {data.afinidades.length > 0 && (
-        <ChartCard
-          title="Afinidades de compra"
-          Icon={Link2}
-          height={220}
-          subtitle="Productos comprados juntos con frecuencia"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 max-h-[200px] overflow-y-auto">
-            {data.afinidades.map((a, i) => (
-              <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                <span className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
-                  i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                )}>{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[var(--text-secondary)] truncate">
-                    <span className="font-medium">{a.productoA}</span>
-                    <span className="text-[var(--text-tertiary)] mx-1">+</span>
-                    <span className="font-medium">{a.productoB}</span>
-                  </p>
-                </div>
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded shrink-0">
-                  {a.coCompras}x juntos
-                </span>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      )}
-    </div>
+  const valorZombie = data.productosSinMov.reduce(
+    (s, p) => s + (p.stock ?? 0) * p.precio,
+    0,
   );
+
+  const stockChart = data.stockProjection.slice(0, 10).map((p) => ({
+    producto: p.nombre.length > 14 ? p.nombre.slice(0, 13) + "…" : p.nombre,
+    dias: Math.min(p.diasRestantes, 90),
+    stock: p.stock,
+  }));
+
+  const stockKpis = useMemo(() => {
+    const critico = data.stockProjection.filter((p) => p.status === "critico").length;
+    const alerta = data.stockProjection.filter((p) => p.status === "alerta").length;
+    const worst = data.stockProjection[0];
+    return { critico, alerta, worst };
+  }, [data.stockProjection]);
+
+  const catChart = data.ventasPorCategoria.map((c) => ({
+    categoria: c.nombre,
+    total: Math.round(c.total),
+  }));
+
+  const catKpis = useMemo(() => {
+    const total = data.ventasPorCategoria.reduce((s, c) => s + c.total, 0);
+    const lider = data.ventasPorCategoria[0];
+    const share = lider && total > 0 ? Math.round((lider.total / total) * 100) : 0;
+    return { total, lider: lider?.nombre ?? "—", share, count: data.ventasPorCategoria.length };
+  }, [data.ventasPorCategoria]);
+
+  const sections: DraggableItem[] = [
+    {
+      id: "top-10-productos",
+      render: () => (
+        <DashboardSection
+          kicker="Rankings · top 10 del periodo"
+          title="Los productos que más venden"
+          kpis={[
+            { label: "Ingresos top-10", value: fmtS(topIngresos.total), tone: "primary" },
+            { label: "Utilidad top-10", value: fmtS(topIngresos.utilidad), tone: "success" },
+            {
+              label: "Margen prom.",
+              value: `${topIngresos.margenAvg}%`,
+              tone: topIngresos.margenAvg >= 25 ? "success" : "warning",
+            },
+            { label: "Uds. top-10", value: fmtU(topIngresos.unidades), tone: "neutral" },
+          ]}
+        >
+          <MicroList items={topProductosRows} barColor="var(--brand-primary)" showRank />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "abc-pareto",
+      render: () => (
+        <DashboardSection
+          kicker="ABC analysis · concentración de ingresos"
+          title="Top 20 productos con curva acumulada 80/20"
+          kpis={[
+            { label: "Total en pareto", value: String(paretoKpis.total), tone: "neutral" },
+            { label: "Clase A (≤80%)", value: String(data.claseA), tone: "success" },
+            { label: "Clase B (≤95%)", value: String(data.claseB), tone: "primary" },
+            { label: "Clase C (resto)", value: String(data.claseC), tone: "neutral" },
+          ]}
+        >
+          <BulejeComposedChart
+            data={data.paretoData.map((p) => ({
+              producto: p.nombre.length > 14 ? p.nombre.slice(0, 13) + "…" : p.nombre,
+              ingresos: Math.round(p.ingresos),
+              acumuladoPct: Math.round(p.acumulado * 10) / 10,
+            }))}
+            xKey="producto"
+            bars={[{ key: "ingresos", label: "Ingresos S/", color: "primary", yAxis: "left" }]}
+            lines={[
+              { key: "acumuladoPct", label: "Acumulado %", color: "accent", yAxis: "right" },
+            ]}
+            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={(v) => `${v}%`}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("acumulado")
+                ? `${Number(v).toFixed(1)}%`
+                : fmtS(Number(v))
+            }
+            height={320}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "ventas-categoria",
+      render: () => (
+        <DashboardSection
+          kicker="Categorías · periodo"
+          title="Ingresos por categoría"
+          kpis={[
+            { label: "Categorías activas", value: String(catKpis.count), tone: "neutral" },
+            { label: "Líder", value: catKpis.lider, tone: "success" },
+            {
+              label: "Share líder",
+              value: `${catKpis.share}%`,
+              tone: catKpis.share >= 40 ? "warning" : "neutral",
+            },
+            { label: "Total", value: fmtS(catKpis.total), tone: "primary" },
+          ]}
+        >
+          <BulejeComposedChart
+            data={catChart}
+            xKey="categoria"
+            bars={[{ key: "total", label: "Ingresos S/", color: "primary", yAxis: "left" }]}
+            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            tooltipFormat={(v) => fmtS(Number(v))}
+            height={280}
+            showLegend={false}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "stock-proyeccion",
+      render: () => (
+        <DashboardSection
+          kicker="Riesgo · proyección top 10"
+          title="Días hasta agotarse"
+          kpis={[
+            {
+              label: "Crítico (<7d)",
+              value: String(stockKpis.critico),
+              tone: stockKpis.critico > 0 ? "warning" : "success",
+            },
+            {
+              label: "Alerta (<14d)",
+              value: String(stockKpis.alerta),
+              tone: stockKpis.alerta > 0 ? "primary" : "success",
+            },
+            {
+              label: "Más urgente",
+              value: stockKpis.worst?.nombre?.slice(0, 16) ?? "—",
+              tone: "warning",
+            },
+            {
+              label: "Días urgente",
+              value: `${stockKpis.worst?.diasRestantes ?? 0}d`,
+              tone: "warning",
+            },
+          ]}
+        >
+          <BulejeComposedChart
+            data={stockChart}
+            xKey="producto"
+            bars={[{ key: "dias", label: "Días restantes", color: "primary", yAxis: "left" }]}
+            lines={[{ key: "stock", label: "Stock", color: "accent", yAxis: "right" }]}
+            leftAxisFormat={(v) => `${v}d`}
+            rightAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("días") ? `${v} días` : `${v} u`
+            }
+            height={280}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "sin-movimiento",
+      render: () => (
+        <DashboardSection
+          kicker="Dead stock · top 10 zombies"
+          title="Productos sin movimiento · capital inmovilizado"
+          kpis={[
+            {
+              label: "Zombies",
+              value: String(data.sinMovimiento),
+              tone: data.sinMovimiento > 10 ? "warning" : "neutral",
+            },
+            { label: "Capital inmovilizado", value: fmtS(valorZombie), tone: "warning" },
+            { label: "Total activos", value: String(data.productosActivos), tone: "neutral" },
+            {
+              label: "% del catálogo",
+              value: `${data.productosActivos > 0 ? Math.round((data.sinMovimiento / data.productosActivos) * 100) : 0}%`,
+              tone: "neutral",
+            },
+          ]}
+        >
+          {sinMovRows.length > 0 ? (
+            <MicroList items={sinMovRows} barColor="var(--data-warning)" showRank />
+          ) : (
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              Sin productos zombies — todo rota ✓
+            </div>
+          )}
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "afinidades",
+      render: () => (
+        <DashboardSection
+          kicker="Análisis de cesta · co-compra"
+          title="Pares que se venden juntos"
+          kpis={[
+            { label: "Pares detectados", value: String(data.afinidades.length), tone: "primary" },
+            {
+              label: "Co-compras máx",
+              value: String(data.afinidades[0]?.coCompras ?? 0),
+              tone: "success",
+            },
+            {
+              label: "Co-compras min",
+              value: String(data.afinidades[data.afinidades.length - 1]?.coCompras ?? 0),
+              tone: "neutral",
+            },
+            {
+              label: "Promedio",
+              value: String(
+                data.afinidades.length
+                  ? Math.round(
+                      data.afinidades.reduce((s, a) => s + a.coCompras, 0) /
+                        data.afinidades.length,
+                    )
+                  : 0,
+              ),
+              tone: "neutral",
+            },
+          ]}
+        >
+          {data.afinidades.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              Aún no hay suficiente data para detectar afinidades (mínimo 2 co-compras).
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {data.afinidades.map((a, i) => {
+                const max = data.afinidades[0]?.coCompras || 1;
+                const width = Math.round((a.coCompras / max) * 100);
+                return (
+                  <li
+                    key={i}
+                    className="relative rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 overflow-hidden"
+                  >
+                    <div
+                      className="absolute inset-y-0 left-0 bg-[var(--accent-soft)] transition-all"
+                      style={{ width: `${width}%` }}
+                    />
+                    <div className="relative flex items-center gap-3">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[10px] font-bold text-[var(--text-tertiary)] shrink-0">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                        {a.productoA}
+                      </span>
+                      <Link2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                        {a.productoB}
+                      </span>
+                      <span className="ml-auto text-xs font-bold text-[var(--text-secondary)] shrink-0">
+                        {a.coCompras}× juntos
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </DashboardSection>
+      ),
+    },
+  ];
+
+  return <DraggableSections items={sections} storageKey="productos-base-order" />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCustomer } from "@/contexts/customer-context";
 import { useWishlist } from "@/hooks/use-wishlist";
@@ -9,32 +10,84 @@ import { LastOrderBanner } from "@/components/marketplace/mi-cuenta/LastOrderBan
 
 interface StatCard {
   label: string;
-  value: string;        // número real, o "—" si no tenemos dato confiable
+  value: string;        // número real, "—" si no hay sesión, "..." si carga
   href: string;
   description: string;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 //
-// Las tarjetas que SÍ tienen dato confiable en el cliente muestran número real:
-//   - Favoritos (useWishlist — localStorage)
-//   - Direcciones (useCustomer — perfil local)
-// Las que requieren fetch al server (pedidos, cupones) muestran "—" hasta
-// cablear PR-2. NO mostramos números ficticios (rompe confianza del cliente).
+// Pedidos: fetch real /api/marketplace/mi-cuenta/pedidos?phone=...&tenantId=main
+// Cupones: lee localStorage (key "marketplace-coupons:v1") como fallback
+// Favoritos + Direcciones: client-side (wishlist localStorage + customer ctx)
 
 export default function MiCuentaPage() {
   const { customer } = useCustomer();
   const { items: wishlistItems } = useWishlist();
+  const [ordersCount, setOrdersCount] = useState<number | null>(null);
+  const [couponsCount, setCouponsCount] = useState<number | null>(null);
 
   const favoritesCount = wishlistItems.length;
   const addressesCount = customer?.locations?.length ?? 0;
+  const phone = customer?.phone;
+
+  // Fetch pedidos reales si hay sesión (phone)
+  useEffect(() => {
+    if (!phone) {
+      setOrdersCount(0);
+      return;
+    }
+    let cancelled = false;
+    fetch(
+      `/api/marketplace/mi-cuenta/pedidos?phone=${encodeURIComponent(phone)}&tenantId=main`,
+      { cache: "no-store" },
+    )
+      .then((r) => (r.ok ? r.json() : { orders: [] }))
+      .then((data: { orders?: unknown[] }) => {
+        if (cancelled) return;
+        setOrdersCount(Array.isArray(data.orders) ? data.orders.length : 0);
+      })
+      .catch(() => {
+        if (!cancelled) setOrdersCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [phone]);
+
+  // Cupones disponibles: lee localStorage (cliente-side, sin endpoint dedicado)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("marketplace-coupons:v1");
+      if (!raw) {
+        setCouponsCount(0);
+        return;
+      }
+      const parsed = JSON.parse(raw) as unknown;
+      const count = Array.isArray(parsed) ? parsed.length : 0;
+      setCouponsCount(count);
+    } catch {
+      setCouponsCount(0);
+    }
+  }, []);
+
+  const formatCount = (n: number | null): string =>
+    n === null ? "..." : String(n);
 
   const stats: StatCard[] = [
     {
       label: "Pedidos",
-      value: "—",
+      value: formatCount(ordersCount),
       href: "/marketplace/mi-cuenta/pedidos",
-      description: "Ver tu historial",
+      description:
+        ordersCount === null
+          ? "Cargando..."
+          : ordersCount > 0
+            ? "Ver tu historial"
+            : phone
+              ? "Aun sin pedidos"
+              : "Identificate para ver tus pedidos",
     },
     {
       label: "Favoritos",
@@ -45,9 +98,14 @@ export default function MiCuentaPage() {
     },
     {
       label: "Cupones",
-      value: "—",
+      value: formatCount(couponsCount),
       href: "/marketplace/mi-cuenta/cupones",
-      description: "Ver disponibles",
+      description:
+        couponsCount === null
+          ? "Cargando..."
+          : couponsCount > 0
+            ? "Ver disponibles"
+            : "Sin cupones por ahora",
     },
     {
       label: "Direcciones",

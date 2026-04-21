@@ -1,9 +1,10 @@
 "use client";
 
-import { PageTitle, SectionTitle } from "@buleje/design-system";
+import { PageTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useOrdersData } from "./hooks/useOrdersData";
 import { useOrdersFilters } from "./hooks/useOrdersFilters";
@@ -132,61 +133,104 @@ export default function OrdersTab() {
   const archivedOrders = orders.filter(o => o.status === "entregado" || o.status === "cancelado");
   const total = activeOrders.reduce((s, o) => s + o.total, 0);
 
+  // Stats agregados
+  const pendingOrders = activeOrders.filter(o => o.status === "pendiente").length;
+  const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado").length;
+  const todayDelivered = orders.filter(o => {
+    if (o.status !== "entregado") return false;
+    const today = new Date().toISOString().slice(0, 10);
+    return o.createdAt.slice(0, 10) === today;
+  }).length;
+
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Pedidos</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-            {activeOrders.length} activos · S/{total.toFixed(2)} total
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setFilterByDelivery(prev => !prev)}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
-              filterByDelivery
-                ? "text-white bg-primary"
-                : "text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200"
-            )}
+      {/* Header — patron estandar AdminModuleHeader (igual que EInvoice, Inventario,
+          Compras, etc). Eyebrow + PageTitle font-display italic + description.
+          Acciones en slot children: filtros, imprimir, archivados. */}
+      <AdminModuleHeader
+        eyebrow="Operaciones · Hoy"
+        title="Pedidos del dia"
+        description={`Gestiona pedidos activos, asigna delivery y verifica pagos. ${inDeliveryOrders > 0 ? `${inDeliveryOrders} en preparacion / delivery.` : ""}`}
+        icon={Package}
+      >
+        <button
+          type="button"
+          onClick={() => setFilterByDelivery((prev) => !prev)}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors border",
+            filterByDelivery
+              ? "bg-primary text-white border-primary"
+              : "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent",
+          )}
+        >
+          <Bike className="h-4 w-4" /> Por delivery
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowAdvancedFilters(true)}
+          className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+        >
+          <SlidersHorizontal className="h-4 w-4" /> Filtros
+          {activeFiltersCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary text-white">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+        >
+          <Printer className="h-4 w-4" /> Imprimir
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowArchive(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+        >
+          <FileText className="h-4 w-4" /> Archivados
+          {archivedOrders.length > 0 && (
+            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
+              {archivedOrders.length}
+            </span>
+          )}
+        </button>
+      </AdminModuleHeader>
+
+      {/* KPI stats — patron estandar EInvoice/Inventario/Cierre.
+          Sin iconos, label uppercase tracking-wider, value text-xl font-extrabold,
+          intent en color del valor solo cuando hay alerta. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {([
+          { label: "Activos", value: String(activeOrders.length), intent: "neutral" as const },
+          {
+            label: "Por confirmar",
+            value: String(pendingOrders),
+            intent: pendingOrders > 0 ? ("warning" as const) : ("neutral" as const),
+          },
+          { label: "Entregados hoy", value: String(todayDelivered), intent: "neutral" as const },
+          { label: "Total activo", value: `S/ ${total.toFixed(2)}`, intent: "neutral" as const },
+        ]).map(({ label, value, intent }) => (
+          <div
+            key={label}
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
           >
-            <Bike className="h-4 w-4" />
-            Por delivery
-          </button>
-          <button
-            onClick={() => setShowAdvancedFilters(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors relative"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filtros avanzados
-            {activeFiltersCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
-          >
-            <Printer className="h-4 w-4" />
-            Imprimir
-          </button>
-          <button
-            onClick={() => setShowArchive(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
-          >
-            <FileText className="h-4 w-4" />
-            Cancelados y Entregados
-            {archivedOrders.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-gray-300 text-[var(--text-primary)] dark:text-foreground text-xs font-bold">
-                {archivedOrders.length}
-              </span>
-            )}
-          </button>
-        </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+              {label}
+            </p>
+            <p
+              className={cn(
+                "text-xl font-extrabold tabular-nums",
+                intent === "warning"
+                  ? "text-[var(--data-warning)]"
+                  : "text-[var(--text-primary)]",
+              )}
+            >
+              {value}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Delivery driver filter */}
@@ -238,6 +282,71 @@ export default function OrdersTab() {
           </button>
         </div>
       )}
+
+      {/* Quick filter chips por status — atajo visual sin abrir filtros avanzados */}
+      <div role="group" aria-label="Filtros rapidos por estado" className="flex items-center gap-2 flex-wrap">
+        {([
+          { id: "all", label: "Todos", count: activeOrders.length },
+          { id: "pendiente", label: "Pendientes", count: orders.filter(o => o.status === "pendiente").length },
+          { id: "confirmado", label: "Confirmados", count: orders.filter(o => o.status === "confirmado").length },
+          { id: "en_camino", label: "En camino", count: orders.filter(o => o.status === "en_camino").length },
+        ] as const).map((chip) => {
+          const active =
+            chip.id === "all"
+              ? filters.statuses.size === 0
+              : filters.statuses.size === 1 && filters.statuses.has(chip.id);
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => {
+                if (chip.id === "all") {
+                  filtersDispatch({ type: "SET_STATUSES", statuses: new Set() });
+                } else {
+                  filtersDispatch({ type: "SET_STATUSES", statuses: new Set([chip.id]) });
+                }
+              }}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[length:var(--ts-xs)] font-bold transition-colors border",
+                active
+                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
+              )}
+            >
+              {chip.label}
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums",
+                  active
+                    ? "bg-[var(--surface-canvas)]/20 text-[var(--surface-canvas)]"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                )}
+              >
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
+
+        {/* Sub-filtros adicionales: con deuda + Yape pendiente (visible si > 0) */}
+        {orders.some(o => o.deuda === true) && (
+          <button
+            type="button"
+            onClick={() => filtersDispatch({ type: "SET_HAS_DEBT", value: !filters.hasDebt })}
+            aria-pressed={filters.hasDebt}
+            className={cn(
+              "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[length:var(--ts-xs)] font-bold transition-colors border",
+              filters.hasDebt
+                ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)] border-[var(--data-warning)]/40"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--data-warning)] hover:text-[var(--data-warning)]",
+            )}
+          >
+            <DollarSign className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+            Con deuda
+          </button>
+        )}
+      </div>
 
       {/* Orders list */}
       <OrdersList

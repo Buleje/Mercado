@@ -14,8 +14,8 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 import { RecipeImagePlaceholder } from "@buleje/design-system";
-import { PaicheEnOlla } from "@/components/ui-system/illustrations/pucallpa-locals";
-import { CorazonLatiendo } from "@/components/ui-system/illustrations/contextual";
+import RecipePreviewModal from "@/components/marketplace/RecipePreviewModal";
+import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 
 // ── Types ──────────────────────────────────────────────────
 type Ingrediente = {
@@ -108,30 +108,37 @@ function useInView(ref: React.RefObject<HTMLElement | null>, once = true) {
 function RecetaCard({
   receta,
   onAddAll,
+  onPreview,
   index,
 }: {
   receta: Receta;
   onAddAll: (r: Receta) => void;
+  onPreview: (r: Receta) => void;
   index: number;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const inView = useInView(cardRef);
 
   const dif = DIFICULTAD_LABELS[receta.dificultad || ""] || null;
-  // Aspect ratio canonical 4/3 — token RECIPE_CARD_RATIO (ADR-075 Fase 5)
-  const aspectClass = "aspect-[4/3]";
+  // Aspect ratio square — consistente con UnifiedProductCard del marketplace
+  const aspectClass = "aspect-square";
 
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 30 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
-      className="group break-inside-avoid mb-6"
+      initial={{ opacity: 0, y: 16 }}
+      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.4) }}
+      whileHover={{ y: -4 }}
+      className="group"
     >
-      <div className="rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-[var(--shadow-xl)] border border-[var(--rule-base)] transition-all duration-[var(--dur-slow)]">
-        {/* Image area */}
-        <Link href={`/recetas/${receta.id}`} className="block relative overflow-hidden">
+      <div className="rounded-xl overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_24px_-12px_rgba(0,180,166,0.18)] transition-[border-color,box-shadow,transform] duration-200">
+        {/* Image area — click abre modal preview en lugar de navegar */}
+        <button
+          type="button"
+          onClick={() => onPreview(receta)}
+          className="block w-full text-left relative overflow-hidden"
+        >
           <div className={cn("relative w-full overflow-hidden", aspectClass)}>
             {receta.imageUrl ? (
               /* Recipe image */
@@ -143,103 +150,98 @@ function RecetaCard({
                 className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
               />
             ) : (
-              /* Placeholder canonical — RecipeImagePlaceholder DS (ADR-075 Fase 5) */
-              <RecipeImagePlaceholder
-                recipeId={receta.id}
-                name={receta.nombre}
-                className="absolute inset-0 rounded-none"
-              />
-            )}
-
-            {/* Category kicker corner (editorial, sin emoji) */}
-            {receta.categoria && (
-              <span className="absolute top-3 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white mix-blend-difference">
-                {receta.categoria}
-              </span>
-            )}
-
-            {/* Subtle bottom gradient for readability of floating badges */}
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/20 to-transparent" />
-
-            {/* Floating badges on image */}
-            <div className="absolute bottom-3 left-3 flex items-center gap-2 flex-wrap">
-              {receta.tiempoMinutos && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur border border-[var(--rule-base)] text-gray-800 text-[length:var(--ts-xs)] font-bold tabular-nums">
-                  <Clock className="h-3 w-3" strokeWidth={1.75} /> {receta.tiempoMinutos} min
+              /* Placeholder más grande con icono y texto visible */
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] text-[var(--text-tertiary)] gap-3">
+                <ChefHat className="h-14 w-14" strokeWidth={1.25} aria-hidden />
+                <span className="text-[length:var(--ts-xs)] uppercase tracking-[0.18em] font-bold">
+                  {receta.categoria ?? "Receta"}
                 </span>
-              )}
-              {receta.porciones && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur border border-[var(--rule-base)] text-gray-800 text-[length:var(--ts-xs)] font-bold tabular-nums">
-                  <Users className="h-3 w-3" strokeWidth={1.75} /> {receta.porciones}
+              </div>
+            )}
+
+            {/* Subtle bottom gradient solo si hay imagen real */}
+            {receta.imageUrl && (
+              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/50 to-transparent" />
+            )}
+
+            {/* Floating badges on image — mas grandes, mejor contraste */}
+            <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+              {receta.categoria && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-800">
+                  {receta.categoria}
                 </span>
               )}
               {dif && (() => {
                 const DIcon = dif.Icon;
                 return (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur border border-[var(--rule-base)] text-gray-800 text-[length:var(--ts-xs)] font-bold">
-                    <DIcon className="h-3 w-3" strokeWidth={1.75} /> {dif.label}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[length:var(--ts-2xs)] font-bold text-gray-800">
+                    <DIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden /> {dif.label}
                   </span>
                 );
               })()}
             </div>
 
-            {/* Video badge */}
-            {receta.videoUrl && (
-              <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-red-500/90 backdrop-blur-sm text-white text-xs font-bold flex items-center gap-1 shadow-lg">
-                <Flame className="h-3 w-3" /> Video
-              </span>
-            )}
+            {/* Tiempo + porciones bottom */}
+            <div className="absolute bottom-3 left-3 flex items-center gap-2 flex-wrap">
+              {receta.tiempoMinutos && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-gray-800 text-[length:var(--ts-xs)] font-bold tabular-nums">
+                  <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden /> {receta.tiempoMinutos} min
+                </span>
+              )}
+              {receta.porciones && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-gray-800 text-[length:var(--ts-xs)] font-bold tabular-nums">
+                  <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden /> {receta.porciones}
+                </span>
+              )}
+            </div>
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-[var(--dur-slow)] flex items-center justify-center">
-              <span className="opacity-0 group-hover:opacity-100 transition-all duration-[var(--dur-base)] transform translate-y-4 group-hover:translate-y-0 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/95 text-gray-900 text-sm font-bold shadow-xl">
-                <Eye className="h-4 w-4" /> Ver receta
-                <ArrowRight className="h-3.5 w-3.5" />
+            {/* Hover overlay — abre vista previa en modal (solo en este card) */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-all duration-[var(--dur-base)] flex items-center justify-center">
+              <span className="opacity-0 group-hover:opacity-100 transition-all duration-[var(--dur-base)] inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-[var(--text-primary)] text-[length:var(--ts-sm)] font-bold shadow-lg">
+                <Eye className="h-4 w-4" strokeWidth={2} /> Vista previa
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
               </span>
             </div>
           </div>
-        </Link>
+        </button>
 
-        {/* Card body */}
-        <div className="p-5">
-          <Link href={`/recetas/${receta.id}`}>
-            <h3 className="text-lg font-bold text-[var(--text-primary)] leading-tight group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
+        {/* Card body — generoso, info clara, precio prominente */}
+        <div className="p-4 sm:p-5 space-y-3">
+          <button
+            type="button"
+            onClick={() => onPreview(receta)}
+            className="block w-full text-left"
+          >
+            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] leading-snug line-clamp-2 group-hover:text-[var(--accent)] transition-colors min-h-[3rem]">
               {receta.nombre}
             </h3>
-          </Link>
-          {receta.categoria && (
-            <span className="inline-block mt-1.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
-              {receta.categoria}
-            </span>
-          )}
+          </button>
+
           {receta.descripcion && (
-            <p className="text-sm text-[var(--text-tertiary)] line-clamp-2 mt-2 leading-relaxed">
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-clamp-2 leading-relaxed">
               {receta.descripcion}
             </p>
           )}
 
-          {/* Summary info */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--rule-base)]">
-            <span className="text-sm text-[var(--text-tertiary)]">
-              {receta.ingredientes.length} ingredientes
-            </span>
-            <span className="text-lg font-extrabold text-primary dark:text-primary-light">
-              S/ {Number(receta.totalIngredientes).toFixed(2)}
-            </span>
+          {/* Bottom row: ingredientes count + precio destacado */}
+          <div className="flex items-end justify-between gap-3 pt-3 border-t border-[var(--rule-soft)]">
+            <div className="min-w-0">
+              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+                Total
+              </p>
+              <p className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tabular-nums leading-none">
+                S/ {Number(receta.totalIngredientes).toFixed(2)}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+                Ingredientes
+              </p>
+              <p className="text-base font-bold text-[var(--text-secondary)] tabular-nums">
+                {receta.ingredientes.length}
+              </p>
+            </div>
           </div>
-
-          {/* Buy button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAddAll(receta);
-            }}
-            className="w-full mt-4 py-3 rounded-xl bg-primary hover:bg-primary-dark active:scale-[0.98] text-white text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Comprar ingredientes
-          </button>
         </div>
       </div>
     </motion.div>
@@ -292,6 +294,8 @@ export default function RecetarioClient() {
   const [catFilter, setCatFilter] = useState("todas");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [suggestion, setSuggestion] = useState("");
+  // Vista previa de receta — reemplaza la pagina dedicada /recetas/[id]
+  const [previewRecipe, setPreviewRecipe] = useState<Receta | null>(null);
   const { addItem } = useCart();
   const { showToast } = useToast();
 
@@ -388,113 +392,11 @@ export default function RecetarioClient() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* ═══════════════════════ HERO SECTION — 2 column culinario ═══════════════════════ */}
-      <section className="relative overflow-hidden py-12 sm:py-16 lg:py-20 bg-[var(--surface-canvas)]">
-        {/* Blobs decorativos */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute -top-24 left-[10%] h-80 w-80 rounded-full bg-primary/8 blur-[100px]" />
-          <div className="absolute top-1/3 right-[-8%] h-64 w-64 rounded-full bg-amber-400/8 blur-[90px]" />
-        </div>
+      {/* Banner promocional rotativo (3 slides cada 8s) */}
+      <PromoBannerCarousel slot="recetas" />
 
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-8 lg:gap-12 items-center">
-            {/* LEFT — content */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="order-2 lg:order-1"
-            >
-              <motion.span
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-5"
-              >
-                <ChefHat className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
-                Recetas · Inspiración local
-              </motion.span>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[var(--text-primary)] leading-[1.05] tracking-tight">
-                Lo que cocinás hoy,{" "}
-                <span className="text-primary">lo traemos mañana</span>
-              </h1>
-              <p className="mt-5 text-base sm:text-lg text-[var(--text-tertiary)] max-w-xl leading-relaxed">
-                Recetas de Pucallpa con ingredientes que podés pedir al toque.
-                Arma tu canasta con 1 click y recibe todo en tu casa.
-              </p>
-
-              {/* Search bar */}
-              <div className="mt-8 max-w-xl">
-                <div className="relative">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
-                  <input
-                    type="text"
-                    placeholder="Busca arroz con pollo, ceviche, lomo saltado..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="w-full h-14 pl-14 pr-12 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch("")}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                      aria-label="Limpiar búsqueda"
-                    >
-                      <X className="h-4 w-4 text-[var(--text-tertiary)]" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats inline */}
-              <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 text-[var(--text-tertiary)] text-sm">
-                <span className="flex items-center gap-1.5">
-                  <Star className="h-4 w-4 text-primary" strokeWidth={1.75} />
-                  <span className="font-bold text-[var(--text-primary)]">{recetas.length}</span> recetas
-                </span>
-                <span className="w-px h-4 bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
-                <span className="flex items-center gap-1.5">
-                  <ChefHat className="h-4 w-4 text-primary" strokeWidth={1.75} />
-                  <span className="font-bold text-[var(--text-primary)]">{Object.keys(categoryCounts).length}</span> categorias
-                </span>
-                <span className="w-px h-4 bg-gray-200 dark:bg-gray-700 hidden sm:block" aria-hidden="true" />
-                <span className="hidden sm:flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-primary" strokeWidth={1.75} />
-                  Ingredientes locales
-                </span>
-              </div>
-            </motion.div>
-
-            {/* RIGHT — ilustracion culinaria stack */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-              className="order-1 lg:order-2 flex flex-col items-center gap-5 sm:gap-6"
-              aria-hidden="true"
-            >
-              {/* Olla con paiche — representa cocina local */}
-              <div className="relative w-full max-w-[320px] aspect-square bg-[var(--surface-sunken)] rounded-3xl border border-[var(--rule-base)] flex items-center justify-center overflow-hidden">
-                <PaicheEnOlla
-                  size={220}
-                  className="relative text-[var(--text-secondary)]"
-                />
-                {/* Steam accent flotante */}
-                <div className="absolute top-6 right-6 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              </div>
-
-              {/* Corazón (inspiración) — representa pasión por cocinar */}
-              <div className="relative w-full max-w-[320px] aspect-[4/3] bg-[var(--surface-sunken)] rounded-3xl border border-[var(--rule-base)] flex items-center justify-center overflow-hidden">
-                <CorazonLatiendo
-                  size={160}
-                  className="relative text-[var(--text-secondary)]"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      {/* Hero culinario eliminado 2026-04-20: el PromoBannerCarousel cubre el rol.
+          Search bar movida al filter bar sticky abajo. */}
 
       {/* ═══════════════════════ FILTER BAR ═══════════════════════ */}
       <div className="sticky top-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-[var(--rule-base)] shadow-sm">
@@ -623,15 +525,27 @@ export default function RecetarioClient() {
               transition={{ duration: 0.2 }}
               className={cn(
                 viewMode === "grid"
-                  ? "columns-1 sm:columns-2 lg:columns-3 gap-6"
+                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6"
                   : "space-y-4 max-w-3xl mx-auto"
               )}
             >
               {filtered.map((receta, idx) =>
                 viewMode === "grid" ? (
-                  <RecetaCard key={receta.id} receta={receta} onAddAll={handleAddAll} index={idx} />
+                  <RecetaCard
+                    key={receta.id}
+                    receta={receta}
+                    onAddAll={handleAddAll}
+                    onPreview={setPreviewRecipe}
+                    index={idx}
+                  />
                 ) : (
-                  <RecetaListItem key={receta.id} receta={receta} onAddAll={handleAddAll} index={idx} />
+                  <RecetaListItem
+                    key={receta.id}
+                    receta={receta}
+                    onAddAll={handleAddAll}
+                    onPreview={setPreviewRecipe}
+                    index={idx}
+                  />
                 )
               )}
             </motion.div>
@@ -724,6 +638,12 @@ export default function RecetarioClient() {
           </Link>
         </div>
       </section>
+
+      {/* Modal de vista previa — reemplaza la pagina dedicada /recetas/[id] */}
+      <RecipePreviewModal
+        recipe={previewRecipe}
+        onClose={() => setPreviewRecipe(null)}
+      />
     </div>
   );
 }
@@ -732,10 +652,12 @@ export default function RecetarioClient() {
 function RecetaListItem({
   receta,
   onAddAll,
+  onPreview,
   index,
 }: {
   receta: Receta;
   onAddAll: (r: Receta) => void;
+  onPreview: (r: Receta) => void;
   index: number;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -748,9 +670,14 @@ function RecetaListItem({
       animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.3) }}
     >
-      <div className="flex gap-4 bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-[var(--dur-base)] group">
+      <div className="flex gap-4 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] hover:border-[var(--rule-mid)] overflow-hidden transition-colors duration-[var(--dur-base)] group">
         {/* Mini image */}
-        <Link href={`/recetas/${receta.id}`} className="shrink-0 w-28 sm:w-36 relative overflow-hidden">
+        <button
+          type="button"
+          onClick={() => onPreview(receta)}
+          className="shrink-0 w-28 sm:w-36 relative overflow-hidden"
+          aria-label={`Vista previa de ${receta.nombre}`}
+        >
           {receta.imageUrl ? (
             <div className="h-full min-h-30 relative">
               <Image
@@ -758,7 +685,7 @@ function RecetaListItem({
                 alt={receta.nombre}
                 fill
                 sizes="(max-width: 640px) 112px, 144px"
-                className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
+                className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
               />
             </div>
           ) : (
@@ -769,15 +696,15 @@ function RecetaListItem({
               className="h-full min-h-30 rounded-none"
             />
           )}
-        </Link>
+        </button>
 
         {/* Content */}
         <div className="flex-1 py-4 pr-4 flex flex-col justify-center min-w-0">
-          <Link href={`/recetas/${receta.id}`}>
-            <h3 className="font-extrabold tracking-tight text-[var(--text-primary)] group-hover:text-primary dark:group-hover:text-primary-light transition-colors truncate">
+          <button type="button" onClick={() => onPreview(receta)} className="text-left">
+            <h3 className="font-extrabold tracking-tight text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors truncate">
               {receta.nombre}
             </h3>
-          </Link>
+          </button>
           {receta.descripcion && (
             <p className="text-sm text-[var(--text-tertiary)] line-clamp-1 mt-1">
               {receta.descripcion}

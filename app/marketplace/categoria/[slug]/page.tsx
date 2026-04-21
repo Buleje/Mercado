@@ -11,6 +11,7 @@ const BASE_URL = "https://www.buleje.pe";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ q?: string }>;
 }
 
 /**
@@ -68,8 +69,10 @@ export async function generateStaticParams() {
  * Server Component: fetcha productos + tiendas de la categoria y delega
  * todo el estado de filtros/sort al CategoriaClient.
  */
-export default async function CategoriaPage({ params }: PageProps) {
+export default async function CategoriaPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+  const initialQuery = typeof sp.q === "string" ? sp.q : undefined;
   const def = getCategoriaDef(slug);
 
   if (!def) {
@@ -89,6 +92,7 @@ export default async function CategoriaPage({ params }: PageProps) {
       initialProducts={initial.products}
       initialTotal={initial.total}
       storesFacet={storesFacet}
+      initialQuery={initialQuery}
     />
   );
 }

@@ -18,6 +18,7 @@ import {
   MicrosoftClarity,
   MetaPixel,
 } from "@/components/Analytics";
+import { SkipLink } from "@/components/ui-system/SkipLink";
 
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
@@ -117,13 +118,8 @@ export default function StoreLayout({
       <GoogleTagManager />
       <MicrosoftClarity />
       <MetaPixel />
-      {/* Skip-to-content link for keyboard and screen-reader users */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:rounded-xl focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white focus:shadow-xl"
-      >
-        Saltar al contenido principal
-      </a>
+      {/* Skip-link WCAG 2.4.1 — ADR-075 tokens DS, sin colores hardcodeados. */}
+      <SkipLink />
       <Suspense fallback={null}>
         <StoreLayoutContent>{children}</StoreLayoutContent>
         <LocalBusinessJsonLd />

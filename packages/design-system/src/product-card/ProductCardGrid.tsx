@@ -12,7 +12,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ShoppingCart, Heart, Star, Plus } from "../icons";
+import { ShoppingCart, Heart, Star } from "../icons";
 import { CardTitle, Caption } from "../typography";
 import { ProductBadge, ProductPrice } from "../store";
 import { cn } from "../utils";
@@ -47,12 +47,14 @@ export function ProductCardGrid({
   renderImage,
   onAddToCart,
   onAddToFavorites,
+  quantityInCart = 0,
   className,
 }: ProductCardGridProps) {
   const discount = resolveDiscount(product);
   const outOfStock = isOutOfStock(product);
   const href = resolveHref(product);
   const alt = product.imageAlt ?? product.name;
+  const hasInCart = quantityInCart > 0;
 
   // Si esta agotado, forzar badge agotado por encima del original
   const resolvedBadge = outOfStock ? "agotado" : product.badge;
@@ -173,25 +175,36 @@ export function ProductCardGrid({
               aria-label={
                 outOfStock
                   ? `${product.name} agotado`
-                  : `Agregar ${product.name} al carrito`
+                  : hasInCart
+                    ? `Tenés ${quantityInCart} ${product.name} en el carrito — agregar otra`
+                    : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                "border border-[var(--rule-base)]",
-                "transition-all duration-[var(--dur-fast)]",
+                "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                "border transition-all duration-[var(--dur-fast)]",
                 outOfStock
-                  ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
-                  : cn(
-                      "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
-                      "hover:opacity-90 focus-visible:outline-none focus-visible:ring-2",
-                      "focus-visible:ring-[var(--text-primary)] focus-visible:ring-offset-2",
-                    ),
+                  ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
+                  : hasInCart
+                    ? cn(
+                        "border-[var(--accent)] bg-[var(--accent)] text-white",
+                        "hover:opacity-90 focus-visible:outline-none focus-visible:ring-2",
+                        "focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
+                      )
+                    : cn(
+                        "border-[var(--rule-base)] bg-[var(--text-primary)] text-[var(--surface-canvas)]",
+                        "hover:opacity-90 focus-visible:outline-none focus-visible:ring-2",
+                        "focus-visible:ring-[var(--text-primary)] focus-visible:ring-offset-2",
+                      ),
               )}
             >
-              {outOfStock ? (
-                <ShoppingCart className="h-4 w-4" aria-hidden />
-              ) : (
-                <Plus className="h-4 w-4" aria-hidden />
+              <ShoppingCart className="h-4 w-4" aria-hidden strokeWidth={1.75} />
+              {hasInCart && (
+                <span
+                  aria-hidden
+                  className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black tabular-nums text-[var(--accent)] shadow ring-2 ring-[var(--surface-raised)]"
+                >
+                  {quantityInCart > 99 ? "99+" : quantityInCart}
+                </span>
               )}
             </button>
           </div>

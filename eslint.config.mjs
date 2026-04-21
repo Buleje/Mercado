@@ -29,6 +29,28 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "warn",
       "@next/next/no-html-link-for-pages": "warn",
       // ─────────────────────────────────────────────────────────────────────
+      // A11y strict — eslint-plugin-jsx-a11y (viene con next/core-web-vitals).
+      // Level "warn" para no bloquear mientras limpiamos backlog; subir a
+      // "error" cuando el repo esté al día. Meta: WCAG 2.1 AA.
+      "jsx-a11y/alt-text": "warn",
+      "jsx-a11y/anchor-has-content": "warn",
+      "jsx-a11y/anchor-is-valid": "warn",
+      "jsx-a11y/aria-props": "error",
+      "jsx-a11y/aria-proptypes": "error",
+      "jsx-a11y/aria-role": "error",
+      "jsx-a11y/aria-unsupported-elements": "error",
+      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/heading-has-content": "warn",
+      "jsx-a11y/iframe-has-title": "error",
+      "jsx-a11y/img-redundant-alt": "warn",
+      "jsx-a11y/interactive-supports-focus": "warn",
+      "jsx-a11y/label-has-associated-control": "warn",
+      "jsx-a11y/no-autofocus": "warn",
+      "jsx-a11y/no-redundant-roles": "warn",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      "jsx-a11y/role-supports-aria-props": "error",
+      "jsx-a11y/tabindex-no-positive": "warn",
+      // ─────────────────────────────────────────────────────────────────────
       // Empty .catch() — silently swallows promise rejections.
       //
       // CLAUDE.md regla #7 permite fire-and-forget con `.catch(() => {})`,
@@ -63,6 +85,21 @@ const eslintConfig = defineConfig([
             "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='Literal'][body.value=null]",
           message:
             "`.catch(() => null)` hides errors. If the null fallback is intentional, log first: .catch((err) => { logger.warn('[ctx]', err); return null; }).",
+        },
+        // ─────────────────────────────────────────────────────────────────────
+        // .toFixed() sobre identifiers que vienen de localStorage/props sin
+        // normalización previa: atrapa el patrón exacto del bug real visto en
+        // RecentlyViewed.tsx:111 — `item.price.toFixed(2)` crasheaba cuando
+        // entries legacy tenían price como string.
+        //
+        // Regla: cuando el callee de .toFixed() es MemberExpression (algo.x)
+        // debería estar envuelto en Number() o ser claramente numérico.
+        // El selector exige `Number(...).toFixed(...)` como forma canónica.
+        {
+          selector:
+            "CallExpression[callee.property.name='toFixed'][callee.object.type='MemberExpression'][callee.object.computed=false]",
+          message:
+            "`.toFixed()` directo sobre una propiedad de objeto es frágil si la fuente es localStorage/props externos. Usa `Number(obj.price).toFixed(n)` o valida con Zod/schema antes. Regresión vista en /marketplace/explorar.",
         },
       ],
     },

@@ -50,13 +50,15 @@ export async function GET(
   const redis = getRedis();
 
   if (!redis) {
-    // TODO: Conectar UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN para
-    // habilitar el conteo real de visitas en vivo.
+    // Sin Redis configurado (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN)
+    // devolvemos 0 para que el cliente no muestre la pill "viewers en vivo"
+    // (ver components/marketplace/LiveViewers.tsx — oculta el componente si
+    // recentViewers === 0). NUNCA inventamos datos falsos.
     return NextResponse.json(
       { recentViewers: 0 },
       {
         headers: {
-          "X-Live-Viewers-Source": "stub-no-redis",
+          "X-Live-Viewers-Source": "no-redis",
           "Cache-Control": "no-store",
         },
       },

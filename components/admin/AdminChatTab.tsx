@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageSquare, Send, Loader2, Users, ArrowLeft, Maximize2, Minimize2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Message = { id: string; sender: string; message: string; createdAt: string };
 type Conversation = { phone: string; name: string; lastMessage: string; lastAt: string; unread: number };
@@ -54,7 +55,7 @@ export default function AdminChatTab() {
   const send = async () => {
     if (!text.trim() || sending) return;
     setSending(true);
-    await fetch("/api/admin-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sender, message: text.trim() }) });
+    await fetch("/api/admin-chat", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ sender, message: text.trim() }) });
     setText("");
     setTick(v => v + 1);
     setSending(false);
@@ -88,7 +89,7 @@ export default function AdminChatTab() {
   const sendChatReply = async () => {
     if (!chatText.trim() || !activePhone || chatSending) return;
     setChatSending(true);
-    await fetch("/api/admin/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: activePhone, message: chatText.trim() }) });
+    await fetch("/api/admin/chat", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ phone: activePhone, message: chatText.trim() }) });
     setChatText("");
     await fetchChatMessages(activePhone);
     setChatSending(false);

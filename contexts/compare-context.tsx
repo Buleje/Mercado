@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { z } from "zod";
+import { useValidatedLocalStorage } from "@/hooks/use-validated-local-storage";
 
 export type CompareProduct = {
   id: number;
@@ -41,64 +43,73 @@ const Ctx = createContext<CompareCtx | null>(null);
 const MAX = 4;
 const STORAGE_KEY = "marketplace-compare";
 
-function readStorage(): CompareProduct[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as CompareProduct[];
-    return Array.isArray(parsed) ? parsed.slice(0, MAX) : [];
-  } catch {
-    return [];
-  }
-}
+/** Filtra entries sin id válido y coerce price string → number. */
+const CompareEntrySchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string().min(1),
+  category: z.string().default(""),
+  price: z.coerce.number().nonnegative().default(0),
+  image: z.string().default(""),
+  unit: z.string().default(""),
+  badge: z.string().optional(),
+  stock: z.number().int().nonnegative().optional(),
+  rating: z.number().optional(),
+  reviewCount: z.number().optional(),
+  description: z.string().optional(),
+  storeSlug: z.string().optional(),
+  storeName: z.string().optional(),
+  productId: z.number().optional(),
+});
 
-function writeStorage(items: CompareProduct[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    /* storage lleno — silent fail */
-  }
-}
+const CompareArraySchema = z
+  .array(z.unknown())
+  .transform((arr) =>
+    arr
+      .map((item) => CompareEntrySchema.safeParse(item))
+      .filter((r): r is { success: true; data: CompareProduct } => r.success)
+      .map((r) => r.data)
+      .slice(0, MAX),
+  );
 
 export function CompareProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CompareProduct[]>([]);
+  const [items, setItems] = useValidatedLocalStorage<CompareProduct[]>(
+    STORAGE_KEY,
+    CompareArraySchema,
+    [],
+  );
   const [open, setOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage on mount (avoid SSR mismatch)
-  useEffect(() => {
-    setItems(readStorage());
-    setHydrated(true);
-  }, []);
+  const add = useCallback(
+    (p: CompareProduct) => {
+      setItems((prev) => {
+        if (prev.length >= MAX || prev.some((x) => x.id === p.id)) return prev;
+        return [...prev, p];
+      });
+    },
+    [setItems],
+  );
 
-  // Persist changes after hydration
-  useEffect(() => {
-    if (!hydrated) return;
-    writeStorage(items);
-  }, [items, hydrated]);
+  const remove = useCallback(
+    (id: number) => {
+      setItems((prev) => prev.filter((x) => x.id !== id));
+    },
+    [setItems],
+  );
 
-  const add = useCallback((p: CompareProduct) => {
-    setItems((prev) => {
-      if (prev.length >= MAX || prev.some((x) => x.id === p.id)) return prev;
-      return [...prev, p];
-    });
-  }, []);
-
-  const remove = useCallback((id: number) => {
-    setItems((prev) => prev.filter((x) => x.id !== id));
-  }, []);
-
-  const isIn = useCallback((id: number) => items.some((x) => x.id === id), [items]);
+  const isIn = useCallback(
+    (id: number) => items.some((x) => x.id === id),
+    [items],
+  );
 
   const clear = useCallback(() => {
     setItems([]);
     setOpen(false);
-  }, []);
+  }, [setItems]);
 
   return (
-    <Ctx.Provider value={{ items, add, remove, isIn, has: isIn, clear, open, setOpen, max: MAX }}>
+    <Ctx.Provider
+      value={{ items, add, remove, isIn, has: isIn, clear, open, setOpen, max: MAX }}
+    >
       {children}
     </Ctx.Provider>
   );

@@ -133,6 +133,27 @@ export function listCategoriaSlugs(): string[] {
   return Object.keys(CATEGORIAS);
 }
 
+/**
+ * Mapea un valor `Product.category` (string libre) al slug canónico de la
+ * categoría que lo contiene, usando matching por keywords (substring,
+ * case-insensitive). Devuelve null si no encuentra match.
+ *
+ * Uso típico: cuando un suggestion de búsqueda devuelve un product, queremos
+ * llevar al usuario a la categoría correspondiente para ver "más como este".
+ */
+export function findCategorySlugByProductCategory(
+  productCategory: string | null | undefined,
+): string | null {
+  if (!productCategory) return null;
+  const needle = productCategory.toLowerCase();
+  for (const def of Object.values(CATEGORIAS)) {
+    if (def.keywords.some((kw) => needle.includes(kw.toLowerCase()))) {
+      return def.slug;
+    }
+  }
+  return null;
+}
+
 // ─── Pure types (shared server/client) ───────────────────────────────────────
 
 export type CatalogProduct = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, X, Clock, ShoppingBag, ArrowLeft } from "@buleje/design-system/icons";
 import Link from "next/link";
@@ -9,6 +9,14 @@ function PaymentResultContent() {
   const params = useSearchParams();
   const status = params.get("status"); // approved, rejected, pending
   const orderId = params.get("order") || "";
+
+  useEffect(() => {
+    if (status === "approved") {
+      try {
+        localStorage.setItem("buleje-first-purchase", "1");
+      } catch { /* ignore */ }
+    }
+  }, [status]);
 
   const config = {
     approved: {

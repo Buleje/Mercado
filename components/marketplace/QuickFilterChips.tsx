@@ -55,19 +55,18 @@ export default function QuickFilterChips({
             aria-pressed={active}
             aria-label={label}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap shrink-0",
+              "inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-base font-semibold transition-colors whitespace-nowrap shrink-0",
               active
-                ? "border-gray-900 bg-gray-900 text-white dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900"
-                : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-800",
+                ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--surface-canvas)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
             )}
           >
             <Icon
               className={cn(
-                "h-3.5 w-3.5 shrink-0",
-                active
-                  ? "text-white dark:text-gray-900"
-                  : "text-gray-400 dark:text-gray-500",
+                "h-4 w-4 shrink-0",
+                active ? "" : "text-[var(--text-tertiary)]",
               )}
+              strokeWidth={1.75}
               aria-hidden="true"
             />
             {label}

@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * components/admin/shared/EmptyState.tsx — VARIANTE admin con ilustraciones SVG.
+ *
+ * ⚠️  OJO: existen 3 EmptyState con APIs distintas:
+ *   - components/admin/EmptyState.tsx         (`actions[]` array)
+ *   - components/admin/shared/EmptyState.tsx  ← este (SVG + `variant` prop)
+ *   - components/ui-system/EmptyState.tsx     (slots eyebrow/action del DS)
+ *
+ * Esta versión es para estados vacíos "ricos" del admin (pedidos, inventario,
+ * etc.) que se benefician de ilustraciones temáticas. NO es intercambiable.
+ *
+ * Audit: `npm run dev:duplicates`.
+ */
+
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "@buleje/design-system/icons";

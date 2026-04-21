@@ -112,23 +112,27 @@ export function ProductInfo({
     : 0;
 
   return (
-    <div className="space-y-4">
-      {/* Kicker: tienda */}
+    <div className="space-y-5">
+      {/* Kicker editorial: accent line + tienda */}
       <Link
         href={`/marketplace/${storeSlug}`}
-        className="inline-flex items-center gap-1.5 group"
+        className="inline-flex items-center gap-2 group"
         aria-label={`Ver tienda ${storeName}`}
       >
-        <Store className="h-3.5 w-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors" />
-        <Kicker className="group-hover:text-[var(--accent)] transition-colors">
+        <span
+          aria-hidden
+          className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+        />
+        <Store className="h-3.5 w-3.5 text-[var(--accent)]" />
+        <span className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] group-hover:underline">
           {storeName}
           {storeZone && ` · ${storeZone}`}
           {storeKm && ` · ${storeKm}`}
-        </Kicker>
+        </span>
       </Link>
 
-      {/* Nombre del producto */}
-      <h1 className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold text-[var(--text-primary)] leading-[var(--lh-tight)] tracking-[var(--ls-tight)]">
+      {/* Nombre del producto — clamp editorial */}
+      <h1 className="text-[clamp(2rem,4.5vw,3.25rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
         {name}
       </h1>
 

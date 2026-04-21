@@ -51,15 +51,28 @@ export async function GET(req: NextRequest) {
     if (!store) {
       return NextResponse.json({ error: "Store no encontrado" }, { status: 404 });
     }
-    const predictions = await StockoutPredictionsDB.getByStore(auth.tenantId, store.id, {
-      severity: parsed.data.severity,
-      limit: 100,
-    });
-    return NextResponse.json({ data: predictions });
+    // Graceful degrade: cualquier error de DB → lista vacía con 200.
+    // Never-throw contract: este endpoint nunca debe tirar 500 al UI para no
+    // romper el dashboard vendor. Los errores reales quedan loggeados.
+    try {
+      const predictions = await StockoutPredictionsDB.getByStore(auth.tenantId, store.id, {
+        severity: parsed.data.severity,
+        limit: 100,
+      });
+      return NextResponse.json({ data: predictions });
+    } catch (dbErr) {
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      logger.warn("[marketplace/predictions] DB error, returning empty list", {
+        error: msg,
+        tenantId: auth.tenantId,
+      });
+      return NextResponse.json({ data: [], warning: "db_unavailable" });
+    }
   } catch (err) {
-    logger.error("[marketplace/predictions] GET error", {
+    logger.warn("[marketplace/predictions] outer error, returning empty list", {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    // 200 con data vacía — nunca 500 al UI.
+    return NextResponse.json({ data: [], warning: "unavailable" });
   }
 }

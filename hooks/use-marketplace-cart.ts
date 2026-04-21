@@ -55,24 +55,35 @@ function writeStorage(state: CartState) {
 export function useMarketplaceCart() {
   const [items, setItems] = useState<CartItem[]>(() => readStorage().items);
 
-  // On mount: validate cart items still exist — remove stale/deleted products
+  // On mount: validate cart items still exist — remove stale/deleted products.
+  //
+  // Endpoint: /api/marketplace/products/check-exists cruza stores (marketplace
+  // multi-tenant). El endpoint legacy /api/products?active=true solo devuelve
+  // productos del tenant "main" → borraba el carrito al abrir el sidebar si los
+  // items venian de otros stores (mismo bug del cart-context.tsx, fix 2026-04-19).
+  //
+  // Guard: si por alguna razon la respuesta no es confiable (empty, error,
+  // cleaned.length === 0), NUNCA borrar el carrito entero. Preservamos como-esta.
   useEffect(() => {
     const stored = readStorage().items;
     if (stored.length === 0) return;
-    const _productIds = [...new Set(stored.map(i => i.productId))];
-    fetch("/api/products?active=true")
+    const idsQuery = stored.map(i => i.productId).join(",");
+    const controller = new AbortController();
+    fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`, { signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data) return;
-        const products: { id: number }[] = Array.isArray(data) ? data : [];
-        const validIds = new Set(products.map((p: { id: number }) => p.id));
-        const cleaned = stored.filter(i => validIds.has(i.productId));
+      .then((data: { existingIds?: number[]; missingIds?: number[] } | null) => {
+        if (!data || !Array.isArray(data.existingIds)) return;
+        const existing = new Set<number>(data.existingIds);
+        const cleaned = stored.filter(i => existing.has(i.productId));
+        // Guard: preservar carrito si TODOS "desaparecerian" (senal dudosa).
+        if (cleaned.length === 0 && stored.length > 0) return;
         if (cleaned.length !== stored.length) {
           setItems(cleaned);
           writeStorage({ items: cleaned });
         }
       })
-      .catch(() => { /* silently ignore */ });
+      .catch(() => { /* silently ignore — cart stays as-is or aborted */ });
+    return () => { controller.abort(); };
   }, []);
 
   // Sincronizar si otra pestaña cambia el carrito

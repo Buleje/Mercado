@@ -203,7 +203,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Recipe detail pages — dynamic from DB
+  // Recipe detail pages — REACTIVADO 2026-04-20 (Sprint S2).
+  // La pagina app/marketplace/recetas/[id]/page.tsx ahora existe con
+  // metadata SEO + JSON-LD Recipe schema.
   let recipePages: MetadataRoute.Sitemap = [];
   try {
     const recipes = await prisma.receta.findMany({
@@ -214,13 +216,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     recipePages = recipes.map((r) => ({
-      url: `${baseUrl}/recetas/${r.id}`,
+      url: `${baseUrl}/marketplace/recetas/${r.id}`,
       lastModified: r.updatedAt,
       changeFrequency: "monthly" as const,
-      priority: 0.5,
+      priority: 0.6,
     }));
   } catch {
-    // DB unavailable
+    // DB unavailable — devolver lista vacia es safe
   }
 
   // Programmatic SEO — zone pages (/zona/[ciudad] + /zona/[ciudad]/[categoria])

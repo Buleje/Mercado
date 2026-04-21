@@ -3,18 +3,11 @@
 import { CardTitle } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import type { DateRange } from "./DashboardDateRange";
-import {
-  BulejeComposedChart,
-  BulejeHeatmap,
-  type HeatmapCell,
-} from "@/components/ui-system/charts";
-import {
-  BulejeMetricHeroCard,
-  BulejeMetricTableCard,
-  BulejeTimeBucketCard,
-  BulejeForecastCard,
-} from "@/components/ui-system/cards";
+import { useDashboardData } from "@/contexts/dashboard-data-context";
+import { BulejeComposedChart } from "@/components/ui-system/charts";
+import { BulejeMetricHeroCard } from "@/components/ui-system/cards";
 import { SkeletonEditorial } from "@/components/ui-system";
+import { InicioMultiCharts } from "./InicioMultiCharts";
 
 /**
  * InicioDashboardV2 — redesign denso (ADR-066 Ola M).
@@ -46,13 +39,13 @@ interface OverviewData {
     activeOrders: number;
     criticalStock: number;
   };
-  heatmap: HeatmapCell[];
-  topProducts: Array<{ productId: number | null; quantity: number }>;
 }
 
 export default function InicioDashboardV2(_props: Props) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Hook llamado SIEMPRE — antes de cualquier early return (Rules of Hooks).
+  const sharedRaw = useDashboardData();
 
   useEffect(() => {
     let active = true;
@@ -99,8 +92,6 @@ export default function InicioDashboardV2(_props: Props) {
   const {
     hero,
     contextual: { ordersToday, uniqueCustomers, ticketAverage, criticalStock },
-    heatmap,
-    topProducts,
   } = data;
 
   // Weekly data desde sparkline — 7 valores labels L M X J V S D
@@ -113,30 +104,36 @@ export default function InicioDashboardV2(_props: Props) {
     clientes: Math.max(1, Math.round((ventas / lastSpark) * uniqueCustomers)) || 0,
   }));
 
-  // Top productos
-  const topProductRows = topProducts.slice(0, 5).map((p, i) => ({
-    id: String(p.productId ?? i),
-    label: `Producto #${p.productId ?? "—"}`,
-    value: p.quantity,
-    suffix: " unid",
-    decimals: 0,
-  }));
-
-  // Time buckets mock — distribuye ventas hoy por franja
-  const totalHoy = hero.totalToday;
-  const bucketMorning = totalHoy * 0.22;
-  const bucketAfternoon = totalHoy * 0.58;
-  const bucketEvening = totalHoy * 0.2;
-
   // Meta mensual
   const avgDaily = hero.sparkline.reduce((s, v) => s + v, 0) / Math.max(1, hero.sparkline.length);
   const metaMes = Math.max(10000, avgDaily * 22 * 1.1);
   const dayOfMonth = new Date().getDate();
   const acumMes = avgDaily * dayOfMonth;
   const proyectado = avgDaily * 30;
+  const metaPct = Math.min(100, Math.round((acumMes / metaMes) * 100));
+  const proyPct = Math.min(150, Math.round((proyectado / metaMes) * 100));
+
+  // Hora pico (últimos 7d combinando orders + sales)
+  const allOrdersForPeak = (sharedRaw?.data?.orders ?? []) as Array<{ createdAt: string; status: string }>;
+  const allSalesForPeak = (sharedRaw?.data?.sales ?? []) as Array<{ createdAt: string }>;
+  const hourCount = new Array(24).fill(0);
+  allOrdersForPeak.forEach((o) => {
+    if (o.status === "cancelado") return;
+    hourCount[new Date(o.createdAt).getHours()] += 1;
+  });
+  allSalesForPeak.forEach((s) => {
+    hourCount[new Date(s.createdAt).getHours()] += 1;
+  });
+  const peakHour = hourCount.indexOf(Math.max(...hourCount, 1));
+  const peakHourLabel = `${String(peakHour).padStart(2, "0")}:00`;
 
   return (
     <div className="space-y-4">
+      {/* ── DASHBOARD OVERVIEW PRO — 12 secciones de alto nivel ──
+          KPIs con deltas + sparklines, heatmap hora x dia, BCG matrix,
+          deadstock, stock critico, cohort retention, cash runway, funnel. */}
+      {null /* legacy — migrar a DashboardTab */}
+
       {/* ── Row 1: Hero con 3 sub-metrics + sparkline + delta matrix ── */}
       <BulejeMetricHeroCard
         kicker="Ventas de hoy"
@@ -155,6 +152,59 @@ export default function InicioDashboardV2(_props: Props) {
           { label: "vs mes", value: hero.deltaVsYesterday * 0.4 },
         ]}
       />
+
+      {/* ── Meta mensual + hora pico (enriquece el hero) ── */}
+      <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+              Meta mensual · día {dayOfMonth}
+            </p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              S/ {Math.round(acumMes).toLocaleString("es-PE")} de S/ {Math.round(metaMes).toLocaleString("es-PE")}
+              <span className="ml-2 text-[var(--text-tertiary)] font-normal">
+                ({metaPct}% avanzado)
+              </span>
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1">
+              <span className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Hora pico
+              </span>
+              <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+                {peakHourLabel}
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1">
+              <span className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Proyección mes
+              </span>
+              <span
+                className={
+                  "text-sm font-extrabold tabular-nums " +
+                  (proyPct >= 100 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")
+                }
+              >
+                {proyPct}%
+              </span>
+            </span>
+          </div>
+        </div>
+        <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+          <div
+            className={
+              "h-full rounded-full transition-all duration-500 " +
+              (metaPct >= 75
+                ? "bg-[var(--data-success)]"
+                : metaPct >= 40
+                  ? "bg-primary"
+                  : "bg-[var(--data-warning)]")
+            }
+            style={{ width: `${metaPct}%` }}
+          />
+        </div>
+      </section>
 
       {/* ── Row 2: Compound chart — 3 series correlacionadas ── */}
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
@@ -187,66 +237,8 @@ export default function InicioDashboardV2(_props: Props) {
         />
       </section>
 
-      {/* ── Row 3: Top productos + Time buckets ── */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {topProductRows.length > 0 ? (
-          <BulejeMetricTableCard
-            kicker="Top productos"
-            sublabel="Últimos 7 días · por volumen"
-            rows={topProductRows}
-            viewAllHref="/admin?module=operar&section=productos"
-          />
-        ) : (
-          <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 flex items-center justify-center">
-            <p className="text-sm text-[var(--text-tertiary)] text-center">
-              Los productos más vendidos aparecerán con pedidos históricos.
-            </p>
-          </div>
-        )}
-
-        <BulejeTimeBucketCard
-          kicker="Ventas por franja"
-          sublabel="Estimación de hoy"
-          prefix="S/ "
-          decimals={2}
-          buckets={[
-            { label: "Mañana", sublabel: "6-12h", value: bucketMorning, color: "data-1" },
-            { label: "Tarde", sublabel: "12-19h", value: bucketAfternoon, color: "data-5" },
-            { label: "Noche", sublabel: "19-22h", value: bucketEvening, color: "data-3" },
-          ]}
-        />
-      </div>
-
-      {/* ── Row 4: Heatmap + Forecast ── */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          {heatmap.length > 0 ? (
-            <BulejeHeatmap
-              data={heatmap}
-              label="Patrón de ventas"
-              sublabel="Hora × día · últimos 30 días"
-              valueFormat={(v) => `${v} ventas`}
-            />
-          ) : (
-            <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-10 h-full flex items-center justify-center">
-              <p className="text-sm text-[var(--text-tertiary)] text-center">
-                Patrones hora × día aparecerán al tener 30 días de ventas.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <BulejeForecastCard
-          kicker="Meta del mes"
-          sublabel={`Día ${dayOfMonth} de 30`}
-          actual={acumMes}
-          projected={proyectado}
-          target={metaMes}
-          prefix="S/ "
-          decimals={0}
-          sparkline={hero.sparkline}
-        />
-      </div>
+      {/* ── Row 3: 5 gráficos multi-variable (caja, inventario, compras, clientes, productos) ── */}
+      <InicioMultiCharts />
 
       {/* ── Footer alerta rápida ── */}
       {criticalStock > 0 && (

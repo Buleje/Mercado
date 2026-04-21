@@ -1,245 +1,313 @@
 "use client";
 
 /**
- * ClientesCharts — pattern unificado:
- *  - Row 2 (FULL): Cohorts retention 6 meses (LineChart multiple)
- *  - Row 3: Segmentacion + Frecuencia compra
- *  - Row 4: MicroDonut canal origen + MicroList top 5 CLV + MicroGauge tasa retencion
+ * ClientesCharts — charts base del módulo Clientes.
+ * Rediseñado con DashboardSection + primitivas Buleje + DraggableSections.
  */
 
-import {
-  AreaChart, Area, BarChart, Bar, ComposedChart, Line,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell,
-} from "recharts";
-import {
-  Users, Star, Heart, ShoppingCart, Crown, Target, TrendingUp,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import type { ClientesData } from "./ClientesDashboard";
 import {
-  ChartCard, ChartTooltip, CHART_TOKENS,
-  MicroDonut, MicroList, MicroGauge,
-} from "./_shared";
+  BulejeComposedChart,
+  BulejeDonutChart,
+} from "@/components/ui-system/charts";
+import { DashboardSection, MicroList } from "./_shared";
+import { DraggableSections, type DraggableItem } from "./DraggableSections";
 
-const T = CHART_TOKENS;
+function fmtS(v: number) {
+  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+}
 
 export default function ClientesCharts({ data }: { data: ClientesData }) {
-  // Top 5 clientes para MicroList
-  const top5Clientes = data.topClientes.slice(0, 5).map((c) => ({
-    name: c.nombre,
+  const topRows = data.topClientes.slice(0, 10).map((c) => ({
+    name: c.nombre.length > 22 ? c.nombre.slice(0, 21) + "…" : c.nombre,
     value: c.gasto,
-    label: `S/ ${c.gasto >= 1000 ? `${(c.gasto / 1000).toFixed(1)}k` : c.gasto.toFixed(0)}`,
-    sublabel: `${c.pedidos} compras`,
+    label: `${fmtS(c.gasto)} · ${c.pedidos} ped.`,
   }));
 
-  // Segmentacion para donut (basada en distribucionGasto)
-  const segmentData = data.distribucionGasto
-    .filter((d) => d.cantidad > 0)
-    .map((d) => ({
-      name: d.rango, value: d.cantidad, color: d.color,
-    }));
+  const topKpis = useMemo(() => {
+    const total = data.topClientes.reduce((s, c) => s + c.gasto, 0);
+    const pedidos = data.topClientes.reduce((s, c) => s + c.pedidos, 0);
+    const ticket = pedidos > 0 ? total / pedidos : 0;
+    return { total, pedidos, ticket, lider: data.topClientes[0] };
+  }, [data.topClientes]);
 
-  // Tasa de retencion = recurrentes / activos
-  const tasaRetencion = data.clientesActivos > 0
-    ? (data.recurrentes / data.clientesActivos) * 100
-    : 0;
+  const retencionKpis = useMemo(() => {
+    const total = data.retencion.reduce((s, m) => s + m.total, 0);
+    const nuevos = data.retencion.reduce((s, m) => s + m.nuevos, 0);
+    const recurrentes = data.retencion.reduce((s, m) => s + m.recurrentes, 0);
+    const retPct = total > 0 ? Math.round((recurrentes / total) * 100) : 0;
+    return { total, nuevos, recurrentes, retPct };
+  }, [data.retencion]);
 
-  return (
-    <div className="space-y-4">
-      {/* ── Row 2: FULL-WIDTH — Retencion mensual ── */}
-      <ChartCard
-        title="Retencion mensual — ultimos 6 meses"
-        Icon={TrendingUp}
-        height={340}
-        subtitle="Clientes nuevos vs recurrentes por mes (apilado)"
-        isEmpty={!data.retencion.some((r) => r.total > 0)}
-        emptyText="Sin datos historicos"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data.retencion} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-            <XAxis dataKey="mes" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-            <YAxis yAxisId="left" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-            <Tooltip content={<ChartTooltip />} />
-            <Legend iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-            <Bar yAxisId="left" dataKey="recurrentes" name="Recurrentes" fill={T.brand} stackId="a" radius={[0, 0, 0, 0]} />
-            <Bar yAxisId="left" dataKey="nuevos" name="Nuevos" fill={T.violet} stackId="a" radius={[6, 6, 0, 0]} />
-            <Line yAxisId="left" type="monotone" dataKey="total" name="Total" stroke={T.amber} strokeWidth={2} dot={{ r: 3, fill: T.amber }} strokeDasharray="4 4" />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </ChartCard>
+  const porDiaKpis = useMemo(() => {
+    const nuevos = data.clientesPorDia.reduce((s, d) => s + d.nuevos, 0);
+    const activosMax = data.clientesPorDia.reduce(
+      (best, d) => (d.activos > best.activos ? d : best),
+      { dia: "—", nuevos: 0, activos: 0 },
+    );
+    const promActivos = data.clientesPorDia.length
+      ? Math.round(
+          data.clientesPorDia.reduce((s, d) => s + d.activos, 0) /
+            data.clientesPorDia.length,
+        )
+      : 0;
+    return { nuevos, pico: activosMax, prom: promActivos };
+  }, [data.clientesPorDia]);
 
-      {/* ── Row 3: 2 secondary charts ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Actividad diaria"
-          Icon={Users}
-          height={280}
-          subtitle="Clientes activos vs nuevos por dia"
-          isEmpty={data.clientesPorDia.length === 0}
-          emptyText="Sin actividad en el periodo"
+  const gastoKpis = useMemo(() => {
+    const total = data.distribucionGasto.reduce((s, r) => s + r.cantidad, 0);
+    const top = data.distribucionGasto.reduce(
+      (best, r) => (r.cantidad > best.cantidad ? r : best),
+      { rango: "—", cantidad: 0, color: "" },
+    );
+    const top500 = data.distribucionGasto.find((r) => r.rango === "S/ 500+")?.cantidad ?? 0;
+    return { total, top, top500 };
+  }, [data.distribucionGasto]);
+
+  const freqKpis = useMemo(() => {
+    const total = data.frecuenciaCompra.reduce((s, r) => s + r.cantidad, 0);
+    const loyal =
+      (data.frecuenciaCompra.find((r) => r.frecuencia === "8+ compras")?.cantidad ?? 0) +
+      (data.frecuenciaCompra.find((r) => r.frecuencia === "4-7 compras")?.cantidad ?? 0);
+    const oneShot = data.frecuenciaCompra.find((r) => r.frecuencia === "1 compra")?.cantidad ?? 0;
+    return { total, loyal, oneShot };
+  }, [data.frecuenciaCompra]);
+
+  const ticketChart = data.ticketPorCliente.map((c) => ({
+    cliente: c.nombre.length > 14 ? c.nombre.slice(0, 13) + "…" : c.nombre,
+    ticket: Math.round(c.ticket),
+    visitas: c.visitas,
+  }));
+
+  const sections: DraggableItem[] = [
+    {
+      id: "top-10-clientes",
+      render: () => (
+        <DashboardSection
+          kicker="Ranking · top 10 clientes del periodo"
+          title="Quién más te compra"
+          kpis={[
+            { label: "Top-10 gastó", value: fmtS(topKpis.total), tone: "primary" },
+            { label: "Pedidos top-10", value: String(topKpis.pedidos), tone: "neutral" },
+            { label: "Ticket prom. top-10", value: fmtS(topKpis.ticket), tone: "success" },
+            {
+              label: "Líder",
+              value: topKpis.lider?.nombre?.slice(0, 18) ?? "—",
+              tone: "success",
+            },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data.clientesPorDia} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="gradActivos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={T.brand} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={T.brand} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="dia" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="activos" name="Activos" stroke={T.brand} fill="url(#gradActivos)" strokeWidth={2} />
-              <Bar dataKey="nuevos" name="Nuevos" fill={T.violet} radius={[4, 4, 0, 0]} opacity={0.8} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="Frecuencia de compra"
-          Icon={ShoppingCart}
-          height={280}
-          subtitle="Compras por cliente en el periodo"
-          isEmpty={!data.frecuenciaCompra.some((f) => f.cantidad > 0)}
-          emptyText="Sin compras en el periodo"
+          {topRows.length > 0 ? (
+            <MicroList items={topRows} barColor="var(--brand-primary)" showRank />
+          ) : (
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              Aún no hay clientes en el periodo.
+            </div>
+          )}
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "retencion-6m",
+      render: () => (
+        <DashboardSection
+          kicker="Retención · últimos 6 meses"
+          title="Nuevos vs recurrentes por mes"
+          kpis={[
+            { label: "Total 6m", value: String(retencionKpis.total), tone: "primary" },
+            { label: "Nuevos 6m", value: String(retencionKpis.nuevos), tone: "success" },
+            { label: "Recurrentes 6m", value: String(retencionKpis.recurrentes), tone: "success" },
+            {
+              label: "Retención",
+              value: `${retencionKpis.retPct}%`,
+              tone:
+                retencionKpis.retPct >= 50
+                  ? "success"
+                  : retencionKpis.retPct >= 30
+                    ? "primary"
+                    : "warning",
+            },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.frecuenciaCompra} barCategoryGap="22%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="frecuencia" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="cantidad" name="Clientes" radius={[6, 6, 0, 0]}>
-                {data.frecuenciaCompra.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} opacity={entry.cantidad > 0 ? 1 : 0.15} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* ── Row 4: 3 micro-insights ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard
-          title="Segmentacion de gasto"
-          Icon={Crown}
-          height={220}
-          isEmpty={segmentData.length === 0}
-          emptyText="Sin clientes activos"
-        >
-          <MicroDonut
-            data={segmentData}
-            centerLabel={String(data.totalClientes)}
-            centerSubLabel="clientes"
+          <BulejeComposedChart
+            data={data.retencion}
+            xKey="mes"
+            bars={[
+              { key: "nuevos", label: "Nuevos", color: "primary", yAxis: "left" },
+              { key: "recurrentes", label: "Recurrentes", color: "tertiary", yAxis: "left" },
+            ]}
+            lines={[{ key: "total", label: "Total activos", color: "accent", yAxis: "left" }]}
+            leftAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v) => Number(v).toString()}
+            height={300}
+            minDataPoints={2}
           />
-        </ChartCard>
-
-        <ChartCard
-          title="Top 5 clientes (CLV)"
-          Icon={Star}
-          height={220}
-          isEmpty={top5Clientes.length === 0}
-          emptyText="Sin clientes"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "clientes-por-dia",
+      render: () => (
+        <DashboardSection
+          kicker="Actividad · últimos 14 días"
+          title="Clientes nuevos y activos por día"
+          kpis={[
+            { label: "Nuevos 14d", value: String(porDiaKpis.nuevos), tone: "success" },
+            { label: "Día pico", value: porDiaKpis.pico.dia, tone: "success" },
+            {
+              label: "Activos pico",
+              value: String(porDiaKpis.pico.activos),
+              tone: "primary",
+            },
+            { label: "Prom. activos/día", value: String(porDiaKpis.prom), tone: "neutral" },
+          ]}
         >
-          <MicroList items={top5Clientes} barColor={T.brand} showRank />
-        </ChartCard>
-
-        <ChartCard
-          title="Tasa de retencion"
-          Icon={Target}
-          height={220}
-          subtitle={`${data.recurrentes} recurrentes`}
-        >
-          <MicroGauge
-            value={tasaRetencion}
-            max={100}
-            centerLabel={`${tasaRetencion.toFixed(0)}%`}
-            centerSubLabel="retencion"
-            footerText={
-              tasaRetencion >= 60
-                ? "Lealtad alta"
-                : tasaRetencion >= 30
-                  ? "Lealtad media"
-                  : "Captar mas recurrentes"
-            }
+          <BulejeComposedChart
+            data={data.clientesPorDia}
+            xKey="dia"
+            bars={[{ key: "nuevos", label: "Nuevos", color: "primary", yAxis: "left" }]}
+            lines={[{ key: "activos", label: "Activos", color: "accent", yAxis: "left" }]}
+            leftAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v) => Number(v).toString()}
+            height={280}
+            minDataPoints={2}
           />
-        </ChartCard>
-      </div>
-
-      {/* ── Row opcional: Cohort table + Rating ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Cohortes de retencion (4 meses)"
-          Icon={Heart}
-          height={220}
-          subtitle="% de clientes que regresan"
-          isEmpty={!data.cohortData.some((c) => c.m0 > 0)}
-          emptyText="Sin cohortes suficientes"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "distribucion-gasto",
+      render: () => (
+        <DashboardSection
+          kicker="Distribución · gasto histórico"
+          title="Cuántos clientes en cada rango de gasto"
+          kpis={[
+            { label: "Total clientes", value: String(gastoKpis.total), tone: "primary" },
+            { label: "Rango líder", value: gastoKpis.top.rango, tone: "success" },
+            {
+              label: "VIP (S/ 500+)",
+              value: String(gastoKpis.top500),
+              tone: gastoKpis.top500 > 0 ? "success" : "neutral",
+            },
+            {
+              label: "% VIP",
+              value: `${gastoKpis.total > 0 ? Math.round((gastoKpis.top500 / gastoKpis.total) * 100) : 0}%`,
+              tone: "primary",
+            },
+          ]}
         >
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-[var(--text-tertiary)]">
-                  <th className="text-left py-2 font-medium">Cohorte</th>
-                  <th className="text-center py-2 font-medium">M0</th>
-                  <th className="text-center py-2 font-medium">M1</th>
-                  <th className="text-center py-2 font-medium">M2</th>
-                  <th className="text-center py-2 font-medium">M3</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.cohortData.map((row, i) => (
-                  <tr key={i} className="border-t border-gray-50 dark:border-[var(--rule-base)]">
-                    <td className="py-2 font-medium text-[var(--text-secondary)]">{row.cohorte}</td>
-                    {[row.m0, row.m1, row.m2, row.m3].map((val, j) => (
-                      <td key={j} className="text-center py-2">
-                        <span className={cn(
-                          "inline-block px-2 py-0.5 rounded-md font-bold text-[length:var(--ts-2xs)]",
-                          val >= 50
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)]"
-                            : val >= 20
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)]"
-                              : val > 0
-                                ? "bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-amber-950/30"
-                                : "text-[var(--text-tertiary)]",
-                        )}>
-                          {val}%
-                        </span>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center justify-center py-2">
+            <div className="w-full max-w-md">
+              <BulejeDonutChart
+                data={data.distribucionGasto.map((d) => ({ name: d.rango, value: d.cantidad }))}
+                height={240}
+                format={(v) => `${v} clientes`}
+                label={
+                  <div className="text-center">
+                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      Total
+                    </p>
+                    <p className="text-xl font-extrabold text-[var(--text-primary)]">
+                      {gastoKpis.total}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">clientes</p>
+                  </div>
+                }
+              />
+            </div>
           </div>
-        </ChartCard>
-
-        <ChartCard
-          title="Distribucion de ratings"
-          Icon={Star}
-          height={220}
-          subtitle={`${data.totalResenas} reseñas · ${data.ratingPromedio.toFixed(1)}/5`}
-          isEmpty={!data.distribucionRating.some((r) => r.cantidad > 0)}
-          emptyText="Sin reseñas aun"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "frecuencia-compra",
+      render: () => (
+        <DashboardSection
+          kicker="Frecuencia · en el periodo"
+          title="Cuántas veces compran tus clientes"
+          kpis={[
+            { label: "Total activos", value: String(freqKpis.total), tone: "primary" },
+            { label: "Fieles (4+)", value: String(freqKpis.loyal), tone: "success" },
+            {
+              label: "Solo 1 compra",
+              value: String(freqKpis.oneShot),
+              tone: freqKpis.oneShot > 0 ? "warning" : "neutral",
+            },
+            {
+              label: "% fieles",
+              value: `${freqKpis.total > 0 ? Math.round((freqKpis.loyal / freqKpis.total) * 100) : 0}%`,
+              tone: "primary",
+            },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.distribucionRating} barCategoryGap="22%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="rating" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}★`} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="cantidad" name="Reseñas" radius={[6, 6, 0, 0]}>
-                {data.distribucionRating.map((entry, i) => (
-                  <Cell key={i} fill={entry.rating >= 4 ? T.emerald : entry.rating >= 3 ? T.amber : T.red} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-    </div>
-  );
+          <div className="flex items-center justify-center py-2">
+            <div className="w-full max-w-md">
+              <BulejeDonutChart
+                data={data.frecuenciaCompra.map((d) => ({
+                  name: d.frecuencia,
+                  value: d.cantidad,
+                }))}
+                height={240}
+                format={(v) => `${v} clientes`}
+              />
+            </div>
+          </div>
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "ticket-por-cliente",
+      render: () => (
+        <DashboardSection
+          kicker="Ticket promedio · top clientes"
+          title="Cuánto gastan por visita"
+          kpis={[
+            {
+              label: "Top 1",
+              value: ticketChart[0]?.cliente ?? "—",
+              tone: "success",
+            },
+            {
+              label: "Ticket top 1",
+              value: fmtS(ticketChart[0]?.ticket ?? 0),
+              tone: "primary",
+            },
+            {
+              label: "Visitas top 1",
+              value: String(ticketChart[0]?.visitas ?? 0),
+              tone: "neutral",
+            },
+            {
+              label: "Promedio top",
+              value: fmtS(
+                ticketChart.length > 0
+                  ? ticketChart.reduce((s, c) => s + c.ticket, 0) / ticketChart.length
+                  : 0,
+              ),
+              tone: "neutral",
+            },
+          ]}
+        >
+          <BulejeComposedChart
+            data={ticketChart}
+            xKey="cliente"
+            bars={[{ key: "ticket", label: "Ticket S/", color: "primary", yAxis: "left" }]}
+            lines={[{ key: "visitas", label: "Visitas", color: "accent", yAxis: "right" }]}
+            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            rightAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("ticket")
+                ? fmtS(Number(v))
+                : `${v} visitas`
+            }
+            height={280}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+  ];
+
+  return <DraggableSections items={sections} storageKey="clientes-base-order" />;
 }

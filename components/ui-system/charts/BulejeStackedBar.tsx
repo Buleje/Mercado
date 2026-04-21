@@ -82,7 +82,7 @@ export const BulejeStackedBar = memo(function BulejeStackedBar({
 }: Props) {
   return (
     <div className={className}>
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} minWidth={0}>
         <BarChart
           data={data}
           layout={horizontal ? "vertical" : "horizontal"}

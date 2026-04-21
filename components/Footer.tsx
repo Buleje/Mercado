@@ -20,8 +20,6 @@ import {
   Wallet,
 } from "lucide-react";
 import { useSettings } from "@/contexts/settings-context";
-import LocaleSwitcher from "@/components/ui-system/LocaleSwitcher";
-import CurrencySwitcher from "@/components/ui-system/CurrencySwitcher";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 
 
@@ -491,11 +489,7 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Locale + Currency switchers */}
-            <div className="flex items-center gap-2">
-              <CurrencySwitcher />
-              <LocaleSwitcher />
-            </div>
+            {/* Currency + Locale switchers removidos — default: Soles + Español */}
 
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">

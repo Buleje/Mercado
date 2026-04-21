@@ -5,7 +5,7 @@ import { Clock, Users, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import RecipeModal, { type RecipeData } from "@/components/marketplace/RecipeModal";
 import { RECIPE_ILLUSTRATIONS } from "@/components/marketplace/RecipeIllustrations";
-import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import MarketplaceSection, { MARKETPLACE_CAROUSEL, CAROUSEL_ITEM_W } from "@/components/marketplace/MarketplaceSection";
 
 interface Recipe {
   id: string;
@@ -163,7 +163,7 @@ export default function MarketplaceRecipesWidget() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(RECIPE_JSONLD) }}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={MARKETPLACE_CAROUSEL}>
         {RECIPES.map((r, idx) => {
           const Illustration = RECIPE_ILLUSTRATIONS[r.id];
           return (
@@ -174,6 +174,7 @@ export default function MarketplaceRecipesWidget() {
                 "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer",
                 "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800",
                 "transition-all duration-300 hover:border-gray-900 dark:hover:border-gray-500",
+                CAROUSEL_ITEM_W,
               )}
             >
               {/* Hero: illustration line-art sobre off-white con número editorial */}

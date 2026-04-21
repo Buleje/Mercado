@@ -48,7 +48,7 @@ export function BulejeBarChart({
   radius = 4,
 }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} minWidth={0}>
       <BarChart
         data={data}
         layout={horizontal ? "vertical" : "horizontal"}

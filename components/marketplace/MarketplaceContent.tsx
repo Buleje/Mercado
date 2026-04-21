@@ -1,30 +1,29 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useSearchParams } from "next/navigation";
-import {
-  Store,
-  TrendingUp,
-  Clock,
-  LocateFixed,
-} from "lucide-react";
+import { Store, ArrowUpRight } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { m } from "framer-motion";
-import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 import MarketplaceCatalogViewSection from "@/components/marketplace/MarketplaceCatalogViewSection";
-import {
-  useMarketplaceGeo,
-  type MarketplaceStore,
-} from "@/components/marketplace/useMarketplaceGeo";
 import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 // useCustomer y ReorderButton removidos (ronda A) — sin uso en catálogo puro
-import MarketplaceHeroBanner from "@/components/marketplace/MarketplaceHeroBanner";
-import { LiveSocialProofBanner } from "@/components/marketing/LiveSocialProofBanner";
+import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
+// CategoriasQuickAccess movido a /explorar
+// LiveStats removido — ya no aparece en el home de bodegas
+import TiendasDestacadas from "@/components/marketplace/home/TiendasDestacadas";
+// BentoHero + WelcomeStrip movidos a /explorar
+// StickyPromoBar + LiveActivityStrip removidos del home de bodegas
+// BodegueroSpotlight, CategoriasShowcase, Testimonials — movidos a la landing `/`.
+// OfertasEditorial movido a /explorar
+import SectionDivider from "@/components/marketplace/home/SectionDivider";
+import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import MarketplaceStories from "@/components/marketplace/MarketplaceStories";
 import MarketplaceTopToday from "@/components/marketplace/MarketplaceTopToday";
 import MarketplaceFreeShippingBar from "@/components/marketplace/MarketplaceFreeShippingBar";
-import MarketplaceMiniCart from "@/components/marketplace/MarketplaceMiniCart";
+// MarketplaceMiniCart floating removido — CartBadge del navbar lo reemplaza
 import MarketplaceJungleProducts from "@/components/marketplace/MarketplaceJungleProducts";
 import MarketplaceRecipesWidget from "@/components/marketplace/MarketplaceRecipesWidget";
 import MarketplaceRecentViewed from "@/components/marketplace/MarketplaceRecentViewed";
@@ -34,8 +33,9 @@ import GiftCardsBanner from "@/components/marketplace/gift-cards/GiftCardsBanner
 // import { LiveNowWidget } from "@/components/marketplace/en-vivo/LiveNowWidget";
 import MarketplaceWelcomeCoupon from "@/components/marketplace/MarketplaceWelcomeCoupon";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
+// AddedToCartDrawerProvider vive en app/marketplace/layout.tsx (persistente).
+// Footer también vive en el layout — NO volver a incluirlo acá.
 // ── Home narrative modules (ENRICH-6) ────────────────────────────────────────
-import ParaVosSection from "@/components/marketplace/home/ParaVosSection";
 import OfertasDelDiaHero from "@/components/marketplace/home/OfertasDelDiaHero";
 import OfertasFlashSection from "@/components/marketplace/home/OfertasFlashSection";
 import LiveActivityFeed from "@/components/marketplace/home/LiveActivityFeed";
@@ -84,11 +84,10 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
   const { addItem } = useMarketplaceCart();
   const cartImportDone = useRef(false);
   const [sharedCartToast, setSharedCartToast] = useState<string | null>(null);
-  const [search, setSearch] = useState(searchParams.get("buscar") ?? "");
-
-  // ── Geo hook — solo para badge "Ordenado por cercanía" en stats row ──
-  const [_stores] = useState<MarketplaceStore[]>([]);
-  const { geoActive } = useMarketplaceGeo(_stores, () => {});
+  const search = searchParams.get("buscar") ?? "";
+  // Visibilidad de secciones del home — controlada desde superadmin/stores → Navegación
+  const sectionVisibility = useNavVisibility("marketplace-sections");
+  const isVisible = (id: string) => sectionVisibility[id] !== false;
 
   // ── Import shared cart from ?cart= param ──
   useEffect(() => {
@@ -116,13 +115,13 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
       });
     }
 
-    setSharedCartToast(`Carrito importado: ${items.length} ${items.length === 1 ? "producto" : "productos"}`);
-    setTimeout(() => setSharedCartToast(null), 4000);
-
     try {
       const url = new URL(window.location.href);
       url.searchParams.delete("cart");
       window.history.replaceState({}, "", url.toString());
+
+      setSharedCartToast(`Carrito importado: ${items.length} ${items.length === 1 ? "producto" : "productos"}`);
+      setTimeout(() => setSharedCartToast(null), 4000);
     } catch { /* SSR guard */ }
   }, [searchParams, addItem]);
 
@@ -143,178 +142,60 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
         </m.div>
       )}
 
-      {/* ── Free shipping progress bar (sticky, aparece cuando hay items en carrito) ── */}
-      <MarketplaceFreeShippingBar />
+      {/* FreeShippingBar eliminada del home — ahora vive en MarketplaceSecondaryNav
+          como indicador compacto (evita que tape la barra de categorias). */}
 
-      {/* ── Hero banner rotativo (Pucallpa · delivery · selva · cupón) ── */}
-      <MarketplaceHeroBanner />
+      {/* ── Hero eliminado (2026-04-20) — ya tenemos el banner rotativo abajo.
+            WelcomeStrip, BentoHero (Express/Selva/Pagar/Bienvenida),
+            CategoriasQuickAccess y OfertasEditorial MOVIDOS a /explorar
+            para armar el layout tipo Mercado Libre pedido. */}
 
-      {/* ── Stories tipo Instagram — accesos rápidos ── */}
-      <MarketplaceStories />
+      {/* Banner promocional rotativo (slot="bodegas" editable desde superadmin) */}
+      <PromoBannerCarousel slot="bodegas" />
 
-      {/* ── Hero Section ── noise-texture-bg da feel "papel impreso" */}
-      <section className="relative overflow-hidden noise-texture-bg bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] pb-6 pt-5 sm:pt-8 sm:pb-8">
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-secondary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+      {/* LiveActivityStrip y LiveStats eliminados (2026-04-20) — pedido del
+          negocio: reducir ruido visual y compactar el home de bodegas. */}
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Title — compact since search is in navbar now */}
-          <div className="text-center mb-5">
-            <m.h1
-              className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.02em]"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              Todo el catálogo{" "}
-              <span className="text-primary relative">
-                de Pucallpa
-                <svg
-                  aria-hidden="true"
-                  className="absolute -bottom-1 left-0 w-full h-2 text-primary/30"
-                  viewBox="0 0 100 12"
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d="M0 8 Q25 0 50 6 Q75 12 100 4"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </m.h1>
-
-            <m.p
-              className="text-gray-500 dark:text-muted mt-2 text-sm sm:text-base max-w-xl mx-auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              Pedí a bodegas cerca tuyo. Delivery en 25 min.
-              Pagás con Yape o efectivo al recibir.
-            </m.p>
-
-            {/* Social proof real desde DB — Cialdini Social Proof */}
-            <m.div
-              className="mt-3 flex justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <LiveSocialProofBanner variant="light" />
-            </m.div>
-
-            {/* Search bar — SearchAutocomplete con sugerencias IA + did you mean */}
-            <m.div
-              className="mt-5 max-w-xl mx-auto"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <SearchAutocomplete
-                onSearch={(q) => {
-                  setSearch(q);
-                }}
-                placeholder="Busca productos, categorías..."
-              />
-            </m.div>
-          </div>
-
-          {/* Stats row */}
-          <m.div
-            className="flex items-center justify-center gap-4 sm:gap-8 text-sm text-gray-500 dark:text-muted flex-wrap"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <Store className="h-4 w-4 text-primary" aria-hidden="true" />
-              Miles de productos en Pucallpa
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
-              Abierto 24/7
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-primary" aria-hidden="true" />
-              Delivery rápido
-            </span>
-            {geoActive && (
-              <span className="inline-flex items-center gap-1.5 text-primary font-semibold" aria-live="polite">
-                <LocateFixed className="h-4 w-4" aria-hidden="true" />
-                Ordenado por cercanía
-              </span>
-            )}
-          </m.div>
-
-          {/* QuickFilterChips y ViewMode Toggle removidos (ronda A).
-              Van a nav secundaria en ronda B. */}
+      {/* ══════════════════════════════════════════════════════════════════
+          SECCIONES ENCAPSULADAS — cada una en una caja con borde sobre
+          fondo sunken. Espaciado compacto + contraste mosaico ML.
+          ══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[var(--surface-sunken)] py-3 sm:py-4">
+        <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 px-3 sm:px-4 lg:px-6">
+          <BodegasSectionBox><TiendasDestacadas /></BodegasSectionBox>
+          <BodegasSectionBox><MarketplaceStories /></BodegasSectionBox>
+          <BodegasSectionBox><OfertasDelDiaHero /></BodegasSectionBox>
+          {SHOW_SECONDARY_HOME_SECTIONS && (
+            <BodegasSectionBox><LiveActivityFeed /></BodegasSectionBox>
+          )}
+          <BodegasSectionBox><MarketplaceTopToday /></BodegasSectionBox>
+          <BodegasSectionBox><MarketplaceJungleProducts /></BodegasSectionBox>
+          <BodegasSectionBox><OfertasFlashSection /></BodegasSectionBox>
+          <BodegasSectionBox>
+            <MarketplaceCatalogViewSection searchQuery={search || undefined} />
+          </BodegasSectionBox>
+          {SHOW_SECONDARY_HOME_SECTIONS && (
+            <BodegasSectionBox><AhorraMasMegaSection /></BodegasSectionBox>
+          )}
+          <BodegasSectionBox><MarketplaceRecipesWidget /></BodegasSectionBox>
+          {isVisible("comparar-productos") && (
+            <BodegasSectionBox><ComparedProductsSection /></BodegasSectionBox>
+          )}
+          {isVisible("bodega-al-mes") && (
+            <BodegasSectionBox><SubscribeAndSaveSection /></BodegasSectionBox>
+          )}
+          {isVisible("gift-cards") && (
+            <BodegasSectionBox><GiftCardsBanner /></BodegasSectionBox>
+          )}
+          {isVisible("asistente-ia") && (
+            <BodegasSectionBox><AsistenteHomeBanner /></BodegasSectionBox>
+          )}
+          <BodegasSectionBox><MarketplaceRecentViewed /></BodegasSectionBox>
+          {SHOW_SECONDARY_HOME_SECTIONS && (
+            <BodegasSectionBox><VenderMiniCTA /></BodegasSectionBox>
+          )}
         </div>
-      </section>
-
-      {/* ── Ofertas del dia: ProductCardHero (Ola 7) — 2 featured above-the-fold ── */}
-      <OfertasDelDiaHero />
-
-      {/* ── Para vos: smart recommendations post-hero (ENRICH-6 Ola 3) ── */}
-      <ParaVosSection />
-
-      {/* ══════════════════════════════════════════════════════════════════
-          LO QUE ESTA PASANDO AHORA
-          Narrativa de urgencia + prueba social en tiempo real.
-          ══════════════════════════════════════════════════════════════════ */}
-
-      {/* LiveNowWidget removido (ronda A) — ver /marketplace/en-vivo */}
-
-      {/* ── Ofertas flash con countdown (secundaria — redundante con OfertasDelDia) ── */}
-      {SHOW_SECONDARY_HOME_SECTIONS && <OfertasFlashSection />}
-
-      {/* ── Feed de actividad real-time (secundaria — ruido visual) ── */}
-      {SHOW_SECONDARY_HOME_SECTIONS && <LiveActivityFeed />}
-
-      {/* ── Lo más pedido hoy (carrusel horizontal con ranking) ── */}
-      <MarketplaceTopToday />
-
-      {/* ── Productos de la selva (Pucallpa/Ucayali) ── */}
-      <MarketplaceJungleProducts />
-
-      {/* ── Catálogo de productos ──
-          Category chips de tiendas, zone selector y MarketplaceStoresView
-          removidos (ronda A) — tiendas migradas a /tiendas.
-          Ronda B montará el secondary nav con chips de categoría de producto. */}
-      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        <MarketplaceCatalogViewSection
-          searchQuery={search || undefined}
-        />
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════════════
-          AHORRA MAS CON BULEJE — mega-section secundaria, condicional
-          ══════════════════════════════════════════════════════════════════ */}
-      {SHOW_SECONDARY_HOME_SECTIONS && <AhorraMasMegaSection />}
-
-      {/* ── Recetas de la selva (widget con ingredientes al carrito) ── */}
-      <MarketplaceRecipesWidget />
-
-      {/* ── Productos populares en el comparador (cross-sell) ── */}
-      <ComparedProductsSection />
-
-      {/* ── Bodega al Mes: productos suscribibles con 5% descuento ── */}
-      <SubscribeAndSaveSection />
-
-      {/* ── Gift Cards: regalá la bodega del barrio ── */}
-      <GiftCardsBanner />
-
-      {/* ── Preguntale al asistente (secundaria — cross-sell) ── */}
-      {SHOW_SECONDARY_HOME_SECTIONS && <AsistenteHomeBanner />}
-
-      {/* ── Productos vistos recientemente (local storage) ── */}
-      <MarketplaceRecentViewed />
-
-      {/* ── Vende en Buleje (secundaria — redundante con CTA Register abajo) ── */}
-      {SHOW_SECONDARY_HOME_SECTIONS && <VenderMiniCTA />}
+      </div>
 
       {/* ── CTA a /descubri — compensa las secciones secundarias ocultas ── */}
       {!SHOW_SECONDARY_HOME_SECTIONS && (
@@ -331,31 +212,82 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
         </section>
       )}
 
-      {/* ── CTA: Register Your Store ── */}
-      <section className="bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)] py-12 sm:py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-foreground mb-3">
-            ¿Tienes una tienda?{" "}
-            <span className="text-primary">Únete al marketplace</span>
+      {/* ── CTA editorial: Register Your Store ─────────────────────────── */}
+      <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        />
+        <div className="relative max-w-4xl mx-auto px-4 text-center">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <span
+              aria-hidden
+              className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+            />
+            Para bodegueros
+          </p>
+          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+            ¿Tenés una tienda?
+            <br />
+            <span className="italic font-serif text-[var(--accent)]">
+              Sumate al marketplace.
+            </span>
           </h2>
-          <p className="text-gray-500 dark:text-muted text-sm sm:text-base mb-6 max-w-lg mx-auto">
-            Publica tus productos, recibe pedidos automáticamente y llega a
+          <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+            Publicá tus productos, recibí pedidos automáticamente y llegá a
             miles de clientes. Sin costo de inscripción.
           </p>
-          <Link
-            href="/registro"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
-          >
-            <Store className="h-5 w-5" />
-            Registra tu tienda gratis
-          </Link>
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/abrir-tienda"
+              className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
+            >
+              <Store className="h-4 w-4" strokeWidth={1.75} />
+              Registrá tu tienda gratis
+              <ArrowUpRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                strokeWidth={2.25}
+              />
+            </Link>
+            <Link
+              href="/abrir-tienda#planes"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              Ver planes
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ── Floating: mini-cart sticky + welcome coupon ── */}
-      <MarketplaceMiniCart />
+      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
+
+      {/* MiniCart floating eliminado (2026-04-20) — redundante con el
+          CartBadge del navbar que ya muestra total + contador. */}
       <MarketplaceWelcomeCoupon />
     </div>
     </FlyToCartProvider>
+  );
+}
+
+// MarketplaceEditorialHero eliminado (2026-04-20) — el banner rotativo
+// de arriba ya cumple el rol de "sobre qué trata esta página".
+
+/**
+ * BodegasSectionBox — wrapper compartido para que cada strip del home de
+ * bodegas se vea como una tarjeta (igual que Mercado Libre): borde, bg
+ * raised sobre wrapper sunken (contraste). Anula el padding/max-width
+ * interno de cada strip para evitar doble padding.
+ */
+function BodegasSectionBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className={[
+        "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+        "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
+        "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
+      ].join(" ")}
+    >
+      {children}
+    </div>
   );
 }

@@ -7,14 +7,42 @@ import {
   DiscountBanner,
   ReviewsCarousel,
 } from "@/components/landing/LandingClientSections";
-import { SocioPromoBanner } from "@/components/socio-buleje/SocioPromoBanner";
 import LandingHero from "@/components/landing/LandingHero";
 import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
-import FeaturedStoresCarousel from "@/components/landing/FeaturedStoresCarousel";
 import ScrollyHowItWorks from "@/components/landing/ScrollyHowItWorks";
-import { RecommendationsEngine } from "@/components/landing/recommendations/RecommendationsEngine";
-import { Button, Card, SectionHeader, Kicker } from "@/components/ui-system";
-import { Store, Bike } from "lucide-react";
+import { Store, Bike, ArrowUpRight } from "@buleje/design-system/icons";
+
+// Secciones movidas desde /tiendas (Bodegas) a la página de Inicio:
+// - BodegueroSpotlight ("Conocé a tu bodeguero") — info de humanos detrás del marketplace
+// - Testimonials ("Lo que dicen tus vecinos") — reseñas reales de la comunidad
+// - CategoriasShowcase (Categorías destacadas) — CTA a explorar por categoría
+const BodegueroSpotlight = dynamic(
+  () => import("@/components/marketplace/home/BodegueroSpotlight"),
+  { ssr: true },
+);
+const Testimonials = dynamic(
+  () => import("@/components/marketplace/home/Testimonials"),
+  { ssr: true },
+);
+const CategoriasShowcase = dynamic(
+  () => import("@/components/marketplace/home/CategoriasShowcase"),
+  { ssr: true },
+);
+
+// Secciones editorial nuevas (Nosotros + Cómo funciona + FAQ consolidados en landing).
+// Reemplazan rutas separadas /nosotros, /como-funciona, /faq (ahora son redirects).
+const NosotrosSection = dynamic(
+  () => import("@/components/landing/sections/NosotrosSection"),
+  { ssr: true },
+);
+const ComoFuncionaSection = dynamic(
+  () => import("@/components/landing/sections/ComoFuncionaSection"),
+  { ssr: true },
+);
+const FAQSection = dynamic(
+  () => import("@/components/landing/sections/FAQSection"),
+  { ssr: true },
+);
 
 export const metadata: Metadata = {
   title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Mas",
@@ -67,130 +95,6 @@ async function getMarketplaceStats() {
       .catch(() => 4.8),
   ]);
   return { storeCount, productCount, avgRating: Number(avgRating.toFixed(1)) };
-}
-
-// ── Cached featured stores from DB (with products) ──
-async function getFeaturedStores() {
-  "use cache";
-  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
-  cacheTag("featured-stores");
-  const { prisma } = await import("@/lib/prisma");
-  try {
-    const stores = await prisma.store.findMany({
-      where: { isPublished: true },
-      orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-      take: 6,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        logo: true,
-        category: true,
-        zone: true,
-        rating: true,
-        reviewCount: true,
-        description: true,
-        products: {
-          where: { isActive: true },
-          take: 3,
-          select: {
-            retailPrice: true,
-            product: {
-              select: {
-                name: true,
-                image: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    // Convert Decimal → number so data is RSC-serializable through "use cache"
-    return stores.map((s) => ({
-      ...s,
-      products: s.products.map((p) => ({
-        ...p,
-        retailPrice: Number(p.retailPrice),
-      })),
-    }));
-  } catch {
-    return [];
-  }
-}
-
-// ── Cached products for recommendations engine ──
-async function getRecommendationProducts() {
-  "use cache";
-  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
-  cacheTag("recommendation-products");
-  const { prisma } = await import("@/lib/prisma");
-  try {
-    const rows = await prisma.storeProduct.findMany({
-      where: { isActive: true, store: { isPublished: true } },
-      orderBy: { product: { badge: "asc" } },
-      take: 24,
-      select: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-            image: true,
-            description: true,
-            unit: true,
-            badge: true,
-            stock: true,
-          },
-        },
-        retailPrice: true,
-      },
-    });
-    return rows.map((r) => ({
-      id: r.product.id,
-      name: r.product.name,
-      category: r.product.category,
-      price: Number(r.retailPrice),
-      image: r.product.image ?? undefined,
-      description: r.product.description ?? undefined,
-      unit: r.product.unit,
-      badge: r.product.badge ?? undefined,
-      stock: r.product.stock ?? undefined,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-// ── Cached stores for recommendations engine (new arrivals) ──
-async function getRecommendationStores() {
-  "use cache";
-  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
-  cacheTag("recommendation-stores");
-  const { prisma } = await import("@/lib/prisma");
-  try {
-    const stores = await prisma.store.findMany({
-      where: { isPublished: true },
-      orderBy: [{ reviewCount: "asc" }, { rating: "asc" }],
-      take: 8,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        logo: true,
-        category: true,
-        zone: true,
-        rating: true,
-        reviewCount: true,
-        description: true,
-      },
-    });
-    return stores.map((s) => ({
-      ...s,
-      rating: Number(s.rating),
-    }));
-  } catch {
-    return [];
-  }
 }
 
 // ── Cached reviews from DB ──
@@ -258,47 +162,6 @@ async function HeroSection() {
   );
 }
 
-// Categories grid — reemplazado por <PopularCategoriesTiles /> con ilustraciones DS.
-// HowItWorks — reemplazado por <ScrollyHowItWorks /> del design system.
-
-// ── Featured Stores section (real DB data) ──
-async function FeaturedStoresSection() {
-  const stores = await getFeaturedStores();
-  if (stores.length === 0) return null;
-
-  return (
-    <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader
-          eyebrow="Con mejor reputación"
-          title="Tiendas destacadas"
-          description="Las mejor valoradas por nuestros clientes esta semana."
-          size="md"
-          ruled
-          className="mb-6"
-          action={
-            <Link
-              href="/marketplace"
-              className="text-xs font-bold text-gray-900 dark:text-white link-underline hidden sm:inline-flex"
-            >
-              Ver todas →
-            </Link>
-          }
-        />
-        <FeaturedStoresCarousel stores={stores} />
-        <div className="mt-6 sm:hidden text-center">
-          <Link
-            href="/marketplace"
-            className="text-xs font-bold text-gray-900 dark:text-white link-underline"
-          >
-            Ver todas las tiendas →
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ── Reviews section (real DB data → animated carousel) ──
 async function ReviewsSection() {
   const reviews = await getMarketplaceReviews();
@@ -317,61 +180,219 @@ async function ReviewsSection() {
   return <ReviewsCarousel reviews={displayReviews} />;
 }
 
-// ── Business + Driver CTA banners ──
+// ── Business + Driver CTA banners — editorial asimétrico ──
 function PromoBanners() {
   const banners = [
     {
       kicker: "Para dueños",
       icon: Store,
-      title: "¿Tenés un negocio?",
+      titleLine1: "¿Tenés un",
+      titleAccent: "negocio?",
       desc: "Registrá tu bodega, minimarket o tienda y empezá a vender online gratis. Miles de clientes te esperan.",
-      primary: { label: "Registrar mi negocio", href: "/marketplace/apply" },
-      secondary: { label: "Ver planes", href: "/negocios" },
+      primary: { label: "Abrir mi tienda", href: "/abrir-tienda" },
+      secondary: { label: "Ver planes", href: "/abrir-tienda#planes" },
     },
     {
       kicker: "Para repartidores",
       icon: Bike,
-      title: "¿Querés repartir?",
+      titleLine1: "¿Querés",
+      titleAccent: "repartir?",
       desc: "Uníte como repartidor y generá ingresos extra entregando pedidos en tu zona. Vos elegís tu horario.",
       primary: { label: "Quiero ser repartidor", href: "/marketplace/repartidor" },
+      secondary: null as { label: string; href: string } | null,
     },
   ];
 
   return (
-    <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid sm:grid-cols-2 gap-5">
+    <section
+      aria-label="Sumate a Buleje"
+      className="py-20 sm:py-28 bg-[var(--surface-canvas)]"
+    >
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
           {banners.map((b, i) => {
             const Icon = b.icon;
             return (
-              <Card key={i} variant="base" padding="lg" className="justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">
-                      <Icon className="h-4 w-4" strokeWidth={1.5} />
-                    </div>
-                    <Kicker>{b.kicker}</Kicker>
-                  </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                    {b.title}
-                  </h3>
-                  <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
-                    {b.desc}
+              <div
+                key={i}
+                className="group relative bg-[var(--surface-raised)] p-8 sm:p-12 transition-colors hover:bg-[var(--surface-sunken)]"
+              >
+                <span
+                  aria-hidden
+                  className="absolute top-6 right-8 text-[11px] font-bold tabular-nums uppercase tracking-[0.15em] text-[var(--text-tertiary)]"
+                >
+                  {String(i + 1).padStart(2, "0")} / 02
+                </span>
+
+                <div className="flex items-center gap-3 mb-8">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <Icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
+                    {b.kicker}
                   </p>
                 </div>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button asChild variant="primary" size="md">
-                    <Link href={b.primary.href}>{b.primary.label}</Link>
-                  </Button>
+
+                <h3 className="text-[clamp(2rem,4.5vw,3rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+                  {b.titleLine1}
+                  <br />
+                  <span className="italic font-serif text-[var(--accent)]">
+                    {b.titleAccent}
+                  </span>
+                </h3>
+                <p className="mt-6 text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+                  {b.desc}
+                </p>
+
+                <div className="mt-10 flex flex-wrap gap-3">
+                  <Link
+                    href={b.primary.href}
+                    className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] px-6 py-3 text-sm font-bold text-[var(--surface-canvas)] hover:bg-[var(--accent)] hover:gap-3 transition-all"
+                  >
+                    {b.primary.label}
+                    <ArrowUpRight
+                      className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5"
+                      strokeWidth={2.25}
+                    />
+                  </Link>
                   {b.secondary && (
-                    <Button asChild variant="secondary" size="md">
-                      <Link href={b.secondary.href}>{b.secondary.label}</Link>
-                    </Button>
+                    <Link
+                      href={b.secondary.href}
+                      className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-transparent px-6 py-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                    >
+                      {b.secondary.label}
+                    </Link>
                   )}
                 </div>
-              </Card>
+              </div>
             );
           })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Planes snapshot — sección editorial con 3 planes destacados ──
+// Nota: el bloque "Nosotros" ahora vive en NosotrosSection (arriba en el flujo).
+function AboutAndPricingSnapshot() {
+  const planes = [
+    {
+      name: "Gratis",
+      price: "S/ 0",
+      tagline: "Para empezar hoy",
+      perks: ["Catálogo ilimitado", "Yape/efectivo", "Hasta 50 pedidos/mes"],
+      tone: "neutral" as const,
+    },
+    {
+      name: "Pro",
+      price: "S/ 49",
+      tagline: "Para vender en serio",
+      perks: ["Inventario + caja", "Reportes + exportes", "Pedidos ilimitados"],
+      tone: "primary" as const,
+    },
+    {
+      name: "Enterprise",
+      price: "A medida",
+      tagline: "Para cadenas",
+      perks: ["Multi-sucursal", "API + webhooks", "Soporte dedicado"],
+      tone: "neutral" as const,
+    },
+  ];
+
+  return (
+    <section
+      id="planes"
+      aria-label="Planes"
+      className="relative overflow-hidden bg-[var(--surface-canvas)] py-20 sm:py-28 scroll-mt-20"
+    >
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header editorial */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-16">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <span
+                aria-hidden
+                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+              />
+              Planes
+            </p>
+            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              Empezá gratis.
+              <br />
+              <span className="italic font-serif text-[var(--accent)]">
+                Sin letra chica.
+              </span>
+            </h2>
+          </div>
+          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
+            Elegí el plan que te queda. Cambiás cuando quieras, sin contratos ni permanencias.
+          </p>
+        </div>
+
+        {/* Grid 3 planes — Pro destacado */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+          {planes.map((p) => {
+            const isPrimary = p.tone === "primary";
+            return (
+              <div
+                key={p.name}
+                className={`relative rounded-2xl p-8 sm:p-10 ${
+                  isPrimary
+                    ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] md:scale-[1.02] md:shadow-xl"
+                    : "border border-[var(--rule-soft)] bg-[var(--surface-raised)]"
+                }`}
+              >
+                {isPrimary && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
+                    Más popular
+                  </span>
+                )}
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
+                  {p.tagline}
+                </p>
+                <h3 className="mt-2 text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+                  {p.name}
+                </h3>
+                <p
+                  className={`mt-3 text-[clamp(2rem,4vw,2.75rem)] font-black tabular-nums tracking-[-0.03em] leading-none ${
+                    isPrimary
+                      ? "text-[var(--accent)]"
+                      : "text-[var(--text-primary)]"
+                  }`}
+                >
+                  {p.price}
+                  <span className="ml-2 text-sm font-semibold text-[var(--text-tertiary)]">
+                    /mes
+                  </span>
+                </p>
+                <ul className="mt-6 space-y-2">
+                  {p.perks.map((perk) => (
+                    <li
+                      key={perk}
+                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
+                    >
+                      <span
+                        aria-hidden
+                        className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--accent)]"
+                      />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-12 text-center">
+          <Link
+            href="/abrir-tienda#planes"
+            className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"
+          >
+            Ver comparativa completa
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
     </section>
@@ -387,21 +408,49 @@ function PaymentMethods() {
     { name: "Tarjeta", desc: "Débito y crédito" },
   ];
   return (
-    <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-6 justify-between flex-wrap mb-8">
-          <Kicker>Formas de pago aceptadas</Kicker>
-          <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 tabular-nums uppercase tracking-wider">
-            4 OPCIONES
-          </span>
+    <section
+      aria-label="Formas de pago"
+      className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]"
+    >
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-14">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <span
+                aria-hidden
+                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+              />
+              Formas de pago
+            </p>
+            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              Pagás como
+              <br />
+              <span className="italic font-serif text-[var(--accent)]">
+                vos quieras.
+              </span>
+            </h2>
+          </div>
+          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
+            Cuatro maneras de pagar sin complicaciones. Elegís al momento del
+            checkout — no hay cargos ocultos.
+          </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-200 dark:divide-gray-800 border border-gray-200 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden">
-          {methods.map((m) => (
-            <div key={m.name} className="px-6 py-6 sm:py-8">
-              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl bg-[var(--surface-raised)] overflow-hidden">
+          {methods.map((m, i) => (
+            <div
+              key={m.name}
+              className="relative bg-[var(--surface-raised)] px-6 py-8 sm:py-10 transition-colors hover:bg-[var(--surface-canvas)]"
+            >
+              <span
+                aria-hidden
+                className="absolute top-4 right-5 text-[10px] font-bold tabular-nums uppercase tracking-wider text-[var(--text-tertiary)]"
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <p className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-none">
                 {m.name}
               </p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-3 text-sm text-[var(--text-secondary)]">
                 {m.desc}
               </p>
             </div>
@@ -412,30 +461,50 @@ function PaymentMethods() {
   );
 }
 
-// ── Final CTA ──
+// ── Final CTA editorial ──
 function FinalCTA() {
   return (
-    <section className="py-14 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
-      <div className="max-w-4xl mx-auto px-4 text-center">
-        <h2 className="text-fs-h1 font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
-          Todo lo que necesitas,{" "}
-          <span className="text-gray-500 dark:text-gray-400">en un solo lugar</span>
-        </h2>
-        <p className="mt-4 text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto leading-relaxed">
-          Pedí a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o efectivo al recibir.
+    <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-canvas)] border-t border-[var(--rule-soft)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+      />
+      <div className="relative max-w-4xl mx-auto px-4 text-center">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+          <span
+            aria-hidden
+            className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+          />
+          Empezá hoy
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+          Todo lo que necesitás,
+          <br />
+          <span className="italic font-serif text-[var(--accent)]">
+            en un solo lugar.
+          </span>
+        </h2>
+        <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+          Pedí a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o
+          efectivo al recibir.
+        </p>
+        <div className="mt-12 flex flex-wrap justify-center gap-3">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-6 py-3 rounded-full text-sm hover:opacity-90 transition-opacity"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
           >
-            Explorar Marketplace
+            Explorar marketplace
+            <ArrowUpRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              strokeWidth={2.25}
+            />
           </Link>
           <Link
-            href="/negocios"
-            className="inline-flex items-center gap-2 bg-transparent text-gray-900 dark:text-white font-bold px-6 py-3 rounded-full text-sm border border-gray-300 dark:border-gray-700 hover:border-gray-900 dark:hover:border-gray-400 transition-colors"
+            href="/abrir-tienda"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
-            Abrí tu tienda →
+            Abrí tu tienda
+            <span aria-hidden>→</span>
           </Link>
         </div>
       </div>
@@ -443,47 +512,63 @@ function FinalCTA() {
   );
 }
 
-// ── Recommendations section (server fetches + client engine) ──
-async function RecommendationsSection() {
-  const [products, stores] = await Promise.all([
-    getRecommendationProducts(),
-    getRecommendationStores(),
-  ]);
-  // Si no hay datos (DB vacia en dev) no renderizamos nada
-  if (products.length === 0 && stores.length === 0) return null;
-  return (
-    <RecommendationsEngine initialProducts={products} initialStores={stores} />
-  );
-}
-
 // ── Main page ──
+// Flujo informativo: hero → categorías → cómo funciona → detrás del marketplace
+// (bodegueros) → voz de la comunidad (reseñas) → ser parte (negocio / repartidor)
+// → formas de pago → CTA.
+// Removido: RecommendationsEngine, SocioPromoBanner, FeaturedStoresSection.
+// (La landing debe informar, no vender productos individuales — eso es /marketplace/explorar).
 export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
       <LandingHeader />
       <DiscountBanner />
+
+      {/* Hero — presentación del marketplace */}
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
       </Suspense>
+
+      {/* Categorías populares — atajos a explorar */}
       <PopularCategoriesTiles />
 
-      {/* ── Recomendaciones: InspiredByHistory + TopSellersToday ── */}
-      <Suspense fallback={<RecommendationsSkeleton />}>
-        <RecommendationsSection />
-      </Suspense>
+      {/* Categorías destacadas con visual rico (movida desde /tiendas) */}
+      <CategoriasShowcase />
 
-      <Suspense fallback={<SectionSkeleton />}>
-        <FeaturedStoresSection />
-      </Suspense>
-      <SocioPromoBanner />
+      {/* Cómo funciona — sección editorial consolidada (reemplaza /como-funciona) */}
+      <ComoFuncionaSection />
+
+      {/* Scrolly storytelling — refuerza visualmente el flujo */}
       <ScrollyHowItWorks />
+
+      {/* Conocé a tu bodeguero — humanos detrás (movida desde /tiendas) */}
+      <BodegueroSpotlight />
+
+      {/* Nosotros — historia + valores + stats (reemplaza /nosotros) */}
+      <NosotrosSection />
+
+      {/* Voz de la comunidad: 2 componentes complementarios */}
+      <Testimonials />
       <Suspense fallback={<SectionSkeleton />}>
         <ReviewsSection />
       </Suspense>
+
+      {/* Planes snapshot (el bloque de Nosotros ya vive arriba en NosotrosSection) */}
+      <AboutAndPricingSnapshot />
+
+      {/* FAQ — sección editorial consolidada (reemplaza /faq) */}
+      <FAQSection />
+
+      {/* Ser parte — negocio + repartidor */}
       <PromoBanners />
+
+      {/* Info confianza */}
       <PaymentMethods />
+
+      {/* CTA final */}
       <FinalCTA />
+
       <Footer />
     </main>
   );
@@ -496,22 +581,6 @@ function HeroSkeleton() {
         <div className="h-12 w-80 bg-gray-200 dark:bg-gray-800 rounded-xl mx-auto mb-4 animate-pulse" />
         <div className="h-6 w-96 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto mb-8 animate-pulse" />
         <div className="h-14 max-w-xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
-      </div>
-    </div>
-  );
-}
-
-function RecommendationsSkeleton() {
-  return (
-    <div className="py-12 sm:py-16 border-t border-gray-100 dark:border-gray-800">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="h-5 w-24 bg-gray-100 dark:bg-gray-800 rounded mb-2 animate-pulse" />
-        <div className="h-8 w-72 bg-gray-200 dark:bg-gray-800 rounded-lg mb-8 animate-pulse" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
-          ))}
-        </div>
       </div>
     </div>
   );

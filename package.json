@@ -135,6 +135,8 @@
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.5.0",
     "tailwind-variants": "^3.2.2",
+    "twilio": "^6.0.0",
+    "ubigeo-peru": "^2.0.2",
     "vaul": "^1.1.2",
     "web-push": "^3.6.7",
     "web-vitals": "^5.1.0",
@@ -142,6 +144,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.2",
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.2",
     "@babel/preset-react": "^7.28.5",

@@ -1,204 +1,419 @@
 "use client";
 
 /**
- * InventarioCharts — pattern unificado:
- *  - Row 2 (FULL): Movimiento de inventario 14d — AreaChart entradas/salidas
- *  - Row 3: Top 10 productos por valor + Stock por categoria
- *  - Row 4: ABC analysis donut + Top 5 proximos a vencer + Tasa rotacion gauge
+ * InventarioCharts — charts base del módulo Inventario.
+ *
+ * Rediseñado con DashboardSection + primitivas Buleje DS + DraggableSections.
+ *
+ * Secciones:
+ *  1. Valor y stock por categoría (Composed)
+ *  2. Movimiento diario 14d (Composed entradas/salidas)
+ *  3. Top 10 salidas (MicroList con tendencia)
+ *  4. Distribución por rango de stock (Donut)
+ *  5. Días de cobertura (Composed con umbrales)
+ *  6. Proyección de agotamiento (Composed con umbral crítico 7d) + botón Generar OC
  */
 
-import {
-  AreaChart, Area, BarChart, Bar, ComposedChart,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell,
-} from "recharts";
-import {
-  Package, AlertTriangle, Layers, ShoppingCart, TrendingUp, Target, Timer,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
 import type { InventarioData } from "./InventarioDashboard";
 import {
-  ChartCard, ChartTooltip, CHART_TOKENS,
-  MicroDonut, MicroList, MicroGauge,
-} from "./_shared";
+  BulejeComposedChart,
+  BulejeDonutChart,
+} from "@/components/ui-system/charts";
+import { DashboardSection, MicroList } from "./_shared";
+import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { ReorderModal, type ReorderCandidate } from "./ReorderModal";
+import { Package, Bell } from "@buleje/design-system/icons";
+import { toast } from "sonner";
 
-const T = CHART_TOKENS;
+function fmtS(v: number) {
+  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+}
+function fmtU(v: number) {
+  return `${v.toLocaleString("es-PE")} u`;
+}
 
 export default function InventarioCharts({ data }: { data: InventarioData }) {
-  // ABC analysis basado en stockPorCategoria — cantidad de items en cada rango
-  const abcData = data.distribucionStock.map((d) => ({
-    name: d.rango, value: d.cantidad, color: d.color,
-  })).filter((d) => d.value > 0);
+  const [reorderOpen, setReorderOpen] = useState(false);
+  const [sendingAlert, setSendingAlert] = useState(false);
+  const reorderCandidates: ReorderCandidate[] = data.proyeccionAgotamiento
+    .filter((p) => p.status === "critico" || p.status === "alerta")
+    .slice(0, 20)
+    .map((p) => ({
+      id: p.nombre,
+      name: p.nombre,
+      stock: p.stock,
+      suggestedQty: Math.max(5, Math.ceil(p.diario * 30)),
+      daysRemaining: p.diasRestantes,
+    }));
 
-  // Top 5 proximos a agotar (ya esta sorted por diasRestantes asc)
-  const top5Vencer = data.proyeccionAgotamiento.slice(0, 5).map((p) => ({
-    name: p.nombre,
-    value: 30 - Math.min(p.diasRestantes, 30), // mas dias menos = mas alto
-    label: `${p.diasRestantes}d`,
-    sublabel: `${p.stock} uds`,
-    color: p.status === "critico" ? T.red : p.status === "alerta" ? T.amber : T.emerald,
+  async function handleSendAlert() {
+    setSendingAlert(true);
+    try {
+      const res = await fetch("/api/admin/alerts/stock-critical", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error ?? "Error");
+      }
+      if (json.affected === 0) {
+        toast("Sin SKUs críticos", {
+          description: "No se enviaron alertas — todo en orden.",
+        });
+      } else {
+        const channels = json.channels ?? {};
+        const active = [
+          channels.inApp ? "in-app" : null,
+          channels.whatsapp ? "WhatsApp" : null,
+          channels.telegram ? "Telegram" : null,
+        ].filter(Boolean);
+        toast.success("Alerta disparada", {
+          description: `${json.affected} SKUs · canales: ${active.length > 0 ? active.join(", ") : "solo log interno (configurá webhooks)"}`,
+          duration: 4000,
+        });
+      }
+    } catch (err) {
+      toast.error("No se pudo enviar alerta", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setSendingAlert(false);
+    }
+  }
+  const catTop = useMemo(() => {
+    const arr = data.stockPorCategoria;
+    if (arr.length === 0) return { top: null, totalValor: 0, share: 0 };
+    const totalValor = arr.reduce((s, c) => s + c.valor, 0);
+    const top = arr[0];
+    const share = totalValor > 0 ? Math.round((top.valor / totalValor) * 100) : 0;
+    return { top, totalValor, share };
+  }, [data.stockPorCategoria]);
+
+  const movKpis = useMemo(() => {
+    const totalSalidas = data.movimientoDiario.reduce((s, d) => s + d.salidas, 0);
+    const totalEntradas = data.movimientoDiario.reduce((s, d) => s + d.entradas, 0);
+    const neto = totalEntradas - totalSalidas;
+    const diaPico = data.movimientoDiario.reduce(
+      (best, d) => (d.salidas > best.salidas ? d : best),
+      { dia: "—", entradas: 0, salidas: 0 },
+    );
+    return { totalSalidas, totalEntradas, neto, diaPico };
+  }, [data.movimientoDiario]);
+
+  const topSalidasRows = data.topSalidas.slice(0, 10).map((p) => ({
+    name: p.nombre.length > 22 ? p.nombre.slice(0, 21) + "…" : p.nombre,
+    value: p.unidades,
+    label: `${fmtU(p.unidades)} ${p.tendencia === "up" ? "↑" : p.tendencia === "down" ? "↓" : "·"}`,
   }));
 
-  // Rotacion gauge — segun rotacionGeneral, 2x mensual = 100% optimo
-  const rotacionPct = Math.min((data.rotacionGeneral / 2) * 100, 100);
+  const cobKpis = useMemo(() => {
+    const critico = data.coberturaDias.filter((c) => c.status === "critico").length;
+    const alerta = data.coberturaDias.filter((c) => c.status === "alerta").length;
+    const promDias = data.coberturaDias.length
+      ? Math.round(
+          data.coberturaDias.reduce((s, c) => s + Math.min(c.dias, 365), 0) /
+            data.coberturaDias.length,
+        )
+      : 0;
+    const worst = data.coberturaDias[0];
+    return { critico, alerta, promDias, worst };
+  }, [data.coberturaDias]);
+
+  const coverChart = data.coberturaDias.slice(0, 10).map((c) => ({
+    producto: c.nombre.length > 14 ? c.nombre.slice(0, 13) + "…" : c.nombre,
+    dias: Math.min(c.dias, 90),
+    umbralCritico: 7,
+    umbralAlerta: 14,
+  }));
+
+  const stockoutChart = data.proyeccionAgotamiento.slice(0, 10).map((p) => ({
+    producto: p.nombre.length > 14 ? p.nombre.slice(0, 13) + "…" : p.nombre,
+    dias: Math.min(p.diasRestantes, 60),
+    stock: p.stock,
+  }));
+
+  const stockoutKpis = useMemo(() => {
+    const critico = data.proyeccionAgotamiento.filter((p) => p.status === "critico").length;
+    const alerta = data.proyeccionAgotamiento.filter((p) => p.status === "alerta").length;
+    const worstItem = data.proyeccionAgotamiento[0];
+    return { critico, alerta, worstItem };
+  }, [data.proyeccionAgotamiento]);
+
+  const sections: DraggableItem[] = [
+    {
+      id: "valor-categoria",
+      render: () => (
+        <DashboardSection
+          kicker="Valor del inventario · por categoría"
+          title="Cuánto vale y cuánto hay por categoría"
+          kpis={[
+            { label: "Valor total", value: fmtS(data.valorInventario), tone: "primary" },
+            { label: "Categoría líder", value: catTop.top?.nombre ?? "—", tone: "success" },
+            {
+              label: "Valor líder",
+              value: fmtS(catTop.top?.valor ?? 0),
+              tone: "primary",
+            },
+            {
+              label: "Share líder",
+              value: `${catTop.share}%`,
+              tone: catTop.share >= 40 ? "warning" : "neutral",
+            },
+          ]}
+        >
+          <BulejeComposedChart
+            data={data.stockPorCategoria.map((c) => ({
+              categoria: c.nombre,
+              valor: Math.round(c.valor),
+              cantidad: c.cantidad,
+            }))}
+            xKey="categoria"
+            bars={[{ key: "valor", label: "Valor S/", color: "primary", yAxis: "left" }]}
+            lines={[{ key: "cantidad", label: "Unidades", color: "accent", yAxis: "right" }]}
+            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("valor")
+                ? fmtS(Number(v))
+                : fmtU(Number(v))
+            }
+            height={300}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "movimiento-diario",
+      render: () => (
+        <DashboardSection
+          kicker="Movimiento · últimos 14 días"
+          title="Entradas y salidas de stock"
+          kpis={[
+            { label: "Salidas 14d", value: fmtU(movKpis.totalSalidas), tone: "primary" },
+            { label: "Entradas 14d", value: fmtU(movKpis.totalEntradas), tone: "success" },
+            {
+              label: "Neto",
+              value: fmtU(movKpis.neto),
+              tone: movKpis.neto >= 0 ? "success" : "warning",
+            },
+            { label: "Día pico salida", value: movKpis.diaPico.dia, tone: "neutral" },
+          ]}
+        >
+          <BulejeComposedChart
+            data={data.movimientoDiario}
+            xKey="dia"
+            bars={[
+              { key: "entradas", label: "Entradas", color: "primary", yAxis: "left" },
+              { key: "salidas", label: "Salidas", color: "amber", yAxis: "left" },
+            ]}
+            leftAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v) => fmtU(Number(v))}
+            height={280}
+            minDataPoints={2}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "top-salidas",
+      render: () => (
+        <DashboardSection
+          kicker="Productos · más rotación · periodo"
+          title="Top 10 productos por unidades salidas"
+          kpis={[
+            {
+              label: "Líder",
+              value: data.topSalidas[0]?.nombre.slice(0, 20) ?? "—",
+              tone: "success",
+            },
+            {
+              label: "Salidas líder",
+              value: fmtU(data.topSalidas[0]?.unidades ?? 0),
+              tone: "primary",
+            },
+            {
+              label: "Subiendo",
+              value: String(data.topSalidas.filter((p) => p.tendencia === "up").length),
+              tone: "success",
+            },
+            {
+              label: "Bajando",
+              value: String(data.topSalidas.filter((p) => p.tendencia === "down").length),
+              tone: "warning",
+            },
+          ]}
+        >
+          <MicroList items={topSalidasRows} barColor="var(--brand-primary)" showRank />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "distribucion-stock",
+      render: () => (
+        <DashboardSection
+          kicker="Distribución · SKUs por rango de stock"
+          title="Cuántos productos hay en cada rango"
+          kpis={[
+            { label: "Total SKUs", value: String(data.totalProductos), tone: "primary" },
+            {
+              label: "Agotados",
+              value: String(data.agotados),
+              tone: data.agotados > 0 ? "warning" : "success",
+            },
+            {
+              label: "Stock crítico",
+              value: String(data.stockCritico),
+              tone: data.stockCritico > 0 ? "warning" : "success",
+            },
+            {
+              label: "Sin movimiento",
+              value: String(data.sinMovimiento),
+              tone: data.sinMovimiento > 5 ? "warning" : "neutral",
+            },
+          ]}
+        >
+          <div className="flex items-center justify-center py-2">
+            <div className="w-full max-w-md">
+              <BulejeDonutChart
+                data={data.distribucionStock.map((d) => ({ name: d.rango, value: d.cantidad }))}
+                height={260}
+                format={(v) => `${v} SKUs`}
+                label={
+                  <div className="text-center">
+                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      Total
+                    </p>
+                    <p className="text-2xl font-extrabold text-[var(--text-primary)]">
+                      {data.totalProductos}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">SKUs activos</p>
+                  </div>
+                }
+              />
+            </div>
+          </div>
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "dias-cobertura",
+      render: () => (
+        <DashboardSection
+          kicker="Cobertura · días restantes top-10"
+          title="Días de stock para los productos más expuestos"
+          kpis={[
+            {
+              label: "En crítico",
+              value: String(cobKpis.critico),
+              tone: cobKpis.critico > 0 ? "warning" : "success",
+            },
+            {
+              label: "En alerta",
+              value: String(cobKpis.alerta),
+              tone: cobKpis.alerta > 0 ? "primary" : "success",
+            },
+            { label: "Peor días", value: `${cobKpis.worst?.dias ?? 0}d`, tone: "warning" },
+            { label: "Promedio", value: `${cobKpis.promDias}d`, tone: "neutral" },
+          ]}
+        >
+          <BulejeComposedChart
+            data={coverChart}
+            xKey="producto"
+            bars={[{ key: "dias", label: "Días de stock", color: "primary", yAxis: "left" }]}
+            lines={[
+              { key: "umbralAlerta", label: "Alerta (14d)", color: "amber", yAxis: "left" },
+              { key: "umbralCritico", label: "Crítico (7d)", color: "accent", yAxis: "left" },
+            ]}
+            leftAxisFormat={(v) => `${v}d`}
+            tooltipFormat={(v) => `${v} días`}
+            height={280}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "stockout-proyeccion",
+      render: () => (
+        <DashboardSection
+          kicker="Proyección · cuándo se agota"
+          title="Días hasta agotarse · top 10 riesgo"
+          rightSlot={
+            reorderCandidates.length > 0 ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSendAlert}
+                  disabled={sendingAlert}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold bg-[var(--data-warning)] text-white hover:bg-[var(--data-warning)]/90 shadow-sm transition-all disabled:opacity-50"
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                  {sendingAlert ? "Enviando..." : "Enviar alerta"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReorderOpen(true)}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 shadow-sm transition-all"
+                >
+                  <Package className="h-3.5 w-3.5" />
+                  Generar OC ({reorderCandidates.length})
+                </button>
+              </div>
+            ) : undefined
+          }
+          kpis={[
+            {
+              label: "Crítico (<7d)",
+              value: String(stockoutKpis.critico),
+              tone: stockoutKpis.critico > 0 ? "warning" : "success",
+            },
+            {
+              label: "Alerta (<14d)",
+              value: String(stockoutKpis.alerta),
+              tone: stockoutKpis.alerta > 0 ? "primary" : "success",
+            },
+            {
+              label: "Más urgente",
+              value: stockoutKpis.worstItem?.nombre?.slice(0, 18) ?? "—",
+              tone: "warning",
+            },
+            {
+              label: "Días urgente",
+              value: `${stockoutKpis.worstItem?.diasRestantes ?? 0}d`,
+              tone: "warning",
+            },
+          ]}
+        >
+          <BulejeComposedChart
+            data={stockoutChart}
+            xKey="producto"
+            bars={[{ key: "dias", label: "Días restantes", color: "primary", yAxis: "left" }]}
+            lines={[{ key: "stock", label: "Stock actual", color: "accent", yAxis: "right" }]}
+            leftAxisFormat={(v) => `${v}d`}
+            rightAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("días") ? `${v} días` : `${v} u`
+            }
+            height={280}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* ── Row 2: FULL-WIDTH — Movimiento ── */}
-      <ChartCard
-        title="Movimiento de inventario — ultimos 14 dias"
-        Icon={ShoppingCart}
-        height={340}
-        subtitle="Entradas vs salidas diarias"
-        isEmpty={data.movimientoDiario.length === 0}
-        emptyText="Sin movimientos en el periodo"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data.movimientoDiario} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradEntradas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={T.emerald} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={T.emerald} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="gradSalidas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={T.red} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={T.red} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-            <XAxis dataKey="dia" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-            <Tooltip content={<ChartTooltip />} />
-            <Area type="monotone" dataKey="entradas" name="Entradas" stroke={T.emerald} fill="url(#gradEntradas)" strokeWidth={2.5} />
-            <Area type="monotone" dataKey="salidas" name="Salidas" stroke={T.red} fill="url(#gradSalidas)" strokeWidth={2.5} />
-            <Legend iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      {/* ── Row 3: 2 secondary charts ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Stock por categoria"
-          Icon={Layers}
-          height={280}
-          subtitle="Valor en S/ por categoria"
-          isEmpty={data.stockPorCategoria.length === 0}
-          emptyText="Sin productos categorizados"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.stockPorCategoria} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
-              <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-              <YAxis type="category" dataKey="nombre" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} width={120} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Bar dataKey="valor" name="Valor" radius={[0, 6, 6, 0]} barSize={20}>
-                {data.stockPorCategoria.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="Productos para reponer"
-          Icon={AlertTriangle}
-          height={280}
-          subtitle="Stock <= minimo"
-          isEmpty={data.productosCriticos.length === 0}
-          emptyText="Sin productos criticos"
-        >
-          <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
-            {data.productosCriticos.map((p, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-foreground truncate leading-tight">{p.nombre}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted leading-tight">{p.categoria}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-[var(--data-error)]">{p.stock}/{p.stockMin}</p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pedir {p.reorder} uds</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      </div>
-
-      {/* ── Row 4: 3 micro-insights ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard
-          title="Distribucion de stock"
-          Icon={Layers}
-          height={220}
-          isEmpty={abcData.length === 0}
-          emptyText="Sin productos"
-        >
-          <MicroDonut
-            data={abcData}
-            centerLabel={String(data.totalProductos)}
-            centerSubLabel="productos"
-            tooltipFormatter={(v) => `${v} items`}
-          />
-        </ChartCard>
-
-        <ChartCard
-          title="Top 5 proximos a agotar"
-          Icon={Timer}
-          height={220}
-          isEmpty={top5Vencer.length === 0}
-          emptyText="Stock saludable"
-          EmptyIcon={Package}
-        >
-          <MicroList items={top5Vencer} barColor={T.amber} showRank />
-        </ChartCard>
-
-        <ChartCard
-          title="Tasa de rotacion"
-          Icon={Target}
-          height={220}
-          subtitle={`${data.rotacionGeneral.toFixed(2)}x periodo`}
-        >
-          <MicroGauge
-            value={rotacionPct}
-            max={100}
-            centerLabel={`${data.rotacionGeneral.toFixed(1)}x`}
-            centerSubLabel="rotacion"
-            footerText={
-              data.rotacionGeneral >= 2
-                ? "Rotacion alta — saludable"
-                : data.rotacionGeneral >= 1
-                  ? "Rotacion media"
-                  : "Rotacion baja — revisar surtido"
-            }
-          />
-        </ChartCard>
-      </div>
-
-      {/* ── Row opcional: Top salidas ── */}
-      {data.topSalidas.length > 0 && (
-        <ChartCard
-          title="Top salidas del periodo"
-          Icon={TrendingUp}
-          height={220}
-          subtitle="Productos mas vendidos por unidades"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 max-h-[200px] overflow-y-auto">
-            {data.topSalidas.map((p, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
-                    i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                  )}>{i + 1}</span>
-                  <p className="text-xs font-medium text-[var(--text-secondary)] truncate">{p.nombre}</p>
-                </div>
-                <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground shrink-0 tabular-nums">{p.unidades} uds</span>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      )}
-    </div>
+    <>
+      <DraggableSections items={sections} storageKey="inventario-base-order" />
+      <ReorderModal
+        open={reorderOpen}
+        candidates={reorderCandidates}
+        onClose={() => setReorderOpen(false)}
+      />
+    </>
   );
 }

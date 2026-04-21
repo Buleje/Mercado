@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" role="img" aria-label="Coca Cola 3L">
+  <rect width="300" height="300" fill="#fee2e2"/>
+  <path d="M115 60 L185 60 L190 90 L185 250 Q185 260 175 260 L125 260 Q115 260 115 250 L110 90 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"/>
+  <rect x="125" y="45" width="50" height="20" rx="4" fill="#7f1d1d"/>
+  <rect x="115" y="125" width="70" height="45" fill="#ffffff"/>
+  <text x="150" y="152" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#dc2626">COCA</text>
+  <text x="150" y="275" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#450a0a">3 L</text>
+</svg>

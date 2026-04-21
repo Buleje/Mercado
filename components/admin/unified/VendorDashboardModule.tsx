@@ -21,10 +21,10 @@ import {
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
 import dynamic from "next/dynamic";
-import ChartSkeleton from "@/components/charts/ChartSkeleton";
+import { BulejeLoader } from "@/components/admin/inicio/_shared";
 
 // ── Lazy-loaded components (tab-gated, not immediately visible) ─────────────
-const DashboardLoading = () => <ChartSkeleton height={400} label="Cargando dashboard..." />;
+const DashboardLoading = () => <BulejeLoader variant="card" size={48} label="Cargando dashboard..." />;
 const InicioDashboard = dynamic(() => import("@/components/admin/inicio/InicioDashboard"), { ssr: false, loading: DashboardLoading });
 const VendorKPICards = dynamic(() => import("@/components/admin/vendor-dashboard/VendorKPICards").then(m => ({ default: m.VendorKPICards })), { ssr: false });
 const VendorPendingOrders = dynamic(() => import("@/components/admin/vendor-dashboard/VendorPendingOrders").then(m => ({ default: m.VendorPendingOrders })), { ssr: false });
@@ -35,6 +35,10 @@ const VendorQuickActions = dynamic(() => import("@/components/admin/vendor-dashb
 const StockoutPredictionWidget = dynamic(() => import("@/components/marketplace/StockoutPredictionWidget"), { ssr: false });
 const SponsoredAdminPanel = dynamic(() => import("@/components/marketplace/SponsoredAdminPanel"), { ssr: false });
 const SalesAnomalyAlert = dynamic(() => import("@/components/marketplace/SalesAnomalyAlert"), { ssr: false });
+const MarketplaceAdvancedCharts = dynamic(
+  () => import("@/components/admin/inicio/MarketplaceAdvancedCharts").then((m) => ({ default: m.MarketplaceAdvancedCharts })),
+  { ssr: false, loading: DashboardLoading },
+);
 const VentasDashboard = dynamic(() => import("@/components/admin/inicio/VentasDashboard"), { ssr: false, loading: DashboardLoading });
 const CajaDashboard = dynamic(() => import("@/components/admin/inicio/CajaDashboard"), { ssr: false, loading: DashboardLoading });
 const InventarioDashboard = dynamic(() => import("@/components/admin/inicio/InventarioDashboard"), { ssr: false, loading: DashboardLoading });
@@ -218,14 +222,7 @@ export default function VendorDashboardModule() {
             )}
 
             {loading && !data && (
-              <div className="space-y-6">
-                <KPISkeleton />
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <CardSkeleton rows={4} />
-                  <CardSkeleton rows={4} />
-                </div>
-                <CardSkeleton rows={2} />
-              </div>
+              <BulejeLoader variant="card" size={56} label="Cargando marketplace..." />
             )}
 
             {!loading && data && (
@@ -241,6 +238,9 @@ export default function VendorDashboardModule() {
                 </div>
                 <VendorRecentSales sales={data.recentSales} />
                 <SponsoredAdminPanel storeSlug={storeSlug} />
+
+                {/* ── Charts especializados marketplace (6 draggables: funnel, ingresos 6m, top productos, ratings, comparativa, heatmap) ── */}
+                <MarketplaceAdvancedCharts />
               </div>
             )}
           </div>

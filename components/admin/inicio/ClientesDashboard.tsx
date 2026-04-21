@@ -12,7 +12,11 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const ClientesCharts = dynamic(() => import("./ClientesCharts"), { ssr: false });
-import { DashboardSectionHeader } from "./_shared";
+const ClientesAdvancedCharts = dynamic(
+  () => import("./ClientesAdvancedCharts").then((m) => ({ default: m.ClientesAdvancedCharts })),
+  { ssr: false },
+);
+import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -263,7 +267,7 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
     };
   }, [raw, dateRange]);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
@@ -311,8 +315,11 @@ export default function ClientesDashboard({ dateRange }: ClientesDashboardProps)
         </div>
       )}
 
-      {/* ── Charts ── */}
+      {/* ── Charts base (top, retención, por día, gasto, frecuencia, ticket) ── */}
       <ClientesCharts data={data} />
+
+      {/* ── Charts especializados (cohort, RFM, rating, comparativa, heatmap, churn) ── */}
+      <ClientesAdvancedCharts />
     </div>
   );
 }

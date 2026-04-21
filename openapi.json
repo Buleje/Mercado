@@ -1,0 +1,2593 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Buleje / Bodega San Martín API",
+    "version": "0.1.0",
+    "description": "ERP/e-commerce multi-tenant API para Buleje — Pucallpa, Perú. Endpoints de /admin requieren autenticación JWT con rol válido."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "CouponValidResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "couponId": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "discountType": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "discountValue": {
+            "type": "number"
+          },
+          "discount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "valid",
+          "couponId",
+          "code",
+          "description",
+          "discountType",
+          "discountValue",
+          "discount"
+        ]
+      },
+      "CouponInvalidResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "example": "Cupón expirado"
+          }
+        },
+        "required": [
+          "valid",
+          "reason"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "CouponValidateBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "example": "BIENVENIDO10"
+          },
+          "storeSlug": {
+            "type": "string",
+            "minLength": 1,
+            "example": "bodega-san-martin"
+          },
+          "cartTotal": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "example": 45.5
+          }
+        },
+        "required": [
+          "code",
+          "storeSlug",
+          "cartTotal"
+        ]
+      },
+      "ReviewCreated": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "rating": {
+                "type": "integer"
+              },
+              "text": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "verified": {
+                "type": "boolean"
+              },
+              "status": {
+                "type": "string"
+              },
+              "storeName": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "rating",
+              "text",
+              "name",
+              "verified",
+              "status",
+              "storeName",
+              "date"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ReviewCreateBody": {
+        "type": "object",
+        "properties": {
+          "storeSlug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "example": "bodega-san-martin"
+          },
+          "productId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "example": 42
+          },
+          "orderId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "ord_abc123"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150,
+            "example": "María García"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 20,
+            "example": "51987654321"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "Excelente servicio y entrega rápida."
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "qualityRating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "priceRating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "deliveryRating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "photosJson": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "storeSlug",
+          "orderId",
+          "name",
+          "phone",
+          "text",
+          "rating"
+        ]
+      },
+      "ReviewListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewItem"
+            }
+          },
+          "aggregate": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "data",
+          "aggregate"
+        ]
+      },
+      "ReviewItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "rating": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "helpfulUpvotes": {
+            "type": "integer"
+          },
+          "helpfulDownvotes": {
+            "type": "integer"
+          },
+          "adminReply": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "adminReplyDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "qualityRating": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "priceRating": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "deliveryRating": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "name",
+          "verified",
+          "helpfulUpvotes",
+          "helpfulDownvotes",
+          "adminReply",
+          "adminReplyDate",
+          "date",
+          "qualityRating",
+          "priceRating",
+          "deliveryRating"
+        ]
+      },
+      "RecommendationsResponse": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductRecommendation"
+            }
+          }
+        },
+        "required": [
+          "products"
+        ]
+      },
+      "ProductRecommendation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slug": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "storeSlug": {
+            "type": "string"
+          },
+          "similarity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "imageUrl",
+          "slug",
+          "storeSlug",
+          "similarity"
+        ]
+      },
+      "StoreRegisterResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "isPublished": {
+                "type": "boolean"
+              },
+              "tenantId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name",
+              "isPublished",
+              "tenantId"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "StoreRegisterBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80,
+            "example": "Bodega Las Flores"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Bodega familiar con productos frescos"
+          },
+          "logo": {
+            "type": "string",
+            "format": "uri"
+          },
+          "banner": {
+            "type": "string",
+            "format": "uri"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "abarrotes"
+          },
+          "zone": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "Pucallpa Centro"
+          },
+          "commission": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30,
+            "example": 10
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "DriverApplyResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "DriverApplyBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Juan Pérez"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 20,
+            "example": "51987654321"
+          },
+          "zone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "Pucallpa Centro"
+          },
+          "vehicleType": {
+            "type": "string",
+            "enum": [
+              "moto",
+              "bicicleta",
+              "auto",
+              "a_pie"
+            ],
+            "example": "moto"
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "manana",
+              "tarde",
+              "noche",
+              "full",
+              "fines"
+            ],
+            "example": "full"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "zone",
+          "vehicleType",
+          "availability"
+        ]
+      },
+      "QAListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QAItem"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total"
+        ]
+      },
+      "QAItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userName",
+          "question",
+          "answer",
+          "createdAt"
+        ]
+      },
+      "QACreatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/QAItem"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "QAQuestionBody": {
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "María López"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "¿Este producto tiene garantía?"
+          }
+        },
+        "required": [
+          "userName",
+          "question"
+        ]
+      },
+      "LiveViewersResponse": {
+        "type": "object",
+        "properties": {
+          "recentViewers": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 7
+          }
+        },
+        "required": [
+          "recentViewers"
+        ]
+      },
+      "LiveViewersPostResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "LiveViewersPostBody": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "example": "sess_abc123",
+            "description": "ID de sesión único del visitante"
+          }
+        }
+      },
+      "StorePhoneResponse": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "51987654321",
+            "description": "WhatsApp de la tienda. null si no configurado o tienda inactiva."
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "CouponListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponItem"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CouponItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "discountType": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "discountValue": {
+            "type": "number"
+          },
+          "minPurchase": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "maxUses": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "usedCount": {
+            "type": "integer"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "storeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "description",
+          "discountType",
+          "discountValue",
+          "minPurchase",
+          "maxUses",
+          "usedCount",
+          "expiresAt",
+          "isActive",
+          "storeId",
+          "createdAt"
+        ]
+      },
+      "CouponCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CouponItem"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CreateCouponBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "example": "VERANO20",
+            "description": "Se convierte a mayúsculas"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "20% descuento en verano"
+          },
+          "discountType": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ],
+            "example": "percent"
+          },
+          "discountValue": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "example": 20
+          },
+          "minPurchase": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "example": 50
+          },
+          "maxUses": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "example": 100
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "example": "2026-12-31T23:59:59Z"
+          },
+          "storeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "discountType",
+          "discountValue"
+        ]
+      },
+      "DashboardAggregatesResponse": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "$ref": "#/components/schemas/DashboardAggregatesPeriod"
+          },
+          "week": {
+            "$ref": "#/components/schemas/DashboardAggregatesPeriod"
+          },
+          "activeCarts": {
+            "type": "integer",
+            "description": "Pedidos en vuelo"
+          },
+          "lowStockCount": {
+            "type": "integer",
+            "description": "Productos en/bajo stockMin"
+          }
+        },
+        "required": [
+          "today",
+          "week",
+          "activeCarts",
+          "lowStockCount"
+        ]
+      },
+      "DashboardAggregatesPeriod": {
+        "type": "object",
+        "properties": {
+          "salesCount": {
+            "type": "integer"
+          },
+          "revenue": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "salesCount",
+          "revenue"
+        ]
+      },
+      "AdminStatsResponse": {
+        "type": "object",
+        "properties": {
+          "pendingOrders": {
+            "type": "integer",
+            "description": "Pedidos en estado pendiente"
+          },
+          "oldPendingOrders": {
+            "type": "integer",
+            "description": "Pedidos pendientes hace más de 30 min"
+          },
+          "todayOrders": {
+            "type": "integer",
+            "description": "Pedidos creados hoy"
+          },
+          "todayRevenue": {
+            "type": "number",
+            "description": "Ingresos hoy (pedidos no cancelados)"
+          },
+          "lowStockProducts": {
+            "type": "integer",
+            "description": "Productos en o bajo su stockMin"
+          },
+          "weekOrders": {
+            "type": "integer",
+            "description": "Pedidos en los últimos 7 días"
+          },
+          "totalCustomers": {
+            "type": "integer"
+          },
+          "overduePayables": {
+            "type": "integer",
+            "description": "Cuentas por cobrar vencidas"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "pendingOrders",
+          "oldPendingOrders",
+          "todayOrders",
+          "todayRevenue",
+          "lowStockProducts",
+          "weekOrders",
+          "totalCustomers",
+          "overduePayables",
+          "generatedAt"
+        ]
+      },
+      "TodaySummaryResponse": {
+        "type": "object",
+        "properties": {
+          "ventas": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "ventasMostrador": {
+                "type": "number"
+              },
+              "ventasOnline": {
+                "type": "number"
+              },
+              "cantidadVentas": {
+                "type": "integer"
+              },
+              "cambioVsAyer": {
+                "type": "integer",
+                "description": "Variación % vs ayer"
+              }
+            },
+            "required": [
+              "total",
+              "ventasMostrador",
+              "ventasOnline",
+              "cantidadVentas",
+              "cambioVsAyer"
+            ]
+          },
+          "pedidos": {
+            "type": "object",
+            "properties": {
+              "hoy": {
+                "type": "integer"
+              },
+              "pendientes": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "hoy",
+              "pendientes"
+            ]
+          },
+          "alertas": {
+            "type": "object",
+            "properties": {
+              "stockBajo": {
+                "type": "integer"
+              },
+              "sinStock": {
+                "type": "integer"
+              },
+              "porVencer": {
+                "type": "integer",
+                "description": "Lotes por vencer en 7 días"
+              },
+              "totalAlertas": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "stockBajo",
+              "sinStock",
+              "porVencer",
+              "totalAlertas"
+            ]
+          },
+          "topProducto": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "nombre": {
+                "type": "string"
+              },
+              "cantidad": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "nombre",
+              "cantidad"
+            ]
+          },
+          "generadoA": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "ventas",
+          "pedidos",
+          "alertas",
+          "topProducto",
+          "generadoA"
+        ]
+      },
+      "AnalyticsKPIsResponse": {
+        "type": "object",
+        "properties": {
+          "ingresosHoy": {
+            "$ref": "#/components/schemas/KPIMetric"
+          },
+          "ticketPromedio": {
+            "$ref": "#/components/schemas/KPIMetric"
+          },
+          "transaccionesHoy": {
+            "$ref": "#/components/schemas/KPIMetric"
+          },
+          "margenOperativo": {
+            "$ref": "#/components/schemas/KPIMetric"
+          },
+          "fiadoPendiente": {
+            "$ref": "#/components/schemas/FiadoKPI"
+          },
+          "stockCritico": {
+            "$ref": "#/components/schemas/KPICountMetric"
+          }
+        },
+        "required": [
+          "ingresosHoy",
+          "ticketPromedio",
+          "transaccionesHoy",
+          "margenOperativo",
+          "fiadoPendiente",
+          "stockCritico"
+        ]
+      },
+      "KPIMetric": {
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "number"
+          },
+          "cambio": {
+            "type": "number",
+            "description": "Variación % vs período anterior"
+          }
+        },
+        "required": [
+          "valor",
+          "cambio"
+        ]
+      },
+      "FiadoKPI": {
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "number"
+          },
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "valor",
+          "count"
+        ]
+      },
+      "KPICountMetric": {
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "valor"
+        ]
+      },
+      "RFMResponse": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RFMCustomer"
+            }
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RFMSegment"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customers",
+          "segments",
+          "total"
+        ]
+      },
+      "RFMCustomer": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "recencyDays": {
+            "type": "integer"
+          },
+          "frequency": {
+            "type": "integer"
+          },
+          "monetary": {
+            "type": "number"
+          },
+          "rScore": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "fScore": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "mScore": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "segment": {
+            "type": "string",
+            "enum": [
+              "Champions",
+              "Loyal",
+              "New",
+              "AtRisk",
+              "Lost",
+              "Regular"
+            ]
+          }
+        },
+        "required": [
+          "phone",
+          "name",
+          "recencyDays",
+          "frequency",
+          "monetary",
+          "rScore",
+          "fScore",
+          "mScore",
+          "segment"
+        ]
+      },
+      "RFMSegment": {
+        "type": "object",
+        "properties": {
+          "segment": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "avgMonetary": {
+            "type": "number"
+          },
+          "avgFrequency": {
+            "type": "number"
+          },
+          "color": {
+            "type": "string",
+            "example": "#00B4A6"
+          },
+          "action": {
+            "type": "string",
+            "example": "Recompensar lealtad, ofrecer exclusividades"
+          }
+        },
+        "required": [
+          "segment",
+          "count",
+          "avgMonetary",
+          "avgFrequency",
+          "color",
+          "action"
+        ]
+      },
+      "AIStatusResponse": {
+        "type": "object",
+        "properties": {
+          "activeProvider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "openai",
+            "description": "ID del proveedor activo o null"
+          },
+          "activeProviderName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "OpenAI GPT-4"
+          },
+          "hasAI": {
+            "type": "boolean",
+            "description": "true si algún proveedor está configurado"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AIProvider"
+            }
+          }
+        },
+        "required": [
+          "activeProvider",
+          "activeProviderName",
+          "hasAI",
+          "providers"
+        ]
+      },
+      "AIProvider": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "openai"
+          },
+          "name": {
+            "type": "string",
+            "example": "OpenAI GPT-4"
+          },
+          "configured": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "configured"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/marketplace/coupons/validate": {
+      "post": {
+        "summary": "Validar cupón de descuento",
+        "tags": [
+          "Marketplace",
+          "Coupons"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponValidateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado de validación (válido o inválido con razón)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CouponValidResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CouponInvalidResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tienda no encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/reviews": {
+      "post": {
+        "summary": "Crear review verificada",
+        "tags": [
+          "Marketplace",
+          "Reviews"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCreateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review creada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validación de orden fallida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Feature flag deshabilitado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar reviews aprobadas de una tienda",
+        "tags": [
+          "Marketplace",
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "bodega-san-martin"
+            },
+            "required": true,
+            "name": "storeSlug",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "42"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "50"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "true"
+            },
+            "required": false,
+            "name": "verifiedOnly",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de reviews",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "storeSlug requerido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tienda no disponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Feature flag deshabilitado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/recommendations/for-me": {
+      "get": {
+        "summary": "Recomendaciones personalizadas para el customer autenticado",
+        "tags": [
+          "Marketplace",
+          "Recommendations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "5",
+              "description": "Máximo 20"
+            },
+            "required": false,
+            "description": "Máximo 20",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de productos recomendados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión de customer requerida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/stores/register": {
+      "post": {
+        "summary": "Registrar nueva tienda en el marketplace",
+        "tags": [
+          "Marketplace",
+          "Stores"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreRegisterBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tienda registrada (pendiente de aprobación)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreRegisterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere rol admin u owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tenant ya tiene tienda registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/drivers/apply": {
+      "post": {
+        "summary": "Postular como repartidor",
+        "tags": [
+          "Marketplace",
+          "Drivers"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverApplyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Solicitud registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverApplyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error de servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/qa/{productId}": {
+      "get": {
+        "summary": "Listar preguntas y respuestas de un producto",
+        "tags": [
+          "Marketplace",
+          "QA"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "42",
+              "description": "ID numérico del producto"
+            },
+            "required": true,
+            "description": "ID numérico del producto",
+            "name": "productId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de preguntas del producto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QAListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "productId inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Registrar nueva pregunta sobre un producto",
+        "tags": [
+          "Marketplace",
+          "QA"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "42",
+              "description": "ID numérico del producto"
+            },
+            "required": true,
+            "description": "ID numérico del producto",
+            "name": "productId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QAQuestionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pregunta registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QACreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o ID inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit excedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/stores/{slug}/live-viewers": {
+      "get": {
+        "summary": "Obtener cantidad de visitantes activos en la última hora",
+        "tags": [
+          "Marketplace",
+          "Stores"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "bodega-san-martin",
+              "description": "Slug de la tienda"
+            },
+            "required": true,
+            "description": "Slug de la tienda",
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conteo de visitantes recientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveViewersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Slug inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Registrar visita a tienda (fire-and-forget)",
+        "tags": [
+          "Marketplace",
+          "Stores"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "bodega-san-martin",
+              "description": "Slug de la tienda"
+            },
+            "required": true,
+            "description": "Slug de la tienda",
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveViewersPostBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Visita registrada o degradada silenciosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveViewersPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Slug inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/stores/{slug}/phone": {
+      "get": {
+        "summary": "Obtener número WhatsApp público de una tienda",
+        "tags": [
+          "Marketplace",
+          "Stores"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "bodega-san-martin",
+              "description": "Slug de la tienda"
+            },
+            "required": true,
+            "description": "Slug de la tienda",
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Número WhatsApp o null si no está configurado / tienda inactiva",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorePhoneResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace/coupons": {
+      "get": {
+        "summary": "Listar cupones del tenant (admin/manager/cajero)",
+        "tags": [
+          "Admin",
+          "Coupons"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "store_abc123",
+              "description": "Filtrar por tienda específica"
+            },
+            "required": false,
+            "description": "Filtrar por tienda específica",
+            "name": "storeId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de cupones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear cupón de descuento (admin/manager)",
+        "tags": [
+          "Admin",
+          "Coupons"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCouponBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cupón creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tienda no encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código de cupón duplicado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/dashboard/aggregates": {
+      "get": {
+        "summary": "KPIs pre-agregados del dashboard admin (hoy + semana + alertas)",
+        "tags": [
+          "Admin",
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agregados del dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardAggregatesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error de base de datos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/stats": {
+      "get": {
+        "summary": "Stats ligeros en tiempo real para el widget del header admin",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estadísticas del negocio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error de base de datos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/today-summary": {
+      "get": {
+        "summary": "Resumen ejecutivo del día: ventas, pedidos, alertas, stock",
+        "tags": [
+          "Admin",
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen del día (caché 2 min)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodaySummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/kpis": {
+      "get": {
+        "summary": "6 KPIs de negocio en tiempo real (ingresos, margen, fiados, stock)",
+        "tags": [
+          "Analytics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KPIs calculados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsKPIsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error de base de datos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/rfm": {
+      "get": {
+        "summary": "Análisis RFM de clientes con segmentación percentil (Champions, Loyal, AtRisk…)",
+        "tags": [
+          "Analytics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "90",
+              "description": "Período en días (7-365, default: 90)"
+            },
+            "required": false,
+            "description": "Período en días (7-365, default: 90)",
+            "name": "days",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clientes segmentados por RFM",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFMResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requiere autenticación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol insuficiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error de base de datos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/status": {
+      "get": {
+        "summary": "Proveedores de IA configurados (usado por LiveChatWidget)",
+        "tags": [
+          "AI"
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de los proveedores de IA",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

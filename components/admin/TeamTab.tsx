@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Role = "admin" | "cajero" | "almacenero";
 
@@ -131,7 +132,7 @@ export default function TeamTab() {
 
       const res = await fetch("/api/admin-users", {
         method: editingId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
 
@@ -168,7 +169,7 @@ export default function TeamTab() {
   const handleToggleActive = async (u: AdminUser) => {
     const res = await fetch("/api/admin-users", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ id: u.id, active: !u.active }),
     });
     if (res.ok) fetchUsers();

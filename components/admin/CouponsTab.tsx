@@ -6,6 +6,7 @@ import { Ticket, Plus, Trash2, Check, X, Loader2, Copy, Gift, Sparkles, Zap, Use
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Coupon = {
   id: string; code: string; description: string;
@@ -111,7 +112,7 @@ export default function CouponsTab() {
     const storeId = couponScope === "tienda" ? getActiveStoreId() : null;
     const res = await fetch("/api/coupons", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         ...form,
         minPurchase: form.minPurchase || undefined,
@@ -124,7 +125,7 @@ export default function CouponsTab() {
   };
 
   const toggleActive = async (c: Coupon) => {
-    await fetch(`/api/coupons/${c.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: !c.active }) });
+    await fetch(`/api/coupons/${c.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ active: !c.active }) });
     load();
   };
 

@@ -3,28 +3,37 @@
 /**
  * OfertasClient — Orchestrator de /marketplace/ofertas.
  *
- * Stack (top → bottom):
- *   1. OfertasHero   (kicker + H1 + breadcrumb + stats + countdown strip)
- *   2. FlashDealsCountdown  (banner dark + grid 6 flash deals con timer)
- *   3. DealsFilterBar       (tabs categoria + sort + min-discount)
- *   4. DealsGrid            (grid 4 cols + pagination)
- *   5. DealsByStore         (scroll horizontal tiendas participantes)
- *   6. DealsAlert           (suscripcion email)
- *   7. FinalCTA             (link a explorar)
+ * Stack canonico (top → bottom) — alineado con ExplorarClient:
+ *   1.  PromoBannerCarousel (slot="ofertas")
+ *   2.  ExplorarTracker (analytics view_item_list + scroll_depth)
+ *   3.  OfertasHero (kicker + h1 + countdown global + 3 stats trust)
+ *   4.  FlashDealsCountdown (header editorial + countdown + carrusel UnifiedProductCard variant="flash")
+ *   5.  DealsFilterBar (sticky tokens chips Holded)
+ *   6.  DealsGrid (UnifiedProductCard con variant dinamico)
+ *   7.  DealsByStore (ExplorarSectionHeader + carrusel)
+ *   8.  DealsAlert (card editorial accent blob)
+ *   9.  FinalCTA (tokenizado, igual que ExplorarClient)
+ *  10.  ExplorarBackToTop FAB
+ *
+ * Cada seccion va envuelta en ExplorarErrorBoundary + RevealOnScroll
+ * (excepto above-the-fold). SectionDividers entre bloques.
  */
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "@buleje/design-system/icons";
+import { ArrowUpRight, Store } from "@buleje/design-system/icons";
+import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
+import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
+import SectionDivider from "@/components/marketplace/home/SectionDivider";
+import ExplorarErrorBoundary from "@/components/marketplace/explorar/ExplorarErrorBoundary";
+import ExplorarBackToTop from "@/components/marketplace/explorar/ExplorarBackToTop";
+import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import OfertasHero from "./OfertasHero";
 import FlashDealsCountdown from "./FlashDealsCountdown";
 import DealsFilterBar, { type DealsFilters } from "./DealsFilterBar";
 import DealsGrid from "./DealsGrid";
 import DealsByStore from "./DealsByStore";
 import DealsAlert from "./DealsAlert";
-import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
-import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
-import { relatedFor } from "@/lib/navigation/feature-registry";
 import {
   MOCK_DEALS,
   MOCK_DEAL_STORES,
@@ -45,7 +54,6 @@ function sortDeals(deals: Deal[], sort: DealsFilters["sort"]): Deal[] {
         (a, b) => new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime(),
       );
     case "popular":
-      // MVP: popular = mayor descuento (sin datos reales de clicks)
       return copy.sort((a, b) => b.discountPct - a.discountPct);
     default:
       return copy;
@@ -54,33 +62,48 @@ function sortDeals(deals: Deal[], sort: DealsFilters["sort"]): Deal[] {
 
 function FinalCTA() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-8 sm:p-10">
-        <div className="max-w-xl">
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
-            Seguir explorando
+    <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+      />
+      <div className="relative max-w-4xl mx-auto px-4 text-center">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+          <span
+            aria-hidden
+            className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+          />
+          Seguí explorando
+        </p>
+        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+          Más allá de
+          <br />
+          <span className="italic font-serif text-[var(--accent)]">
+            las ofertas.
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
-            Explorar mas productos
-          </h2>
-          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-            Mas alla de las ofertas, encontras todo el catalogo de bodegas de Pucallpa en un solo lugar.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              href="/marketplace/explorar"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
-            >
-              Ver todo el catalogo
-              <ArrowUpRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </Link>
-            <Link
-              href="/marketplace"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-300 dark:border-gray-700 px-6 py-3 text-sm font-bold text-gray-900 dark:text-white hover:bg-white dark:hover:bg-gray-950 transition-colors"
-            >
-              Ver bodegas
-            </Link>
-          </div>
+        </h2>
+        <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+          Todo el catálogo de bodegas, recetas y productos nuevos de Pucallpa
+          en un solo lugar.
+        </p>
+        <div className="mt-12 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/marketplace/explorar"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
+          >
+            Ver todo el catálogo
+            <ArrowUpRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              strokeWidth={2.25}
+            />
+          </Link>
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            <Store className="h-4 w-4" strokeWidth={1.75} />
+            Ver bodegas
+          </Link>
         </div>
       </div>
     </section>
@@ -98,47 +121,62 @@ export default function OfertasClient() {
 
   const filteredDeals = useMemo(() => {
     let deals = [...MOCK_DEALS];
-
     if (filters.category !== "todas") {
       deals = deals.filter((d) => d.category === (filters.category as DealCategory));
     }
-
     if (filters.minDiscount > 0) {
       deals = deals.filter((d) => d.discountPct >= filters.minDiscount);
     }
-
     return sortDeals(deals, filters.sort);
   }, [filters]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
-          <Breadcrumbs
-            items={[
-              { label: "Marketplace", href: "/marketplace" },
-              { label: "Ofertas" },
-            ]}
-          />
-        </div>
-      </div>
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      <ExplorarTracker pageName="marketplace_ofertas" />
+      <PromoBannerCarousel slot="ofertas" />
 
-      <OfertasHero summary={DEALS_SUMMARY} />
-
-      <div className="py-10 sm:py-14 space-y-12 sm:space-y-16">
+      {/* Hero removido — el PromoBannerCarousel ya cumple el rol editorial */}
+      <ExplorarErrorBoundary section="flash-deals">
         <FlashDealsCountdown deals={MOCK_DEALS} />
+      </ExplorarErrorBoundary>
 
-        <div className="space-y-6">
-          <DealsFilterBar filters={filters} onFiltersChange={setFilters} />
-          <DealsGrid deals={filteredDeals} />
-        </div>
+      <SectionDivider />
 
-        <DealsByStore stores={MOCK_DEAL_STORES} />
-        <DealsAlert />
-        <FinalCTA />
-      </div>
+      {/* ── Filters + Grid (sticky filter bar) ── */}
+      <ExplorarErrorBoundary section="deals-filter-bar">
+        <RevealOnScroll>
+          <div className="space-y-6">
+            <DealsFilterBar filters={filters} onFiltersChange={setFilters} />
+            <DealsGrid deals={filteredDeals} />
+          </div>
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
 
-      <RelatedFeatures features={relatedFor("ofertas")} />
+      <SectionDivider />
+
+      <ExplorarErrorBoundary section="deals-by-store">
+        <RevealOnScroll>
+          <DealsByStore stores={MOCK_DEAL_STORES} />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
+
+      <SectionDivider />
+
+      <ExplorarErrorBoundary section="deals-alert">
+        <RevealOnScroll>
+          <DealsAlert />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
+
+      <ExplorarErrorBoundary section="ofertas-final-cta">
+        <RevealOnScroll>
+          <FinalCTA />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
+
+      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
+
+      <ExplorarBackToTop />
     </div>
   );
 }

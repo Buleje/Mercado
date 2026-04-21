@@ -9,10 +9,11 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useCompare } from "@/contexts/compare-context";
+import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { cn } from "@/lib/utils";
 import { trackAddToCart } from "@/lib/analytics";
 import type { Product } from "@/data/products";
-import { trackView } from "@/components/RecentlyViewed";
+import { trackView } from "@/components/RecentlyViewedSingleTenant";
 import { SocioPriceBadge } from "@/components/marketplace/SocioPriceBadge";
 import { BodegaAbriendo } from "@/components/ui-system/illustrations/contextual";
 import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
@@ -90,6 +91,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
   const { showToast } = useToast();
   const { isFavorite, toggle: toggleFav } = useFavorites();
   const { add: addToCompare, isIn: isInCompare, remove: removeFromCompare } = useCompare();
+  const quickAdd = useQuickAddSafe();
   const router = useRouter();
 
   // Mejora 18: Prefetch product page on hover (desktop only)
@@ -500,14 +502,24 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
             {qty === 0 ? (
               <button
-                onClick={handleAdd}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  // Si hay QuickAddProvider (marketplace), abre drawer con
+                  // variaciones + cantidad. Sino, fallback a agregar directo.
+                  if (quickAdd) {
+                    quickAdd.openQuickAdd(product);
+                  } else {
+                    handleAdd();
+                  }
+                }}
                 className={cn(
                   "flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
                   justAdded ? "bg-[var(--accent)] scale-95" : "bg-primary hover:bg-primary-dark"
                 )}
-                aria-label={`Agregar ${product.name}`}
+                aria-label={quickAdd ? `Elegir opciones de ${product.name}` : `Agregar ${product.name}`}
               >
-                {justAdded ? <span className="text-sm font-bold">✓</span> : <ShoppingCart className="h-5 w-5" />}
+                {justAdded ? <span className="text-sm font-bold">✓</span> : quickAdd ? <Plus className="h-5 w-5" strokeWidth={2.5} /> : <ShoppingCart className="h-5 w-5" />}
               </button>
             ) : (
               <div className="flex items-center bg-primary rounded-2xl overflow-hidden shadow-md animate-[scaleIn_0.15s_ease-out] shrink-0">

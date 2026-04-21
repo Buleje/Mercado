@@ -27,6 +27,12 @@ export interface ProductCardCompactProps
    * obtener optimizacion completa.
    */
   renderImage?: (args: { src: string; alt: string; className: string }) => ReactNode;
+  /**
+   * Callback para "agregar rapido" — abre drawer con variaciones y cantidad.
+   * Si se pasa, reemplaza al boton inline "Agregar" por uno circular "+".
+   * Es el flujo recomendado en catalogos grandes (marketplace).
+   */
+  onQuickAdd?: (product: ProductCardProduct) => void;
   className?: string;
 }
 
@@ -34,6 +40,7 @@ export function ProductCardCompact({
   product,
   renderImage,
   onAddToCart,
+  onQuickAdd,
   className,
 }: ProductCardCompactProps) {
   const discount = resolveDiscount(product);
@@ -85,6 +92,58 @@ export function ProductCardCompact({
     outOfStock && "opacity-75",
     className,
   );
+
+  // Modo "quick add": boton circular "+" flotante sobre la imagen.
+  // La card entera es un link al detalle. El click del "+" NO navega.
+  if (onQuickAdd) {
+    return (
+      <div className={cn(baseClass, "relative")}>
+        <a
+          href={href}
+          aria-label={product.name}
+          className="flex flex-1 flex-col"
+        >
+          {Content}
+        </a>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!outOfStock) onQuickAdd(product);
+          }}
+          disabled={outOfStock}
+          aria-label={
+            outOfStock
+              ? `${product.name} agotado`
+              : `Elegir opciones de ${product.name}`
+          }
+          className={cn(
+            "absolute bottom-2 right-2 h-9 w-9 rounded-full flex items-center justify-center",
+            "shadow-[var(--shadow-sm)] transition-all duration-[var(--dur-fast)]",
+            outOfStock
+              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
+              : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:scale-105 active:scale-95",
+          )}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
 
   // Si hay onAddToCart (con click afterwards), render como button wrapper para
   // touch targets limpios. Default: link al detalle.

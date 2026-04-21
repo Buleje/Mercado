@@ -1,0 +1,300 @@
+"use client";
+
+/**
+ * /marketplace/carrito — Step 1 del checkout multi-pagina.
+ *
+ * Layout 2 columnas editorial:
+ *   - Izquierda: items agrupados por tienda en SectionBoxes con divide-y
+ *   - Derecha: CheckoutSummary sticky con resumen + CTA "Continuar"
+ *
+ * Vive dentro del marketplace layout (navbar normal). El usuario aun puede
+ * explorar productos. Al clickear "Continuar" entra al CheckoutShell en
+ * /checkout/datos.
+ */
+
+import Link from "next/link";
+import Image from "next/image";
+import { useCallback } from "react";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  Store,
+  ShoppingCart,
+  ArrowLeft,
+} from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
+import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
+import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
+import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import { PaicheMascot } from "@/components/ui-system/illustrations";
+import { useCustomer } from "@/contexts/customer-context";
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
+
+function ItemRow({
+  item,
+  onInc,
+  onDec,
+  onRemove,
+}: {
+  item: CartItem;
+  onInc: () => void;
+  onDec: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex gap-4 py-5 border-b border-[var(--rule-soft)] last:border-b-0">
+      <Link
+        href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
+        className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)]"
+      >
+        {item.image ? (
+          <Image
+            src={item.image}
+            alt={item.name}
+            fill
+            sizes="96px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
+            <ShoppingCart className="h-6 w-6" strokeWidth={1.5} />
+          </div>
+        )}
+      </Link>
+
+      <div className="flex-1 min-w-0 flex flex-col">
+        <Link
+          href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
+          className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[-0.01em] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2"
+        >
+          {item.name}
+        </Link>
+
+        <p className="mt-1 text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">
+          {fmt(item.price)}
+          {item.unit && (
+            <span className="ml-1 text-[length:var(--ts-xs)] font-normal text-[var(--text-tertiary)]">
+              / {item.unit}
+            </span>
+          )}
+        </p>
+
+        <div className="mt-3 flex items-center gap-3 flex-wrap">
+          <div className="flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <button
+              type="button"
+              onClick={onDec}
+              aria-label="Reducir cantidad"
+              className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] rounded-l-full transition-colors"
+            >
+              <Minus className="h-3.5 w-3.5" strokeWidth={2} />
+            </button>
+            <span
+              aria-live="polite"
+              className="min-w-[2.5rem] text-center text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]"
+            >
+              {item.quantity}
+            </span>
+            <button
+              type="button"
+              onClick={onInc}
+              aria-label="Aumentar cantidad"
+              className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] rounded-r-full transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onRemove}
+            className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+      <div className="hidden sm:block text-right shrink-0 self-start">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] font-bold">
+          Subtotal
+        </p>
+        <p className="mt-1 text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[-0.02em]">
+          {fmt(item.price * item.quantity)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function CarritoPage() {
+  const { byStore, totalByStore, itemCount, updateQuantity, removeItem, clearAll } =
+    useMarketplaceCart();
+  const { customer: loggedCustomer } = useCustomer();
+  const storeIds = Object.keys(byStore);
+  const isEmpty = storeIds.length === 0;
+  // Si no hay sesión, mandamos al gate auth que fuerza el modal con fondo vacío
+  const continueHref = loggedCustomer ? "/checkout/datos" : "/checkout/auth";
+
+  const handleInc = useCallback(
+    (item: CartItem) => updateQuantity(item.storeId, item.productId, item.quantity + 1),
+    [updateQuantity],
+  );
+  const handleDec = useCallback(
+    (item: CartItem) => updateQuantity(item.storeId, item.productId, item.quantity - 1),
+    [updateQuantity],
+  );
+  const handleRemove = useCallback(
+    (item: CartItem) => removeItem(item.storeId, item.productId),
+    [removeItem],
+  );
+
+  return (
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      {/* ── Header simple ──────────────────────────────────────── */}
+      <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            Seguir comprando
+          </Link>
+          <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+            Tu carrito
+          </h1>
+          {itemCount > 0 && (
+            <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+              {itemCount} {itemCount === 1 ? "producto" : "productos"} de {storeIds.length}{" "}
+              {storeIds.length === 1 ? "tienda" : "tiendas"}
+            </p>
+          )}
+        </div>
+        {!isEmpty && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error)] underline-offset-2 hover:underline transition-colors"
+          >
+            Vaciar carrito
+          </button>
+        )}
+      </div>
+
+      {/* ── Stepper solo con items ────────────────────────────────── */}
+      {!isEmpty && (
+        <div className="mb-8 overflow-x-auto">
+          <CheckoutStepper current="carrito" />
+        </div>
+      )}
+
+      {/* ── Contenido ─────────────────────────────────────────────── */}
+      {isEmpty ? (
+        <div
+          className={cn(
+            "rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+            "px-6 py-16 sm:py-20 text-center flex flex-col items-center gap-6",
+            "relative overflow-hidden",
+          )}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-20 -right-20 h-[280px] w-[280px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+          />
+          <div className="relative text-[var(--accent)]">
+            <PaicheMascot size={160} animated />
+          </div>
+          <div className="relative max-w-md">
+            <p className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+              Tu carrito está{" "}
+              <span className="italic font-serif text-[var(--accent)]">vacío.</span>
+            </p>
+            <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+              Los paiches del Ucayali esperan que elijas algo rico.
+            </p>
+          </div>
+          <Link
+            href="/marketplace"
+            className="relative mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-7 h-12 text-[length:var(--ts-sm)] font-bold text-white hover:bg-[var(--accent)]/90 shadow-[0_6px_20px_-10px_var(--accent)] hover:shadow-[0_10px_28px_-10px_var(--accent)] hover:gap-3 transition-all duration-200"
+          >
+            Explorar productos
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-16">
+          <section aria-label="Productos en tu carrito" className="space-y-6">
+            {storeIds.map((sid) => {
+              const group = byStore[sid];
+              const subtotal = totalByStore[sid]?.total ?? 0;
+              return (
+                <article
+                  key={sid}
+                  className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
+                >
+                  <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-6 py-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--accent)] shrink-0">
+                        <Store className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                          Tienda
+                        </p>
+                        <Link
+                          href={`/marketplace/${group.storeSlug}`}
+                          className="text-[length:var(--ts-sm)] font-bold tracking-[-0.01em] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors truncate block"
+                        >
+                          {group.storeName}
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                        {group.items.length} {group.items.length === 1 ? "item" : "items"}
+                      </p>
+                      <p className="text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums">
+                        {fmt(subtotal)}
+                      </p>
+                    </div>
+                  </header>
+                  <div className="px-6">
+                    {group.items.map((item) => (
+                      <ItemRow
+                        key={`${item.storeId}-${item.productId}`}
+                        item={item}
+                        onInc={() => handleInc(item)}
+                        onDec={() => handleDec(item)}
+                        onRemove={() => handleRemove(item)}
+                      />
+                    ))}
+                  </div>
+                </article>
+              );
+            })}
+
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] px-1 leading-relaxed">
+              Se crea un pedido separado por cada tienda. Cada bodega te contacta por WhatsApp
+              con el detalle y el tiempo estimado de entrega.
+            </p>
+          </section>
+
+          <CheckoutSummary
+            ctaLabel="Continuar"
+            ctaHref={continueHref}
+            showItems={false}
+            helperText={
+              loggedCustomer
+                ? "Pago al recibir o por Yape · sin sorpresas"
+                : "Te pedimos iniciar sesión para continuar"
+            }
+          />
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingBag, Package, Ticket, BarChart3, Palette } from "@buleje/design-system/icons";
+import { ShoppingBag, Package, Ticket, BarChart3, Palette, Menu } from "@buleje/design-system/icons";
 import { StoresTab } from "@/components/superadmin/stores/StoresTab";
 import { OrdersTab } from "@/components/superadmin/stores/OrdersTab";
 import { CouponsTab } from "@/components/superadmin/stores/CouponsTab";
 import { AnalyticsTab } from "@/components/superadmin/stores/AnalyticsTab";
 import { PersonalizarTab } from "@/components/superadmin/stores/PersonalizarTab";
+import { NavegacionTab } from "@/components/superadmin/stores/NavegacionTab";
 import type { StoreRow, StoreTab } from "@/components/superadmin/stores/types";
 
 // ─── Tabs config ──────────────────────────────────────────────────────────────
@@ -17,6 +18,7 @@ const TABS: { key: StoreTab; label: string; icon: React.ReactNode }[] = [
   { key: "coupons", label: "Cupones", icon: <Ticket className="w-4 h-4" /> },
   { key: "analytics", label: "Analítica", icon: <BarChart3 className="w-4 h-4" /> },
   { key: "personalizar", label: "Personalizar", icon: <Palette className="w-4 h-4" /> },
+  { key: "navegacion", label: "Navegación", icon: <Menu className="w-4 h-4" /> },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -96,6 +98,7 @@ export default function StoresPage() {
       {tab === "coupons" && <CouponsTab />}
       {tab === "analytics" && <AnalyticsTab stores={stores} />}
       {tab === "personalizar" && <PersonalizarTab stores={stores} onRefresh={handleRefresh} />}
+      {tab === "navegacion" && <NavegacionTab />}
     </div>
   );
 }

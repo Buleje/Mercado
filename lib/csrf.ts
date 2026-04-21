@@ -106,11 +106,18 @@ export function validateCsrfToken(request: NextRequest): boolean {
 
   // Skip CSRF for auth endpoints (login, token refresh — no session to protect yet
   // or refresh rotates existing httpOnly cookie-based tokens automatically)
-  // and webhook endpoints that receive external callbacks
+  // y endpoints webhook que reciben callbacks externos.
+  //
+  // `/api/auth/otp/send` + `/api/auth/otp/verify` están exentos porque son
+  // parte del flujo de login inicial (sin sesión previa). El OTP funciona
+  // como "algo que tenés" (SMS/WhatsApp) — el CSRF token no agrega
+  // protección real acá, y el AuthModal no tiene fácil el csrf-cookie.
   const webhookPaths = [
     "/api/auth/login",
     "/api/auth/bypass",
     "/api/auth/refresh",
+    "/api/auth/otp/",
+    "/api/auth/customer-lookup",
     "/api/webhooks/",
     "/api/stripe/webhook",
     "/api/cron/",

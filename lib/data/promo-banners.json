@@ -1,0 +1,244 @@
+{
+  "explorar": [
+    {
+      "id": "explorar-1",
+      "title": "Hasta 95% de descuento",
+      "subtitle": "En tus 3 primeras órdenes",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Aprovechar ahora",
+      "bgFrom": "#fce7f3",
+      "bgTo": "#fbcfe8",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "explorar-2",
+      "title": "Envío gratis a Pucallpa",
+      "subtitle": "En compras desde S/50",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/explorar",
+      "ctaLabel": "Comprar ahora",
+      "bgFrom": "#dbeafe",
+      "bgTo": "#bfdbfe",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "explorar-3",
+      "title": "Cupón BIENVENIDO10",
+      "subtitle": "10% off en tu primera compra",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Usar cupón",
+      "bgFrom": "#d1fae5",
+      "bgTo": "#a7f3d0",
+      "active": true,
+      "order": 3
+    }
+  ],
+  "explorar-mid": [
+    {
+      "id": "explorar-mid-1",
+      "title": "Delivery gratis hoy",
+      "subtitle": "En pedidos desde S/ 50 · Toda Pucallpa",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/explorar?delivery=free",
+      "ctaLabel": "Aprovechar delivery",
+      "bgFrom": "#dbeafe",
+      "bgTo": "#bfdbfe",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "explorar-mid-2",
+      "title": "Buleje Socio · 10% extra",
+      "subtitle": "Descuento en cada compra · Sin letra chica",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/mi-cuenta?tab=socio",
+      "ctaLabel": "Hacete Socio",
+      "bgFrom": "#fef3c7",
+      "bgTo": "#fde68a",
+      "active": true,
+      "order": 2
+    }
+  ],
+  "explorar-bottom": [
+    {
+      "id": "explorar-bottom-1",
+      "title": "Nuevo en tu zona",
+      "subtitle": "3 bodegas recién sumadas este mes",
+      "imageUrl": null,
+      "ctaHref": "/tiendas",
+      "ctaLabel": "Descubrí tiendas nuevas",
+      "bgFrom": "#d1fae5",
+      "bgTo": "#a7f3d0",
+      "active": true,
+      "order": 1
+    }
+  ],
+  "bodegas": [
+    {
+      "id": "bodegas-1",
+      "title": "Tu bodega del barrio en tu bolsillo",
+      "subtitle": "Delivery en 25 minutos · Pago al recibir",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/explorar",
+      "ctaLabel": "Explorar productos",
+      "bgFrom": "#e0f2fe",
+      "bgTo": "#bae6fd",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "bodegas-2",
+      "title": "Productos de la selva",
+      "subtitle": "Açaí, camu camu, aguaje · Directo del productor",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/explorar?q=selva",
+      "ctaLabel": "Ver la selva",
+      "bgFrom": "#ecfccb",
+      "bgTo": "#d9f99d",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "bodegas-3",
+      "title": "Pagás cuando recibís",
+      "subtitle": "Efectivo o Yape — sin riesgo",
+      "imageUrl": null,
+      "ctaHref": "/marketplace",
+      "ctaLabel": "Comprar ahora",
+      "bgFrom": "#fef3c7",
+      "bgTo": "#fde68a",
+      "active": true,
+      "order": 3
+    }
+  ],
+  "recetas": [
+    {
+      "id": "recetas-1",
+      "title": "Lo que cocinás hoy, lo traemos mañana",
+      "subtitle": "Recetas peruanas con ingredientes que pedís al toque",
+      "imageUrl": null,
+      "ctaHref": "/recetas",
+      "ctaLabel": "Ver recetas",
+      "bgFrom": "#fed7aa",
+      "bgTo": "#fdba74",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "recetas-2",
+      "title": "Cocina amazónica auténtica",
+      "subtitle": "Ingredientes frescos de la selva en tu casa",
+      "imageUrl": null,
+      "ctaHref": "/recetas?cat=selva",
+      "ctaLabel": "Sabores de la selva",
+      "bgFrom": "#dcfce7",
+      "bgTo": "#bbf7d0",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "recetas-3",
+      "title": "Arma tu canasta con 1 click",
+      "subtitle": "Recetas con ingredientes ya en el carrito",
+      "imageUrl": null,
+      "ctaHref": "/recetas",
+      "ctaLabel": "Probar ahora",
+      "bgFrom": "#fae8ff",
+      "bgTo": "#f5d0fe",
+      "active": true,
+      "order": 3
+    }
+  ],
+  "ofertas": [
+    {
+      "id": "ofertas-1",
+      "title": "Ofertas relámpago — hasta -40%",
+      "subtitle": "Termina pronto. No te quedes afuera.",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Ver ofertas",
+      "bgFrom": "#fee2e2",
+      "bgTo": "#fecaca",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "ofertas-2",
+      "title": "2x1 en bodegas seleccionadas",
+      "subtitle": "Solo este fin de semana",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Aprovechar",
+      "bgFrom": "#ffedd5",
+      "bgTo": "#fed7aa",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "ofertas-3",
+      "title": "Combos del día",
+      "subtitle": "Ahorrá hasta S/15 en combos preparados",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Ver combos",
+      "bgFrom": "#cffafe",
+      "bgTo": "#a5f3fc",
+      "active": true,
+      "order": 3
+    }
+  ],
+  "bento": [
+    {
+      "id": "bento-hero",
+      "title": "Express 25 min",
+      "subtitle": "Pedí ahora y te llega antes que prepares la mesa.",
+      "imageUrl": null,
+      "ctaHref": "/marketplace?vista=catalogo&sort=popular",
+      "ctaLabel": "Comprar ahora",
+      "bgFrom": "#0c1015",
+      "bgTo": "#1a1f26",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "bento-cupon",
+      "title": "BIENVENIDO10",
+      "subtitle": "10% off primera compra",
+      "imageUrl": null,
+      "ctaHref": "/marketplace/ofertas",
+      "ctaLabel": "Usar cupón",
+      "bgFrom": "#00B4A6",
+      "bgTo": "#00998d",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "bento-yape",
+      "title": "Pagás al recibir",
+      "subtitle": "Efectivo o Yape — sin riesgo",
+      "imageUrl": null,
+      "ctaHref": "/marketplace",
+      "ctaLabel": "Cómo funciona",
+      "bgFrom": "#f4f4f3",
+      "bgTo": "#e7e5e0",
+      "active": true,
+      "order": 3
+    },
+    {
+      "id": "bento-selva",
+      "title": "De la selva a tu casa",
+      "subtitle": "Açaí, camu camu, aguaje",
+      "imageUrl": null,
+      "ctaHref": "/marketplace?q=selva",
+      "ctaLabel": "Ver la selva",
+      "bgFrom": "#0c2a25",
+      "bgTo": "#0c1015",
+      "active": true,
+      "order": 4
+    }
+  ]
+}

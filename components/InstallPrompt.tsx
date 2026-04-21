@@ -1,167 +1,228 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Download, Smartphone } from "@buleje/design-system/icons";
+import { X, Download, Smartphone, Copy, Check, Gift } from "@buleje/design-system/icons";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+const INSTALL_COUPON = "INSTALA10";
+
+const LS = {
+  firstPurchase: "buleje-first-purchase", // "1" despues de completar la primera orden
+  shown: "buleje-install-shown", // "1" cuando ya se mostro — nunca se vuelve a mostrar
+  dismissed: "buleje-install-dismissed", // legacy, aun respetado
+};
+
 /**
- * PWA Install Prompt Component
- * Displays a prompt to install the app when the browser indicates it's installable
- * Respects user dismissal and shows at strategic moments
+ * InstallPrompt — se muestra UNA sola vez, solo despues de la primera compra
+ * del cliente. Ofrece cupon `INSTALA10` como incentivo al instalar la PWA.
  */
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [installed, setInstalled] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Never show install prompt inside admin/superadmin panel — it blocks navigation
+    if (typeof window === "undefined") return;
+
+    // Nunca en admin/superadmin
     if (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/superadmin")) {
       return;
     }
 
-    // Check if user already dismissed the prompt
-    const dismissed = localStorage.getItem("buleje-install-dismissed");
-    if (dismissed === "1") {
-      return;
-    }
+    // Ya se mostro antes — no volver a mostrar
+    if (localStorage.getItem(LS.shown) === "1") return;
+    if (localStorage.getItem(LS.dismissed) === "1") return;
 
-    // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      return;
-    }
+    // Ya instalada
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    // Listen for the beforeinstallprompt event
+    // Solo si el cliente ya completo su primera compra
+    const hasFirstPurchase = localStorage.getItem(LS.firstPurchase) === "1";
+
+    const tryShow = () => {
+      const ready = localStorage.getItem(LS.firstPurchase) === "1";
+      if (ready && deferredPromptRef) setShowPrompt(true);
+    };
+
+    let deferredPromptRef: BeforeInstallPromptEvent | null = null;
+
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the default browser install prompt
       e.preventDefault();
-      
-      // Store the event for later use (cast to our interface)
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
-      // Show prompt based on engagement: user must scroll >40% AND spend >12s
-      let scrolledEnough = false;
-      let timeReady = false;
-      const tryShow = () => { if (scrolledEnough && timeReady) setShowPrompt(true); };
-
-      const onScroll = () => {
-        const scrollPct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-        if (scrollPct > 0.4) { scrolledEnough = true; window.removeEventListener("scroll", onScroll); tryShow(); }
-      };
-      window.addEventListener("scroll", onScroll, { passive: true });
-
-      const timer = setTimeout(() => { timeReady = true; tryShow(); }, 12000);
-
-      // Fallback: show after 30s regardless of scroll (e.g., on mobile with short pages)
-      const fallback = setTimeout(() => setShowPrompt(true), 30000);
-
-      // Cleanup stored for component unmount
-      (handleBeforeInstallPrompt as { _cleanup?: () => void })._cleanup = () => {
-        window.removeEventListener("scroll", onScroll);
-        clearTimeout(timer);
-        clearTimeout(fallback);
-      };
+      deferredPromptRef = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(deferredPromptRef);
+      if (hasFirstPurchase) setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
+    // Poll ligero: si el usuario termina una compra en otra pestana, detectar el flag
+    const pollId = setInterval(() => {
+      tryShow();
+    }, 3000);
+
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      (handleBeforeInstallPrompt as { _cleanup?: () => void })._cleanup?.();
+      clearInterval(pollId);
     };
   }, []);
 
+  const markShown = () => {
+    localStorage.setItem(LS.shown, "1");
+  };
+
   const handleInstall = async () => {
-    if (!deferredPrompt) {
-      return;
-    }
-
-    // Show the browser's install prompt
+    if (!deferredPrompt) return;
     deferredPrompt.prompt();
-
-    // Wait for the user's response
     const { outcome } = await deferredPrompt.userChoice;
-
-
-    // Clear the prompt
     setDeferredPrompt(null);
-    setShowPrompt(false);
+    if (outcome === "accepted") {
+      setInstalled(true);
+      markShown();
+    } else {
+      setShowPrompt(false);
+      markShown();
+    }
   };
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem("buleje-install-dismissed", "1");
+    markShown();
   };
 
-  if (!showPrompt) {
-    return null;
-  }
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(INSTALL_COUPON);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-50 animate-slide-up">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-        {/* Header */}
-        <div className="bg-linear-to-r from-primary to-primary-dark px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <Smartphone className="h-6 w-6 text-white" />
+    <div
+      role="dialog"
+      aria-labelledby="install-prompt-title"
+      className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-50 animate-slide-up"
+    >
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-950 shadow-xl border border-gray-200 dark:border-gray-800">
+        {/* Close */}
+        <button
+          onClick={installed ? handleDismiss : handleDismiss}
+          className="absolute right-3 top-3 p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors z-10"
+          aria-label="Cerrar"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {!installed ? (
+          <div className="p-5">
+            {/* Header: icon + title */}
+            <div className="flex items-start gap-3 pr-6">
+              <div className="h-11 w-11 shrink-0 rounded-xl bg-gray-900 dark:bg-white flex items-center justify-center">
+                <Smartphone className="h-5 w-5 text-white dark:text-gray-900" strokeWidth={2} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3
+                  id="install-prompt-title"
+                  className="text-base font-bold text-gray-900 dark:text-white leading-tight"
+                >
+                  Instala Buleje
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  App en tu pantalla, pedidos en 2 toques
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-white font-bold text-sm">Instalar Buleje</h3>
-              <p className="text-white/70 text-xs">Acceso rápido desde tu inicio</p>
+
+            {/* Reward block */}
+            <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3 flex items-center gap-3">
+              <Gift className="h-5 w-5 text-gray-900 dark:text-white shrink-0" strokeWidth={1.75} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Regalo por instalar
+                </p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
+                  10% de descuento en tu proxima compra
+                </p>
+              </div>
             </div>
-          </div>
-          <button
-            onClick={handleDismiss}
-            className="text-white/70 hover:text-white transition-colors p-1"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
-        {/* Body */}
-        <div className="px-5 py-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-            Instala nuestra app para acceder más rápido, recibir ofertas exclusivas y comprar incluso sin conexión.
-          </p>
+            {/* Action */}
+            {deferredPrompt ? (
+              <button
+                onClick={handleInstall}
+                className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 dark:bg-white px-4 py-3 text-sm font-bold text-white dark:text-gray-900 transition-colors hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-[0.98]"
+              >
+                <Download className="h-4 w-4" strokeWidth={2} />
+                Instalar y obtener cupon
+              </button>
+            ) : (
+              <p className="mt-4 text-[11px] text-gray-500 dark:text-gray-400 text-center leading-relaxed">
+                Abre Buleje en Chrome o Safari para instalar desde tu navegador.
+              </p>
+            )}
 
-          {/* Benefits */}
-          <ul className="space-y-2 mb-5">
-            <li className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="text-green-500">✓</span>
-              Acceso instantáneo desde tu pantalla de inicio
-            </li>
-            <li className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="text-green-500">✓</span>
-              Funciona sin conexión con caché inteligente
-            </li>
-            <li className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="text-green-500">✓</span>
-              Notificaciones de ofertas y promociones
-            </li>
-          </ul>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleInstall}
-              className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95"
-            >
-              <Download className="h-4 w-4" />
-              Instalar ahora
-            </button>
             <button
               onClick={handleDismiss}
-              className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium text-sm transition-colors"
+              className="mt-2 w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium py-1 transition-colors"
             >
               Ahora no
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="p-5">
+            <div className="flex items-start gap-3 pr-6">
+              <div className="h-11 w-11 shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                  Listo, app instalada
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Usa este cupon en tu proxima compra
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Tu cupon
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <code className="flex-1 text-lg font-extrabold tracking-wider tabular-nums text-gray-900 dark:text-white">
+                  {INSTALL_COUPON}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-700 px-2.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                  aria-label="Copiar cupon"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? "Copiado" : "Copiar"}
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                Valido por 10% de descuento en tu proxima compra.
+              </p>
+            </div>
+
+            <button
+              onClick={handleDismiss}
+              className="mt-4 w-full rounded-xl bg-gray-900 dark:bg-white px-4 py-2.5 text-sm font-bold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

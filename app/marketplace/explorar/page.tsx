@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import ExplorarClient from "@/components/marketplace/explorar/ExplorarClient";
 
 const BASE_URL = "https://www.buleje.pe";

@@ -4,7 +4,9 @@
 // Blocks Edit/Write/MultiEdit on critical files.
 // Exit 0 = allow | Exit 2 = block (stderr shown to user) | Other = non-blocking error
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const DANGER_ZONES = [
   { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (pagos, cupones, reservas) + todo components/checkout/**', agent: 'checkout-squad', reason: 'Zona critica de pagos — usar /checkout-squad para coordinacion segura' },
@@ -32,6 +34,17 @@ try {
     if (zone.pattern.test(filePath)) {
       // Structured JSON response per official spec
       const skillPath = `.github/instructions/${zone.skill}.instructions.md`;
+
+      // Sanity check: si el skill declarado no existe, advertimos explícitamente
+      // en el mensaje para que el dev sepa que debe crearlo ANTES de proceder.
+      // No cambia el bloqueo — sigue negando la edición, pero agrega contexto.
+      const __dirname = dirname(fileURLToPath(import.meta.url));
+      const repoRoot = join(__dirname, '..', '..');
+      const skillAbs = join(repoRoot, skillPath);
+      const skillMissing = !existsSync(skillAbs);
+      const skillMissingNote = skillMissing
+        ? `\n   ⚠️  El archivo del skill NO existe — créalo en ${skillPath} antes de editar.`
+        : '';
       const response = JSON.stringify({
         decision: 'block',
         reason: `ZONA DE PELIGRO: ${zone.label}. Lee el skill "${zone.skill}" primero.`,
@@ -50,7 +63,7 @@ try {
         `⚠️ ZONA DE PELIGRO: ${zone.label}\n` +
         `   📖 Skill requerido: "${zone.skill}" (${skillPath})\n` +
         `   🤖 Agente recomendado: ${zone.agent}\n` +
-        `   💡 Razon: ${zone.reason}\n` +
+        `   💡 Razon: ${zone.reason}${skillMissingNote}\n` +
         `   Usa /audit-first o el agente recomendado antes de tocar este archivo.\n`
       );
       process.exit(2); // Exit 2 = blocking error per official spec

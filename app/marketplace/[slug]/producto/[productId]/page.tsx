@@ -14,6 +14,7 @@
  */
 
 import { notFound } from "next/navigation";
+import { cacheLife, cacheTag } from "next/cache";
 import type { Metadata } from "next";
 import { ProductDetailClient } from "@/components/marketplace/product-detail/ProductDetailClient";
 import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
@@ -67,11 +68,12 @@ interface ApiCatalogProduct {
 // ── Data fetchers ──────────────────────────────────────────────────────────────
 
 async function fetchProduct(productId: string): Promise<ApiProduct | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("marketplace-product", `marketplace-product:${productId}`);
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
   try {
-    const res = await fetch(`${base}/api/marketplace/products/${productId}`, {
-      next: { revalidate: 120 },
-    });
+    const res = await fetch(`${base}/api/marketplace/products/${productId}`);
     if (!res.ok) return null;
     const json = await res.json();
     return json.data ?? null;
@@ -85,12 +87,14 @@ async function fetchRelated(
   storeSlug: string,
   excludeId: number
 ): Promise<RelatedProduct[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("marketplace-catalog", `marketplace-catalog:${storeSlug}`);
   if (!category) return [];
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
   try {
     const res = await fetch(
-      `${base}/api/marketplace/catalog?store=${storeSlug}&limit=5`,
-      { next: { revalidate: 300 } }
+      `${base}/api/marketplace/catalog?store=${storeSlug}&limit=5`
     );
     if (!res.ok) return [];
     const json = await res.json();

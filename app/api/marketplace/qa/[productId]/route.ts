@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductQADB } from "@/lib/db/product-qa.db";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const QuestionBody = z.object({
@@ -46,6 +47,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ productId: string }> },
 ) {
+  // Rate limit: anti-spam preguntas (10 / 15min / IP)
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-qa-question");
+  if (rl) return rl;
+
   const { productId: pidStr } = await params;
   const productId = parseInt(pidStr, 10);
   if (!Number.isInteger(productId) || productId <= 0) {

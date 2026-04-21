@@ -28,6 +28,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/dlq-retry",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/stock-alerts",
       "schedule": "0 8 * * *"
     },
@@ -94,6 +98,10 @@
     {
       "path": "/api/cron/auto-backup",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/finops-report",
+      "schedule": "0 8 * * 1"
     },
     {
       "path": "/api/cron/fiados-reminder",

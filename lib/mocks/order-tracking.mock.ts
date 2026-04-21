@@ -152,7 +152,7 @@ export function makeMockTracking(
         price: 4.5,
         quantity: 2,
         unit: "kg",
-        image: "/products/arroz-costeno.jpg",
+        image: "/products/arroz-costeno.svg",
       },
       {
         productId: 2,
@@ -160,7 +160,7 @@ export function makeMockTracking(
         price: 7.9,
         quantity: 1,
         unit: "botella",
-        image: "/products/aceite-primor.jpg",
+        image: "/products/aceite-primor.svg",
       },
       {
         productId: 3,
@@ -168,7 +168,7 @@ export function makeMockTracking(
         price: 3.2,
         quantity: 1,
         unit: "kg",
-        image: "/products/azucar-rubia.jpg",
+        image: "/products/azucar-rubia.svg",
       },
     ],
     address: {

@@ -53,7 +53,7 @@ export function AdminMainContent({
       aria-label="Contenido del modulo activo"
       className={cn(
         "flex-1 mx-auto w-full pb-24 sm:pb-8",
-        presentationMode ? "max-w-full px-4 py-4" : "max-w-7xl",
+        presentationMode ? "max-w-full px-4 py-4" : "max-w-[1600px]",
         compactMode && !presentationMode
           ? "px-2 sm:px-3 py-2 sm:py-4"
           : !presentationMode
@@ -65,10 +65,14 @@ export function AdminMainContent({
       <AnimatePresence mode="wait">
         <m.div
           key={tab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
+          transition={{
+            opacity: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+            y: { type: "spring", stiffness: 260, damping: 28 },
+            filter: { duration: 0.3 },
+          }}
         >
           <TabRouter tab={tab} onNavigateTab={navigateTab} {...tabRouter} />
         </m.div>

@@ -26,7 +26,7 @@ import {
   SectionTitle,
 } from "@buleje/design-system";
 import { ArrowRight } from "@buleje/design-system/icons";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 
 // Mock de 2 productos destacados. Estructura lista para reemplazar por fetch.
 const FEATURED: ProductCardProduct[] = [
@@ -88,10 +88,10 @@ function nextImage({
 }
 
 export default function OfertasDelDiaHero() {
-  const { addItem } = useMarketplaceCart();
+  const { addItemWithUndo } = useCartWithUndo();
 
   const handleAdd = (p: ProductCardProduct) => {
-    addItem({
+    addItemWithUndo({
       storeId: p.storeSlug ?? "",
       storeName: p.storeName ?? "",
       storeSlug: p.storeSlug ?? "",

@@ -1,15 +1,17 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
+import MarketplacePromoBar from "@/components/marketplace/MarketplacePromoBar";
 import MarketplaceStoreProviders from "@/components/MarketplaceStoreProviders";
 import MotionProvider from "@/components/MotionProvider";
 import CompareFloatingBadge from "@/components/marketplace/CompareFloatingBadge";
 import ProductCompareDrawer from "@/components/marketplace/ProductCompareDrawer";
 import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
-import ContextualHintBar from "@/components/marketplace/home/ContextualHintBar";
 import MarketplaceSecondaryNav from "@/components/marketplace/MarketplaceSecondaryNav";
 import LocalStorageDoctor from "@/components/LocalStorageDoctor";
+import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
+import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 
 export const metadata: Metadata = {
@@ -37,44 +39,35 @@ export default function MarketplaceLayout({
 }) {
   return (
     <MarketplaceStoreProviders tenantSlug="main">
-      {/* LazyMotion boundary — sin esto los `m.*` de framer-motion
-          (usados por MarketplaceContent y otros) quedan en opacity: 0
-          porque no hay features cargadas. Fix 2026-04-16 — el hero y
-          la stats row aparecían en blanco sin esto. */}
       <MotionProvider>
         <QuickAddProvider>
-          {/* Doctor en su propio Suspense — no contamina el render tree server.
-              Solo hace side effects en el cliente (sanitización de localStorage). */}
-          <Suspense fallback={null}>
-            <LocalStorageDoctor />
-          </Suspense>
-          <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950">
-            {/* Skip-link WCAG 2.4.1 — antes del navbar para que sea el primer
-                tabulable del scope marketplace. */}
-            <SkipLink />
-            {/* Cada componente dinámico en su propio Suspense para cumplir con
-                Next 16 Cache Components (ADR-019). Sin esto, cualquier acceso
-                a cookies/connection() dentro del árbol bloquea TODA la route
-                y la vuelve lenta (warning "blocking-route"). */}
+          <AddedToCartDrawerProvider>
             <Suspense fallback={null}>
-              <MarketplaceNavbar />
+              <LocalStorageDoctor />
             </Suspense>
-            {/* Barra secundaria — sticky top-16 debajo del navbar principal.
-                Es un Client Component puro (sin Suspense necesario porque no
-                hace fetch ni accede a cookies — solo estado local + router). */}
-            <MarketplaceSecondaryNav />
-            <Suspense fallback={null}>
-              <ContextualHintBar />
-            </Suspense>
-            <Suspense fallback={null}>
-              <main id="main-content">{children}</main>
-            </Suspense>
-            <Suspense fallback={null}>
-              <CompareFloatingBadge />
-              <ProductCompareDrawer />
-              <QuickAddDrawer />
-            </Suspense>
-          </div>
+            <div className="relative min-h-screen bg-[var(--surface-canvas)]">
+              <SkipLink />
+              {/* Chrome persistente — NO se remonta al navegar entre páginas
+                  del marketplace. Sólo el `<main>` interior se re-renderiza. */}
+              <MarketplacePromoBar />
+              <Suspense fallback={null}>
+                <MarketplaceNavbar />
+              </Suspense>
+              <Suspense fallback={null}>
+                <MarketplaceSecondaryNav />
+              </Suspense>
+              <Suspense fallback={null}>
+                <main id="main-content">{children}</main>
+              </Suspense>
+              {/* Footer persistente — evita flash / remount al navegar. */}
+              <Footer />
+              <Suspense fallback={null}>
+                <CompareFloatingBadge />
+                <ProductCompareDrawer />
+                <QuickAddDrawer />
+              </Suspense>
+            </div>
+          </AddedToCartDrawerProvider>
         </QuickAddProvider>
       </MotionProvider>
     </MarketplaceStoreProviders>

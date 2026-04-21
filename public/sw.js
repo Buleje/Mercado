@@ -1,4 +1,4 @@
-const CACHE_NAME = "buleje-v8";
+const CACHE_NAME = "buleje-v12";
 const CATALOG_CACHE = "buleje-catalog-v2";
 const STATIC_URLS = [
   "/",

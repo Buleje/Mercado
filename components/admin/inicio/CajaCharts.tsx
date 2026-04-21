@@ -1,30 +1,44 @@
 "use client";
 
 /**
- * CajaCharts — pattern unificado:
- *  - Row 2 (FULL): Flujo de caja 14d — AreaChart in/out stacked
- *  - Row 3: Tendencia mensual + Apertura vs cierre (gastos por categoria)
- *  - Row 4: Distribucion efectivo/digital donut + Top 5 conceptos + Ratio liquido gauge
+ * CajaCharts — charts base del módulo Caja.
+ *
+ * Rediseñado con DashboardSection + primitivas Buleje DS + DraggableSections.
+ *
+ * Secciones:
+ *  1. Flujo de caja 14d (ComposedChart: ingresos/egresos bars + balance line)
+ *  2. Tendencia mensual 6m (ComposedChart: ingresos/egresos bars)
+ *  3. Ingresos por hora hoy (ComposedChart con highlight pico)
+ *  4. Método de pago (DonutChart + MicroList top-5)
+ *  5. Ratio líquido (GaugeChart)
+ *  6. Waterfall de flujo (WaterfallChart)
  */
 
-import {
-  AreaChart, Area, BarChart, Bar, ComposedChart, Line,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell,
-} from "recharts";
-import {
-  Wallet, ArrowUpFromLine, ArrowDownToLine, CreditCard, Layers, Target,
-  CalendarDays,
-} from "@buleje/design-system/icons";
+import { useMemo } from "react";
 import type { CajaData } from "./CajaDashboard";
 import {
-  ChartCard, ChartTooltip, CHART_TOKENS,
-  MicroDonut, MicroList, MicroGauge,
-} from "./_shared";
+  BulejeComposedChart,
+  BulejeDonutChart,
+  BulejeGaugeChart,
+  BulejeWaterfallChart,
+  type WaterfallStep,
+} from "@/components/ui-system/charts";
+import { DashboardSection, MicroList } from "./_shared";
+import { DraggableSections, type DraggableItem } from "./DraggableSections";
 
-const T = CHART_TOKENS;
+function fmtS(v: number) {
+  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+}
+function fmtS2(v: number) {
+  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`;
+}
 
 export default function CajaCharts({ data }: { data: CajaData }) {
-  // Distribucion efectivo vs digital
+  // ── Ratio liquido ─────────────────────────────────────────────────────────
+  const ratioLiquido =
+    data.ingresos > 0 ? Math.max(0, Math.min(100, (data.balance / data.ingresos) * 100)) : 0;
+
+  // ── Efectivo vs Digital ───────────────────────────────────────────────────
   const efectivoTotal = data.metodosPago
     .filter((m) => m.metodo === "Efectivo")
     .reduce((a, m) => a + m.monto, 0);
@@ -32,189 +46,274 @@ export default function CajaCharts({ data }: { data: CajaData }) {
     .filter((m) => m.metodo !== "Efectivo")
     .reduce((a, m) => a + m.monto, 0);
   const totalIngresos = efectivoTotal + digitalTotal;
+  const digitalPct = totalIngresos > 0 ? Math.round((digitalTotal / totalIngresos) * 100) : 0;
 
-  const efectivoVsDigital = [
-    { name: "Efectivo", value: efectivoTotal, color: T.emerald },
-    { name: "Digital", value: digitalTotal, color: T.violet },
-  ].filter((d) => d.value > 0);
+  // ── Top 5 por método de pago ─────────────────────────────────────────────
+  const top5Metodos = data.metodosPago.slice(0, 5).map((m) => ({
+    name: m.metodo,
+    value: m.monto,
+    label: fmtS(m.monto),
+    color: m.color,
+  }));
 
-  // Top 5 conceptos del waterfall (positivos absolutos)
-  const top5Conceptos = data.waterfall
-    .map((w) => ({
-      name: w.concepto,
-      value: Math.abs(w.monto),
-      label: `S/ ${Math.abs(w.monto).toFixed(0)}`,
-      color: w.color,
-    }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+  // ── Hora pico ─────────────────────────────────────────────────────────────
+  const horaPico = useMemo(() => {
+    return data.ingresosPorHora.reduce(
+      (best, h) => (h.monto > best.monto ? h : best),
+      { hora: "—", monto: 0 },
+    );
+  }, [data.ingresosPorHora]);
 
-  // Ratio liquido = balance / max(ingresos, 1) * 100, clamp 0-100
-  const ratioLiquido = data.ingresos > 0
-    ? Math.max(0, Math.min(100, (data.balance / data.ingresos) * 100))
-    : 0;
+  // ── Mes ganador / mes peor ───────────────────────────────────────────────
+  const mesTop = useMemo(() => {
+    const arr = data.flujoMensual.map((m) => ({ ...m, neto: m.ingresos - m.egresos }));
+    const top = [...arr].sort((a, b) => b.neto - a.neto)[0];
+    const worst = [...arr].sort((a, b) => a.neto - b.neto)[0];
+    return { top, worst };
+  }, [data.flujoMensual]);
 
-  return (
-    <div className="space-y-4">
-      {/* ── Row 2: FULL-WIDTH — Flujo diario ── */}
-      <ChartCard
-        title="Flujo de caja — ultimos 14 dias"
-        Icon={Wallet}
-        height={340}
-        subtitle="Ingresos vs egresos con balance acumulado"
-        isEmpty={data.flujoDiario.length === 0}
-        emptyText="Sin movimientos en el periodo"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data.flujoDiario} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradIng" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={T.emerald} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={T.emerald} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="gradEgr" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={T.red} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={T.red} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-            <XAxis dataKey="dia" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-            <Tooltip content={<ChartTooltip prefix="S/" />} />
-            <Area type="monotone" dataKey="ingresos" name="Ingresos" stroke={T.emerald} fill="url(#gradIng)" strokeWidth={2.5} />
-            <Area type="monotone" dataKey="egresos" name="Egresos" stroke={T.red} fill="url(#gradEgr)" strokeWidth={2} />
-            <Line type="monotone" dataKey="balance" name="Balance" stroke={T.blue} strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
-            <Legend iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </ChartCard>
+  // ── Mejor/peor día ───────────────────────────────────────────────────────
+  const mejorDia = useMemo(() => {
+    const arr = data.flujoDiario.map((d) => ({ ...d }));
+    const best = [...arr].sort((a, b) => b.balance - a.balance)[0];
+    const worst = [...arr].sort((a, b) => a.balance - b.balance)[0];
+    return { best, worst };
+  }, [data.flujoDiario]);
 
-      {/* ── Row 3: 2 secondary charts ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Tendencia mensual"
-          Icon={CalendarDays}
-          height={260}
-          subtitle="Ingresos y egresos por mes (ultimos 6)"
-          isEmpty={!data.flujoMensual.some((m) => m.ingresos > 0 || m.egresos > 0)}
-          emptyText="Sin datos historicos"
+  // ── Waterfall steps ──────────────────────────────────────────────────────
+  const waterfallSteps: WaterfallStep[] = useMemo(() => {
+    const steps: WaterfallStep[] = [
+      { label: "Inicio", value: 0, type: "baseline" },
+    ];
+    data.waterfall.forEach((w) => {
+      if (w.tipo === "balance") {
+        steps.push({ label: w.concepto, value: Math.round(w.monto), type: "total" });
+      } else {
+        steps.push({
+          label: w.concepto,
+          value: Math.round(w.monto),
+          type: w.monto >= 0 ? "positive" : "negative",
+        });
+      }
+    });
+    return steps;
+  }, [data.waterfall]);
+
+  const sections: DraggableItem[] = [
+    {
+      id: "flujo-14d",
+      render: () => (
+        <DashboardSection
+          kicker="Flujo diario · últimos 14 días"
+          title="Ingresos, egresos y balance"
+          kpis={[
+            { label: "Mejor día", value: mejorDia.best?.dia ?? "—", tone: "success" },
+            { label: "Balance mejor día", value: fmtS(mejorDia.best?.balance ?? 0), tone: "success" },
+            { label: "Peor día", value: mejorDia.worst?.dia ?? "—", tone: "warning" },
+            { label: "Balance peor día", value: fmtS(mejorDia.worst?.balance ?? 0), tone: "warning" },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.flujoMensual} barCategoryGap="22%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="ingresos" name="Ingresos" fill={T.emerald} radius={[6, 6, 0, 0]} />
-              <Bar dataKey="egresos" name="Egresos" fill={T.red} radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="Ingresos por hora del dia"
-          Icon={ArrowUpFromLine}
-          height={260}
-          subtitle="Distribucion horaria de ingresos hoy"
-          isEmpty={!data.ingresosPorHora.some((h) => h.monto > 0)}
-          emptyText="Sin ingresos hoy"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.ingresosPorHora} barCategoryGap="15%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="hora" tick={{ fontSize: 9, fill: T.tickFill }} axisLine={false} tickLine={false} interval={1} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Bar dataKey="monto" name="Ingreso" radius={[4, 4, 0, 0]}>
-                {data.ingresosPorHora.map((entry, i) => {
-                  const max = Math.max(...data.ingresosPorHora.map((h) => h.monto));
-                  return (
-                    <Cell
-                      key={i}
-                      fill={entry.monto === max && entry.monto > 0 ? T.brand : T.violet}
-                      opacity={entry.monto > 0 ? 1 : 0.15}
-                    />
-                  );
-                })}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* ── Row 4: 3 micro-insights ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard
-          title="Efectivo vs Digital"
-          Icon={CreditCard}
-          height={220}
-          isEmpty={efectivoVsDigital.length === 0}
-          emptyText="Sin pagos en el periodo"
-        >
-          <MicroDonut
-            data={efectivoVsDigital}
-            centerLabel={totalIngresos > 0 ? `${Math.round((digitalTotal / totalIngresos) * 100)}%` : "0%"}
-            centerSubLabel="Digital"
-            tooltipFormatter={(v) => `S/ ${v.toFixed(2)}`}
+          <BulejeComposedChart
+            data={data.flujoDiario}
+            xKey="dia"
+            bars={[
+              { key: "ingresos", label: "Ingresos", color: "primary", yAxis: "left" },
+              { key: "egresos", label: "Egresos", color: "amber", yAxis: "left" },
+            ]}
+            lines={[{ key: "balance", label: "Balance", color: "accent", yAxis: "right" }]}
+            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            rightAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            tooltipFormat={(v) => fmtS(Number(v))}
+            height={320}
+            minDataPoints={2}
           />
-        </ChartCard>
-
-        <ChartCard
-          title="Top 5 conceptos"
-          Icon={Layers}
-          height={220}
-          isEmpty={top5Conceptos.length === 0}
-          emptyText="Sin movimientos"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "tendencia-mensual",
+      render: () => (
+        <DashboardSection
+          kicker="Tendencia · últimos 6 meses"
+          title="Ingresos y egresos por mes"
+          kpis={[
+            { label: "Mejor mes", value: mesTop.top?.mes ?? "—", tone: "success" },
+            { label: "Neto mejor mes", value: fmtS(mesTop.top?.neto ?? 0), tone: "success" },
+            { label: "Peor mes", value: mesTop.worst?.mes ?? "—", tone: "warning" },
+            { label: "Neto peor mes", value: fmtS(mesTop.worst?.neto ?? 0), tone: "warning" },
+          ]}
         >
-          <MicroList items={top5Conceptos} barColor={T.brand} showRank />
-        </ChartCard>
-
-        <ChartCard
-          title="Ratio liquido"
-          Icon={Target}
-          height={220}
-          subtitle={`Balance: S/ ${data.balance.toFixed(0)}`}
-        >
-          <MicroGauge
-            value={ratioLiquido}
-            max={100}
-            centerLabel={`${ratioLiquido.toFixed(0)}%`}
-            centerSubLabel="balance/ingresos"
-            footerText={
-              ratioLiquido >= 30
-                ? "Salud financiera buena"
-                : ratioLiquido >= 10
-                  ? "Vigilar gastos"
-                  : "Atencion: gastos altos"
-            }
+          <BulejeComposedChart
+            data={data.flujoMensual}
+            xKey="mes"
+            bars={[
+              { key: "ingresos", label: "Ingresos", color: "primary", yAxis: "left" },
+              { key: "egresos", label: "Egresos", color: "amber", yAxis: "left" },
+            ]}
+            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            tooltipFormat={(v) => fmtS(Number(v))}
+            height={280}
+            minDataPoints={2}
           />
-        </ChartCard>
-      </div>
-
-      {/* ── Row opcional: Waterfall (descomposicion) ── */}
-      {data.waterfall.length > 0 && (
-        <ChartCard
-          title="Descomposicion de flujo"
-          Icon={ArrowDownToLine}
-          height={220}
-          subtitle="De ventas a balance neto"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "ingresos-por-hora",
+      render: () => (
+        <DashboardSection
+          kicker="Ingresos hoy · por hora"
+          title="Distribución horaria de cobros"
+          kpis={[
+            { label: "Hora pico", value: horaPico.hora, tone: "success" },
+            { label: "Pico S/", value: fmtS(horaPico.monto), tone: "primary" },
+            {
+              label: "Horas activas",
+              value: String(data.ingresosPorHora.filter((h) => h.monto > 0).length),
+              tone: "neutral",
+            },
+            {
+              label: "Promedio/hora",
+              value: fmtS(
+                data.ingresosPorHora.reduce((s, h) => s + h.monto, 0) /
+                  Math.max(1, data.ingresosPorHora.filter((h) => h.monto > 0).length || 1),
+              ),
+              tone: "neutral",
+            },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.waterfall} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
-              <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 || v <= -1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-              <YAxis type="category" dataKey="concepto" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} width={130} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Bar dataKey="monto" name="Monto" radius={[0, 6, 6, 0]} barSize={22}>
-                {data.waterfall.map((w, i) => (
-                  <Cell key={i} fill={w.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      )}
-    </div>
-  );
+          <BulejeComposedChart
+            data={data.ingresosPorHora}
+            xKey="hora"
+            bars={[{ key: "monto", label: "Monto S/", color: "primary", yAxis: "left" }]}
+            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            tooltipFormat={(v) => fmtS(Number(v))}
+            height={260}
+            showLegend={false}
+            minDataPoints={3}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "metodo-pago",
+      render: () => (
+        <DashboardSection
+          kicker="Cobros por método"
+          title="Composición de ingresos"
+          kpis={[
+            {
+              label: "Líder",
+              value: data.metodosPago[0]?.metodo ?? "—",
+              tone: "success",
+            },
+            {
+              label: "Share líder",
+              value: `${(data.metodosPago[0]?.porcentaje ?? 0).toFixed(0)}%`,
+              tone: "primary",
+            },
+            {
+              label: "% Digital",
+              value: `${digitalPct}%`,
+              tone: digitalPct >= 50 ? "success" : "neutral",
+            },
+            {
+              label: "% Efectivo",
+              value: `${100 - digitalPct}%`,
+              tone: "neutral",
+            },
+          ]}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-center">
+            <div className="lg:col-span-2">
+              <BulejeDonutChart
+                data={data.metodosPago.map((m) => ({ name: m.metodo, value: m.monto }))}
+                height={220}
+                format={(v) => fmtS(Number(v))}
+                label={
+                  <div className="text-center">
+                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      Top
+                    </p>
+                    <p className="text-lg font-extrabold text-[var(--text-primary)]">
+                      {(data.metodosPago[0]?.porcentaje ?? 0).toFixed(0)}%
+                    </p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">
+                      {data.metodosPago[0]?.metodo ?? ""}
+                    </p>
+                  </div>
+                }
+              />
+            </div>
+            <div className="lg:col-span-3">
+              <MicroList items={top5Metodos} barColor="var(--brand-primary)" showRank />
+            </div>
+          </div>
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "ratio-liquido",
+      render: () => (
+        <DashboardSection
+          kicker="Salud financiera · periodo"
+          title="Ratio líquido (balance / ingresos)"
+          kpis={[
+            { label: "Balance", value: fmtS(data.balance), tone: data.balance >= 0 ? "success" : "warning" },
+            { label: "Ingresos", value: fmtS(data.ingresos), tone: "primary" },
+            { label: "Egresos", value: fmtS(data.egresos), tone: "warning" },
+            {
+              label: "Ratio",
+              value: `${ratioLiquido.toFixed(0)}%`,
+              tone: ratioLiquido >= 30 ? "success" : ratioLiquido >= 10 ? "primary" : "warning",
+            },
+          ]}
+        >
+          <div className="flex items-center justify-center py-2">
+            <BulejeGaugeChart
+              value={ratioLiquido}
+              max={100}
+              label="Salud líquida"
+              sublabel={
+                ratioLiquido >= 30
+                  ? "Salud buena"
+                  : ratioLiquido >= 10
+                    ? "Vigilar gastos"
+                    : "Atención: gastos altos"
+              }
+              format="percentage"
+              size={260}
+            />
+          </div>
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "waterfall-flujo",
+      render: () => (
+        <DashboardSection
+          kicker="Descomposición · periodo"
+          title="De ventas a balance neto"
+          kpis={[
+            { label: "Utilidad neta", value: fmtS(data.utilidadNeta), tone: data.utilidadNeta >= 0 ? "success" : "warning" },
+            {
+              label: "Margen neto",
+              value: `${data.margenNeto.toFixed(1)}%`,
+              tone: data.margenNeto >= 15 ? "success" : data.margenNeto >= 5 ? "primary" : "warning",
+            },
+            { label: "Tickets", value: String(data.ticketsTotal), tone: "neutral" },
+            {
+              label: "Ticket prom.",
+              value: fmtS2(data.ticketsTotal > 0 ? data.ingresos / data.ticketsTotal : 0),
+              tone: "primary",
+            },
+          ]}
+        >
+          <BulejeWaterfallChart steps={waterfallSteps} currency="S/" height={280} />
+        </DashboardSection>
+      ),
+    },
+  ];
+
+  return <DraggableSections items={sections} storageKey="caja-base-order" />;
 }

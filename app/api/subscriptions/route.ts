@@ -7,7 +7,9 @@ import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// `dynamic = "force-dynamic"` removido (2026-04-21) — incompatible con
+// `nextConfig.cacheComponents` (Next 16 ADR-019). El handler accede a
+// cookies vía `requireCustomer()`, lo que ya invalida el caché.
 
 /**
  * GET  /api/subscriptions          — lista del cliente autenticado

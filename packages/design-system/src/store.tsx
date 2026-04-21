@@ -103,6 +103,21 @@ const SIZE_SECONDARY: Record<NonNullable<ProductPriceProps["size"]>, string> = {
  * reserva para CTAs y chrome editorial, no para valores monetarios dentro de
  * cards — ahí debe dominar la legibilidad del text-primary.
  */
+// Coerce defensivo: el precio puede venir como Decimal de Prisma, string,
+// o null si la API devuelve datos parciales. Nunca debe crashear la UI.
+function coercePrice(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (value && typeof value === "object" && "toString" in value) {
+    const parsed = Number.parseFloat(String(value));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
 export function ProductPrice({
   price,
   previousPrice,
@@ -110,7 +125,9 @@ export function ProductPrice({
   size = "md",
   className,
 }: ProductPriceProps) {
-  const hasDiscount = previousPrice != null && previousPrice > price;
+  const currentPrice = coercePrice(price);
+  const prevPrice = previousPrice != null ? coercePrice(previousPrice) : null;
+  const hasDiscount = prevPrice != null && prevPrice > currentPrice;
 
   return (
     <div className={cn("flex items-baseline gap-2 flex-wrap", className)}>
@@ -120,16 +137,16 @@ export function ProductPrice({
           SIZE_PRIMARY[size],
         )}
       >
-        S/{price.toFixed(2)}
+        S/{currentPrice.toFixed(2)}
       </span>
-      {hasDiscount && (
+      {hasDiscount && prevPrice != null && (
         <span
           className={cn(
             "text-[var(--text-tertiary)] line-through tabular-nums leading-none",
             SIZE_SECONDARY[size],
           )}
         >
-          S/{previousPrice.toFixed(2)}
+          S/{prevPrice.toFixed(2)}
         </span>
       )}
       {unit && (

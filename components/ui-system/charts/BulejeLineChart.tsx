@@ -48,7 +48,7 @@ export function BulejeLineChart({
   showDots = false,
 }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} minWidth={0}>
       <LineChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
         <CartesianGrid
           stroke={CHART_GRID_STROKE}

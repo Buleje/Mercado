@@ -9,6 +9,7 @@ import {
   User, CheckCircle, AlertTriangle, BarChart2, RefreshCw, Printer, Info, ExternalLink,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -198,7 +199,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
     // Persist to DB and store the real registerId
     fetch("/api/cash-registers", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "open", openingAmount: openingCash, notes: `${openForm.userName.trim()} (${openForm.role})` }),
     })
       .then(r => r.ok ? r.json() : null)
@@ -230,7 +231,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
     if (showCloseForm.registerId) {
       fetch(`/api/cash-registers/${showCloseForm.registerId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "close", closingAmount: countedCash, notes: closeForm.notes }),
       }).catch(() => {});
     }

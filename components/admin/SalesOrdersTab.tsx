@@ -22,6 +22,7 @@ import { exportToExcel } from "@/lib/export-excel";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import TicketPreview from "./TicketPreview";
 import OrderTimeline from "./pedidos/OrderTimeline";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -286,7 +287,7 @@ export default function SalesOrdersTab() {
     try {
       const res = await tenantFetch(`/api/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
@@ -1048,7 +1049,7 @@ export default function SalesOrdersTab() {
                           w[timeoutKey] = setTimeout(() => {
                             tenantFetch(`/api/orders/${orderId}`, {
                               method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
+                              headers: csrfHeaders({ "Content-Type": "application/json" }),
                               body: JSON.stringify({ notes: value ? `[ADMIN] ${value}` : "" }),
                             }).catch(() => {});
                           }, 1000);
@@ -1104,7 +1105,7 @@ export default function SalesOrdersTab() {
                               }));
                               const res = await fetch("/api/guias-remision", {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json" },
+                                headers: csrfHeaders({ "Content-Type": "application/json" }),
                                 body: JSON.stringify({
                                   orderId: order.id,
                                   motivoTraslado: "VENTA",

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" role="img" aria-label="Yogurt natural">
+  <rect width="300" height="300" fill="#fce7f3"/>
+  <path d="M100 100 L200 100 L210 230 Q210 245 195 245 L105 245 Q90 245 90 230 Z" fill="#ffffff" stroke="#be185d" stroke-width="2"/>
+  <rect x="95" y="90" width="110" height="18" rx="4" fill="#be185d"/>
+  <rect x="105" y="135" width="90" height="60" fill="#fce7f3"/>
+  <text x="150" y="165" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="#be185d">YOGURT</text>
+  <text x="150" y="183" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#9f1239">Natural</text>
+  <text x="150" y="275" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#831843">1 kg</text>
+</svg>

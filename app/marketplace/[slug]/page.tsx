@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cacheLife, cacheTag } from "next/cache";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
 import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
@@ -17,7 +18,10 @@ interface Props {
 // ── generateMetadata ───────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  "use cache";
+  cacheLife("minutes");
   const { slug } = await params;
+  cacheTag("marketplace-store", `marketplace-store:${slug}`);
   const store = await MarketplaceStoresDB.getBySlug(slug);
 
   if (!store) {

@@ -1,213 +1,305 @@
 "use client";
 
 /**
- * ComprasCharts — pattern unificado:
- *  - Row 2 (FULL): Historico compras 6 meses + dailie 14d (BarChart)
- *  - Row 3: Top proveedores + Cuentas proximas a vencer
- *  - Row 4: MicroDonut estado ordenes + MicroList por proveedor + MicroGauge dias pago
+ * ComprasCharts — charts base del módulo Compras.
+ *
+ * Rediseñado con DashboardSection + primitivas Buleje DS + DraggableSections.
+ *
+ * Secciones:
+ *  1. Compras diarias (últimos 14 días)
+ *  2. Tendencia mensual (últimos 6 meses)
+ *  3. Top proveedores del periodo (monto + órdenes)
+ *  4. Estado de cuentas por pagar (Donut)
+ *  5. Cuentas por vencer (Composed con umbrales)
+ *  6. Top proveedores histórico (MicroList)
  */
 
-import {
-  BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
-} from "recharts";
-import {
-  Truck, Clock, CreditCard, DollarSign, BarChart3, Target,
-  CalendarDays,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import type { ComprasData } from "./ComprasDashboard";
 import {
-  ChartCard, ChartTooltip, CHART_TOKENS,
-  MicroDonut, MicroList, MicroGauge,
-} from "./_shared";
+  BulejeComposedChart,
+  BulejeDonutChart,
+} from "@/components/ui-system/charts";
+import { DashboardSection, MicroList } from "./_shared";
+import { DraggableSections, type DraggableItem } from "./DraggableSections";
 
-const T = CHART_TOKENS;
+function fmtS(v: number) {
+  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+}
 
 export default function ComprasCharts({ data }: { data: ComprasData }) {
-  // Estado ordenes para donut
-  const estadoData = data.estadoCuentas.map((e) => ({
-    name: e.estado, value: e.monto, color: e.color,
-  }));
+  const diariasKpis = useMemo(() => {
+    const total = data.comprasDiarias.reduce((s, d) => s + d.total, 0);
+    const dias = data.comprasDiarias.length || 1;
+    const prom = total / dias;
+    const pico = data.comprasDiarias.reduce(
+      (best, d) => (d.total > best.total ? d : best),
+      { dia: "—", total: 0 },
+    );
+    return { total, prom, pico };
+  }, [data.comprasDiarias]);
 
-  // Top 5 proveedores por monto
-  const top5Proveedores = data.topProveedores.slice(0, 5).map((p) => ({
-    name: p.nombre,
+  const mensualKpis = useMemo(() => {
+    const total = data.comprasMensuales.reduce((s, m) => s + m.total, 0);
+    const prom = total / Math.max(1, data.comprasMensuales.length);
+    const best = [...data.comprasMensuales].sort((a, b) => b.total - a.total)[0];
+    const worst = [...data.comprasMensuales].sort((a, b) => a.total - b.total)[0];
+    return { total, prom, best, worst };
+  }, [data.comprasMensuales]);
+
+  const topProvRows = data.topProveedores.slice(0, 10).map((p) => ({
+    name: p.nombre.length > 22 ? p.nombre.slice(0, 21) + "…" : p.nombre,
     value: p.total,
-    label: `S/ ${p.total >= 1000 ? `${(p.total / 1000).toFixed(1)}k` : p.total.toFixed(0)}`,
-    sublabel: `${p.ordenes} ordenes`,
+    label: `${fmtS(p.total)} · ${p.ordenes} OC`,
   }));
 
-  // Dias promedio de pago — heuristica: si hay vencidos, mas alto es peor
-  const totalPayables = data.cuentasPorVencer.length || 1;
-  const avgDays = data.cuentasPorVencer.length > 0
-    ? data.cuentasPorVencer.reduce((a, c) => a + Math.max(c.diasRestantes, 0), 0) / totalPayables
-    : 30;
-  // Gauge: 30 dias = 100% (saludable). Mas dias = mejor
-  const diasPagoPct = Math.min((avgDays / 30) * 100, 100);
+  const cuentasChart = data.cuentasPorVencer.slice(0, 10).map((c) => ({
+    proveedor: c.nombre.length > 14 ? c.nombre.slice(0, 13) + "…" : c.nombre,
+    dias: c.diasRestantes,
+    monto: c.monto,
+    umbralVencido: 0,
+    umbralUrgente: 7,
+  }));
 
-  return (
-    <div className="space-y-4">
-      {/* ── Row 2: FULL-WIDTH — Compras historico ── */}
-      <ChartCard
-        title="Compras mensuales — ultimos 6 meses"
-        Icon={DollarSign}
-        height={340}
-        subtitle="Total gastado en compras a proveedores"
-        isEmpty={!data.comprasMensuales.some((c) => c.total > 0)}
-        emptyText="Sin compras historicas"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.comprasMensuales} barCategoryGap="22%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-            <XAxis dataKey="mes" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-            <Tooltip content={<ChartTooltip prefix="S/" />} />
-            <Bar dataKey="total" name="Compras" fill={T.brand} radius={[6, 6, 0, 0]}>
-              {data.comprasMensuales.map((entry, i) => {
-                const max = Math.max(...data.comprasMensuales.map((c) => c.total));
-                const isMax = entry.total === max && entry.total > 0;
-                return (
-                  <Cell key={i} fill={isMax ? T.brand : T.blue} opacity={entry.total > 0 ? 1 : 0.15} />
-                );
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
+  const cuentasKpis = useMemo(() => {
+    const vencidos = data.cuentasPorVencer.filter((c) => c.status === "vencido").length;
+    const urgentes = data.cuentasPorVencer.filter((c) => c.status === "urgente").length;
+    const totalMonto = data.cuentasPorVencer.reduce((s, c) => s + c.monto, 0);
+    const worst = data.cuentasPorVencer[0];
+    return { vencidos, urgentes, totalMonto, worst };
+  }, [data.cuentasPorVencer]);
 
-      {/* ── Row 3: 2 secondary charts ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Compras del periodo (diario)"
-          Icon={CalendarDays}
-          height={280}
-          subtitle="Tendencia diaria de compras"
-          isEmpty={data.comprasDiarias.length === 0}
-          emptyText="Sin compras en el periodo"
+  const sections: DraggableItem[] = [
+    {
+      id: "compras-diarias",
+      render: () => (
+        <DashboardSection
+          kicker="Compras · últimos 14 días"
+          title="Monto de compras por día"
+          kpis={[
+            { label: "Total periodo", value: fmtS(diariasKpis.total), tone: "primary" },
+            { label: "Promedio/día", value: fmtS(diariasKpis.prom), tone: "neutral" },
+            { label: "Día pico", value: diariasKpis.pico.dia, tone: "success" },
+            { label: "Monto pico", value: fmtS(diariasKpis.pico.total), tone: "primary" },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data.comprasDiarias} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="gradComp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={T.brand} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={T.brand} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="dia" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Area type="monotone" dataKey="total" name="Compras" stroke={T.brand} fill="url(#gradComp)" strokeWidth={2.5} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="Cuentas por vencer"
-          Icon={Clock}
-          height={280}
-          subtitle="Pagos pendientes ordenados por fecha"
-          isEmpty={data.cuentasPorVencer.length === 0}
-          emptyText="Sin cuentas pendientes"
-        >
-          <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
-            {data.cuentasPorVencer.map((c, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-foreground truncate leading-tight">{c.nombre}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums">S/ {c.monto.toFixed(0)}</span>
-                  <span className={cn(
-                    "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded whitespace-nowrap",
-                    c.status === "vencido"
-                      ? "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30"
-                      : c.status === "urgente"
-                        ? "bg-[var(--data-warning-50)] text-[var(--data-warning)] dark:bg-amber-950/30"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)]",
-                  )}>
-                    {c.diasRestantes < 0 ? `${Math.abs(c.diasRestantes)}d atras` : `${c.diasRestantes}d`}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      </div>
-
-      {/* ── Row 4: 3 micro-insights ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard
-          title="Estado de cuentas"
-          Icon={CreditCard}
-          height={220}
-          isEmpty={estadoData.length === 0}
-          emptyText="Sin cuentas"
-        >
-          <MicroDonut
-            data={estadoData}
-            centerLabel={`S/ ${data.deudaPendiente >= 1000 ? `${(data.deudaPendiente / 1000).toFixed(1)}k` : data.deudaPendiente.toFixed(0)}`}
-            centerSubLabel="Pendiente"
-            tooltipFormatter={(v) => `S/ ${v.toFixed(2)}`}
+          <BulejeComposedChart
+            data={data.comprasDiarias}
+            xKey="dia"
+            bars={[{ key: "total", label: "Compras S/", color: "primary", yAxis: "left" }]}
+            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            tooltipFormat={(v) => fmtS(Number(v))}
+            height={280}
+            showLegend={false}
+            minDataPoints={1}
           />
-        </ChartCard>
-
-        <ChartCard
-          title="Top 5 proveedores"
-          Icon={Truck}
-          height={220}
-          isEmpty={top5Proveedores.length === 0}
-          emptyText="Sin historial"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "tendencia-mensual",
+      render: () => (
+        <DashboardSection
+          kicker="Compras · últimos 6 meses"
+          title="Tendencia mensual"
+          kpis={[
+            { label: "Total 6m", value: fmtS(mensualKpis.total), tone: "primary" },
+            { label: "Promedio mes", value: fmtS(mensualKpis.prom), tone: "neutral" },
+            { label: "Mejor mes", value: mensualKpis.best?.mes ?? "—", tone: "success" },
+            { label: "Mes mínimo", value: mensualKpis.worst?.mes ?? "—", tone: "warning" },
+          ]}
         >
-          <MicroList items={top5Proveedores} barColor={T.brand} showRank />
-        </ChartCard>
-
-        <ChartCard
-          title="Dias de pago promedio"
-          Icon={Target}
-          height={220}
-          subtitle={`${data.cuentasVencidas} vencidas`}
+          <BulejeComposedChart
+            data={data.comprasMensuales}
+            xKey="mes"
+            bars={[{ key: "total", label: "Compras S/", color: "primary", yAxis: "left" }]}
+            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            tooltipFormat={(v) => fmtS(Number(v))}
+            height={280}
+            showLegend={false}
+            minDataPoints={2}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "top-proveedores-periodo",
+      render: () => (
+        <DashboardSection
+          kicker="Proveedores · periodo"
+          title="Top 10 proveedores por monto y órdenes"
+          kpis={[
+            {
+              label: "Líder",
+              value: data.comprasPorProveedor[0]?.nombre ?? "—",
+              tone: "success",
+            },
+            {
+              label: "Monto líder",
+              value: fmtS(data.comprasPorProveedor[0]?.total ?? 0),
+              tone: "primary",
+            },
+            {
+              label: "OC líder",
+              value: String(data.comprasPorProveedor[0]?.ordenes ?? 0),
+              tone: "neutral",
+            },
+            {
+              label: "Proveedores activos",
+              value: String(data.comprasPorProveedor.length),
+              tone: "neutral",
+            },
+          ]}
         >
-          <MicroGauge
-            value={diasPagoPct}
-            max={100}
-            centerLabel={`${avgDays.toFixed(0)}d`}
-            centerSubLabel="hasta vencer"
-            footerText={
-              data.cuentasVencidas > 0
-                ? `${data.cuentasVencidas} cuenta${data.cuentasVencidas > 1 ? "s" : ""} vencida${data.cuentasVencidas > 1 ? "s" : ""}`
-                : avgDays >= 15
-                  ? "Pagos saludables"
-                  : "Pagos urgentes"
+          <BulejeComposedChart
+            data={data.comprasPorProveedor.map((p) => ({
+              proveedor: p.nombre.length > 14 ? p.nombre.slice(0, 13) + "…" : p.nombre,
+              total: Math.round(p.total),
+              ordenes: p.ordenes,
+            }))}
+            xKey="proveedor"
+            bars={[{ key: "total", label: "Monto S/", color: "primary", yAxis: "left" }]}
+            lines={[{ key: "ordenes", label: "Órdenes", color: "accent", yAxis: "right" }]}
+            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={(v) => v.toString()}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("órdenes")
+                ? Number(v).toString()
+                : fmtS(Number(v))
             }
-            color={data.cuentasVencidas > 0 ? T.red : avgDays >= 15 ? T.emerald : T.amber}
+            height={300}
+            minDataPoints={1}
           />
-        </ChartCard>
-      </div>
-
-      {/* ── Row opcional: Compras por proveedor (donut grande) ── */}
-      {data.comprasPorProveedor.length > 0 && (
-        <ChartCard
-          title="Compras del periodo por proveedor"
-          Icon={BarChart3}
-          height={260}
-          subtitle="Distribucion del gasto entre proveedores"
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "estado-cuentas",
+      render: () => (
+        <DashboardSection
+          kicker="Cuentas por pagar · estado"
+          title="Distribución por estado de cuenta"
+          kpis={[
+            {
+              label: "Deuda total",
+              value: fmtS(data.deudaPendiente),
+              tone: data.deudaPendiente > 0 ? "warning" : "success",
+            },
+            {
+              label: "Vencidas",
+              value: String(data.cuentasVencidas),
+              tone: data.cuentasVencidas > 0 ? "warning" : "success",
+            },
+            {
+              label: "Estados activos",
+              value: String(data.estadoCuentas.length),
+              tone: "neutral",
+            },
+            {
+              label: "Monto pendiente",
+              value: fmtS(data.estadoCuentas.reduce((s, e) => s + e.monto, 0)),
+              tone: "primary",
+            },
+          ]}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.comprasPorProveedor.slice(0, 10)} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
-              <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-              <YAxis type="category" dataKey="nombre" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} width={120} />
-              <Tooltip content={<ChartTooltip prefix="S/" />} />
-              <Bar dataKey="total" name="Total" radius={[0, 6, 6, 0]} barSize={20}>
-                {data.comprasPorProveedor.slice(0, 10).map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      )}
+          <div className="flex items-center justify-center py-2">
+            <div className="w-full max-w-md">
+              <BulejeDonutChart
+                data={data.estadoCuentas.map((e) => ({ name: e.estado, value: e.monto }))}
+                height={260}
+                format={(v) => fmtS(Number(v))}
+                label={
+                  <div className="text-center">
+                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      Total
+                    </p>
+                    <p className="text-lg font-extrabold text-[var(--text-primary)]">
+                      {fmtS(data.deudaPendiente)}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">pendiente</p>
+                  </div>
+                }
+              />
+            </div>
+          </div>
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "cuentas-por-vencer",
+      render: () => (
+        <DashboardSection
+          kicker="Cuentas · próximos vencimientos"
+          title="Días restantes para pagar"
+          kpis={[
+            {
+              label: "Vencidas",
+              value: String(cuentasKpis.vencidos),
+              tone: cuentasKpis.vencidos > 0 ? "warning" : "success",
+            },
+            {
+              label: "Urgentes (<7d)",
+              value: String(cuentasKpis.urgentes),
+              tone: cuentasKpis.urgentes > 0 ? "primary" : "success",
+            },
+            { label: "Total monto", value: fmtS(cuentasKpis.totalMonto), tone: "primary" },
+            {
+              label: "Más urgente",
+              value: cuentasKpis.worst?.nombre?.slice(0, 18) ?? "—",
+              tone: "warning",
+            },
+          ]}
+        >
+          <BulejeComposedChart
+            data={cuentasChart}
+            xKey="proveedor"
+            bars={[{ key: "dias", label: "Días restantes", color: "primary", yAxis: "left" }]}
+            lines={[
+              { key: "monto", label: "Monto S/", color: "accent", yAxis: "right" },
+            ]}
+            leftAxisFormat={(v) => `${v}d`}
+            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            tooltipFormat={(v, name) =>
+              name?.toLowerCase().includes("monto")
+                ? fmtS(Number(v))
+                : `${v} días`
+            }
+            height={280}
+            minDataPoints={1}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "top-proveedores-historico",
+      render: () => (
+        <DashboardSection
+          kicker="Proveedores · histórico total"
+          title="Top 10 proveedores acumulados"
+          kpis={[
+            { label: "Proveedores", value: String(data.totalProveedores), tone: "neutral" },
+            {
+              label: "Líder histórico",
+              value: data.topProveedores[0]?.nombre.slice(0, 20) ?? "—",
+              tone: "success",
+            },
+            {
+              label: "Compras líder",
+              value: fmtS(data.topProveedores[0]?.total ?? 0),
+              tone: "primary",
+            },
+            {
+              label: "OC líder",
+              value: String(data.topProveedores[0]?.ordenes ?? 0),
+              tone: "neutral",
+            },
+          ]}
+        >
+          <MicroList items={topProvRows} barColor="var(--brand-primary)" showRank />
+        </DashboardSection>
+      ),
+    },
+  ];
 
-    </div>
-  );
+  return <DraggableSections items={sections} storageKey="compras-base-order" />;
 }

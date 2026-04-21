@@ -174,19 +174,20 @@ export function ProductDetailClient({
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* Breadcrumb */}
-      <Breadcrumb
-        storeName={store.name}
-        storeSlug={store.slug}
-        category={product.category}
-        productName={product.name}
-      />
+      {/* Breadcrumb: ya lo renderiza la page server component (`page.tsx`)
+          con el primitivo `@/components/ui-system/Breadcrumbs`. Duplicarlo
+          aquí generaba dos breadcrumbs visuales — fix 2026-04-20. */}
 
-      {/* Layout 2-col desktop / stack mobile */}
-      <div className="mx-auto max-w-6xl px-4 py-6 lg:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-8 lg:gap-12">
+      {/* Layout 2-col desktop / stack mobile — ancho editorial */}
+      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        {/* Blob decorativo sutil */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-16 -right-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        />
+        <div className="relative grid grid-cols-1 lg:grid-cols-[5fr_6fr] gap-10 lg:gap-16">
           {/* LEFT — Gallery */}
-          <div className="lg:self-start lg:sticky lg:top-6">
+          <div className="lg:self-start lg:sticky lg:top-8">
             <ProductGalleryDS
               images={images}
               productName={product.name}
@@ -196,7 +197,7 @@ export function ProductDetailClient({
           </div>
 
           {/* RIGHT — Info + Actions */}
-          <div className="space-y-6">
+          <div className="space-y-7">
             <ProductInfo
               name={product.name}
               storeName={store.name}
@@ -212,8 +213,7 @@ export function ProductDetailClient({
               badge={product.badge}
             />
 
-            {/* Separador visual */}
-            <div className="border-t border-[var(--rule-muted)]" />
+            <div className="border-t border-[var(--rule-soft)]" />
 
             <ProductActions
               productId={product.id}
@@ -230,14 +230,14 @@ export function ProductDetailClient({
           </div>
         </div>
 
-        {/* Sections below hero */}
-        <div className="mt-12 space-y-10">
+        {/* Sections below hero — cada componente trae su propio header */}
+        <div className="mt-16 sm:mt-24 space-y-12 sm:space-y-16">
           <ProductDescription
             description={product.description}
             productName={product.name}
           />
 
-          <div className="border-t border-[var(--rule-muted)]" />
+          <div className="border-t border-[var(--rule-soft)]" />
 
           <ProductSpecs
             name={product.name}
@@ -246,7 +246,7 @@ export function ProductDetailClient({
             price={product.price}
           />
 
-          <div className="border-t border-[var(--rule-muted)]" />
+          <div className="border-t border-[var(--rule-soft)]" />
 
           <ProductSellerInfo
             storeName={store.name}
@@ -257,18 +257,18 @@ export function ProductDetailClient({
             storeRating={store.rating}
           />
 
-          <div className="border-t border-[var(--rule-muted)]" />
+          <div className="border-t border-[var(--rule-soft)]" />
 
           <ProductReviews productId={product.id} productName={product.name} />
 
           {relatedProducts.length > 0 && (
             <>
-              <div className="border-t border-[var(--rule-muted)]" />
+              <div className="border-t border-[var(--rule-soft)]" />
               <ProductRelated products={relatedProducts} storeSlug={store.slug} />
             </>
           )}
 
-          <div className="border-t border-[var(--rule-muted)]" />
+          <div className="border-t border-[var(--rule-soft)]" />
 
           <ProductFaq />
         </div>
@@ -287,9 +287,12 @@ export function ProductDetailClient({
         unit={product.unit}
         stock={product.stock}
       />
+
+      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
     </div>
   );
 }
+
 
 // ── Mobile sticky bar ──────────────────────────────────────────────────────────
 

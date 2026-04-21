@@ -16,27 +16,36 @@ interface ProductBadgesProps {
   details?: BadgeDetails;
 }
 
-type BadgeIntent = "accent" | "muted" | "warning" | "success" | "neutral";
+type BadgeIntent = "discount" | "trending" | "new" | "urgency" | "shipping" | "verified" | "neutral";
 
+/**
+ * Tokens semánticos contrastados (definidos en globals.css).
+ * Cada intent usa un par bg/text consistente — alto contraste para llamar
+ * la atención sin saturar.
+ */
 const INTENT_CLS: Record<BadgeIntent, string> = {
-  accent:
-    "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white",
-  muted:
-    "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-800",
-  warning:
-    "bg-white dark:bg-gray-900 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800",
-  success:
-    "bg-white dark:bg-gray-900 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800",
+  discount:
+    "bg-[var(--badge-discount-bg)] text-[var(--badge-discount-text)] border-transparent",
+  trending:
+    "bg-[var(--badge-trending-bg)] text-[var(--badge-trending-text)] border-transparent",
+  new:
+    "bg-[var(--badge-new-bg)] text-[var(--badge-new-text)] border-transparent",
+  urgency:
+    "bg-[var(--badge-urgency-bg)] text-[var(--badge-urgency-text)] border-transparent",
+  shipping:
+    "bg-[var(--badge-shipping-bg)] text-[var(--badge-shipping-text)] border-transparent",
+  verified:
+    "bg-[var(--accent-soft)] text-[var(--accent)] border-transparent",
   neutral:
-    "bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800",
+    "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-soft)]",
 };
 
 const BADGE_MAP: Record<string, { label: string; Icon: LucideIcon; intent: BadgeIntent }> = {
-  "best-seller": { label: "Más vendido", Icon: Flame, intent: "accent" },
-  new: { label: "Nuevo", Icon: Sparkles, intent: "muted" },
-  "low-stock": { label: "Solo {count}", Icon: AlertTriangle, intent: "warning" },
-  verified: { label: "Verificado", Icon: BadgeCheck, intent: "success" },
-  "fast-shipping": { label: "Envío rápido", Icon: Truck, intent: "neutral" },
+  "best-seller": { label: "Más vendido", Icon: Flame, intent: "trending" },
+  new: { label: "Nuevo", Icon: Sparkles, intent: "new" },
+  "low-stock": { label: "Solo {count}", Icon: AlertTriangle, intent: "urgency" },
+  verified: { label: "Verificado", Icon: BadgeCheck, intent: "verified" },
+  "fast-shipping": { label: "Envío rápido", Icon: Truck, intent: "shipping" },
 };
 
 export default function ProductBadges({ badges, details }: ProductBadgesProps) {

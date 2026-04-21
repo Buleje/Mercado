@@ -97,6 +97,14 @@ const REQUIRED: EnvSpec[] = [
 // Push notifications:
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 //
+// Twilio SMS (OTP login):
+//   TWILIO_ACCOUNT_SID     — Account SID del dashboard Twilio (AC...)
+//   TWILIO_AUTH_TOKEN      — Auth Token del dashboard Twilio (rotar si se filtra)
+//   TWILIO_PHONE_NUMBER    — Número Twilio con SMS capability, formato E.164 (+1...)
+//   Si las 3 están presentes, `/api/auth/otp/send` envía SMS real.
+//   Si faltan en dev, el endpoint cae a log en consola (safe fallback).
+//   En prod sin estas vars, el endpoint retorna 503.
+//
 // WhatsApp:
 //   WHATSAPP_API_URL, WHATSAPP_API_TOKEN
 //   NOTIFY_PHONE / WHATSAPP_OWNER_PHONE — fallback owner phone for single-tenant mode

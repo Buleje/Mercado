@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { Save, Printer, MessageCircle, CheckCircle, Loader2 } from "@buleje/design-system/icons";
 import type { PreviewData } from "./useCierreDiario";
 

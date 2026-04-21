@@ -72,17 +72,6 @@ function buildMetadata(input: {
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
   try {
-    // Public read for marketplace customers — try admin auth, fallback to tenant header
-    let tenantId = req.headers.get("x-tenant-id") ?? "main";
-    try {
-      const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
-      if (!(auth instanceof NextResponse)) {
-        tenantId = auth.tenantId;
-      }
-    } catch {
-      // Not authenticated as admin — continue with public read using header tenantId
-    }
-
     const parsed = HistoryQuerySchema.safeParse({
       phone: req.nextUrl.searchParams.get("phone"),
       limit: req.nextUrl.searchParams.get("limit") ?? undefined,
@@ -97,13 +86,53 @@ export async function GET(req: NextRequest) {
 
     const { phone, limit, offset } = parsed.data;
 
-    const [page, customer] = await Promise.all([
-      LoyaltyDB.getHistory(tenantId, phone, limit, offset),
+    // Resolución de tenant:
+    //  1. Si hay admin auth → su propio tenantId (ve solo sus loyalty points)
+    //  2. Si es read público del marketplace → usar el tenantId REAL del
+    //     customer en DB (platform-level: el cliente existe en "main" típico).
+    //     Evita 403 LOYALTY_CROSS_TENANT cuando el header trae otro tenant
+    //     (ej. marketplace en subdominio `luis` pero el customer vive en `main`).
+    let tenantId = req.headers.get("x-tenant-id") ?? "main";
+    let adminMode = false;
+    try {
+      const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
+      if (!(auth instanceof NextResponse)) {
+        tenantId = auth.tenantId;
+        adminMode = true;
+      }
+    } catch {
+      // No admin — seguimos como read público
+    }
+
+    if (!adminMode) {
+      const customerInDb = await prisma.customer.findUnique({
+        where: { phone },
+        select: { tenantId: true },
+      });
+      if (customerInDb) {
+        tenantId = customerInDb.tenantId;
+      }
+    }
+
+    // Lookup tolerante — si la DB tira cross-tenant u otro error, devolvemos
+    // balance 0 en vez de 403. El marketplace público NO debe romperse por
+    // un lookup de loyalty. Solo admins ven errores reales.
+    const [pageResult, customer] = await Promise.all([
+      LoyaltyDB.getHistory(tenantId, phone, limit, offset).catch((err) => {
+        logger.warn("[marketplace/loyalty] GetHistory fallback", {
+          phone,
+          tenantId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return { transactions: [], balance: 0, total: 0 };
+      }),
       prisma.customer.findUnique({
         where: { phone },
         select: { name: true, totalSpent: true },
-      }),
+      }).catch(() => null),
     ]);
+
+    const page = pageResult;
 
     return NextResponse.json({
       data: {

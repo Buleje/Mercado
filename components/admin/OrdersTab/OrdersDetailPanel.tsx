@@ -52,41 +52,63 @@ export function OrdersDetailPanel({
   const currentDriver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
 
+  const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Detalle del pedido de ${order.customer.name}`}
     >
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col"
-        onClick={e => e.stopPropagation()}
+        className="bg-[var(--surface-canvas)] w-full max-w-2xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
-          <div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Detalle del pedido</CardTitle>
-            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
-              {order.customer.name} · {formatDate(order.createdAt)}
-            </p>
+        {/* Header editorial Holded */}
+        <header className="flex items-start justify-between px-6 py-5 border-b border-[var(--rule-soft)] shrink-0 bg-[var(--surface-raised)]">
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              aria-hidden
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xl font-black tracking-tight"
+            >
+              {initial}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-0.5">
+                Pedido
+              </p>
+              <CardTitle className="text-xl font-black tracking-[-0.01em] text-[var(--text-primary)] truncate">
+                {order.customer.name}
+              </CardTitle>
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">
+                #{order.id.slice(-8)} · {formatDate(order.createdAt)}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <button
+              type="button"
               onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
               title="Imprimir ticket / Boleta"
+              aria-label="Imprimir ticket o boleta"
             >
-              <Printer className="h-4 w-4" />
+              <Printer className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              aria-label="Cerrar panel"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" strokeWidth={2} aria-hidden />
             </button>
           </div>
-        </div>
+        </header>
 
-        <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
+        <div className="overflow-y-auto px-6 py-5 space-y-5 flex-1 bg-[var(--surface-canvas)]">
           {/* Visual Timeline */}
           <div className="bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-base)]">
             <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Estado del Pedido</p>
@@ -355,9 +377,9 @@ export function OrdersDetailPanel({
                   </>
                 );
               })()}
-              <div className="flex justify-between items-center px-3 py-2 bg-gray-50 dark:bg-surface font-bold text-sm">
-                <span className="text-[var(--text-primary)] dark:text-foreground">Total</span>
-                <span className="text-primary">S/{order.total.toFixed(2)}</span>
+              <div className="flex justify-between items-center px-3 py-3 bg-[var(--surface-sunken)] font-bold text-base">
+                <span className="text-[var(--text-primary)] uppercase tracking-wider text-[length:var(--ts-xs)]">Total</span>
+                <span className="text-[var(--text-primary)] text-xl font-black tabular-nums tracking-[-0.02em]">S/{order.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -371,12 +393,13 @@ export function OrdersDetailPanel({
             </span>
           </div>
 
-          {/* Invoice */}
+          {/* Invoice CTA tokenizado */}
           <button
+            type="button"
             onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold hover:bg-[var(--accent)] transition-colors"
           >
-            <FileText className="h-4 w-4" />
+            <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
             Generar Boleta
           </button>
         </div>

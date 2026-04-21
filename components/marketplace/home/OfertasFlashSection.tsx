@@ -16,11 +16,11 @@ import {
   ArrowRight,
   Clock,
 } from "@buleje/design-system/icons";
-import { Caption } from "@buleje/design-system";
 import { MOCK_DEALS, type Deal } from "@/lib/mock-deals";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
-import MarketplaceSection, { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 
 function useCountdown(target: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -90,39 +90,43 @@ export default function OfertasFlashSection() {
   return (
     <MarketplaceSection
       id="ofertas-flash"
-      kicker="Ofertas flash"
+      kicker="Ofertas relámpago"
       title="Termina pronto: hasta -40% en productos seleccionados"
-      subtitle={
-        !expired
-          ? undefined
-          : undefined
+      headerExtra={
+        !expired ? (
+          <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-1.5">
+            <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+            <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Cierra en
+            </span>
+            <div className="flex items-center gap-0.5 tabular-nums text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
+              <span className="min-w-[1.75rem] text-center">
+                {pad(hours)}
+              </span>
+              <span className="text-[var(--text-tertiary)]">:</span>
+              <span className="min-w-[1.75rem] text-center">
+                {pad(minutes)}
+              </span>
+              <span className="text-[var(--text-tertiary)]">:</span>
+              <span className="min-w-[1.75rem] text-center">
+                {pad(seconds)}
+              </span>
+            </div>
+          </div>
+        ) : undefined
       }
       actions={
         <Link
           href="/marketplace/ofertas"
-          className={cn(
-            "inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold",
-            "text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors",
-          )}
+          className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Ver todas las ofertas
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       }
     >
-      {/* Countdown badge — debajo del header del wrapper */}
-      {!expired && (
-        <Caption className="mb-4 inline-flex items-center gap-1.5 text-[var(--text-tertiary)]">
-          <Clock className="h-3 w-3" aria-hidden />
-          Cierra en{" "}
-          <span className="tabular-nums font-semibold text-[var(--text-secondary)]">
-            {pad(hours)}:{pad(minutes)}:{pad(seconds)}
-          </span>
-        </Caption>
-      )}
-
-      {/* Desktop grid */}
-      <div className={`hidden sm:grid ${MARKETPLACE_GRID}`}>
+      {/* Carrusel horizontal 1 fila (mobile + desktop) — drag, snap, barra mini */}
+      <HorizontalCarousel ariaLabel="Ofertas relampago">
         {flashDeals.map((d, i) => (
           <UnifiedProductCard
             key={d.id}
@@ -133,22 +137,7 @@ export default function OfertasFlashSection() {
             href={`/marketplace/${d.storeSlug}/producto/${dealToCardProduct(d).id}`}
           />
         ))}
-      </div>
-
-      {/* Mobile horizontal scroll */}
-      <div className="sm:hidden -mx-4 px-4 flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
-        {flashDeals.map((d, i) => (
-          <div key={d.id} className="shrink-0 w-[200px] snap-start">
-            <UnifiedProductCard
-              product={dealToCardProduct(d)}
-              variant="flash"
-              endsAt={new Date(d.endsAt)}
-              index={i}
-              href={`/marketplace/${d.storeSlug}/producto/${dealToCardProduct(d).id}`}
-            />
-          </div>
-        ))}
-      </div>
+      </HorizontalCarousel>
     </MarketplaceSection>
   );
 }

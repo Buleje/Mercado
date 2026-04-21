@@ -6,6 +6,14 @@ const MarketplaceNavbar = dynamic(
   () => import("@/components/marketplace/MarketplaceNavbar"),
   { ssr: true }
 );
+const MarketplaceSecondaryNav = dynamic(
+  () => import("@/components/marketplace/MarketplaceSecondaryNav"),
+  { ssr: true }
+);
+const MarketplacePromoBar = dynamic(
+  () => import("@/components/marketplace/MarketplacePromoBar"),
+  { ssr: true }
+);
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 
 export const metadata: Metadata = {
@@ -27,10 +35,14 @@ export const metadata: Metadata = {
 
 export default function RecetasPage() {
   return (
-    <main id="main-content">
+    <>
+      <MarketplacePromoBar />
       <MarketplaceNavbar />
-      <RecetarioClient />
+      <MarketplaceSecondaryNav />
+      <main id="main-content">
+        <RecetarioClient />
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }

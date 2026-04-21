@@ -46,9 +46,21 @@ export async function requireCustomer(
     return NextResponse.json({ error: "session expired" }, { status: 401 });
   }
 
-  // Validate tenant consistency: middleware-set header takes precedence
+  // Validate tenant consistency: middleware-set header takes precedence.
+  //
+  // Excepción: customers de PLATAFORMA (tenantId === "main") pueden operar
+  // sobre cualquier tenant — el flujo OTP del marketplace hardcodea
+  // `tenantId: "main"` en el token (app/api/auth/otp/verify/route.ts) porque
+  // el cliente puede comprar en múltiples bodegas y cada pedido lleva su
+  // propio storeSlug/tenant destino. Bloquearlo por mismatch rompe
+  // subscriptions, reviews y cualquier feature cross-tenant del marketplace.
+  const PLATFORM_TENANT = "main";
   const headerTenantId = req.headers.get("x-tenant-id");
-  if (headerTenantId && headerTenantId !== payload.tenantId) {
+  if (
+    headerTenantId &&
+    headerTenantId !== payload.tenantId &&
+    payload.tenantId !== PLATFORM_TENANT
+  ) {
     logger.warn("[CUSTOMER_AUTH] Tenant mismatch — forbidden", {
       email: payload.email,
       sessionTenant: payload.tenantId,

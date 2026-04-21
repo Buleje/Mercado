@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingCart } from "@buleje/design-system/icons";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
 import ShareCartButton from "@/components/marketplace/ShareCartButton";
 import WhatsAppOrderButton from "@/components/marketplace/WhatsAppOrderButton";
+import { cn } from "@/lib/utils";
 
 // ---------- helpers ----------
 
@@ -113,95 +115,97 @@ function CartItemRow({
 // ---------- badge para navbar ----------
 
 export function CartBadge({ onClick }: { onClick: () => void }) {
-  const { itemCount, grandTotal, byStore } = useMarketplaceCart();
-  const [showPreview, setShowPreview] = useState(false);
+  const { itemCount, grandTotal } = useMarketplaceCart();
+  const [pulse, setPulse] = React.useState(false);
+  const prevCountRef = React.useRef(itemCount);
 
-  const allItems = Object.values(byStore).flatMap(s => s.items).slice(0, 3);
+  // Pulse animation cuando itemCount aumenta
+  React.useEffect(() => {
+    if (itemCount > prevCountRef.current) {
+      setPulse(true);
+      const t = setTimeout(() => setPulse(false), 700);
+      prevCountRef.current = itemCount;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = itemCount;
+  }, [itemCount]);
+
   const fmtPrice = (n: number) =>
-    new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
+    new Intl.NumberFormat("es-PE", {
+      style: "currency",
+      currency: "PEN",
+      maximumFractionDigits: 0,
+    }).format(n);
+
+  const hasItems = itemCount > 0;
+
+  // NOTE: hover preview menu removido — el user pidió UX más directa:
+  // click → página de carrito; no popover al hover.
+  // Micro-animación: pulse ring al agregar + badge con spring, total
+  // visible al lado del icono cuando hay items.
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => itemCount > 0 && setShowPreview(true)}
-      onMouseLeave={() => setShowPreview(false)}
-    >
-      <button
+    <div className="relative">
+      <motion.button
         onClick={onClick}
+        animate={pulse ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.96 }}
         aria-label={`Carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-primary"
+        className={cn(
+          "relative inline-flex items-center gap-2.5 h-11 rounded-full transition-colors shadow-sm focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+          hasItems
+            ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:bg-[var(--accent)] pl-3.5 pr-4 text-sm font-bold"
+            : "w-11 justify-center border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+        )}
       >
-        <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        <AnimatePresence>
-          {itemCount > 0 && (
+        {/* Icono — limpio, sin badge encima */}
+        <span className="relative inline-flex items-center justify-center">
+          <ShoppingCart
+            className="h-5 w-5 shrink-0"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
+          <AnimatePresence>
+            {pulse && hasItems && (
+              <motion.span
+                key="pulse-ring"
+                initial={{ scale: 0.8, opacity: 0.8 }}
+                animate={{ scale: 2.6, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="absolute inset-0 rounded-full border-2 border-[var(--accent)] pointer-events-none"
+                aria-hidden
+              />
+            )}
+          </AnimatePresence>
+        </span>
+        {/* Contador + total INLINE cuando hay items — no tapa el icono */}
+        <AnimatePresence mode="wait">
+          {hasItems && (
             <motion.span
-              key="badge"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black text-white"
+              key={`meta-${itemCount}-${Math.round(grandTotal)}`}
+              initial={{ opacity: 0, x: -6, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: "auto" }}
+              exit={{ opacity: 0, x: -6, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
             >
-              {itemCount > 99 ? "99+" : itemCount}
+              <span className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[11px] font-black tabular-nums text-white">
+                {itemCount > 99 ? "99+" : itemCount}
+              </span>
+              <span
+                aria-hidden
+                className="h-4 w-px bg-current opacity-25"
+              />
+              <span className="tabular-nums font-black text-sm">
+                {fmtPrice(grandTotal)}
+              </span>
             </motion.span>
           )}
         </AnimatePresence>
-      </button>
-
-      {/* Hover preview */}
-      <AnimatePresence>
-        {showPreview && itemCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 p-3 z-50"
-          >
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 mb-2">
-              {itemCount} producto{itemCount !== 1 ? "s" : ""} en el carrito
-            </p>
-            <div className="space-y-2">
-              {allItems.map(item => (
-                <div key={`${item.storeId}-${item.productId}`} className="flex items-center gap-2">
-                  <div className="relative w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0">
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{item.name}</p>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-400">x{item.quantity}</p>
-                  </div>
-                  <span className="text-xs font-bold text-gray-900 dark:text-white shrink-0">
-                    {fmtPrice(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
-              {itemCount > 3 && (
-                <p className="text-[length:var(--ts-2xs)] text-gray-400 text-center">y {itemCount - 3} más...</p>
-              )}
-            </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <span className="text-xs text-gray-500">Total</span>
-              <span className="text-sm font-bold text-emerald-600">{fmtPrice(grandTotal)}</span>
-            </div>
-            <button
-              onClick={onClick}
-              className="w-full mt-2 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
-            >
-              Ver carrito
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </motion.button>
     </div>
   );
 }

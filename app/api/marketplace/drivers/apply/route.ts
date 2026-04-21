@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const DriverApplySchema = z.object({
@@ -11,6 +12,10 @@ const DriverApplySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Rate limit: anti-spam aplicar como repartidor (5 / 15min / IP)
+  const rl = applyRateLimit(req, "STRICT", "marketplace-drivers-apply");
+  if (rl) return rl;
+
   try {
     const body = await req.json();
     const parsed = DriverApplySchema.safeParse(body);

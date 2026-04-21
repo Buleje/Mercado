@@ -2,74 +2,249 @@
 
 /**
  * ExplorarClient — Orchestrator de la pagina /marketplace/explorar.
- * Layout: Hero + secciones apiladas con respiracion 8pt grid.
  *
- * Stack canonico (top → bottom):
- *   1. ExplorarHero (kicker + h1 + search + trust)
- *   2. OfertasFlash (grid con ProductBadge teal)
- *   3. GuiasTips (3 cards de contenido)
- *   4. FinalCTA (abrir tienda)
+ * Stack canonico (top → bottom) — Sprint 1-5 completos:
+ *   1.  PromoBannerCarousel (banner top rotativo)
+ *   2.  ExplorarHeroSearch (search XL + chips + trust)
+ *   3.  DealsOfTheDayStrip (countdown global + carrusel)
+ *   4.  RecentlyViewedStrip (lee localStorage — solo si hay items)
+ *   5.  ExplorarAmazonBoxes (6 cajas tematicas)
+ *   6.  BuyAgainStrip (lee phone cookie — solo customer logueado)
+ *   7.  EditorialFeature (receta destacada + ingredientes)
+ *   8.  TopRatedBento (bento 1+3 productos top calificados)
+ *   9.  NeighborsBoughtStrip (recommendations o top-today fallback)
+ *  10.  BodegasTrendingRow (3 cards bodegas trending)
+ *  11.  ExplorarRelacionados (2 carruseles relacionados/considerar)
+ *  12.  ExplorarCategoriasGrid (grid completo todas las categorias)
+ *  13.  NewArrivalsRow (carrusel productos nuevos)
+ *  14.  FinalCTA (segmentado vendor)
  *
- * REMOVIDOS (ronda A — migrados a /tiendas o nav secundaria):
- *   - QuickAccessGrid     → ronda B secondary nav
- *   - RecommendationsStrip (tiendas) → /tiendas
- *   - ExplorarPorSector   → ronda B secondary nav
- *   - ExplorarPorOcasion  → ronda B secondary nav
+ * Cada seccion va envuelta en ExplorarErrorBoundary para que un fallo
+ * de fetch o render no rompa el resto. RevealOnScroll agrega fade-in
+ * al entrar en viewport (excepto secciones above-the-fold).
+ *
+ * BackToTop FAB aparece despues de 800px scroll.
  */
 
 import Link from "next/link";
-import { ArrowUpRight } from "@buleje/design-system/icons";
-import ExplorarHero from "./ExplorarHero";
-import OfertasFlash from "./OfertasFlash";
-import GuiasTips from "./GuiasTips";
-import RecentlyViewed from "@/components/store/RecentlyViewed";
+import { useEffect } from "react";
+import { ArrowUpRight, Store } from "@buleje/design-system/icons";
+import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
+import WelcomeStrip from "@/components/marketplace/home/WelcomeStrip";
+import ExplorarTileGrid, { FillBanner } from "./ExplorarTileGrid";
+import ExplorarErrorBoundary from "./ExplorarErrorBoundary";
+import ExplorarBackToTop from "./ExplorarBackToTop";
+import ExplorarTracker from "./ExplorarTracker";
+import ExplorarAmazonBoxes from "./ExplorarAmazonBoxes";
+import ExplorarRelacionados from "./ExplorarRelacionados";
+import ExplorarCategoriasGrid from "./ExplorarCategoriasGrid";
+import RecentlyViewedStrip from "./RecentlyViewedStrip";
+import BuyAgainStrip from "./BuyAgainStrip";
+import NeighborsBoughtStrip from "./NeighborsBoughtStrip";
+import DealsOfTheDayStrip from "./DealsOfTheDayStrip";
+import TopRatedBento from "./TopRatedBento";
+import NewArrivalsRow from "./NewArrivalsRow";
+import BodegasTrendingRow from "./BodegasTrendingRow";
+import EditorialFeature from "./EditorialFeature";
+
+/**
+ * SectionBox — wrapper que envuelve cada strip de explorar en una caja
+ * con borde + bg + rounded, estilo Mercado Libre. El strip mantiene su
+ * propio header interno (titulo + link "ver todos").
+ *
+ * Los strips internos usan `max-w-[1600px] mx-auto px-*` propio; se anula
+ * con `[&_section]:!px-0 [&_section]:!max-w-none [&_section]:!mx-0`
+ * para que el padding venga de la caja (no doble).
+ */
+function SectionBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className={[
+        "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+        "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
+        "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
+      ].join(" ")}
+    >
+      {children}
+    </div>
+  );
+}
 
 function FinalCTA() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-8 sm:p-12">
-        <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
-            Para bodegueros
+    <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+      />
+      <div className="relative max-w-4xl mx-auto px-4 text-center">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+          <span
+            aria-hidden
+            className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+          />
+          Para bodegueros
+        </p>
+        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+          Abrí tu tienda,
+          <br />
+          <span className="italic font-serif text-[var(--accent)]">
+            vendé a todo Pucallpa.
           </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.1]">
-            Abre tu tienda y vende a todo Pucallpa
-          </h2>
-          <p className="mt-4 text-base text-gray-500 dark:text-gray-400 leading-relaxed">
-            Miles de vecinos ya estan buscando lo que tu vendes. Pon tu bodega online en 5 minutos, sin codigo y sin permanencia.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/marketplace/registrar"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
-            >
-              Abrir mi tienda gratis
-              <ArrowUpRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </Link>
-            <Link
-              href="/marketplace/negocios"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-300 dark:border-gray-700 px-6 py-3 text-sm font-bold text-gray-900 dark:text-white hover:bg-white dark:hover:bg-gray-950 transition-colors"
-            >
-              Ver como funciona
-            </Link>
-          </div>
+        </h2>
+        <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+          Miles de vecinos ya están buscando lo que vendés. Poné tu bodega
+          online en{" "}
+          <span className="text-[var(--text-primary)] font-bold">5 minutos</span>
+          , sin código y sin permanencia.
+        </p>
+        <div className="mt-12 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/abrir-tienda"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
+          >
+            <Store className="h-4 w-4" strokeWidth={1.75} />
+            Abrir mi tienda gratis
+            <ArrowUpRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              strokeWidth={2.25}
+              aria-hidden="true"
+            />
+          </Link>
+          <Link
+            href="/abrir-tienda#planes"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            Ver planes
+          </Link>
         </div>
+        <p className="mt-6 text-sm text-[var(--text-tertiary)]">
+          Sin tarjeta · Sin contrato · Cancelás cuando quieras
+        </p>
       </div>
     </section>
   );
 }
 
 export default function ExplorarClient() {
-  return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <ExplorarHero />
+  // Body data-attribute para aplicar tipografía mejorada solo en /explorar.
+  // Se limpia al desmontar (navegando a otra página).
+  useEffect(() => {
+    document.body.setAttribute("data-marketplace-explorar", "true");
+    return () => {
+      document.body.removeAttribute("data-marketplace-explorar");
+    };
+  }, []);
 
-      <div className="py-10 sm:py-14 space-y-12 sm:space-y-16">
-        <OfertasFlash />
-        <GuiasTips />
-        <RecentlyViewed />
-        <FinalCTA />
+  return (
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      <ExplorarTracker pageName="marketplace_explorar" />
+
+      {/* ══════════════════════════════════════════════════════════════════
+          TOP EN CAJAS ESTILO MERCADO LIBRE / AMAZON — grid 12 cols con
+          banner + bento + categorías + ofertas + banner side empaquetados
+          como piezas de un mismo mosaico (ver ExplorarTileGrid).
+          ══════════════════════════════════════════════════════════════════ */}
+
+      {/* Bienvenida personalizada (solo clientes logueados, silencioso si no) */}
+      <WelcomeStrip />
+
+      {/* Grid tile — banner · 4 bento · categorías · ofertas · banner side */}
+      <ExplorarTileGrid />
+
+      {/* ══════════════════════════════════════════════════════════════════
+          SECCIONES ENCAPSULADAS EN CAJAS CON BORDE — estilo Mercado Libre.
+          Cada strip va dentro de un wrapper con border + bg + padding
+          compartido para que se vean como tarjetas apiladas, pegadas.
+          ══════════════════════════════════════════════════════════════════ */}
+
+      <div className="bg-[var(--surface-sunken)] py-3 sm:py-4">
+        <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 px-3 sm:px-4 lg:px-6">
+
+          <ExplorarErrorBoundary section="deals-of-the-day">
+            <SectionBox><DealsOfTheDayStrip /></SectionBox>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="recently-viewed">
+            <SectionBox><RecentlyViewedStrip /></SectionBox>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="amazon-boxes">
+            <RevealOnScroll>
+              <SectionBox><ExplorarAmazonBoxes /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          {/* Banner debajo de "¿Dónde querés empezar?" — admin configurable.
+              Usa FillBanner (no PromoBannerCarousel) para llenar la altura
+              completa sin recortes. Altura 260-300 px. */}
+          <ExplorarErrorBoundary section="promo-below-boxes">
+            <RevealOnScroll>
+              <div className="h-[260px] sm:h-[300px]">
+                <FillBanner slot="explorar-bottom" />
+              </div>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="buy-again">
+            <RevealOnScroll>
+              <SectionBox><BuyAgainStrip /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="editorial-feature">
+            <RevealOnScroll>
+              <SectionBox><EditorialFeature /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="top-rated-bento">
+            <RevealOnScroll>
+              <SectionBox><TopRatedBento /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="neighbors-bought">
+            <RevealOnScroll>
+              <SectionBox><NeighborsBoughtStrip /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="bodegas-trending">
+            <RevealOnScroll>
+              <SectionBox><BodegasTrendingRow /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="relacionados">
+            <RevealOnScroll>
+              <SectionBox><ExplorarRelacionados /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="categorias-grid">
+            <RevealOnScroll>
+              <SectionBox><ExplorarCategoriasGrid /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="new-arrivals">
+            <RevealOnScroll>
+              <SectionBox><NewArrivalsRow /></SectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+        </div>
       </div>
+
+      <ExplorarErrorBoundary section="final-cta">
+        <RevealOnScroll>
+          <FinalCTA />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
+
+      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
+
+      <ExplorarBackToTop />
     </div>
   );
 }

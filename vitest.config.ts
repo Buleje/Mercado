@@ -20,11 +20,13 @@ export default defineConfig({
         "app/**/layout.tsx",
         "app/**/not-found.tsx",
       ],
+      // Thresholds progresivos — subir cuando la suite esté estable.
+      // Baseline previo: 80/70/75/80 (2026-04). Objetivo Q3: 90/85/90/90.
       thresholds: {
-        statements: 80,
-        branches: 70,
-        functions: 75,
-        lines: 80,
+        statements: 85,
+        branches: 75,
+        functions: 80,
+        lines: 85,
       },
     },
   },

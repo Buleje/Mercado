@@ -7,6 +7,25 @@ cd bodega-san-martin 2>/dev/null || true
 # simultáneos. Fuente del problema: ADR-075 Sprint A/B/C bulk migrations.
 export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192"
 
+# 0. Empty-file gate: block commits that stage 0-byte source/content files.
+#    Prevents regressions like QuickAddDrawer.tsx (empty stub pushed a layout
+#    import that crashed /marketplace/explorar with "Element type is invalid").
+#    Cubre: código (ts/tsx/js/mjs/cjs), data (json/yml/yaml), docs (md),
+#    estilos (css) y schemas (prisma).
+#    Emergency bypass: HUSKY=0 git commit ...
+EMPTY_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json|md|mdx|yml|yaml|css|scss|prisma)$' | while read -r f; do
+  if [ -f "$f" ] && [ ! -s "$f" ]; then echo "$f"; fi
+done)
+if [ -n "$EMPTY_FILES" ]; then
+  echo ""
+  echo "❌ Empty source files staged (0 bytes) — commit blocked:"
+  echo "$EMPTY_FILES" | sed 's/^/   - /'
+  echo ""
+  echo "   Either implement them or \`git rm\` before committing."
+  echo "   Emergency bypass: HUSKY=0 git commit ..."
+  exit 1
+fi
+
 # 1. Lint-staged: ESLint fix on staged .ts/.tsx files
 npx lint-staged || exit 1
 
@@ -32,6 +51,34 @@ npx tsc --noEmit || {
   exit 1
 }
 echo "✅ tsc clean"
+
+# 2a. Danger-zone skills integrity: si algún skill referenciado en el hook
+#     danger-zone.mjs no existe como .instructions.md, el gate falla. Evita
+#     que el hook bloquee edits con "skill path not found" en otra sesión.
+node scripts/check-zone-skills.mjs || {
+  echo ""
+  echo "❌ Falta algún skill .instructions.md referenciado por danger-zone.mjs."
+  echo "   Corre \`npm run dev:dangers:check\` para ver cuál."
+  exit 1
+}
+
+# 2b. Vitest --changed: corre SOLO los tests afectados por archivos staged.
+#     Usa resolución de dependencias de Vitest — si tocas `hooks/x.ts`, corre
+#     los tests que importan ese archivo (directa o transitivamente).
+#     Ventana <5s cuando no hay cambios que afecten tests. Escape válvula:
+#     SKIP_VITEST_GATE=1 para tests conocidamente flakey en un commit puntual.
+#     Atrapa bugs que tsc NO captura: lógica runtime, React state, etc.
+if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
+  echo "🧪 Running vitest --changed (fast related-tests gate)..."
+  npx vitest run --changed HEAD --passWithNoTests || {
+    echo ""
+    echo "❌ Tests related to staged changes failed."
+    echo "   Run \`npx vitest run --changed HEAD\` locally to debug."
+    echo "   Skip gate for this commit: SKIP_VITEST_GATE=1 git commit ..."
+    exit 1
+  }
+  echo "✅ related tests pass"
+fi
 
 # 3. Delta check: block NEW empty .catch() in staged files.
 #    Existing ones are being cleaned up — this gate prevents adding more.

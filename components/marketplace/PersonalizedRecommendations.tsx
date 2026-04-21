@@ -96,42 +96,12 @@ export default function PersonalizedRecommendations() {
     scrollRef.current?.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
   };
 
-  // Cold start: no hay customer
-  if (!loading && !customer?.phone) {
-    return (
-      <section className="py-6 px-4 sm:px-0">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Para vos</h2>
-        </div>
-        <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-8 px-4 text-center">
-          <Sparkles className="h-8 w-8 text-primary/40 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Estamos aprendiendo tus gustos.
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
-            Compra mas para recibir recomendaciones personalizadas para ti.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  // Empty: customer existe pero sin historial suficiente
-  if (!loading && products.length === 0 && customer?.phone) {
-    return (
-      <section className="py-6 px-4 sm:px-0">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Para vos</h2>
-        </div>
-        <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-8 px-4 text-center">
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            Aun no tenemos recomendaciones para ti. Sigue comprando.
-          </p>
-        </div>
-      </section>
-    );
+  // Cold start o sin historial: no rendereamos nada — la personalizacion
+  // se aplica directo en el catalogo principal (sort by popularity + history).
+  // Decision 2026-04-20: eliminado el placeholder "estamos aprendiendo tus gustos"
+  // que generaba ruido visual sin agregar valor al user.
+  if (!loading && (!customer?.phone || products.length === 0)) {
+    return null;
   }
 
   return (

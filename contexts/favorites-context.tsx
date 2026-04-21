@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, startTransition, type ReactNode } from "react";
+import { createContext, useContext, useCallback, useMemo, type ReactNode } from "react";
+import { z } from "zod";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
+import { useValidatedLocalStorage } from "@/hooks/use-validated-local-storage";
 
 type FavoritesCtx = {
   favorites: Set<string>;
@@ -12,46 +14,45 @@ type FavoritesCtx = {
 
 const FavoritesContext = createContext<FavoritesCtx | null>(null);
 
-function loadFavorites(key: string): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) return new Set(JSON.parse(raw) as string[]);
-  } catch { /* ignore */ }
-  return new Set();
-}
+/** Ids se guardan como array (JSON-serializable); el context expone Set para
+ *  checks O(1). Zod filtra entries no-string y deduplica al hidratar. */
+const FavoriteIdsSchema = z
+  .array(z.unknown())
+  .transform((arr) => Array.from(new Set(arr.filter((v): v is string => typeof v === "string" && v.length > 0))));
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const slug = useTenantSlug();
   const storageKey = tenantKey(slug, "favorites");
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage after mount to avoid SSR mismatch
-  useEffect(() => {
-    startTransition(() => {
-      setFavorites(loadFavorites(storageKey));
-      setHydrated(true);
-    });
-  }, [storageKey]);
+  const [ids, setIds] = useValidatedLocalStorage<string[]>(
+    storageKey,
+    FavoriteIdsSchema,
+    [],
+  );
 
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(storageKey, JSON.stringify([...favorites]));
-  }, [favorites, hydrated, storageKey]);
+  const favorites = useMemo(() => new Set(ids), [ids]);
 
-  const toggle = useCallback((productId: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
-  }, []);
+  const toggle = useCallback(
+    (productId: string) => {
+      setIds((prev) => {
+        const set = new Set(prev);
+        if (set.has(productId)) set.delete(productId);
+        else set.add(productId);
+        return Array.from(set);
+      });
+    },
+    [setIds],
+  );
 
-  const isFavorite = useCallback((productId: string) => favorites.has(productId), [favorites]);
+  const isFavorite = useCallback(
+    (productId: string) => favorites.has(productId),
+    [favorites],
+  );
 
   return (
-    <FavoritesContext.Provider value={{ favorites, toggle, isFavorite, count: favorites.size }}>
+    <FavoritesContext.Provider
+      value={{ favorites, toggle, isFavorite, count: favorites.size }}
+    >
       {children}
     </FavoritesContext.Provider>
   );

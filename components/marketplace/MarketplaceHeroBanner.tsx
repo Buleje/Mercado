@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MapPin, Clock, ArrowUpRight } from "@buleje/design-system/icons";
+import { MapPin, Clock, ArrowUpRight, Truck, Store, ShoppingBag } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface Slide {
   eyebrow: string;
   title: string;
+  /** Pieza de la frase con accent color para llamar la atencion. */
+  titleAccent?: string;
   subtitle: string;
   cta: string;
   href: string;
@@ -17,7 +19,8 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     eyebrow: "Pucallpa · Ucayali",
-    title: "La bodega de tu barrio, ahora en tu bolsillo",
+    title: "La bodega de tu barrio,",
+    titleAccent: "ahora en tu bolsillo",
     subtitle:
       "Abarrotes, bebidas y productos frescos. Entrega el mismo día. Pagás al recibir.",
     cta: "Explorar tiendas",
@@ -25,7 +28,8 @@ const SLIDES: Slide[] = [
   },
   {
     eyebrow: "Productos de la selva",
-    title: "Açaí, camu camu, aguaje — directo del productor",
+    title: "Açaí, camu camu, aguaje —",
+    titleAccent: "directo del productor",
     subtitle:
       "Sabores de Ucayali seleccionados de familias locales. Entrega el mismo día.",
     cta: "Ver la selva",
@@ -33,12 +37,20 @@ const SLIDES: Slide[] = [
   },
   {
     eyebrow: "Cupón de bienvenida",
-    title: "10% de descuento en tu primera compra",
+    title: "10% off en tu primera compra,",
+    titleAccent: "solo por hoy",
     subtitle:
       "Código BIENVENIDO10 al pagar. Válido 24 horas para nuevos clientes.",
     cta: "Usar cupón",
     href: "#welcome-coupon",
   },
+];
+
+/** Stats persistentes mostrados debajo del CTA — psicologia: trust + scale. */
+const HERO_STATS = [
+  { Icon: Store, value: "120+", label: "tiendas activas" },
+  { Icon: Truck, value: "25 min", label: "entrega promedio" },
+  { Icon: ShoppingBag, value: "8.000+", label: "productos" },
 ];
 
 const INTERVAL = 7000;
@@ -73,13 +85,13 @@ export default function MarketplaceHeroBanner() {
         }}
       />
 
-      {/* Spot de color muy sutil (accent teal) */}
+      {/* Spot de color muy sutil (accent teal) — discreto, no satura */}
       <div
         aria-hidden="true"
-        className="absolute -top-40 right-1/3 h-80 w-80 rounded-full bg-primary/[0.06] blur-[100px] pointer-events-none"
+        className="absolute -top-40 right-1/3 h-80 w-80 rounded-full bg-[var(--accent)]/[0.06] blur-[100px] pointer-events-none"
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 lg:py-20">
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 items-center">
           <div>
             <AnimatePresence mode="wait">
@@ -90,38 +102,80 @@ export default function MarketplaceHeroBanner() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               >
-                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                <m.span
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05, duration: 0.4 }}
+                  className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]"
+                >
                   <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
                   {slide.eyebrow}
-                </span>
+                </m.span>
 
-                <h1 className="mt-5 text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-[-0.02em] leading-[1.05] text-gray-900 dark:text-white max-w-2xl">
+                <m.h1
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.5 }}
+                  className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.02em] leading-[1.1] text-[var(--text-primary)] max-w-2xl"
+                >
                   {slide.title}
-                </h1>
+                  {slide.titleAccent && <> {slide.titleAccent}</>}
+                </m.h1>
 
-                <p className="mt-5 text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
+                <m.p
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.18, duration: 0.45 }}
+                  className="mt-4 text-base sm:text-lg text-[var(--text-tertiary)] max-w-xl leading-relaxed"
+                >
                   {slide.subtitle}
-                </p>
+                </m.p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-6">
+                <m.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25, duration: 0.45 }}
+                  className="mt-6 flex flex-wrap items-center gap-4"
+                >
                   <Link
                     href={slide.href}
                     className={cn(
-                      "inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold",
-                      "bg-gray-900 dark:bg-white text-white dark:text-gray-900",
-                      "hover:bg-gray-800 dark:hover:bg-gray-100",
-                      "transition-colors active:scale-[0.98]",
+                      "group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold",
+                      "bg-[var(--accent)] text-white",
+                      "hover:bg-[var(--accent)]/90",
+                      "transition-colors duration-200 active:scale-[0.98]",
                     )}
                   >
                     {slide.cta}
-                    <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
+                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
                   </Link>
 
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <Clock className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-                    Entrega promedio 25 min
-                  </span>
-                </div>
+                  <Link
+                    href="#destacados"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] underline-offset-4 hover:underline transition-colors"
+                  >
+                    <Clock className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+                    Ver lo mas pedido hoy
+                  </Link>
+                </m.div>
+
+                {/* Stats cluster — psicologia: prueba social + escala (mas sutil) */}
+                <m.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.32, duration: 0.45 }}
+                  className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3"
+                >
+                  {HERO_STATS.map(({ Icon, value, label }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                        <span className="font-bold text-[var(--text-secondary)] tabular-nums">{value}</span>{" "}
+                        {label}
+                      </p>
+                    </div>
+                  ))}
+                </m.div>
               </m.div>
             </AnimatePresence>
 

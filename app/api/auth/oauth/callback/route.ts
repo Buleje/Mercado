@@ -105,6 +105,37 @@ export async function GET(req: NextRequest) {
     }
 
     // Éxito — la cookie `sb-...-auth-token` quedó seteada por el client.
+    // Antes de redirigir, leemos el user de Supabase y, si NO tiene un
+    // Customer asociado por email, mandamos a `/marketplace?oauth=complete`
+    // con el name pre-llenado para que el modal pida solo el celular.
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const u = userData?.user;
+      if (u) {
+        const email = u.email ?? null;
+        const oauthName =
+          (u.user_metadata?.full_name as string | undefined) ??
+          (u.user_metadata?.name as string | undefined) ??
+          (u.user_metadata?.given_name as string | undefined) ??
+          email?.split("@")[0] ??
+          "";
+
+        // Buscamos si ya existe un Customer linkeado a este email
+        // (los Customers se identifican por phone — no podemos buscar por
+        // email directamente sin un join). Por simplicidad: siempre
+        // mandamos al flujo de completar perfil con name pre-llenado.
+        // Si el usuario YA tiene customer (sabe su phone), el modal lo
+        // detectará al tipearlo y mostrará "Autollenado".
+        const params = new URLSearchParams({
+          oauth: "complete",
+          name: oauthName,
+          ...(email ? { email } : {}),
+        });
+        return NextResponse.redirect(`${origin}/marketplace?${params}`);
+      }
+    } catch {
+      // si falla la lectura del user, seguimos con el redirect normal
+    }
     return NextResponse.redirect(`${origin}${safeNext}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

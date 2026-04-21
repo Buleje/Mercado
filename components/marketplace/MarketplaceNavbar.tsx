@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -30,27 +30,26 @@ import {
   Sparkles,
   Radio,
   Tag,
-  Bell,
   Package,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
-import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
 import { useTheme } from "@/contexts/theme-context";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCustomer } from "@/contexts/customer-context";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
-import LocaleSwitcher from "@/components/ui-system/LocaleSwitcher";
-import CurrencySwitcher from "@/components/ui-system/CurrencySwitcher";
 import DiscoverMegaMenu from "@/components/marketplace/navbar/DiscoverMegaMenu";
+import NotificationsMenu from "@/components/marketplace/NotificationsMenu";
+import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
+import { useNavVisibility } from "@/hooks/use-nav-visibility";
+import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import { useLocale } from "@/contexts/locale-context";
 
-const MarketplaceCheckoutModal = dynamic(
-  () => import("@/components/marketplace/MarketplaceCheckoutModal"),
-  { ssr: false }
-);
+// MarketplaceCheckoutModal y MarketplaceCart sidebar fueron deprecados —
+// ahora el flujo es 100% pages: /marketplace/carrito -> /checkout/datos ->
+// /checkout/entrega -> /checkout/confirmar. El navbar solo navega.
 
 // ── Links transaccionales post-auth ──
 // Prioridad (izq → der): Explorar · Bodegas · Recetas · Descubrí▼ · En Vivo · Ofertas.
@@ -59,6 +58,8 @@ const MarketplaceCheckoutModal = dynamic(
 // `matchEquals` para links exact (evita que "Bodegas" matchee en sub-rutas).
 // `matchPrefix` para links de sección (cubre sub-rutas).
 type NavLink = {
+  /** ID canonico — debe coincidir con NAV_LINK_CATALOG.marketplace[*].id */
+  id: string;
   href: string;
   labelKey: string;
   icon: LucideIcon;
@@ -74,18 +75,21 @@ type NavLink = {
 
 const PRIMARY_LINKS: readonly NavLink[] = [
   {
+    id: "explorar",
     href: "/marketplace/explorar",
     labelKey: "nav.explore",
     icon: Compass,
     matchPrefix: "/marketplace/explorar",
   },
   {
+    id: "bodegas",
     href: "/marketplace",
     labelKey: "nav.stores",
     icon: Store,
     matchEquals: "/marketplace",
   },
   {
+    id: "recetas",
     href: "/recetas",
     labelKey: "nav.recipes",
     icon: ChefHat,
@@ -94,12 +98,14 @@ const PRIMARY_LINKS: readonly NavLink[] = [
   // "Descubrí" se renderiza como mega-menu (DiscoverMegaMenu) con sus propios items.
   // Marker `discover: true` → el map lo salta y DiscoverMegaMenu ocupa ese slot.
   {
+    id: "descubri",
     href: "#discover",
     labelKey: "nav.discover",
     icon: Sparkles,
     discover: true,
   },
   {
+    id: "en-vivo",
     href: "/marketplace/en-vivo",
     labelKey: "nav.live",
     icon: Radio,
@@ -107,6 +113,7 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     showLiveDot: true,
   },
   {
+    id: "ofertas",
     href: "/marketplace/ofertas",
     labelKey: "nav.offers",
     icon: Tag,
@@ -114,6 +121,18 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     // badge "Nuevo" removido 2026-04-18 — llevaba meses, ya no aporta señal.
   },
 ] as const;
+
+/**
+ * Devuelve las iniciales (1 o 2 letras) del nombre del usuario para
+ * mostrar en el avatar del nav. Ej: "Juan Martínez" → "JM", "Ana" → "A".
+ */
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "•";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "•";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
 
 /** Poll `/api/lives/active` cada 60s — dot rojo pulsante si hay live activo. */
 function useActiveLivePoll(): boolean {
@@ -155,31 +174,64 @@ function useScrolledPastThreshold(px: number = 40): boolean {
 }
 
 export default function MarketplaceNavbar() {
-  const [cartOpen, setCartOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const navSearchParams = useSearchParams();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
+  // Cuando volvemos del callback OAuth con `?oauth=complete&name=...`,
+  // pre-llenamos el AuthModal con el nombre del usuario y solo le pedimos
+  // el celular para terminar el registro.
+  const [oauthInitialName, setOauthInitialName] = useState<string | null>(null);
+  useEffect(() => {
+    const oauth = navSearchParams.get("oauth");
+    const oauthName = navSearchParams.get("name");
+    if (oauth === "complete" && oauthName) {
+      setOauthInitialName(oauthName);
+      openAuthModal();
+      // Limpiamos el query param para evitar re-abrir al refresh.
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("oauth");
+        url.searchParams.delete("name");
+        url.searchParams.delete("email");
+        window.history.replaceState({}, "", url.toString());
+      } catch {
+        /* SSR guard */
+      }
+    }
+    // intencional: solo correr al primer mount con los params
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const { count: wishlistCount } = useWishlist();
   const { customer, clear } = useCustomer();
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
   const { t } = useLocale();
   const scrolled = useScrolledPastThreshold(40);
+  const navVisible = useNavScrollHide(80);
   const hasActiveLive = useActiveLivePoll();
+  // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
+  const navVisibility = useNavVisibility("marketplace");
+  const visibleLinks = PRIMARY_LINKS.filter(
+    (l) => navVisibility[l.id] !== false,
+  );
 
-  const handleOpenCart = useCallback(() => setCartOpen(true), []);
-  const handleCloseCart = useCallback(() => setCartOpen(false), []);
-  const handleCloseCheckout = useCallback(() => setCheckoutOpen(false), []);
+  const handleOpenCart = useCallback(() => {
+    router.push("/marketplace/carrito");
+  }, [router]);
 
-  const handleCheckout = useCallback(() => {
-    setCartOpen(false);
-    setCheckoutOpen(true);
-  }, []);
+  // Listener global de back-compat: si algun componente legacy aun dispara
+  // "buleje:open-cart" (ej. el modal de "Agregado al carrito"), lo redirigimos
+  // a la pagina de carrito en lugar de abrir un sidebar.
+  useEffect(() => {
+    const onOpenCart = () => router.push("/marketplace/carrito");
+    window.addEventListener("buleje:open-cart", onOpenCart);
+    return () => window.removeEventListener("buleje:open-cart", onOpenCart);
+  }, [router]);
 
   const handleSearch = useCallback(
     (e: React.FormEvent) => {
@@ -245,10 +297,11 @@ export default function MarketplaceNavbar() {
       <nav
         aria-label="Navegación del marketplace"
         className={cn(
-          "sticky top-0 z-50 transition-[background-color,backdrop-filter,border-color,box-shadow] duration-200",
+          "nav-smooth-transition sticky top-0 z-50",
           scrolled
-            ? "bg-[var(--surface-canvas)]/90 backdrop-blur-md shadow-[var(--shadow-sm)] border-b border-[var(--rule-soft)]"
-            : "bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]",
+            ? "bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-md border-b border-[var(--rule-base)]"
+            : "bg-[var(--surface-raised)] shadow-sm border-b border-[var(--rule-base)]",
+          navVisible ? "translate-y-0" : "-translate-y-full",
         )}
       >
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
@@ -267,33 +320,15 @@ export default function MarketplaceNavbar() {
               />
             </Link>
 
-            {/* ── Search bar (desktop + tablet) ── */}
-            <form
-              onSubmit={handleSearch}
-              role="search"
-              aria-label={t("nav.search")}
-              className="hidden md:block flex-1 max-w-[520px]"
-            >
-              <div className="relative">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
-                  aria-hidden="true"
-                  strokeWidth={1.75}
-                />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("nav.searchPlaceholder")}
-                  aria-label={t("nav.search")}
-                  className="w-full rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
-                />
-              </div>
-            </form>
+            {/* ── Search bar autocomplete (desktop + tablet) ── */}
+            <NavbarSearchAutocomplete
+              className="hidden md:block flex-1 max-w-[680px]"
+              placeholder={t("nav.searchPlaceholder")}
+            />
 
             {/* ── Nav links transaccionales (lg+) ── */}
             <div className="hidden lg:flex items-center gap-0.5">
-              {PRIMARY_LINKS.map((link) => {
+              {visibleLinks.map((link) => {
                 if (link.discover) {
                   return <DiscoverMegaMenu key="discover" variant="desktop" />;
                 }
@@ -334,20 +369,10 @@ export default function MarketplaceNavbar() {
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
-              <div className="hidden xl:flex items-center gap-1">
-                <CurrencySwitcher />
-                <LocaleSwitcher />
-              </div>
+              {/* Currency + Locale switchers removidos — default: Soles (PEN) + Español (es-PE) */}
 
-              {/* Notif bell */}
-              <button
-                type="button"
-                aria-label={t("nav.notifications")}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
-                onClick={() => router.push("/cuenta/notificaciones")}
-              >
-                <Bell className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-              </button>
+              {/* Notif bell dropdown */}
+              <NotificationsMenu />
 
               {/* Cart */}
               <CartBadge onClick={handleOpenCart} />
@@ -358,22 +383,29 @@ export default function MarketplaceNavbar() {
                 aria-hidden="true"
               />
 
-              {/* Auth — Avatar dropdown o Ingresar */}
+              {/* Auth — Avatar circular con iniciales o Ingresar */}
               {customer ? (
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen((o) => !o)}
                     aria-expanded={userMenuOpen}
                     aria-haspopup="true"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 min-h-[40px]"
+                    aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
+                    className="group inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5 pr-3 transition-all hover:border-[var(--accent)] hover:shadow-md"
                   >
-                    <UserCircle className="h-4 w-4" aria-hidden="true" strokeWidth={1.75} />
-                    <span className="max-w-[5.5rem] truncate">
+                    {/* Círculo con iniciales del nombre */}
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-black text-white shadow-sm"
+                    >
+                      {getInitials(customer.name)}
+                    </span>
+                    <span className="hidden sm:inline max-w-[5.5rem] truncate text-sm font-bold text-[var(--text-primary)]">
                       {customer.name?.split(" ")[0] ?? t("nav.account")}
                     </span>
                     <ChevronDown
                       className={cn(
-                        "h-3.5 w-3.5 transition-transform",
+                        "h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform",
                         userMenuOpen && "rotate-180",
                       )}
                       aria-hidden="true"
@@ -586,7 +618,7 @@ export default function MarketplaceNavbar() {
             {/* Scrollable: links + mega-menu + switchers */}
             <div className="flex-1 overflow-y-auto px-3 py-3">
               <div className="space-y-0.5">
-                {PRIMARY_LINKS.map((link) => {
+                {visibleLinks.map((link) => {
                   if (link.discover) return null;
                   const active = isActive(link);
                   const LinkIcon = link.icon;
@@ -634,11 +666,7 @@ export default function MarketplaceNavbar() {
                 />
               </div>
 
-              {/* Separator + Locale/Currency horizontal compact */}
-              <div className="mt-3 flex items-center gap-2 border-t border-[var(--rule-soft)] pt-3">
-                <CurrencySwitcher />
-                <LocaleSwitcher />
-              </div>
+              {/* Currency + Locale switchers removidos — default: Soles + Español */}
             </div>
 
             {/* Footer drawer — auth + theme fijo abajo */}
@@ -747,13 +775,14 @@ export default function MarketplaceNavbar() {
         </div>
       )}
 
-      <MarketplaceCart
-        isOpen={cartOpen}
-        onClose={handleCloseCart}
-        onCheckout={handleCheckout}
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => {
+          setOauthInitialName(null);
+          closeAuthModal();
+        }}
+        initialName={oauthInitialName ?? undefined}
       />
-      <MarketplaceCheckoutModal isOpen={checkoutOpen} onClose={handleCloseCheckout} />
-      <AuthModal open={authModalOpen} onClose={closeAuthModal} />
     </>
   );
 }

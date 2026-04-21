@@ -1,57 +1,48 @@
 "use client";
 
 /**
- * FlashDealsCountdown — Banner claro con timer + grid 6 productos flash.
+ * FlashDealsCountdown — Banner editorial con countdown global + carrusel de
+ * productos flash deals (24h max).
  *
- * Fix 2026-04-18: antes era dark-forzado (bg-gray-900 hardcoded, text-white).
- * Ahora usa tokens del design system → sigue el tema del resto del sitio
- * (claro por default, dark solo en dark mode via dark:). Timer + badges
- * mantienen el teal/amber como acento, pero sobre surface claro.
+ * Estilo Buleje: gradient surface sunken con accent blob, header inline
+ * (Flame icon + h2 + countdown HH:MM:SS tabular-nums), carrusel horizontal
+ * con cards Holded.
+ *
+ * Tokens estrictos. Sin colores hardcoded. Iconos del DS Buleje.
  */
 
 import Link from "next/link";
-import { Zap } from "@buleje/design-system/icons";
+import Image from "next/image";
+import { Flame, Package, Clock } from "@buleje/design-system/icons";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import { cn } from "@/lib/utils";
 import type { Deal } from "@/lib/mock-deals";
 import { useDealsCountdown } from "./useDealsCountdown";
-import {
-  VerduraFresca,
-  CarniceriaFresca,
-  LacteosRefresh,
-  BebidasVarias,
-  LimpiezaDomicilio,
-  PaicheEnOlla,
-} from "@/components/ui-system/illustrations";
-import type { ComponentType, SVGAttributes } from "react";
 
-type IllustrationComponent = ComponentType<{
-  size?: number;
-  strokeWidth?: number;
-  className?: string;
-} & SVGAttributes<SVGSVGElement>>;
+const pen = new Intl.NumberFormat("es-PE", {
+  style: "currency",
+  currency: "PEN",
+});
 
-const CATEGORY_ILLUSTRATION: Record<string, IllustrationComponent> = {
-  abarrotes: LacteosRefresh,
-  frescos: VerduraFresca,
-  bebidas: BebidasVarias,
-  limpieza: LimpiezaDomicilio,
-  lacteos: LacteosRefresh,
-  farmacia: PaicheEnOlla,
-  carnes: CarniceriaFresca,
-};
+function formatHMS(days: number, hours: number, minutes: number, seconds: number): string {
+  if (days > 0) {
+    return `${days}d ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 function CardTimer({ endsAt }: { endsAt: string }) {
   const { hours, minutes, seconds, expired } = useDealsCountdown(endsAt);
-
   if (expired) {
     return (
-      <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] mt-0.5">
-        Oferta vencida
+      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        Vencida
       </span>
     );
   }
-
   return (
-    <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] tabular-nums mt-0.5">
+    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)]">
+      <Clock className="h-3 w-3" strokeWidth={2} aria-hidden />
       {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
     </span>
   );
@@ -62,105 +53,107 @@ interface FlashDealsCountdownProps {
 }
 
 export default function FlashDealsCountdown({ deals }: FlashDealsCountdownProps) {
-  const flash = deals.filter((d) => d.isFlash).slice(0, 6);
+  const flash = deals.filter((d) => d.isFlash).slice(0, 8);
   const firstEndsAt = flash[0]?.endsAt ?? deals[0]?.endsAt ?? "";
-  const { days, hours, minutes, seconds } = useDealsCountdown(firstEndsAt);
+  const { days, hours, minutes, seconds, expired } = useDealsCountdown(firstEndsAt);
 
-  // Si no hay deals, no tiene sentido mostrar el countdown — devolvemos null.
-  if (!firstEndsAt) return null;
+  if (!firstEndsAt || flash.length === 0) return null;
 
   return (
     <section
       aria-labelledby="flash-deals-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      className={cn(
+        "relative w-full py-10 sm:py-14 overflow-hidden",
+        "bg-gradient-to-r from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]",
+      )}
     >
-      {/* Banner header — superficie raised sobre canvas */}
-      <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden">
-        <div className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="h-4 w-4 text-[var(--data-warning)]" strokeWidth={2} aria-hidden="true" />
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
-                Oferta flash de hoy
-              </span>
-            </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 right-0 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+      />
+
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header inline: kicker + h2 + countdown grande */}
+        <header className="mb-8 pb-6 border-b border-[var(--rule-soft)] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-2">
+              <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+              <Flame className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Ofertas relampago
+            </p>
             <h2
               id="flash-deals-heading"
-              className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]"
+              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-[1.05]"
             >
-              Solo 24 horas
+              Termina hoy
             </h2>
+            <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-tertiary)] leading-relaxed max-w-2xl">
+              {flash.length} productos con descuento real. Solo por las proximas horas.
+            </p>
           </div>
 
-          {/* Countdown grande */}
+          {/* Countdown grande tabular-nums */}
           <div
-            className="flex items-center gap-1 sm:gap-2"
-            aria-label={`Tiempo restante: ${days} dias, ${hours} horas, ${minutes} minutos, ${seconds} segundos`}
+            aria-live="polite"
+            aria-label={`Tiempo restante: ${days}d ${hours}h ${minutes}m ${seconds}s`}
+            className="shrink-0 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5"
           >
-            {[
-              { v: days, label: "d" },
-              { v: hours, label: "h" },
-              { v: minutes, label: "m" },
-              { v: seconds, label: "s" },
-            ].map(({ v, label }, i) => (
-              <div key={label} className="flex items-center gap-1 sm:gap-2">
-                {i > 0 && (
-                  <span className="text-xl font-bold text-[var(--text-tertiary)] select-none" aria-hidden="true">:</span>
-                )}
-                <div className="flex flex-col items-center">
-                  <span className="tabular-nums text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight leading-none">
-                    {String(v).padStart(2, "0")}
-                  </span>
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] tracking-widest mt-0.5">
-                    {label}
+            <Clock className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+            <span className="tabular-nums text-2xl sm:text-3xl font-black text-[var(--text-primary)] leading-none tracking-tight">
+              {expired ? "00:00:00" : formatHMS(days, hours, minutes, seconds)}
+            </span>
+          </div>
+        </header>
+
+        {/* Carrusel horizontal con cards Holded */}
+        <HorizontalCarousel ariaLabel="Productos en oferta relampago">
+          {flash.map((deal) => {
+            const ahorro = deal.previousPrice - deal.price;
+            return (
+              <Link
+                key={deal.id}
+                href={`/marketplace/${deal.storeSlug}`}
+                className="group relative block rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5 transition-all duration-300 motion-reduce:hover:translate-y-0"
+              >
+                {/* Badge -X% top-left */}
+                <span className="absolute top-2 left-2 z-10 inline-flex items-center justify-center rounded-md px-2 py-1 text-[length:var(--ts-xs)] font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md">
+                  -{deal.discountPct}%
+                </span>
+
+                {/* Imagen / placeholder */}
+                <div className="relative aspect-square bg-[var(--surface-sunken)]">
+                  <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                    <Package className="h-10 w-10" strokeWidth={1.25} aria-hidden />
                   </span>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Grid productos flash — superficie sunken para contraste sutil */}
-        <div className="border-t border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 sm:px-6 py-5">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {flash.map((deal) => {
-              const Ill = CATEGORY_ILLUSTRATION[deal.category] ?? LacteosRefresh;
-              return (
-                <Link
-                  key={deal.id}
-                  href={`/marketplace/${deal.storeSlug}`}
-                  className="group relative bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl overflow-hidden hover:border-[var(--rule-strong)] transition-all duration-200"
-                >
-                  {/* Badge descuento — acento sobre claro */}
-                  <span className="absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent)] text-white">
-                    -{deal.discountPct}%
-                  </span>
-
-                  {/* Ilustración — fondo neutral claro */}
-                  <div className="aspect-square bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
-                    <Ill size={72} strokeWidth={1.5} />
+                {/* Info */}
+                <div className="p-3">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
+                    {deal.category}
+                  </p>
+                  <p className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem]">
+                    {deal.name}
+                  </p>
+                  <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-through tabular-nums">
+                      {pen.format(deal.previousPrice)}
+                    </span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)]">
+                      Ahorra {pen.format(ahorro)}
+                    </span>
                   </div>
-
-                  {/* Info */}
-                  <div className="p-3">
-                    <h3 className="text-xs font-semibold text-[var(--text-primary)] leading-tight line-clamp-2">
-                      {deal.name}
-                    </h3>
-                    <div className="mt-1.5 flex items-baseline gap-1.5">
-                      <span className="text-sm font-extrabold text-[var(--text-primary)]">
-                        S/{deal.price.toFixed(2)}
-                      </span>
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-through">
-                        S/{deal.previousPrice.toFixed(2)}
-                      </span>
-                    </div>
+                  <p className="text-xl font-black tabular-nums tracking-[-0.02em] text-[var(--accent)] leading-none mt-0.5">
+                    {pen.format(deal.price)}
+                  </p>
+                  <div className="mt-2 pt-2 border-t border-[var(--rule-soft)]">
                     <CardTimer endsAt={deal.endsAt} />
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+                </div>
+              </Link>
+            );
+          })}
+        </HorizontalCarousel>
       </div>
     </section>
   );

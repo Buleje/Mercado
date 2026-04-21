@@ -16,6 +16,7 @@ import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import ExcelProductImporter from "./ExcelProductImporter";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -699,7 +700,7 @@ export default function ProductsAdminTab() {
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -717,7 +718,7 @@ export default function ProductsAdminTab() {
     try {
       const res = await fetch(`/api/products/${p.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ active: !p.active }),
       });
       if (!res.ok) throw new Error();

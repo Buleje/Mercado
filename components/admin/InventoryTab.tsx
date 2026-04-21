@@ -20,6 +20,10 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import KardexModal from "./KardexModal";
 import PriceSparkline from "./inventario/PriceSparkline";
+import ImageWarningBadge from "./inventario/ImageWarningBadge";
+import ImageUploadHints from "./inventario/ImageUploadHints";
+import { validateImageUrl } from "@/lib/image-validators";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { categories } from "@/data/products";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
@@ -235,6 +239,10 @@ export default function InventoryTab() {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  // Bulk clear images
+  const [bulkClearImagesConfirm, setBulkClearImagesConfirm] = useState(false);
+  const [bulkClearingImages, setBulkClearingImages] = useState(false);
+  const [dontAskBulkClear, setDontAskBulkClear] = useState(false);
 
   // Mejora 5 nueva: Auto-reorden config
   const [autoReorderConfigs, setAutoReorderConfigs] = useState<Record<number, { threshold: number; qty: number; supplierId: string }>>(() => {
@@ -269,7 +277,7 @@ export default function InventoryTab() {
   // Context menu state for right-click on product rows
   const [ctxMenu, setCtxMenu] = useState<{ product: DbProduct; x: number; y: number } | null>(null);
 
-  useScrollLock(!!(showAdd || showPicker || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
+  useScrollLock(!!(showAdd || showPicker || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm || bulkClearImagesConfirm));
 
   const handleDbSearch = async () => {
     if (!dbQuery.trim()) return;
@@ -299,9 +307,11 @@ export default function InventoryTab() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      // cache: "no-store" — sin esto el browser cachea la respuesta y los bulk
+      // edits no se reflejan al recargar el listado (bug 2026-04-20 bulk-clear-images).
       const [pRes, mRes] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/inventory-movements"),
+        fetch("/api/products", { cache: "no-store" }),
+        fetch("/api/inventory-movements", { cache: "no-store" }),
       ]);
       if (pRes.ok) setProducts(await pRes.json());
       if (mRes.ok) setMovements(await mRes.json());
@@ -360,7 +370,7 @@ export default function InventoryTab() {
       try {
         const res = await fetch("/api/products", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(body),
         });
         if (res.ok) created++;
@@ -395,7 +405,7 @@ export default function InventoryTab() {
     setSaving(true);
     await fetch(`/api/products/${editModalProduct.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(editForm),
     });
     setSaving(false);
@@ -406,7 +416,7 @@ export default function InventoryTab() {
   const toggleActive = async (p: DbProduct) => {
     await fetch(`/api/products/${p.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ active: !p.active }),
     });
     load();
@@ -422,7 +432,7 @@ export default function InventoryTab() {
       confirmLabel: "Eliminar",
     });
     if (!ok) return;
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    await fetch(`/api/products/${id}`, { method: "DELETE", headers: csrfHeaders() });
     showUndo({
       message: `Producto "${name}" eliminado`,
       detail: "Si fue un error, contacta soporte para restauración.",
@@ -437,7 +447,7 @@ export default function InventoryTab() {
     setSaving(true);
     await fetch("/api/products", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         ...addForm,
         price: Number(addForm.price),
@@ -488,7 +498,7 @@ export default function InventoryTab() {
     try {
       await fetch("/api/products/bulk", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids, fields }),
       });
     } catch { /* ignore */ }
@@ -505,7 +515,7 @@ export default function InventoryTab() {
       const ids = Array.from(selectedIds);
       await fetch("/api/products/bulk", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids }),
       });
     } catch { /* ignore */ }
@@ -513,6 +523,47 @@ export default function InventoryTab() {
     setBulkDeleteConfirm(false);
     clearSelection();
     load();
+  };
+
+  /**
+   * Bulk clear images — limpia el campo `image` de los productos seleccionados.
+   * El producto en si NO se elimina, solo se quita la URL de la imagen para
+   * que el admin pueda re-subirla con los requisitos correctos.
+   *
+   * Nota tecnica 2026-04-20: el endpoint /api/products/bulk acepta
+   * `fields.image: ""` desde el extender del schema. Si recibis 400, revisar
+   * que el dev server haya recargado el schema. El load() usa cache:no-store
+   * para forzar refetch.
+   */
+  const executeBulkClearImages = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkClearingImages(true);
+    let success = false;
+    try {
+      const ids = Array.from(selectedIds);
+      const res = await fetch("/api/products/bulk", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ ids, fields: { image: "" } }),
+      });
+      success = res.ok;
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("[bulk-clear-images] failed", res.status, err);
+      }
+    } catch (e) {
+      console.error("[bulk-clear-images] network error", e);
+    }
+    setBulkClearingImages(false);
+    setBulkClearImagesConfirm(false);
+    if (success) {
+      // Optimistic UI: marcar localmente como sin imagen mientras llega el reload
+      setProducts((prev) =>
+        prev.map((p) => (selectedIds.has(p.id) ? { ...p, image: "" } : p)),
+      );
+    }
+    clearSelection();
+    await load();
   };
 
   // ── Purchase Order Auto-Suggestion ──────────────────────────────────────
@@ -532,7 +583,7 @@ export default function InventoryTab() {
     try {
       await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId: "",
           items: [{
@@ -568,7 +619,7 @@ export default function InventoryTab() {
       });
       await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId: "",
           items,
@@ -1023,7 +1074,10 @@ export default function InventoryTab() {
                   return (
                     <div key={p.id} className="bg-white dark:bg-card border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 flex flex-wrap items-center gap-3">
                       {p.image ? (
-                        <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0" />
+                        <span className="relative inline-block shrink-0">
+                          <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border" />
+                          <ImageWarningBadge image={p.image} />
+                        </span>
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-primary/40" />
@@ -1205,7 +1259,10 @@ export default function InventoryTab() {
                   )}
                   <div className="flex flex-wrap items-start gap-3">
                     {p.image ? (
-                      <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
+                      <span className="relative inline-block shrink-0">
+                        <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface" />
+                        <ImageWarningBadge image={p.image} size="md" />
+                      </span>
                     ) : (
                       <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <Package className="h-6 w-6 text-primary/40" />
@@ -1319,7 +1376,10 @@ export default function InventoryTab() {
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           {p.image ? (
-                            <Image src={p.image} alt={p.name} width={40} height={40} className="w-10 h-10 rounded-md object-cover" />
+                            <span className="relative inline-block shrink-0">
+                              <Image src={p.image} alt={p.name} width={40} height={40} className="w-10 h-10 rounded-md object-cover" />
+                              <ImageWarningBadge image={p.image} />
+                            </span>
                           ) : (
                             <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-surface flex items-center justify-center">
                               <Package className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
@@ -1798,12 +1858,26 @@ export default function InventoryTab() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-2 space-y-3">
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Imagen del producto</label>
+                  <ImageUploadHints />
+                  {(() => {
+                    const validation = validateImageUrl(addForm.image);
+                    if (!validation.valid && addForm.image) {
+                      return (
+                        <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] flex items-center gap-1.5">
+                          <AlertTriangle className="h-3 w-3" strokeWidth={2} aria-hidden />
+                          {validation.reason}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                   <div className="flex flex-wrap gap-3 items-start">
                     {addForm.image && (
                       <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
                         <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
+                        <ImageWarningBadge image={addForm.image} size="md" />
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5">
@@ -1819,13 +1893,13 @@ export default function InventoryTab() {
                       <input
                         value={addForm.image}
                         onChange={(e) => setAddForm(f => ({ ...f, image: e.target.value }))}
-                        placeholder="o pegar URL de imagen"
+                        placeholder="o pegar URL de imagen (PNG con fondo transparente)"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm"
                       />
                       <input
                         ref={addImgRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/png,image/webp,image/svg+xml"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -2063,7 +2137,7 @@ export default function InventoryTab() {
               const ids = Array.from(selectedIds);
               await fetch("/api/products/bulk", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: csrfHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ ids, fields: { active: true } }),
               });
               clearSelection();
@@ -2078,7 +2152,7 @@ export default function InventoryTab() {
               const ids = Array.from(selectedIds);
               await fetch("/api/products/bulk", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: csrfHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ ids, fields: { active: false } }),
               });
               clearSelection();
@@ -2087,6 +2161,23 @@ export default function InventoryTab() {
             className="px-3 py-1.5 rounded-lg bg-gray-500/80 hover:bg-gray-500 text-xs font-semibold transition-colors flex items-center gap-1"
           >
             <EyeOff className="h-3 w-3" /> Desactivar
+          </button>
+          <button
+            onClick={() => {
+              // Si el user marco "no preguntar" antes, ejecutar directo
+              const skip =
+                typeof window !== "undefined" &&
+                localStorage.getItem("admin-skip-bulk-clear-images-confirm") === "1";
+              if (skip) {
+                executeBulkClearImages();
+              } else {
+                setBulkClearImagesConfirm(true);
+              }
+            }}
+            className="px-3 py-1.5 rounded-lg bg-[var(--data-warning)]/80 hover:bg-[var(--data-warning)] text-xs font-semibold transition-colors flex items-center gap-1"
+            title="Quita la imagen de los productos seleccionados (no los elimina)"
+          >
+            <Camera className="h-3 w-3" /> Quitar imágenes
           </button>
           <button
             onClick={() => setBulkDeleteConfirm(true)}
@@ -2098,6 +2189,61 @@ export default function InventoryTab() {
             className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold transition-colors">
             Limpiar
           </button>
+        </div>
+      )}
+
+      {/* Bulk clear images confirmation modal */}
+      {bulkClearImagesConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[var(--data-warning-100)] dark:bg-orange-950/30">
+                  <Camera className="h-5 w-5 text-[var(--data-warning)]" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-bold text-foreground">Quitar imágenes</CardTitle>
+                  <p className="text-sm text-muted">Solo borra la imagen, no el producto</p>
+                </div>
+              </div>
+              <p className="text-sm text-foreground">
+                ¿Quitar la imagen de <strong>{selectedIds.size}</strong> producto{selectedIds.size > 1 ? "s" : ""}?
+                Los productos siguen activos pero quedan sin imagen hasta que subas una nueva con
+                fondo transparente.
+              </p>
+              <label className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={dontAskBulkClear}
+                  onChange={(e) => setDontAskBulkClear(e.target.checked)}
+                  className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
+                />
+                <span>No volver a preguntar (puedo deshacer desde la cuenta)</span>
+              </label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setBulkClearImagesConfirm(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    if (dontAskBulkClear) {
+                      try {
+                        localStorage.setItem("admin-skip-bulk-clear-images-confirm", "1");
+                      } catch { /* silent */ }
+                    }
+                    executeBulkClearImages();
+                  }}
+                  disabled={bulkClearingImages}
+                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-warning)] hover:bg-[var(--data-warning)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {bulkClearingImages ? "Quitando…" : `Sí, quitar ${selectedIds.size}`}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

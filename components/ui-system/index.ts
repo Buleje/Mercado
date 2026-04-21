@@ -24,6 +24,7 @@ export { Divider } from "./Divider";
 // ENRICH-1 — Cross-link + navegación
 export { default as Breadcrumbs, type BreadcrumbItem, type BreadcrumbsProps } from "./Breadcrumbs";
 export { default as RelatedFeatures } from "./RelatedFeatures";
+export { SkipLink } from "./SkipLink";
 
 // Brand icons — v4 (20 custom SVG)
 export {

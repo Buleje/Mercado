@@ -1,13 +1,23 @@
+/**
+ * scripts/generate-openapi.ts
+ *
+ * Genera openapi.json en la raíz del proyecto.
+ *
+ * Uso:
+ *   npm run openapi:gen
+ */
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { generateOpenAPIDoc } from "../lib/openapi/generator";
 
-const outputDir = join(process.cwd(), "public");
-const outputPath = join(outputDir, "openapi.json");
-
-mkdirSync(outputDir, { recursive: true });
+const rootDir    = process.cwd();
+const outputPath = join(rootDir, "openapi.json");
 
 const doc = generateOpenAPIDoc();
-writeFileSync(outputPath, JSON.stringify(doc, null, 2), "utf-8");
+const json = JSON.stringify(doc, null, 2);
 
-console.log(`OpenAPI spec generado en: ${outputPath}`);
+writeFileSync(outputPath, json, "utf-8");
+
+const sizeKB = (Buffer.byteLength(json, "utf-8") / 1024).toFixed(1);
+console.log(`OpenAPI 3.1 spec generado en: ${outputPath} (${sizeKB} KB)`);
+console.log(`Paths registrados: ${Object.keys(doc.paths ?? {}).length}`);

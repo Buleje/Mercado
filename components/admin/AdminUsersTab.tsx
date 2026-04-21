@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type AdminUserRow = {
   id: string;
@@ -107,7 +108,7 @@ export default function AdminUsersTab() {
     try {
       const res = await fetch("/api/admin-users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           username: form.username.trim(),
           password: form.password,
@@ -136,7 +137,7 @@ export default function AdminUsersTab() {
     try {
       const res = await fetch(`/api/admin-users/${selectedUser.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ role: form.role, name: form.name.trim(), active: form.active }),
       });
       const data = await res.json();
@@ -160,7 +161,7 @@ export default function AdminUsersTab() {
     try {
       const res = await fetch(`/api/admin-users/${selectedUser.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ password: form.password }),
       });
       const data = await res.json();

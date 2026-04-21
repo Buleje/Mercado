@@ -174,6 +174,8 @@ export function EnVivoClient() {
       </main>
 
       <RelatedFeatures features={relatedFor("en-vivo")} />
+
+      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
     </div>
   );
 }

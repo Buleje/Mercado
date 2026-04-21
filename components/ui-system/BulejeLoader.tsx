@@ -48,13 +48,15 @@ interface Props {
 }
 
 const LOGO_SIZE = { sm: 40, md: 64, lg: 96 } as const;
-const PAICHE_SIZE = { sm: 80, md: 140, lg: 200 } as const;
+// Paiche más grande y presente — se percibe como identidad amazónica, no
+// como decoración chica. Duplicamos el tamaño previo (2026-04-20).
+const PAICHE_SIZE = { sm: 140, md: 240, lg: 360 } as const;
 
 export function BulejeLoader({
   label = "Cargando",
   size = "md",
   inline = false,
-  variant = "mark",
+  variant = "paiche",
   className,
 }: Props) {
   const [dots, setDots] = useState("");

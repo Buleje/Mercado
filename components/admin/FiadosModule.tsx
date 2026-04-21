@@ -21,6 +21,7 @@ import { exportToExcel } from "@/lib/export-excel";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
+import { csrfHeaders } from "@/lib/csrf-client";
 const FiadoFormModal = dynamic(() => import("./fiados/FiadoFormModal"), { ssr: false });
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
@@ -398,7 +399,7 @@ export default function FiadosModule() {
     try {
       const res = await fetch("/api/fiados", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           customerId: quickFiadoForm.nombre.trim(),
           total: monto,
@@ -601,7 +602,7 @@ export default function FiadosModule() {
       if (desc) body.descripcion = desc;
       if (newForm.fechaVence) body.fechaVence = new Date(newForm.fechaVence).toISOString();
 
-      const res = await fetch("/api/fiados", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch("/api/fiados", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error al crear" }));
         throw new Error(err.error || "Error al crear fíado");
@@ -632,7 +633,7 @@ export default function FiadosModule() {
 
       const res = await fetch(`/api/fiados/${selected.id}/pagar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -706,7 +707,7 @@ export default function FiadosModule() {
       const payments = distribution.map(d => ({ fiadoId: d.fiadoId, monto: d.pago }));
       const res = await fetch("/api/fiados/cobro-masivo", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ payments }),
       });
       if (!res.ok) {

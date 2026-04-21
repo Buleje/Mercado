@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import type { PreviewData } from "./useCierreDiario";
 
 type Props = {

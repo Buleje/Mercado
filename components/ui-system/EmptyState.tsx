@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * components/ui-system/EmptyState.tsx — VARIANTE DS (eyebrow + action slots).
+ *
+ * ⚠️  OJO: existen 3 EmptyState con APIs distintas:
+ *   - components/admin/EmptyState.tsx         (`actions[]` array)
+ *   - components/admin/shared/EmptyState.tsx  (SVG illustrations + `variant`)
+ *   - components/ui-system/EmptyState.tsx     ← este (slots eyebrow/action)
+ *
+ * Esta versión es la canonical del design system (ADR-068). Úsala en páginas
+ * nuevas del marketplace y tienda. NO es intercambiable con las admin.
+ *
+ * Audit: `npm run dev:duplicates`.
+ */
+
 import { cn } from "@/lib/utils";
 
 interface Props {

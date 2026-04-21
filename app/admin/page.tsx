@@ -29,7 +29,7 @@ import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
-import { AdminSubSidebar } from "@/components/admin/layout/AdminSubSidebar";
+import { _AdminSubSidebar } from "@/components/admin/layout/AdminSubSidebar";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
 // AdminCommandPalette, AdminGlobalModals and AdminOverlaysLayer are not on the
@@ -119,7 +119,7 @@ function AdminPage() {
     activeTenantLogo, handleExit: handleExitImpersonation,
   } = useImpersonation();
 
-  const { toggle: toggleTheme } = useTheme();
+  const { toggle: toggleTheme, resolved: resolvedTheme, theme: themeMode, setTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
   const _webhookPendingCount = useWebhookPendingCount(userRole, authReady);
   void _webhookPendingCount;
@@ -244,7 +244,9 @@ function AdminPage() {
         }}
       />
 
-      <div className={cn(
+      <div
+        data-dark-fallback
+        className={cn(
         "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
         presentationMode ? "sm:ml-0"
           : focusMode ? "sm:ml-16"
@@ -254,6 +256,8 @@ function AdminPage() {
           presentationMode={presentationMode}
           isSuperAdminImpersonating={isSuperAdminImpersonating}
           focusMode={focusMode}
+          resolvedTheme={resolvedTheme}
+          themeMode={themeMode}
           userName={userName}
           userRole={userRole}
           onOpenMobileNav={() => setMobileNavOpen(true)}
@@ -261,6 +265,8 @@ function AdminPage() {
           onOpenCierreDiario={() => setShowCierreDiario(true)}
           onToggleFocus={toggleFocusMode}
           onTogglePresentation={() => setPresentationMode(true)}
+          onToggleTheme={toggleTheme}
+          onSetTheme={setTheme}
           onNavigate={(t) => navigateTab(t as Tab)}
           onLogout={handleLogout}
         />

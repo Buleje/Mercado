@@ -3,11 +3,14 @@ import { Suspense } from "react";
 import { Geist, Instrument_Serif } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
+// preload: false silencia el warning "preloaded but not used within a few
+// seconds" que se dispara cuando la navegación client-side retrasa el uso
+// inicial de la fuente. display:swap mantiene FOUT instantáneo.
 const GeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
-  preload: true,
+  preload: false,
 });
 
 // Display — Instrument Serif: serif contemporáneo con carácter editorial.
@@ -38,6 +41,7 @@ import { CurrencyProvider } from "@/contexts/currency-context";
 import CommandPalette from "@/components/CommandPalette";
 import ClientEffects from "@/components/ui/ClientEffects";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+import { SkipLink } from "@/components/ui-system/SkipLink";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -244,6 +248,8 @@ export default async function RootLayout({
         
       </head>
       <body className={`antialiased ${GeistSans.className}`}>
+        {/* Skip-link WCAG 2.4.1 — primer tabulable del body (ADR-075 tokens DS). */}
+        <SkipLink />
         <ThemeProvider>
         <LocaleProvider>
         <CurrencyProvider>
@@ -252,13 +258,6 @@ export default async function RootLayout({
         <SmoothScrollProvider />
         {/* Global interactive UX layer */}
         <ClientEffects />
-        {/* Skip to content — accesibilidad */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-100 focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-bold"
-        >
-          Ir al contenido principal
-        </a>
         <ServiceWorkerRegistrar />
         <InstallPrompt />
         <CommandPalette />

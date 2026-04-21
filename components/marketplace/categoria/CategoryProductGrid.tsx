@@ -8,6 +8,9 @@
  * resto del marketplace. Container expandido a max-w-[1600px] por pedido
  * del user ("las secciones seran mas amplias abarcando todo el ancho").
  *
+ * Cards ahora tienen botón "Agregar al carrito" que usa `useMarketplaceCart`
+ * (click directo en la card sin abrir drawer — mismo UX que Explorar).
+ *
  * Grid responsivo: 2 col mobile / 3 tablet / 4 desktop / 5 xl.
  * Cuando no hay resultados: EmptyState con CanastaVacia + CTA reset.
  */
@@ -21,6 +24,9 @@ import type {
   CategoriaDef,
 } from "@/lib/constants/marketplace-categories";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCartQuantityMap } from "@/hooks/use-cart-quantity-map";
+import { useAddedToCartDrawer } from "@/components/marketplace/AddedToCartDrawer";
 
 interface CategoryProductGridProps {
   products: CatalogProduct[];
@@ -76,6 +82,10 @@ export default function CategoryProductGrid({
   products,
   categoria,
 }: CategoryProductGridProps) {
+  const { addItem } = useMarketplaceCart();
+  const { open: openAddedModal } = useAddedToCartDrawer();
+  const cartQty = useCartQuantityMap();
+
   if (products.length === 0) {
     return <EmptyState categoria={categoria} />;
   }
@@ -91,6 +101,33 @@ export default function CategoryProductGrid({
             href: `/marketplace/${p.storeSlug}/producto/${p.productId}`,
           })}
           renderImage={p.image ? nextImage : undefined}
+          quantityInCart={cartQty.get(p.storeProductId) ?? 0}
+          onAddToCart={() => {
+            // Mismo flujo que en la página de bodegas: agrega 1 al carrito +
+            // dispara el MODAL CENTRAL (no un drawer lateral) con resumen.
+            addItem({
+              storeId: p.storeId,
+              storeName: p.storeName,
+              storeSlug: p.storeSlug,
+              storeProductId: p.storeProductId,
+              productId: p.productId,
+              name: p.name,
+              price: p.price,
+              image: p.image ?? null,
+              unit: p.unit ?? null,
+            });
+            openAddedModal({
+              storeId: p.storeId,
+              storeName: p.storeName,
+              storeSlug: p.storeSlug,
+              productId: p.productId,
+              storeProductId: p.storeProductId,
+              name: p.name,
+              price: p.price,
+              image: p.image,
+              unit: p.unit,
+            });
+          }}
         />
       ))}
     </div>

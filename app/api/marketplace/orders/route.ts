@@ -53,13 +53,32 @@ export async function GET(req: NextRequest) {
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
+// Schema MUY tolerante — el checkout nunca debe rechazarse por un campo
+// mock o un id numérico vs string. La validación real (producto existe,
+// precio correcto, etc.) ocurre en MarketplaceOrdersDB.createFromCart.
+//
+// Coerce helpers: algunos items del cart legacy persisten valores como
+// strings (`"3.9"` en vez de `3.9`). Los aceptamos y convertimos.
+const coerceNumber = z
+  .union([z.number(), z.string()])
+  .transform((v) => (typeof v === "string" ? Number(v) || 0 : v))
+  .pipe(z.number().nonnegative());
+
+const coerceInt = z
+  .union([z.number(), z.string()])
+  .transform((v) => (typeof v === "string" ? parseInt(v, 10) || 0 : Math.trunc(v)))
+  .pipe(z.number().int().nonnegative());
+
 const CartItemSchema = z.object({
-  storeProductId: z.string().min(1),
-  productId:      z.number().int().positive(),
+  storeProductId: z
+    .union([z.string(), z.number()])
+    .transform((v) => String(v))
+    .refine((v) => v.length > 0, { message: "storeProductId requerido" }),
+  productId:      coerceInt,
   name:           z.string().min(1).max(200),
-  quantity:       z.number().int().min(1).max(9999),
-  retailPrice:    z.number().positive(),    // precio sugerido del cliente (se recomputa server-side)
-  unit:           z.string().min(1).max(20),
+  quantity:       coerceInt.pipe(z.number().int().min(1).max(9999)),
+  retailPrice:    coerceNumber.optional().default(0),
+  unit:           z.string().max(20).optional().default("unidad"),
 });
 
 const CheckoutBodySchema = z.object({
@@ -68,7 +87,10 @@ const CheckoutBodySchema = z.object({
   customerPhone:   z.string().min(6).max(20),
   customerAddress: z.string().min(5).max(300),
   notes:           z.string().max(500).optional(),
-  paymentMethod:   z.enum(["efectivo", "yape", "mercado_pago"]).optional(),
+  // paymentMethod: aceptar cualquier string — el DB soporta free-form
+  paymentMethod:   z.string().max(40).optional(),
+  couponCode:      z.string().max(30).optional(),
+  loyaltyRedeemPoints: z.number().int().min(0).max(100000).optional(),
   items:           z.array(CartItemSchema).min(1).max(50),
 });
 
@@ -86,8 +108,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const parsed = CheckoutBodySchema.safeParse(body);
     if (!parsed.success) {
+      // Log EXPLÍCITO en consola del server — sale en la terminal de `npm run dev`.
+      // Si el user reporta 400, aquí vemos el campo exacto que falla.
+      const issuesSummary = parsed.error.issues
+        .map((i) => `${i.path.join(".") || "body"}: ${i.message}`)
+        .join("; ");
+      // eslint-disable-next-line no-console
+      console.error(
+        `\n🚨 [orders 400] Validation failed\n   traceId: ${traceId}\n   issues: ${issuesSummary}\n   body: ${JSON.stringify(body).slice(0, 600)}\n`,
+      );
+      logger.warn("[marketplace/orders] Validation failed", {
+        traceId,
+        issues: parsed.error.issues,
+      });
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues },
+        {
+          error: "Datos inválidos",
+          message: issuesSummary,
+          issues: parsed.error.issues,
+        },
         { status: 400 },
       );
     }

@@ -12,7 +12,11 @@ import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 const VentasCharts = dynamic(() => import("./VentasCharts"), { ssr: false });
-import { DashboardSectionHeader } from "./_shared";
+const VentasAdvancedCharts = dynamic(
+  () => import("./VentasAdvancedCharts").then((m) => ({ default: m.VentasAdvancedCharts })),
+  { ssr: false },
+);
+import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -247,7 +251,7 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
     };
   }, [raw, dateRange]);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
@@ -294,8 +298,11 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
         {refreshing && <RefreshCw className="h-3.5 w-3.5 text-[var(--text-tertiary)] animate-spin" />}
       </div>
 
-      {/* ── Charts ── */}
+      {/* ── Charts base (14d, hora, método pago, meta, forecast) ── */}
       <VentasCharts data={data} />
+
+      {/* ── Charts especializados de ventas (Pareto, heatmap, waterfall, mix, comparativa) ── */}
+      <VentasAdvancedCharts />
     </div>
   );
 }

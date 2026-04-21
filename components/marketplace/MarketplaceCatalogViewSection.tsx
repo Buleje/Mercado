@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import PersonalizedRecommendations from "@/components/marketplace/PersonalizedRecommendations";
 import CatalogSections from "@/components/marketplace/CatalogSections";
 
 /* ── Catalog skeleton — shown while CatalogView bundle loads ───────────────── */
@@ -55,8 +54,7 @@ export default function MarketplaceCatalogViewSection({
         <CatalogSections />
       </div>
 
-      {/* ── C2: Recomendaciones personalizadas ── */}
-      <PersonalizedRecommendations />
+      {/* Sección "Para vos" removida por pedido del usuario (2026-04-21) */}
 
       {/* ── CatalogView — filtered product grid ── */}
       <CatalogView

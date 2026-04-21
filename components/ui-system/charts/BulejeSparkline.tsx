@@ -33,7 +33,7 @@ export function BulejeSparkline({
 
   return (
     <div style={{ width, height }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <LineChart data={formatted} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
           <YAxis hide domain={["dataMin", "dataMax"]} />
           <Line

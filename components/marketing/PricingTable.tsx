@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import { PLANS, PLAN_ORDER, type PlanId } from "@/lib/plans";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -175,11 +175,9 @@ export default function PricingTable({
           );
 
           return (
-            <motion.div
+            <RevealOnScroll
               key={planId}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: index * 0.07 }}
+              delayMs={index * 70}
               className={`relative flex flex-col rounded-2xl bg-card p-6 ring-1 dark:bg-card ${styles.ring} ${
                 isSelected ? "ring-2" : ""
               } ${isPopular ? "ring-2 shadow-lg shadow-primary/10" : ""}`}
@@ -258,7 +256,7 @@ export default function PricingTable({
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </RevealOnScroll>
           );
         })}
       </div>

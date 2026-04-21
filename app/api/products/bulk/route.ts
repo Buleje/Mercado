@@ -23,6 +23,8 @@ const BulkUpdateSchema = z.object({
     category: z.string().min(1).max(100).optional(),
     active: z.boolean().optional(),
     badge: z.string().max(50).nullable().optional(),
+    /** Permite borrar imagenes en bulk: pasar { image: "" } o { image: null }. */
+    image: z.string().nullable().optional(),
   }).refine(
     (f) => Object.values(f).some((v) => v !== undefined),
     { message: "At least one field to update is required" },
@@ -76,6 +78,8 @@ export async function POST(req: NextRequest) {
       if (fields.category !== undefined) data.category = fields.category;
       if (fields.active !== undefined) data.active = fields.active;
       if (fields.badge !== undefined) data.badge = fields.badge;
+      // image: null o "" limpian la URL guardada — usado por bulk "Quitar imagenes"
+      if (fields.image !== undefined) data.image = fields.image ?? "";
 
       const result = await prisma.product.updateMany({
         where: { id: { in: ids } },

@@ -32,9 +32,15 @@ function getSystemTheme(): Resolved {
 function applyDom(resolved: Resolved) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
+  // Smooth theme transition — adds transition class 200ms, then removes to avoid
+  // interfering with page animations. See globals.css `.theme-transition` rule.
+  root.classList.add("theme-transition");
   if (resolved === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
   root.style.colorScheme = resolved;
+  window.setTimeout(() => {
+    root.classList.remove("theme-transition");
+  }, 220);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

@@ -117,7 +117,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
 
   return (
     <div className={className}>
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} minWidth={0}>
         <ComposedChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
           {showGrid && (
             <CartesianGrid

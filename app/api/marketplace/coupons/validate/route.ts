@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
@@ -15,6 +16,10 @@ const ValidateSchema = z.object({
  * Público: valida un cupón para el marketplace checkout.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit: anti-enum attack para descubrir codigos validos (20 / 15min / IP)
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-coupons-validate");
+  if (rl) return rl;
+
   const traceId = newTraceId();
   try {
     const body = await req.json();

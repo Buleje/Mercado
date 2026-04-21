@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" role="img" aria-label="Jabon Bolivar">
+  <rect width="300" height="300" fill="#fef3c7"/>
+  <rect x="80" y="110" width="140" height="90" rx="12" fill="#eab308" stroke="#713f12" stroke-width="2"/>
+  <rect x="95" y="130" width="110" height="50" rx="4" fill="#ffffff" opacity="0.9"/>
+  <text x="150" y="155" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="#713f12">JABON</text>
+  <text x="150" y="172" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#854d0e">BOLIVAR</text>
+  <text x="150" y="240" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#713f12">250 g</text>
+</svg>

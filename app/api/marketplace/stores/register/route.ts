@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const BodySchema = z.object({
@@ -21,6 +22,10 @@ const BodySchema = z.object({
 // La tienda queda como isPublished=false hasta que un admin la apruebe.
 
 export async function POST(req: NextRequest) {
+  // Rate limit: anti-spam signup tienda (5 attempts / 15min / IP)
+  const rl = applyRateLimit(req, "STRICT", "marketplace-stores-register");
+  if (rl) return rl;
+
   const traceId = newTraceId();
   try {
     const auth = await requireAdmin(req, ["admin", "owner"]);

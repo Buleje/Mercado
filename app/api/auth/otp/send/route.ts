@@ -4,6 +4,7 @@ import { z } from "zod";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { storeOtp } from "@/lib/auth/otp-store";
 import { logger } from "@/lib/logger";
+import { sendSms, isTwilioConfigured } from "@/lib/twilio";
 
 // Esquema: acepta 9 digitos peruanos (con o sin prefijo +51 / 51)
 const SendOtpSchema = z.object({
@@ -86,14 +87,48 @@ export async function POST(req: Request) {
   // 4. Almacenar OTP (TTL 5 min, single-use)
   storeOtp(phone, code);
 
-  // 5. Envio (dev: solo log; prod: aqui va el proveedor WhatsApp/SMS)
-  if (process.env.NODE_ENV !== "production") {
-    logger.info(`[OTP/send] [DEV] Codigo para +51${phone}: ${code}`, { phone });
-    console.info(`\n  OTP DEV ▶  +51 ${phone}  →  ${code}\n`);
-  } else {
-    // TODO: integrar proveedor (Twilio / Meta Cloud API / etc.)
-    logger.info("[OTP/send] Codigo generado y listo para envio", { phone });
+  // 5. Envio — Twilio SMS (prod y dev si hay credenciales).
+  //    Si Twilio NO está configurado, fallback a log en consola (solo dev).
+  const isDev = process.env.NODE_ENV !== "production";
+
+  if (isTwilioConfigured()) {
+    const smsBody = `Tu codigo Buleje: ${code}. Expira en 5 min. No lo compartas.`;
+    const result = await sendSms({
+      to: `+51${phone}`,
+      body: smsBody,
+    });
+
+    if (!result.ok) {
+      logger.error("[OTP/send] Twilio falló", { phone, reason: result.reason, error: result.error });
+      // En dev seguimos devolviendo ok y logueamos el código para que el user
+      // pueda seguir probando sin SMS. En prod retornamos 502.
+      if (isDev) {
+        console.info(`\n  OTP DEV (twilio falló) ▶  +51 ${phone}  →  ${code}\n`);
+        return NextResponse.json({
+          ok: true,
+          message: "Codigo generado (revisa la consola — SMS falló)",
+        });
+      }
+      return NextResponse.json(
+        { error: "No pudimos enviar el SMS. Intenta de nuevo en unos minutos." },
+        { status: 502 },
+      );
+    }
+
+    logger.info("[OTP/send] SMS enviado por Twilio", { phone, sid: result.sid });
+    return NextResponse.json({ ok: true, message: "Codigo enviado por SMS" });
   }
 
-  return NextResponse.json({ ok: true, message: "Codigo enviado" });
+  // Fallback: Twilio no configurado. En dev escribimos a consola; en prod error.
+  if (isDev) {
+    logger.info(`[OTP/send] [DEV] Codigo para +51${phone}: ${code}`, { phone });
+    console.info(`\n  OTP DEV ▶  +51 ${phone}  →  ${code}\n`);
+    return NextResponse.json({ ok: true, message: "Codigo enviado (modo DEV — revisa consola)" });
+  }
+
+  logger.error("[OTP/send] Twilio no configurado en producción", { phone });
+  return NextResponse.json(
+    { error: "Servicio de SMS no disponible. Contacta soporte." },
+    { status: 503 },
+  );
 }

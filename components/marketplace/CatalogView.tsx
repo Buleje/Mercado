@@ -188,45 +188,54 @@ export default function CatalogView({
 
   return (
     <div className="space-y-4">
-      {/* Sort pills */}
+      {/* Sort pills — grandes, accent token, estilo Holded (sin sombras) */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <span className="hidden sm:inline-flex items-center text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mr-2 shrink-0">
+          Ordenar por
+        </span>
         {SORT_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             onClick={() => setSort(opt.id)}
+            aria-pressed={sort === opt.id}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0",
+              "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-semibold whitespace-nowrap border transition-colors shrink-0",
               sort === opt.id
-                ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
-                : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary/40 hover:text-primary"
+                ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
             )}
           >
-            {opt.icon}
+            <span className="[&>svg]:h-4 [&>svg]:w-4">{opt.icon}</span>
             {opt.label}
           </button>
         ))}
       </div>
 
-      {/* Category filter pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        {PRODUCT_CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setProductCategory(cat.id)}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-semibold whitespace-nowrap border transition-all shrink-0",
-              productCategory === cat.id
-                ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
-                : "bg-white dark:bg-card text-gray-500 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-400"
-            )}
-          >
-            {(() => {
-              const CatIcon = getProductCategoryIcon(cat.id);
-              return <CatIcon className="h-3 w-3" strokeWidth={1.75} />;
-            })()}
-            {cat.label}
-          </button>
-        ))}
+      {/* Category filter pills — grandes y consistentes con sort pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <span className="hidden sm:inline-flex items-center text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mr-2 shrink-0">
+          Categoria
+        </span>
+        {PRODUCT_CATEGORIES.map((cat) => {
+          const isActive = productCategory === cat.id;
+          const CatIcon = getProductCategoryIcon(cat.id);
+          return (
+            <button
+              key={cat.id}
+              onClick={() => setProductCategory(cat.id)}
+              aria-pressed={isActive}
+              className={cn(
+                "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-semibold whitespace-nowrap border transition-colors shrink-0",
+                isActive
+                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+              )}
+            >
+              <CatIcon className="h-4 w-4" strokeWidth={1.75} />
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Result count */}

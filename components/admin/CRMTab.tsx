@@ -18,6 +18,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import Customer360Tab from "./Customer360Tab";
 import ClienteFormModal from "./clientes/ClienteFormModal";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -274,7 +275,7 @@ export default function CRMTab() {
     try {
       const res = await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ creditLimit: limit }),
       });
       if (!res.ok) return;

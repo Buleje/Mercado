@@ -26,6 +26,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
 import type { CategoriaDef, CatalogProduct } from "@/lib/constants/marketplace-categories";
+import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import CategoryHero from "./CategoryHero";
 import CategoryFilters, { type CategoryFiltersState } from "./CategoryFilters";
 import CategoryToolbar, { type CategorySortKey } from "./CategoryToolbar";
@@ -46,19 +47,22 @@ interface CategoriaClientProps {
   initialProducts: CatalogProduct[];
   initialTotal: number;
   storesFacet: StoreFacet[];
+  /** Query inicial pasada por searchParam ?q= — filtra el listado por
+   *  nombre/descripción adicionalmente al filtro de categoría. */
+  initialQuery?: string;
 }
 
 function CategoryBreadcrumb({ label }: { label: string }) {
   return (
     <nav
       aria-label="Ruta de navegacion"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6"
     >
-      <ol className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+      <ol className="flex items-center gap-1.5 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
         <li>
           <Link
             href="/marketplace"
-            className="hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="hover:text-[var(--text-primary)] transition-colors"
           >
             Inicio
           </Link>
@@ -69,7 +73,7 @@ function CategoryBreadcrumb({ label }: { label: string }) {
         <li>
           <Link
             href="/marketplace/explorar"
-            className="hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="hover:text-[var(--text-primary)] transition-colors"
           >
             Explorar
           </Link>
@@ -79,7 +83,7 @@ function CategoryBreadcrumb({ label }: { label: string }) {
         </li>
         <li
           aria-current="page"
-          className="text-gray-900 dark:text-white font-semibold"
+          className="text-[var(--text-primary)] font-semibold"
         >
           {label}
         </li>
@@ -178,22 +182,34 @@ export default function CategoriaClient({
   initialProducts,
   initialTotal,
   storesFacet,
+  initialQuery,
 }: CategoriaClientProps) {
   const [filters, setFilters] = useState<CategoryFiltersState>(INITIAL_FILTERS);
   const [sort, setSort] = useState<CategorySortKey>("relevance");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  // Filtro adicional por texto libre (vino del search del navbar via ?q=)
+  const [query, setQuery] = useState<string>(initialQuery?.trim() ?? "");
 
-  const filteredProducts = useMemo(
-    () => applyFilters(initialProducts, filters, sort),
-    [initialProducts, filters, sort],
-  );
+  const filteredProducts = useMemo(() => {
+    let out = applyFilters(initialProducts, filters, sort);
+    const needle = query.trim().toLowerCase();
+    if (needle) {
+      out = out.filter(
+        (p) =>
+          p.name.toLowerCase().includes(needle) ||
+          p.category.toLowerCase().includes(needle),
+      );
+    }
+    return out;
+  }, [initialProducts, filters, sort, query]);
 
   const uniqueStoreCount = useMemo(() => {
     return new Set(initialProducts.map((p) => p.storeId)).size;
   }, [initialProducts]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      <ExplorarTracker pageName={`marketplace_categoria_${slug}`} />
       <CategoryBreadcrumb label={categoria.label} />
 
       <CategoryHero
@@ -201,6 +217,24 @@ export default function CategoriaClient({
         productCount={initialTotal}
         storeCount={uniqueStoreCount}
       />
+
+      {/* Chip "Buscando: <query>" — visible si el usuario llegó con ?q=  */}
+      {query.length > 0 && (
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm">
+            <span className="text-[var(--text-tertiary)]">Buscando:</span>
+            <strong className="text-[var(--accent)]">"{query}"</strong>
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Quitar filtro de búsqueda"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Layout 2 columnas (sidebar + main) */}
       {/* max-w-[1600px] (Ola 7) — secciones amplias para mas productos visibles */}
@@ -243,6 +277,8 @@ export default function CategoriaClient({
         categorySlug={slug}
         categoryLabel={categoria.label}
       />
+
+      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
 
       {/* Mobile drawer overlay */}
       {mobileFiltersOpen && (

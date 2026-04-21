@@ -1,9 +1,9 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { RefreshCw, Settings, Check, X, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
+import { RefreshCw, Settings, Check, X, TrendingUp, TrendingDown, Minus, BarChart3 } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -344,33 +344,29 @@ export default function ConfigurableKPIDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
-            Dashboard de KPIs
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-tertiary)] flex items-center gap-1">
+    <div className="space-y-3 sm:space-y-6">
+      <AdminModuleHeader
+        eyebrow="Indicadores · KPIs configurables"
+        title="Dashboard de KPIs"
+        description="Haz clic en cualquier meta para editarla — se guarda automaticamente. Refresco cada 5 min."
+        icon={BarChart3}
+      >
+        {lastUpdated && (
+          <span className="hidden sm:inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
             <Settings className="h-3.5 w-3.5" />
-            Haz clic en cualquier meta para editarla — se guarda automaticamente
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {lastUpdated && (
-            <span className="text-xs text-[var(--text-tertiary)]">
-              Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
-            </span>
-          )}
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] disabled:opacity-50"
-          >
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            Actualizar
-          </button>
-        </div>
-      </div>
+            {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          Actualizar
+        </button>
+      </AdminModuleHeader>
 
       {/* KPI grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

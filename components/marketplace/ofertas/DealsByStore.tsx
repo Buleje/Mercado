@@ -1,108 +1,113 @@
 "use client";
 
 /**
- * DealsByStore — Sección "Ofertas por bodega".
- * Grid horizontal 4-6 store cards con ilustracion + deals count + CTA.
+ * DealsByStore — Carrusel horizontal de bodegas con deals activos.
+ *
+ * Estilo Buleje: ExplorarSectionHeader + HorizontalCarousel + cards Holded
+ * con avatar bodega (letra inicial) + zona + stats (deals count + max %).
+ *
+ * Tokens estrictos. Sin colores hardcoded. Iconos del DS Buleje.
  */
 
 import Link from "next/link";
-import { ChevronRight, MapPin, Tag } from "@buleje/design-system/icons";
+import { ArrowRight, MapPin, Tag, Store as StoreIcon } from "@buleje/design-system/icons";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import ExplorarSectionHeader from "@/components/marketplace/explorar/ExplorarSectionHeader";
 import type { DealStore } from "@/lib/mock-deals";
-import {
-  BodegaAbriendo,
-  DoniaElena,
-  BodegueroCelebrando,
-  MalocaAtardecer,
-  MotorizadoUcayali,
-  CuadernoFiadoReal,
-} from "@/components/ui-system/illustrations";
-import type { ComponentType, SVGAttributes } from "react";
-
-type IllComp = ComponentType<{
-  size?: number;
-  strokeWidth?: number;
-  className?: string;
-} & SVGAttributes<SVGSVGElement>>;
-
-const STORE_ILLUSTRATIONS: IllComp[] = [
-  DoniaElena,
-  BodegaAbriendo,
-  BodegueroCelebrando,
-  MalocaAtardecer,
-  MotorizadoUcayali,
-  CuadernoFiadoReal,
-];
 
 interface DealsByStoreProps {
   stores: DealStore[];
 }
 
 export default function DealsByStore({ stores }: DealsByStoreProps) {
+  if (stores.length === 0) return null;
+
   return (
     <section
       aria-labelledby="deals-by-store-heading"
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
     >
-      <header className="mb-6 sm:mb-8">
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
-          Por tienda
-        </span>
-        <h2
-          id="deals-by-store-heading"
-          className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white"
-        >
-          Ofertas por bodega
-        </h2>
-      </header>
+      <ExplorarSectionHeader
+        kicker="Bodegas en oferta"
+        title="Las que mas rebajan esta semana"
+        subtitle={`${stores.length} bodegas con descuentos activos. Cliquea cualquiera para ver su catalogo en oferta.`}
+        ctaLabel="Ver todas las bodegas"
+        ctaHref="/tiendas"
+      />
 
-      {/* Scroll horizontal mobile / grid desktop */}
-      <div className="-mx-4 sm:mx-0 overflow-x-auto sm:overflow-visible scrollbar-none">
-        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 px-4 sm:px-0 snap-x snap-mandatory sm:snap-none">
-          {stores.map((store, i) => {
-            const Ill = STORE_ILLUSTRATIONS[i % STORE_ILLUSTRATIONS.length];
-            return (
-              <article
-                key={store.id}
-                className="group snap-start shrink-0 w-56 sm:w-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
-              >
-                {/* Ilustracion */}
-                <div className="aspect-[4/3] bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
-                  <Ill size={88} strokeWidth={1.5} />
-                </div>
-
-                <div className="p-4">
-                  <h3 className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white line-clamp-1">
+      <HorizontalCarousel
+        ariaLabel="Bodegas con ofertas activas"
+        itemWidthClass="w-[280px] sm:w-[320px] shrink-0 snap-start"
+      >
+        {stores.map((store) => {
+          const initial = store.name.trim().charAt(0).toUpperCase() || "B";
+          return (
+            <Link
+              key={store.id}
+              href={`/marketplace/${store.slug}`}
+              className="group block rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5 transition-all duration-300 motion-reduce:hover:translate-y-0"
+            >
+              {/* Top bloque: avatar + name + zona */}
+              <div className="p-5 flex items-start gap-4 border-b border-[var(--rule-soft)]">
+                <span
+                  aria-hidden
+                  className="inline-flex h-14 w-14 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-2xl font-black tracking-tight"
+                >
+                  {initial}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-black tracking-[-0.01em] text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
                     {store.name}
                   </h3>
-                  <p className="mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
-                    <MapPin className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+                  <p className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
                     {store.zone}
                   </p>
-
-                  {/* Stats */}
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
-                      <Tag className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
-                      {store.activeDeals} ofertas
-                    </span>
-                    <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500">
-                      Hasta -{store.maxDiscountPct}%
-                    </span>
-                  </div>
-
-                  <Link
-                    href={`/marketplace/${store.slug}`}
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                  >
-                    Ver ofertas
-                    <ChevronRight className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
-                  </Link>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      </div>
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-3 divide-x divide-[var(--rule-soft)]">
+                <div className="p-3 flex flex-col items-center text-center">
+                  <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
+                  <p className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)] leading-none">
+                    {store.activeDeals}
+                  </p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                    Ofertas
+                  </p>
+                </div>
+                <div className="p-3 flex flex-col items-center text-center">
+                  <StoreIcon className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
+                  <p className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--accent)] leading-none">
+                    -{store.maxDiscountPct}%
+                  </p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                    Maximo
+                  </p>
+                </div>
+                <div className="p-3 flex flex-col items-center text-center">
+                  <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
+                  <p className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)] leading-none">
+                    -{store.avgDiscountPct}%
+                  </p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                    Promedio
+                  </p>
+                </div>
+              </div>
+
+              {/* CTA pill */}
+              <div className="p-3 border-t border-[var(--rule-soft)]">
+                <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] group-hover:gap-2 transition-all">
+                  Ver ofertas de esta bodega
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </HorizontalCarousel>
     </section>
   );
 }

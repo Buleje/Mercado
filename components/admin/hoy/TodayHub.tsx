@@ -227,51 +227,9 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
         </section>
       )}
 
-      {/* ── Heatmap ventas hora/día ── */}
-      {data.heatmap.length > 0 && (
-        <BulejeHeatmap
-          data={data.heatmap}
-          label="Cuándo venden tus clientes"
-          sublabel="Últimos 30 días · hora × día"
-          valueFormat={(v) => `${v} ventas`}
-        />
-      )}
-
-      {/* ── Top productos ── */}
-      {data.topProducts.length > 0 && (
-        <section
-          className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
-          aria-labelledby="top-products-title"
-        >
-          <header className="px-5 py-3 border-b border-[var(--rule-soft)]">
-            <p
-              id="top-products-title"
-              className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
-            >
-              Top productos · últimos 7 días
-            </p>
-          </header>
-          <ul className="divide-y divide-[var(--rule-soft)]">
-            {data.topProducts.map((p, i) => (
-              <li key={p.productId ?? i} className="flex items-center gap-3 px-5 py-3">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
-                  {i + 1}
-                </span>
-                <Package className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
-                <span className="flex-1 text-sm text-[var(--text-primary)] font-semibold">
-                  Producto #{p.productId ?? "—"}
-                </span>
-                <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-                  {p.quantity.toLocaleString("es-PE")}
-                </span>
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  unid
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* Heatmap "Cuándo venden" y "Top productos últimos 7 días" removidos
+          — migran al módulo de gráficos individuales. El resumen del admin
+          solo muestra charts de alto nivel. */}
 
       {/* Refresh timestamp */}
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] text-right">

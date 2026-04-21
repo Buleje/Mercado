@@ -442,6 +442,31 @@ body {
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Shimmer horizontal para CTA de geolocalización — pasa una franja brillante
+   de izquierda a derecha sin salirse del contenedor. */
+@keyframes geoShimmer {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(450%); }
+}
+
+/* ── Nav auto-hide smooth transition ────────────────────────────────────────
+ * Aplicado al MarketplaceNavbar y MarketplaceSecondaryNav para que el
+ * show/hide en scroll tenga easing premium. Se escribe acá (no como clase
+ * Tailwind) para eliminar problemas de compilación del arbitrary value.
+ */
+.nav-smooth-transition {
+  transition-property: transform, opacity, background-color, box-shadow;
+  transition-duration: 1100ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-smooth-transition {
+    transition-duration: 0ms !important;
+  }
+}
+
 @keyframes glowPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.12); }
   50%       { box-shadow: 0 0 24px 6px rgba(15, 118, 110, 0.06); }
@@ -577,12 +602,16 @@ body {
 }
 
 /* Hide scrollbar for category filters */
-.scrollbar-hide {
+.scrollbar-hide,
+.no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.scrollbar-hide::-webkit-scrollbar {
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 @keyframes scrollX {
@@ -1495,6 +1524,20 @@ button,
   --data-error: var(--data-error-700);
   --data-info: var(--data-info-700);
 
+  /* ─── Badges semánticos para contraste visual ───────────────────────────────
+     Tokens centralizados para badges/chips de descuento, novedad, urgencia,
+     etc. Evitan colores hardcoded en componentes. */
+  --badge-discount-bg: #fee2e2;       /* rojo suave para -X% off */
+  --badge-discount-text: #b91c1c;
+  --badge-new-bg: #dbeafe;            /* azul suave para "Nuevo" */
+  --badge-new-text: #1e40af;
+  --badge-shipping-bg: #d1fae5;       /* verde suave para "Envío gratis" */
+  --badge-shipping-text: #065f46;
+  --badge-urgency-bg: #fef3c7;        /* amarillo suave para "Últimas unidades" */
+  --badge-urgency-text: #92400e;
+  --badge-trending-bg: #fce7f3;       /* rosa suave para "Tendencia" */
+  --badge-trending-text: #9d174d;
+
   /* ─── Brand System v4 (Ola 1) — signature + heros ─── */
   --brand-ink: #060a0d;
   --brand-cream: #FAFAF7;
@@ -2013,4 +2056,205 @@ html {
   font-feature-settings: "ss01", "cv11";
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
+}
+
+/* ─── Theme change transition (suavizado del toggle dark/light) ─────────── */
+:root {
+  --theme-transition-duration: 180ms;
+}
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color var(--theme-transition-duration) ease-in-out,
+    color var(--theme-transition-duration) ease-in-out,
+    border-color var(--theme-transition-duration) ease-in-out,
+    fill var(--theme-transition-duration) ease-in-out,
+    stroke var(--theme-transition-duration) ease-in-out !important;
+}
+
+/* ─── View Transitions API — transición suave al navegar entre tabs ─────── */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  ::view-transition-old(root) {
+    animation-name: bsm-vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation-name: bsm-vt-fade-in;
+  }
+  @keyframes bsm-vt-fade-out {
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+  @keyframes bsm-vt-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DARK MODE: Safety net — fallbacks para componentes legacy sin `dark:`.
+   Solo se activa con `.dark` + dentro de containers con `data-dark-fallback`.
+   Respeta elementos que YA declaran su propio dark variant
+   (`:not([class*="dark:"])` — el attribute value contiene el prefix).
+   ───────────────────────────────────────────────────────────────────────── */
+.dark [data-dark-fallback] .bg-white:not([class*="dark:bg-"]) {
+  background-color: var(--surface-raised);
+}
+.dark [data-dark-fallback] .bg-gray-50:not([class*="dark:bg-"]),
+.dark [data-dark-fallback] .bg-slate-50:not([class*="dark:bg-"]),
+.dark [data-dark-fallback] .bg-neutral-50:not([class*="dark:bg-"]),
+.dark [data-dark-fallback] .bg-gray-100:not([class*="dark:bg-"]),
+.dark [data-dark-fallback] .bg-slate-100:not([class*="dark:bg-"]),
+.dark [data-dark-fallback] .bg-neutral-100:not([class*="dark:bg-"]) {
+  background-color: var(--surface-sunken);
+}
+.dark [data-dark-fallback] .text-gray-500:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-gray-600:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-slate-500:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-slate-600:not([class*="dark:text-"]) {
+  color: var(--text-secondary);
+}
+.dark [data-dark-fallback] .text-gray-700:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-gray-800:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-gray-900:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-slate-700:not([class*="dark:text-"]),
+.dark [data-dark-fallback] .text-slate-900:not([class*="dark:text-"]) {
+  color: var(--text-primary);
+}
+.dark [data-dark-fallback] .border-gray-100:not([class*="dark:border-"]),
+.dark [data-dark-fallback] .border-slate-100:not([class*="dark:border-"]) {
+  border-color: var(--rule-soft);
+}
+.dark [data-dark-fallback] .border-gray-200:not([class*="dark:border-"]),
+.dark [data-dark-fallback] .border-slate-200:not([class*="dark:border-"]),
+.dark [data-dark-fallback] .border-gray-300:not([class*="dark:border-"]),
+.dark [data-dark-fallback] .border-slate-300:not([class*="dark:border-"]) {
+  border-color: var(--rule-base);
+}
+
+/* Hovers legacy */
+.dark [data-dark-fallback] *:hover:not([class*="dark:hover:bg-"]).hover\:bg-gray-50,
+.dark [data-dark-fallback] *:hover:not([class*="dark:hover:bg-"]).hover\:bg-gray-100,
+.dark [data-dark-fallback] *:hover:not([class*="dark:hover:bg-"]).hover\:bg-slate-50,
+.dark [data-dark-fallback] *:hover:not([class*="dark:hover:bg-"]).hover\:bg-slate-100 {
+  background-color: var(--surface-sunken);
+}
+
+/* Ring/shadow adjustments */
+.dark [data-dark-fallback] .shadow-sm:not([class*="dark:shadow-"]),
+.dark [data-dark-fallback] .shadow:not([class*="dark:shadow-"]),
+.dark [data-dark-fallback] .shadow-md:not([class*="dark:shadow-"]) {
+  --tw-shadow-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Input fields without dark variant */
+.dark [data-dark-fallback] input:not([class*="dark:bg-"]):not([type="checkbox"]):not([type="radio"]),
+.dark [data-dark-fallback] textarea:not([class*="dark:bg-"]),
+.dark [data-dark-fallback] select:not([class*="dark:bg-"]) {
+  background-color: var(--surface-sunken);
+  border-color: var(--rule-base);
+  color: var(--text-primary);
+}
+.dark [data-dark-fallback] input::placeholder,
+.dark [data-dark-fallback] textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MARKETPLACE EXPLORAR — ajustes globales de legibilidad y coherencia.
+   Alcance: cualquier page bajo /marketplace/explorar (o containers con
+   `data-marketplace-explorar`).
+   ───────────────────────────────────────────────────────────────────────── */
+body[data-marketplace-explorar] {
+  font-feature-settings:
+    "ss01",
+    "cv11",
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Garantiza que cualquier texto debajo del Hero tenga buen line-height */
+body[data-marketplace-explorar] section p,
+body[data-marketplace-explorar] section li {
+  text-wrap: pretty;
+}
+
+/* Reemplaza los text-[length:var(--ts-2xs)] que queden sueltos por text-xs
+   (12px) para legibilidad mínima — solo dentro de explorar, no storefront. */
+body[data-marketplace-explorar] .text-\[length\:var\(--ts-2xs\)\] {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Shadows suaves al hover de cards */
+body[data-marketplace-explorar] a[class*="hover:border-"][class*="accent"] {
+  will-change: transform, box-shadow;
+}
+
+/* Mejorar tracking de números (precios, stats) */
+body[data-marketplace-explorar] .tabular-nums {
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SKELETON shimmer — reemplaza el "bloque gris oscuro" por un gradient sutil.
+   Aplica a cualquier bloque dentro de `.animate-pulse` que use superficie.
+   ───────────────────────────────────────────────────────────────────────── */
+.animate-pulse .bg-\[var\(--surface-sunken\)\],
+.animate-pulse [style*="var(--surface-sunken)"] {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--rule-soft) 70%, var(--surface-sunken));
+}
+.animate-pulse .bg-\[var\(--surface-sunken\)\]::after,
+.animate-pulse [style*="var(--surface-sunken)"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--surface-raised) 50%, transparent) 50%,
+    transparent 100%
+  );
+  animation: bsm-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes bsm-skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse .bg-\[var\(--surface-sunken\)\]::after,
+  .animate-pulse [style*="var(--surface-sunken)"]::after {
+    animation: none;
+  }
 }

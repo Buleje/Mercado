@@ -1,10 +1,14 @@
 "use client";
 
 /**
- * components/admin/EmptyState.tsx
+ * components/admin/EmptyState.tsx — VARIANTE admin (actions[] array).
  *
- * Componente reutilizable de estado vacío para el panel admin.
- * Reemplaza los patrones inline "No hay X / No se encontraron X".
+ * ⚠️  OJO: existen 3 EmptyState con APIs distintas:
+ *   - components/admin/EmptyState.tsx         ← este (prop `actions[]`)
+ *   - components/admin/shared/EmptyState.tsx  (SVG illustrations + `variant`)
+ *   - components/ui-system/EmptyState.tsx     (`eyebrow, action, secondaryAction`)
+ *
+ * NO son intercambiables. Audit: `npm run dev:duplicates`.
  *
  * Props:
  *  - icon      — ReactNode (icono lucide u otro)

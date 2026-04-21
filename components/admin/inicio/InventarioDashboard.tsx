@@ -12,7 +12,11 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 
 const InventarioCharts = dynamic(() => import("./InventarioCharts"), { ssr: false });
-import { DashboardSectionHeader } from "./_shared";
+const InventarioAdvancedCharts = dynamic(
+  () => import("./InventarioAdvancedCharts").then((m) => ({ default: m.InventarioAdvancedCharts })),
+  { ssr: false },
+);
+import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -212,7 +216,7 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
     };
   }, [raw, dateRange, now]);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <BulejeDashboardSkeleton />;
   if (error && !data) return (
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning)]" />
@@ -253,8 +257,11 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
         </div>
       )}
 
-      {/* ── Charts ── */}
+      {/* ── Charts base (valor cat, movimiento 14d, top salidas, distribución, cobertura, proyección) ── */}
       <InventarioCharts data={data} />
+
+      {/* ── Charts especializados (ABC, salud, rotación cat, salidas stacked, waterfall, comparativa) ── */}
+      <InventarioAdvancedCharts />
     </div>
   );
 }

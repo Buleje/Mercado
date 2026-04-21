@@ -18,9 +18,10 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { Eye, Maximize2, Menu, Minimize2, Power, Search } from "@buleje/design-system/icons";
+import { Menu, Search } from "@buleje/design-system/icons";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
+import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,8 @@ export interface AdminTopHeaderProps {
   presentationMode: boolean;
   isSuperAdminImpersonating: boolean;
   focusMode: boolean;
+  resolvedTheme: "light" | "dark";
+  themeMode: "light" | "dark" | "system";
   userName: string;
   userRole: string;
   onOpenMobileNav: () => void;
@@ -35,6 +38,8 @@ export interface AdminTopHeaderProps {
   onOpenCierreDiario: () => void;
   onToggleFocus: () => void;
   onTogglePresentation: () => void;
+  onToggleTheme: () => void;
+  onSetTheme: (t: "light" | "dark" | "system") => void;
   onNavigate: (tab: string) => void;
   onLogout: () => void | Promise<void>;
 }
@@ -43,6 +48,8 @@ export function AdminTopHeader({
   presentationMode,
   isSuperAdminImpersonating,
   focusMode,
+  resolvedTheme,
+  themeMode,
   userName,
   userRole,
   onOpenMobileNav,
@@ -50,6 +57,8 @@ export function AdminTopHeader({
   onOpenCierreDiario,
   onToggleFocus,
   onTogglePresentation,
+  onToggleTheme,
+  onSetTheme,
   onNavigate,
   onLogout,
 }: AdminTopHeaderProps) {
@@ -93,44 +102,15 @@ export function AdminTopHeader({
           <NotificationBell />
         </div>
 
-        <AdminTooltip content="Cerrar el día y arquear caja · Ctrl+Shift+C" side="bottom">
-          <button
-            onClick={onOpenCierreDiario}
-            aria-label="Cerrar día"
-            className="hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--data-warning)] dark:text-[var(--data-warning)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors border border-[var(--data-warning)] dark:border-[var(--data-warning)]"
-          >
-            <Power className="h-4 w-4" />
-            <span>Cerrar día</span>
-          </button>
-        </AdminTooltip>
-
-        <AdminTooltip
-          content={focusMode ? "Salir del modo enfoque" : "Ocultar sidebar para enfocarte"}
-          side="bottom"
-        >
-          <button
-            onClick={onToggleFocus}
-            aria-label={focusMode ? "Salir modo enfoque" : "Activar modo enfoque"}
-            aria-pressed={focusMode}
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            {focusMode ? (
-              <Minimize2 className="h-4 w-4 text-primary" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
-          </button>
-        </AdminTooltip>
-
-        <AdminTooltip content="Modo presentación (pantalla limpia) · Ctrl+Shift+P" side="bottom">
-          <button
-            onClick={onTogglePresentation}
-            aria-label="Activar modo presentación"
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-        </AdminTooltip>
+        <AdminOptionsDropdown
+          focusMode={focusMode}
+          resolvedTheme={resolvedTheme}
+          themeMode={themeMode}
+          onOpenCierreDiario={onOpenCierreDiario}
+          onToggleFocus={onToggleFocus}
+          onTogglePresentation={onTogglePresentation}
+          onSetTheme={onSetTheme}
+        />
 
         <AdminUserDropdown
           userName={userName}

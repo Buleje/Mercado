@@ -13,10 +13,9 @@
  *   - Integrar mapa Leaflet para zona visual
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { m } from "framer-motion";
-import { Store, MapPin } from "lucide-react";
+import { Store, MapPin, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 import MarketplaceStoresView, {
@@ -29,13 +28,15 @@ import {
 } from "@/components/marketplace/useMarketplaceGeo";
 import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
 import RecommendationsStrip from "@/components/marketplace/explorar/RecommendationsStrip";
-import { useEffect } from "react";
+import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
+import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
 } from "@/components/marketplace/MarketplaceFilters";
 import QuickFilterChips, {
   type QuickChipId,
 } from "@/components/marketplace/QuickFilterChips";
+import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -121,143 +122,132 @@ export default function TiendasClient() {
   }, [fetchStores, search, category, zone]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] pb-8 pt-10 sm:pt-14 sm:pb-10">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      <ExplorarTracker pageName="tiendas_directorio" />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <m.span
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-            Pucallpa · Ucayali
-          </m.span>
+      {/* ── Banner promocional reemplaza al hero ───────────────────────── */}
+      <PromoBannerCarousel slot="bodegas" />
 
-          <m.h1
-            className="font-display text-3xl sm:text-5xl font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.02em] mb-4"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-          >
-            Todas las tiendas,{" "}
-            <span className="text-primary relative">
-              un solo lugar
-              <svg
-                aria-hidden="true"
-                className="absolute -bottom-1 left-0 w-full h-2 text-primary/30"
-                viewBox="0 0 100 12"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M0 8 Q25 0 50 6 Q75 12 100 4"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-          </m.h1>
-
-          <m.p
-            className="text-[var(--text-secondary)] text-sm sm:text-base max-w-xl mx-auto mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.15 }}
-          >
-            Bodegas, minimarkets, carnicerías y más. Encontrá lo que buscás cerca tuyo con delivery rápido.
-          </m.p>
-
-          {/* Search */}
-          <m.div
-            className="max-w-xl mx-auto"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+      {/* Barra compacta: search + quick chips (sin hero editorial) */}
+      <section className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+          <div className="max-w-xl">
             <SearchAutocomplete
               onSearch={setSearch}
               placeholder="Buscar tienda, bodega, minimarket..."
             />
-          </m.div>
-
-          {/* Stats */}
-          <m.div
-            className="mt-5 flex items-center justify-center gap-6 text-sm text-[var(--text-tertiary)] flex-wrap"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <Store className="h-4 w-4 text-primary" aria-hidden="true" />
-              <strong className="text-[var(--text-primary)]">{loading ? "..." : stores.length}</strong> tiendas
-            </span>
-            <span>Delivery en 25 min</span>
-            <span>Yape · Efectivo</span>
-          </m.div>
-
-          {/* Quick-filter chips — ronda B los mueve a nav secundaria */}
-          <m.div
-            className="mt-5 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <QuickFilterChips activeChips={activeChips} onToggle={handleChipToggle} />
-          </m.div>
+          </div>
+          <QuickFilterChips
+            activeChips={activeChips}
+            onToggle={handleChipToggle}
+          />
         </div>
       </section>
 
-      {/* ── Tiendas destacadas strip ── */}
-      <div className="py-8 sm:py-10">
-        <RecommendationsStrip />
-      </div>
+      {/* ── Destacadas — header editorial + strip ─────────────────────── */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <span
+                aria-hidden
+                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+              />
+              Destacadas
+            </p>
+            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              Las que más
+              <br />
+              <span className="italic font-serif text-[var(--accent)]">
+                piden tus vecinos.
+              </span>
+            </h2>
+          </div>
+          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
+            Curado por volumen de pedidos, calificación y cercanía a tu zona.
+          </p>
+        </div>
+      </section>
+      <RevealOnScroll>
+        <div className="py-6 sm:py-8">
+          <RecommendationsStrip />
+        </div>
+      </RevealOnScroll>
+
+      {/* ── Explorá — header editorial antes de los filtros ───────────── */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <span
+                aria-hidden
+                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+              />
+              Explorá
+            </p>
+            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              Filtrá por lo que
+              <br />
+              <span className="italic font-serif text-[var(--accent)]">
+                te interesa.
+              </span>
+            </h2>
+          </div>
+          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
+            Categoría, zona, precio y distancia — combiná para encontrar la tienda ideal.
+          </p>
+        </div>
+      </section>
 
       {/* ── Filtros + Grid ── */}
       <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        {/* Sticky filter cluster */}
-        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 glass rounded-2xl mb-3">
-          {/* Category pills */}
+        {/* Sticky filter cluster — editorial (tab underline active) */}
+        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-[var(--surface-canvas)]/90 backdrop-blur border-b border-[var(--rule-soft)] mb-3">
+          {/* Category pills — underline-active estilo editorial */}
           <div
             role="group"
             aria-label="Filtrar por categoría de tienda"
-            className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
+            className="flex items-center gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
           >
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                aria-pressed={category === cat.id}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap border transition-all shrink-0",
-                  category === cat.id
-                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
-                    : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-400",
-                )}
-              >
-                {(() => {
-                  const CatIcon = getStoreCategoryIcon(cat.id);
-                  return <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />;
-                })()}
-                {cat.label}
-              </button>
-            ))}
+            {CATEGORIES.map((cat) => {
+              const active = category === cat.id;
+              const CatIcon = getStoreCategoryIcon(cat.id);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  aria-pressed={active}
+                  className={cn(
+                    "relative inline-flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition-colors shrink-0",
+                    active
+                      ? "text-[var(--text-primary)]"
+                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+                  {cat.label}
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[var(--accent)]"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Zona + Filtros */}
-          <div className="flex items-center gap-2 mt-4 flex-wrap">
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
             <select
               value={zone}
               onChange={(e) => setZone(e.target.value)}
               aria-label="Filtrar por zona"
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs font-semibold outline-none transition-colors",
+                "rounded-full border px-4 py-1.5 text-xs font-bold tabular-nums outline-none transition-colors",
                 zone
-                  ? "bg-primary/10 text-primary border-primary/30"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40",
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/40"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:border-[var(--accent)]/40",
               )}
             >
               {ZONES.map((z) => (
@@ -267,7 +257,7 @@ export default function TiendasClient() {
               ))}
             </select>
 
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 shrink-0 hidden sm:block" />
+            <div className="h-5 w-px bg-[var(--rule-soft)] shrink-0 hidden sm:block" />
 
             <MarketplaceFilters
               filters={productFilters}
@@ -287,7 +277,7 @@ export default function TiendasClient() {
                   setProductFilters(DEFAULT_FILTERS);
                 }}
                 aria-label="Limpiar todos los filtros activos"
-                className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors underline"
+                className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
               >
                 Limpiar todo
               </button>
@@ -317,25 +307,54 @@ export default function TiendasClient() {
         />
       </section>
 
-      {/* ── CTA para bodegueros ── */}
-      <section className="bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)] py-12 sm:py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] mb-3">
-            ¿Tienes una tienda?{" "}
-            <span className="text-primary">Únete gratis</span>
-          </h2>
-          <p className="text-[var(--text-secondary)] text-sm sm:text-base mb-6 max-w-lg mx-auto">
-            Publica tus productos, recibí pedidos y llegá a miles de clientes en Pucallpa. Sin costo de inscripción.
+      {/* ── CTA editorial para bodegueros ───────────────────────────────── */}
+      <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        />
+        <div className="relative max-w-4xl mx-auto px-4 text-center">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+            <span
+              aria-hidden
+              className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+            />
+            Para bodegueros
           </p>
-          <Link
-            href="/registro"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
-          >
-            <Store className="h-5 w-5" aria-hidden="true" />
-            Registrá tu tienda gratis
-          </Link>
+          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+            ¿Tenés una tienda?
+            <br />
+            <span className="italic font-serif text-[var(--accent)]">
+              Sumate gratis.
+            </span>
+          </h2>
+          <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+            Publicá tus productos, recibí pedidos y llegá a miles de clientes
+            en Pucallpa. Sin costo de inscripción.
+          </p>
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/abrir-tienda"
+              className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
+            >
+              <Store className="h-4 w-4" strokeWidth={1.75} />
+              Registrá tu tienda gratis
+              <ArrowUpRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                strokeWidth={2.25}
+              />
+            </Link>
+            <Link
+              href="/abrir-tienda#planes"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              Ver planes
+            </Link>
+          </div>
         </div>
       </section>
+
+      {/* Footer vive en el layout `/tiendas/layout.tsx` (persistente). */}
     </div>
   );
 }

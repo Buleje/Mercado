@@ -1,117 +1,112 @@
 "use client";
 
 /**
- * OfertasHero — Hero editorial para /marketplace/ofertas.
- * Kicker + H1 + subtitle + stats + countdown strip.
- * Sin fotos stock. Ilustraciones DS monoline.
+ * OfertasHero — Hero editorial estilo Google/big-small para /marketplace/ofertas.
+ *
+ * Vocabulario unificado con landing / tiendas / marketplace / explorar:
+ *   - Kicker con línea accent h-[3px] w-10
+ *   - Título clamp fluido + italic serif accent en segunda línea
+ *   - Grid asimétrico 7fr/5fr con stats a la derecha
+ *   - Countdown en la card de stats (no como stat inline)
  */
 
-import Link from "next/link";
-import { Tag, Store, Clock } from "@buleje/design-system/icons";
-import {
-  BebidasVarias,
-  VerduraFresca,
-} from "@/components/ui-system/illustrations";
-import { useDealsCountdown } from "@/components/marketplace/ofertas/useDealsCountdown";
-import type { DealsSummary } from "@/components/marketplace/ofertas/types";
+import { Sparkles } from "@buleje/design-system/icons";
+import { useDealsCountdown } from "./useDealsCountdown";
+import type { DealsSummary } from "./types";
 
 interface OfertasHeroProps {
   summary: DealsSummary;
 }
 
 export default function OfertasHero({ summary }: OfertasHeroProps) {
-  const { days, hours, minutes } = useDealsCountdown(summary.flashEndsAt);
+  const { days, hours, minutes, seconds } = useDealsCountdown(summary.flashEndsAt);
 
   return (
     <section
       aria-labelledby="ofertas-hero-heading"
-      className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+      className="relative w-full overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        {/* Breadcrumb */}
-        <nav aria-label="Navegacion de ruta" className="mb-6">
-          <ol className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-gray-400">
-            <li>
-              <Link href="/marketplace" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                Inicio
-              </Link>
-            </li>
-            <li aria-hidden="true" className="text-gray-300 dark:text-gray-600">/</li>
-            <li>
-              <Link href="/marketplace/explorar" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                Explorar
-              </Link>
-            </li>
-            <li aria-hidden="true" className="text-gray-300 dark:text-gray-600">/</li>
-            <li className="font-semibold text-gray-600 dark:text-gray-300" aria-current="page">
-              Ofertas
-            </li>
-          </ol>
-        </nav>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -right-40 h-[520px] w-[520px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/3 -left-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+      />
 
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8 lg:gap-16">
-          {/* Left — texto editorial */}
-          <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
-              <Tag className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
-              Ofertas &middot; Esta semana
-            </span>
-            <h1
-              id="ofertas-hero-heading"
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.025em] text-gray-900 dark:text-white leading-[1.05]"
-            >
-              Precios que no te<br />
-              <span className="text-gray-400 dark:text-gray-500">podés perder</span>
-            </h1>
-            <p className="mt-4 text-base sm:text-lg text-gray-500 dark:text-gray-400 leading-relaxed max-w-xl">
-              Descuentos reales en bodegas cerca tuyo. Hoy ahorrás en lo que
-              mas usas. Sin trampas, sin letra chica.
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-28 pb-14 sm:pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-16 items-center">
+          {/* ── LEFT — título dramático ────────────────────────────────── */}
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <span
+                aria-hidden
+                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+              />
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+              Ofertas de la semana
             </p>
 
-            {/* Stats strip */}
-            <ul className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
-              <li className="inline-flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-                <span>
-                  <strong className="text-gray-900 dark:text-white font-bold">
-                    {summary.totalProducts}
-                  </strong>{" "}
-                  productos en oferta
-                </span>
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Store className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-                <span>
-                  <strong className="text-gray-900 dark:text-white font-bold">
-                    {summary.totalStores}
-                  </strong>{" "}
-                  bodegas participando
-                </span>
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-                <span>
-                  Termina en{" "}
-                  <strong className="text-gray-900 dark:text-white font-bold tabular-nums">
-                    {String(days).padStart(2, "0")}d{" "}
-                    {String(hours).padStart(2, "0")}h{" "}
-                    {String(minutes).padStart(2, "0")}m
-                  </strong>
-                </span>
-              </li>
-            </ul>
+            <h1
+              id="ofertas-hero-heading"
+              className="text-[clamp(2.75rem,8vw,5.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]"
+            >
+              Precios que
+              <br />
+              <span className="italic font-serif text-[var(--accent)]">
+                no te podés perder.
+              </span>
+            </h1>
+
+            <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
+              Descuentos reales en bodegas cerca tuyo. Sin trampas ni letra
+              chica — hoy ahorrás en lo que{" "}
+              <span className="text-[var(--text-primary)] font-bold">
+                más usás
+              </span>
+              .
+            </p>
           </div>
 
-          {/* Right — ilustraciones stack */}
-          <div
-            className="hidden lg:flex items-end gap-4 text-gray-700 dark:text-gray-200 shrink-0"
-            aria-hidden="true"
-          >
-            <div className="rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6">
-              <BebidasVarias size={120} strokeWidth={1.4} />
-            </div>
-            <div className="rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 mb-6">
-              <VerduraFresca size={96} strokeWidth={1.4} />
+          {/* ── RIGHT — stats vertical + countdown ────────────────────── */}
+          <div>
+            <div className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 sm:p-10">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-8">
+                En números — Esta semana
+              </p>
+              <div className="space-y-8">
+                {[
+                  {
+                    value: String(summary.totalProducts),
+                    label: "Productos en oferta",
+                  },
+                  {
+                    value: String(summary.totalStores),
+                    label: "Bodegas con descuentos",
+                  },
+                  {
+                    value: `${String(days).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h`,
+                    label: `Termina en · ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`,
+                    live: true,
+                  },
+                ].map(({ value, label, live }, idx) => (
+                  <div
+                    key={label}
+                    className={`flex items-baseline gap-5 ${idx > 0 ? "pt-6 border-t border-[var(--rule-soft)]" : ""}`}
+                  >
+                    <span
+                      className="text-[clamp(2rem,4vw,3rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--text-primary)] leading-none w-[6.5ch] shrink-0"
+                      aria-live={live ? "polite" : undefined}
+                    >
+                      {value}
+                    </span>
+                    <span className="text-sm sm:text-base text-[var(--text-secondary)] leading-snug">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

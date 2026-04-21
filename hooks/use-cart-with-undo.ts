@@ -2,47 +2,58 @@
 
 import { useCallback } from "react";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
-import { useToast } from "@/hooks/use-toast";
+import { useAddedToCartDrawer } from "@/components/marketplace/AddedToCartDrawer";
 
-type AddItemArg = Omit<CartItem, "quantity"> & { quantity?: number };
+type AddItemArg = Omit<CartItem, "quantity"> & {
+  quantity?: number;
+  /** Descripcion opcional para mostrar en el drawer. */
+  description?: string | null;
+  /** Variaciones a renderizar en el drawer. */
+  variations?: Array<{ label: string; value: string }>;
+};
 
 export interface UseCartWithUndoReturn {
   addItemWithUndo: (item: AddItemArg) => void;
 }
 
 /**
- * Wraps useMarketplaceCart.addItem con un toast de deshacer.
+ * Wraps useMarketplaceCart.addItem con el drawer lateral de confirmacion.
  *
  * Comportamiento:
  * - Llama addItem normalmente
- * - Muestra toast "Agregado al carrito" con boton "Deshacer"
- * - Auto-dismiss a los 3 000 ms
- * - Si el usuario hace click en Deshacer dentro del plazo,
- *   llama removeItem({ storeId, productId }) y descarta el toast
+ * - Abre el drawer lateral (<AddedToCartDrawer>) mostrando imagen, nombre,
+ *   detalles, variaciones y contador de cantidad en vivo.
  *
  * Constraints:
  * - No modifica el estado interno de useMarketplaceCart
  * - No toca checkout/**
  */
 export function useCartWithUndo(): UseCartWithUndoReturn {
-  const { addItem, removeItem } = useMarketplaceCart();
-  const { success } = useToast();
+  const { addItem } = useMarketplaceCart();
+  const { open: openDrawer } = useAddedToCartDrawer();
 
   const addItemWithUndo = useCallback(
     (item: AddItemArg) => {
-      addItem(item);
+      const { description, variations, ...forCart } = item;
+      void description;
+      void variations;
+      addItem(forCart);
 
-      success("Agregado al carrito", {
-        duration: 3000,
-        action: {
-          label: "Deshacer",
-          onClick: () => {
-            removeItem(item.storeId, item.productId);
-          },
-        },
+      openDrawer({
+        storeId: item.storeId,
+        storeName: item.storeName,
+        storeSlug: item.storeSlug,
+        productId: item.productId,
+        storeProductId: item.storeProductId,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        unit: item.unit,
+        description: description ?? null,
+        variations: variations,
       });
     },
-    [addItem, removeItem, success]
+    [addItem, openDrawer]
   );
 
   return { addItemWithUndo };

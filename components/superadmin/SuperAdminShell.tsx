@@ -27,6 +27,7 @@ import {
   Map as MapIcon,
   Cable,
   FileCheck,
+  ImageIcon,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -54,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
+  { label: "Banners",         icon: <ImageIcon       className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
   { label: "Setup Pendiente", icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/setup"           },
@@ -70,6 +72,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/vendor-applications": "Aplicaciones de vendedores",
   "/superadmin/stores":          "Marketplace",
+  "/superadmin/banners":         "Banners promocionales",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
   "/superadmin/setup":           "Setup Pendiente",

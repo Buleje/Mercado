@@ -38,6 +38,7 @@ import {
   calculateSuggestedQty,
 } from "@/lib/types/purchases";
 import { buildPurchaseWhatsAppUrl } from "@/lib/whatsapp-client";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const OCPrintPreviewModal = dynamic(() => import("./OCPrintPreviewModal"), { ssr: false });
 const InvoiceScannerModal = dynamic(() => import("./InvoiceScannerModal"), { ssr: false });
@@ -474,7 +475,7 @@ export default function PuntoCompraView() {
     try {
       const res = await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId: selectedSupplier?.id ?? "",
           supplierName: selectedSupplier?.name ?? "",

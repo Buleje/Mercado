@@ -1,15 +1,23 @@
 "use client";
 
+/**
+ * CatalogSections — 4 secciones del catalogo de tienda:
+ *   1. Ofertas Relámpago (variant="flash")
+ *   2. Top Mas Vendidos    (variant="top")
+ *   3. Productos Destacados (variant="default")
+ *   4. Ultimas Unidades    (variant="liquidation")
+ *
+ * Estandarizado 2026-04-20: usa MarketplaceSection (mismo wrapper que el resto
+ * del marketplace) + HorizontalCarousel (single row + drag + barra mini).
+ *
+ * Antes: cada seccion tenia su propio Section local con icon coloreado y
+ * gridCols. Inconsistente con el resto del home. Migrado al patron canonico.
+ */
+
 import { useState, useEffect } from "react";
-import {
-  Star,
-  Flame,
-  Award,
-  Zap,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
-import { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -41,7 +49,6 @@ interface SectionsData {
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
 
-/** Convierte un SectionProduct al shape que espera UnifiedProductCard */
 function toCardProduct(p: SectionProduct) {
   return {
     id: p.productId,
@@ -60,69 +67,17 @@ function toCardProduct(p: SectionProduct) {
   };
 }
 
-/* ── Section Wrapper ───────────────────────────────────────────────────────── */
-
-function Section({
-  title,
-  icon,
-  accentColor,
-  children,
-  isEmpty,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  accentColor: string;
-  children: React.ReactNode;
-  isEmpty: boolean;
-}) {
-  if (isEmpty) return null;
-
-  return (
-    <div className="mb-10">
-      <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-2.5">
-          <span
-            className={cn(
-              "inline-flex items-center justify-center h-8 w-8 rounded-xl",
-              accentColor
-            )}
-          >
-            {icon}
-          </span>
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-foreground">
-            {title}
-          </h2>
-        </div>
-      </div>
-      {children}
-    </div>
-  );
-}
-
 /* ── Skeleton ──────────────────────────────────────────────────────────────── */
 
-function SectionSkeleton() {
+function SectionSkeleton({ kicker, title }: { kicker: string; title: string }) {
   return (
-    <div className="mb-10">
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="h-8 w-8 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-        <div className="h-5 w-40 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card overflow-hidden"
-          >
-            <div className="aspect-square bg-gray-100 dark:bg-surface animate-pulse" />
-            <div className="p-3 space-y-2">
-              <div className="h-3 bg-gray-100 dark:bg-surface rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-gray-100 dark:bg-surface rounded w-1/2 animate-pulse" />
-            </div>
-          </div>
+    <MarketplaceSection kicker={kicker} title={title}>
+      <HorizontalCarousel ariaLabel={`Cargando ${title}`} showNav={false}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="aspect-square rounded-xl skeleton-shimmer" />
         ))}
-      </div>
-    </div>
+      </HorizontalCarousel>
+    </MarketplaceSection>
   );
 }
 
@@ -134,7 +89,6 @@ export default function CatalogSections() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       try {
         const res = await fetch("/api/marketplace/catalog/sections");
@@ -147,19 +101,16 @@ export default function CatalogSections() {
       }
       if (!cancelled) setLoading(false);
     }
-
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
     return (
-      <div className="space-y-4 mt-8">
-        <SectionSkeleton />
-        <SectionSkeleton />
-      </div>
+      <>
+        <SectionSkeleton kicker="Cargando" title="Ofertas relámpago" />
+        <SectionSkeleton kicker="Cargando" title="Top más vendidos" />
+      </>
     );
   }
 
@@ -174,86 +125,92 @@ export default function CatalogSections() {
     return null;
   }
 
-  const gridCols = MARKETPLACE_GRID;
-
   return (
-    <div className="mt-8 space-y-2">
+    <>
       {/* ── Ofertas Relámpago ── */}
-      <Section
-        title="Ofertas Relámpago"
-        icon={<Zap className="h-4 w-4 text-red-500" />}
-        accentColor="bg-red-50 dark:bg-red-950/30"
-        isEmpty={!hasFlashDeals}
-      >
-        <div className={gridCols}>
-          {data.flashDeals.map((product, i) => (
-            <UnifiedProductCard
-              key={product.storeProductId}
-              product={toCardProduct(product)}
-              variant="flash"
-              index={i}
-            />
-          ))}
-        </div>
-      </Section>
+      {hasFlashDeals && (
+        <MarketplaceSection
+          id="catalog-flash"
+          kicker="Por tiempo limitado"
+          title="Ofertas relámpago"
+          subtitle="Descuentos que terminan pronto. No te quedes afuera."
+        >
+          <HorizontalCarousel ariaLabel="Ofertas relámpago">
+            {data.flashDeals.map((product, i) => (
+              <UnifiedProductCard
+                key={product.storeProductId}
+                product={toCardProduct(product)}
+                variant="flash"
+                index={i}
+              />
+            ))}
+          </HorizontalCarousel>
+        </MarketplaceSection>
+      )}
 
       {/* ── Top Más Vendidos ── */}
-      <Section
-        title="Top 3 Más Vendidos"
-        icon={<Award className="h-4 w-4 text-amber-500" />}
-        accentColor="bg-amber-50 dark:bg-amber-950/30"
-        isEmpty={!hasTopSellers}
-      >
-        <div className={gridCols}>
-          {data.topSellers.slice(0, 5).map((product, i) => (
-            <UnifiedProductCard
-              key={product.storeProductId}
-              product={toCardProduct(product)}
-              variant="top"
-              rank={product.rank ?? i + 1}
-              index={i}
-            />
-          ))}
-        </div>
-      </Section>
+      {hasTopSellers && (
+        <MarketplaceSection
+          id="catalog-top"
+          kicker="Ranking de la semana"
+          title="Top más vendidos"
+          subtitle="Los productos preferidos por nuestros clientes."
+        >
+          <HorizontalCarousel ariaLabel="Top más vendidos">
+            {data.topSellers.slice(0, 8).map((product, i) => (
+              <UnifiedProductCard
+                key={product.storeProductId}
+                product={toCardProduct(product)}
+                variant="top"
+                rank={product.rank ?? i + 1}
+                index={i}
+              />
+            ))}
+          </HorizontalCarousel>
+        </MarketplaceSection>
+      )}
 
       {/* ── Productos Destacados ── */}
-      <Section
-        title="Productos Destacados"
-        icon={<Star className="h-4 w-4 text-primary" />}
-        accentColor="bg-primary/10"
-        isEmpty={!hasFeatured}
-      >
-        <div className={gridCols}>
-          {data.featured.map((product, i) => (
-            <UnifiedProductCard
-              key={product.storeProductId}
-              product={toCardProduct(product)}
-              variant="default"
-              index={i}
-            />
-          ))}
-        </div>
-      </Section>
+      {hasFeatured && (
+        <MarketplaceSection
+          id="catalog-featured"
+          kicker="Recomendados"
+          title="Productos destacados"
+          subtitle="Selección curada por la tienda."
+        >
+          <HorizontalCarousel ariaLabel="Productos destacados">
+            {data.featured.map((product, i) => (
+              <UnifiedProductCard
+                key={product.storeProductId}
+                product={toCardProduct(product)}
+                variant="default"
+                index={i}
+              />
+            ))}
+          </HorizontalCarousel>
+        </MarketplaceSection>
+      )}
 
       {/* ── Últimas Unidades ── */}
-      <Section
-        title="Últimas Unidades"
-        icon={<Flame className="h-4 w-4 text-orange-500" />}
-        accentColor="bg-orange-50 dark:bg-orange-950/30"
-        isEmpty={!hasLiquidations}
-      >
-        <div className={gridCols}>
-          {data.liquidations.map((product, i) => (
-            <UnifiedProductCard
-              key={product.storeProductId}
-              product={toCardProduct(product)}
-              variant="liquidation"
-              index={i}
-            />
-          ))}
-        </div>
-      </Section>
-    </div>
+      {hasLiquidations && (
+        <MarketplaceSection
+          id="catalog-liquidations"
+          kicker="Stock final"
+          title="Últimas unidades"
+          subtitle="Quedan pocas. Llevatelas antes que se agoten."
+        >
+          <HorizontalCarousel ariaLabel="Últimas unidades">
+            {data.liquidations.map((product, i) => (
+              <UnifiedProductCard
+                key={product.storeProductId}
+                product={toCardProduct(product)}
+                variant="liquidation"
+                index={i}
+              />
+            ))}
+          </HorizontalCarousel>
+        </MarketplaceSection>
+      )}
+    </>
   );
 }

@@ -21,20 +21,51 @@ export type Customer = {
   name: string;
   dni?: string;
   phone?: string;
+  email?: string;
   location: string;
   reference: string;
   locations?: SavedLocation[];
   activeLocationId?: string;
   birthday?: string; // MM-DD
+  /** Direccion calle + numero (ej. "Jr. Las Magnolias 254"). */
+  addressLine?: string;
+  /** Codigo INEI 2 digitos del departamento (ej. "25" = Ucayali). */
+  departmentCode?: string;
+  departmentName?: string;
+  /** Codigo INEI 2 digitos de la provincia (ej. "01" = Coronel Portillo). */
+  provinceCode?: string;
+  provinceName?: string;
+  /** Codigo INEI 2 digitos del distrito (ej. "01" = Calleria). */
+  districtCode?: string;
+  districtName?: string;
 };
+
+/** True si el customer tiene perfil COMPLETO listo para fast-track al checkout. */
+export function isCustomerProfileComplete(c: Customer | null): boolean {
+  if (!c) return false;
+  return Boolean(
+    c.name &&
+      c.phone &&
+      c.addressLine &&
+      c.departmentCode &&
+      c.provinceCode &&
+      c.districtCode,
+  );
+}
 
 type CustomerCtx = {
   customer: Customer | null;
+  /** Lista de todas las cuentas guardadas en este dispositivo (multi-account). */
+  accounts: Customer[];
   showModal: boolean;
   openMode: "order" | "profile";
   accountModalOpen: boolean;
   orderStatusModalOpen: boolean;
   register: (data: Customer) => void;
+  /** Cambia el customer activo entre las accounts guardadas. Devuelve true si se encontró. */
+  switchAccount: (phone: string) => boolean;
+  /** Elimina una cuenta de la lista (si es la activa, deja null). */
+  removeAccount: (phone: string) => void;
   openModal: (mode?: "order" | "profile") => void;
   closeModal: () => void;
   openAccountModal: () => void;
@@ -58,28 +89,106 @@ function getStorageKey(): string {
   return tenantKey(getTenantSlug(), "customer");
 }
 
+/** Key donde guardamos el ARRAY de todas las cuentas (multi-account). */
+function getAccountsStorageKey(): string {
+  return tenantKey(getTenantSlug(), "accounts-list");
+}
+
+/** Dedupe accounts by phone, preservando orden (primero = más reciente). */
+function upsertAccount(list: Customer[], next: Customer): Customer[] {
+  if (!next.phone) return [next, ...list.filter(() => false)]; // sin phone no se agrega a la lista
+  const normalized = next.phone.replace(/\D/g, "");
+  const cleaned = list.filter((c) => c.phone?.replace(/\D/g, "") !== normalized);
+  return [next, ...cleaned].slice(0, 8); // max 8 cuentas guardadas
+}
+
 export function CustomerProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [accounts, setAccounts] = useState<Customer[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [openMode, setOpenMode] = useState<"order" | "profile">("order");
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [orderStatusModalOpen, setOrderStatusModalOpen] = useState(false);
 
-  // Hydrate from localStorage after mount — null during SSR and first render to avoid mismatch
+  // Hydrate from localStorage after mount — null during SSR to avoid mismatch.
+  // Si no hay localStorage (primera visita en este dispositivo) pero SÍ existe
+  // la cookie `buleje-customer-sess` (creada tras OTP/OAuth), preguntamos al
+  // endpoint `/api/auth/customer/me` y rehidratamos. Esta es la "llave
+  // maestra": el user queda logueado 30 días sin hacer nada.
   useEffect(() => {
+    let cancelled = false;
+
+    const hydrateFromServer = async () => {
+      try {
+        const res = await fetch("/api/auth/customer/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (cancelled) return;
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          authenticated?: boolean;
+          customer?: { name: string; phone?: string };
+        };
+        if (!data.authenticated || !data.customer?.name) return;
+
+        const next: Customer = {
+          name: data.customer.name,
+          ...(data.customer.phone ? { phone: data.customer.phone } : {}),
+          location: "",
+          reference: "",
+        };
+        startTransition(() => setCustomer(next));
+        try {
+          localStorage.setItem(getStorageKey(), JSON.stringify(next));
+        } catch {}
+      } catch {
+        /* fire-and-forget — si falla, queda null */
+      }
+    };
+
+    // Hidratar la lista de accounts (independiente del customer activo)
+    try {
+      const savedList = localStorage.getItem(getAccountsStorageKey());
+      if (savedList) {
+        const parsedList = JSON.parse(savedList);
+        if (Array.isArray(parsedList)) {
+          startTransition(() => setAccounts(parsedList));
+        }
+      }
+    } catch {}
+
     try {
       const key = getStorageKey();
       const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.name) startTransition(() => setCustomer(parsed));
+        if (parsed && parsed.name) {
+          startTransition(() => setCustomer(parsed));
+          return; // localStorage suficiente
+        }
       }
     } catch {}
+
+    // localStorage vacío → probamos con la cookie del server
+    void hydrateFromServer();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const register = useCallback((data: Customer) => {
     setCustomer(data);
     localStorage.setItem(getStorageKey(), JSON.stringify(data));
+    // Upsert en la lista de accounts (multi-account support)
+    setAccounts((prev) => {
+      const next = upsertAccount(prev, data);
+      try {
+        localStorage.setItem(getAccountsStorageKey(), JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     setShowModal(false);
     // Sync to backend if phone is present (fire-and-forget)
     if (data.phone) {
@@ -137,12 +246,45 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(getStorageKey());
   }, []);
 
+  const switchAccount = useCallback(
+    (phone: string) => {
+      const normalized = phone.replace(/\D/g, "");
+      const found = accounts.find((c) => c.phone?.replace(/\D/g, "") === normalized);
+      if (!found) return false;
+      setCustomer(found);
+      try {
+        localStorage.setItem(getStorageKey(), JSON.stringify(found));
+        // Mover la seleccionada al tope de la lista (más reciente)
+        const next = upsertAccount(accounts, found);
+        setAccounts(next);
+        localStorage.setItem(getAccountsStorageKey(), JSON.stringify(next));
+      } catch {}
+      return true;
+    },
+    [accounts],
+  );
+
+  const removeAccount = useCallback((phone: string) => {
+    const normalized = phone.replace(/\D/g, "");
+    setAccounts((prev) => {
+      const next = prev.filter((c) => c.phone?.replace(/\D/g, "") !== normalized);
+      try {
+        localStorage.setItem(getAccountsStorageKey(), JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    setCustomer((curr) =>
+      curr?.phone?.replace(/\D/g, "") === normalized ? null : curr,
+    );
+  }, []);
+
   return (
     <CustomerContext.Provider
-      value={{ 
-        customer, showModal, openMode, accountModalOpen, orderStatusModalOpen,
-        register, openModal, closeModal, openAccountModal, closeAccountModal,
-        openOrderStatusModal, closeOrderStatusModal, clear, findByPhone 
+      value={{
+        customer, accounts, showModal, openMode, accountModalOpen, orderStatusModalOpen,
+        register, switchAccount, removeAccount,
+        openModal, closeModal, openAccountModal, closeAccountModal,
+        openOrderStatusModal, closeOrderStatusModal, clear, findByPhone,
       }}
     >
       {children}

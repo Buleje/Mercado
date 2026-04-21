@@ -108,7 +108,7 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
                       {item.storeName}
                     </p>
                     <p className="mt-1.5 text-base font-extrabold text-gray-900 dark:text-white">
-                      S/{item.price.toFixed(2)}
+                      S/{(Number(item.price) || 0).toFixed(2)}
                     </p>
                     <span className="mt-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-primary">
                       Volver a ver

@@ -24,20 +24,27 @@ import {
   BulejeWordmark,
 } from "@/components/ui-system/illustrations";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
+import { useNavVisibility } from "@/hooks/use-nav-visibility";
 
 // ── Nav links canónicos (mission spec) ──────────────────────────────────────
 type NavLink = {
+  id: string;
   label: string;
   href: string;
 };
 
+// Nav links de la landing — todos dentro del contexto pre-auth.
+// Nosotros, Cómo funciona y FAQ ahora son anchors de la landing consolidada.
+// `id` debe coincidir con `NAV_LINK_CATALOG.landing[*].id` en
+// `lib/nav-visibility.ts` — el superadmin puede ocultar cualquiera desde
+// /superadmin/stores → tab Navegación.
 const NAV_LINKS: readonly NavLink[] = [
-  { label: "Inicio", href: "/" },
-  { label: "Nosotros", href: "/nosotros" },
-  { label: "Abre tu Tienda", href: "/vender" },
-  { label: "Precios", href: "/precios" },
-  { label: "Cómo funciona", href: "/como-funciona" },
-  { label: "FAQ", href: "/faq" },
+  { id: "inicio", label: "Inicio", href: "/" },
+  { id: "como-funciona", label: "Cómo funciona", href: "/#como-funciona" },
+  { id: "nosotros", label: "Nosotros", href: "/#nosotros" },
+  { id: "planes", label: "Planes", href: "/#planes" },
+  { id: "faq", label: "FAQ", href: "/#faq" },
+  { id: "abrir-tienda", label: "Abre tu Tienda", href: "/abrir-tienda" },
 ] as const;
 
 // ── Active-state matcher (rutas exactas, / solo matchea en root) ────────────
@@ -61,6 +68,13 @@ export default function LandingHeader({
   // alwaysOpaque seeds initial state so we don't trigger a cascading render.
   const [scrolled, setScrolled] = useState<boolean>(alwaysOpaque);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Visibilidad controlada desde superadmin. Durante SSR muestra todos;
+  // el hook sincroniza con localStorage tras mount.
+  const visibility = useNavVisibility("landing");
+  const visibleLinks = NAV_LINKS.filter(
+    (l) => visibility[l.id] !== false,
+  );
 
   // AuthModal state — primary CTA abre modal "register", ghost "login"
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
@@ -129,7 +143,7 @@ export default function LandingHeader({
             aria-label="Navegación principal"
             className="hidden items-center gap-1 lg:flex"
           >
-            {NAV_LINKS.map((link) => {
+            {visibleLinks.map((link) => {
               const active = isActiveLink(pathname, link.href);
               return (
                 <Link
@@ -231,6 +245,11 @@ interface MobileSheetProps {
   onSignup: () => void;
 }
 
+function useVisibleLinks() {
+  const visibility = useNavVisibility("landing");
+  return NAV_LINKS.filter((l) => visibility[l.id] !== false);
+}
+
 function MobileSheet({
   open,
   onClose,
@@ -238,6 +257,7 @@ function MobileSheet({
   onLogin,
   onSignup,
 }: MobileSheetProps) {
+  const visibleLinks = useVisibleLinks();
   if (!open) return null;
 
   return (
@@ -309,7 +329,7 @@ function MobileSheet({
           className="flex-1 overflow-y-auto px-4 py-4"
         >
           <ul className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => {
+            {visibleLinks.map((link) => {
               const active = isActiveLink(pathname, link.href);
               return (
                 <li key={link.href}>

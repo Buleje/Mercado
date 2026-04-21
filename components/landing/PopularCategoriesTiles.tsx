@@ -8,8 +8,7 @@
  */
 
 import Link from "next/link";
-import { m } from "framer-motion";
-import { SectionHeader } from "@/components/ui-system";
+import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import {
   VerduraFresca,
   CarniceriaFresca,
@@ -60,45 +59,64 @@ const POPULAR_CATEGORIES = [
 
 export default function PopularCategoriesTiles() {
   return (
-    <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader
-          eyebrow="Categorías populares"
-          title="Pedí lo que necesitás"
-          description="Productos de todas las bodegas, organizados para que los encuentres al toque."
-          size="md"
-          ruled
-          className="mb-8"
-        />
+    <section
+      aria-label="Categorías populares"
+      className="relative bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)] py-20 sm:py-28"
+    >
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        {/* Header editorial */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-14 sm:mb-18">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
+              <span
+                aria-hidden
+                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+              />
+              Categorías populares
+            </p>
+            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              Pedí lo que
+              <br />
+              <span className="italic font-serif text-[var(--accent)]">
+                necesitás.
+              </span>
+            </h2>
+          </div>
+          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
+            Productos de todas las bodegas, organizados para que los encuentres
+            al toque.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* Grid px-spaced — mismo patrón que ComoFuncionaSection y Beneficios */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
           {POPULAR_CATEGORIES.map((cat, i) => {
             const Illustration = cat.Illustration;
             return (
-              <m.div
-                key={cat.slug}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-              >
+              <RevealOnScroll key={cat.slug} delayMs={i * 50}>
                 <Link
                   href={`/marketplace?categoria=${cat.slug}`}
-                  className="group relative flex flex-col items-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-5 transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5"
+                  className="group relative flex h-full flex-col items-center gap-3 bg-[var(--surface-raised)] px-4 py-7 transition-colors hover:bg-[var(--surface-canvas)]"
                 >
-                  <div className="h-20 w-20 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors">
+                  <span
+                    aria-hidden
+                    className="absolute top-3 right-4 text-[10px] font-bold tabular-nums uppercase tracking-wider text-[var(--text-tertiary)]"
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="h-20 w-20 flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">
                     <Illustration size={72} strokeWidth={1.5} />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white">
+                    <p className="text-sm font-black tracking-[-0.01em] text-[var(--text-primary)]">
                       {cat.label}
                     </p>
-                    <p className="mt-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
                       {cat.desc}
                     </p>
                   </div>
                 </Link>
-              </m.div>
+              </RevealOnScroll>
             );
           })}
         </div>
