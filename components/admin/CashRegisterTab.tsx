@@ -568,19 +568,48 @@ export default function CashRegisterTab() {
       {view === "current" && (
         <>
           {!currentRegister ? (
-            /* No open register */
-            <div className="bg-white dark:bg-card rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border p-8 text-center">
-              <div className="h-14 w-14 rounded-xl bg-gray-100 dark:bg-accent flex items-center justify-center mx-auto mb-4">
-                <Lock className="h-7 w-7 text-[var(--text-tertiary)] dark:text-muted" />
+            /* No open register — layout 2-col consistente con Turnos */
+            <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 sm:p-6">
+                <div className="flex items-start gap-4 mb-5">
+                  <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                    <Lock className="h-5 w-5 text-primary" strokeWidth={1.75} aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base font-bold text-[var(--text-primary)]">Caja cerrada</CardTitle>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Abre una caja para registrar ventas en efectivo del dia.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                >
+                  <Unlock className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                  Abrir caja
+                </button>
               </div>
-              <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">Caja cerrada</CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-6">No hay una caja abierta. Abre una para registrar ventas.</p>
-              <button
-                onClick={() => setShowOpen(true)}
-                className="px-3 sm:px-6 py-3 rounded-lg bg-primary text-white font-bold hover:bg-primary-dark transition-colors inline-flex items-center gap-2"
-              >
-                <Unlock className="h-5 w-5" /> Abrir caja
-              </button>
+              <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-col gap-3">
+                <div>
+                  <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Que es la caja</p>
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                    Registro del efectivo fisico del dia. Abres con un monto inicial, registras ingresos / egresos durante el turno y al cerrar comparas lo contado con lo esperado.
+                  </p>
+                </div>
+                <div className="border-t border-[var(--rule-soft)] pt-3">
+                  <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Tolerancia actual</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-[var(--text-primary)] font-mono">&plusmn; S/ {cashTolerance}</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowToleranceConfig(true)}
+                      className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline"
+                    >
+                      Ajustar
+                    </button>
+                  </div>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Diferencias dentro del rango se marcan como aceptables.</p>
+                </div>
+              </aside>
             </div>
           ) : (
             /* Open register */

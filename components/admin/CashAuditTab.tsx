@@ -380,11 +380,16 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         {loading ? (
           <div className="p-8 flex justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
         ) : audits.length === 0 ? (
-          <div className="p-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">
-            <Calculator className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p>No hay cuadres de caja registrados aún.</p>
+          <div className="p-12 text-center">
+            <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
+              <Calculator className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+            </div>
+            <CardTitle className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin cuadres registrados</CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Los cuadres se generan al cerrar turnos en Control de turnos.</p>
             {onNavigateToTurnos && (
-              <button onClick={onNavigateToTurnos} className="mt-2 text-primary hover:underline font-semibold text-xs">Ir a Control de Turnos para abrir el primer turno →</button>
+              <button onClick={onNavigateToTurnos} className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
+                Ir a Control de turnos →
+              </button>
             )}
           </div>
         ) : (

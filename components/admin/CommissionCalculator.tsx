@@ -352,8 +352,12 @@ export default function CommissionCalculator() {
       )}
 
       {!loading && !error && summaries.length === 0 && (
-        <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
-          No hay ventas registradas para el periodo seleccionado.
+        <div className="py-12 px-4 text-center bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
+          <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
+            <Users className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+          </div>
+          <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin ventas en el periodo</p>
+          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde POS para ver el desglose.</p>
         </div>
       )}
     </div>
