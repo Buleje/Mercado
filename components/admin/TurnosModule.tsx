@@ -809,6 +809,26 @@ export default function TurnosModule() {
                 placeholder="0.00"
                 className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
               />
+              <div className="flex flex-wrap gap-1.5 mt-2 justify-center">
+                {[100, 200, 300, 500].map(amount => {
+                  const active = parseFloat(efectivoInicial || "0") === amount;
+                  return (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => setEfectivoInicial(String(amount))}
+                      className={cn(
+                        "px-3 py-1 rounded-md text-xs font-bold border transition-colors",
+                        active
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
+                      )}
+                    >
+                      S/ {amount}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <button
               onClick={handleAbrir}
@@ -1007,10 +1027,12 @@ export default function TurnosModule() {
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           {historial.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="text-6xl mb-4">&#9200;</div>
-              <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin turnos registrados</CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Abre tu primer turno para empezar a registrar ventas</p>
+            <div className="text-center py-12 px-4">
+              <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
+                <Clock className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+              </div>
+              <CardTitle className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin turnos registrados</CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Abre tu primer turno para empezar a registrar ventas.</p>
             </div>
           ) : historialView === "timeline" ? (
             /* Vista Timeline */
