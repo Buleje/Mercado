@@ -18,7 +18,8 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { Menu, Search } from "@buleje/design-system/icons";
+import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
+import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
@@ -33,6 +34,8 @@ export interface AdminTopHeaderProps {
   themeMode: "light" | "dark" | "system";
   userName: string;
   userRole: string;
+  tenantSlug?: string | null;
+  tenantName?: string | null;
   onOpenMobileNav: () => void;
   onOpenSearch: () => void;
   onOpenCierreDiario: () => void;
@@ -52,6 +55,8 @@ export function AdminTopHeader({
   themeMode,
   userName,
   userRole,
+  tenantSlug,
+  tenantName,
   onOpenMobileNav,
   onOpenSearch,
   onOpenCierreDiario,
@@ -94,6 +99,22 @@ export function AdminTopHeader({
             ⌘K
           </kbd>
         </button>
+
+        {/* Chip de tenant activo — reemplaza la barra superior gruesa.
+            Muestra el nombre del negocio administrado + link rapido a tienda. */}
+        {tenantSlug && (
+          <Link
+            href={`/t/${tenantSlug}/tienda`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Abrir tienda en nueva pestaña"
+            className="hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20 text-xs font-semibold text-primary transition-colors shrink-0"
+          >
+            <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            <span className="truncate max-w-[120px]">{tenantName || tenantSlug}</span>
+            <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
+          </Link>
+        )}
       </div>
 
       {/* Right: actions */}

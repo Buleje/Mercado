@@ -959,26 +959,34 @@ body {
 }
 
 /* ── Modal backdrop unificado ───────────────────────────────────────────
- * Reemplaza los `bg-black/40 backdrop-blur-sm` ad-hoc repartidos en
- * 30+ modales del admin. Efecto mas suave (slate en vez de negro puro)
- * + blur menor para evitar el "rayado" que aparecia sobre contenido con
- * franjas / tablas / charts.
+ * Overlay BLANCO semi-opaco (no negro). Fija el modal en el centro y
+ * difumina el contenido de fondo sin oscurecer la pantalla — sensacion
+ * de "whiteout" editorial, consistente con el tema admin claro.
+ *
  * Uso: `className="modal-backdrop"` en el overlay fijo del modal.
+ * Colores via tokens CSS para adaptarse a dark mode automaticamente.
  */
 .modal-backdrop {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgb(15 23 42 / 0.28); /* slate-900 con 28% vs negro puro 40% */
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  animation: modal-backdrop-in 160ms ease-out;
+  background: rgb(255 255 255 / 0.75); /* blanco 75% opacidad */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: modal-backdrop-in 180ms ease-out;
+  /* Display flex para centrar automaticamente el modal-content hijo.
+     Si el consumer ya agrega flex-X, estos se sobreescriben. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-@media (prefers-color-scheme: dark) {
-  .modal-backdrop {
-    background: rgb(0 0 0 / 0.5);
-  }
+[data-admin-shell="true"] .modal-backdrop,
+.dark .modal-backdrop {
+  background: rgb(15 23 42 / 0.72); /* slate-900 72% para dark mode */
 }
+/* NOTE: algunos modales ya aplican su propio `flex items-center` al
+ * lado de .modal-backdrop. El display:flex default no rompe porque
+ * align/justify son idempotentes cuando coincide. */
 @keyframes modal-backdrop-in {
   from { opacity: 0; }
   to   { opacity: 1; }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -126,6 +126,28 @@ function AdminPage() {
 
   useAdminNavigateEvent(navigateTab);
   useDocumentTitle(tab, activeTenantName);
+
+  // Compact sidebar state propagado via localStorage — AdminSidebar lo toggle.
+  // Aca lo leemos para ajustar el margin del main content en coherencia.
+  const [sidebarCompact, setSidebarCompact] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("admin-sidebar-compact") === "true"; } catch { return false; }
+  });
+  useEffect(() => {
+    const syncFromStorage = () => {
+      try { setSidebarCompact(localStorage.getItem("admin-sidebar-compact") === "true"); } catch { /* ignore */ }
+    };
+    const syncFromEvent = (e: Event) => {
+      const detail = (e as CustomEvent<{ compact: boolean }>).detail;
+      if (detail && typeof detail.compact === "boolean") setSidebarCompact(detail.compact);
+    };
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener("admin-sidebar-compact-change", syncFromEvent);
+    return () => {
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener("admin-sidebar-compact-change", syncFromEvent);
+    };
+  }, []);
   const swipeHandlers = useSwipeNavigation(tab, navigateTab, TAB_CATEGORIES);
   useOnboardingTourTrigger(onboarding);
 
@@ -207,7 +229,8 @@ function AdminPage() {
         onExit={handleExitImpersonation}
       />
 
-      <AdminTenantBar tenantSlug={activeTenantSlug} tenantName={activeTenantName} />
+      {/* AdminTenantBar removido — el chip tenant ahora vive dentro del
+          AdminTopHeader al lado de la busqueda global (mas compacto). */}
 
       <AdminNavigation
         shared={{
@@ -250,6 +273,7 @@ function AdminPage() {
         "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
         presentationMode ? "sm:ml-0"
           : focusMode ? "sm:ml-16"
+          : sidebarCompact ? "sm:ml-[60px]"
           : "sm:ml-[260px]",
       )}>
         <AdminTopHeader
@@ -260,6 +284,8 @@ function AdminPage() {
           themeMode={themeMode}
           userName={userName}
           userRole={userRole}
+          tenantSlug={activeTenantSlug}
+          tenantName={activeTenantName}
           onOpenMobileNav={() => setMobileNavOpen(true)}
           onOpenSearch={() => setSearchOpen(true)}
           onOpenCierreDiario={() => setShowCierreDiario(true)}

@@ -320,7 +320,12 @@ export function AdminSidebar({
   const toggleCompact = React.useCallback(() => {
     setIsCompact(prev => {
       const next = !prev;
-      try { localStorage.setItem("admin-sidebar-compact", next ? "true" : "false"); } catch { /* ignore */ }
+      try {
+        localStorage.setItem("admin-sidebar-compact", next ? "true" : "false");
+        /* Dispara evento custom para que el layout principal reajuste el
+           margin del main immediate (sin esperar el polling de 500ms). */
+        window.dispatchEvent(new CustomEvent("admin-sidebar-compact-change", { detail: { compact: next } }));
+      } catch { /* ignore */ }
       return next;
     });
   }, []);
