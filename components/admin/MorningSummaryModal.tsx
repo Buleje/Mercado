@@ -80,7 +80,7 @@ export default function MorningSummaryModal() {
   const dayName = DIAS[now.getDay()];
 
   return (
-    <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="modal-backdrop flex items-center justify-center " style={{ zIndex: 9000 }}>
       <div className="relative bg-white dark:bg-card rounded-xl max-w-md w-full mx-4 overflow-hidden">
         {/* Header */}
         <div className="relative bg-[var(--brand-ink)] p-6 text-[var(--surface-canvas)]">

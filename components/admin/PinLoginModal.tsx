@@ -243,7 +243,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
   const isLocked = remainingMs > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="modal-backdrop flex items-center justify-center">
       <div
         className={cn(
           "relative w-full max-w-sm rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-8",

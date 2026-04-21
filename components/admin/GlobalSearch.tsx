@@ -562,7 +562,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center pt-[12vh] bg-black/50 backdrop-blur-sm"
+      className="modal-backdrop flex items-start justify-center pt-[12vh] " style={{ zIndex: 9999 }}
       onClick={onClose}
     >
       <div

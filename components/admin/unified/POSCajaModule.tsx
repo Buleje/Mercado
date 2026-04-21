@@ -801,7 +801,7 @@ function ShiftCloseModal({
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="modal-backdrop flex items-center justify-center p-4">
       <div className="bg-white border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-primary px-6 py-4">

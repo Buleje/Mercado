@@ -2194,7 +2194,7 @@ export default function InventoryTab() {
 
       {/* Bulk clear images confirmation modal */}
       {bulkClearImagesConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="modal-backdrop flex items-center justify-center p-4">
           <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
@@ -2249,7 +2249,7 @@ export default function InventoryTab() {
 
       {/* Bulk delete confirmation modal */}
       {bulkDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="modal-backdrop flex items-center justify-center p-4">
           <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
@@ -2286,7 +2286,7 @@ export default function InventoryTab() {
 
       {/* Bulk edit modal */}
       {bulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="modal-backdrop flex items-center justify-center p-4">
           <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <CardTitle className="text-lg font-bold text-foreground">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
@@ -2361,7 +2361,7 @@ export default function InventoryTab() {
       {/* Mejora 6 nueva: QR Modal */}
       {showQRProduct && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowQRProduct(null)} />
+          <div className="modal-backdrop" onClick={() => setShowQRProduct(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
             <div className="w-full max-w-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 text-center">
               <div className="flex items-center justify-between">
@@ -2409,7 +2409,7 @@ export default function InventoryTab() {
       {/* Mejora 5 nueva: Auto-reorden modal */}
       {showAutoReorder !== null && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowAutoReorder(null)} />
+          <div className="modal-backdrop" onClick={() => setShowAutoReorder(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
             <div className="w-full max-w-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">

@@ -217,7 +217,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] bg-black/40 backdrop-blur-sm"
+      className="modal-backdrop flex items-start justify-center pt-[15vh] " style={{ zIndex: 9999 }}
       onClick={() => setOpen(false)}
       role="dialog"
       aria-modal="true"

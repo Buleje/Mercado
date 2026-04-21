@@ -1095,7 +1095,7 @@ export default function PuntoDeCompraTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="modal-backdrop flex items-center justify-center p-4"
             onClick={() => setShowBarcode(false)}
           >
             <m.div
@@ -1124,7 +1124,7 @@ export default function PuntoDeCompraTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="modal-backdrop flex items-center justify-center p-4"
             onClick={() => setShowHistory(false)}
           >
             <m.div
@@ -1253,7 +1253,7 @@ export default function PuntoDeCompraTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="modal-backdrop flex items-center justify-center p-4"
             onClick={() => setShowSupplierForm(false)}
           >
             <m.div
@@ -1373,7 +1373,7 @@ export default function PuntoDeCompraTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="modal-backdrop flex items-center justify-center p-4"
             onClick={() => !submitting && setShowConfirm(false)}
           >
             <m.div
@@ -1492,7 +1492,7 @@ export default function PuntoDeCompraTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="modal-backdrop flex items-center justify-center p-4"
             onClick={() => setShowSuccess(false)}
           >
             <m.div

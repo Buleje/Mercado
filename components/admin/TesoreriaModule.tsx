@@ -1264,7 +1264,7 @@ export default function TesoreriaModule() {
             <m.div
               key="cuenta-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 40 }}
               onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }}
             />
             <m.div
@@ -1408,7 +1408,7 @@ export default function TesoreriaModule() {
             <m.div
               key="mov-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 40 }}
               onClick={() => setShowCreateMov(false)}
             />
             <m.div
@@ -1574,7 +1574,7 @@ export default function TesoreriaModule() {
             <m.div
               key="trans-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 40 }}
               onClick={() => setShowCreateTransfer(false)}
             />
             <m.div
@@ -1704,7 +1704,7 @@ export default function TesoreriaModule() {
             <m.div
               key="deact-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 40 }}
               onClick={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
             />
             <m.div

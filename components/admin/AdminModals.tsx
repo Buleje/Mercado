@@ -62,7 +62,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
 
   // Close on Escape
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 60 }} onClick={onClose}>
       <div
         className="bg-white dark:bg-card rounded-xl w-full max-w-lg mx-4 border border-[var(--rule-base)] dark:border-card-border overflow-hidden"
         onClick={e => e.stopPropagation()}
@@ -218,7 +218,7 @@ export function ClearDataModal({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={handleCancel}>
+    <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 100 }} onClick={handleCancel}>
       <div className="bg-white dark:bg-card rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
         {/* Step indicator */}

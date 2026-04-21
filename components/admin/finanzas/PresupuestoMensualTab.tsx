@@ -307,7 +307,7 @@ export default function PresupuestoMensualTab() {
       {/* ── Edit Modal ──────────────────────────────────────────────────────── */}
       {showEdit && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowEdit(false)} />
+          <div className="modal-backdrop" onClick={() => setShowEdit(false)} />
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={e => e.target === e.currentTarget && setShowEdit(false)}

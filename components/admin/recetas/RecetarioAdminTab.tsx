@@ -366,7 +366,7 @@ export default function RecetarioAdminTab() {
       <AnimatePresence>
         {deleteConfirm && (
           <>
-            <m.div key="del-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+            <m.div key="del-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => setDeleteConfirm(null)} />
             <m.div key="del-modal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
                 <p className="text-base font-bold text-[var(--text-primary)]">Eliminar receta?</p>
@@ -385,7 +385,7 @@ export default function RecetarioAdminTab() {
       <AnimatePresence>
         {showModal && (
           <>
-            <m.div key="modal-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => { setShowModal(false); resetForm(); }} />
+            <m.div key="modal-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => { setShowModal(false); resetForm(); }} />
             <m.div
               key="modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}

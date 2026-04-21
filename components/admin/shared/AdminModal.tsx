@@ -75,7 +75,7 @@ export default function AdminModal({
       <Dialog.Portal>
         <Dialog.Overlay
           className={cn(
-            "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm",
+            "modal-backdrop",
             "data-[state=open]:animate-modal-overlay-in",
           )}
         />

@@ -118,7 +118,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
   }, [enriched, search, sortKey, sortDir]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white dark:bg-card w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border shrink-0">

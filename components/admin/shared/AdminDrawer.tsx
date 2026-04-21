@@ -50,7 +50,7 @@ export function AdminDrawer({
       direction="right"
     >
       <VaulDrawer.Portal>
-        <VaulDrawer.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-drawer-overlay-in" />
+        <VaulDrawer.Overlay className="modal-backdrop data-[state=open]:animate-drawer-overlay-in" />
         <VaulDrawer.Content
           aria-describedby={description ? undefined : undefined}
           className={cn(

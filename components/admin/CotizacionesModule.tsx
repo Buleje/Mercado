@@ -1189,7 +1189,7 @@ export default function CotizacionesModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 40 }}
               onClick={() => setSelected(null)}
             />
             <m.div
@@ -1465,7 +1465,7 @@ export default function CotizacionesModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 60 }}
               onClick={() => setShowTemplateModal(false)}
             />
             <m.div
@@ -1523,7 +1523,7 @@ export default function CotizacionesModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 60 }}
               onClick={() => setShowTemplateList(false)}
             />
             <m.div

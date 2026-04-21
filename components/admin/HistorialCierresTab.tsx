@@ -212,7 +212,7 @@ export default function HistorialCierresTab() {
       <AnimatePresence>
         {detail && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDetail(null)} />
+            <div className="modal-backdrop" onClick={() => setDetail(null)} />
             <m.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

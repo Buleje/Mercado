@@ -97,7 +97,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
       {children}
       <AlertDialog.Root open={open} onOpenChange={(v) => !v && handleCancel()}>
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-confirm-overlay-in" />
+          <AlertDialog.Overlay className="modal-backdrop data-[state=open]:animate-confirm-overlay-in" />
           <AlertDialog.Content
             className={cn(
               "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-w-md w-[calc(100vw-2rem)]",

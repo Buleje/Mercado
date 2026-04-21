@@ -234,7 +234,7 @@ function ProductFormModal({
   const valid = form.name.trim().length >= 2 && form.price > 0 && form.unit.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
         className="bg-white dark:bg-card rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-card-border"
         onClick={(e) => e.stopPropagation()}
@@ -1051,7 +1051,7 @@ export default function ProductsAdminTab() {
       {/* Excel importer modal */}
       {showExcelImporter && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="modal-backdrop flex items-center justify-center p-4"
           onClick={() => setShowExcelImporter(false)}
         >
           <div

@@ -2075,7 +2075,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       <AnimatePresence>
         {selected && (
           <>
-            <m.div key="ct-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
+            <m.div key="ct-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
             <m.div
               key="ct-panel"
               initial={{ x: "100%" }}

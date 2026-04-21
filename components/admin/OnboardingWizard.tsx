@@ -310,7 +310,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="modal-backdrop flex items-center justify-center p-4 " style={{ zIndex: 9990 }}
       role="dialog"
       aria-modal="true"
       aria-label="Guía de configuración inicial"

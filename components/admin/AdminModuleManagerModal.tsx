@@ -88,7 +88,7 @@ export function AdminModuleManagerModal({
 
   return (
     <div className="fixed inset-0 z-100 overflow-y-auto">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="modal-backdrop" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-3xl max-h-[90vh] flex flex-col">
           {/* Header */}

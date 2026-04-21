@@ -56,7 +56,7 @@ export function OrdersDetailPanel({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="modal-backdrop flex justify-end animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

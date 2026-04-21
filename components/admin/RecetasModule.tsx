@@ -730,7 +730,7 @@ export default function RecetasModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 40 }}
               onClick={() => setSelected(null)}
             />
             <m.div
@@ -945,7 +945,7 @@ export default function RecetasModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop"
               onClick={resetNew}
             />
             <m.div
@@ -1136,7 +1136,7 @@ export default function RecetasModule() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              className="modal-backdrop" style={{ zIndex: 60 }}
               onClick={() => setShowProducir(false)}
             />
             <m.div

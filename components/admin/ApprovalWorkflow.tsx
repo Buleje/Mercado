@@ -132,7 +132,7 @@ function ResolveModal({
 }) {
   const [note, setNote] = useState("");
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="modal-backdrop flex items-center justify-center p-4">
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-full max-w-md p-6 space-y-4">
         <CardTitle className="text-base font-semibold text-[var(--text-primary)]">
           {decision === "aprobado" ? "Aprobar solicitud" : "Rechazar solicitud"}

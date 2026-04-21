@@ -947,7 +947,7 @@ export default function GuiasRemisionModule() {
         {selected && (
           <>
             <m.div key="grr-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
+              className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
             <m.div key="grr-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto">
@@ -1178,7 +1178,7 @@ export default function GuiasRemisionModule() {
       <AnimatePresence>
         {showNew && (
           <>
-            <m.div key="ng-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowNew(false)} />
+            <m.div key="ng-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => setShowNew(false)} />
             <m.div
               key="ng-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}

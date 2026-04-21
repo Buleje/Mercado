@@ -182,7 +182,7 @@ export default function HITLApprovalsBanner() {
       {/* Modal de detalle + aprobación */}
       {selected && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="modal-backdrop flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && !resolving && setSelected(null)}
           role="dialog"
           aria-modal="true"
