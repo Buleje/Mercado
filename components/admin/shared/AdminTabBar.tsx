@@ -25,6 +25,8 @@ interface AdminTabBarProps {
   vertical?: boolean;
   children?: ReactNode;
   onTabHover?: (id: string) => void;
+  /** Contenido alineado a la derecha del tab bar (ej. status chip). */
+  rightSlot?: ReactNode;
 }
 
 export default function AdminTabBar({
@@ -37,6 +39,7 @@ export default function AdminTabBar({
   vertical = false,
   children,
   onTabHover,
+  rightSlot,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
 
@@ -269,6 +272,14 @@ export default function AdminTabBar({
           >
             Restablecer
           </button>
+        )}
+
+        {/* Slot derecho — status chip u otras acciones contextuales.
+            ml-auto empuja todo a la derecha, pr-2 margen del borde. */}
+        {rightSlot && (
+          <div className="ml-auto flex shrink-0 items-center pr-2">
+            {rightSlot}
+          </div>
         )}
       </div>
 

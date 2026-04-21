@@ -952,32 +952,11 @@ export default function POSCajaModule() {
     <div className="space-y-3">
       <OfflineIndicator />
 
-      {/* Toolbar slim — badge de turno + Cerrar/Abrir Turno.
-          Breadcrumbs los maneja cada sub-modulo individualmente para cubrir
-          tambien los accesos standalone (ej. /admin?tab=fiados). */}
-      <div className="hidden sm:flex items-center justify-end gap-2">
-        <span className={cn(
-          "px-3 py-1 rounded-full text-xs font-bold inline-flex",
-          turnoAbierto ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-secondary)]"
-        )}>
-          {turnoAbierto ? "Turno abierto" : "Sin turno"}
-        </span>
-        {turnoAbierto ? (
-          <button
-            onClick={handleOpenCloseModal}
-            className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error)] transition-colors"
-          >
-            Cerrar Turno
-          </button>
-        ) : (
-          <button
-            onClick={() => setSub("turnos")}
-            className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
-          >
-            Abrir Turno
-          </button>
-        )}
-      </div>
+      {/* La barra flotante 'Sin turno/Abrir Turno' se movio:
+          - Chip de status es ahora rightSlot del AdminTabBar (micro, inline)
+          - El boton CTA full se renderiza dentro de POSView/TurnosModule
+            donde pertenece contextualmente.
+          Gano ~60px verticales + accion en su contexto correcto. */}
 
       <AdminTabBar
         tabs={TABS.map(t => ({
@@ -989,6 +968,31 @@ export default function POSCajaModule() {
         activeTab={sub}
         onTabChange={(id) => setSub(id as TabId)}
         moduleId="pos-caja"
+        rightSlot={
+          /* Chip micro de status — visible desde cualquier sub-tab.
+             - Turno abierto: abre modal para cerrar (accion mas frecuente).
+             - Turno cerrado: navega a Turnos (donde se abre con el form). */
+          <button
+            type="button"
+            onClick={() => {
+              if (turnoAbierto) handleOpenCloseModal();
+              else setSub("turnos");
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
+              turnoAbierto
+                ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]/80"
+                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",
+            )}
+            title={turnoAbierto ? "Turno abierto — click para cerrar" : "Sin turno — click para abrir uno"}
+          >
+            <span className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              turnoAbierto ? "bg-[var(--data-success)] animate-pulse" : "bg-[var(--text-tertiary)]",
+            )} aria-hidden />
+            {turnoAbierto ? "Turno abierto" : "Sin turno"}
+          </button>
+        }
       >
 
       {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────── */}
