@@ -948,20 +948,59 @@ export default function FiadosModule() {
     exportToExcel(rows, `deudores-${fecha}`, "Deudores");
   };
 
+  const VIEW_MODES = [
+    { id: "list" as const, label: "Lista" },
+    { id: "kanban" as const, label: "Kanban" },
+    { id: "libreta" as const, label: "Libreta" },
+    { id: "cobranza" as const, label: "Cobranza" },
+  ];
+
+  const STATUS_FILTERS = [
+    { key: "" as const, label: "Todos" },
+    { key: "ACTIVO" as const, label: "Activo" },
+    { key: "VENCIDO" as const, label: "Vencido" },
+    { key: "PAGADO" as const, label: "Pagado" },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Toolbar (sin titulo redundante — el nav ya indica Fiados).
-          Saldo pendiente inline + Opciones dropdown + CTA Nuevo Fiado */}
-      <div className="flex items-center justify-end gap-2 flex-wrap">
+    <div className="space-y-4">
+      {/* Fila 1 — View tabs + Acciones. Compact, sin titulos redundantes. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-0.5 p-0.5 bg-[var(--surface-sunken)] rounded-lg">
+          {VIEW_MODES.map(m => (
+            <button
+              key={m.id}
+              onClick={() => { setFiadosViewMode(m.id); try { localStorage.setItem("fiados-view-mode", m.id); } catch {} }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
+                fiadosViewMode === m.id
+                  ? "bg-white text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Total pendiente — chips inline, sin mr-auto gore */}
         {totalSaldo > 0 && (
-          <span className="text-xs font-semibold text-[var(--text-tertiary)] mr-auto">
-            Total pendiente: <span className="text-[var(--text-primary)] font-bold">{formatCurrency(totalSaldo)}</span>
-            <span className="mx-1.5">·</span>
-            <span className="text-[var(--data-success)]">{activosCount} activos</span>
-            <span className="mx-1.5">·</span>
-            <span className="text-[var(--data-error)]">{vencidosCount} vencidos</span>
-          </span>
+          <div className="flex items-center gap-2 text-xs ml-1">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendiente</span>
+            <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{formatCurrency(totalSaldo)}</span>
+            <span className="text-[var(--text-tertiary)]">·</span>
+            <span className="font-semibold text-[var(--data-success)]">{activosCount} activos</span>
+            {vencidosCount > 0 && (
+              <>
+                <span className="text-[var(--text-tertiary)]">·</span>
+                <span className="font-semibold text-[var(--data-error)]">{vencidosCount} vencidos</span>
+              </>
+            )}
+          </div>
         )}
+
+        <div className="flex-1" />
+
         <ModuleActionMenu
           label="Opciones"
           items={[
@@ -972,103 +1011,52 @@ export default function FiadosModule() {
         />
         <button
           onClick={() => setShowNew(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
         >
-          <Plus className="h-4 w-4" />
-          Nuevo Fiado
+          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+          Nuevo fiado
         </button>
       </div>
 
-      {/* ── Tabs estandar (View modes) ─────────────────────────────── */}
-      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl w-fit">
-        <button
-          onClick={() => { setFiadosViewMode("list"); try { localStorage.setItem("fiados-view-mode", "list"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "list" ? "bg-white text-[var(--text-primary)] " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
-        >
-          Lista
-        </button>
-        <button
-          onClick={() => { setFiadosViewMode("kanban"); try { localStorage.setItem("fiados-view-mode", "kanban"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "kanban" ? "bg-white text-[var(--text-primary)] " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
-        >
-          Kanban
-        </button>
-        <button
-          onClick={() => { setFiadosViewMode("libreta"); try { localStorage.setItem("fiados-view-mode", "libreta"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "libreta" ? "bg-white text-[var(--text-primary)] " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
-        >
-          Libreta
-        </button>
-        <button
-          onClick={() => { setFiadosViewMode("cobranza"); try { localStorage.setItem("fiados-view-mode", "cobranza"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "cobranza" ? "bg-white text-[var(--text-primary)] " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
-        >
-          Cobranza
-        </button>
-      </div>
-
-      {/* ── Toolbar estandar ───────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Busqueda */}
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
+      {/* Fila 2 — Search + Filtros + contador + reload. */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white focus:border-[var(--data-success)]/30 focus:ring-1 focus:ring-[var(--data-success)]/40 outline-none transition-all"
+            className="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
           />
         </div>
 
-        {/* Filtro status — chips estandar */}
-        {([
-          { key: "" as const, label: "Todos" },
-          { key: "ACTIVO" as const, label: "Activo" },
-          { key: "VENCIDO" as const, label: "Vencido" },
-          { key: "PAGADO" as const, label: "Pagado" },
-        ] as const).map(f => (
-          <button
-            key={f.key}
-            onClick={() => setStatusFilter(f.key)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              statusFilter === f.key
-                ? "bg-[var(--accent-soft)] border-[var(--data-success)]/30 text-[var(--data-success)]"
-                : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white hover:bg-gray-50"
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {STATUS_FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setStatusFilter(f.key)}
+              className={cn(
+                "inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold border transition-colors",
+                statusFilter === f.key
+                  ? "bg-primary text-white border-primary"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white hover:border-primary/40 hover:text-primary"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Tendencia de morosidad */}
-        {(tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0) && (
-          <span className={cn(
-            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-            tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes
-              ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-              : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes
-              ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
-              : "bg-gray-100 text-[var(--text-secondary)]"
-          )}>
-            {tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes ? "+" : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes ? "-" : "="}{" "}
-            Cobrado S/{tendenciaMorosidad.cobradoEsteMes.toFixed(0)} / Prestado S/{tendenciaMorosidad.prestadoEsteMes.toFixed(0)}
-          </span>
-        )}
-
-        {/* Resultado count */}
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {fiados.length} resultados
+        <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
+          {fiados.length} {fiados.length === 1 ? "resultado" : "resultados"}
         </span>
 
-        {/* Reload */}
         <AdminTooltip content="Recargar la lista de fiados">
-          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
+          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-[var(--surface-sunken)] transition-colors">
+            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
           </button>
         </AdminTooltip>
       </div>
@@ -1079,41 +1067,40 @@ export default function FiadosModule() {
       {/* Cobranza Inteligente — escalado automático + descuentos */}
       {fiadosViewMode === "cobranza" && <CobranzaInteligente />}
 
-      {/* IDEA 1: Vista Libreta Digital — replica la libreta de fiados de papel */}
+      {/* Vista Libreta Digital — inspirada en la libreta de papel, pero
+          con paleta del admin (sin amarillo chillon, sin border-dashed). */}
       {fiadosViewMode === "libreta" && (
-        <div className="space-y-6">
-          {/* Boton para anotar fiado rapido */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-[var(--data-warning)] italic">Libreta de fiados — como la de toda la vida</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Una tarjeta por cliente con sus fiados abiertos — hojea con el scroll horizontal.</p>
             <button
               onClick={() => setShowQuickFiado(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-[#245a41] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" /> Anotar fiado
+              <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> Anotar fiado
             </button>
           </div>
 
           {libretaClientes.length === 0 ? (
-            <div className="bg-[var(--data-warning-50)] border-2 border-dashed border-[var(--data-warning)] rounded-xl p-8 text-center">
-              <FileText className="h-10 w-10 text-[var(--data-warning)] mx-auto mb-2" />
-              <p className="text-sm font-bold text-[var(--data-warning)]">Libreta vacia</p>
-              <p className="text-xs text-[var(--data-warning)] mt-1">No hay fiados activos. Usa el boton &quot;Anotar fiado&quot; para empezar.</p>
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] rounded-xl py-12 px-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
+                <FileText className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+              </div>
+              <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Libreta vacia</p>
+              <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">No hay fiados activos. Usa &quot;Anotar fiado&quot; para registrar el primero.</p>
             </div>
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar" style={{ scrollBehavior: "smooth" }}>
               {libretaClientes.map((cliente, idx) => (
                 <div
                   key={cliente.customerId}
-                  className="snap-center shrink-0 w-[320px] sm:w-[360px] rounded-xl border-2 border-[var(--data-warning)]/30"
-                  style={{ background: "linear-gradient(180deg, #fef3c7 0%, #fffbeb 30%, #fffdf5 100%)" }}
+                  className="snap-center shrink-0 w-[320px] sm:w-[360px] rounded-xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden"
                 >
-                  {/* Encabezado de pagina */}
-                  <div className="px-4 pt-4 pb-2 border-b-2 border-[var(--data-warning)]/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-serif italic font-bold text-[var(--data-warning)] text-base">{cliente.nombre}</span>
-                      </div>
-                      <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--data-warning)]">Pag. {idx + 1}/{libretaClientes.length}</span>
+                  {/* Encabezado de pagina — header limpio */}
+                  <div className="px-4 pt-4 pb-3 border-b border-[var(--rule-soft)]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-[var(--text-primary)] text-sm truncate">{cliente.nombre}</span>
+                      <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] shrink-0">{idx + 1} / {libretaClientes.length}</span>
                     </div>
                     <FiadoReliabilityBadge customerId={cliente.customerId} fiados={fiados} />
                   </div>
@@ -1123,30 +1110,32 @@ export default function FiadosModule() {
                     {cliente.fiados.map((f) => {
                       const fechaCorta = new Date(f.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" });
                       return (
-                        <div key={f.id} className="flex items-baseline justify-between font-mono text-sm leading-7 cursor-pointer hover:bg-[var(--data-warning)]/30 px-1 rounded transition-colors" onClick={() => openDetail(f)}>
-                          <span className="text-[var(--data-warning)] truncate max-w-[200px]">
-                            <span className="text-[var(--data-warning)] text-xs">{fechaCorta}</span> — {f.descripcion || "fiado"}
+                        <div key={f.id} className="flex items-baseline justify-between font-mono text-sm leading-7 cursor-pointer hover:bg-[var(--surface-sunken)] px-1.5 rounded transition-colors" onClick={() => openDetail(f)}>
+                          <span className="text-[var(--text-secondary)] truncate max-w-[200px]">
+                            <span className="text-[var(--text-tertiary)] text-xs">{fechaCorta}</span>
+                            <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
+                            {f.descripcion || "fiado"}
                           </span>
-                          <span className="font-bold text-[var(--data-warning)] shrink-0 ml-2">S/ {f.total.toFixed(0)}</span>
+                          <span className="font-bold text-[var(--text-primary)] shrink-0 ml-2">S/ {f.total.toFixed(0)}</span>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Totales */}
-                  <div className="px-4 py-3 border-t-2 border-[var(--data-warning)]/20">
-                    <div className="flex justify-between font-mono text-sm text-[var(--data-warning)]">
-                      <span>Total:</span>
-                      <span className="font-bold">S/ {cliente.fiados.reduce((s, f) => s + f.total, 0).toFixed(0)}</span>
+                  {/* Totales — tipografia limpia, tokens coherentes */}
+                  <div className="px-4 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60">
+                    <div className="flex justify-between font-mono text-xs text-[var(--text-secondary)]">
+                      <span>Total prestado</span>
+                      <span className="font-semibold">S/ {cliente.fiados.reduce((s, f) => s + f.total, 0).toFixed(0)}</span>
                     </div>
                     {cliente.totalPagado > 0 && (
-                      <div className="flex justify-between font-mono text-sm text-[var(--data-success)]">
-                        <span>Pagado:</span>
-                        <span className="font-bold">-S/ {cliente.totalPagado.toFixed(0)}</span>
+                      <div className="flex justify-between font-mono text-xs text-[var(--data-success)] mt-0.5">
+                        <span>Pagado</span>
+                        <span className="font-semibold">&minus; S/ {cliente.totalPagado.toFixed(0)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between font-mono text-sm mt-1 pt-1 border-t border-[var(--data-warning)]/20">
-                      <span className="font-bold text-[var(--data-error)]">Debe:</span>
+                    <div className="flex justify-between font-mono mt-2 pt-2 border-t border-[var(--rule-soft)]">
+                      <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">Debe</span>
                       <span className="font-bold text-[var(--data-error)] text-base">S/ {cliente.totalDeuda.toFixed(2)}</span>
                     </div>
                   </div>
@@ -1155,19 +1144,25 @@ export default function FiadosModule() {
             </div>
           )}
 
-          {/* Modal de fiado rapido */}
+          {/* Modal de fiado rapido — paleta neutra coherente con el resto */}
           {showQuickFiado && (
-            <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowQuickFiado(false)}>
-              <div className="bg-[var(--data-warning-50)] rounded-xl max-w-sm w-full p-5 space-y-3" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center gap-2 mb-2">
-                  <CardTitle className="text-base font-bold text-[var(--data-warning)] font-serif italic">Anotar en la libreta</CardTitle>
+            <div className="modal-backdrop flex items-center justify-center p-4" onClick={() => setShowQuickFiado(false)}>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] rounded-xl max-w-sm w-full p-5 space-y-3" onClick={e => e.stopPropagation()}>
+                <div className="flex items-start gap-3 mb-1">
+                  <div className="h-9 w-9 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                    <FileText className="h-4.5 w-4.5 text-primary" strokeWidth={1.75} aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base font-bold text-[var(--text-primary)]">Anotar en la libreta</CardTitle>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Registro rapido sin validaciones.</p>
+                  </div>
                 </div>
                 <input
                   type="text"
                   placeholder="Nombre del cliente"
                   value={quickFiadoForm.nombre}
                   onChange={e => setQuickFiadoForm({ ...quickFiadoForm, nombre: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning)] bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
                   autoFocus
                 />
                 <input
@@ -1175,7 +1170,7 @@ export default function FiadosModule() {
                   placeholder="Producto (ej: arroz 5kg, leche)"
                   value={quickFiadoForm.producto}
                   onChange={e => setQuickFiadoForm({ ...quickFiadoForm, producto: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning)] bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
                 />
                 <input
                   type="number"
@@ -1183,11 +1178,11 @@ export default function FiadosModule() {
                   value={quickFiadoForm.monto}
                   onChange={e => setQuickFiadoForm({ ...quickFiadoForm, monto: e.target.value })}
                   step="0.50"
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning)] bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm font-bold text-right font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
                 />
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setShowQuickFiado(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 transition-colors">Cancelar</button>
-                  <button onClick={handleQuickFiado} disabled={quickFiadoCreating || !quickFiadoForm.nombre.trim() || !quickFiadoForm.monto} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50">
+                  <button onClick={handleQuickFiado} disabled={quickFiadoCreating || !quickFiadoForm.nombre.trim() || !quickFiadoForm.monto} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
                     {quickFiadoCreating ? "Anotando..." : "Anotar"}
                   </button>
                 </div>
