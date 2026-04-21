@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { VocabularyProvider } from "@/contexts/vocabulary-context";
 import { ModuleTabsProvider } from "@/contexts/module-tabs-context";
 import AdminMotionProvider from "@/components/admin/providers/AdminMotionProvider";
@@ -28,9 +28,22 @@ const FAB_EXCLUDED_PATHS = [
   "/admin/pos-mobile",
 ];
 
+/** Tabs donde el FAB sobra — el propio modulo tiene sus acciones principales
+ *  bien organizadas, agregar un FAB flotante produce ruido visual y accesos
+ *  redundantes. POS/Turnos/Caja/Fiados cumplen este criterio. */
+const FAB_EXCLUDED_TABS = new Set([
+  "ventas-caja",
+  "fiados",
+  "pedidos",
+]);
+
 export function AdminProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const showFab = !FAB_EXCLUDED_PATHS.some((p) => pathname?.startsWith(p));
+  const searchParams = useSearchParams();
+  const activeTab = searchParams?.get("tab") ?? "";
+  const showFab =
+    !FAB_EXCLUDED_PATHS.some((p) => pathname?.startsWith(p)) &&
+    !FAB_EXCLUDED_TABS.has(activeTab);
 
   // Keyboard shortcuts help modal — Ctrl+? / Cmd+?
   const [showShortcuts, setShowShortcuts] = useState(false);
