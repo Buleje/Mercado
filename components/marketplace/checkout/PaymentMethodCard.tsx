@@ -63,33 +63,37 @@ export default function PaymentMethodCard({
         </span>
       )}
 
-      {/* Icon circle */}
-      <span
-        className={cn(
-          "inline-flex h-12 w-12 items-center justify-center rounded-full mb-4 transition-colors",
-          selected
-            ? "bg-[var(--accent)] text-white"
-            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)]",
-        )}
-        style={
-          brandColor && !selected
-            ? { backgroundColor: `${brandColor}14`, color: brandColor }
-            : undefined
-        }
-        aria-hidden
-      >
-        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-      </span>
-
-      <p
-        className={cn(
-          "text-base font-bold tracking-[-0.01em]",
-          selected ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]",
-        )}
-      >
-        {name}
-      </p>
-      <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug">
+      {/* Icon + Wordmark row — si hay brandColor, nombre va en color de marca prominente */}
+      <div className="flex items-center gap-3 mb-3">
+        <span
+          className={cn(
+            "inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 transition-colors",
+            selected
+              ? "bg-[var(--accent)] text-white"
+              : brandColor
+              ? ""
+              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)]",
+          )}
+          style={
+            brandColor && !selected
+              ? { backgroundColor: `${brandColor}14`, color: brandColor }
+              : undefined
+          }
+          aria-hidden
+        >
+          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        </span>
+        <p
+          className={cn(
+            "tracking-[-0.02em] leading-none",
+            brandColor ? "text-2xl font-black" : "text-base font-bold text-[var(--text-primary)]",
+          )}
+          style={brandColor && !selected ? { color: brandColor } : undefined}
+        >
+          {name}
+        </p>
+      </div>
+      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug">
         {subtitle}
       </p>
     </button>

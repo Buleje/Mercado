@@ -60,20 +60,20 @@ const PAYMENT_METHODS: Array<{
   {
     key: "efectivo",
     label: "Efectivo",
-    hint: "Pagás cuando recibas el pedido",
+    hint: "Pagás al recibir · sin tarjeta",
     Icon: Wallet,
   },
   {
     key: "yape",
     label: "Yape",
-    hint: "Transferí al número del vendedor",
+    hint: "Instantáneo · desde tu celular",
     Icon: Smartphone,
     brandColor: "#8a1bd4",
   },
   {
     key: "plin",
     label: "Plin",
-    hint: "Transferí al número del vendedor",
+    hint: "Instantáneo · desde tu banco",
     Icon: Smartphone,
     brandColor: "#1f86c7",
   },
