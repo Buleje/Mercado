@@ -88,8 +88,30 @@ function maybeKillZombies() {
   }
 }
 
+function ensurePrismaClient() {
+  // Tras borrar .next o tras instalar deps, el client hasheado que genera
+  // Next.js queda desincronizado del schema. El instrumentation hook falla
+  // silencioso hasta correr `prisma generate`. Lo regeneramos siempre ANTES
+  // de `next dev` — es rápido (<3s) y elimina una clase entera de bugs.
+  const started = Date.now();
+  const res = spawnSync("npx", ["prisma", "generate"], {
+    stdio: "pipe",
+    encoding: "utf8",
+    windowsHide: true,
+    shell: platform() === "win32",
+  });
+  const ms = Date.now() - started;
+  if (res.status === 0) {
+    console.log(`✅ Prisma client regenerado (${(ms / 1000).toFixed(1)}s).`);
+  } else {
+    console.warn("⚠️  prisma generate falló — sigo igual, pero podría fallar el instrumentation hook.");
+    if (res.stderr) console.warn(`    ${res.stderr.trim().slice(0, 400)}`);
+  }
+}
+
 function main() {
   maybeKillZombies();
+  ensurePrismaClient();
   if (!existsSync(DEV_CACHE)) return;
 
   const size = dirSizeBytes(DEV_CACHE);

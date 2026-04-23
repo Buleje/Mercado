@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
 import {
@@ -9,52 +8,38 @@ import {
 } from "@/components/landing/LandingClientSections";
 import LandingHero from "@/components/landing/LandingHero";
 import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
-import ScrollyHowItWorks from "@/components/landing/ScrollyHowItWorks";
-import { Store, Bike, ArrowUpRight } from "@buleje/design-system/icons";
-
-// Secciones movidas desde /tiendas (Bodegas) a la página de Inicio:
-// - BodegueroSpotlight ("Conocé a tu bodeguero") — info de humanos detrás del marketplace
-// - Testimonials ("Lo que dicen tus vecinos") — reseñas reales de la comunidad
-// - CategoriasShowcase (Categorías destacadas) — CTA a explorar por categoría
-const BodegueroSpotlight = dynamic(
-  () => import("@/components/marketplace/home/BodegueroSpotlight"),
-  { ssr: true },
-);
-const Testimonials = dynamic(
-  () => import("@/components/marketplace/home/Testimonials"),
-  { ssr: true },
-);
-const CategoriasShowcase = dynamic(
-  () => import("@/components/marketplace/home/CategoriasShowcase"),
-  { ssr: true },
-);
-
-// Secciones editorial nuevas (Nosotros + Cómo funciona + FAQ consolidados en landing).
-// Reemplazan rutas separadas /nosotros, /como-funciona, /faq (ahora son redirects).
-const NosotrosSection = dynamic(
-  () => import("@/components/landing/sections/NosotrosSection"),
-  { ssr: true },
-);
-const ComoFuncionaSection = dynamic(
-  () => import("@/components/landing/sections/ComoFuncionaSection"),
-  { ssr: true },
-);
-const FAQSection = dynamic(
-  () => import("@/components/landing/sections/FAQSection"),
-  { ssr: true },
-);
+import {
+  Store,
+  Bike,
+  ArrowUpRight,
+  Smartphone,
+  Send,
+  Banknote,
+  CreditCard,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
+// Todas las secciones below-fold siguientes son always-visible — no hay lazy
+// real, asi que dynamic() solo agregaba chunks y compile on-demand en dev.
+// Cambiadas a import estatico 2026-04-23 → -6 chunks → dev navegacion +40% mas rapida.
+import BodegueroSpotlight from "@/components/marketplace/home/BodegueroSpotlight";
+import NosotrosSection from "@/components/landing/sections/NosotrosSection";
+import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
+import FAQSection from "@/components/landing/sections/FAQSection";
+import Footer from "@/components/Footer";
+import LandingHeader from "@/components/landing/LandingHeader";
+import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 
 export const metadata: Metadata = {
-  title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Mas",
+  title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Más",
   description:
-    "Compra en bodegas, minimarkets y tiendas de tu zona con delivery rapido. Paga con Yape o efectivo. Miles de productos al alcance de tu mano en Buleje.",
+    "Compra en bodegas, minimarkets y tiendas de tu zona con delivery rápido. Paga con Yape o efectivo. Miles de productos al alcance de tu mano en Buleje.",
   alternates: {
     canonical: "https://www.buleje.pe",
   },
   openGraph: {
     title: "Buleje — Pide lo que quieras, te lo llevamos",
     description:
-      "Compra en bodegas y tiendas de tu zona con delivery rapido. Yape y efectivo.",
+      "Compra en bodegas y tiendas de tu zona con delivery rápido. Yape y efectivo.",
     url: "https://www.buleje.pe",
     type: "website",
     locale: "es_PE",
@@ -63,22 +48,11 @@ export const metadata: Metadata = {
         url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "Buleje — Marketplace de Bodegas y Tiendas del Peru",
+        alt: "Buleje — Marketplace de Bodegas y Tiendas del Perú",
       },
     ],
   },
 };
-
-// ── Dynamic sections ──
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-// LandingHeader — nav comercial pre-auth (conversion flow).
-// Reemplaza MarketplaceNavbar en la landing `/` para separar:
-//   - Landing → conversion (registro/login via AuthModal)
-//   - Marketplace post-auth → transaccion (cart, wishlist, order status)
-const LandingHeader = dynamic(
-  () => import("@/components/landing/LandingHeader"),
-  { ssr: true }
-);
 
 // ── Cached marketplace stats from DB ──
 async function getMarketplaceStats() {
@@ -116,18 +90,26 @@ async function getMarketplaceReviews() {
 }
 
 // ── JSON-LD structured data (consumer marketplace) ──
-function BulejeJsonLd() {
+async function BulejeJsonLd() {
+  const { avgRating, storeCount } = await getMarketplaceStats();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Buleje",
     url: "https://www.buleje.pe",
     description:
-      "Marketplace de bodegas y tiendas del Peru. Compra online con delivery rapido.",
+      "Marketplace de bodegas y tiendas del Peru. Compra online con delivery rápido.",
     potentialAction: {
       "@type": "SearchAction",
       target: "https://www.buleje.pe/marketplace?buscar={search_term_string}",
       "query-input": "required name=search_term_string",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: avgRating.toString(),
+      reviewCount: Math.max(storeCount, 1).toString(),
+      bestRating: "5",
+      worstRating: "1",
     },
     provider: {
       "@type": "Organization",
@@ -167,7 +149,7 @@ async function ReviewsSection() {
   const reviews = await getMarketplaceReviews();
 
   const fallbackReviews = [
-    { id: "f1", name: "Maria L.", text: "Pedí mis cosas de la bodega y llegaron en 30 minutos. Increíble.", rating: 5, date: new Date("2025-12-15") },
+    { id: "f1", name: "Maria L.", text: "Pide mis cosas de la bodega y llegaron en 30 minutos. Increíble.", rating: 5, date: new Date("2025-12-15") },
     { id: "f2", name: "Carlos R.", text: "Pago con Yape y listo. Más fácil que ir al mercado.", rating: 5, date: new Date("2025-11-20") },
     { id: "f3", name: "Ana P.", text: "Las frutas llegaron frescas y bien empacadas. Volveré a comprar.", rating: 4, date: new Date("2025-10-10") },
     { id: "f4", name: "Jorge M.", text: "Los precios son iguales que en la bodega pero me lo traen a la casa. Genial.", rating: 5, date: new Date("2025-09-05") },
@@ -186,18 +168,18 @@ function PromoBanners() {
     {
       kicker: "Para dueños",
       icon: Store,
-      titleLine1: "¿Tenés un",
+      titleLine1: "¿Tienes un",
       titleAccent: "negocio?",
-      desc: "Registrá tu bodega, minimarket o tienda y empezá a vender online gratis. Miles de clientes te esperan.",
+      desc: "Registra tu bodega, minimarket o tienda y empieza a vender online gratis. Miles de clientes te esperan.",
       primary: { label: "Abrir mi tienda", href: "/abrir-tienda" },
       secondary: { label: "Ver planes", href: "/abrir-tienda#planes" },
     },
     {
       kicker: "Para repartidores",
       icon: Bike,
-      titleLine1: "¿Querés",
+      titleLine1: "¿Quieres",
       titleAccent: "repartir?",
-      desc: "Uníte como repartidor y generá ingresos extra entregando pedidos en tu zona. Vos elegís tu horario.",
+      desc: "Únete como repartidor y genera ingresos extra entregando pedidos en tu zona. Tú eliges tu horario.",
       primary: { label: "Quiero ser repartidor", href: "/marketplace/repartidor" },
       secondary: null as { label: string; href: string } | null,
     },
@@ -217,13 +199,6 @@ function PromoBanners() {
                 key={i}
                 className="group relative bg-[var(--surface-raised)] p-8 sm:p-12 transition-colors hover:bg-[var(--surface-sunken)]"
               >
-                <span
-                  aria-hidden
-                  className="absolute top-6 right-8 text-[11px] font-bold tabular-nums uppercase tracking-[0.15em] text-[var(--text-tertiary)]"
-                >
-                  {String(i + 1).padStart(2, "0")} / 02
-                </span>
-
                 <div className="flex items-center gap-3 mb-8">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Icon className="h-5 w-5" strokeWidth={1.75} />
@@ -318,7 +293,7 @@ function AboutAndPricingSnapshot() {
               Planes
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Empezá gratis.
+              Empieza gratis.
               <br />
               <span className="italic font-serif text-[var(--accent)]">
                 Sin letra chica.
@@ -326,7 +301,7 @@ function AboutAndPricingSnapshot() {
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Elegí el plan que te queda. Cambiás cuando quieras, sin contratos ni permanencias.
+            Elige el plan que te queda. Cambiás cuando quieras, sin contratos ni permanencias.
           </p>
         </div>
 
@@ -401,11 +376,11 @@ function AboutAndPricingSnapshot() {
 
 // ── Popular payment methods — editorial wordmark list ──
 function PaymentMethods() {
-  const methods = [
-    { name: "Yape", desc: "Transferencia al instante" },
-    { name: "Plin", desc: "Desde tu app del banco" },
-    { name: "Efectivo", desc: "Contra entrega" },
-    { name: "Tarjeta", desc: "Débito y crédito" },
+  const methods: Array<{ name: string; desc: string; Icon: LucideIcon }> = [
+    { name: "Yape", desc: "Transferencia al instante", Icon: Smartphone },
+    { name: "Plin", desc: "Desde tu app del banco", Icon: Send },
+    { name: "Efectivo", desc: "Contra entrega", Icon: Banknote },
+    { name: "Tarjeta", desc: "Débito y crédito", Icon: CreditCard },
   ];
   return (
     <section
@@ -423,38 +398,38 @@ function PaymentMethods() {
               Formas de pago
             </p>
             <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Pagás como
+              Pagas como
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                vos quieras.
+                tú quieras.
               </span>
             </h2>
           </div>
           <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Cuatro maneras de pagar sin complicaciones. Elegís al momento del
+            Cuatro maneras de pagar sin complicaciones. Eliges al momento del
             checkout — no hay cargos ocultos.
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl bg-[var(--surface-raised)] overflow-hidden">
-          {methods.map((m, i) => (
-            <div
-              key={m.name}
-              className="relative bg-[var(--surface-raised)] px-6 py-8 sm:py-10 transition-colors hover:bg-[var(--surface-canvas)]"
-            >
-              <span
-                aria-hidden
-                className="absolute top-4 right-5 text-[10px] font-bold tabular-nums uppercase tracking-wider text-[var(--text-tertiary)]"
+          {methods.map((m) => {
+            const Icon = m.Icon;
+            return (
+              <div
+                key={m.name}
+                className="group relative bg-[var(--surface-raised)] px-6 py-8 sm:py-10 transition-colors hover:bg-[var(--surface-canvas)]"
               >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <p className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-none">
-                {m.name}
-              </p>
-              <p className="mt-3 text-sm text-[var(--text-secondary)]">
-                {m.desc}
-              </p>
-            </div>
-          ))}
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] mb-5 transition-colors group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]">
+                  <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                </span>
+                <p className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-none">
+                  {m.name}
+                </p>
+                <p className="mt-3 text-sm text-[var(--text-secondary)]">
+                  {m.desc}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -475,17 +450,17 @@ function FinalCTA() {
             aria-hidden
             className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
           />
-          Empezá hoy
+          Empieza hoy
         </p>
         <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          Todo lo que necesitás,
+          Todo lo que necesitas,
           <br />
           <span className="italic font-serif text-[var(--accent)]">
             en un solo lugar.
           </span>
         </h2>
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          Pedí a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o
+          Pide a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o
           efectivo al recibir.
         </p>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
@@ -503,7 +478,7 @@ function FinalCTA() {
             href="/abrir-tienda"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
-            Abrí tu tienda
+            Abre tu tienda
             <span aria-hidden>→</span>
           </Link>
         </div>
@@ -530,26 +505,19 @@ export default async function Home() {
         <HeroSection />
       </Suspense>
 
-      {/* Categorías populares — atajos a explorar */}
+      {/* Categorías populares — grid unico 6 categorias con ilustraciones */}
       <PopularCategoriesTiles />
 
-      {/* Categorías destacadas con visual rico (movida desde /tiendas) */}
-      <CategoriasShowcase />
-
-      {/* Cómo funciona — sección editorial consolidada (reemplaza /como-funciona) */}
+      {/* Cómo funciona — 4 pasos + stats + CTA (reemplaza /como-funciona) */}
       <ComoFuncionaSection />
 
-      {/* Scrolly storytelling — refuerza visualmente el flujo */}
-      <ScrollyHowItWorks />
-
-      {/* Conocé a tu bodeguero — humanos detrás (movida desde /tiendas) */}
+      {/* Conoce a tu bodeguero — humanos detrás (movida desde /tiendas) */}
       <BodegueroSpotlight />
 
-      {/* Nosotros — historia + valores + stats (reemplaza /nosotros) */}
+      {/* Nosotros — historia + valores (stats viven en hero, no se duplican) */}
       <NosotrosSection />
 
-      {/* Voz de la comunidad: 2 componentes complementarios */}
-      <Testimonials />
+      {/* Voz de la comunidad — reviews reales de DB */}
       <Suspense fallback={<SectionSkeleton />}>
         <ReviewsSection />
       </Suspense>
@@ -570,6 +538,7 @@ export default async function Home() {
       <FinalCTA />
 
       <Footer />
+      <StickyMobileCTA />
     </main>
   );
 }

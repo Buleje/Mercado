@@ -115,6 +115,17 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: true,
   },
 
+  // Redirects — rutas consolidadas en la landing (anchors) para SEO-friendly
+  // 308 HTTP (permanent + preserves method). Reemplaza los page.tsx con
+  // redirect() que devolvian 200 + HTML intermedio.
+  async redirects() {
+    return [
+      { source: "/nosotros", destination: "/#nosotros", permanent: true },
+      { source: "/faq", destination: "/#faq", permanent: true },
+      { source: "/como-funciona", destination: "/#como-funciona", permanent: true },
+    ];
+  },
+
   // Add long-lived cache headers for static assets and security headers
   async headers() {
     return [

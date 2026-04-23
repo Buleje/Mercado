@@ -94,7 +94,7 @@ export default function LandingHero({
       </m.div>
 
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-28 pb-14 sm:pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[6fr_5fr] gap-10 lg:gap-14 items-center">
           {/* ── LEFT — título editorial dramático ───────────────────────── */}
           <m.div
             initial={{ opacity: 0, y: 20 }}
@@ -147,75 +147,79 @@ export default function LandingHero({
             </m.div>
           </m.div>
 
-          {/* ── RIGHT — illustration card + stats editorial ─────────────── */}
+          {/* ── RIGHT — ilustracion protagonista editorial ─────────────── */}
           <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
             className="order-1 lg:order-2"
           >
-            <div className="relative rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-              {/* Illustration hero */}
-              <div
-                className="relative aspect-[5/4] flex items-center justify-center overflow-hidden"
-                aria-hidden
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/[0.06] via-transparent to-[var(--accent)]/[0.03]" />
-                <MapaUcayaliAutentico
-                  size={260}
-                  className="relative text-[var(--text-primary)]/70"
-                />
-                {/* Pin accent flotante */}
-                <span className="absolute top-6 right-6 inline-flex h-3 w-3 rounded-full bg-[var(--accent)] shadow-lg shadow-[var(--accent)]/40 animate-pulse" />
-                {/* Mini card overlay — bodega abriendo */}
-                <div className="absolute bottom-5 left-5 flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]/90 backdrop-blur px-3 py-2.5">
-                  <BodegaAbriendo
-                    size={36}
-                    className="text-[var(--accent)]"
-                  />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
-                      Abierta ahora
-                    </p>
-                    <p className="text-sm font-black tracking-tight text-[var(--text-primary)]">
-                      120+ bodegas
-                    </p>
-                  </div>
+            <div
+              aria-hidden
+              className="relative aspect-[4/3] flex items-center justify-center"
+            >
+              {/* Gradient accent sutil de fondo */}
+              <div className="absolute inset-4 rounded-3xl bg-gradient-to-br from-[var(--accent)]/[0.06] via-transparent to-[var(--accent)]/[0.02]" />
+
+              {/* Mapa grande — protagonista */}
+              <MapaUcayaliAutentico
+                size={440}
+                className="relative text-[var(--text-primary)]/75"
+              />
+
+              {/* Chip bodega flotante — bottom-left */}
+              <div className="absolute bottom-6 left-6 flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3 shadow-sm">
+                <BodegaAbriendo size={32} className="text-[var(--accent)]" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
+                    Abierta ahora
+                  </p>
+                  <p className="text-sm font-black tracking-tight text-[var(--text-primary)]">
+                    Don Paco · 5 min
+                  </p>
                 </div>
               </div>
 
-              {/* Stats vertical editorial */}
-              <div className="divide-y divide-[var(--rule-soft)] border-t border-[var(--rule-soft)]">
-                {heroStats.map((stat, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-baseline gap-5 px-6 py-4"
-                  >
-                    <span className="text-[clamp(1.75rem,3vw,2.5rem)] font-black tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none w-[4.5ch] shrink-0">
-                      <NumberFlow
-                        value={stat.value}
-                        format={
-                          stat.decimals
-                            ? { minimumFractionDigits: 1, maximumFractionDigits: 1 }
-                            : { maximumFractionDigits: 0 }
-                        }
-                        locales="es-PE"
-                      />
-                      {stat.suffix && (
-                        <span className="text-[var(--text-tertiary)]">
-                          {stat.suffix}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-sm text-[var(--text-secondary)] leading-snug">
-                      {stat.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {/* Pin accent flotante — top-right */}
+              <span className="absolute top-10 right-10 inline-flex h-3 w-3 rounded-full bg-[var(--accent)] shadow-lg shadow-[var(--accent)]/40 animate-pulse" />
             </div>
           </m.div>
         </div>
+
+        {/* Stats strip horizontal — editorial fuera del card, full-width */}
+        <m.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
+          className="mt-16 sm:mt-20 pt-8 border-t border-[var(--rule-soft)]"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+            {heroStats.map((stat, idx) => (
+              <div
+                key={idx}
+                className={`${idx > 0 ? "md:border-l md:border-[var(--rule-soft)] md:pl-6" : ""}`}
+              >
+                <p className="text-[clamp(2rem,4vw,3rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--text-primary)] leading-none">
+                  <NumberFlow
+                    value={stat.value}
+                    format={
+                      stat.decimals
+                        ? { minimumFractionDigits: 1, maximumFractionDigits: 1 }
+                        : { maximumFractionDigits: 0 }
+                    }
+                    locales="es-PE"
+                  />
+                  {stat.suffix && (
+                    <span className="text-[var(--accent)]">{stat.suffix}</span>
+                  )}
+                </p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                  {stat.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </m.div>
       </div>
     </section>
   );

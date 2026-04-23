@@ -12,7 +12,7 @@ const VALUES = [
   {
     icon: Heart,
     title: "Sin intermediarios",
-    desc: "Vos vendés, vos decidís. Nosotros sólo facilitamos la tecnología y el delivery.",
+    desc: "Vos vendes, tú decides. Nosotros sólo facilitamos la tecnología y el delivery.",
   },
   {
     icon: MapPin,
@@ -22,20 +22,13 @@ const VALUES = [
   {
     icon: Users,
     title: "Comunidad real",
-    desc: "Cada bodega que vende acá conoce a sus clientes por nombre. No somos Amazon.",
+    desc: "Cada bodega que vende aquí conoce a sus clientes por nombre. No somos Amazon.",
   },
   {
     icon: Zap,
     title: "Sin burocracia",
     desc: "Registro en 5 min. Sin contratos, sin mínimos, sin letra chica.",
   },
-];
-
-const STATS = [
-  { value: "2024", label: "Fundado en Pucallpa" },
-  { value: "120+", label: "Bodegas conectadas" },
-  { value: "25k", label: "Vecinos comprando" },
-  { value: "4.8★", label: "Satisfacción" },
 ];
 
 export default function NosotrosSection() {
@@ -88,7 +81,7 @@ export default function NosotrosSection() {
               le gane a esos gigantes en su propio barrio.
             </p>
             <p className="mt-6 text-base text-[var(--text-tertiary)] leading-relaxed">
-              Tu cliente es tu vecino. Lo conocés por nombre. Sabés qué compra cada semana.
+              Tu cliente es tu vecino. Lo conoces por nombre. Sabes qué compra cada semana.
               Ese vínculo no lo reemplaza ningún algoritmo — pero sí lo amplificamos con
               delivery, inventario, reportes y cobros digitales.
             </p>
@@ -115,24 +108,8 @@ export default function NosotrosSection() {
           </div>
         </div>
 
-        {/* Stats editorial — números enormes */}
-        <div className="pt-12 border-t border-[var(--rule-soft)]">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
-            {STATS.map(({ value, label }) => (
-              <div key={label}>
-                <p className="text-[clamp(2.5rem,5vw,4rem)] font-black tabular-nums text-[var(--text-primary)] tracking-[-0.035em] leading-none">
-                  {value}
-                </p>
-                <p className="mt-3 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-                  {label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA sutil */}
-        <div className="mt-16 sm:mt-20 text-center">
+        {/* CTA sutil — stats viven en el hero, no se duplican aqui */}
+        <div className="mt-4 text-center">
           <Link
             href="/abrir-tienda"
             className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"

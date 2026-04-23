@@ -75,10 +75,10 @@ export default function PopularCategoriesTiles() {
               Categorías populares
             </p>
             <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Pedí lo que
+              Pide lo que
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                necesitás.
+                necesitas.
               </span>
             </h2>
           </div>
@@ -98,12 +98,6 @@ export default function PopularCategoriesTiles() {
                   href={`/marketplace?categoria=${cat.slug}`}
                   className="group relative flex h-full flex-col items-center gap-3 bg-[var(--surface-raised)] px-4 py-7 transition-colors hover:bg-[var(--surface-canvas)]"
                 >
-                  <span
-                    aria-hidden
-                    className="absolute top-3 right-4 text-[10px] font-bold tabular-nums uppercase tracking-wider text-[var(--text-tertiary)]"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
                   <div className="h-20 w-20 flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">
                     <Illustration size={72} strokeWidth={1.5} />
                   </div>

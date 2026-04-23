@@ -83,10 +83,11 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
       {/* Form fields */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="ob-brand-nombre" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Nombre del negocio *
           </label>
           <input
+            id="ob-brand-nombre"
             type="text"
             value={data.nombre}
             onChange={e => onChange({ ...data, nombre: e.target.value })}
@@ -96,10 +97,11 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="ob-brand-direccion" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Direcci&oacute;n
           </label>
           <input
+            id="ob-brand-direccion"
             type="text"
             value={data.direccion}
             onChange={e => onChange({ ...data, direccion: e.target.value })}
@@ -109,10 +111,11 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="ob-brand-telefono" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Tel&eacute;fono WhatsApp
           </label>
           <input
+            id="ob-brand-telefono"
             type="tel"
             value={data.telefono}
             onChange={e => onChange({ ...data, telefono: e.target.value })}
