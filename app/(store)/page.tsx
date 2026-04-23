@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
 import {
@@ -8,6 +9,9 @@ import {
 } from "@/components/landing/LandingClientSections";
 import LandingHero from "@/components/landing/LandingHero";
 import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
+import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
+import LandingHeader from "@/components/landing/LandingHeader";
+import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import {
   Store,
   Bike,
@@ -18,16 +22,22 @@ import {
   CreditCard,
   type LucideIcon,
 } from "@buleje/design-system/icons";
-// Todas las secciones below-fold siguientes son always-visible — no hay lazy
-// real, asi que dynamic() solo agregaba chunks y compile on-demand en dev.
-// Cambiadas a import estatico 2026-04-23 → -6 chunks → dev navegacion +40% mas rapida.
-import BodegueroSpotlight from "@/components/marketplace/home/BodegueroSpotlight";
-import NosotrosSection from "@/components/landing/sections/NosotrosSection";
-import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
-import FAQSection from "@/components/landing/sections/FAQSection";
-import Footer from "@/components/Footer";
-import LandingHeader from "@/components/landing/LandingHeader";
-import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
+// Below-fold — dynamic con skeleton para reducir initial bundle en prod y
+// parallelizar compile en dev. Combinacion warm-routes (ver scripts/) +
+// dynamic es ideal: cada chunk se compila una vez, luego navegacion es <1s.
+const BodegueroSpotlight = dynamic(
+  () => import("@/components/marketplace/home/BodegueroSpotlight"),
+  { ssr: true, loading: () => <SectionSkeleton /> },
+);
+const NosotrosSection = dynamic(
+  () => import("@/components/landing/sections/NosotrosSection"),
+  { ssr: true, loading: () => <SectionSkeleton /> },
+);
+const FAQSection = dynamic(
+  () => import("@/components/landing/sections/FAQSection"),
+  { ssr: true, loading: () => <SectionSkeleton /> },
+);
+const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 
 export const metadata: Metadata = {
   title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Más",

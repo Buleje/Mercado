@@ -9,21 +9,35 @@
  * siempre-visible en mobile aumenta conversion entre 15-25%.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "@buleje/design-system/icons";
 
 export default function StickyMobileCTA() {
   const [visible, setVisible] = useState(false);
+  const rafRef = useRef<number | null>(null);
+  const lastVisibleRef = useRef(false);
 
   useEffect(() => {
+    // rAF throttle — evita setState en cada scroll event (60fps max)
+    // y skip redundante si el valor no cambio.
     const onScroll = () => {
-      // Aparece despues de 400px de scroll (hero alto ~600px mobile)
-      setVisible(window.scrollY > 400);
+      if (rafRef.current != null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        const shouldShow = window.scrollY > 400;
+        if (shouldShow !== lastVisibleRef.current) {
+          lastVisibleRef.current = shouldShow;
+          setVisible(shouldShow);
+        }
+        rafRef.current = null;
+      });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   return (
