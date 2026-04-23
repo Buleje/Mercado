@@ -167,6 +167,9 @@ export default function CheckoutEntregaPage() {
   const [couponInputs, setCouponInputs] = useState<Record<string, string>>({});
   const [couponLoading, setCouponLoading] = useState<Record<string, boolean>>({});
   const [couponErrors, setCouponErrors] = useState<Record<string, string>>({});
+  const [couponsUserOpened, setCouponsUserOpened] = useState(false);
+  const hasAppliedCoupons = Object.keys(coupons).length > 0;
+  const showCouponFields = couponsUserOpened || hasAppliedCoupons;
 
   const [loyaltyAvailable, setLoyaltyAvailable] = useState(0);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
@@ -324,7 +327,7 @@ export default function CheckoutEntregaPage() {
     // Marcamos si el permiso no estaba bloqueado a nivel navegador —
     // usamos un booleano en vez de comparar el estado dentro del closure
     // para evitar el narrowing de TS tras el guard previo.
-    const wasExplicitlyDenied = false; // (si llega acá, no era "denied")
+    const wasExplicitlyDenied = false; // (si llega aquí, no era "denied")
     const geoOptions: PositionOptions = {
       enableHighAccuracy: true,
       timeout: 12000,
@@ -404,7 +407,7 @@ export default function CheckoutEntregaPage() {
           "Bloqueaste la ubicación. Tocá el candado 🔒 en la barra de direcciones → Permisos → permití ubicación → recargá.",
         );
       } else if (ge?.code === 2) {
-        setGeoError("Ubicación no disponible. Revisá tu GPS o conexión.");
+        setGeoError("Ubicación no disponible. Revisa tu GPS o conexión.");
       } else if (ge?.code === 3) {
         setGeoError("Tiempo agotado. Intentá de nuevo.");
       } else {
@@ -537,7 +540,7 @@ export default function CheckoutEntregaPage() {
           Entrega y pago
         </h1>
         <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-          Elegí dónde recibís y cómo pagás.
+          Elige dónde recibes y cómo pagás.
         </p>
       </div>
 
@@ -831,14 +834,43 @@ export default function CheckoutEntregaPage() {
                 <ol className="list-decimal pl-5 space-y-1 marker:text-[var(--accent)] marker:font-bold">
                   <li>Confirmá tu pedido en la siguiente página.</li>
                   <li>El vendedor te enviará su número de {payment.method === "yape" ? "Yape" : "Plin"} por WhatsApp.</li>
-                  <li>Transferí el monto exacto y mandá el comprobante.</li>
+                  <li>Transferí el monto exacto y manda el comprobante.</li>
                 </ol>
               </div>
             )}
           </SectionBox>
 
-          {/* ── CUPONES ───────────────────────────────────────────── */}
-          <SectionBox kicker="Cupones" title="¿Tenés un código?" icon={Tag}>
+          {/* ── CUPONES (colapsable por default) ──────────────────── */}
+          <SectionBox
+            kicker="Cupones"
+            title="¿Tienes un código?"
+            icon={Tag}
+            action={
+              showCouponFields && !hasAppliedCoupons ? (
+                <button
+                  type="button"
+                  onClick={() => setCouponsUserOpened(false)}
+                  className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+                >
+                  Ocultar
+                </button>
+              ) : null
+            }
+          >
+            {!showCouponFields ? (
+              <button
+                type="button"
+                onClick={() => setCouponsUserOpened(true)}
+                className="w-full rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors inline-flex items-center justify-between gap-2"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  Agregá tu código de cupón
+                </span>
+                <span aria-hidden>+</span>
+              </button>
+            ) : (
+              <>
             <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] -mt-2">
               Un cupón por cada tienda. El descuento se refleja en el total.
             </p>
@@ -918,13 +950,15 @@ export default function CheckoutEntregaPage() {
                 );
               })}
             </div>
+              </>
+            )}
           </SectionBox>
 
           {/* ── LOYALTY POINTS ─────────────────────────────────────── */}
           {loyaltyAvailable > 0 && (
             <SectionBox kicker="Puntos Buleje" title="Canjeá lo que tengas" icon={Sparkles}>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] -mt-2">
-                Tenés{" "}
+                Tienes{" "}
                 <strong className="text-[var(--text-primary)] tabular-nums font-black">
                   {loyaltyAvailable}
                 </strong>{" "}
