@@ -162,12 +162,18 @@ function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: nu
           </span>
         )}
       </div>
-      {/* CTA row */}
-      <div className="flex items-center justify-between">
-        <span className="text-[length:var(--ts-xs)] font-bold text-[var(--accent)] group-hover:underline">
-          Ver productos
+      {/* CTA row — accion-oriented */}
+      <div className="flex items-center justify-between pt-1">
+        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)] group-hover:gap-2.5 transition-all">
+          Pedir ahora
+          <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
         </span>
-        <ChevronRight className="h-4 w-4 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+        {!store.vacationMode && (
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success,_#00b66a)]" />
+            Disponible
+          </span>
+        )}
       </div>
       {/* Product preview strip — visible on hover */}
       <AnimatePresence>

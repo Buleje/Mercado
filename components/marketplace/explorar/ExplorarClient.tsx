@@ -31,21 +31,21 @@ import { useEffect } from "react";
 import { ArrowUpRight, Store } from "@buleje/design-system/icons";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import WelcomeStrip from "@/components/marketplace/home/WelcomeStrip";
-import ExplorarTileGrid, { FillBanner } from "./ExplorarTileGrid";
+import ExplorarTileGrid from "./ExplorarTileGrid";
+import ExplorarHeroSearch from "./ExplorarHeroSearch";
 import ExplorarErrorBoundary from "./ExplorarErrorBoundary";
 import ExplorarBackToTop from "./ExplorarBackToTop";
 import ExplorarTracker from "./ExplorarTracker";
 import ExplorarAmazonBoxes from "./ExplorarAmazonBoxes";
-import ExplorarRelacionados from "./ExplorarRelacionados";
 import ExplorarCategoriasGrid from "./ExplorarCategoriasGrid";
 import RecentlyViewedStrip from "./RecentlyViewedStrip";
 import BuyAgainStrip from "./BuyAgainStrip";
-import NeighborsBoughtStrip from "./NeighborsBoughtStrip";
 import DealsOfTheDayStrip from "./DealsOfTheDayStrip";
 import TopRatedBento from "./TopRatedBento";
-import NewArrivalsRow from "./NewArrivalsRow";
 import BodegasTrendingRow from "./BodegasTrendingRow";
-import EditorialFeature from "./EditorialFeature";
+// Consolidacion 2026-04-23: removidos EditorialFeature, NeighborsBoughtStrip,
+// ExplorarRelacionados (2 carruseles), NewArrivalsRow, FillBanner extra.
+// Pasamos de 15 a 9 secciones (-40% altura, menos decision paralysis).
 
 /**
  * SectionBox — wrapper que envuelve cada strip de explorar en una caja
@@ -86,14 +86,14 @@ function FinalCTA() {
           Para bodegueros
         </p>
         <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          Abrí tu tienda,
+          Abre tu tienda,
           <br />
           <span className="italic font-serif text-[var(--accent)]">
-            vendé a todo Pucallpa.
+            vende a todo Pucallpa.
           </span>
         </h2>
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          Miles de vecinos ya están buscando lo que vendés. Poné tu bodega
+          Miles de vecinos ya están buscando lo que vendes. Pon tu bodega
           online en{" "}
           <span className="text-[var(--text-primary)] font-bold">5 minutos</span>
           , sin código y sin permanencia.
@@ -149,6 +149,11 @@ export default function ExplorarClient() {
       {/* Bienvenida personalizada (solo clientes logueados, silencioso si no) */}
       <WelcomeStrip />
 
+      {/* Hero search protagonista — XL search + chips populares + trust strip */}
+      <ExplorarErrorBoundary section="hero-search">
+        <ExplorarHeroSearch />
+      </ExplorarErrorBoundary>
+
       {/* Grid tile — banner · 4 bento · categorías · ofertas · banner side */}
       <ExplorarTileGrid />
 
@@ -175,26 +180,9 @@ export default function ExplorarClient() {
             </RevealOnScroll>
           </ExplorarErrorBoundary>
 
-          {/* Banner debajo de "¿Dónde querés empezar?" — admin configurable.
-              Usa FillBanner (no PromoBannerCarousel) para llenar la altura
-              completa sin recortes. Altura 260-300 px. */}
-          <ExplorarErrorBoundary section="promo-below-boxes">
-            <RevealOnScroll>
-              <div className="h-[260px] sm:h-[300px]">
-                <FillBanner slot="explorar-bottom" />
-              </div>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
           <ExplorarErrorBoundary section="buy-again">
             <RevealOnScroll>
               <SectionBox><BuyAgainStrip /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="editorial-feature">
-            <RevealOnScroll>
-              <SectionBox><EditorialFeature /></SectionBox>
             </RevealOnScroll>
           </ExplorarErrorBoundary>
 
@@ -204,33 +192,15 @@ export default function ExplorarClient() {
             </RevealOnScroll>
           </ExplorarErrorBoundary>
 
-          <ExplorarErrorBoundary section="neighbors-bought">
-            <RevealOnScroll>
-              <SectionBox><NeighborsBoughtStrip /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
           <ExplorarErrorBoundary section="bodegas-trending">
             <RevealOnScroll>
               <SectionBox><BodegasTrendingRow /></SectionBox>
             </RevealOnScroll>
           </ExplorarErrorBoundary>
 
-          <ExplorarErrorBoundary section="relacionados">
-            <RevealOnScroll>
-              <SectionBox><ExplorarRelacionados /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
           <ExplorarErrorBoundary section="categorias-grid">
             <RevealOnScroll>
               <SectionBox><ExplorarCategoriasGrid /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="new-arrivals">
-            <RevealOnScroll>
-              <SectionBox><NewArrivalsRow /></SectionBox>
             </RevealOnScroll>
           </ExplorarErrorBoundary>
         </div>

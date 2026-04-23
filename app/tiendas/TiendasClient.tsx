@@ -36,7 +36,6 @@ import MarketplaceFilters, {
 import QuickFilterChips, {
   type QuickChipId,
 } from "@/components/marketplace/QuickFilterChips";
-import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -121,167 +120,166 @@ export default function TiendasClient() {
     return () => clearTimeout(timer);
   }, [fetchStores, search, category, zone]);
 
+  const hasFilters =
+    category !== "todos" || zone || geoActive || activeChips.size > 0 || search.trim().length > 0;
+
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
 
-      {/* ── Banner promocional reemplaza al hero ───────────────────────── */}
-      <PromoBannerCarousel slot="bodegas" />
+      {/* ── Hero editorial compacto — reemplaza el banner promocional ─── */}
+      <section className="relative overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-32 -right-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+        />
+        <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-10">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-5">
+            <span
+              aria-hidden
+              className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+            />
+            <MapPin className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Directorio · Pucallpa
+          </p>
+          <h1 className="text-[clamp(2.25rem,6vw,4.25rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-4xl">
+            Las bodegas del barrio,
+            <br />
+            <span className="italic font-serif text-[var(--accent)]">
+              al alcance de un clic.
+            </span>
+          </h1>
+          <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.45] max-w-2xl">
+            Bodegas, minimarkets, farmacias y más — filtrá por zona, categoría o cercanía,
+            y recibí en {" "}
+            <span className="text-[var(--text-primary)] font-bold">25 min</span>.
+          </p>
 
-      {/* Barra compacta: search + quick chips (sin hero editorial) */}
-      <section className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
-          <div className="max-w-xl">
+          {/* Search + chips — parte del hero, no sección aparte */}
+          <div className="mt-8 max-w-2xl">
             <SearchAutocomplete
               onSearch={setSearch}
-              placeholder="Buscar tienda, bodega, minimarket..."
+              placeholder="Buscar bodega, minimarket, farmacia..."
             />
           </div>
-          <QuickFilterChips
-            activeChips={activeChips}
-            onToggle={handleChipToggle}
-          />
+          <div className="mt-4">
+            <QuickFilterChips activeChips={activeChips} onToggle={handleChipToggle} />
+          </div>
         </div>
       </section>
 
-      {/* ── Destacadas — header editorial + strip ─────────────────────── */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
-              <span
-                aria-hidden
-                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-              />
-              Destacadas
-            </p>
-            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Las que más
-              <br />
-              <span className="italic font-serif text-[var(--accent)]">
-                piden tus vecinos.
-              </span>
-            </h2>
-          </div>
-          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Curado por volumen de pedidos, calificación y cercanía a tu zona.
-          </p>
-        </div>
-      </section>
+      {/* ── Destacadas — solo si hay recomendaciones ──────────────────── */}
       <RevealOnScroll>
-        <div className="py-6 sm:py-8">
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+          <div className="flex items-end justify-between gap-6 mb-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
+                Destacadas
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+                Las que más piden tus vecinos
+              </h2>
+            </div>
+            <p className="hidden sm:block text-sm text-[var(--text-tertiary)] max-w-xs text-right">
+              Curado por volumen de pedidos y cercanía.
+            </p>
+          </div>
           <RecommendationsStrip />
-        </div>
+        </section>
       </RevealOnScroll>
 
-      {/* ── Explorá — header editorial antes de los filtros ───────────── */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-6">
-              <span
-                aria-hidden
-                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-              />
-              Explorá
-            </p>
-            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              Filtrá por lo que
-              <br />
-              <span className="italic font-serif text-[var(--accent)]">
-                te interesa.
-              </span>
-            </h2>
-          </div>
-          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            Categoría, zona, precio y distancia — combiná para encontrar la tienda ideal.
+      {/* ── Filtros + Grid — sin 2do header editorial, directo al browse ── */}
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-12">
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
+            Todas las tiendas
           </p>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
+            Filtrá y elegí la que más te convenga
+          </h2>
         </div>
-      </section>
 
-      {/* ── Filtros + Grid ── */}
-      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        {/* Sticky filter cluster — editorial (tab underline active) */}
-        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-[var(--surface-canvas)]/90 backdrop-blur border-b border-[var(--rule-soft)] mb-3">
-          {/* Category pills — underline-active estilo editorial */}
-          <div
-            role="group"
-            aria-label="Filtrar por categoría de tienda"
-            className="flex items-center gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
-          >
-            {CATEGORIES.map((cat) => {
-              const active = category === cat.id;
-              const CatIcon = getStoreCategoryIcon(cat.id);
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategory(cat.id)}
-                  aria-pressed={active}
-                  className={cn(
-                    "relative inline-flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition-colors shrink-0",
-                    active
-                      ? "text-[var(--text-primary)]"
-                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                  {cat.label}
-                  {active && (
-                    <span
-                      aria-hidden
-                      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[var(--accent)]"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Zona + Filtros */}
-          <div className="flex items-center gap-3 mt-3 flex-wrap">
-            <select
-              value={zone}
-              onChange={(e) => setZone(e.target.value)}
-              aria-label="Filtrar por zona"
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-xs font-bold tabular-nums outline-none transition-colors",
-                zone
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/40"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:border-[var(--accent)]/40",
-              )}
+        {/* Sticky filter cluster — categoria pills + zona + filtros en 1 fila */}
+        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-[var(--surface-canvas)]/95 backdrop-blur border-y border-[var(--rule-soft)] mb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div
+              role="group"
+              aria-label="Filtrar por categoría de tienda"
+              className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0"
             >
-              {ZONES.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.label}
-                </option>
-              ))}
-            </select>
+              {CATEGORIES.map((cat) => {
+                const active = category === cat.id;
+                const CatIcon = getStoreCategoryIcon(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategory(cat.id)}
+                    aria-pressed={active}
+                    className={cn(
+                      "relative inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors shrink-0",
+                      active
+                        ? "text-[var(--text-primary)]"
+                        : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                    )}
+                  >
+                    <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+                    {cat.label}
+                    {active && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[var(--accent)]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            <div className="h-5 w-px bg-[var(--rule-soft)] shrink-0 hidden sm:block" />
-
-            <MarketplaceFilters
-              filters={productFilters}
-              userCoords={userCoords}
-              geoLoading={geoLoading}
-              onChange={handleFiltersChange}
-              onRequestGeo={handleGeoSort}
-            />
-
-            {(category !== "todos" || zone || geoActive) && (
-              <button
-                onClick={() => {
-                  setCategory("todos");
-                  setZone("");
-                  setGeoActive(false);
-                  setUserCoords(null);
-                  setProductFilters(DEFAULT_FILTERS);
-                }}
-                aria-label="Limpiar todos los filtros activos"
-                className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+            <div className="flex items-center gap-2 shrink-0">
+              <select
+                value={zone}
+                onChange={(e) => setZone(e.target.value)}
+                aria-label="Filtrar por zona"
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-bold tabular-nums outline-none transition-colors",
+                  zone
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/40"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:border-[var(--accent)]/40",
+                )}
               >
-                Limpiar todo
-              </button>
-            )}
+                {ZONES.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.label}
+                  </option>
+                ))}
+              </select>
+
+              <MarketplaceFilters
+                filters={productFilters}
+                userCoords={userCoords}
+                geoLoading={geoLoading}
+                onChange={handleFiltersChange}
+                onRequestGeo={handleGeoSort}
+              />
+
+              {hasFilters && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("todos");
+                    setZone("");
+                    setGeoActive(false);
+                    setUserCoords(null);
+                    setProductFilters(DEFAULT_FILTERS);
+                    setActiveChips(new Set());
+                  }}
+                  aria-label="Limpiar todos los filtros activos"
+                  className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors px-2"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -322,14 +320,14 @@ export default function TiendasClient() {
             Para bodegueros
           </p>
           <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-            ¿Tenés una tienda?
+            ¿Tienes una tienda?
             <br />
             <span className="italic font-serif text-[var(--accent)]">
               Sumate gratis.
             </span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-            Publicá tus productos, recibí pedidos y llegá a miles de clientes
+            Publica tus productos, recibe pedidos y llegá a miles de clientes
             en Pucallpa. Sin costo de inscripción.
           </p>
           <div className="mt-12 flex flex-wrap justify-center gap-3">
@@ -338,7 +336,7 @@ export default function TiendasClient() {
               className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
             >
               <Store className="h-4 w-4" strokeWidth={1.75} />
-              Registrá tu tienda gratis
+              Registra tu tienda gratis
               <ArrowUpRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 strokeWidth={2.25}
