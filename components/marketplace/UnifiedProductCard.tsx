@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import {
   ShoppingCart,
   Store as StoreIcon,
@@ -265,7 +265,7 @@ export default function UnifiedProductCard({
               setQuickViewOpen(true);
             }}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm transition-colors hover:border-gray-400 dark:hover:border-gray-500"
-            aria-label={`Ver rapido ${product.name}`}
+            aria-label={`Ver rápido ${product.name}`}
           >
             <Heart className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" strokeWidth={1.75} aria-hidden />
           </button>
@@ -407,7 +407,7 @@ export default function UnifiedProductCard({
             role="alert"
             className="mt-2 rounded-md bg-amber-50 px-2 py-1 text-center text-[length:var(--ts-xs)] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
           >
-            Maximo 3 productos para comparar
+            Máximo 3 productos para comparar
           </p>
         )}
       </div>

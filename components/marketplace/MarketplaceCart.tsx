@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart } from "@buleje/design-system/icons";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
 import ShareCartButton from "@/components/marketplace/ShareCartButton";

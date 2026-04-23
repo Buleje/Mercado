@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useQuickAdd } from "@/contexts/quick-add-context";
 import { useCart } from "@/contexts/cart-context";
@@ -58,7 +58,7 @@ export default function QuickAddDrawer() {
     setAdding(true);
     const meta = (product as WithStoreMeta)._bulejeStoreMeta;
     if (meta) {
-      // Producto viene del marketplace multi-store — agregá al cart global
+      // Producto viene del marketplace multi-store — agrega al cart global
       // (hooks/use-marketplace-cart) con meta de la tienda.
       addMarketplaceItem({
         storeId: meta.storeId,
