@@ -8,7 +8,16 @@
  */
 
 import { useState, useCallback } from "react";
-import { Minus, Plus, ShoppingCart, Zap, Heart } from "@buleje/design-system/icons";
+import {
+  Minus,
+  Plus,
+  ShoppingCart,
+  Zap,
+  Heart,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+} from "@buleje/design-system/icons";
 import { cn } from "@buleje/design-system";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCurrency } from "@/contexts/currency-context";
@@ -98,23 +107,54 @@ export function ProductActions({
   const previewTotal = format(price * quantity);
 
   return (
-    <div className="space-y-3">
-      {/* Stepper */}
-      <div className="flex items-center gap-3">
-        <span className="text-[length:var(--ts-sm)] font-medium text-[var(--text-secondary)]">
+    <div className="space-y-4">
+      {/* Trust strip — beneficios clave arriba de las acciones */}
+      <div className="grid grid-cols-3 gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
+        <div className="flex flex-col items-center text-center gap-1">
+          <Truck className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-tight">
+            Delivery
+          </p>
+          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+            25 min
+          </p>
+        </div>
+        <div className="flex flex-col items-center text-center gap-1 border-x border-[var(--rule-soft)]">
+          <ShieldCheck className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-tight">
+            Pago
+          </p>
+          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+            Al recibir
+          </p>
+        </div>
+        <div className="flex flex-col items-center text-center gap-1">
+          <RotateCcw className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-tight">
+            Devolucion
+          </p>
+          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+            Gratis
+          </p>
+        </div>
+      </div>
+
+      {/* Stepper — label arriba, botones prominentes */}
+      <div>
+        <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)] mb-2">
           {t("cart.quantity")}
-        </span>
-        <div className="flex items-center border border-[var(--rule-base)] rounded-lg overflow-hidden bg-[var(--surface-raised)]">
+        </label>
+        <div className="inline-flex items-center border border-[var(--rule-base)] rounded-xl overflow-hidden bg-[var(--surface-raised)]">
           <button
             onClick={handleDecrement}
             disabled={quantity <= minOrderQty}
             aria-label="Reducir cantidad"
-            className="p-2.5 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-3 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Minus className="h-4 w-4 text-[var(--text-secondary)]" />
+            <Minus className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2} />
           </button>
           <span
-            className="px-4 py-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] min-w-[3rem] text-center tabular-nums"
+            className="px-5 py-3 text-base font-black text-[var(--text-primary)] min-w-[3.5rem] text-center tabular-nums"
             aria-live="polite"
             aria-label={`Cantidad: ${quantity}`}
           >
@@ -124,9 +164,9 @@ export function ProductActions({
             onClick={handleIncrement}
             disabled={quantity >= maxQty}
             aria-label="Aumentar cantidad"
-            className="p-2.5 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-3 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="h-4 w-4 text-[var(--text-secondary)]" />
+            <Plus className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2} />
           </button>
         </div>
       </div>
