@@ -117,37 +117,37 @@ function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: nu
 
   const badges = (
     <>
+      {/* Rating — primero y mas prominente (decision factor #1) */}
+      {store.rating > 0 && (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)]">
+          <Star className="h-3.5 w-3.5 fill-current text-[var(--accent)]" aria-hidden="true" />
+          {store.rating.toFixed(1)}
+        </span>
+      )}
       {/* Categoria */}
       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-gray-200 dark:border-gray-800 text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-gray-200">
         <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
         {categoryMeta.label}
       </span>
-      {/* Vacation */}
+      {/* Vacation — ultimo (solo si aplica, warning visual claro) */}
       {store.vacationMode && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
           <Plane className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
           De vacaciones
         </span>
       )}
-      {/* Rating */}
-      {store.rating > 0 && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)]">
-          <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
-          {store.rating.toFixed(1)}
-        </span>
-      )}
     </>
   );
 
   const footer = (
-    <div className="flex flex-col gap-1.5">
-      {/* Description */}
+    <div className="flex flex-col gap-2">
+      {/* Description — compacta */}
       {store.description && (
-        <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] line-clamp-1 leading-snug">
           {store.description}
         </p>
       )}
-      {/* Meta row */}
+      {/* Meta row — zona + reseñas + tiempo delivery */}
       <div className="flex items-center gap-3 flex-wrap">
         {store.zone && (
           <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
@@ -161,15 +161,35 @@ function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: nu
             {store.reviewCount} reseña{store.reviewCount !== 1 ? "s" : ""}
           </span>
         )}
+        {/* Tiempo delivery estimado — generico, valor percibido */}
+        <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="h-3 w-3"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          25–35 min
+        </span>
       </div>
       {/* CTA row — accion-oriented */}
-      <div className="flex items-center justify-between pt-1">
-        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)] group-hover:gap-2.5 transition-all">
+      <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
+        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)] group-hover:gap-2.5 transition-all pt-2">
           Pedir ahora
           <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
         </span>
-        {!store.vacationMode && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+        {store.vacationMode ? (
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] pt-2">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning)]" />
+            De vacaciones
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] pt-2">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success,_#00b66a)]" />
             Disponible
           </span>
@@ -403,7 +423,7 @@ export default function MarketplaceStoresView({
         </div>
       )}
 
-      {/* Loading state */}
+      {/* Loading state — skeleton matched a la card final (rating + cat + meta + CTA) */}
       {loading && (
         <div
           aria-busy="true"
@@ -414,13 +434,28 @@ export default function MarketplaceStoresView({
             <div
               key={i}
               aria-hidden="true"
-              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg overflow-hidden"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden"
             >
-              <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse" />
-              <div className="p-3 space-y-3">
+              {/* Image area + badges shimmer */}
+              <div className="relative aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse">
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <div className="h-6 w-12 rounded-full bg-[var(--surface-raised)]/70" />
+                  <div className="h-6 w-16 rounded-full bg-[var(--surface-raised)]/70" />
+                </div>
+              </div>
+              {/* Body */}
+              <div className="p-4 space-y-3">
                 <div className="h-5 bg-[var(--surface-sunken)] rounded-lg w-3/4 animate-pulse" />
-                <div className="h-4 bg-[var(--surface-sunken)] rounded-lg w-full animate-pulse" />
-                <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-1/2 animate-pulse" />
+                <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-full animate-pulse" />
+                <div className="flex items-center gap-3">
+                  <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-16 animate-pulse" />
+                  <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-20 animate-pulse" />
+                  <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-16 animate-pulse" />
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)]">
+                  <div className="h-4 bg-[var(--surface-sunken)] rounded-lg w-24 animate-pulse" />
+                  <div className="h-3 bg-[var(--surface-sunken)] rounded-lg w-16 animate-pulse" />
+                </div>
               </div>
             </div>
           ))}
