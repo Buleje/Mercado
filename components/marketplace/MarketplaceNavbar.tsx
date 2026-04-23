@@ -41,7 +41,12 @@ import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import DiscoverMegaMenu from "@/components/marketplace/navbar/DiscoverMegaMenu";
-import NotificationsMenu from "@/components/marketplace/NotificationsMenu";
+// NotificationsMenu lazy — framer-motion pesado + solo aparece al click.
+// Ahorra ~50kb del bundle initial del navbar.
+const NotificationsMenu = dynamic(
+  () => import("@/components/marketplace/NotificationsMenu"),
+  { ssr: false },
+);
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
