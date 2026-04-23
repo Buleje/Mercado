@@ -1,7 +1,7 @@
 "use client";
 
 import { GitCompareArrows } from "@buleje/design-system/icons";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { useCompare } from "@/contexts/compare-context";
 
 /**

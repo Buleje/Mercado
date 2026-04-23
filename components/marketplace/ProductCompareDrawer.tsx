@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { X, GitCompareArrows, Package, Star } from "@buleje/design-system/icons";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCompare, type CompareItem } from "@/contexts/compare-context";
 

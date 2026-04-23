@@ -9,14 +9,14 @@
  *
  * Autenticación:
  *   - Si el customer NO está logueado: botón sin badge + dropdown con CTA
- *     "Iniciá sesión" (sin mostrar notificaciones).
+ *     "Inicia sesión" (sin mostrar notificaciones).
  *   - Si está logueado: fetchea /api/notifications (scoped por phone cookie).
  *     Si la API falla o devuelve vacío, muestra empty state.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import {
   Bell,
   Check,
@@ -177,7 +177,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                 </p>
                 <p className="mt-0.5 text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
                   {!isLoggedIn
-                    ? "Iniciá sesión"
+                    ? "Inicia sesión"
                     : unreadCount > 0
                       ? `${unreadCount} sin leer`
                       : "Todo al día"}
@@ -202,7 +202,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                   <LogIn className="h-6 w-6" strokeWidth={1.5} />
                 </div>
                 <p className="text-base font-black tracking-[-0.01em] text-[var(--text-primary)]">
-                  Iniciá sesión para ver tus notificaciones
+                  Inicia sesión para ver tus notificaciones
                 </p>
                 <p className="mt-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
                   Te avisamos del estado de tus pedidos, promos de tus bodegas
