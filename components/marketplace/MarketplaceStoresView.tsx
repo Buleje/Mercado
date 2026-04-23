@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import {
   MapPin,
   Star,
@@ -91,7 +91,7 @@ function CategoryIconRenderer({ id, className }: { id: string; className?: strin
  * No reemplaza la logica de negocio de hover-preview: esa logica vive aqui
  * porque es especifica de esta vista y el DS canonical no la incluye.
  */
-function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: number }) {
+const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: number }) {
   const categoryMeta = CATEGORIES.find((c) => c.id === store.category) ?? CATEGORIES[0];
   const [preview, setPreview] = useState<ProductPreview[]>([]);
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -285,7 +285,13 @@ function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: nu
       />
     </m.div>
   );
-}
+}, (prev, next) =>
+  prev.store.id === next.store.id &&
+  prev.store.slug === next.store.slug &&
+  prev.store.rating === next.store.rating &&
+  prev.store.vacationMode === next.store.vacationMode &&
+  prev.index === next.index,
+);
 
 /* ── MarketplaceStoresView Props ───────────────────────────────────────────── */
 
