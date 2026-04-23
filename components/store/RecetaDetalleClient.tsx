@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, Users, ChefHat, ShoppingCart, Check,
   Share2, Home, ChevronRight, Sparkles, Copy, Play,
@@ -53,7 +53,7 @@ const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
 };
 
 const DIFICULTAD_EMOJI: Record<string, string> = {
-  "Facil": "\u2B50",
+  "Fácil": "\u2B50",
   "Media": "\uD83D\uDD25",
   "Dificil": "\uD83C\uDFC6",
 };

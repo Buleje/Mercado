@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, ShoppingCart, X } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -117,7 +117,7 @@ export default function QuickReorder() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-                Tu ultimo pedido
+                Tu último pedido
               </h3>
               <button
                 onClick={() => setDismissed(true)}

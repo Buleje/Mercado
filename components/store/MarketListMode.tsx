@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, X, Check, HelpCircle, AlertTriangle, FileText, Loader2 } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
