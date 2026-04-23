@@ -95,30 +95,45 @@ export default function TiendasClient() {
     [setGeoActive, setUserCoords],
   );
 
-  const fetchStores = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (category !== "todos") params.set("category", category);
-      if (zone) params.set("zone", zone);
-      if (search.trim()) params.set("search", search.trim());
-      params.set("limit", "50");
+  // Retry counter — bump para re-ejecutar el useEffect del fetch
+  const [retryKey, setRetryKey] = useState(0);
 
-      const res = await fetch(`/api/marketplace/stores?${params}`);
-      if (!res.ok) throw new Error("Error cargando tiendas");
-      const json = await res.json();
-      setStores(json.data ?? []);
-    } catch {
-      setError("No pudimos cargar las tiendas. Intentá de nuevo.");
-    }
-    setLoading(false);
-  }, [category, zone, search]);
-
+  // Fetch con AbortController — cancela request previa si el user sigue
+  // tipeando/filtrando. Debounce 300ms unificado (no solo en search) para
+  // reducir requests cuando cambian multiples filtros rapido.
   useEffect(() => {
-    const timer = setTimeout(fetchStores, search ? 400 : 0);
-    return () => clearTimeout(timer);
-  }, [fetchStores, search, category, zone]);
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        if (category !== "todos") params.set("category", category);
+        if (zone) params.set("zone", zone);
+        if (search.trim()) params.set("search", search.trim());
+        params.set("limit", "50");
+
+        const res = await fetch(`/api/marketplace/stores?${params}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("Error cargando tiendas");
+        const json = await res.json();
+        if (!controller.signal.aborted) {
+          setStores(json.data ?? []);
+        }
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setError("No pudimos cargar las tiendas. Intentá de nuevo.");
+      }
+      if (!controller.signal.aborted) setLoading(false);
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [search, category, zone, retryKey]);
+
+  const fetchStores = useCallback(() => setRetryKey((k) => k + 1), []);
 
   const hasFilters =
     category !== "todos" || zone || geoActive || activeChips.size > 0 || search.trim().length > 0;
