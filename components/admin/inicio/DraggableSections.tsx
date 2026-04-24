@@ -22,6 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Eye, EyeOff, RotateCcw } from "@buleje/design-system/icons";
+import { SECTION_PALETTE } from "@/components/ui-system/charts/palette";
 
 export interface DraggableItem {
   id: string;
@@ -184,6 +185,12 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     display: "grid",
                     gap: `${gap}rem`,
                     gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 36rem), 1fr))",
+                    // 2026-04-24: gridAutoRows 1fr asegura que todas las
+                    // secciones de una misma fila compartan altura.
+                    // Combinado con h-full dentro de DashboardSection el
+                    // chart rellena el espacio y no quedan huecos.
+                    gridAutoRows: "1fr",
+                    alignItems: "stretch",
                   }
                 : { display: "flex", flexDirection: "column", gap: `${gap}rem` }
             }
@@ -255,14 +262,26 @@ function DraggableSection({
     isDragging,
   } = useSortable({ id });
 
+  // Rotacion de paleta por posicion en el grid (2026-04-24). Cada seccion
+  // recibe 4 CSS vars scoped — los charts internos las leen automaticamente
+  // y pintan con un color distinto por vecino. Mas info: palette.ts
+  const sectionColors = SECTION_PALETTE[index % SECTION_PALETTE.length];
+
   const dndStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 30 : 1,
     position: "relative",
+    // h-full + flex col para que el DashboardSection interno se estire
+    // al alto de la fila (combinado con gridAutoRows: 1fr del parent).
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
     // fullSpan: en grid mode hace que el item ocupe TODAS las columnas
     // de la fila (1 / -1 = desde la primera hasta la ultima track line).
     ...(fullSpan ? { gridColumn: "1 / -1" } : null),
+    // Inyecta las CSS vars de paleta rotativa.
+    ...(sectionColors as React.CSSProperties),
   };
 
   return (
@@ -283,7 +302,13 @@ function DraggableSection({
           scale: { duration: 0.18 },
           boxShadow: { duration: 0.2 },
         }}
-        style={{ borderRadius: "0.75rem" }}
+        style={{
+          borderRadius: "0.75rem",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+        }}
       >
         <div className="absolute top-3 right-3 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
           <button

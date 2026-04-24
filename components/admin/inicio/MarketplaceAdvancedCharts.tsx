@@ -219,6 +219,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "funnel-pedidos",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Funnel · rango activo"
           title="De pedido recibido a entregado"
           kpis={[
@@ -278,8 +279,10 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     },
     {
       id: "ingresos-6m",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Ingresos · rango activo"
           title="Tendencia mensual marketplace"
           kpis={[
@@ -309,8 +312,10 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     },
     {
       id: "top-productos-marketplace",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Top 10 productos · rango activo"
           title="Los productos que más venden en marketplace"
           kpis={[
@@ -360,6 +365,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "ratings-marketplace",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Satisfacción · todos los periodos"
           title="Distribución de reseñas"
           kpis={[
@@ -396,6 +402,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "comparativa-semanal-mkt",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Comparativa · ingresos semana a semana"
           title="Esta semana vs pasada"
         >
@@ -415,11 +422,13 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     },
     {
       id: "heatmap-marketplace",
+      span: "full",
       render: () => {
         const peakLabel =
           heatmap.peak.idx >= 0 ? heatmap.buckets[heatmap.peak.idx].label : "—";
         return (
           <DashboardSection
+          hideHeader
             kicker="Heatmap · franja × día · 30d"
             title="Cuándo entran más pedidos"
             kpis={[
@@ -486,5 +495,5 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="marketplace-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="marketplace-advanced-order" layout="grid" />;
 });

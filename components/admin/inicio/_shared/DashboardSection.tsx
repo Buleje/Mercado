@@ -41,7 +41,10 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
   return (
     <section
       className={
-        "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 " +
+        // h-full + flex-col asegura que el chart (children) se estire al alto
+        // disponible cuando el padre usa gridAutoRows: 1fr. Sin huecos entre
+        // secciones de la misma fila.
+        "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col " +
         (className ?? "")
       }
     >
@@ -65,7 +68,7 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
         </header>
       )}
       {kpis && kpis.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 shrink-0">
           {kpis.map((k) => (
             <div
               key={k.label}
@@ -76,13 +79,16 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
               </p>
               <p
                 className={
+                  // 2026-04-24: tone=primary lee la CSS var scoped
+                  // --section-primary (fallback a --text-primary). Asi cada
+                  // seccion diferencia su KPI numerico con su color tema.
                   "text-sm font-extrabold tabular-nums truncate " +
                   (k.tone === "warning"
                     ? "text-[var(--data-warning)]"
                     : k.tone === "success"
                       ? "text-[var(--data-success)]"
                       : k.tone === "primary"
-                        ? "text-[var(--text-primary)]"
+                        ? "text-[color:var(--section-primary,var(--text-primary))]"
                         : "text-[var(--text-secondary)]")
                 }
                 title={k.value}
@@ -93,7 +99,9 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
           ))}
         </div>
       )}
-      {children}
+      {/* children wrapper con flex-1 min-h-0 para que el chart (ResponsiveContainer
+          de Recharts) se estire al espacio restante sin desbordar. */}
+      <div className="flex-1 min-h-0 flex flex-col justify-end">{children}</div>
     </section>
   );
 }
