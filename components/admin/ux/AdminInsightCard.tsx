@@ -80,11 +80,13 @@ interface Props {
  *  - Dia actual destacado con color accent + marca "HOY"
  *  - Mejor dia marcado con un dot dorado + valor en bold
  *  - Linea horizontal del promedio con label
+ *  - Chip de delta "1ra mitad vs 2da mitad" para ver tendencia dentro
+ *    del rango (ej: "segunda mitad +42% vs primera").
  *
  * Aporta info real: ve cuanto vendiste cada dia y comparas facil.
  */
 function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] }) {
-  const { max, avg, maxIdx, todayIdx, displayData } = useMemo(() => {
+  const { max, avg, maxIdx, todayIdx, displayData, halfDelta } = useMemo(() => {
     const max = Math.max(...data, 1);
     const avg = data.reduce((s, v) => s + v, 0) / Math.max(1, data.length);
     const maxIdx = data.indexOf(max);
@@ -94,7 +96,22 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
       const label = labels?.[i] ?? defaultDays[i % 7];
       return { value, label, isToday: i === todayIdx, isMax: i === maxIdx };
     });
-    return { max, avg, maxIdx, todayIdx, displayData };
+
+    // Delta primera mitad vs segunda mitad del rango — muestra si estas
+    // acelerando o desacelerando.
+    const mid = Math.ceil(data.length / 2);
+    const firstHalf = data.slice(0, mid);
+    const secondHalf = data.slice(mid);
+    const firstAvg = firstHalf.reduce((s, v) => s + v, 0) / Math.max(1, firstHalf.length);
+    const secondAvg = secondHalf.reduce((s, v) => s + v, 0) / Math.max(1, secondHalf.length);
+    let halfDelta: number | null = null;
+    if (firstAvg > 0 && secondHalf.length > 0) {
+      halfDelta = ((secondAvg - firstAvg) / firstAvg) * 100;
+    } else if (firstAvg === 0 && secondAvg > 0) {
+      halfDelta = 100; // Arrancó desde cero — mostrar como crecimiento fuerte
+    }
+
+    return { max, avg, maxIdx, todayIdx, displayData, halfDelta };
   }, [data, labels]);
 
   const avgPct = (avg / max) * 100;
@@ -107,6 +124,27 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
 
   return (
     <div className="w-full">
+      {/* Header del strip — delta de mitad contra mitad */}
+      {halfDelta != null && Math.abs(halfDelta) >= 5 && (
+        <div className="flex justify-end mb-2">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
+              halfDelta > 0
+                ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))]"
+                : "bg-[var(--data-error-50)] text-[var(--data-error)]",
+            )}
+            title={
+              halfDelta > 0
+                ? "Estás acelerando: la segunda mitad del rango vendió más que la primera"
+                : "Estás desacelerando: la segunda mitad vendió menos que la primera"
+            }
+          >
+            {halfDelta > 0 ? "↗" : "↘"} 2da mitad {halfDelta > 0 ? "+" : ""}
+            {halfDelta.toFixed(0)}% vs 1ra
+          </span>
+        </div>
+      )}
       {/* Chart area — 7 barras con label encima */}
       <div className="relative flex items-end justify-between gap-1 h-20">
         {/* Linea del promedio */}
