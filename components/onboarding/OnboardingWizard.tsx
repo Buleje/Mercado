@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useOnboarding } from './useOnboarding';
 import OnboardingProgressBar from './OnboardingProgressBar';
 import OnboardingStep1Brand from './OnboardingStep1Brand';

@@ -20,6 +20,7 @@ import {
   Truck,
   ArrowRight,
   Smartphone,
+  CheckCircle2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -195,13 +196,38 @@ export default function CheckoutSummary({
               )}
             </dd>
           </div>
-          {remainingForFree > 0 && (
-            <p className="text-xs text-[var(--text-tertiary)] -mt-1 leading-snug">
-              Faltan{" "}
-              <span className="font-bold tabular-nums text-[var(--text-secondary)]">
-                {fmt(remainingForFree)}
-              </span>{" "}
-              para envío gratis
+          {remainingForFree > 0 && subtotal > 0 && (
+            <div className="-mt-1 space-y-1.5">
+              <div className="flex items-baseline justify-between text-xs">
+                <p className="text-[var(--text-tertiary)] leading-snug">
+                  Agregá{" "}
+                  <span className="font-bold tabular-nums text-[var(--text-primary)]">
+                    {fmt(remainingForFree)}
+                  </span>{" "}
+                  más
+                </p>
+                <p className="font-bold uppercase tracking-[0.14em] text-[10px] text-[var(--accent)]">
+                  Envío gratis
+                </p>
+              </div>
+              {/* Progress bar visual */}
+              <div
+                aria-hidden
+                className="h-1.5 w-full rounded-full bg-[var(--surface-sunken)] overflow-hidden"
+              >
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {shipping === 0 && subtotal >= FREE_SHIPPING_THRESHOLD && (
+            <p className="text-xs font-bold text-[var(--accent)] -mt-1 inline-flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+              Ya tenés envío gratis
             </p>
           )}
         </dl>
