@@ -3,6 +3,9 @@ import { SkipLink } from "@/components/ui-system/SkipLink";
 import "./print.css";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  // AdminProviders contiene su propio Suspense boundary interno alrededor
+  // de useSearchParams (ver providers.tsx). Requerido por Next 16 para no
+  // marcar /admin como blocking-route.
   return (
     <AdminProviders>
       {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}

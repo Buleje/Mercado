@@ -32,10 +32,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
-  const zone = store.zone ?? "Peru";
+  const zone = store.zone ?? "Perú";
   const desc =
     store.description ??
-    `Compra en ${store.name}, ${store.category} en ${zone}. Delivery rapido. Paga con Yape o efectivo. Marketplace Buleje.`;
+    `Compra en ${store.name}, ${store.category} en ${zone}. Delivery rápido. Paga con Yape o efectivo. Marketplace Buleje.`;
 
   return {
     title: `${store.name} — ${store.category} en ${zone} | Marketplace Buleje`,

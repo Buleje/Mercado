@@ -219,7 +219,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "funnel-pedidos",
       render: () => (
         <DashboardSection
-          kicker="Funnel · últimos 30 días"
+          kicker="Funnel · rango activo"
           title="De pedido recibido a entregado"
           kpis={[
             { label: "Recibidos", value: String(funnel.recibidos), tone: "primary" },
@@ -280,7 +280,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "ingresos-6m",
       render: () => (
         <DashboardSection
-          kicker="Ingresos · últimos 6 meses"
+          kicker="Ingresos · rango activo"
           title="Tendencia mensual marketplace"
           kpis={[
             { label: "Total 6m", value: fmtS(monthly.total), tone: "primary" },
@@ -311,7 +311,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "top-productos-marketplace",
       render: () => (
         <DashboardSection
-          kicker="Top 10 productos · últimos 30 días"
+          kicker="Top 10 productos · rango activo"
           title="Los productos que más venden en marketplace"
           kpis={[
             {
@@ -350,7 +350,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin pedidos en los últimos 30 días.
+              Sin pedidos en los rango activo.
             </div>
           )}
         </DashboardSection>

@@ -971,7 +971,7 @@ function RankingTab() {
                       </div>
                       <div>
                         <p className="font-semibold text-[var(--text-primary)] text-xs">{entry.name}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{entry.vehicleType}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{entry.vehicleType}</p>
                       </div>
                     </div>
                   </td>
@@ -990,7 +990,7 @@ function RankingTab() {
                   <td className="py-2.5 pr-3 text-center">
                     <span className="text-xs font-semibold text-[var(--text-primary)]">{entry.deliveries}</span>
                     {entry.pending > 0 && (
-                      <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--data-warning)]">+{entry.pending} pen.</span>
+                      <span className="ml-1 text-xs text-[var(--data-warning)]">+{entry.pending} pen.</span>
                     )}
                   </td>
                   <td className="py-2.5 pr-3 text-center">
@@ -1132,11 +1132,11 @@ function SolicitudesTab() {
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{data.name}</h4>
                       {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)]">
                           Pendiente
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-[var(--text-secondary)]">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-[var(--text-secondary)]">
                           Revisado
                         </span>
                       )}
@@ -1155,7 +1155,7 @@ function SolicitudesTab() {
                         <Clock className="h-3 w-3" /> {AVAILABILITY_LABELS[data.availability] ?? data.availability}
                       </span>
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       {new Date(app.createdAt).toLocaleDateString("es-PE", {
                         year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
                       })}
@@ -1251,7 +1251,7 @@ export default function DeliveryPartnersModule() {
             ) : (
               <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
             )}
-            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
+            <p className="text-xs sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
           </div>
         ))}
       </div>

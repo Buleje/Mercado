@@ -248,7 +248,7 @@ export default function PromotionsTab() {
         <LoadingState />
       ) : list.length === 0 ? (
         <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-          Sin promociones activas. Creá la primera con el botón arriba.
+          Sin promociones activas. Crea la primera con el botón arriba.
         </div>
       ) : (
         <div className="space-y-2">

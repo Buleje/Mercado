@@ -16,17 +16,35 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("framer-motion", () => ({
-  motion: {
+vi.mock("framer-motion", () => {
+  const motion = {
     div: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <div {...props}>{children}</div>,
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+  };
+  return {
+    motion,
+    m: motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    domAnimation: {},
+  };
+});
 
 // Mock CustomerContext
 const mockUseCustomer = vi.fn();
 vi.mock("@/contexts/customer-context", () => ({
   useCustomer: () => mockUseCustomer(),
+}));
+
+// Mock UnifiedProductCard so tests don't need Compare/Cart providers — we just
+// need to assert the product name/reason is rendered. The component passes the
+// recommendation `reason` in `description`, so we surface both.
+vi.mock("@/components/marketplace/UnifiedProductCard", () => ({
+  default: ({ product }: { product: { name?: string; description?: string } }) => (
+    <div data-testid="unified-product-card">
+      <span>{product.name}</span>
+      {product.description ? <span>{product.description}</span> : null}
+    </div>
+  ),
 }));
 
 const mockFetch = vi.fn();
@@ -65,23 +83,25 @@ const PRODUCTS = [
 ];
 
 describe("PersonalizedRecommendations", () => {
-  it("muestra cold start cuando no hay customer logueado", async () => {
+  it("no renderiza nada en cold start (sin customer logueado)", async () => {
     mockUseCustomer.mockReturnValue({ customer: null });
 
-    render(<PersonalizedRecommendations />);
+    const { container } = render(<PersonalizedRecommendations />);
 
+    // Decision 2026-04-20: cold start ya no muestra placeholder — el componente
+    // retorna null cuando no hay phone/historial.
     await waitFor(() => {
-      expect(screen.getByText(/Estamos aprendiendo tus gustos/i)).toBeInTheDocument();
+      expect(container.firstChild).toBeNull();
     });
   });
 
-  it("muestra cold start cuando customer no tiene phone", async () => {
+  it("no renderiza nada cuando customer no tiene phone", async () => {
     mockUseCustomer.mockReturnValue({ customer: { name: "Juan", phone: null } });
 
-    render(<PersonalizedRecommendations />);
+    const { container } = render(<PersonalizedRecommendations />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Estamos aprendiendo tus gustos/i)).toBeInTheDocument();
+      expect(container.firstChild).toBeNull();
     });
   });
 
@@ -108,7 +128,8 @@ describe("PersonalizedRecommendations", () => {
     );
   });
 
-  it("muestra empty state cuando no hay historial suficiente (array vacio)", async () => {
+  it("no renderiza nada cuando la API responde con array vacio", async () => {
+    // Decision 2026-04-20: sin productos el componente retorna null (no placeholder).
     mockUseCustomer.mockReturnValue({
       customer: { name: "Pedro", phone: "912345678" },
     });
@@ -118,10 +139,10 @@ describe("PersonalizedRecommendations", () => {
       json: async () => ({ data: [] }),
     });
 
-    render(<PersonalizedRecommendations />);
+    const { container } = render(<PersonalizedRecommendations />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Aun no tenemos recomendaciones/i)).toBeInTheDocument();
+      expect(container.firstChild).toBeNull();
     });
   });
 

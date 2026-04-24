@@ -66,16 +66,18 @@ export function AdminMainContent({
       )}
       {...swipeHandlers}
     >
+      {/* NOTE: no usar `filter` en el animate — crea un containing block que
+          rompe `position: fixed` para todos los modales hijos. Opacidad + y
+          dan el efecto suave sin penalizar los modales. */}
       <AnimatePresence mode="wait">
         <m.div
           key={tab}
-          initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
           transition={{
             opacity: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
             y: { type: "spring", stiffness: 260, damping: 28 },
-            filter: { duration: 0.3 },
           }}
         >
           <TabRouter tab={tab} onNavigateTab={navigateTab} {...tabRouter} />

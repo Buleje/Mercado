@@ -13,7 +13,7 @@ interface InvoiceRecord {
   id: string;
   tipo: "boleta" | "factura";
   serie: string;
-  numero: string;
+  número: string;
   numeroCompleto: string;
   clienteNombre: string;
   clienteDoc: string;

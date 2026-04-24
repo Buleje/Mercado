@@ -201,7 +201,7 @@ export default function SalesTrendChart() {
     return projected;
   }, [chartData, prevWeekData]);
 
-  // Fecha del ultimo dato real para la linea de referencia
+  // Fecha del último dato real para la linea de referencia
   const todayFecha = chartData.length > 0 ? chartData[chartData.length - 1].fecha : "";
 
   const quincenas = useMemo(

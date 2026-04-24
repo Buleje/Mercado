@@ -5,7 +5,7 @@ import { LoadingState } from "@buleje/design-system";
  * TenantLifecycleKanban.tsx — Roadmap item #40
  *
  * Vista Kanban de 5 columnas: Trial → Onboarded → Active → At-Risk → Churned
- * Cada tarjeta muestra: nombre, MRR, ultimo pedido, signal activo.
+ * Cada tarjeta muestra: nombre, MRR, último pedido, signal activo.
  * Click → TenantDetailModal (impersonate, WhatsApp, email, extender trial).
  */
 
@@ -70,7 +70,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
 
       {tenant.lastOrderDate && (
         <p className="text-[length:var(--ts-2xs)] text-muted mt-1">
-          Ultimo pedido: {tenant.daysSinceLastOrder === 0 ? "hoy" : `hace ${tenant.daysSinceLastOrder}d`}
+          Último pedido: {tenant.daysSinceLastOrder === 0 ? "hoy" : `hace ${tenant.daysSinceLastOrder}d`}
         </p>
       )}
 

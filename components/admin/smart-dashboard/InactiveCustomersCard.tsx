@@ -97,7 +97,7 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-200 truncate">{c.name}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
-                  Ultima compra: hace {c.daysSince} dias &middot; Gasto total S/{c.totalSpent.toFixed(0)}
+                  Última compra: hace {c.daysSince} dias &middot; Gasto total S/{c.totalSpent.toFixed(0)}
                 </p>
               </div>
               {c.phone && (

@@ -65,7 +65,7 @@ export function NavegacionTab() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--accent-soft)] px-5 py-4 text-sm text-[var(--text-secondary)]">
-        Activá o desactivá cada enlace para controlar qué se muestra en la
+        Activa o desactivá cada enlace para controlar qué se muestra en la
         barra superior del sitio público. Los cambios se aplican{" "}
         <strong className="text-[var(--text-primary)]">al instante</strong> en
         todas las pestañas abiertas (misma sesión).
@@ -94,7 +94,7 @@ export function NavegacionTab() {
       <NavScopeSection
         scope="marketplace-sections"
         title="Secciones del home de Marketplace"
-        description="Tarjetas internas del home. Por defecto OFF para mantener el layout limpio. Activá lo que necesites."
+        description="Tarjetas internas del home. Por defecto OFF para mantener el layout limpio. Activa lo que necesites."
         icon={<Sparkles className="h-5 w-5" strokeWidth={1.75} />}
         values={store["marketplace-sections"]}
         onToggle={(id) => toggle("marketplace-sections", id)}

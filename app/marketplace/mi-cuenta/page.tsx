@@ -159,7 +159,7 @@ export default function MiCuentaPage() {
             </div>
             {customer.phone && (
               <div className="flex gap-2">
-                <dt className="w-24 text-gray-500 dark:text-gray-400">Telefono</dt>
+                <dt className="w-24 text-gray-500 dark:text-gray-400">Teléfono</dt>
                 <dd className="text-gray-900 dark:text-gray-100">{customer.phone}</dd>
               </div>
             )}

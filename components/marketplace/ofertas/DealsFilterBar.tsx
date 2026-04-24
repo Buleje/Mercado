@@ -115,11 +115,11 @@ export default function DealsFilterBar({ filters, onFiltersChange }: DealsFilter
               />
             </div>
 
-            {/* Descuento minimo */}
+            {/* Descuento mínimo */}
             <div
               className="flex items-center gap-1.5 flex-wrap"
               role="group"
-              aria-label="Descuento minimo"
+              aria-label="Descuento mínimo"
             >
               <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] mr-1">
                 Descuento:

@@ -96,7 +96,7 @@ export function SocioPromoFlotante() {
               <Sparkles className="h-4 w-4" aria-hidden />
             </div>
             <CardTitle className="text-[length:var(--ts-sm)]">
-              ¿Hacés compras seguido?
+              ¿Hazs compras seguido?
             </CardTitle>
           </div>
           <button

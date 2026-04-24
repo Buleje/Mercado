@@ -31,13 +31,13 @@ function diffDays(from: Date, to: Date): number {
   return Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-type CuotaStatus = "pagada" | "vencida" | "proxima" | "futura";
+type CuotaStatus = "pagada" | "vencida" | "próxima" | "futura";
 
 function getCuotaStatus(c: PrestamoCuota, now: Date, isNextPending: boolean): CuotaStatus {
   if (c.pagadoEn) return "pagada";
   const vence = new Date(c.fechaVence);
   if (vence < now) return "vencida";
-  if (isNextPending) return "proxima";
+  if (isNextPending) return "próxima";
   return "futura";
 }
 
@@ -117,7 +117,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                     <XCircle className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
                   </div>
                 )}
-                {status === "proxima" && (
+                {status === "próxima" && (
                   <div className="h-6 w-6 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 flex items-center justify-center animate-pulse">
                     <Clock className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
                   </div>
@@ -134,7 +134,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                 "ml-2 rounded-xl p-3 transition-colors",
                 status === "pagada" && "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]",
                 status === "vencida" && "bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error)]/10",
-                status === "proxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10 ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
+                status === "próxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10 ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]",
                 status === "futura" && "bg-gray-50/50 dark:bg-white/[0.02]",
               )}>
                 <div className="flex items-center justify-between">
@@ -145,12 +145,12 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                     "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
                     status === "pagada" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]",
                     status === "vencida" && "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]",
-                    status === "proxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
+                    status === "próxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]",
                     status === "futura" && "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                   )}>
                     {status === "pagada" && "PAGADA"}
                     {status === "vencida" && "VENCIDA"}
-                    {status === "proxima" && "PENDIENTE"}
+                    {status === "próxima" && "PENDIENTE"}
                     {status === "futura" && "FUTURA"}
                   </span>
                 </div>
@@ -162,7 +162,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   {status === "vencida" && (
                     <>Vencida hace {Math.abs(days)} dia{Math.abs(days) !== 1 ? "s" : ""} — {formatDate(c.fechaVence)}</>
                   )}
-                  {status === "proxima" && (
+                  {status === "próxima" && (
                     <>Vence {days === 0 ? "hoy" : days === 1 ? "manana" : `en ${days} dias`} — {formatDate(c.fechaVence)}</>
                   )}
                   {status === "futura" && (

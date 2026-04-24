@@ -34,7 +34,7 @@ const CATEGORIES: Category[] = [
       },
       {
         q: "¿Qué formas de pago aceptan?",
-        a: "Yape, Plin, tarjeta de débito/crédito y efectivo contra entrega. Elegí la que te convenga en el checkout.",
+        a: "Yape, Plin, tarjeta de débito/crédito y efectivo contra entrega. Elige la que te convenga en el checkout.",
       },
       {
         q: "¿Puedo pedir de varias bodegas a la vez?",
@@ -56,11 +56,11 @@ const CATEGORIES: Category[] = [
       },
       {
         q: "¿Cuánto demora registrar mi bodega?",
-        a: "5 minutos. Subís logo, productos y horario — y ya estás visible para los vecinos.",
+        a: "5 minutos. Subes logo, productos y horario — y ya estás visible para los vecinos.",
       },
       {
         q: "¿Necesito tener sistema de inventario?",
-        a: "No. Buleje incluye inventario, caja, reportes y cobros digitales. Si ya tenés uno, lo conectamos.",
+        a: "No. Buleje incluye inventario, caja, reportes y cobros digitales. Si ya tienes uno, lo conectamos.",
       },
       {
         q: "¿Cómo cobro los pedidos?",
@@ -74,11 +74,11 @@ const CATEGORIES: Category[] = [
     items: [
       {
         q: "¿Qué necesito para ser repartidor?",
-        a: "Moto/bici propia, DNI vigente, y ganas de trabajar. Registrás y aprobamos en 24h.",
+        a: "Moto/bici propia, DNI vigente, y ganas de trabajar. Registras y aprobamos en 24h.",
       },
       {
         q: "¿Cuánto puedo ganar?",
-        a: "Depende de la zona y horario. Promedio S/ 40-70/día para medio turno. Vos elegís cuándo trabajás.",
+        a: "Depende de la zona y horario. Promedio S/ 40-70/día para medio turno. Vos eliges cuándo trabajás.",
       },
       {
         q: "¿Cómo me pagan?",
@@ -121,11 +121,11 @@ export default function FAQSection() {
               Todo lo que
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                querés saber.
+                quieres saber.
               </span>
             </h2>
             <p className="mt-6 text-lg text-[var(--text-secondary)] leading-relaxed">
-              Si no encontrás tu respuesta, escribinos — somos humanos, no bots.
+              Si no encontrás tu respuesta, escríbenos — somos humanos, no bots.
             </p>
 
             {/* Tabs de categoría */}
@@ -172,7 +172,7 @@ export default function FAQSection() {
               className="mt-6 inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
-              Escribinos por WhatsApp
+              Escríbenos por WhatsApp
             </a>
           </div>
 

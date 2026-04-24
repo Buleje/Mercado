@@ -46,11 +46,11 @@ const TUTORIALS: Tutorial[] = [
     estimatedMinutes: 3,
     steps: [
       { id: 1, text: "Abre el modulo de Pedidos en el panel de administracion." },
-      { id: 2, text: "Busca el pedido del cliente por nombre o numero de pedido." },
+      { id: 2, text: "Busca el pedido del cliente por nombre o número de pedido." },
       { id: 3, text: "Haz clic en el pedido para ver el detalle." },
       { id: 4, text: "Pide al cliente que te muestre el comprobante de Yape." },
       { id: 5, text: "Verifica que el monto del Yape coincide con el total del pedido." },
-      { id: 6, text: "Selecciona 'Yape' como metodo de pago y registra el numero de operacion." },
+      { id: 6, text: "Selecciona 'Yape' como metodo de pago y registra el número de operacion." },
       { id: 7, text: "Cambia el estado del pedido a 'Pagado' y confirma." },
       { id: 8, text: "Entrega el pedido al cliente y solicita su firma si aplica." },
     ],

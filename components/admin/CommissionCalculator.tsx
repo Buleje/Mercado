@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
-import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
@@ -143,7 +142,6 @@ export default function CommissionCalculator() {
   /* ── Render ── */
   return (
     <div className="space-y-4">
-      <SectionBreadcrumb icon={DollarSign} section="Ventas" page="Comisiones" />
 
       {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3">
@@ -254,98 +252,98 @@ export default function CommissionCalculator() {
       {/* Resumen total */}
       {!loading && !error && summaries.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-primary" />
-              <p className="text-xs text-[var(--text-tertiary)]">Cajeros activos</p>
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-primary" />
+              <p className="text-sm text-[var(--text-tertiary)]">Cajeros activos</p>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-primary)]">
+            <p className="text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
               {summaries.length}
             </p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-            <p className="text-xs text-[var(--text-tertiary)] mb-1">Ventas totales</p>
-            <p className="text-2xl font-bold text-primary dark:text-primary">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+            <p className="text-sm text-[var(--text-tertiary)] mb-2">Ventas totales</p>
+            <p className="text-3xl font-extrabold text-primary tabular-nums">
               {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
             </p>
           </div>
-          <div className="rounded-xl border border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 bg-[var(--data-warning)]/5 dark:bg-[var(--data-warning)]/5 p-4">
-            <p className="text-xs text-[var(--text-tertiary)] mb-1">
+          <div className="rounded-2xl border border-[var(--data-warning)] bg-[var(--data-warning)]/5 p-5">
+            <p className="text-sm text-[var(--text-tertiary)] mb-2">
               Total a pagar en comisiones
             </p>
-            <p className="text-2xl font-bold text-[var(--data-warning)]">{fmt(totalCommissions)}</p>
+            <p className="text-3xl font-extrabold text-[var(--data-warning)] tabular-nums">{fmt(totalCommissions)}</p>
           </div>
         </div>
       )}
 
       {/* Tabla de cajeros */}
       {!loading && !error && summaries.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-x-auto">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
-            <p className="text-sm font-medium text-[var(--text-secondary)]">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-x-auto">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
+            <p className="text-base font-bold text-[var(--text-primary)]">
               Detalle por cajero
             </p>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs text-primary dark:text-primary hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-4 h-4" />
               Exportar CSV
             </button>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--rule-base)]">
-                <th className="px-4 py-2.5 text-left font-medium text-[var(--text-tertiary)]">
+              <tr className="border-b border-[var(--rule-soft)] bg-gray-50/50">
+                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-left font-semibold text-[var(--text-tertiary)]">
                   Cajero
                 </th>
-                <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
+                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
                   Ventas totales
                 </th>
-                <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
+                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
                   Nro ventas
                 </th>
-                <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
-                  % Comision
+                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                  % Comisi&oacute;n
                 </th>
-                <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
-                  Comision
+                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                  Comisi&oacute;n
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+            <tbody className="divide-y divide-[var(--rule-soft)]">
               {summaries.map((s) => (
                 <tr
                   key={s.cashierId}
                   className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
                 >
-                  <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">
+                  <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)]">
                     {s.cashierName}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-[var(--text-primary)]">
+                  <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
                     {fmt(s.totalSales)}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-[var(--text-tertiary)]">
+                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.saleCount}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-[var(--text-tertiary)]">
+                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.rate}%
                   </td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-[var(--data-warning)]">
+                  <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-warning)] tabular-nums">
                     {fmt(s.commission)}
                   </td>
                 </tr>
               ))}
-              <tr className="bg-gray-50 dark:bg-gray-750 font-semibold">
-                <td className="px-4 py-2.5 text-[var(--text-primary)]">Total</td>
-                <td className="px-4 py-2.5 text-right text-[var(--text-primary)]">
+              <tr className="bg-gray-50 dark:bg-gray-750 font-bold">
+                <td className="px-4 py-4 text-base text-[var(--text-primary)]">Total</td>
+                <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
                   {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
                 </td>
-                <td className="px-4 py-2.5 text-right text-[var(--text-secondary)]">
+                <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
                   {summaries.reduce((s, c) => s + c.saleCount, 0)}
                 </td>
-                <td className="px-4 py-2.5" />
-                <td className="px-4 py-2.5 text-right text-[var(--data-warning)] text-base">
+                <td className="px-4 py-4" />
+                <td className="px-4 py-4 text-right text-lg font-extrabold text-[var(--data-warning)] tabular-nums">
                   {fmt(totalCommissions)}
                 </td>
               </tr>

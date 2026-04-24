@@ -131,10 +131,10 @@ function getAvatarColor(name: string): string {
 
 // ── Mejora 9: Customer segment badge ─────────────────────────────────────────
 function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; orderCount: number }) {
-  if (orderCount === 0) return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30">Nuevo</span>;
-  if (totalSpent > 1000) return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)]">VIP</span>;
-  if (totalSpent > 500) return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30">Premium</span>;
-  return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
+  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30">Nuevo</span>;
+  if (totalSpent > 1000) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)]">VIP</span>;
+  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30">Premium</span>;
+  return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
 }
 
 // ── Mejora 11: Productos favoritos del cliente ──────────────────────────────
@@ -208,7 +208,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
-                <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted shrink-0">
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted shrink-0">
                   {p.totalQty} veces · S/{p.totalSpent.toFixed(0)} · {formatFreq(p.freqPerMonth)}
                 </span>
               </div>
@@ -274,12 +274,12 @@ function HealthBadge({ score }: { score?: HealthScore }) {
       <span
         onMouseEnter={() => setShowTip(true)}
         onMouseLeave={() => setShowTip(false)}
-        className={cn("text-[length:var(--ts-2xs)] font-extrabold px-2 py-0.5 rounded-full border cursor-help", cfg.bg, cfg.color, cfg.border)}
+        className={cn("text-xs font-extrabold px-2 py-0.5 rounded-full border cursor-help", cfg.bg, cfg.color, cfg.border)}
       >
         {cfg.label}
       </span>
       {showTip && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-gray-900 text-white text-[length:var(--ts-2xs)] leading-relaxed rounded-lg px-3 py-2 pointer-events-none">
+        <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-gray-900 text-white text-xs leading-relaxed rounded-lg px-3 py-2 pointer-events-none">
           <p className="font-bold mb-1">Salud del cliente</p>
           <p>Activo: compra en últimos 30 días</p>
           <p>En riesgo: 31-90 días sin comprar</p>
@@ -306,7 +306,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
           <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">
-          Aun no hay suficientes datos (minimo 5 compras)
+          Aun no hay suficientes datos (mínimo 5 compras)
         </p>
       </div>
     );
@@ -359,13 +359,13 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
           {/* Header row */}
           <div />
           {HOURS_DISPLAY.map(h => (
-            <div key={h} className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center font-medium pb-1">{h}</div>
+            <div key={h} className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center font-medium pb-1">{h}</div>
           ))}
 
           {/* Data rows */}
           {DAYS.map((day, dayIdx) => (
             <>
-              <div key={`label-${day}`} className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted font-bold flex items-center justify-end pr-2">{day}</div>
+              <div key={`label-${day}`} className="text-xs text-[var(--text-secondary)] dark:text-muted font-bold flex items-center justify-end pr-2">{day}</div>
               {grid[dayIdx].map((val, slotIdx) => (
                 <div
                   key={`${dayIdx}-${slotIdx}`}
@@ -393,7 +393,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
 
 // ── Idea 17: Family Account Component ─────────────────────────────────────
 
-type FamilyMember = { nombre: string; telefono: string; relacion: string };
+type FamilyMember = { nombre: string; teléfono: string; relacion: string };
 
 function FamilyAccountSection({ phone, customer }: { phone: string; customer: CustomerData }) {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => {
@@ -408,7 +408,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
     return [];
   });
   const [addingMember, setAddingMember] = useState(false);
-  const [newMember, setNewMember] = useState({ nombre: "", telefono: "", relacion: "esposa" });
+  const [newMember, setNewMember] = useState({ nombre: "", teléfono: "", relacion: "esposa" });
   const [savingFamily, setSavingFamily] = useState(false);
 
   const saveFamily = async (members: FamilyMember[]) => {
@@ -435,9 +435,9 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           <Users className="h-4 w-4 text-[var(--data-success)]" /> Cuenta Familiar
           {savingFamily && <Loader2 className="h-3 w-3 animate-spin text-[var(--text-tertiary)]" />}
         </CardTitle>
-        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{familyMembers.length} miembros</span>
+        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{familyMembers.length} miembros</span>
       </div>
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mb-3">Las compras de toda la familia suman al mismo historial. El fiado y puntos son compartidos.</p>
+      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-3">Las compras de toda la familia suman al mismo historial. El fiado y puntos son compartidos.</p>
 
       <div className="flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2 mb-2">
         <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: getAvatarColor(customer.name) }}>
@@ -445,7 +445,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{customer.name} <span className="text-[var(--data-success)] dark:text-[var(--data-success)]">(titular)</span></p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{customer.phone}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{customer.phone}</p>
         </div>
         <Star className="h-3.5 w-3.5 text-[var(--data-warning)] shrink-0" />
       </div>
@@ -457,7 +457,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{m.nombre} <span className="text-[var(--text-tertiary)] font-normal">({m.relacion})</span></p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{m.telefono}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">{m.teléfono}</p>
           </div>
           <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error)] transition-colors shrink-0">
             <X className="h-3.5 w-3.5" />
@@ -470,7 +470,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
             <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
-            <input type="tel" placeholder="Telefono" value={newMember.telefono} onChange={e => setNewMember({...newMember, telefono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+            <input type="tel" placeholder="Teléfono" value={newMember.teléfono} onChange={e => setNewMember({...newMember, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
           </div>
           <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground w-full">
             <option value="esposa">Esposa/o</option>
@@ -480,7 +480,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
             <option value="otro">Otro</option>
           </select>
           <div className="flex gap-2">
-            <button onClick={() => { if (newMember.nombre.trim()) { saveFamily([...familyMembers, newMember]); setNewMember({ nombre: "", telefono: "", relacion: "esposa" }); setAddingMember(false); } }} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90">Agregar</button>
+            <button onClick={() => { if (newMember.nombre.trim()) { saveFamily([...familyMembers, newMember]); setNewMember({ nombre: "", teléfono: "", relacion: "esposa" }); setAddingMember(false); } }} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90">Agregar</button>
             <button onClick={() => setAddingMember(false)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Cancelar</button>
           </div>
         </div>
@@ -742,13 +742,13 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 const dias = Math.floor((Date.now() - new Date(firstOrder.createdAt).getTime()) / 86400000);
                 const meses = Math.floor(dias / 30);
                 const anos = Math.floor(dias / 365);
-                if (dias < 30) return <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Nuevo (hace {dias}d)</span>;
-                if (dias < 90) return <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Cliente hace {dias} dias</span>;
-                if (dias < 365) return <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Cliente hace {meses} meses</span>;
-                return <span className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Cliente hace {anos}+ ano(s)</span>;
+                if (dias < 30) return <span className="text-xs text-[var(--text-tertiary)]">Nuevo (hace {dias}d)</span>;
+                if (dias < 90) return <span className="text-xs text-[var(--text-tertiary)]">Cliente hace {dias} dias</span>;
+                if (dias < 365) return <span className="text-xs text-[var(--text-tertiary)]">Cliente hace {meses} meses</span>;
+                return <span className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] font-medium">Cliente hace {anos}+ ano(s)</span>;
               })()}
               <HealthBadge score={customer.healthScore} />
-              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold px-2 py-0.5 rounded-full border", segCfg.bg, segCfg.color, segCfg.border)}>
+              <span className={cn("text-xs font-extrabold px-2 py-0.5 rounded-full border", segCfg.bg, segCfg.color, segCfg.border)}>
                 {segCfg.label}
               </span>
               <CustomerSegmentBadge totalSpent={totalSpent} orderCount={orders.length} />
@@ -851,7 +851,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 return (
                   <div key={label} className="flex-1 flex flex-col items-center gap-1" title={`${monthName}: S/${val.toFixed(0)}`}>
                     <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "#00B4A6", opacity: val > 0 ? 1 : 0.2 }} />
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{monthName}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{monthName}</span>
                   </div>
                 );
               });
@@ -907,16 +907,16 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {customer.categoria && (
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 capitalize">{customer.categoria}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 capitalize">{customer.categoria}</span>
             )}
             {customer.canal && (
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] capitalize">{customer.canal}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] capitalize">{customer.canal}</span>
             )}
             {customer.listaPrecio && customer.listaPrecio !== 'general' && (
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] capitalize">Lista: {customer.listaPrecio}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)] dark:text-[var(--data-warning)] border border-[var(--data-warning)] dark:border-[var(--data-warning)] capitalize">Lista: {customer.listaPrecio}</span>
             )}
             {customer.estado && customer.estado !== 'activo' && (
-              <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full border",
+              <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full border",
                 customer.estado === 'bloqueado' ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)] dark:text-[var(--data-error)] border-[var(--data-error)] dark:border-[var(--data-error)]" : "bg-[var(--surface-sunken)]/30 text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-gray-600"
               )}>
                 {customer.estado === 'bloqueado' ? 'BLOQUEADO' : 'INACTIVO'}
@@ -983,7 +983,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     </span>
                     <button
                       onClick={() => { setEditingCreditLimit(true); setCreditLimitInput(String(customer.creditLimit ?? 0)); }}
-                      className="text-[length:var(--ts-2xs)] text-primary hover:underline font-semibold"
+                      className="text-xs text-primary hover:underline font-semibold"
                     >
                       Editar
                     </button>
@@ -1024,7 +1024,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               ];
               const colorClass = colors[hash % colors.length];
               return (
-                <span key={tag} className={cn("inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", colorClass)}>
+                <span key={tag} className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", colorClass)}>
                   {tag}
                   <button
                     onClick={() => handleRemoveTag(tag)}
@@ -1053,7 +1053,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 <button
                   key={s}
                   onClick={() => handleAddTag(s)}
-                  className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-primary border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-full px-2 py-0.5 hover:border-primary/40 transition-colors"
+                  className="text-xs text-[var(--text-tertiary)] hover:text-primary border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-full px-2 py-0.5 hover:border-primary/40 transition-colors"
                 >
                   + {s}
                 </button>
@@ -1081,7 +1081,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           >
             <div className="flex items-center gap-1.5 mb-1.5">
               <k.icon className={cn("h-3.5 w-3.5", k.color)} />
-              <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             </div>
             <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">{k.value}</p>
           </m.div>
@@ -1104,7 +1104,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             <div className="space-y-2">
               {topProducts.map((p, i) => (
                 <div key={p.name} className="flex items-center gap-2">
-                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
+                  <span className="text-xs font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
                   <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
                     <div
                       className="h-full bg-primary/20 dark:bg-primary/30 rounded-full transition-all"
@@ -1112,7 +1112,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     />
                   </div>
                   <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[120px]">{p.name}</span>
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">x{p.count}</span>
+                  <span className="text-xs text-[var(--text-tertiary)] shrink-0">x{p.count}</span>
                 </div>
               ))}
             </div>
@@ -1137,9 +1137,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{ev.title}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate">{ev.detail}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted truncate">{ev.detail}</p>
                     </div>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{fmtRelative(ev.date)}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] shrink-0">{fmtRelative(ev.date)}</span>
                   </div>
                 );
               })}
@@ -1152,7 +1152,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
           <Package className="h-4 w-4 text-primary" /> Historial de pedidos
-          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-normal ml-auto">{orders.length} total</span>
+          <span className="text-xs text-[var(--text-tertiary)] font-normal ml-auto">{orders.length} total</span>
         </CardTitle>
         {orders.length === 0 ? (
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted py-4 text-center">Sin pedidos registrados</p>
@@ -1161,11 +1161,11 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             <table className="w-full min-w-[500px] text-sm">
               <thead>
                 <tr className="text-left border-b border-[var(--rule-soft)] dark:border-card-border">
-                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Pedido</th>
-                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Fecha</th>
-                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Items</th>
-                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-right">Total</th>
-                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Estado</th>
+                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Pedido</th>
+                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Fecha</th>
+                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Items</th>
+                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)] text-right">Total</th>
+                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -1182,7 +1182,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                         <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
                         <td className="py-2 font-bold text-[var(--text-primary)] dark:text-foreground text-right">{fmt(o.total)}</td>
                         <td className="py-2">
-                          <span className={cn("inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
+                          <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
                             <Icon className="h-2.5 w-2.5" />{st.label}
                           </span>
                         </td>
@@ -1227,10 +1227,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 <Star className="h-6 w-6 text-[var(--data-warning)]" />
                 <div>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{totalPoints} puntos</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
-                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
+                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
                     Canjeable
                   </span>
                 )}
@@ -1248,7 +1248,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     <span className="text-[var(--text-secondary)] truncate flex-1">
                       {entry.description}
                     </span>
-                    <span className="text-[var(--text-tertiary)] dark:text-muted shrink-0 text-[length:var(--ts-2xs)]">
+                    <span className="text-[var(--text-tertiary)] dark:text-muted shrink-0 text-xs">
                       {fmtDate(entry.date)}
                     </span>
                   </div>

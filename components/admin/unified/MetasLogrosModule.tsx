@@ -190,7 +190,7 @@ function SemaMesTab() {
           {!editing ? (
             <button
               onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); }}
-              className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1 text-xs font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
             >
               <Pencil className="w-3 h-3" /> Editar
             </button>
@@ -243,7 +243,7 @@ function SemaMesTab() {
           </p>
           <div className="grid grid-cols-7 gap-1">
             {["L","M","M","J","V","S","D"].map((d, i) => (
-              <div key={i} className="text-[length:var(--ts-2xs)] text-center text-[var(--text-tertiary)] font-bold pb-0.5">{d}</div>
+              <div key={i} className="text-xs text-center text-[var(--text-tertiary)] font-bold pb-0.5">{d}</div>
             ))}
             {/* Celdas vacías de offset */}
             {Array.from({ length: calendarDays.offset }).map((_, i) => (
@@ -261,7 +261,7 @@ function SemaMesTab() {
                   key={day}
                   title={key}
                   className={cn(
-                    "aspect-square rounded flex items-center justify-center text-[length:var(--ts-2xs)] font-semibold",
+                    "aspect-square rounded flex items-center justify-center text-xs font-semibold",
                     hit
                       ? "bg-[var(--accent-soft)] text-white"
                       : isPast
@@ -393,16 +393,16 @@ function LogrosTab() {
                   )}>
                     {a.name}
                   </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 leading-tight">
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5 leading-tight">
                     {a.desc}
                   </p>
                 </div>
                 {isUnlocked ? (
-                  <span className="text-[length:var(--ts-2xs)] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                     {unlocked[a.id]}
                   </span>
                 ) : (
-                  <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+                  <span className="text-xs font-semibold text-[var(--text-tertiary)]">
                     Bloqueado
                   </span>
                 )}

@@ -34,7 +34,7 @@ const NAV_MODULES = [
       { id: "sugerencias", label: "Sugerencias" },
       { id: "ordenes", label: "Ordenes" },
       { id: "proveedores", label: "Proveedores" },
-      { id: "recepcion", label: "Recepcion" },
+      { id: "recepcion", label: "Recepci\u00f3n" },
     ],
   },
   {

@@ -10,7 +10,7 @@
  *   ]} />
  *
  * El primer item siempre es "/" (Inicio). Los intermedios reciben href.
- * El ultimo item (pagina actual) no lleva href.
+ * El último item (pagina actual) no lleva href.
  */
 
 import Link from "next/link";

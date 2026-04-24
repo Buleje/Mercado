@@ -31,8 +31,8 @@ export async function generateMetadata(props: {
     ? `Marketplace Buleje en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
     : "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru";
   const description = zona
-    ? `Encuentra bodegas, minimarkets y tiendas en ${zona}. Compra online con delivery rapido. Paga con Yape o efectivo.`
-    : "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra online con delivery rapido. Paga con Yape o efectivo.";
+    ? `Encuentra bodegas, minimarkets y tiendas en ${zona}. Compra online con delivery rápido. Paga con Yape o efectivo.`
+    : "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra online con delivery rápido. Paga con Yape o efectivo.";
 
   return {
     title,

@@ -12,7 +12,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
-import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -199,7 +199,7 @@ export default function TurnosModule() {
 
       const res = await fetch("/api/turnos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -231,7 +231,7 @@ export default function TurnosModule() {
 
       const res = await fetch(`/api/turnos/${turnoActivo.id}/cerrar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -370,68 +370,40 @@ export default function TurnosModule() {
     );
   }
 
-  // Ultimo turno cerrado (primer item del historial con cierreEfectivo).
+  // Último turno cerrado (primer item del historial con cierreEfectivo).
   // Sirve para mostrar contexto en el panel lateral de "No hay turno abierto".
   const ultimoTurno = historial.find(t => t.cierreEfectivo != null) ?? null;
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <SectionBreadcrumb icon={Clock} section="Ventas" page="Turnos" />
-
-      {/* Header — solo badge de estado. La meta se edita desde el aside
-          "Meta del turno" cuando no hay turno, o desde el card de turno
-          activo. Evita duplicacion de controles. */}
-      <div className="flex items-center">
+      {/* ── Fila única: Tabs Turnos/Cajeros + chip estado de turno ───────────── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1 w-fit">
+          <button
+            onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
+            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+          >
+            <Clock className="h-3.5 w-3.5" /> Turnos
+          </button>
+          <button
+            onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
+            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+          >
+            <User className="h-3.5 w-3.5" /> Cajeros
+          </button>
+        </div>
+        {/* Chip de estado inline — antes flotaba solo arriba */}
         {turnoActivo ? (
-          <span className="text-xs font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] px-2.5 py-1 rounded-full">Turno abierto</span>
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-success)] animate-pulse" aria-hidden />
+            Turno abierto
+          </span>
         ) : !loading && (
-          <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2.5 py-1 rounded-full">Sin turno</span>
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-tertiary)]" aria-hidden />
+            Sin turno
+          </span>
         )}
-      </div>
-      {/* Mejora M3: Config meta inline */}
-      <AnimatePresence>
-        {showMetaConfig && (
-          <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)] rounded-xl p-3 flex items-center gap-3">
-              <label className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] shrink-0">Meta por turno (S/):</label>
-              <input
-                type="number"
-                step="50"
-                min="0"
-                value={metaInput}
-                onChange={e => setMetaInput(e.target.value)}
-                className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--data-warning)] dark:border-[var(--data-warning)] bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning)] max-w-[120px]"
-              />
-              <button
-                onClick={() => {
-                  const val = parseFloat(metaInput) || 500;
-                  setMetaVentas(val);
-                  try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
-                  setShowMetaConfig(false);
-                }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--data-warning)] hover:bg-[var(--data-warning)] transition-colors"
-              >
-                Guardar
-              </button>
-            </div>
-          </m.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Tab Toggle: Turnos / Cajeros ────────────────────────────────────── */}
-      <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1 w-fit">
-        <button
-          onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
-          className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
-        >
-          <Clock className="h-3.5 w-3.5" /> Turnos
-        </button>
-        <button
-          onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
-          className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
-        >
-          <User className="h-3.5 w-3.5" /> Cajeros
-        </button>
       </div>
 
       {/* ── Tab: Cajeros ──────────────────────────────────────────────────────── */}
@@ -486,8 +458,8 @@ export default function TurnosModule() {
           <div className="space-y-6">
             {/* 1. Grid de cajeros */}
             <div>
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <User className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
                 Equipo de Cajeros
               </CardTitle>
               {cajeroStats.length === 0 ? (
@@ -505,46 +477,46 @@ export default function TurnosModule() {
                     const barWidth = maxVentas > 0 ? Math.max(5, (c.ventasPorHora / maxVentas) * 100) : 0;
                     return (
                       <div key={c.id} className={cn(
-                        "bg-white dark:bg-card border rounded-xl  p-4 transition-shadow hover:shadow-sm",
+                        "bg-white dark:bg-card border rounded-2xl p-5 transition-shadow hover:shadow-sm",
                         isTop ? "border-[var(--data-warning)] dark:border-[var(--data-warning)] ring-1 ring-[var(--data-warning)] dark:ring-[var(--data-warning)]" : "border-[var(--rule-base)] dark:border-card-border"
                       )}>
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-3 mb-4">
                           <div
-                            className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                            className="h-12 w-12 rounded-full flex items-center justify-center text-base font-bold shrink-0"
                             style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
                           >
                             {c.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5">
+                            <p className="text-lg font-bold text-[var(--text-primary)] truncate flex items-center gap-2">
                               <span className="truncate">{c.name}</span>
                               {isTop && (
-                                <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)] bg-[var(--data-warning-50)] px-1.5 py-0.5 rounded shrink-0">
-                                  <Trophy className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />
+                                <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[var(--data-warning)] bg-[var(--data-warning-50)] px-2 py-0.5 rounded shrink-0">
+                                  <Trophy className="h-3 w-3" strokeWidth={2} aria-hidden />
                                   Top
                                 </span>
                               )}
                             </p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{c.id}</p>
+                            <p className="text-sm text-[var(--text-tertiary)]">Cajero {isTop ? "destacado del mes" : "del equipo"}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                        <div className="grid grid-cols-2 gap-3 mb-4">
                           <div>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Turnos</p>
-                            <p className="font-extrabold text-[var(--text-primary)]">{c.turnos}</p>
+                            <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Turnos</p>
+                            <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{c.turnos}</p>
                           </div>
                           <div>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Ventas total</p>
-                            <p className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(c.ventasTotal)}</p>
+                            <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Ventas total</p>
+                            <p className="text-lg font-extrabold text-[var(--data-success)] tabular-nums">{formatCurrency(c.ventasTotal)}</p>
                           </div>
                           <div>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Ventas/hora</p>
-                            <p className="font-extrabold text-[var(--text-primary)]">{formatCurrency(c.ventasPorHora)}/h</p>
+                            <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Ventas/hora</p>
+                            <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(c.ventasPorHora)}<span className="text-sm text-[var(--text-tertiary)]">/h</span></p>
                           </div>
                           <div>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase">Dif. caja</p>
-                            <p className={cn("font-extrabold", c.difCaja >= 0 ? "text-[var(--data-success)]" : Math.abs(c.difCaja) > 20 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
-                              {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
+                            <p className="text-xs text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Dif. caja</p>
+                            <p className={cn("text-lg font-extrabold tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success)]" : c.difCaja > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                              {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
                             </p>
                           </div>
                         </div>
@@ -565,21 +537,21 @@ export default function TurnosModule() {
             {/* 2. Ranking table */}
             {cajeroStats.length > 0 && (
               <div>
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-[var(--data-warning)]" />
+                <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-[var(--data-warning)]" />
                   Ranking de Cajeros
                 </CardTitle>
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-base">
                       <thead>
-                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] w-8">#</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cajero</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Turnos</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden md:table-cell">Dif. caja</th>
+                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left bg-gray-50/50 dark:bg-surface/30">
+                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide w-12 text-center">#</th>
+                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Cajero</th>
+                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Turnos</th>
+                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ventas</th>
+                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden sm:table-cell">Ventas/hora</th>
+                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden md:table-cell">Dif. caja</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -587,32 +559,32 @@ export default function TurnosModule() {
                           const isTop = i === 0 && cajeroStats.length > 1;
                           return (
                             <tr key={c.id} className={cn(
-                              "border-b border-gray-50 dark:border-white/5 transition-colors",
+                              "border-b border-gray-50 dark:border-white/5 transition-colors hover:bg-gray-50/50",
                               isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10" : ""
                             )}>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3.5 text-center">
                                 {isTop ? (
-                                  <Trophy className="h-3.5 w-3.5 text-[var(--data-warning)] inline-block" strokeWidth={1.75} aria-hidden />
+                                  <Trophy className="h-5 w-5 text-[var(--data-warning)] inline-block" strokeWidth={1.75} aria-hidden />
                                 ) : (
-                                  <span className="text-xs text-[var(--text-tertiary)] font-bold">{i + 1}</span>
+                                  <span className="text-base text-[var(--text-tertiary)] font-bold tabular-nums">{i + 1}</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 font-medium text-[var(--text-primary)]">
-                                <div className="flex items-center gap-2">
+                              <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
+                                <div className="flex items-center gap-3">
                                   <div
-                                    className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0"
+                                    className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                                     style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
                                   >
                                     {c.name.charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="truncate max-w-[120px]">{c.name}</span>
+                                  <span className="truncate max-w-[160px] text-base">{c.name}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{c.turnos}</td>
-                              <td className="px-4 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(c.ventasTotal)}</td>
-                              <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
-                              <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success)]" : Math.abs(c.difCaja) > 20 ? "text-[var(--data-error)]" : "text-[var(--data-warning)]")}>
-                                {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
+                              <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
+                              <td className="px-4 py-3.5 text-right text-base font-bold text-[var(--data-success)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
+                              <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{formatCurrency(c.ventasPorHora)}/h</td>
+                              <td className={cn("px-4 py-3.5 text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success)]" : c.difCaja > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                                {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
                               </td>
                             </tr>
                           );
@@ -627,20 +599,28 @@ export default function TurnosModule() {
             {/* 3. Chart: ventas por cajero este mes */}
             {chartData.length > 0 && (
               <div>
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
                   Ventas por Cajero (este mes)
                 </CardTitle>
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-4">
-                  <ResponsiveContainer minWidth={0} width="100%" height={250}>
-                    <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `S/${v}`} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                      <Tooltip formatter={(value: unknown) => [`S/${Number(value).toLocaleString("es-PE")}`, "Ventas"]} />
-                      <Bar dataKey="ventas" fill="#00B4A6" radius={[0, 6, 6, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5">
+                  {chartData.some(d => d.ventas > 0) ? (
+                    <ResponsiveContainer minWidth={0} width="100%" height={250}>
+                      <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v: number) => `S/${v}`} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={90} />
+                        <Tooltip formatter={(value: unknown) => [`S/${Number(value).toLocaleString("es-PE")}`, "Ventas"]} />
+                        <Bar dataKey="ventas" fill="#00B4A6" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-[var(--text-tertiary)] gap-2">
+                      <BarChart3 className="h-10 w-10 opacity-40" />
+                      <p className="text-base font-semibold">Sin ventas este mes</p>
+                      <p className="text-sm">El gr&aacute;fico se muestra cuando haya ventas registradas</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -718,97 +698,100 @@ export default function TurnosModule() {
 
       {/* ── Active turno or open form ─────────────────────────────────────────── */}
       {turnoActivo ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl overflow-hidden">
+        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-2xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 px-4 sm:px-6 py-5">
+          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 px-5 sm:px-6 py-5">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center animate-pulse">
-                <Play className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 rounded-xl bg-[var(--data-success)] flex items-center justify-center animate-pulse shrink-0">
+                <Play className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{turnoActivo.adminUserId}</p>
-                <div className="flex items-center gap-3 mt-0.5">
+                <p className="text-lg font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">Turno activo</p>
+                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                   <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{elapsedTime(turnoActivo.abrioEn)}</span>
                   <span className="text-sm text-[var(--data-success)] dark:text-[var(--data-success)]">desde {formatTime(turnoActivo.abrioEn)}</span>
-                  <span className="text-sm font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                  <span className="text-[var(--text-tertiary)]">&middot;</span>
+                  <span className="text-sm font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">Ventas {formatCurrency(turnoActivo.ventasTotal)}</span>
                 </div>
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]  transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]/90 transition-colors shrink-0"
               >
                 <Square className="h-4 w-4" />
-                <span className="hidden sm:inline">Cerrar Turno</span>
+                <span className="hidden sm:inline">Cerrar turno</span>
               </button>
             </div>
           </div>
 
           {/* Turno details */}
-          <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <User className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Operador</p>
+          <div className="p-5 sm:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <p className="text-xs uppercase font-semibold tracking-wide text-[var(--text-tertiary)]">Operador</p>
                 </div>
-                <p className="text-sm font-bold text-[var(--text-primary)] truncate">{turnoActivo.adminUserId}</p>
+                <p className="text-base font-bold text-[var(--text-primary)] truncate">
+                  {(cajeros.find(c => c.id === turnoActivo.adminUserId)?.name) || "Yo mismo"}
+                </p>
               </div>
 
-              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Inicio</p>
+              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <p className="text-xs uppercase font-semibold tracking-wide text-[var(--text-tertiary)]">Inicio</p>
                 </div>
-                <p className="text-sm font-bold text-[var(--text-primary)]">{formatTime(turnoActivo.abrioEn)}</p>
+                <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{formatTime(turnoActivo.abrioEn)}</p>
               </div>
 
-              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ef. Inicial</p>
+              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <p className="text-xs uppercase font-semibold tracking-wide text-[var(--text-tertiary)]">Efectivo inicial</p>
                 </div>
-                <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(turnoActivo.inicioEfectivo)}</p>
+                <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(turnoActivo.inicioEfectivo)}</p>
               </div>
 
-              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <ShoppingCart className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ventas</p>
+              <div className="bg-white/60 dark:bg-white/5 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ShoppingCart className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <p className="text-xs uppercase font-semibold tracking-wide text-[var(--text-tertiary)]">Ventas</p>
                 </div>
-                <p className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(turnoActivo.ventasTotal)}</p>
+                <p className="text-base font-bold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</p>
               </div>
             </div>
           </div>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 sm:p-6">
-            <div className="flex items-start gap-4 mb-5">
-              <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                <Clock className="h-5 w-5 text-primary" strokeWidth={1.75} aria-hidden />
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-6 sm:p-7">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-base font-bold text-[var(--text-primary)]">No hay turno abierto</CardTitle>
-                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Abre un turno para empezar a registrar ventas.</p>
+                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">No hay turno abierto</CardTitle>
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">Abre un turno para empezar a registrar ventas en caja.</p>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label className="block text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Cajero asignado</label>
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cajero asignado</label>
                 <select
                   value={selectedCajero}
                   onChange={e => setSelectedCajero(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 >
                   <option value="">Yo mismo (usuario actual)</option>
                   {cajeros.map(c => (
                     <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
                   ))}
                 </select>
-                {cajerosLoading && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Cargando cajeros...</p>}
+                {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
               </div>
               <div>
-                <label className="block text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Efectivo inicial</label>
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Efectivo inicial en caja</label>
                 <input
                   type="number"
                   step="0.01"
@@ -816,13 +799,14 @@ export default function TurnosModule() {
                   value={efectivoInicial}
                   onChange={e => setEfectivoInicial(e.target.value)}
                   placeholder="S/ 0.00"
-                  className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 text-right font-mono"
+                  className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                 />
+                <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Dinero que abre en la caja al inicio del turno.</p>
               </div>
             </div>
-            <div className="mt-3">
-              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Montos rapidos</p>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="mt-5">
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Montos r&aacute;pidos</p>
+              <div className="flex flex-wrap gap-2">
                 {[100, 200, 300, 500].map(amount => {
                   const active = parseFloat(efectivoInicial || "0") === amount;
                   return (
@@ -831,7 +815,7 @@ export default function TurnosModule() {
                       type="button"
                       onClick={() => setEfectivoInicial(String(amount))}
                       className={cn(
-                        "px-3 py-1.5 rounded-md text-xs font-bold border transition-colors",
+                        "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                         active
                           ? "bg-primary text-white border-primary"
                           : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
@@ -843,55 +827,94 @@ export default function TurnosModule() {
                 })}
               </div>
             </div>
-            <button
-              onClick={handleAbrir}
-              disabled={opening}
-              className="mt-5 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
-            >
-              {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={1.75} aria-hidden />}
-              Abrir turno
-            </button>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleAbrir}
+                disabled={opening}
+                className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={2} aria-hidden />}
+                Abrir turno
+              </button>
+            </div>
           </div>
-          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-col gap-3">
+          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 flex flex-col gap-5">
             <div>
-              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Ultimo turno cerrado</p>
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">&Uacute;ltimo turno cerrado</p>
               {ultimoTurno ? (
-                <div className="space-y-1.5">
-                  <p className="text-sm font-bold text-[var(--text-primary)] truncate">{ultimoTurno.adminUserId || "Sin asignar"}</p>
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                    <CalendarDays className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                <div className="space-y-2.5">
+                  <p className="text-lg font-bold text-[var(--text-primary)] truncate">{cajeros.find(c => c.id === ultimoTurno.adminUserId)?.name || "Yo mismo"}</p>
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <CalendarDays className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
                     {new Date(ultimoTurno.cerroEn || ultimoTurno.abrioEn).toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "short" })}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                    <DollarSign className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
-                    Ventas <span className="font-bold text-[var(--data-success)]">{formatCurrency(ultimoTurno.ventasTotal)}</span>
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <DollarSign className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
+                    Ventas <span className="font-bold text-[var(--data-success)] tabular-nums">{formatCurrency(ultimoTurno.ventasTotal)}</span>
                   </div>
                   {ultimoTurno.cierreEfectivo != null ? (
-                    <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                      <Banknote className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
-                      Cierre <span className="font-bold text-[var(--text-primary)]">{formatCurrency(ultimoTurno.cierreEfectivo)}</span>
+                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                      <Banknote className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
+                      Cierre <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(ultimoTurno.cierreEfectivo)}</span>
                     </div>
                   ) : null}
                 </div>
               ) : (
-                <p className="text-xs text-[var(--text-tertiary)]">Aun no hay turnos cerrados. Este sera el primero.</p>
+                <p className="text-sm text-[var(--text-tertiary)]">A&uacute;n no hay turnos cerrados. Este ser&aacute; el primero.</p>
               )}
             </div>
-            <div className="border-t border-[var(--rule-soft)] pt-3">
-              <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Meta del turno</p>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Trophy className="h-4 w-4 text-[var(--data-warning)] shrink-0" strokeWidth={1.75} aria-hidden />
-                  <p className="text-sm font-bold text-[var(--text-primary)] font-mono truncate">{formatCurrency(metaVentas)}</p>
+            <div className="border-t border-[var(--rule-soft)] pt-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Meta del turno</p>
+              {showMetaConfig ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-semibold text-[var(--text-tertiary)]">S/</span>
+                    <input
+                      type="number"
+                      step="50"
+                      min="0"
+                      value={metaInput}
+                      onChange={e => setMetaInput(e.target.value)}
+                      autoFocus
+                      className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-white/5 text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const val = parseFloat(metaInput) || 500;
+                        setMetaVentas(val);
+                        try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
+                        setShowMetaConfig(false);
+                      }}
+                      className="flex-1 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowMetaConfig(false)}
+                      className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { setShowMetaConfig(!showMetaConfig); setMetaInput(String(metaVentas)); }}
-                  className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline shrink-0"
-                >
-                  {showMetaConfig ? "Cerrar" : "Editar"}
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Trophy className="h-5 w-5 text-[var(--data-warning)] shrink-0" strokeWidth={1.75} aria-hidden />
+                    <p className="text-lg font-bold text-[var(--text-primary)] font-mono truncate tabular-nums">{formatCurrency(metaVentas)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMetaConfig(true); setMetaInput(String(metaVentas)); }}
+                    className="text-sm font-semibold text-primary hover:underline shrink-0"
+                  >
+                    Editar
+                  </button>
+                </div>
+              )}
             </div>
           </aside>
         </div>
@@ -935,17 +958,17 @@ export default function TurnosModule() {
           }
           cajeroMap.set(id, prev);
         }
-        const cajeros = Array.from(cajeroMap.entries()).map(([name, data]) => ({
+        const cajerosStats = Array.from(cajeroMap.entries()).map(([name, data]) => ({
           name,
           ...data,
           ventasPorHora: data.horasTotales > 0 ? data.ventasTotal / data.horasTotales : 0,
           ticketPromedio: data.turnos > 0 ? data.ventasTotal / data.turnos : 0,
         }));
-        const bestCajero = cajeros.length > 0 ? cajeros.reduce((a, b) => a.ventasPorHora > b.ventasPorHora ? a : b).name : "";
+        const bestCajero = cajerosStats.length > 0 ? cajerosStats.reduce((a, b) => a.ventasPorHora > b.ventasPorHora ? a : b).name : "";
 
         // Evita renderizar secciones vacías que solo agregan ruido visual.
         const hasWeekData = weekMap.size > 0;
-        const hasProductividadData = cajeros.length >= 2;
+        const hasProductividadData = cajerosStats.length >= 2;
 
         if (!hasWeekData && !hasProductividadData) return null;
 
@@ -953,34 +976,37 @@ export default function TurnosModule() {
           <>
             {hasWeekData ? (
             <div>
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
                 Calendario Semanal
               </CardTitle>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <div className="grid grid-cols-7 min-w-[700px]">
                     {DIAS_SEMANA.map((dia, idx) => {
                       const turnos = weekMap.get(idx) || [];
                       return (
                         <div key={dia} className={cn("border-r border-[var(--rule-soft)] dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
-                          <div className="px-2 py-2 border-b border-[var(--rule-soft)] dark:border-white/5 text-center">
-                            <p className="text-xs font-bold text-[var(--text-tertiary)]">{dia}</p>
+                          <div className="px-2 py-2.5 border-b border-[var(--rule-soft)] dark:border-white/5 text-center">
+                            <p className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">{dia}</p>
                           </div>
-                          <div className="p-1.5 min-h-[100px] space-y-1">
+                          <div className="p-2 min-h-[110px] space-y-1.5">
                             {turnos.length === 0 ? (
-                              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] text-center py-3">Sin turno</p>
-                            ) : turnos.map(t => (
-                              <div
-                                key={t.id}
-                                className="rounded-lg p-1.5 text-[length:var(--ts-2xs)] leading-tight"
-                                style={{ backgroundColor: cajeroColor(t.adminUserId), color: cajeroColorText(t.adminUserId) }}
-                              >
-                                <p className="font-bold truncate">{t.adminUserId}</p>
-                                <p>{formatTime(t.abrioEn)}{t.cerroEn ? ` - ${formatTime(t.cerroEn)}` : " - ..."}</p>
-                                <p className="font-bold">{formatCurrency(t.ventasTotal)}</p>
-                              </div>
-                            ))}
+                              <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] text-center py-3">Sin turno</p>
+                            ) : turnos.map(t => {
+                              const nombreCajero = cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo";
+                              return (
+                                <div
+                                  key={t.id}
+                                  className="rounded-lg p-2 text-xs leading-tight"
+                                  style={{ backgroundColor: cajeroColor(t.adminUserId), color: cajeroColorText(t.adminUserId) }}
+                                >
+                                  <p className="font-semibold truncate">{nombreCajero}</p>
+                                  <p className="opacity-80">{formatTime(t.abrioEn)}{t.cerroEn ? ` - ${formatTime(t.cerroEn)}` : " - activo"}</p>
+                                  <p className="font-bold tabular-nums">{formatCurrency(t.ventasTotal)}</p>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -998,9 +1024,9 @@ export default function TurnosModule() {
                 Productividad por cajero
               </CardTitle>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
-                {cajeros.length <= 1 && cajeros.length === 1 ? (
+                {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
                   <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
-                ) : cajeros.length === 0 ? (
+                ) : cajerosStats.length === 0 ? (
                   <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Sin datos de productividad</div>
                 ) : (
                   <div className="overflow-x-auto -mx-4 sm:mx-0">
@@ -1016,7 +1042,7 @@ export default function TurnosModule() {
                         </tr>
                       </thead>
                       <tbody>
-                        {cajeros.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
+                        {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
                           <tr key={c.name} className={cn(
                             "border-b border-gray-50 dark:border-white/5 transition-colors",
                             c.name === bestCajero ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]" : ""
@@ -1113,10 +1139,10 @@ export default function TurnosModule() {
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                        {t.adminUserId} <span className="font-normal text-[var(--text-tertiary)]">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(t.ventasTotal)}</span>
+                        {cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"} <span className="font-normal text-[var(--text-tertiary)] tabular-nums">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">{formatCurrency(t.ventasTotal)}</span>
                       </p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                        {cuadro === null ? "" : cuadro ? "Cuadro" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        {cuadro === null ? "" : cuadro ? "Cuadrado" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
                         {" · "}{new Date(t.abrioEn).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                       </p>
                     </div>
@@ -1127,28 +1153,28 @@ export default function TurnosModule() {
           ) : (
             <>
               <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[650px] sm:min-w-0 text-sm">
+                <table className="w-full min-w-[650px] sm:min-w-0 text-base">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
-                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Operador</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Apertura</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] hidden sm:table-cell">Cierre</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ef. Inicial</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ef. Final</th>
+                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left bg-gray-50/50 dark:bg-surface/30">
+                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Operador</th>
+                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Apertura</th>
+                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide hidden sm:table-cell">Cierre</th>
+                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ef. inicial</th>
+                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ventas</th>
+                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden sm:table-cell">Ef. final</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.map(t => (
                       <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3 font-medium text-[var(--text-primary)] truncate max-w-[120px]">{t.adminUserId}</td>
-                        <td className="px-4 py-3 text-[var(--text-tertiary)] text-xs">{formatDateTime(t.abrioEn)}</td>
-                        <td className="px-4 py-3 text-[var(--text-tertiary)] text-xs hidden sm:table-cell">
+                        <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cerroEn ? formatDateTime(t.cerroEn) : "—"}
                         </td>
-                        <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{formatCurrency(t.inicioEfectivo)}</td>
-                        <td className="px-4 py-3 text-right font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(t.ventasTotal)}</td>
-                        <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">
+                        <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
+                        <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-success)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
+                        <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cierreEfectivo != null ? formatCurrency(t.cierreEfectivo) : "—"}
                         </td>
                       </tr>
@@ -1188,138 +1214,166 @@ export default function TurnosModule() {
       {/* ── Close Turno Modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showCierre && turnoActivo && (
-          <>
+          <m.div
+            key="cierre-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="modal-backdrop p-4"
+            onClick={e => e.target === e.currentTarget && setShowCierre(false)}
+          >
             <m.div
-              key="cierre-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => setShowCierre(false)}
-            />
-            <m.div
-              key="cierre-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              onClick={e => e.target === e.currentTarget && setShowCierre(false)}
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
             >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-[90vh] flex flex-col">
-                {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Cerrar Turno</CardTitle>
-                  <button onClick={() => setShowCierre(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
-                  </button>
+              {/* Header — icono + titulo + X */}
+              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 flex items-center justify-center shrink-0">
+                    <Square className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[var(--text-primary)]">Cerrar turno</h3>
+                    <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
+                  </div>
                 </div>
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <button onClick={() => setShowCierre(false)} aria-label="Cerrar" className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
+              </div>
 
-                {/* Resumen */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--text-tertiary)]">Efectivo inicial</span>
-                    <span className="font-bold text-[var(--text-primary)]">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                {/* Resumen — card destacado */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-5 space-y-2.5">
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-[var(--text-secondary)]">Efectivo inicial</span>
+                    <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--text-tertiary)]">Ventas del turno</span>
-                    <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-[var(--text-secondary)]">Ventas del turno</span>
+                    <span className="font-bold text-[var(--data-success)] dark:text-[var(--data-success)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-2">
-                    <span className="text-[var(--text-tertiary)]">Total esperado</span>
-                    <span className="font-bold text-[var(--text-primary)]">
+                  <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2.5">
+                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total esperado</span>
+                    <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
                       {formatCurrency(turnoActivo.inicioEfectivo + turnoActivo.ventasTotal)}
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Conteo de efectivo final (S/)</label>
+                {/* Conteo efectivo final */}
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Conteo de efectivo final</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       value={cierreEfectivo}
-                      onChange={e => setCierreEfectivo(e.target.value)}
+                      onChange={e => { setCierreEfectivo(e.target.value); if (closeError) setCloseError(null); }}
                       placeholder="0.00"
-                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 text-center text-lg font-bold"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                     />
                   </div>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cuenta todo el dinero que queda en caja.</p>
+                </div>
 
-                  {cierreEfectivo && !isNaN(parseFloat(cierreEfectivo)) && (
+                {/* Diferencia */}
+                {cierreEfectivo && !isNaN(parseFloat(cierreEfectivo)) && (() => {
+                  const diff = parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
+                  const cuadrado = Math.abs(diff) < 0.01;
+                  const sobrante = diff > 0;
+                  return (
                     <div className={cn(
-                      "rounded-xl p-3 text-center text-sm font-bold",
-                      parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal) >= 0
-                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]"
-                        : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 text-[var(--data-error)] dark:text-[var(--data-error)]"
+                      "rounded-xl p-4 text-center",
+                      cuadrado
+                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30"
+                        : sobrante
+                        ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)]/30"
+                        : "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 border border-[var(--data-error)]/30"
                     )}>
-                      Diferencia: {formatCurrency(parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
+                      <p className={cn(
+                        "text-xs font-semibold uppercase tracking-wide mb-1",
+                        cuadrado ? "text-[var(--data-success)]" : sobrante ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                      )}>
+                        {cuadrado ? "Caja cuadrada" : sobrante ? "Sobrante" : "Faltante"}
+                      </p>
+                      <p className={cn(
+                        "text-2xl font-extrabold tabular-nums",
+                        cuadrado ? "text-[var(--data-success)]" : sobrante ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+                      )}>
+                        {cuadrado ? formatCurrency(0) : (diff > 0 ? "+" : "") + formatCurrency(diff)}
+                      </p>
                     </div>
-                  )}
+                  );
+                })()}
 
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
-                    <textarea
-                      value={cierreNotas}
-                      onChange={e => setCierreNotas(e.target.value)}
-                      placeholder="Observaciones del turno..."
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                    />
-                  </div>
+                {/* Notas */}
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+                  <textarea
+                    value={cierreNotas}
+                    onChange={e => setCierreNotas(e.target.value)}
+                    placeholder="Ej: turno normal, nada raro..."
+                    rows={2}
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                  />
                 </div>
 
                 {closeError && (
-                  <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{closeError}</p>
+                  <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 border border-[var(--data-error)]/30 px-4 py-3">
+                    <p className="text-sm text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{closeError}</p>
+                  </div>
                 )}
+              </div>
 
-                </div>
-                {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
-                  <button
-                    onClick={() => setShowCierre(false)}
-                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleCerrar}
-                    disabled={closing}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] disabled:opacity-50 rounded-lg  transition-colors"
-                  >
-                    {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
-                    Confirmar Cierre
-                  </button>
-                </div>
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex gap-3">
+                <button
+                  onClick={() => setShowCierre(false)}
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCerrar}
+                  disabled={closing}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]/90 disabled:opacity-50 transition-colors"
+                >
+                  {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Square className="h-5 w-5" />}
+                  Confirmar cierre
+                </button>
               </div>
             </m.div>
-          </>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* ── Resumen del Turno Modal ────────────────────────────────────────────── */}
       <AnimatePresence>
         {showResumen && resumen && (
-          <>
-            <m.div
-              key="resumen-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => setShowResumen(false)}
-            />
+          <m.div
+            key="resumen-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-backdrop p-4"
+            onClick={e => e.target === e.currentTarget && setShowResumen(false)}
+          >
             <m.div
               key="resumen-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowResumen(false)}
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
-              <div className="w-full max-w-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" id="turno-resumen">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-[var(--data-warning)]" />
@@ -1384,8 +1438,8 @@ export default function TurnosModule() {
                     </div>
                     <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-1.5">
                       <span className="text-[var(--text-tertiary)]">Diferencia</span>
-                      <span className={cn("font-bold", resumen.diferencia >= 0 ? "text-[var(--data-success)] dark:text-[var(--data-success)]" : "text-[var(--data-error)] dark:text-[var(--data-error)]")}>
-                        {resumen.diferencia >= 0 ? "+" : ""}{formatCurrency(resumen.diferencia)}
+                      <span className={cn("font-bold tabular-nums", Math.abs(resumen.diferencia) < 0.01 ? "text-[var(--data-success)]" : resumen.diferencia > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                        {Math.abs(resumen.diferencia) < 0.01 ? formatCurrency(0) : (resumen.diferencia > 0 ? "+" : "") + formatCurrency(resumen.diferencia)}
                       </span>
                     </div>
                   </div>
@@ -1604,14 +1658,13 @@ export default function TurnosModule() {
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                    className="flex-1 px-4 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     Cerrar
                   </button>
                 </div>
-              </div>
             </m.div>
-          </>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

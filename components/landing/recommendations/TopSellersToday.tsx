@@ -24,7 +24,7 @@ const CATEGORY_FILTERS = [
 /**
  * TopSellersToday — "Popular hoy / Los mas pedidos en tu zona"
  *
- * Chips de categoria como filtro rapido.
+ * Chips de categoria como filtro rápido.
  * Grid de 6-8 productos en horizontal scroll con snap-x mandatory en mobile,
  * grid estandar en desktop.
  */
@@ -66,7 +66,7 @@ export function TopSellersToday({ initialProducts, className }: Props) {
           }
         />
 
-        {/* Chips de filtro rapido */}
+        {/* Chips de filtro rápido */}
         <div
           className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide"
           role="group"
@@ -99,7 +99,7 @@ export function TopSellersToday({ initialProducts, className }: Props) {
             // Desktop: 4 columnas
             "lg:grid-cols-4"
           )}
-          aria-label="Productos mas vendidos"
+          aria-label="Productos más vendidos"
         >
           {picks.map((p) => (
             <div

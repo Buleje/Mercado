@@ -21,7 +21,6 @@ interface POSSearchProduct {
 interface POSSearchBarProps {
   products: POSSearchProduct[];
   onAddToCart: (productId: number) => void;
-  recentProductIds: number[];
 }
 
 // ── Fuzzy match ────────────────────────────────────────────────────────
@@ -72,7 +71,6 @@ function stockBadge(stock: number | undefined) {
 export default function POSSearchBar({
   products,
   onAddToCart,
-  recentProductIds,
 }: POSSearchBarProps) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -141,14 +139,8 @@ export default function POSSearchBar({
     [onAddToCart]
   );
 
-  // Recent products chips
-  const recentProducts = recentProductIds
-    .map((id) => products.find((p) => p.id === id))
-    .filter(Boolean)
-    .slice(0, 8) as Product[];
-
   return (
-    <div ref={containerRef} className="space-y-2">
+    <div ref={containerRef} className="relative">
       {/* Search input */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
@@ -236,30 +228,6 @@ export default function POSSearchBar({
         </div>
       )}
 
-      {/* Recent chips */}
-      {recentProducts.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {recentProducts.map((p) => {
-            const outOfStock = p.stock != null && p.stock <= 0;
-            return (
-              <button
-                key={p.id}
-                onClick={() => handleAdd(p)}
-                disabled={outOfStock}
-                className={cn(
-                  "shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-medium transition-all whitespace-nowrap flex items-center gap-1",
-                  outOfStock
-                    ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] cursor-not-allowed"
-                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30"
-                )}
-              >
-                <span className="truncate max-w-20">{p.name}</span>
-                <span className="font-bold text-primary">S/{p.price.toFixed(2)}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

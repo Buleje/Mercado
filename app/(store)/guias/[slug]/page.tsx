@@ -497,7 +497,7 @@ export default async function GuiaSlugPage({ params }: PageProps) {
           <div className="mt-12 rounded-xl border border-[var(--brand-ink)]/20 bg-[var(--brand-ink)]/5 dark:bg-[var(--brand-ink)]/10 p-6 text-center">
             <CardTitle className="mb-2">Aplicá lo que aprendiste</CardTitle>
             <BodyText className="mb-4 text-[var(--text-secondary)]">
-              Comprá los ingredientes o productos que necesitás directo desde la tienda.
+              Compra los ingredientes o productos que necesitas directo desde la tienda.
             </BodyText>
             <Link
               href="/tienda"

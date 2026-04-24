@@ -80,7 +80,7 @@ export function threadClosedMessage(
   return [
     `🔒 *${vars.storeName}* cerró la conversación`,
     reasonLine,
-    `Si necesitás más ayuda, abrí un chat nuevo desde la tienda:`,
+    `Si necesitas más ayuda, abre un chat nuevo desde la tienda:`,
     `${vars.threadUrl}`,
   ]
     .filter(Boolean)

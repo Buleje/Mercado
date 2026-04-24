@@ -24,22 +24,22 @@ interface Step {
 const STEPS: Step[] = [
   {
     kicker: "01",
-    title: "Elegí tu bodega",
+    title: "Elige tu bodega",
     desc: "Explora bodegas cerca tuyo en Pucallpa. Filtra por categoría, rating o cercanía — todas verificadas, con delivery en tu zona.",
     illustration: "mapa",
     side: "left",
   },
   {
     kicker: "02",
-    title: "Armá tu canasta",
-    desc: "Agregá lo que necesitás al carrito: abarrotes, frescos, bebidas, limpieza. Combiná productos de una o varias tiendas.",
+    title: "Arma tu canasta",
+    desc: "Agrega lo que necesitas al carrito: abarrotes, frescos, bebidas, limpieza. Combiná productos de una o varias tiendas.",
     illustration: "canasta",
     side: "right",
   },
   {
     kicker: "03",
     title: "Recibilo en 25 min",
-    desc: "El repartidor te lo lleva a la puerta. Pagás al recibir con Yape, Plin o efectivo. Seguí el pedido en vivo desde tu celular.",
+    desc: "El repartidor te lo lleva a la puerta. Pagás al recibir con Yape, Plin o efectivo. Sigue el pedido en vivo desde tu celular.",
     illustration: "moto",
     side: "left",
   },

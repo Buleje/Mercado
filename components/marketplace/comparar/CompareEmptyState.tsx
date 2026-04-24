@@ -20,10 +20,10 @@ export default function CompareEmptyState({ onPickStart }: CompareEmptyStateProp
           <ComparandoTres size={200} />
         </div>
         <h2 className="mt-4 text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-          Empezá a comparar productos
+          Empieza a comparar productos
         </h2>
         <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-md mx-auto leading-relaxed">
-          Agregá hasta 4 productos desde el catálogo o desde la ficha de cada
+          Agrega hasta 4 productos desde el catálogo o desde la ficha de cada
           producto y los verás en una tabla lado a lado.
         </p>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -60,7 +60,7 @@ export default function CompareEmptyState({ onPickStart }: CompareEmptyStateProp
           </li>
           <li className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
             <span className="font-semibold text-[var(--text-primary)] block mb-0.5">
-              Agregá al carrito
+              Agrega al carrito
             </span>
             Directo desde la tabla, sin salir de la comparación.
           </li>

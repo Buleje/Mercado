@@ -284,7 +284,7 @@ async function DistrictCategoryContent({
         </h2>
         <p className="mt-1 text-sm text-slate-600">
           Vende {cat.label.toLowerCase()} con Buleje ERP: inventario, POS,
-          delivery y facturacion SUNAT.
+          delivery y facturación SUNAT.
         </p>
         <Link
           href="/registro"
@@ -297,7 +297,7 @@ async function DistrictCategoryContent({
       {/* Cross-links: sibling categories in same district */}
       <section className="mt-10">
         <h2 className="text-lg font-bold text-slate-800 mb-4">
-          Mas categorias en {district.name}
+          Más categorias en {district.name}
         </h2>
         <div className="flex flex-wrap gap-2">
           {siblingCategories.map((c) => {
@@ -360,7 +360,7 @@ async function DistrictCategoryContent({
           categorias en {district.name}, {zone.name}, {zone.region}.
           Inventario en tiempo real, POS, delivery, fiado digital con score
           y boletas electronicas SUNAT — todo desde el celular. Creado en
-          Pucallpa, Peru.
+          Pucallpa, Perú.
         </p>
       </footer>
     </div>

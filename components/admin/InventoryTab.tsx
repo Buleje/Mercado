@@ -44,9 +44,9 @@ function fmt(n: number) { return `S/${n.toFixed(2)}`; }
 const realCategories = categories.filter(c => c.id !== "todos");
 
 // Mejora 6: Rotation badge config
-type RotationLevel = "rapido" | "normal" | "lento" | "muerto";
+type RotationLevel = "rápido" | "normal" | "lento" | "muerto";
 function getRotationInfo(salesPerWeek: number, stock: number): { level: RotationLevel; label: string; className: string } | null {
-  if (salesPerWeek > 10) return { level: "rapido", label: "Rapido", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]" };
+  if (salesPerWeek > 10) return { level: "rápido", label: "Rápido", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]" };
   if (salesPerWeek >= 3) return null; // Normal — no badge
   if (salesPerWeek >= 1) return { level: "lento", label: "Lento", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/30 dark:text-[var(--data-warning)]" };
   if (stock > 0) return { level: "muerto", label: "Sin rotar", className: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]" };
@@ -530,7 +530,7 @@ export default function InventoryTab() {
    * El producto en si NO se elimina, solo se quita la URL de la imagen para
    * que el admin pueda re-subirla con los requisitos correctos.
    *
-   * Nota tecnica 2026-04-20: el endpoint /api/products/bulk acepta
+   * Nota técnica 2026-04-20: el endpoint /api/products/bulk acepta
    * `fields.image: ""` desde el extender del schema. Si recibis 400, revisar
    * que el dev server haya recargado el schema. El load() usa cache:no-store
    * para forzar refetch.
@@ -965,31 +965,31 @@ export default function InventoryTab() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Productos</p>
           <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-foreground mt-1">{totalProducts}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{activeProducts} activos</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{activeProducts} activos</p>
           <div className="h-1 rounded-full mt-2 bg-primary" />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Activos</p>
           <p className="text-2xl font-mono font-bold text-[var(--data-success)] mt-1">{activeProducts}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
           <div className="h-1 rounded-full mt-2 bg-[var(--accent-soft)]" />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Bajo stock</p>
           <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{lowStockCount}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
           <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-[var(--data-warning)]" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Prox. a vencer</p>
           <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)] dark:text-foreground")}>{expiringSoonCount}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Proximos 30 dias</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Proximos 30 dias</p>
           <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-[var(--data-warning)]" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Valor total</p>
           <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">En inventario</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">En inventario</p>
           <div className="h-1 rounded-full mt-2 bg-[var(--accent-soft)]" />
         </div>
       </div>
@@ -1008,12 +1008,12 @@ export default function InventoryTab() {
       {/* Mejora P-8: Margen promedio por categoria */}
       {categoryMargins.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-medium mr-1">Margen:</span>
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-medium mr-1">Margen:</span>
           {categoryMargins.map(cm => (
             <span
               key={cm.cat}
               className={cn(
-                "text-[length:var(--ts-2xs)] font-mono font-bold px-2 py-0.5 rounded-full",
+                "text-xs font-mono font-bold px-2 py-0.5 rounded-full",
                 cm.margin > 25 ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
                 : cm.margin >= 15 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]"
                 : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
@@ -1114,7 +1114,7 @@ export default function InventoryTab() {
         <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border space-y-3">
           {/* Grupo: Vista */}
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Vista</p>
+            <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Vista</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
@@ -1144,7 +1144,7 @@ export default function InventoryTab() {
 
           {/* Grupo: Importar / Exportar */}
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Importar / Exportar</p>
+            <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Importar / Exportar</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => {
@@ -1197,7 +1197,7 @@ export default function InventoryTab() {
 
       {/* Contador de resultados filtrados */}
       {filteredProducts.length !== products.length && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Mostrando {filteredProducts.length} de {products.length} productos</p>
+        <p className="text-xs text-[var(--text-tertiary)]">Mostrando {filteredProducts.length} de {products.length} productos</p>
       )}
 
       {/* Content */}
@@ -1450,10 +1450,10 @@ export default function InventoryTab() {
                           {(() => {
                             const spw = computeSalesPerWeek(p.id, movements);
                             const info = getRotationInfo(spw, p.stock ?? 0);
-                            if (!info) return <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Normal</span>;
+                            if (!info) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">Normal</span>;
                             return (
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", info.className)}>
-                                {info.level === "rapido" && <TrendingUp className="h-2.5 w-2.5" />}
+                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", info.className)}>
+                                {info.level === "rápido" && <TrendingUp className="h-2.5 w-2.5" />}
                                 {info.label}
                               </span>
                             );
@@ -1585,7 +1585,7 @@ export default function InventoryTab() {
                           onClick={() => { setEditModalProduct(p); }}>
                           <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">{p.category}</span>
+                            <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{p.category}</span>
                             <span className="text-xs font-bold">{p.stock ?? 0} uds</span>
                           </div>
                         </div>
@@ -1681,10 +1681,10 @@ export default function InventoryTab() {
                           )}
                         </div>
                         <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.name}</span>
-                        <span className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">{fmt(p.price)}</span>
+                        <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{fmt(p.price)}</span>
                         {p.stock != null && (
                           <span className={cn(
-                            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
+                            "text-xs font-bold px-2 py-0.5 rounded-full",
                             (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error)]" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-[var(--accent-soft)] text-[var(--data-success)]"
                           )}>
                             Stock: {p.stock}
@@ -1865,7 +1865,7 @@ export default function InventoryTab() {
                     const validation = validateImageUrl(addForm.image);
                     if (!validation.valid && addForm.image) {
                       return (
-                        <p className="text-[length:var(--ts-xs)] text-[var(--data-warning)] flex items-center gap-1.5">
+                        <p className="text-sm text-[var(--data-warning)] flex items-center gap-1.5">
                           <AlertTriangle className="h-3 w-3" strokeWidth={2} aria-hidden />
                           {validation.reason}
                         </p>

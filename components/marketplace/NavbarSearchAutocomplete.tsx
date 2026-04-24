@@ -108,11 +108,11 @@ function useTopStores(): Suggestion[] {
 
 // ── Placeholder animado — rota cada 3.5s ───────────────────────────────────
 const ROTATING_PLACEHOLDERS = [
-  "Buscá arroz, aceite, lácteos…",
-  "Probá 'detergente'",
+  "Busca arroz, aceite, lácteos…",
+  "Prueba 'detergente'",
   "Pollo entero, fresco hoy",
   "Yape · efectivo · Plin",
-  "Buscá una bodega cerca",
+  "Busca una bodega cerca",
   "Ofertas de la semana",
 ];
 
@@ -340,7 +340,7 @@ export default function NavbarSearchAutocomplete({
           {!loading && groups.length === 0 && query.trim().length > 0 && (
             <div className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
               Sin resultados para <strong className="text-[var(--text-primary)]">&quot;{query}&quot;</strong>.
-              Probá con otra palabra.
+              Prueba con otra palabra.
             </div>
           )}
 

@@ -29,7 +29,7 @@ const PRO_BENEFITS: Record<string, { title: string; benefits: string[] }> = {
     benefits: [
       "Estado de perdidas y ganancias",
       "Presupuestos mensuales",
-      "Facturacion electronica SUNAT",
+      "Facturacion electrónica SUNAT",
     ],
   },
   "finanzas": {
@@ -37,7 +37,7 @@ const PRO_BENEFITS: Record<string, { title: string; benefits: string[] }> = {
     benefits: [
       "Estado de perdidas y ganancias",
       "Presupuestos mensuales",
-      "Facturacion electronica SUNAT",
+      "Facturacion electrónica SUNAT",
     ],
   },
   "crm-pro": {
@@ -72,16 +72,16 @@ const PRO_BENEFITS: Record<string, { title: string; benefits: string[] }> = {
       "Mide cuantas ventas genera cada promo",
     ],
   },
-  "logistica-pro": {
-    title: "Logistica Avanzada",
+  "logística-pro": {
+    title: "Logística Avanzada",
     benefits: [
       "Optimiza rutas de delivery",
       "Calendario de entregas",
       "Control de devoluciones",
     ],
   },
-  "logistica": {
-    title: "Logistica Avanzada",
+  "logística": {
+    title: "Logística Avanzada",
     benefits: [
       "Optimiza rutas de delivery",
       "Calendario de entregas",
@@ -130,7 +130,7 @@ interface UpgradeBannerProps {
   moduleId: string;
   /** Nombre amigable del modulo para el titulo principal */
   moduleName?: string;
-  /** Callback al cerrar el banner y quedarse en Plan Basico */
+  /** Callback al cerrar el banner y quedarse en Plan Básico */
   onDismiss: () => void;
 }
 
@@ -242,7 +242,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
               onClick={onDismiss}
               className="w-full px-6 py-3 rounded-xl text-white/80 text-sm font-medium hover:text-white hover:bg-white/10 active:scale-[0.98] transition-all"
             >
-              Seguir con Plan Basico
+              Seguir con Plan Básico
             </button>
           </div>
         </m.div>

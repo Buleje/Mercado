@@ -13,7 +13,7 @@ import { cn } from "@buleje/design-system";
 const FAQ_ITEMS = [
   {
     q: "¿Cuánto cobra Buleje de comisión?",
-    a: "Los primeros 30 días es gratis, sin ninguna comisión. Después tenés dos opciones: Plan Gratis (5% por pedido exitoso, sin cuota fija) o Plan Pro (S/ 29 al mes, sin comisión por pedido). Vos elegís el que te convenga según tu volumen.",
+    a: "Los primeros 30 días es gratis, sin ninguna comisión. Después tienes dos opciones: Plan Gratis (5% por pedido exitoso, sin cuota fija) o Plan Pro (S/ 29 al mes, sin comisión por pedido). Vos eliges el que te convenga según tu volumen.",
   },
   {
     q: "¿Cuándo recibo la plata de mis ventas?",
@@ -21,7 +21,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Necesito tener RUC para vender?",
-    a: "Sí. Pedimos RUC vigente (persona natural con negocio o persona jurídica). Si todavía no tenés, te mandamos el instructivo SUNAT para sacarlo en 48h sin costo. Una vez que lo tengas, subís la foto y seguís.",
+    a: "Sí. Pedimos RUC vigente (persona natural con negocio o persona jurídica). Si todavía no tienes, te mandamos el instructivo SUNAT para sacarlo en 48h sin costo. Una vez que lo tengas, subes la foto y sigues.",
   },
   {
     q: "¿Cómo manejo las entregas? ¿Tengo que contratar repartidores?",
@@ -33,11 +33,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Qué pasa si un cliente devuelve algo?",
-    a: "Tenemos proceso de devolución simple. El cliente reporta el problema en la app, el repartidor recoge el producto, y vos decidís si reembolsás, reemplazás o investigás más. Buleje te acompaña en cada paso y bloquea clientes con patrón de abuso.",
+    a: "Tenemos proceso de devolución simple. El cliente reporta el problema en la app, el repartidor recoge el producto, y tú decides si reembolsas, reemplazas o investigas más. Buleje te acompaña en cada paso y bloquea clientes con patrón de abuso.",
   },
   {
     q: "¿Cuántos productos puedo cargar?",
-    a: "Ilimitados. En el Plan Gratis cargás hasta 50 productos activos, en Plan Pro son infinitos. Podés subir fotos con el celular o pedirnos ayuda para fotografías profesionales (te cobramos solo el costo real, sin márgen).",
+    a: "Ilimitados. En el Plan Gratis cargás hasta 50 productos activos, en Plan Pro son infinitos. Puedes subir fotos con el celular o pedirnos ayuda para fotografías profesionales (te cobramos solo el costo real, sin márgen).",
   },
   {
     q: "¿Puedo darme de baja si no me gusta?",
@@ -59,7 +59,7 @@ export default function VenderFAQ() {
             Lo que casi todos nos preguntan
           </h2>
           <p className="mt-3 text-[var(--text-secondary)]">
-            Si no está acá, escribinos por WhatsApp y te respondemos en minutos.
+            Si no está aquí, escríbenos por WhatsApp y te respondemos en minutos.
           </p>
         </header>
 

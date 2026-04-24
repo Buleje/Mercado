@@ -341,7 +341,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "cash-runway",
       render: () => (
         <DashboardSection
-          kicker="Cash runway · últimos 30 días"
+          kicker="Cash runway · rango activo"
           title="Días de operación con balance actual"
           kpis={[
             {
@@ -384,7 +384,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "pareto-metodos",
       render: () => (
         <DashboardSection
-          kicker="Pareto · métodos de pago · últimos 30 días"
+          kicker="Pareto · métodos de pago · rango activo"
           title="Qué métodos concentran el cash"
           kpis={[
             { label: "Total 30d", value: fmtS(pareto.total), tone: "primary" },
@@ -421,7 +421,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "metodos-stacked",
       render: () => (
         <DashboardSection
-          kicker="Evolución de métodos · últimos 14 días"
+          kicker="Evolución de métodos · rango activo"
           title="Composición diaria de cobros por método"
           kpis={[
             { label: "Días con data", value: String(metodosStacked.rows.length), tone: "neutral" },
@@ -456,7 +456,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los últimos 14 días.
+              Sin datos en los rango activo.
             </div>
           )}
         </DashboardSection>
@@ -487,7 +487,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "margen-trend",
       render: () => (
         <DashboardSection
-          kicker="Evolución del margen · últimos 14 días"
+          kicker="Evolución del margen · rango activo"
           title="Utilidad neta y margen día a día"
           kpis={[
             {
@@ -535,7 +535,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "balance-acumulado",
       render: () => (
         <DashboardSection
-          kicker="Balance acumulado · últimos 30 días"
+          kicker="Balance acumulado · rango activo"
           title="Trayectoria de caja (running total)"
           kpis={[
             { label: "Final", value: fmtS(runningBalance.finalAcc), tone: runningBalance.finalAcc >= 0 ? "success" : "warning" },

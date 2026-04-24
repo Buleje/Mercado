@@ -18,7 +18,7 @@ const TESTIMONIALS = [
   {
     name: "Luis G.",
     zone: "Yarinacocha",
-    text: "Sencillo, rapido y la acepte en mi bodega sin problemas. Mis clientes ahora compran tarjetas para regalar en cumples.",
+    text: "Sencillo, rápido y la acepte en mi bodega sin problemas. Mis clientes ahora compran tarjetas para regalar en cumples.",
     rating: 4,
   },
 ];

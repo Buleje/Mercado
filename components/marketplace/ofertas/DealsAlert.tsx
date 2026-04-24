@@ -94,7 +94,7 @@ export default function DealsAlert() {
                       Listo, te avisamos
                     </p>
                     <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-relaxed">
-                      Revisa tu bandeja (y la carpeta de spam por las dudas). El primer envio sale el proximo lunes.
+                      Revisa tu bandeja (y la carpeta de spam por las dudas). El primer envio sale el próximo lunes.
                     </p>
                   </div>
                 </div>

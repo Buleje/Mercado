@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /**
  * Layout del grupo /cuenta/*.
  *
- * Mantenemos un passthrough minimal: cada pagina del grupo decide si se
+ * Mantenemos un passthrough minimal: cada página del grupo decide si se
  * envuelve con <CuentaLayoutShell> (dashboard unificado + sidebar) o si
  * renderiza su propio chrome (satellite pages legacy).
  *

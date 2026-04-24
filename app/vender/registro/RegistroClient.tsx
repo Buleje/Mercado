@@ -195,7 +195,7 @@ export default function RegistroClient() {
       plan: state.plan,
     });
     if (!full.success) {
-      setSubmitError("Revisá los datos anteriores, hay campos incompletos.");
+      setSubmitError("Revisa los datos anteriores, hay campos incompletos.");
       return;
     }
 

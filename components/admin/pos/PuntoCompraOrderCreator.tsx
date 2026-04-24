@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { X, Search, Loader2, CheckCircle2, User, ShoppingCart } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface CartItemInput {
   product: { id: number; name: string; costPrice?: number | null };
@@ -90,7 +91,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           customerId: selectedCustomer.id,
           customerName: selectedCustomer.name,
@@ -117,7 +118,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="modal-backdrop p-4">
       <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-card-border">
@@ -192,7 +193,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       type="text"
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
-                      placeholder="Buscar por nombre o telefono..."
+                      placeholder="Buscar por nombre o teléfono..."
                       className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                     />
                     {searchLoading && (

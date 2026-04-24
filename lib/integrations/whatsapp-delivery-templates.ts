@@ -60,7 +60,7 @@ export function deliveryNearbyMessage(vars: DeliveryNearbyVars): string {
     `Tu pedido de *${vars.storeName}* está por llegar.`,
     `${vars.driverFirstName} llega en aproximadamente *${vars.etaMinutes} minutos*.`,
     ``,
-    `Seguí su ubicación en vivo aquí:`,
+    `Sigue su ubicación en vivo aquí:`,
     `${vars.trackingUrl}`,
     ``,
     `¡Prepará el cambio! 🙌`,

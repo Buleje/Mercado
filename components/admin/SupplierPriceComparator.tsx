@@ -208,7 +208,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                       Proveedor
                     </th>
                     <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
-                      Ultimo precio
+                      Último precio
                     </th>
                     <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
                       Precio promedio
@@ -217,7 +217,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
                       Compras
                     </th>
                     <th className="px-4 py-2.5 text-right font-medium text-[var(--text-tertiary)]">
-                      Ultima fecha
+                      Última fecha
                     </th>
                     <th className="px-4 py-2.5 text-center font-medium text-[var(--text-tertiary)]">
                       Estado

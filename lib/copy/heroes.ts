@@ -23,7 +23,7 @@ export const HERO = {
     headline: "Tu bodega del barrio,",
     headlineAccent: "en tu celular",
     subhead:
-      "Pedí a cualquier bodega cerca tuyo. Delivery en 25 min. Pagás con Yape o efectivo al recibir.",
+      "Pide a cualquier bodega cerca tuyo. Delivery en 25 min. Pagás con Yape o efectivo al recibir.",
     ctaPrimary: "Ver tiendas cerca",
     ctaSecondary: "Ofertas del día",
     socialProofTemplate: (bodegas: number, ordersToday: number) =>
@@ -43,7 +43,7 @@ export const HERO = {
     socialProofTemplate: (activeStores: number) =>
       `${activeStores} bodegas en todo el Perú ya usan Buleje`,
     // Fallback hero alternativo para A/B test
-    alternativeHeadline: "Vendé el doble",
+    alternativeHeadline: "Vende el doble",
     alternativeAccent: "sin contratar a nadie",
     alternativeSubhead:
       "Automatizá pedidos por WhatsApp, inventario y facturación SUNAT. Ahorrá 2 horas cada día.",
@@ -73,7 +73,7 @@ export const HERO = {
     subhead:
       "Desde 2021 sirviendo a nuestros vecinos con productos frescos, precios justos y el cariño del barrio.",
     ctaPrimary: "Ver tienda",
-    ctaSecondary: "Escribinos por WhatsApp",
+    ctaSecondary: "Escríbenos por WhatsApp",
   },
 
   // ── Ayuda ──────────────────────────────────────────────────
@@ -82,27 +82,27 @@ export const HERO = {
     headline: "Tenemos respuesta",
     headlineAccent: "para todo",
     subhead:
-      "Respuestas rápidas a las preguntas más comunes. Si no encontrás lo tuyo, escribinos por WhatsApp.",
+      "Respuestas rápidas a las preguntas más comunes. Si no encontrás lo tuyo, escríbenos por WhatsApp.",
     ctaPrimary: "Chatear por WhatsApp",
   },
 
   // ── Apply wizard (vendor onboarding) ──────────────────────
   apply: {
-    eyebrow: "Abrí tu tienda",
+    eyebrow: "Abre tu tienda",
     headline: "4 pasos,",
     headlineAccent: "5 minutos",
     subhead:
-      "Contanos quién sos, qué vendés y dónde. Tu tienda queda lista hoy mismo — empezás a vender mañana.",
+      "Contanos quién sos, qué vendes y dónde. Tu tienda queda lista hoy mismo — empiezas a vender mañana.",
     ctaPrimary: "Empezar configuración",
   },
 
   // ── Planes ─────────────────────────────────────────────────
   planes: {
     eyebrow: "Planes y precios",
-    headline: "Empezás gratis,",
+    headline: "Empiezas gratis,",
     headlineAccent: "crecés a tu ritmo",
     subhead:
-      "Probá Buleje 14 días sin pagar un sol. Subís de plan solo cuando te ayude a vender más.",
+      "Prueba Buleje 14 días sin pagar un sol. Subes de plan solo cuando te ayude a vender más.",
     ctaPrimary: "Empezar plan gratis",
     ctaSecondary: "Ver planes pagos",
   },
@@ -113,14 +113,14 @@ export const HERO = {
     headline: "Por cada sol,",
     headlineAccent: "más valor",
     subhead:
-      "Ganás 1 punto por cada S/10 de pedido. 100 puntos = S/5 de descuento. Subís de nivel automático.",
+      "Ganás 1 punto por cada S/10 de pedido. 100 puntos = S/5 de descuento. Subes de nivel automático.",
     ctaPrimary: "Ver mi nivel",
   },
 
   // ── Zona Pucallpa (SEO hyperlocal) ────────────────────────
   zonaPucallpa: {
     eyebrow: "Pucallpa · Ucayali",
-    headline: "Buleje nació acá,",
+    headline: "Buleje nació aquí,",
     headlineAccent: "en Pucallpa",
     subhead:
       "Cobertura en los 11 distritos de Ucayali. Delivery en 25 min, bodegas verificadas, pagos con Yape.",

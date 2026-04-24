@@ -141,7 +141,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
 
-          {/* Clientes del dia */}
+          {/* Clientes del día */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">

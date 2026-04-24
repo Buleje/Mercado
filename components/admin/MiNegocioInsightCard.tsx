@@ -113,7 +113,7 @@ export function MiNegocioInsightCard({ greeting, trend, className }: Props) {
   if (alertas.sinStock > 0) {
     insight = {
       type: "warning",
-      text: `Tenés ${alertas.sinStock} ${alertas.sinStock === 1 ? "producto" : "productos"} sin stock. Los clientes no los pueden comprar.`,
+      text: `Tienes ${alertas.sinStock} ${alertas.sinStock === 1 ? "producto" : "productos"} sin stock. Los clientes no los pueden comprar.`,
       cta: { label: "Ver inventario", href: "/admin?module=inventario&filter=sin-stock" },
     };
   } else if (alertas.porVencer > 0) {

@@ -76,7 +76,7 @@ export default function StepContacto({
           </div>
           <FieldError message={errors.whatsapp} />
           <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Los pedidos te llegan acá. Tenelo siempre prendido.
+            Los pedidos te llegan aquí. Tenelo siempre prendido.
           </p>
         </div>
 

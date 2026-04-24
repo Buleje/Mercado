@@ -113,7 +113,7 @@ export default function CustomerSegmentationTab() {
                 onClick={() => setActiveSegment(activeSegment === seg ? "all" : seg)}
                 title={`${SEGMENT_CONFIG[seg].label}: ${count} (${pct.toFixed(0)}%)`}
               >
-                {pct > 8 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{pct.toFixed(0)}%</span>}
+                {pct > 8 && <span className="text-white text-xs font-extrabold">{pct.toFixed(0)}%</span>}
               </div>
             );
           })}
@@ -174,7 +174,7 @@ export default function CustomerSegmentationTab() {
               <button
                 onClick={() => handleCampaign(seg)}
                 disabled={count === 0}
-                className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all", isSent ? "bg-[var(--accent-soft)] text-white" : "bg-white/60 dark:bg-black/20 text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
+                className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-sm font-bold transition-all", isSent ? "bg-[var(--accent-soft)] text-white" : "bg-white/60 dark:bg-black/20 text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
               >
                 {isSent ? <>Enviado</> : <><Send className="h-3 w-3" />Enviar campaña</>}
               </button>
@@ -217,7 +217,7 @@ export default function CustomerSegmentationTab() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
+                        <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{c.orderCount}</td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">S/{c.totalSpent.toFixed(2)}</td>
@@ -252,7 +252,7 @@ export default function CustomerSegmentationTab() {
                     <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
                     <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold border", cfg.bg, cfg.color, cfg.border)}>
                       <cfg.icon className="h-3 w-3" />{cfg.label}
                     </span>
@@ -266,13 +266,13 @@ export default function CustomerSegmentationTab() {
                   ].map(metric => (
                     <div key={metric.label}>
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">{metric.label}</span>
-                        <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] dark:text-foreground">{metric.value}</span>
+                        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{metric.label}</span>
+                        <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{metric.value}</span>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div className={cn("h-full rounded-full transition-all", metric.color)} style={{ width: `${metric.value}%` }} />
                       </div>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{metric.desc}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{metric.desc}</p>
                     </div>
                   ))}
                 </div>

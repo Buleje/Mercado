@@ -178,13 +178,13 @@ export default function SalesOrdersTab() {
   });
 
   // ── Idea 11: Delivery por Vecinos — Repartidores informales ──────────────
-  type DeliveryPerson = { nombre: string; telefono: string; zona: string; activo: boolean; comision: number; entregas: number };
+  type DeliveryPerson = { nombre: string; teléfono: string; zona: string; activo: boolean; comision: number; entregas: number };
   const [deliveryPeople, setDeliveryPeople] = useState<DeliveryPerson[]>(() => {
     try { const raw = localStorage.getItem("delivery-people"); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
   const [showDeliveryPanel, setShowDeliveryPanel] = useState(false);
   const [showAddDelivery, setShowAddDelivery] = useState(false);
-  const [newDelivery, setNewDelivery] = useState({ nombre: "", telefono: "", zona: "", comision: 3 });
+  const [newDelivery, setNewDelivery] = useState({ nombre: "", teléfono: "", zona: "", comision: 3 });
   const [assigningDelivery, setAssigningDelivery] = useState<string | null>(null);
   const [deliveryAssignments, setDeliveryAssignments] = useState<Record<string, string>>(() => {
     try { const raw = localStorage.getItem("delivery-assignments"); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
@@ -196,10 +196,10 @@ export default function SalesOrdersTab() {
   };
 
   const addDeliveryPerson = () => {
-    if (!newDelivery.nombre.trim() || !newDelivery.telefono.trim()) return;
+    if (!newDelivery.nombre.trim() || !newDelivery.teléfono.trim()) return;
     const person: DeliveryPerson = { ...newDelivery, activo: true, entregas: 0 };
     saveDeliveryPeople([...deliveryPeople, person]);
-    setNewDelivery({ nombre: "", telefono: "", zona: "", comision: 3 });
+    setNewDelivery({ nombre: "", teléfono: "", zona: "", comision: 3 });
     setShowAddDelivery(false);
   };
 
@@ -218,7 +218,7 @@ export default function SalesOrdersTab() {
     if (!person) return "";
     const items = (order.items ?? []).map(i => `${i.name} x${i.qty}`).join(", ");
     const msg = `Hola ${person.nombre}! Tienes un delivery:\n\nPara: ${order.customerName ?? "Cliente"}\nProductos: ${items}\nTotal: S/${order.total.toFixed(2)} - Metodo: ${order.paymentMethod ?? "efectivo"}\n\nGracias!`;
-    const phone = person.telefono.replace(/\D/g, "");
+    const phone = person.teléfono.replace(/\D/g, "");
     const fullPhone = phone.startsWith("51") ? phone : "51" + phone;
     return `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
   };
@@ -1118,7 +1118,7 @@ export default function SalesOrdersTab() {
                               });
                               if (res.ok) {
                                 const data = await res.json();
-                                setGrrToast(`Guía de Remisión ${data.numero || ""} creada`);
+                                setGrrToast(`Guía de Remisión ${data.número || ""} creada`);
                                 setTimeout(() => setGrrToast(null), 4000);
                               }
                             } catch { /* ignore */ }
@@ -1224,7 +1224,7 @@ export default function SalesOrdersTab() {
                 <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Nuevo repartidor</p>
                 <div className="grid grid-cols-2 gap-2">
                   <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
-                  <input type="tel" placeholder="Telefono" value={newDelivery.telefono} onChange={e => setNewDelivery({...newDelivery, telefono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+                  <input type="tel" placeholder="Teléfono" value={newDelivery.teléfono} onChange={e => setNewDelivery({...newDelivery, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
                   <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-[var(--text-secondary)]">S/</span>
@@ -1251,7 +1251,7 @@ export default function SalesOrdersTab() {
         const order = orders.find(o => o.id === assigningDelivery);
         if (!order) return null;
         return (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setAssigningDelivery(null)}>
+          <div className="modal-backdrop p-4" onClick={() => setAssigningDelivery(null)}>
             <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-4" onClick={e => e.stopPropagation()}>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Asignar repartidor a #{order.id.slice(-6).toUpperCase()}</p>
               <div className="space-y-2">

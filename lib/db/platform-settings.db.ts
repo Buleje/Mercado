@@ -22,7 +22,7 @@ import { getOrSet, invalidate } from "@/lib/cache";
  *   - invalidate(key) tras writes → consistency eventual
  *   - Clave: `platform-settings:{key}`
  *
- * Fix del bug MRR fake 2026-04-09 — lee/escribe siempre por acá, jamás
+ * Fix del bug MRR fake 2026-04-09 — lee/escribe siempre por aquí, jamás
  * duplicar precios hardcoded en otras rutas.
  */
 

@@ -11,7 +11,7 @@ import { SocioDashboardClient } from "./SocioDashboardClient";
 export const metadata: Metadata = {
   title: "Panel de Socio — Buleje",
   description:
-    "Gestioná tu membresía Socio Buleje: cashback, envíos gratis, ahorro y ofertas exclusivas.",
+    "Gestióná tu membresía Socio Buleje: cashback, envíos gratis, ahorro y ofertas exclusivas.",
   robots: { index: false, follow: false },
 };
 

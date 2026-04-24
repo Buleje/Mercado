@@ -46,7 +46,7 @@ const ReviewBody = z
       ctx.addIssue({
         code: "custom",
         path: ["note"],
-        message: "Describí qué info necesitás",
+        message: "Describí qué info necesitas",
       });
     }
   });

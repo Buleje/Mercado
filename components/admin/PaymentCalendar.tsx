@@ -270,7 +270,7 @@ export default function PaymentCalendar() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Esta semana", amount: thisWeekTotal, color: "text-primary dark:text-[var(--data-success)]" },
-          { label: "Proxima semana", amount: nextWeekTotal, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
+          { label: "Próxima semana", amount: nextWeekTotal, color: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
           { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]" },
         ].map(({ label, amount, color }) => (
           <div
@@ -421,7 +421,7 @@ export default function PaymentCalendar() {
         {[
           { color: "bg-[var(--accent-soft)]", label: "Pagado" },
           { color: "bg-[var(--data-error)]",     label: "Vencido" },
-          { color: "bg-[var(--data-warning)]",   label: "Proximo" },
+          { color: "bg-[var(--data-warning)]",   label: "Próximo" },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <span className={cn("w-2 h-2 rounded-full", color)} />

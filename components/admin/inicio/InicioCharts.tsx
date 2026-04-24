@@ -174,7 +174,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
       {/* ── Row 5: 3 alertas + funnel ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ChartCard
-          title="Stock proximo a agotar"
+          title="Stock próximo a agotar"
           Icon={AlertTriangle}
           height={250}
           subtitle="Top 8 productos criticos"
@@ -194,7 +194,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
                           "h-full rounded-full",
                           p.diasRestantes < 7 ? "bg-[var(--data-error)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning)]" : "bg-[var(--accent-soft)]",
                         )}
-                        style={{ width: `${Math.min((p.stock / Math.max(p.minimo * 3, 1)) * 100, 100)}%` }}
+                        style={{ width: `${Math.min((p.stock / Math.max(p.mínimo * 3, 1)) * 100, 100)}%` }}
                       />
                     </div>
                     <span className={cn(

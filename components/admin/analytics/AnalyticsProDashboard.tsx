@@ -337,7 +337,7 @@ export default function AnalyticsProDashboard() {
             <TrendForecaster sales={data.sales} />
           </WidgetCard>
 
-          <WidgetCard title="Analisis de Margenes" onRefresh={fetchData}>
+          <WidgetCard title="Análisis de Margenes" onRefresh={fetchData}>
             <ProfitMarginAnalyzer products={data.products} sales={filteredSales} />
           </WidgetCard>
 

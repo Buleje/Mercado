@@ -128,7 +128,7 @@ export default function AutoSegments() {
       {
         key: "nuevo",
         label: "Nuevo",
-        description: "Primera compra en los ultimos 30 dias",
+        description: "Primera compra en los &uacute;ltimos 30 d&iacute;as",
         icon: UserPlus,
         color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
         bg: "bg-[var(--surface-sunken)]",

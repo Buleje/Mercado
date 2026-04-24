@@ -52,8 +52,8 @@ export default function DeliveryTab() {
             Delivery en vivo
           </PageTitle>
           <p className="text-xs text-slate-500">
-            Bloque D1 del Marketplace · polling 10-20s · los clientes reciben link
-            automático por WhatsApp
+            Seguimiento en tiempo real de rutas y paradas. Los clientes reciben link
+            automático por WhatsApp.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -97,7 +97,7 @@ export default function DeliveryTab() {
 
         {/* Live map */}
         <section
-          className="min-h-[500px]"
+          className="h-[600px] overflow-hidden rounded-xl"
           aria-labelledby="map-heading"
         >
           <h2 id="map-heading" className="sr-only">
@@ -116,7 +116,7 @@ export default function DeliveryTab() {
               id="stops-heading"
               className="text-sm font-semibold text-slate-700 dark:text-slate-200"
             >
-              Paradas {selectedRouteId ? "de la ruta" : "(seleccioná una ruta)"}
+              Paradas {selectedRouteId ? "de la ruta" : "(selecciona una ruta)"}
             </SectionTitle>
           </div>
           <div className="max-h-[600px] overflow-y-auto">
@@ -128,7 +128,7 @@ export default function DeliveryTab() {
               />
             ) : (
               <div className="p-6 text-center text-sm text-slate-500">
-                Elegí una ruta de la izquierda para ver sus paradas.
+                Elige una ruta de la izquierda para ver sus paradas.
               </div>
             )}
           </div>

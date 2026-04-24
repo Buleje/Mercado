@@ -7,8 +7,8 @@
  * Uso:
  * ```tsx
  * <ExplorarSectionHeader
- *   kicker="Para vos"
- *   title="Comprá de nuevo"
+ *   kicker="Para ti"
+ *   title="Compra de nuevo"
  *   subtitle="Lo que ya pediste antes, listo en un toque"
  *   ctaLabel="Ver historial"
  *   ctaHref="/marketplace/mi-cuenta/pedidos"

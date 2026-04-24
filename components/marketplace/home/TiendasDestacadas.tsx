@@ -69,7 +69,7 @@ export default function TiendasDestacadas() {
     <MarketplaceSection
       id="tiendas-destacadas"
       kicker="Cerca tuyo"
-      title="Bodegas que no podés perderte"
+      title="Bodegas que no puedes perderte"
       subtitle="Las tiendas mejor calificadas de tu zona"
       actions={
         <Link

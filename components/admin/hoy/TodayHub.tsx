@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles, Package } from "@buleje/design-system/icons";
 import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/components/admin/ux";
@@ -8,6 +8,7 @@ import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
 import { cn } from "@/lib/utils";
+import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
 
 /**
  * TodayHub — pantalla unificada del admin home (ADR-064 Ola B).
@@ -26,12 +27,16 @@ import { cn } from "@/lib/utils";
 
 interface OverviewData {
   hero: {
-    totalToday: number;
-    deltaVsYesterday: number;
+    totalToday: number;        // legacy
+    totalRange?: number;
+    deltaVsYesterday: number;  // legacy
+    deltaVsPrevious?: number;
     sparkline: number[];
+    sparklineLabels?: string[];
   };
   contextual: {
-    ordersToday: number;
+    ordersToday: number;  // legacy
+    ordersInRange?: number;
     uniqueCustomers: number;
     newCustomers: number;
     ticketAverage: number;
@@ -50,10 +55,36 @@ interface Props {
   userName?: string;
   /** Override manual del greeting. Si presente, ignora userName + time-of-day. */
   greeting?: string;
+  /** Rango activo del dashboard. Si se omite, se asume "hoy". */
+  dateRange?: DateRange;
   className?: string;
 }
 
-export function TodayHub({ userName, greeting: greetingOverride, className }: Props) {
+const PRESET_HERO_LABEL: Record<string, string> = {
+  diario: "Ventas de hoy",
+  semanal: "Ventas de la semana",
+  mensual: "Ventas del mes",
+  anual: "Ventas del año",
+  personalizado: "Ventas del período",
+};
+
+const PRESET_DELTA_LABEL: Record<string, string> = {
+  diario: "vs ayer",
+  semanal: "vs semana pasada",
+  mensual: "vs mes pasado",
+  anual: "vs año pasado",
+  personalizado: "vs período anterior",
+};
+
+const PRESET_ORDERS_LABEL: Record<string, string> = {
+  diario: "Pedidos hoy",
+  semanal: "Pedidos de la semana",
+  mensual: "Pedidos del mes",
+  anual: "Pedidos del año",
+  personalizado: "Pedidos del período",
+};
+
+export function TodayHub({ userName, greeting: greetingOverride, dateRange, className }: Props) {
   const dynamicGreeting = usePersonalizedGreeting(userName ?? "bodeguero");
   const greeting = greetingOverride ?? dynamicGreeting;
 
@@ -61,12 +92,22 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Query string estable para el rango — re-fetch cuando cambia
+  const rangeQuery = useMemo(() => {
+    if (!dateRange) return "";
+    const params = new URLSearchParams();
+    params.set("from", dateRange.from.toISOString());
+    params.set("to", dateRange.to.toISOString());
+    params.set("preset", dateRange.preset);
+    return `?${params.toString()}`;
+  }, [dateRange?.from, dateRange?.to, dateRange?.preset]);
+
   useEffect(() => {
     let active = true;
 
     const load = async () => {
       try {
-        const res = await fetch("/api/admin/overview");
+        const res = await fetch(`/api/admin/overview${rangeQuery}`);
         if (!res.ok) throw new Error("fetch failed");
         const json = (await res.json()) as OverviewData;
         if (active) {
@@ -85,7 +126,7 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [rangeQuery]);
 
   if (loading) {
     return (
@@ -115,17 +156,26 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
           No pudimos cargar tu resumen
         </p>
         <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-          Nos pasó algo. Recargá la página o revisá tu conexión.
+          Nos pasó algo. Recargá la página o revisa tu conexión.
         </p>
       </div>
     );
   }
 
+  const presetKey = dateRange?.preset ?? "diario";
+  const heroLabel = PRESET_HERO_LABEL[presetKey] ?? PRESET_HERO_LABEL.diario;
+  const deltaLabel = PRESET_DELTA_LABEL[presetKey] ?? PRESET_DELTA_LABEL.diario;
+  const ordersLabel = PRESET_ORDERS_LABEL[presetKey] ?? PRESET_ORDERS_LABEL.diario;
+
+  const heroValue = data.hero.totalRange ?? data.hero.totalToday ?? 0;
+  const heroDelta = data.hero.deltaVsPrevious ?? data.hero.deltaVsYesterday ?? 0;
+  const ordersValue = data.contextual.ordersInRange ?? data.contextual.ordersToday ?? 0;
+
   // Map contextual metrics
   const contextualMetrics: ContextualMetric[] = [
     {
-      label: "Pedidos hoy",
-      value: data.contextual.ordersToday,
+      label: ordersLabel,
+      value: ordersValue,
     },
     {
       label: "Clientes únicos",
@@ -157,12 +207,12 @@ export function TodayHub({ userName, greeting: greetingOverride, className }: Pr
       {/* ── Hero unificado ── */}
       <AdminInsightCard
         greeting={greeting}
-        heroLabel="Ventas de hoy"
-        heroValue={data.hero.totalToday}
+        heroLabel={heroLabel}
+        heroValue={heroValue}
         heroPrefix="S/ "
         heroDecimals={2}
-        heroDelta={data.hero.deltaVsYesterday}
-        heroDeltaLabel="vs ayer"
+        heroDelta={heroDelta}
+        heroDeltaLabel={deltaLabel}
         trend={data.hero.sparkline}
         contextualMetrics={contextualMetrics}
         insight={insightAction}

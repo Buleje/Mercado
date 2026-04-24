@@ -299,7 +299,7 @@ export default function DeliveryCalendarTab() {
       {/* Assign modal */}
       {assigningSlot && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="modal-backdrop p-4"
           onClick={() => setAssigningSlot(null)}
         >
           <div

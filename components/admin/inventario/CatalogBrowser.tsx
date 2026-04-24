@@ -40,24 +40,24 @@ function ProductCard({
         <span className="text-3xl">{product.emoji}</span>
         <div className="flex items-center gap-1">
           {product.tags?.includes("popular") && (
-            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]">
               Popular
             </span>
           )}
           {margin !== null && (
-            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success)] dark:text-[var(--data-success)]">
               {margin}% margen
             </span>
           )}
         </div>
       </div>
       <p className="text-xs font-bold text-foreground truncate">{product.name}</p>
-      <p className="text-[length:var(--ts-2xs)] text-muted truncate">{product.brand} · {product.presentation ?? product.unit}</p>
+      <p className="text-xs text-muted truncate">{product.brand} · {product.presentation ?? product.unit}</p>
       <div className="flex items-center justify-between mt-2">
         <div>
           <p className="text-sm font-extrabold text-primary">S/ {product.suggestedPrice.toFixed(2)}</p>
           {product.suggestedCostPrice && (
-            <p className="text-[length:var(--ts-2xs)] text-muted">Costo: S/ {product.suggestedCostPrice.toFixed(2)}</p>
+            <p className="text-xs text-muted">Costo: S/ {product.suggestedCostPrice.toFixed(2)}</p>
           )}
         </div>
         <button
@@ -98,17 +98,17 @@ function ProductRow({
       <span className="text-xl shrink-0">{product.emoji}</span>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-foreground truncate">{product.name}</p>
-        <p className="text-[length:var(--ts-2xs)] text-muted">{product.brand} · {product.category}</p>
+        <p className="text-xs text-muted">{product.brand} · {product.category}</p>
       </div>
       <p className="text-xs font-bold text-primary shrink-0 w-16 text-right">S/ {product.suggestedPrice.toFixed(2)}</p>
       {product.barcode && (
-        <p className="text-[length:var(--ts-2xs)] text-muted font-mono shrink-0 w-24 text-right hidden lg:block">{product.barcode}</p>
+        <p className="text-xs text-muted font-mono shrink-0 w-24 text-right hidden lg:block">{product.barcode}</p>
       )}
       <button
         onClick={() => onAdd(product)}
         disabled={inCart}
         className={cn(
-          "h-7 px-2.5 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all shrink-0",
+          "h-7 px-2.5 rounded-md text-xs font-bold transition-all shrink-0",
           inCart
             ? "bg-primary text-white"
             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary hover:text-white"
@@ -143,7 +143,7 @@ function CartItemRow({
           <span className="text-lg">{item.product.emoji}</span>
           <div className="min-w-0">
             <p className="text-xs font-bold text-foreground truncate">{item.product.name}</p>
-            <p className="text-[length:var(--ts-2xs)] text-muted">{item.product.brand}</p>
+            <p className="text-xs text-muted">{item.product.brand}</p>
           </div>
         </div>
         <button
@@ -157,7 +157,7 @@ function CartItemRow({
       {/* Inputs con labels claros */}
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="text-[length:var(--ts-2xs)] font-semibold text-muted block mb-1">Stock inicial</label>
+          <label className="text-xs font-semibold text-muted block mb-1">Stock inicial</label>
           <input
             type="number"
             min={0}
@@ -172,7 +172,7 @@ function CartItemRow({
                 key={n}
                 onClick={() => onUpdate(item.product.catalogId, "stock", n)}
                 className={cn(
-                  "flex-1 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold transition-all",
+                  "flex-1 py-0.5 rounded text-xs font-bold transition-all",
                   item.stock === n ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-muted hover:bg-primary/20"
                 )}
               >
@@ -182,7 +182,7 @@ function CartItemRow({
           </div>
         </div>
         <div>
-          <label className="text-[length:var(--ts-2xs)] font-semibold text-muted block mb-1">Precio venta</label>
+          <label className="text-xs font-semibold text-muted block mb-1">Precio venta</label>
           <input
             type="number"
             min={0}
@@ -193,7 +193,7 @@ function CartItemRow({
           />
         </div>
         <div>
-          <label className="text-[length:var(--ts-2xs)] font-semibold text-muted block mb-1">Precio costo</label>
+          <label className="text-xs font-semibold text-muted block mb-1">Precio costo</label>
           <input
             type="number"
             min={0}
@@ -206,7 +206,7 @@ function CartItemRow({
       </div>
 
       {/* Subtotales */}
-      <div className="flex items-center justify-between text-[length:var(--ts-2xs)] pt-1 border-t border-[var(--rule-base)] dark:border-card-border">
+      <div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--rule-base)] dark:border-card-border">
         <span className="text-muted">Inversion: <span className="font-bold text-foreground">S/ {costTotal.toFixed(2)}</span></span>
         <span className="text-muted">Ganancia: <span className="font-bold text-[var(--data-success)]">+S/ {profit.toFixed(2)}</span></span>
       </div>
@@ -351,7 +351,7 @@ export default function CatalogBrowser() {
       {showCategories && (
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => { setSelectedCategory("all"); setPage(1); }}
-            className={cn("px-3 py-1.5 rounded-full text-[length:var(--ts-xs)] font-semibold transition-all",
+            className={cn("px-3 py-1.5 rounded-full text-sm font-semibold transition-all",
               selectedCategory === "all" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-muted hover:text-foreground")}>
             Todas ({CATALOG_STATS.total})
           </button>
@@ -359,7 +359,7 @@ export default function CatalogBrowser() {
             const count = PERU_CATALOG.filter((p) => p.category === cat.id).length;
             return (
               <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
-                className={cn("px-3 py-1.5 rounded-full text-[length:var(--ts-xs)] font-semibold transition-all",
+                className={cn("px-3 py-1.5 rounded-full text-sm font-semibold transition-all",
                   selectedCategory === cat.id ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-muted hover:text-foreground")}>
                 {cat.emoji} {cat.label} ({count})
               </button>
@@ -368,7 +368,7 @@ export default function CatalogBrowser() {
         </div>
       )}
 
-      <p className="text-[length:var(--ts-2xs)] text-muted">
+      <p className="text-xs text-muted">
         {filtered.length} productos encontrados
         {cart.length > 0 && <span className="ml-2 font-bold text-primary">· {cart.length} productos en carrito ({cartTotals.items} unidades)</span>}
       </p>
@@ -423,15 +423,15 @@ export default function CatalogBrowser() {
               {/* Totales en el header */}
               <div className="hidden sm:flex items-center gap-4 text-right">
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] text-muted">Inversion</p>
+                  <p className="text-xs text-muted">Inversion</p>
                   <p className="text-sm font-bold text-foreground">S/ {cartTotals.inversion.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] text-muted">Venta estimada</p>
+                  <p className="text-xs text-muted">Venta estimada</p>
                   <p className="text-sm font-bold text-primary">S/ {cartTotals.ventaTotal.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] text-muted">Ganancia</p>
+                  <p className="text-xs text-muted">Ganancia</p>
                   <p className="text-sm font-bold text-[var(--data-success)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
                 </div>
               </div>
@@ -459,15 +459,15 @@ export default function CatalogBrowser() {
                 {/* Totales mobile */}
                 <div className="sm:hidden grid grid-cols-3 gap-3 mb-3">
                   <div className="text-center">
-                    <p className="text-[length:var(--ts-2xs)] text-muted">Inversion</p>
+                    <p className="text-xs text-muted">Inversion</p>
                     <p className="text-sm font-bold">S/ {cartTotals.inversion.toFixed(2)}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[length:var(--ts-2xs)] text-muted">Venta</p>
+                    <p className="text-xs text-muted">Venta</p>
                     <p className="text-sm font-bold text-primary">S/ {cartTotals.ventaTotal.toFixed(2)}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[length:var(--ts-2xs)] text-muted">Ganancia</p>
+                    <p className="text-xs text-muted">Ganancia</p>
                     <p className="text-sm font-bold text-[var(--data-success)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
                   </div>
                 </div>

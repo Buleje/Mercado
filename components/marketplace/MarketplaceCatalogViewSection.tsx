@@ -54,7 +54,7 @@ export default function MarketplaceCatalogViewSection({
         <CatalogSections />
       </div>
 
-      {/* Sección "Para vos" removida por pedido del usuario (2026-04-21) */}
+      {/* Sección "Para ti" removida por pedido del usuario (2026-04-21) */}
 
       {/* ── CatalogView — filtered product grid ── */}
       <CatalogView

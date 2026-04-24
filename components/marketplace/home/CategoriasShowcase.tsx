@@ -45,7 +45,7 @@ const SHOWCASES: ShowcaseCat[] = [
     slug: "frutas-verduras",
     kicker: "Frescos del día",
     title: "Frutas y verduras",
-    quote: "Cosechado por productores de Ucayali. La frescura que necesitás para tu mesa.",
+    quote: "Cosechado por productores de Ucayali. La frescura que necesitas para tu mesa.",
     cta: "Ver frescos",
     Icon: Leaf,
   },

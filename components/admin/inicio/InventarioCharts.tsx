@@ -190,7 +190,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "movimiento-diario",
       render: () => (
         <DashboardSection
-          kicker="Movimiento · últimos 14 días"
+          kicker="Movimiento · rango activo"
           title="Entradas y salidas de stock"
           kpis={[
             { label: "Salidas 14d", value: fmtU(movKpis.totalSalidas), tone: "primary" },

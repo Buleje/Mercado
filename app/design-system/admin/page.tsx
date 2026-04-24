@@ -110,7 +110,7 @@ export default function AdminUXDemoPage() {
               storageKey="demo-onboarding-1"
               items={[
                 { id: "store", label: "Configurá tu tienda", description: "Logo, colores, datos de contacto.", done: true, href: "#" },
-                { id: "product", label: "Creá tu primer producto", description: "Al menos 10 productos para abrir.", done: true, href: "#" },
+                { id: "product", label: "Crea tu primer producto", description: "Al menos 10 productos para abrir.", done: true, href: "#" },
                 { id: "whatsapp", label: "Conectá WhatsApp", description: "Los pedidos te llegan directo al chat.", done: false, href: "#" },
                 { id: "payment", label: "Configurá pagos", description: "Yape, Plin o efectivo.", done: false, href: "#" },
                 { id: "delivery", label: "Definí tus zonas de delivery", done: false, href: "#" },
@@ -122,7 +122,7 @@ export default function AdminUXDemoPage() {
               items={[
                 { id: "a", label: "Completaste todo", done: true },
                 { id: "b", label: "Tu tienda está lista", done: true },
-                { id: "c", label: "Ya podés vender", done: true },
+                { id: "c", label: "Ya puedes vender", done: true },
               ]}
             />
           </div>

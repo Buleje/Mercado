@@ -16,20 +16,20 @@ export const EMPTY = {
   // ── Customer store ─────────────────────────────────────────
   cart: {
     eyebrow: "Carrito",
-    title: "Armá tu pedido",
+    title: "Arma tu pedido",
     description: "500+ productos esperan. Delivery en 25 min, pagás con Yape o efectivo al recibir.",
     cta: { label: "Ver catálogo", href: "/tienda" },
   },
   favorites: {
     eyebrow: "Favoritos",
-    title: "Guardá tus favoritos",
-    description: "Tocá el corazón en cualquier producto. Los verás acá cuando vuelvas.",
+    title: "Guarda tus favoritos",
+    description: "Tocá el corazón en cualquier producto. Los verás aquí cuando vuelvas.",
     cta: { label: "Explorar productos", href: "/marketplace" },
   },
   ordersNoHistory: {
     eyebrow: "Mis pedidos",
-    title: "Hacé tu primer pedido",
-    description: "Una vez que pidas, verás acá el historial con estado y tiempos de entrega.",
+    title: "Haz tu primer pedido",
+    description: "Una vez que pidas, verás aquí el historial con estado y tiempos de entrega.",
     cta: { label: "Ir al marketplace", href: "/marketplace" },
   },
   ordersFiltered: {
@@ -46,33 +46,33 @@ export const EMPTY = {
   recipesNoResults: {
     eyebrow: "Recetario",
     title: "No encontramos esa receta",
-    description: "Probá con otro ingrediente o contanos qué plato querés cocinar.",
+    description: "Prueba con otro ingrediente o contanos qué plato quieres cocinar.",
     cta: { label: "Ver todas las recetas", href: "/marketplace/recetas" },
   },
   searchNoResults: (query: string) => ({
     eyebrow: "Búsqueda",
     title: `Nada coincide con "${query}"`,
-    description: "Probá con otra palabra, o contanos qué buscás por WhatsApp.",
+    description: "Prueba con otra palabra, o contanos qué buscas por WhatsApp.",
     cta: { label: "Ver todo el catálogo", href: "/marketplace" },
   }),
 
   // ── Admin ──────────────────────────────────────────────────
   adminProductsNone: {
     eyebrow: "Inventario",
-    title: "Agregá tu primer producto",
-    description: "En 30 segundos tenés tu catálogo online. Empezá con lo que más vendés hoy.",
+    title: "Agrega tu primer producto",
+    description: "En 30 segundos tienes tu catálogo online. Empieza con lo que más vendes hoy.",
     cta: { label: "+ Nuevo producto" },
   },
   adminOrdersNone: {
     eyebrow: "Pedidos",
     title: "Todavía no hay pedidos",
-    description: "Cuando llegue uno por WhatsApp o el marketplace, aparecerá acá en tiempo real.",
+    description: "Cuando llegue uno por WhatsApp o el marketplace, aparecerá aquí en tiempo real.",
     cta: { label: "Ver tienda online", href: "/" },
   },
   adminCustomersNone: {
     eyebrow: "Clientes",
-    title: "Empezá tu base de clientes",
-    description: "Cada vez que registres una venta, el cliente se guarda solo. O creá uno manual ahora.",
+    title: "Empieza tu base de clientes",
+    description: "Cada vez que registres una venta, el cliente se guarda solo. O crea uno manual ahora.",
     cta: { label: "+ Nuevo cliente" },
   },
   adminCreditsNone: {
@@ -84,7 +84,7 @@ export const EMPTY = {
   adminReportsNone: {
     eyebrow: "Reportes",
     title: "Los reportes arrancan al tener ventas",
-    description: "Con 1 semana de ventas ya empezás a ver tendencias, productos top y horarios calientes.",
+    description: "Con 1 semana de ventas ya empiezas a ver tendencias, productos top y horarios calientes.",
     cta: { label: "Ver demo con datos de ejemplo" },
   },
   adminAlertsNone: {
@@ -95,14 +95,14 @@ export const EMPTY = {
   adminTableFiltered: {
     eyebrow: "Sin resultados",
     title: "Ningún registro en este filtro",
-    description: "Ajustá los filtros o buscá otro término.",
+    description: "Ajusta los filtros o busca otro término.",
   },
 
   // ── Vendor / marketplace seller ────────────────────────────
   vendorOrdersPending: {
     eyebrow: "Pendientes",
     title: "Sin pedidos nuevos",
-    description: "Cuando un cliente del marketplace pida de tu tienda, te avisaremos por WhatsApp y aparecerá acá.",
+    description: "Cuando un cliente del marketplace pida de tu tienda, te avisaremos por WhatsApp y aparecerá aquí.",
     cta: { label: "Ver mi tienda pública", href: "/marketplace" },
   },
   vendorReviewsNone: {

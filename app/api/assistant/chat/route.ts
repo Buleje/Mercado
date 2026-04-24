@@ -38,12 +38,12 @@ const INTENTS: IntentRule[] = [
   },
   {
     keywords: ["descuento", "oferta", "rebaja", "barato", "promo", "promocion"],
-    reply: "Este producto no tiene descuento hoy, pero mirá los deals vigentes en /marketplace/ofertas — suelen rotar cada semana.",
+    reply: "Este producto no tiene descuento hoy, pero mira los deals vigentes en /marketplace/ofertas — suelen rotar cada semana.",
     followUp: ["¿Cuándo hay ofertas?", "¿Tienen combo con otros productos?", "¿Hacen precio por mayor?"],
   },
   {
     keywords: ["ceviche", "cevichada", "sudado", "chilcano", "jalea", "tiradito"],
-    reply: "Perfecto para ceviche, es el producto estrella para este plato. Si querés te sumamos limón y culantro al pedido.",
+    reply: "Perfecto para ceviche, es el producto estrella para este plato. Si quieres te sumamos limón y culantro al pedido.",
     followUp: ["¿Agregan limón?", "¿Tienen ají limo?", "¿Cuánto rinde 1 kg?"],
   },
   {
@@ -58,7 +58,7 @@ const INTENTS: IntentRule[] = [
   },
   {
     keywords: ["stock", "queda", "disponible", "hay", "quedan"],
-    reply: "Sí, hay stock disponible. La bodega actualiza el inventario en tiempo real, así que lo que ves es lo que tenés.",
+    reply: "Sí, hay stock disponible. La bodega actualiza el inventario en tiempo real, así que lo que ves es lo que tienes.",
     followUp: ["¿Cuándo reponen?", "¿Puedo reservar?", "¿Cuántas unidades max?"],
   },
   {

@@ -191,7 +191,7 @@ export default function SubscribeAndSaveWidget({
             </span>
           </div>
           <Caption className="mt-0.5 text-[var(--text-tertiary)]">
-            Tu bodega recuerda por vos. Cancela cuando quieras.
+            Tu bodega recuerda por ti. Cancela cuando quieras.
           </Caption>
         </div>
       </header>
@@ -213,12 +213,12 @@ export default function SubscribeAndSaveWidget({
             checked={mode === "once"}
             onChange={() => handleModeClick("once")}
             className="mt-1 accent-[var(--text-primary)]"
-            aria-label="Compra unica"
+            aria-label="Compra única"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)]">
-                Compra unica
+                Compra única
               </span>
               <span className="text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]">
                 {fmtMoney(unitPrice)}

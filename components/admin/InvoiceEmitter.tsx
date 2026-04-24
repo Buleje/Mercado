@@ -21,7 +21,7 @@ type ItemLinea = {
 type ComprobanteEmitido = {
   tipo: TipoComprobante;
   serie: string;
-  numero: string;
+  número: string;
   numeroCompleto: string;
   fechaEmision: string;
   cliente: { nombre: string; dni?: string; ruc?: string };
@@ -533,7 +533,7 @@ export default function InvoiceEmitter({
 
       {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowPreview(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowPreview(false)}>
           <div
             className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}

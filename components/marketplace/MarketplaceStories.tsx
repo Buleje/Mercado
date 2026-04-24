@@ -115,7 +115,7 @@ const STORY_PRESENTATIONS: Record<string, { title: string; slides: StorySlide[] 
       {
         id: "r1",
         headline: "Juane de gallina",
-        subheadline: "El clásico de San Juan. Armamos la lista completa por vos.",
+        subheadline: "El clásico de San Juan. Armamos la lista completa por ti.",
         bg: "from-zinc-900 to-zinc-800",
         ctaLabel: "Ver receta",
         ctaHref: "#recetas",

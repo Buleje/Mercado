@@ -72,7 +72,7 @@ export default function StockPrediction() {
             Prediccion de stock
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
-            Productos que se agotan pronto segun ventas de los ultimos 30 dias
+            Productos que se agotan pronto segun ventas de los &uacute;ltimos 30 d&iacute;as
           </p>
         </div>
         <button
@@ -135,7 +135,7 @@ export default function StockPrediction() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
           <Package className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No hay datos suficientes para predecir el stock</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Se necesitan ventas registradas en los ultimos 30 dias</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Se necesitan ventas registradas en los &uacute;ltimos 30 d&iacute;as</p>
         </div>
       )}
 
@@ -199,7 +199,7 @@ export default function StockPrediction() {
             </table>
           </div>
           <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-[var(--rule-soft)] dark:border-card-border text-xs text-[var(--text-tertiary)] dark:text-muted">
-            Top {items.length} productos con menor tiempo estimado de stock · Basado en ventas de los ultimos 30 dias
+            Top {items.length} productos con menor tiempo estimado de stock · Basado en ventas de los &uacute;ltimos 30 d&iacute;as
           </div>
         </div>
       )}

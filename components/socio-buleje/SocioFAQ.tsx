@@ -29,10 +29,10 @@ export function SocioFAQ() {
           as="h2"
           className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
         >
-          Todo lo que querés saber
+          Todo lo que quieres saber
         </SectionTitle>
         <BodyText className="mt-3 text-[var(--text-secondary)]">
-          Si no encontrás tu duda acá, escribinos por WhatsApp y te respondemos
+          Si no encontrás tu duda aquí, escríbenos por WhatsApp y te respondemos
           en minutos.
         </BodyText>
       </header>

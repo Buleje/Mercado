@@ -10,7 +10,7 @@ import "server-only";
  *   - SocioCashbackEntry    (APPEND-ONLY — ledger del saldo cashback)
  *
  * CLAUDE.md compliance:
- *   #1 — ningún caller toca prisma.socio* directamente; todo pasa por acá.
+ *   #1 — ningún caller toca prisma.socio* directamente; todo pasa por aquí.
  *   #3 — `tenantId` es el PRIMER parámetro en todas las funciones públicas.
  *   #5 — invalidateByPrefix(`socio:${tenantId}:${userId}`) después de writes.
  *   #6 — balances y snapshots se computan server-side.
@@ -72,7 +72,7 @@ export class SocioInsufficientBalanceError extends ApiError {
   constructor(balance: number, requested: number) {
     super(
       "SOCIO_INSUFFICIENT_BALANCE",
-      `Saldo Socio insuficiente: tenés S/${balance.toFixed(2)}, pedís S/${requested.toFixed(2)}`,
+      `Saldo Socio insuficiente: tienes S/${balance.toFixed(2)}, pides S/${requested.toFixed(2)}`,
       409,
       { balance, requested },
     );

@@ -184,7 +184,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
   const VIEW_LABELS: Record<ViewMode, string> = {
     categoria: "Por categoria",
     pago: "Por metodo de pago",
-    hora: "Por hora del dia",
+    hora: "Por hora del día",
   };
 
   return (

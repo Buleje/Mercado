@@ -31,7 +31,7 @@ const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
   { id: "discounts", label: "Descuentos", icon: Percent },
   { id: "promotions", label: "Promociones", icon: Megaphone },
   { id: "engagement", label: "Engagement", icon: Gamepad2 },
-  { id: "analytics", label: "Metricas", icon: BarChart3 },
+  { id: "analytics", label: "Métricas", icon: BarChart3 },
 ];
 
 export default function StorePageAdminPage() {

@@ -225,13 +225,13 @@ function PLCard({ label, value, icon: Icon, accent, iconColor, borderColor, badg
           <Icon className={cn("h-4 w-4", iconColor)} />
         </div>
         {badge && (
-          <span className="text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
             {badge}
           </span>
         )}
       </div>
       <div>
-        <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] leading-none mb-1">
+        <p className="text-sm font-medium text-[var(--text-tertiary)] leading-none mb-1">
           {label}
         </p>
         <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)] leading-tight">
@@ -292,7 +292,7 @@ function RevenueBarChart({ dias }: { dias: DayBucket[] }) {
 
       {tooltip && (
         <div
-          className="absolute z-20 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-[length:var(--ts-xs)] rounded-lg px-2.5 py-1.5 whitespace-nowrap"
+          className="absolute z-20 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg px-2.5 py-1.5 whitespace-nowrap"
           style={{
             left: tooltip.x,
             top: tooltip.y - 52,
@@ -318,7 +318,7 @@ function TopProductsTable({ productos }: { productos: TopProduct[] }) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Package className="h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-2" />
-        <p className="text-sm text-[var(--text-tertiary)]">Sin ventas en los ultimos 30 dias</p>
+        <p className="text-sm text-[var(--text-tertiary)]">Sin ventas en los &uacute;ltimos 30 d&iacute;as</p>
       </div>
     );
   }
@@ -327,22 +327,22 @@ function TopProductsTable({ productos }: { productos: TopProduct[] }) {
     <div className="space-y-3">
       {productos.map((p, i) => (
         <div key={p.name} className="flex items-center gap-3">
-          <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] w-4 shrink-0 text-right">
+          <span className="text-sm font-bold text-[var(--text-tertiary)] w-4 shrink-0 text-right">
             {i + 1}
           </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-none">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-none">
                 {p.name}
               </p>
               <div className="flex items-center gap-3 shrink-0 ml-2">
-                <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                <span className="text-sm text-[var(--text-tertiary)]">
                   {p.units} uds
                 </span>
-                <span className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--text-primary)]">
+                <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
                   {formatCurrency(p.revenue)}
                 </span>
-                <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] w-10 text-right">
+                <span className="text-sm text-[var(--text-tertiary)] w-10 text-right">
                   {p.pct.toFixed(1)}%
                 </span>
               </div>
@@ -378,7 +378,7 @@ function QuickStat({ icon: Icon, label, value }: QuickStatProps) {
         <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="min-w-0">
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium truncate">
+        <p className="text-xs text-[var(--text-tertiary)] font-medium truncate">
           {label}
         </p>
         <p className="text-sm font-extrabold font-mono text-[var(--text-primary)] truncate">
@@ -545,8 +545,8 @@ export default function FinancialDashboard() {
             <CardTitle className="text-sm font-bold">
               Tendencia de ingresos
             </CardTitle>
-            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">
-              Ultimos 30 dias — pasa el cursor sobre una barra para ver el detalle
+            <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
+              &Uacute;ltimos 30 d&iacute;as — pasa el cursor sobre una barra para ver el detalle
             </p>
           </div>
           <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -561,7 +561,7 @@ export default function FinancialDashboard() {
           {dias.map((d, i) => (
             <div key={d.date} className="flex-1 text-center">
               {i % 5 === 0 && (
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
+                <span className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
                   {d.label.split(" ")[0]}
                 </span>
               )}
@@ -577,8 +577,8 @@ export default function FinancialDashboard() {
             <CardTitle className="text-sm font-bold">
               Top 5 productos por ingresos
             </CardTitle>
-            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">
-              Ultimos 30 dias
+            <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
+              &Uacute;ltimos 30 d&iacute;as
             </p>
           </div>
           <div className="h-8 w-8 rounded-xl bg-[#f4a261]/10 flex items-center justify-center">

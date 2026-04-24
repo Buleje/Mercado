@@ -703,7 +703,7 @@ export default function MisPedidosPage() {
   const loadOrders = useCallback(async (phoneNum: string) => {
     const clean = phoneNum.replace(/\D/g, "");
     if (clean.length < 6) {
-      setError("Ingresa tu numero completo (minimo 6 digitos)");
+      setError("Ingresa tu número completo (mínimo 6 digitos)");
       return;
     }
     setError("");
@@ -1031,7 +1031,7 @@ export default function MisPedidosPage() {
                 Necesitas algo mas?
               </p>
               <p className="text-xs text-muted">
-                Delivery rapido · Paga con Yape o efectivo
+                Delivery rápido · Paga con Yape o efectivo
               </p>
               <div className="flex gap-2 justify-center">
                 <Link

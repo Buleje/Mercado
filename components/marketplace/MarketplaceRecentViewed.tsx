@@ -6,7 +6,7 @@
  *
  * Ola 7: migrado al primitivo ProductCardCompact del DS. Antes usaba un
  * tile local con Link + Image inline; ahora consume el primitivo canonico
- * para consistencia visual con Para vos / Comparados / Top hoy.
+ * para consistencia visual con Para ti / Comparados / Top hoy.
  */
 
 import Image from "next/image";

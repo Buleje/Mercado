@@ -17,16 +17,20 @@ export async function PATCH(
   const { id } = await params;
 
   try {
-    const notification = await prisma.notification.update({
+    // updateMany acepta compound where (id + tenantId) sin requerir la
+    // preview feature extendedWhereUnique. Garantiza aislamiento de tenant.
+    const result = await prisma.notification.updateMany({
       where: { id, tenantId: auth.tenantId },
       data: { readAt: new Date() },
     });
 
-    return NextResponse.json({ ok: true, notification });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    // If the record doesn't exist, Prisma throws P2025
-    const status = message.includes("Record to update not found") ? 404 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

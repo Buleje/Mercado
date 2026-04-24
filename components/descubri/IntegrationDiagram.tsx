@@ -63,7 +63,7 @@ export function IntegrationDiagram() {
           </SectionTitle>
           <BodyText className="text-[length:var(--ts-base)] text-[var(--text-secondary)] leading-relaxed">
             Cada feature es una pieza del mismo engranaje. Compras,
-            consultás, ahorrás y recibís — sin cambiar de app.
+            consultás, ahorrás y recibes — sin cambiar de app.
           </BodyText>
         </header>
 

@@ -21,7 +21,7 @@ import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
 import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
-import type { SidebarTheme } from "@/components/admin/shared/SidebarConfigurator";
+import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
@@ -183,6 +183,53 @@ export function AdminSidebar({
     try { localStorage.setItem("admin-sidebar-theme", theme); } catch { /* ignore */ }
   }, []);
 
+  // ── Accent color (persisted) ──
+  const [accent, setAccent] = React.useState<AccentColor>(() => {
+    if (typeof window === "undefined") return "teal";
+    try {
+      const s = localStorage.getItem("admin-sidebar-accent");
+      if (s === "teal" || s === "emerald" || s === "sky" || s === "violet" || s === "amber" || s === "rose") return s;
+    } catch { /* ignore */ }
+    return "teal";
+  });
+
+  // ── Density (persisted) ──
+  const [density, setDensity] = React.useState<Density>(() => {
+    if (typeof window === "undefined") return "normal";
+    try {
+      const s = localStorage.getItem("admin-sidebar-density");
+      if (s === "compact" || s === "normal" || s === "spacious") return s;
+    } catch { /* ignore */ }
+    return "normal";
+  });
+
+  // ── Icon style (persisted) ──
+  const [iconStyle, setIconStyle] = React.useState<IconStyle>(() => {
+    if (typeof window === "undefined") return "colored";
+    try {
+      const s = localStorage.getItem("admin-sidebar-icon-style");
+      if (s === "colored" || s === "monochrome") return s;
+    } catch { /* ignore */ }
+    return "colored";
+  });
+
+  // ── Apply theme to header (persisted) ──
+  const [applyToHeader, setApplyToHeader] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("admin-sidebar-apply-to-header") === "true"; } catch { return false; }
+  });
+
+  // Propagar apply-to-header + accent al header via evento
+  React.useEffect(() => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("admin-sidebar-theming-change", {
+          detail: { applyToHeader, theme: sidebarTheme, accent },
+        }),
+      );
+    } catch { /* ignore */ }
+  }, [applyToHeader, sidebarTheme, accent]);
+
   // ── Hidden categories (persisted in localStorage) ──
   const [hiddenCategories, setHiddenCategories] = React.useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -216,26 +263,108 @@ export function AdminSidebar({
     return TAB_CATEGORIES.map(c => c.id);
   });
 
-  // ── Config mode ──
+  // ── Config mode ── con dispatch de evento para que main ajuste margin
   const [configMode, setConfigMode] = React.useState(false);
+
+  const setConfigModeSynced = React.useCallback((next: boolean) => {
+    setConfigMode(next);
+    try {
+      window.dispatchEvent(
+        new CustomEvent("admin-sidebar-config-change", { detail: { configMode: next } }),
+      );
+    } catch { /* ignore */ }
+  }, []);
+
+  // ── Snapshot del estado committed al entrar a configMode (para revertir) ──
+  const [configSnapshot, setConfigSnapshot] = React.useState<{
+    theme: SidebarTheme;
+    accent: AccentColor;
+    density: Density;
+    iconStyle: IconStyle;
+    applyToHeader: boolean;
+    hiddenCategories: Set<string>;
+    hiddenSubTabs: Set<Tab>;
+    categoryOrder: string[];
+  } | null>(null);
+
+  /* Live preview: cada cambio en el Configurator se aplica inmediatamente
+     al sidebar (para que el usuario vea cómo queda). Si cancela, usamos
+     el snapshot para revertir. Si guarda, persistimos a localStorage. */
+  const handleLiveDraft = React.useCallback((draft: {
+    hiddenCategories: Set<string>;
+    hiddenSubTabs: Set<Tab>;
+    categoryOrder: string[];
+    theme: SidebarTheme;
+    accent: AccentColor;
+    density: Density;
+    iconStyle: IconStyle;
+    applyToHeader: boolean;
+  }) => {
+    setHiddenCategories(draft.hiddenCategories);
+    setHiddenSubTabs(draft.hiddenSubTabs);
+    setCategoryOrder(draft.categoryOrder);
+    setSidebarTheme(draft.theme);
+    setAccent(draft.accent);
+    setDensity(draft.density);
+    setIconStyle(draft.iconStyle);
+    setApplyToHeader(draft.applyToHeader);
+  }, []);
 
   const handleConfigSave = React.useCallback((config: {
     hiddenCategories: Set<string>;
     hiddenSubTabs: Set<Tab>;
     categoryOrder: string[];
     theme: SidebarTheme;
+    accent: AccentColor;
+    density: Density;
+    iconStyle: IconStyle;
+    applyToHeader: boolean;
   }) => {
-    setHiddenCategories(config.hiddenCategories);
-    setHiddenSubTabs(config.hiddenSubTabs);
-    setCategoryOrder(config.categoryOrder);
-    updateTheme(config.theme);
+    /* Live preview ya aplicó los cambios al state; aquí solo persistimos. */
     try {
       localStorage.setItem("admin-sidebar-hidden", JSON.stringify([...config.hiddenCategories]));
       localStorage.setItem("admin-sidebar-hidden-tabs", JSON.stringify([...config.hiddenSubTabs]));
       localStorage.setItem("admin-sidebar-order", JSON.stringify(config.categoryOrder));
+      localStorage.setItem("admin-sidebar-theme", config.theme);
+      localStorage.setItem("admin-sidebar-accent", config.accent);
+      localStorage.setItem("admin-sidebar-density", config.density);
+      localStorage.setItem("admin-sidebar-icon-style", config.iconStyle);
+      localStorage.setItem("admin-sidebar-apply-to-header", config.applyToHeader ? "true" : "false");
     } catch { /* ignore */ }
-    setConfigMode(false);
-  }, [updateTheme]);
+    setConfigSnapshot(null);
+    setConfigModeSynced(false);
+  }, [setConfigModeSynced]);
+
+  /* Open: snapshot del estado committed para poder revertir en cancel. */
+  const openConfig = React.useCallback(() => {
+    setConfigSnapshot({
+      theme: sidebarTheme,
+      accent,
+      density,
+      iconStyle,
+      applyToHeader,
+      hiddenCategories: new Set(hiddenCategories),
+      hiddenSubTabs: new Set(hiddenSubTabs),
+      categoryOrder: [...categoryOrder],
+    });
+    setConfigModeSynced(true);
+  }, [sidebarTheme, accent, density, iconStyle, applyToHeader, hiddenCategories, hiddenSubTabs, categoryOrder, setConfigModeSynced]);
+
+  /* Cancel: revertir al snapshot tomado al entrar a configMode. */
+  const handleConfigCancel = React.useCallback(() => {
+    if (configSnapshot) {
+      setHiddenCategories(configSnapshot.hiddenCategories);
+      setHiddenSubTabs(configSnapshot.hiddenSubTabs);
+      setCategoryOrder(configSnapshot.categoryOrder);
+      setSidebarTheme(configSnapshot.theme);
+      setAccent(configSnapshot.accent);
+      setDensity(configSnapshot.density);
+      setIconStyle(configSnapshot.iconStyle);
+      setApplyToHeader(configSnapshot.applyToHeader);
+    }
+    setConfigSnapshot(null);
+    setConfigModeSynced(false);
+  }, [configSnapshot, setConfigModeSynced]);
 
   // ── Reorder visibleCategories by categoryOrder + filter hidden ──
   const orderedVisibleCategories = React.useMemo(() => {
@@ -269,32 +398,33 @@ export function AdminSidebar({
              Fondo profundo que no compite con el contenido pero que
              respira la identidad de marca via bordes y active state. */
           bg: "bg-[#0b1f2b] dark:bg-[#050e15]",
-          text: "text-white/70",
-          /* Hover con tinte del accent primary (bajo alpha, no invasivo). */
-          hover: "hover:bg-white/[0.06] hover:text-white",
-          /* Borde sutil con tinte teal para evocar la marca. */
+          /* AA compliant: 80% white on slate-900 = 10.7:1 contrast ratio. */
+          text: "text-white/80",
+          /* Hover con tinte teal + glow sutil — feedback más tangible. */
+          hover: "hover:bg-primary/10 hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(0,180,166,0.15)]",
+          /* Borde con tinte teal para evocar marca. */
           border: "border-white/[0.08]",
-          /* Active: highlight teal claro + text-white + font-semibold.
-             No es el fondo invasivo anterior, es una barra y un tinte. */
-          activeItem: "bg-primary/15 text-white font-semibold",
+          /* Active: pill teal sólido + text-white + shadow sutil.
+             Antes era fondo débil — ahora se nota claramente el item activo. */
+          activeItem: "bg-primary/25 text-white font-semibold shadow-[inset_0_0_0_1px_rgba(0,180,166,0.3)]",
           headerBorder: "border-white/[0.08]",
         };
       case "dark":
         return {
           bg: "bg-zinc-950",
-          text: "text-zinc-400",
-          hover: "hover:bg-white/[0.06] hover:text-white",
+          text: "text-zinc-300",
+          hover: "hover:bg-white/[0.08] hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
           border: "border-white/[0.06]",
-          activeItem: "bg-white/[0.08] text-white",
+          activeItem: "bg-white/[0.12] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]",
           headerBorder: "border-white/[0.06]",
         };
       default: // light
         return {
           bg: "bg-white dark:bg-card",
           text: "text-[var(--text-secondary)]",
-          hover: "hover:bg-[var(--surface-sunken)]/40 hover:text-[var(--text-primary)]",
+          hover: "hover:bg-[var(--accent-soft)]/40 hover:text-[var(--text-primary)]",
           border: "border-[var(--rule-soft)] dark:border-card-border",
-          activeItem: "bg-[var(--accent-soft)] text-primary font-semibold",
+          activeItem: "bg-[var(--accent-soft)] text-primary font-semibold shadow-[inset_0_0_0_1px_rgba(0,180,166,0.2)]",
           headerBorder: "border-[var(--rule-soft)] dark:border-card-border",
         };
     }
@@ -430,13 +560,65 @@ export function AdminSidebar({
     };
   }, []);
 
-  // Uniform minimalist icon color — light gray for all categories
-  const ICON_COLORS: Record<string, string> = {
-    dashboard: "text-[var(--text-tertiary)]", ventas: "text-[var(--text-tertiary)]", productos: "text-[var(--text-tertiary)]",
-    inventario: "text-[var(--text-tertiary)]", compras: "text-[var(--text-tertiary)]", finanzas: "text-[var(--text-tertiary)]",
-    clientes: "text-[var(--text-tertiary)]", "marketplace-ops": "text-[var(--text-tertiary)]", analytics: "text-[var(--text-tertiary)]",
-    comunicacion: "text-[var(--text-tertiary)]", documentos: "text-[var(--text-tertiary)]", "mi-tienda": "text-[var(--text-tertiary)]",
-    metas: "text-[var(--text-tertiary)]",
+  /* Colores por categoría — le dan personalidad al sidebar sin saturar.
+     Si iconStyle = "monochrome" → todos grises. Si "colored" → por categoría. */
+  const isDarkTheme = sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded";
+  const MONOCHROME_ICON_COLOR = isDarkTheme ? "text-white/60" : "text-[var(--text-tertiary)]";
+  const ICON_COLORS_COLORED: Record<string, string> = isDarkTheme
+    ? {
+        dashboard: "text-primary/90",
+        ventas: "text-sky-300/90",
+        productos: "text-violet-300/90",
+        inventario: "text-amber-300/90",
+        compras: "text-orange-300/90",
+        finanzas: "text-emerald-300/90",
+        clientes: "text-rose-300/90",
+        "marketplace-ops": "text-fuchsia-300/90",
+        analytics: "text-cyan-300/90",
+        comunicacion: "text-teal-300/90",
+        documentos: "text-slate-300/90",
+        "mi-tienda": "text-pink-300/90",
+        metas: "text-yellow-300/90",
+      }
+    : {
+        dashboard: "text-primary",
+        ventas: "text-sky-600",
+        productos: "text-violet-600",
+        inventario: "text-amber-600",
+        compras: "text-orange-600",
+        finanzas: "text-emerald-600",
+        clientes: "text-rose-600",
+        "marketplace-ops": "text-fuchsia-600",
+        analytics: "text-cyan-600",
+        comunicacion: "text-teal-600",
+        documentos: "text-slate-600",
+        "mi-tienda": "text-pink-600",
+        metas: "text-yellow-600",
+      };
+
+  const ICON_COLORS: Record<string, string> =
+    iconStyle === "colored"
+      ? ICON_COLORS_COLORED
+      : Object.fromEntries(Object.keys(ICON_COLORS_COLORED).map((k) => [k, MONOCHROME_ICON_COLOR]));
+
+  // Density → paddings dinámicos
+  const densityPad = density === "compact" ? "px-2.5 py-1.5" : density === "spacious" ? "px-3 py-3" : "px-3 py-2.5";
+  const densityGap = density === "compact" ? "gap-2" : density === "spacious" ? "gap-3.5" : "gap-3";
+
+  /* Accent color → active bar hex (para drop-shadow glow).
+     Los classes Tailwind con arbitrary values aceptan hex literal. */
+  const ACCENT_HEX: Record<AccentColor, string> = {
+    teal:    "#00B4A6",
+    emerald: "#10B981",
+    sky:     "#0EA5E9",
+    violet:  "#8B5CF6",
+    amber:   "#F59E0B",
+    rose:    "#F43F5E",
+  };
+  const accentHex = ACCENT_HEX[accent];
+  const accentBarStyle: React.CSSProperties = {
+    background: accentHex,
+    boxShadow: `0 0 8px ${accentHex}80`,
   };
 
   // Section headers keyed by the first category id in each group
@@ -451,31 +633,26 @@ export function AdminSidebar({
     <>
       {/* Desktop permanent sidebar — siempre desde top:0 para abarcar
           toda la altura. Banner de impersonation fue removido. */}
-      <aside className={cn(
-        "hidden md:flex fixed left-0 top-0 bottom-0 z-40 flex-col transition-[width] duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
-        themeClasses.bg,
-        themeClasses.border,
-        effectiveCompact ? "w-[60px]" : "w-[260px]",
-        presentationMode && "hidden!"
-      )}>
-        {/* ── Header: tenant + user ── */}
-        {/* ── Configurator overlay (replaces sidebar content when active) ── */}
-        {configMode && !effectiveCompact && (
-          <SidebarConfigurator
-            allCategories={TAB_CATEGORIES}
-            hiddenCategories={hiddenCategories}
-            hiddenSubTabs={hiddenSubTabs}
-            categoryOrder={categoryOrder}
-            theme={sidebarTheme}
-            allTabs={allTabs}
-            allowedTabs={allowedTabs}
-            onSave={handleConfigSave}
-            onCancel={() => setConfigMode(false)}
-          />
+      <aside
+        className={cn(
+          "hidden md:flex fixed top-0 bottom-0 z-40 flex-col transition-all duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
+          themeClasses.bg,
+          themeClasses.border,
+          effectiveCompact ? "w-[60px]" : "w-[260px]",
+          presentationMode && "hidden!"
         )}
-
-        {/* Normal sidebar content (hidden when configMode) */}
-        {(!configMode || effectiveCompact) && (<>
+        style={{
+          /* Cuando configMode activo, el sidebar real se mueve a la derecha del
+             panel de configuración para que el usuario vea naturalmente de
+             izquierda → derecha: edita en el Configurator y el resultado aparece
+             inmediatamente al lado. */
+          left: configMode && !effectiveCompact ? 400 : 0,
+        }}
+      >
+        {/* ── Header: tenant + user ── */}
+        {/* Sidebar content SIEMPRE visible (incluso en configMode — el
+            configurator ahora se muestra en panel separado al lado) */}
+        <>
         <div className={cn(
           "flex items-center gap-3 h-16 border-b transition-all duration-[var(--dur-base)] shrink-0",
           themeClasses.headerBorder,
@@ -616,8 +793,9 @@ export function AdminSidebar({
                         }
                       }}
                       className={cn(
-                        "group relative w-full flex items-center gap-3 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
-                        "px-3 py-2.5",
+                        "group relative w-full flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
+                        densityPad,
+                        densityGap,
                         isActive
                           ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
                           : cn(themeClasses.text, themeClasses.hover, sidebarTheme === "dark" ? "hover:text-white" : "hover:text-[var(--text-primary)] dark:hover:text-gray-200")
@@ -625,7 +803,7 @@ export function AdminSidebar({
                     >
                       {/* Active indicator bar — 3px left bar with category color */}
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--accent-soft)]" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={accentBarStyle} />
                       )}
 
                       <DisplayIcon className={cn(
@@ -699,7 +877,7 @@ export function AdminSidebar({
                                   )}
                                 >
                                   {isSubActive && (
-                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-[var(--accent-soft)]" />
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={accentBarStyle} />
                                   )}
                                   <SubIcon className={cn(
                                     "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
@@ -740,7 +918,7 @@ export function AdminSidebar({
                 )}
               >
                 {tab === id && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--accent-soft)]" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,180,166,0.5)]" />
                 )}
                 <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-[var(--data-success)]" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
@@ -884,7 +1062,7 @@ export function AdminSidebar({
             <>
               <div className={cn("my-1.5 border-t", themeClasses.border)} />
               <button
-                onClick={() => setConfigMode(true)}
+                onClick={openConfig}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
                   themeClasses.text, themeClasses.hover
@@ -897,7 +1075,7 @@ export function AdminSidebar({
           )}
           {effectiveCompact && (
             <button
-              onClick={() => setConfigMode(true)}
+              onClick={openConfig}
               title="Configurar barra lateral"
               className={cn(
                 "flex items-center justify-center w-full px-0 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
@@ -908,8 +1086,38 @@ export function AdminSidebar({
             </button>
           )}
         </div>
-        </>)}
+        </>
       </aside>
+
+      {/* ── Configurator panel — al inicio (left: 0), sidebar real al lado.
+          Orden natural: usuario edita aquí ← y ve el resultado aquí →. */}
+      {configMode && !effectiveCompact && !presentationMode && (
+        <aside
+          className={cn(
+            "hidden md:flex fixed top-0 bottom-0 z-50 flex-col overflow-hidden border-r shadow-2xl",
+            themeClasses.border,
+          )}
+          style={{ left: 0, width: 400 }}
+          aria-label="Configuración de barra lateral"
+        >
+          <SidebarConfigurator
+            allCategories={TAB_CATEGORIES}
+            hiddenCategories={hiddenCategories}
+            hiddenSubTabs={hiddenSubTabs}
+            categoryOrder={categoryOrder}
+            theme={sidebarTheme}
+            accent={accent}
+            density={density}
+            iconStyle={iconStyle}
+            applyToHeader={applyToHeader}
+            allTabs={allTabs}
+            allowedTabs={allowedTabs}
+            onSave={handleConfigSave}
+            onCancel={handleConfigCancel}
+            onLiveDraftChange={handleLiveDraft}
+          />
+        </aside>
+      )}
 
       {/* Tooltip lateral para iconos en modo compact — position:fixed
           para escapar el overflow clip del nav. Card blanca con arrow. */}

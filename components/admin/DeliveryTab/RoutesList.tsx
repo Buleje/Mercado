@@ -46,7 +46,7 @@ export function RoutesList({
       <div className="p-6 text-center">
         <Truck className="mx-auto h-12 w-12 text-slate-300" />
         <p className="mt-2 text-sm text-slate-500">
-          No hay rutas para hoy. Creá una desde el botón &ldquo;Nueva ruta&rdquo;.
+          No hay rutas para hoy. Crea una desde el botón &ldquo;Nueva ruta&rdquo;.
         </p>
       </div>
     );

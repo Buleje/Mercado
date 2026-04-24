@@ -31,7 +31,7 @@ type Doc = {
 
 interface ContratoAPI {
   id: string;
-  numero: string;
+  número: string;
   tipo: string;
   estado: string;
   clienteNombre: string;
@@ -113,7 +113,7 @@ export default function DocumentManagerTab() {
 
             return {
               id: c.id,
-              name: `${c.numero} - ${c.tipo} - ${c.clienteNombre}`,
+              name: `${c.número} - ${c.tipo} - ${c.clienteNombre}`,
               category: "contrato" as DocCategory,
               status,
               uploadDate: c.createdAt?.split("T")[0] || "",
@@ -122,7 +122,7 @@ export default function DocumentManagerTab() {
               relatedTo: c.clienteNombre,
               notes: c.descripcion?.substring(0, 100) || "",
               isContrato: true,
-              contratoNumero: c.numero,
+              contratoNumero: c.número,
               contratoMonto: c.monto,
             };
           });
@@ -257,7 +257,7 @@ export default function DocumentManagerTab() {
           <div>
             <p className="font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">Documentos que necesitan atencion</p>
             <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
-              {stats.porVencer > 0 && <span>{stats.porVencer} proximo(s) a vencer. </span>}
+              {stats.porVencer > 0 && <span>{stats.porVencer} próximo(s) a vencer. </span>}
               {stats.vencidos > 0 && <span className="font-bold">{stats.vencidos} vencido(s) — renovar o archivar.</span>}
               {stats.contratosPorVencer > 0 && (
                 <span className="block mt-1 font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">
@@ -396,7 +396,7 @@ export default function DocumentManagerTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm flex items-center gap-1.5">

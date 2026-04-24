@@ -15,6 +15,7 @@ import {
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     try {
       const res = await fetch("/api/ocr/invoice", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ image: imageDataUrl }),
       });
 

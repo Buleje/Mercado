@@ -63,7 +63,7 @@ export function ventasStory(ctx: KPIContext): KPIStory {
     return {
       headline: `Subiste ${ctx.prefix ?? ""}${delta.toLocaleString("es-PE", { maximumFractionDigits: 0 })} vs ayer`,
       cause: "Más clientes o tickets más altos.",
-      nextAction: "Seguí con el mismo mix de productos en stock.",
+      nextAction: "Sigue con el mismo mix de productos en stock.",
       tone: "celebrate",
     };
   }
@@ -84,7 +84,7 @@ export function ventasStory(ctx: KPIContext): KPIStory {
     return {
       headline: `Caíste ${ctx.prefix ?? ""}${delta.toLocaleString("es-PE", { maximumFractionDigits: 0 })} vs ayer`,
       cause: "Puede ser día lento o falta de producto estrella.",
-      nextAction: "Revisá stock crítico y creá promo flash de bebidas.",
+      nextAction: "Revisa stock crítico y crea promo flash de bebidas.",
       tone: "alert",
     };
   }
@@ -92,9 +92,9 @@ export function ventasStory(ctx: KPIContext): KPIStory {
   // 5. Bajo promedio + sin hora todavía
   if (avgValue && value < avgValue * 0.6 && hour > 12) {
     return {
-      headline: `Vas atrás del promedio — aún podés recuperar`,
-      cause: `Necesitás ${ctx.prefix ?? ""}${(avgValue - value).toFixed(0)} más para igualar.`,
-      nextAction: "Compartí tu catálogo por WhatsApp ahora.",
+      headline: `Vas atrás del promedio — aún puedes recuperar`,
+      cause: `Necesitas ${ctx.prefix ?? ""}${(avgValue - value).toFixed(0)} más para igualar.`,
+      nextAction: "Comparte tu catálogo por WhatsApp ahora.",
       tone: "motivate",
     };
   }
@@ -104,7 +104,7 @@ export function ventasStory(ctx: KPIContext): KPIStory {
     return {
       headline: "Sin ventas aún hoy",
       cause: "Los martes suelen arrancar lento. Esto es normal.",
-      nextAction: "Mandá un mensaje a tus clientes frecuentes.",
+      nextAction: "Manda un mensaje a tus clientes frecuentes.",
       tone: "motivate",
     };
   }
@@ -137,7 +137,7 @@ export function pedidosStory(ctx: KPIContext): KPIStory {
     return {
       headline: "Sin pedidos todavía",
       cause: "Horario bajo o catálogo no difundido.",
-      nextAction: "Compartí tu tienda por WhatsApp.",
+      nextAction: "Comparte tu tienda por WhatsApp.",
       tone: "motivate",
     };
   }
@@ -146,7 +146,7 @@ export function pedidosStory(ctx: KPIContext): KPIStory {
     return {
       headline: `${value} pedidos — ${((value / avgValue - 1) * 100).toFixed(0)}% sobre lo normal`,
       cause: "Demanda alta — asegurá stock y delivery.",
-      nextAction: "Activá modo 'preparación rápida' si tenés repartidores extra.",
+      nextAction: "Activa modo 'preparación rápida' si tienes repartidores extra.",
       tone: "celebrate",
     };
   }
@@ -229,7 +229,7 @@ export function projectionStory(
   if (projected >= target * 1.1) {
     return {
       headline: `Vas a romper tu meta — ${prefix ?? ""}${(projected - target).toFixed(0)} por encima`,
-      cause: `Si seguís así, cerrás con ${prefix ?? ""}${projected.toFixed(0)}.`,
+      cause: `Si sigues así, cerrás con ${prefix ?? ""}${projected.toFixed(0)}.`,
       nextAction: "Anotá qué funcionó este mes — replicá el formato.",
       tone: "celebrate",
     };
@@ -246,7 +246,7 @@ export function projectionStory(
   if (gap < target * 0.1 && daysLeft > 5) {
     return {
       headline: `Te faltan ${prefix ?? ""}${gap.toFixed(0)} — alcanzable`,
-      cause: `Necesitás ${prefix ?? ""}${(gap / daysLeft).toFixed(0)} diarios los próximos ${daysLeft} días.`,
+      cause: `Necesitas ${prefix ?? ""}${(gap / daysLeft).toFixed(0)} diarios los próximos ${daysLeft} días.`,
       nextAction: "Enfocate en tus productos con mejor margen.",
       tone: "motivate",
     };
@@ -254,7 +254,7 @@ export function projectionStory(
 
   return {
     headline: `Te faltan ${prefix ?? ""}${gap.toFixed(0)} para la meta`,
-    cause: `Ritmo actual: ${prefix ?? ""}${dailyPace.toFixed(0)}/día. Necesitás ${prefix ?? ""}${((target - current) / daysLeft).toFixed(0)}/día.`,
+    cause: `Ritmo actual: ${prefix ?? ""}${dailyPace.toFixed(0)}/día. Necesitas ${prefix ?? ""}${((target - current) / daysLeft).toFixed(0)}/día.`,
     nextAction: "Evaluá subir precios de productos sin competencia local.",
     tone: "alert",
   };

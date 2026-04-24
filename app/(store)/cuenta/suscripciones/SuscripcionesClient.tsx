@@ -4,7 +4,7 @@
  * SuscripcionesClient — Dashboard del cliente para "Bodega al Mes".
  *
  * Tabs: Activas / Pausadas / Canceladas
- * Acciones por card: Pausar, Reanudar, Cancelar, Saltar proxima, Cambiar frecuencia.
+ * Acciones por card: Pausar, Reanudar, Cancelar, Saltar próxima, Cambiar frecuencia.
  *
  * Todo el state corre desde el SubscriptionContext (localStorage + tenantKey).
  */
@@ -185,8 +185,8 @@ export default function SuscripcionesClient() {
                   "outline-none focus:border-[var(--rule-strong)]",
                 )}
               >
-                <option value="nextDelivery">Proxima entrega</option>
-                <option value="recent">Mas recientes</option>
+                <option value="nextDelivery">Próxima entrega</option>
+                <option value="recent">Más recientes</option>
               </select>
             </label>
           </div>

@@ -22,7 +22,7 @@ import {
  *   - `tenantId` primer param (aunque hoy los mocks no discriminan, la firma
  *     está lista para multi-tenant).
  *   - Cache getOrSet con TTL 120s.
- *   - `safeParse`/logger en la capa API; acá devolvemos datos crudos.
+ *   - `safeParse`/logger en la capa API; aquí devolvemos datos crudos.
  */
 
 export type { MockReview } from "@/lib/mocks/product-reviews.mock";

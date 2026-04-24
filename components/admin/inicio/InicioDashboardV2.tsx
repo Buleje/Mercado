@@ -1,7 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "./DashboardDateRange";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
@@ -27,12 +27,16 @@ interface Props {
 
 interface OverviewData {
   hero: {
-    totalToday: number;
-    deltaVsYesterday: number;
+    totalToday: number;           // legacy
+    totalRange?: number;
+    deltaVsYesterday: number;     // legacy
+    deltaVsPrevious?: number;
     sparkline: number[];
+    sparklineLabels?: string[];
   };
   contextual: {
     ordersToday: number;
+    ordersInRange?: number;
     uniqueCustomers: number;
     newCustomers: number;
     ticketAverage: number;
@@ -41,15 +45,61 @@ interface OverviewData {
   };
 }
 
-export default function InicioDashboardV2(_props: Props) {
+const PRESET_HERO: Record<string, string> = {
+  diario: "Ventas de hoy",
+  semanal: "Ventas de la semana",
+  mensual: "Ventas del mes",
+  anual: "Ventas del año",
+  personalizado: "Ventas del período",
+};
+const PRESET_CORRELATION: Record<string, string> = {
+  diario: "Correlación · últimas horas",
+  semanal: "Correlación · rango activo",
+  mensual: "Correlación · últimos días",
+  anual: "Correlación · últimos meses",
+  personalizado: "Correlación · período",
+};
+const PRESET_DELTA: Record<string, string> = {
+  diario: "vs ayer",
+  semanal: "vs semana pasada",
+  mensual: "vs mes pasado",
+  anual: "vs año pasado",
+  personalizado: "vs período anterior",
+};
+const PRESET_META_LABEL: Record<string, string> = {
+  diario: "Meta del día",
+  semanal: "Meta de la semana",
+  mensual: "Meta del mes",
+  anual: "Meta del año",
+  personalizado: "Meta del período",
+};
+const PRESET_PROYECCION: Record<string, string> = {
+  diario: "Proyección hoy",
+  semanal: "Proyección semana",
+  mensual: "Proyección mes",
+  anual: "Proyección año",
+  personalizado: "Proyección período",
+};
+
+export default function InicioDashboardV2({ dateRange }: Props) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   // Hook llamado SIEMPRE — antes de cualquier early return (Rules of Hooks).
   const sharedRaw = useDashboardData();
 
+  const rangeQuery = useMemo(() => {
+    if (!dateRange) return "";
+    const params = new URLSearchParams();
+    params.set("from", dateRange.from.toISOString());
+    params.set("to", dateRange.to.toISOString());
+    params.set("preset", dateRange.preset);
+    return `?${params.toString()}`;
+  }, [dateRange?.from, dateRange?.to, dateRange?.preset]);
+
   useEffect(() => {
     let active = true;
-    fetch("/api/admin/overview")
+    setLoading(true);
+    fetch(`/api/admin/overview${rangeQuery}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (active && json && !json.error) setData(json as OverviewData);
@@ -61,7 +111,7 @@ export default function InicioDashboardV2(_props: Props) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [rangeQuery]);
 
   if (loading) {
     return (
@@ -89,29 +139,41 @@ export default function InicioDashboardV2(_props: Props) {
     );
   }
 
+  const presetKey = dateRange?.preset ?? "diario";
   const {
     hero,
-    contextual: { ordersToday, uniqueCustomers, ticketAverage, criticalStock },
+    contextual: { uniqueCustomers, ticketAverage, criticalStock },
   } = data;
+  const ordersInRange = data.contextual.ordersInRange ?? data.contextual.ordersToday ?? 0;
+  const heroValue = hero.totalRange ?? hero.totalToday ?? 0;
+  const heroDelta = hero.deltaVsPrevious ?? hero.deltaVsYesterday ?? 0;
 
-  // Weekly data desde sparkline — 7 valores labels L M X J V S D
-  const DAYS = ["L", "M", "X", "J", "V", "S", "D"];
+  // Weekly data desde sparkline — labels dinámicos según rango
   const lastSpark = hero.sparkline[hero.sparkline.length - 1] || 1;
+  const sparkLabels = hero.sparklineLabels ?? [];
   const weeklyData = hero.sparkline.map((ventas, i) => ({
-    day: DAYS[i] ?? `D${i + 1}`,
+    day: sparkLabels[i] ?? `${i + 1}`,
     ventas: Math.round(ventas),
-    pedidos: Math.max(1, Math.round((ventas / lastSpark) * ordersToday)) || 0,
+    pedidos: Math.max(1, Math.round((ventas / lastSpark) * ordersInRange)) || 0,
     clientes: Math.max(1, Math.round((ventas / lastSpark) * uniqueCustomers)) || 0,
   }));
 
-  // Meta mensual
+  // Meta proyectada según preset activo
   const avgDaily = hero.sparkline.reduce((s, v) => s + v, 0) / Math.max(1, hero.sparkline.length);
-  const metaMes = Math.max(10000, avgDaily * 22 * 1.1);
+  const daysInRange = Math.max(
+    1,
+    Math.ceil(((dateRange?.to?.getTime() ?? Date.now()) - (dateRange?.from?.getTime() ?? Date.now())) / (24 * 60 * 60 * 1000)) + 1,
+  );
+  // Target: 10% sobre promedio diario × días del rango, con piso mínimo 10k (mensual) / 300 (diario)
+  const metaFloor = presetKey === "diario" ? 300 : presetKey === "semanal" ? 2500 : presetKey === "anual" ? 120000 : 10000;
+  const metaRango = Math.max(metaFloor, avgDaily * daysInRange * 1.1);
+  // Acumulado real = totalRange del backend (no simulado)
+  const acumRango = heroValue;
   const dayOfMonth = new Date().getDate();
-  const acumMes = avgDaily * dayOfMonth;
-  const proyectado = avgDaily * 30;
-  const metaPct = Math.min(100, Math.round((acumMes / metaMes) * 100));
-  const proyPct = Math.min(150, Math.round((proyectado / metaMes) * 100));
+  // Proyección: extrapola el promedio diario al rango completo
+  const proyectado = avgDaily * daysInRange;
+  const metaPct = Math.min(100, Math.round((acumRango / metaRango) * 100));
+  const proyPct = Math.min(150, Math.round((proyectado / metaRango) * 100));
 
   // Hora pico (últimos 7d combinando orders + sales)
   const allOrdersForPeak = (sharedRaw?.data?.orders ?? []) as Array<{ createdAt: string; status: string }>;
@@ -136,32 +198,31 @@ export default function InicioDashboardV2(_props: Props) {
 
       {/* ── Row 1: Hero con 3 sub-metrics + sparkline + delta matrix ── */}
       <BulejeMetricHeroCard
-        kicker="Ventas de hoy"
-        heroValue={hero.totalToday}
+        kicker={PRESET_HERO[presetKey] ?? PRESET_HERO.diario}
+        heroValue={heroValue}
         prefix="S/ "
         decimals={2}
         subMetrics={[
-          { label: "Pedidos", value: ordersToday },
+          { label: "Pedidos", value: ordersInRange },
           { label: "Ticket prom.", value: ticketAverage, prefix: "S/ ", decimals: 2 },
           { label: "Clientes", value: uniqueCustomers },
         ]}
         sparkline={hero.sparkline}
         deltas={[
-          { label: "vs ayer", value: hero.deltaVsYesterday },
-          { label: "vs semana", value: hero.deltaVsYesterday * 0.6 },
-          { label: "vs mes", value: hero.deltaVsYesterday * 0.4 },
+          { label: PRESET_DELTA[presetKey] ?? PRESET_DELTA.diario, value: heroDelta },
         ]}
       />
 
-      {/* ── Meta mensual + hora pico (enriquece el hero) ── */}
+      {/* ── Meta + hora pico (enriquece el hero) · ambos dinámicos por preset ── */}
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              Meta mensual · día {dayOfMonth}
+              {PRESET_META_LABEL[presetKey] ?? PRESET_META_LABEL.mensual}
+              {presetKey === "mensual" && ` · día ${dayOfMonth}`}
             </p>
             <p className="text-sm font-semibold text-[var(--text-primary)]">
-              S/ {Math.round(acumMes).toLocaleString("es-PE")} de S/ {Math.round(metaMes).toLocaleString("es-PE")}
+              S/ {Math.round(acumRango).toLocaleString("es-PE")} de S/ {Math.round(metaRango).toLocaleString("es-PE")}
               <span className="ml-2 text-[var(--text-tertiary)] font-normal">
                 ({metaPct}% avanzado)
               </span>
@@ -178,7 +239,7 @@ export default function InicioDashboardV2(_props: Props) {
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1">
               <span className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Proyección mes
+                {PRESET_PROYECCION[presetKey] ?? PRESET_PROYECCION.mensual}
               </span>
               <span
                 className={
@@ -210,7 +271,7 @@ export default function InicioDashboardV2(_props: Props) {
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
         <header className="mb-5">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-            Correlación · últimos 7 días
+            {PRESET_CORRELATION[presetKey] ?? PRESET_CORRELATION.diario}
           </p>
           <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
             Ventas, pedidos y clientes
@@ -238,7 +299,7 @@ export default function InicioDashboardV2(_props: Props) {
       </section>
 
       {/* ── Row 3: 5 gráficos multi-variable (caja, inventario, compras, clientes, productos) ── */}
-      <InicioMultiCharts />
+      <InicioMultiCharts dateRange={dateRange} />
 
       {/* ── Footer alerta rápida ── */}
       {criticalStock > 0 && (

@@ -147,7 +147,7 @@ export default function FrequencyRewardCard({
       <p className="text-sm text-foreground dark:text-foreground leading-snug">
         {completed ? (
           <span className="font-semibold text-[#00B4A6]">
-            Completaste las {targetCount} compras. Tu proxima compra de{" "}
+            Completaste las {targetCount} compras. Tu próxima compra de{" "}
             {productName} es GRATIS.
           </span>
         ) : (

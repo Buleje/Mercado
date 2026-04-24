@@ -74,7 +74,7 @@ export function SocioBadge({ regularPrice, socioPrice, className }: SocioBadgePr
           Con Socio Buleje: {fmt(socioPrice)}
         </CardTitle>
         <BodyText className="mt-0.5 text-[var(--text-secondary)]">
-          Ahorrarías {fmt(savings)} en este producto ({pct}% menos). Conocé el
+          Ahorrarías {fmt(savings)} en este producto ({pct}% menos). Conoce el
           plan →
         </BodyText>
       </div>

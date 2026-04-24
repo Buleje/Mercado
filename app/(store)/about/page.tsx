@@ -23,11 +23,11 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Acerca de Nosotros — Buleje | Software ERP para Bodegas",
   description:
-    "Buleje es un software ERP para bodegas y tiendas de todo el Peru. Inventario, POS, delivery, fiado digital y facturacion SUNAT. Creado en Pucallpa.",
+    "Buleje es un software ERP para bodegas y tiendas de todo el Perú. Inventario, POS, delivery, fiado digital y facturación SUNAT. Creado en Pucallpa.",
   openGraph: {
     title: "Acerca de Nosotros — Buleje",
     description:
-      "Software ERP para bodegas creado en Pucallpa. Inventario, delivery y facturacion SUNAT para todo el Peru.",
+      "Software ERP para bodegas creado en Pucallpa. Inventario, delivery y facturación SUNAT para todo el Perú.",
     type: "website",
     locale: "es_PE",
     url: "https://www.buleje.pe/about",

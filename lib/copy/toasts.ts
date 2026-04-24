@@ -17,7 +17,7 @@ export const TOAST = {
   }),
   deleted: (what: string) => ({
     title: `${what} eliminado`,
-    description: "Podés deshacer en los próximos 5 segundos.",
+    description: "Puedes deshacer en los próximos 5 segundos.",
   }),
   orderPlaced: (orderId: string) => ({
     title: "Pedido confirmado",
@@ -25,7 +25,7 @@ export const TOAST = {
   }),
   paymentReceived: {
     title: "Pago recibido",
-    description: "Ya podés preparar el pedido.",
+    description: "Ya puedes preparar el pedido.",
   },
   subscriberAdded: {
     title: "Suscrito correctamente",
@@ -37,13 +37,13 @@ export const TOAST = {
   }),
   copied: (what = "Texto") => ({
     title: `${what} copiado al portapapeles`,
-    description: "Ya lo podés pegar donde quieras.",
+    description: "Ya lo puedes pegar donde quieras.",
   }),
 
   // ── Info ──────────────────────────────────────────────────
   draftSaved: {
     title: "Borrador guardado automáticamente",
-    description: "Podés cerrar esta ventana — no perdés nada.",
+    description: "Puedes cerrar esta ventana — no perdés nada.",
   },
   offlineSyncing: {
     title: "Trabajando sin conexión",
@@ -61,7 +61,7 @@ export const TOAST = {
   }),
   unsavedChanges: {
     title: "Cambios sin guardar",
-    description: "Guardá antes de salir o vas a perder tu trabajo.",
+    description: "Guarda antes de salir o vas a perder tu trabajo.",
   },
   slowConnection: {
     title: "Conexión lenta detectada",
@@ -71,11 +71,11 @@ export const TOAST = {
   // ── Error ─────────────────────────────────────────────────
   saveFailed: {
     title: "No pudimos guardar",
-    description: "Revisá tu conexión y volvé a intentar.",
+    description: "Revisa tu conexión y vuelve a intentar.",
   },
   paymentFailed: {
     title: "Pago no procesado",
-    description: "No te cobramos nada. Probá otra vez o elegí otro método.",
+    description: "No te cobramos nada. Prueba otra vez o elige otro método.",
   },
   uploadFailed: {
     title: "Archivo no subido",

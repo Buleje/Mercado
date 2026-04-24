@@ -21,7 +21,7 @@ type Fiado = {
 
 type CuotaPendiente = {
   id: string;
-  numero: number;
+  número: number;
   monto: number;
   fechaVence: string;
   status: string;
@@ -163,7 +163,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
   const handlePrint = () => window.print();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="modal-backdrop p-4">
       <div className="bg-white dark:bg-card rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
@@ -293,7 +293,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         <div className="bg-gray-50 dark:bg-card rounded-lg p-2 space-y-1">
                           {p.cuotasPendientes.map((c) => (
                             <div key={c.id} className="flex justify-between text-xs">
-                              <span className="text-[var(--text-secondary)] dark:text-muted">Cuota #{c.numero}</span>
+                              <span className="text-[var(--text-secondary)] dark:text-muted">Cuota #{c.número}</span>
                               <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fechaVence)}</span>
                               <span className={cn("font-bold", c.status === "atrasado" ? "text-[var(--data-error)]" : "text-[var(--text-primary)] dark:text-foreground")}>
                                 {fmt(c.monto)}

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   title:
     "Descubrí todo lo que Buleje puede hacer por tu hogar — Pucallpa y Ucayali",
   description:
-    "10 features nuevas gratis: Comparar productos, Bodega al Mes, Gift Cards, Socio Buleje, En Vivo, Asistente IA, Seguimiento en tiempo real, 1-Click Buy y Vendé en Buleje.",
+    "10 features nuevas gratis: Comparar productos, Bodega al Mes, Gift Cards, Socio Buleje, En Vivo, Asistente IA, Seguimiento en tiempo real, 1-Click Buy y Vende en Buleje.",
   alternates: {
     canonical: "https://www.buleje.pe/descubri",
   },

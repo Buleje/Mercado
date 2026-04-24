@@ -34,14 +34,14 @@ const USOS: readonly UsoRow[] = [
     value: 12,
     goal: 20,
     unit: "pedidos",
-    description: "Seguí pidiendo sin costo de envío",
+    description: "Sigue pidiendo sin costo de envío",
   },
   {
     label: "Ofertas exclusivas usadas",
     value: 6,
     goal: 12,
     unit: "ofertas",
-    description: "Tenés 6 ofertas más disponibles",
+    description: "Tienes 6 ofertas más disponibles",
   },
 ];
 

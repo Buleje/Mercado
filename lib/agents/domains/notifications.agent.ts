@@ -47,7 +47,7 @@ async function sendOrderUpdate(
     confirmado: `Tu pedido #${orderId.slice(-6)} ha sido confirmado.`,
     en_camino: `Tu pedido #${orderId.slice(-6)} esta en camino.`,
     entregado: `Tu pedido #${orderId.slice(-6)} ha sido entregado. Gracias por tu compra!`,
-    cancelado: `Tu pedido #${orderId.slice(-6)} ha sido cancelado. Contactanos si tienes dudas.`,
+    cancelado: `Tu pedido #${orderId.slice(-6)} ha sido cancelado. Contáctanos si tienes dudas.`,
   };
 
   const message =

@@ -314,9 +314,9 @@ async function DistrictContent({
         <p className="text-xs text-slate-400 leading-relaxed">
           Buleje es el software ERP para bodegas de {district.name},{" "}
           {zone.name}, {zone.region}. Gestiona inventario, ventas POS,
-          delivery, fiado digital con score de credito y facturacion
-          electronica SUNAT. Compatible con Yape, Plin y efectivo. Creado
-          en Pucallpa, Peru — disponible en todo el pais.
+          delivery, fiado digital con score de credito y facturación
+          electrónica SUNAT. Compatible con Yape, Plin y efectivo. Creado
+          en Pucallpa, Perú — disponible en todo el país.
         </p>
       </footer>
     </div>
@@ -330,7 +330,7 @@ export default function DistrictLandingPage({ params }: Props) {
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="animate-pulse text-sm text-slate-400">
-            Cargando informacion del distrito...
+            Cargando información del distrito...
           </div>
         </div>
       }

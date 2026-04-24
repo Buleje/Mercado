@@ -4,7 +4,7 @@ import TrackingForm from "./TrackingForm";
 export const metadata: Metadata = {
   title: "Seguir mi pedido | Buleje",
   description:
-    "Rastrea el estado de tu pedido en Buleje. Ingresa tu numero de pedido y ve en tiempo real donde esta tu delivery.",
+    "Rastrea el estado de tu pedido en Buleje. Ingresa tu número de pedido y ve en tiempo real donde esta tu delivery.",
 };
 
 export default function TrackingPage() {
@@ -16,7 +16,7 @@ export default function TrackingPage() {
             Seguir mi pedido
           </h1>
           <p className="mt-2 text-sm text-muted-foreground dark:text-muted">
-            Ingresa tu numero de pedido para ver el estado de tu delivery
+            Ingresa tu número de pedido para ver el estado de tu delivery
           </p>
         </div>
         <TrackingForm />

@@ -12,11 +12,11 @@
  *   - Renderiza botones nav <- y -> en hover desktop (md+).
  *   - Mantiene snap-x mandatory + scroll-padding para que cada card encaje.
  *
- * Estilo Holded/Buleje: minimalista, accent token unico, sin sombras fuertes.
+ * Estilo Holded/Buleje: minimalista, accent token único, sin sombras fuertes.
  *
  * Uso:
  * ```tsx
- * <HorizontalCarousel ariaLabel="Top mas vendidos">
+ * <HorizontalCarousel ariaLabel="Top más vendidos">
  *   {items.map((p) => <ProductCard key={p.id} ... />)}
  * </HorizontalCarousel>
  * ```

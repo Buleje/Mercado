@@ -33,7 +33,7 @@ export default function CuponesHero({ activeCount, totalSavings }: Props) {
         description={
           activeCount > 0
             ? "Aplicalos en el checkout para ahorrar en tu próximo pedido."
-            : "Todavía no tenés cupones activos. Aplicá uno nuevo abajo."
+            : "Todavía no tienes cupones activos. Aplicá uno nuevo abajo."
         }
         illustration={<CorazonLatiendo size={140} />}
         stats={stats}

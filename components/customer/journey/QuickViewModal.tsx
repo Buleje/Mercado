@@ -10,7 +10,7 @@ import { modalVariants, popoverVariants, tapPress } from "@/components/ui-system
 import { BTN } from "@/lib/copy";
 
 /**
- * QuickViewModal — preview rapido de producto sin salir del grid.
+ * QuickViewModal — preview rápido de producto sin salir del grid.
  *
  * Radix Dialog accesible. Patron Shopify/Amazon: al tap en un producto
  * del grid, abre modal con imagen + descripcion + variantes + CTA.

@@ -79,10 +79,10 @@ export type ContactoForm = z.infer<typeof contactoSchema>;
 export const verificacionSchema = z.object({
   // Mock: sólo flags que el usuario "subió" las fotos.
   fotoRucSubida: z.boolean().refine((v) => v === true, {
-    message: "Subí la foto de tu RUC",
+    message: "Sube la foto de tu RUC",
   }),
   fotoFachadaSubida: z.boolean().refine((v) => v === true, {
-    message: "Subí la foto de tu fachada",
+    message: "Sube la foto de tu fachada",
   }),
   aceptoTerminos: z.boolean().refine((v) => v === true, {
     message: "Aceptá los términos para continuar",
@@ -129,7 +129,7 @@ export type PlanVendor = (typeof PLANES_VENDOR)[number];
 
 export const planSchema = z.object({
   plan: z.enum(PLANES_VENDOR, {
-    message: "Elegí un plan",
+    message: "Elige un plan",
   }),
 });
 export type PlanForm = z.infer<typeof planSchema>;

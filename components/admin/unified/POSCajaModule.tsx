@@ -319,7 +319,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         const change = [12, 8, -3, -6, 15, 4][idx] ?? 0;
         return (
           <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-lg border border-[var(--rule-base)] p-4  transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-sm")}>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-medium">{k.label}</p>
+            <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
               <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
@@ -462,12 +462,12 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         <div className="min-w-150">
           <div className="flex gap-0.5 mb-1 ml-10">
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className="flex-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{h}</div>
+              <div key={h} className="flex-1 text-center text-xs text-[var(--text-tertiary)]">{h}</div>
             ))}
           </div>
           {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day, di) => (
             <div key={day} className="flex gap-0.5 items-center mb-0.5">
-              <span className="w-9 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] text-right pr-1 shrink-0">{day}</span>
+              <span className="w-9 text-xs text-[var(--text-secondary)] text-right pr-1 shrink-0">{day}</span>
               {Array.from({ length: 24 }, (_, h) => {
                 const val = heatmapData[di]?.[h] ?? 0;
                 const intensity = heatmapMax > 0 ? val / heatmapMax : 0;
@@ -483,11 +483,11 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             </div>
           ))}
           <div className="flex items-center gap-2 mt-2 justify-end">
-            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Menos</span>
+            <span className="text-xs text-[var(--text-tertiary)]">Menos</span>
             {[0.08, 0.25, 0.5, 0.75, 1].map((o, i) => (
               <div key={i} className="w-4 h-3 rounded-sm" style={{ backgroundColor: `rgba(45,106,79,${o})` }} />
             ))}
-            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Mas</span>
+            <span className="text-xs text-[var(--text-tertiary)]">Mas</span>
           </div>
         </div>
       </div>
@@ -498,7 +498,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-[var(--text-secondary)]" />
           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Pronostico 7 dias</CardTitle>
-          <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-primary)] px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
+          <span className="text-xs bg-[var(--surface-sunken)] text-[var(--text-primary)] px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
         </div>
         <button onClick={() => setExpandedChart("forecast")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
@@ -532,21 +532,21 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month1]}</p>
+          <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month1]}</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.total1 === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(monthComparisonData.total1, { decimals: 0 })}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{monthComparisonData.count1} ventas</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{monthComparisonData.count1} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month2]}</p>
+          <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">{MESES_LABEL[month2]}</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-warning)]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{monthComparisonData.count2} ventas</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{monthComparisonData.count2} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">Diferencia</p>
+          <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Diferencia</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
             {monthComparisonData.diffPct >= 0 ? "+" : ""}{monthComparisonData.diffPct}%
           </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
         </div>
       </div>
       {monthComparisonData.weekData.some(w => w.mes1 > 0 || w.mes2 > 0) ? (
@@ -617,7 +617,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <div className="min-w-175">
               <div className="flex gap-1 mb-2 ml-14">
                 {Array.from({ length: 24 }, (_, h) => (
-                  <div key={h} className="flex-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{h}h</div>
+                  <div key={h} className="flex-1 text-center text-xs text-[var(--text-tertiary)]">{h}h</div>
                 ))}
               </div>
               {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day, di) => (
@@ -678,7 +678,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
                       <div key={i} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl text-xs">
                         <div>
                           <p className="font-medium text-[var(--text-primary)]">{new Date(String(s.createdAt ?? "")).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</p>
-                          <p className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
+                          <p className="text-[var(--text-tertiary)] text-xs">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
                         </div>
                         <p className="font-mono font-bold text-[var(--text-primary)]">S/ {(Number(s.total) || 0).toFixed(2)}</p>
                       </div>
@@ -806,7 +806,7 @@ function ShiftCloseModal({
         {/* Header */}
         <div className="bg-primary px-6 py-4">
           <CardTitle className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>
-          <p className="text-sm text-white/80">Resumen del dia antes de cerrar</p>
+          <p className="text-sm text-white/80">Resumen del día antes de cerrar</p>
         </div>
 
         {/* Body */}
@@ -979,7 +979,7 @@ export default function POSCajaModule() {
               else setSub("turnos");
             }}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
               turnoAbierto
                 ? "bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)]/80"
                 : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",

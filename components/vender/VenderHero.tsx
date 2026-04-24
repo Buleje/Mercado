@@ -14,8 +14,8 @@ export default function VenderHero() {
   return (
     <UnifiedHero
       kicker="Seller Central"
-      title="Vendé en Buleje, llegá a todo Pucallpa"
-      description="Abrí tu tienda online como si abrieras la persiana de tu bodega de toda la vida. Cientos de clientes te compran todos los días por la plataforma de Ucayali."
+      title="Vende en Buleje, llegá a todo Pucallpa"
+      description="Abre tu tienda online como si abrieras la persiana de tu bodega de toda la vida. Cientos de clientes te compran todos los días por la plataforma de Ucayali."
       trustChips={[
         "Sin comisión el primer mes",
         "Soporte en español",

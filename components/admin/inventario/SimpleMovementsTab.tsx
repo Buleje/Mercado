@@ -227,7 +227,7 @@ export default function SimpleMovementsTab() {
                 <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                   <td className="px-4 py-3">
                     <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtRelative(m.createdAt)}</p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{fmtDate(m.createdAt)}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(m.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3">
                     <span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[180px] block">{m.productName}</span>

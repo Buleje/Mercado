@@ -318,7 +318,7 @@ export default function ShippingCostsTab() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowModal(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
           <div
             className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-md w-full border border-[var(--rule-base)] dark:border-card-border"
             onClick={e => e.stopPropagation()}

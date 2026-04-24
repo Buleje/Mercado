@@ -185,7 +185,7 @@ export function AdminMarketplaceOverview() {
       <div className="flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-primary" />
         <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Resumen del Marketplace</CardTitle>
-        <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
       </div>
 
       {/* KPIs globales */}
@@ -199,8 +199,8 @@ export function AdminMarketplaceOverview() {
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 ">
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">{label}</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
@@ -220,7 +220,7 @@ export function AdminMarketplaceOverview() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.name}</p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{s.orders} pedido(s)</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">{s.orders} pedido(s)</p>
                   </div>
                   <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(s.revenue)}</span>
                 </div>
@@ -241,9 +241,9 @@ export function AdminMarketplaceOverview() {
                   <div key={o.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{o.customerName}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{o.storeName}</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">{o.storeName}</p>
                     </div>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cfg.className)}>
                       {cfg.label}
                     </span>
                     <span className="text-xs font-bold text-[var(--text-primary)] shrink-0">{fmtS(o.total)}</span>
@@ -341,8 +341,8 @@ void DashboardTab;
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 ">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
-            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>
+            <p className="text-xs sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
@@ -357,22 +357,22 @@ void DashboardTab;
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <p className="text-lg font-extrabold text-primary">{fmtS(data.allChannels.today.revenue)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Hoy (total)</p>
+              <p className="text-xs text-[var(--text-secondary)]">Hoy (total)</p>
             </div>
             <div>
               <p className="text-lg font-extrabold text-[var(--data-success)]">{data.allChannels.today.orders}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pedidos hoy (total)</p>
+              <p className="text-xs text-[var(--text-secondary)]">Pedidos hoy (total)</p>
             </div>
             <div>
               <p className="text-lg font-extrabold text-[var(--text-secondary)]">{fmtS(data.allChannels.month.revenue)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Este mes (total)</p>
+              <p className="text-xs text-[var(--text-secondary)]">Este mes (total)</p>
             </div>
             <div>
               <p className="text-lg font-extrabold text-[var(--data-warning)]">{data.allChannels.month.orders}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pedidos mes (total)</p>
+              <p className="text-xs text-[var(--text-secondary)]">Pedidos mes (total)</p>
             </div>
           </div>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">Incluye ventas directas, POS y marketplace.</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-2">Incluye ventas directas, POS y marketplace.</p>
         </div>
       )}
 
@@ -429,7 +429,7 @@ void DashboardTab;
                   ? `${data.pendingOrders} pedido(s) por confirmar`
                   : "Sin pedidos pendientes"}
               </p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
+              <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                 Ir a órdenes <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -463,7 +463,7 @@ void DashboardTab;
                   ? `${data.products.lowStock} producto(s) stock bajo`
                   : "Stock OK"}
               </p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
+              <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                 Ver productos <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -481,7 +481,7 @@ void DashboardTab;
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-[var(--text-primary)]">Ver mi tienda</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
+              <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                 Abrir en marketplace <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -499,7 +499,7 @@ void DashboardTab;
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-[var(--text-primary)]">Ir al Marketplace</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
+              <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                 Ver todas las tiendas <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -523,7 +523,7 @@ void DashboardTab;
                     title={`${fmtS(day.revenue)} — ${day.orders} pedido(s)`}
                   />
                 </div>
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{dayLabel}</span>
+                <span className="text-xs text-[var(--text-tertiary)] capitalize">{dayLabel}</span>
               </div>
             );
           })}
@@ -545,7 +545,7 @@ void DashboardTab;
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.qty} vendido(s)</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">{p.qty} vendido(s)</p>
                   </div>
                   <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(p.revenue)}</span>
                 </div>
@@ -567,7 +567,7 @@ void DashboardTab;
                   <div key={o.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{o.customerName}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                      <p className="text-xs text-[var(--text-tertiary)]">
                         {o.itemsCount} producto(s) · {new Date(o.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
                       </p>
                     </div>
@@ -575,13 +575,13 @@ void DashboardTab;
                       <button
                         onClick={() => handleQuickConfirm(o.id)}
                         disabled={confirmingId === o.id}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
                       >
                         <CheckCircle className="h-3 w-3" />
                         {confirmingId === o.id ? "..." : "Confirmar"}
                       </button>
                     ) : (
-                      <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
+                      <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cfg.className)}>
                         {cfg.label}
                       </span>
                     )}
@@ -598,17 +598,17 @@ void DashboardTab;
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className="text-xl font-extrabold text-primary">{data.products.published}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Publicados</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Publicados</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className="text-xl font-extrabold text-[var(--text-secondary)]">{data.products.total}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Total productos</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total productos</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>
             {data.products.lowStock}
           </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Stock bajo</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Stock bajo</p>
         </div>
       </div>
     </div>
@@ -695,7 +695,7 @@ function TiendaTab() {
               className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
             {store.slug && (
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">marketplace.com/{store.slug}</p>
+              <p className="text-xs text-[var(--text-tertiary)]">marketplace.com/{store.slug}</p>
             )}
           </div>
 
@@ -1330,7 +1330,7 @@ function ComisionesTab() {
                           </button>
                         )}
                         {e.status === "pagado" && (
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pagado</span>
+                          <span className="text-xs text-[var(--text-tertiary)]">Pagado</span>
                         )}
                       </td>
                     </tr>
@@ -1578,7 +1578,7 @@ function CuponesTab() {
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-sm text-primary">{c.code}</span>
                   <span className={cn(
-                    "text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full",
+                    "text-xs font-semibold px-2 py-0.5 rounded-full",
                     c.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-200 text-[var(--text-secondary)]"
                   )}>
                     {c.active ? "Activo" : "Inactivo"}
@@ -1685,7 +1685,7 @@ function FidelidadTab() {
         {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
           <div key={key} className={cn("rounded-xl p-2 text-xs font-semibold", cfg.className)}>
             <p className="text-sm">{cfg.label}</p>
-            <p className="text-[length:var(--ts-2xs)] font-normal mt-0.5">{cfg.minPoints} pts</p>
+            <p className="text-xs font-normal mt-0.5">{cfg.minPoints} pts</p>
           </div>
         ))}
       </div>
@@ -1719,7 +1719,7 @@ function FidelidadTab() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-extrabold text-primary">{data.points}</p>
-              <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-[var(--text-secondary)]")}>
+              <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-[var(--text-secondary)]")}>
                 {TIER_CONFIG[data.tier]?.label ?? data.tier}
               </span>
             </div>
@@ -1761,7 +1761,7 @@ function FidelidadTab() {
                       </span>
                       <span className="text-[var(--text-tertiary)] ml-2">{tx.description}</span>
                     </div>
-                    <span className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">
+                    <span className="text-[var(--text-tertiary)] text-xs">
                       {new Date(tx.createdAt).toLocaleDateString("es-PE")}
                     </span>
                   </div>
@@ -1779,10 +1779,10 @@ function FidelidadTab() {
           <p className="text-xs mt-1">Busca un cliente por teléfono para ver y gestionar sus puntos.</p>
           <div className="mt-4 bg-gray-50 rounded-xl p-3 text-left max-w-xs mx-auto">
             <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Reglas de puntos:</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 1 punto por cada S/1 de compra</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 500 pts = Nivel Plata (5% descuento)</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 1000 pts = Nivel Oro (10% descuento)</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 100 pts = S/1 de descuento al canjear</p>
+            <p className="text-xs text-[var(--text-secondary)]">• 1 punto por cada S/1 de compra</p>
+            <p className="text-xs text-[var(--text-secondary)]">• 500 pts = Nivel Plata (5% descuento)</p>
+            <p className="text-xs text-[var(--text-secondary)]">• 1000 pts = Nivel Oro (10% descuento)</p>
+            <p className="text-xs text-[var(--text-secondary)]">• 100 pts = S/1 de descuento al canjear</p>
           </div>
         </div>
       )}
@@ -1867,11 +1867,11 @@ function ResenasTab() {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-[var(--data-warning)]">{pendingCount}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Por moderar</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Por moderar</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-[var(--data-success)]">
@@ -1879,7 +1879,7 @@ function ResenasTab() {
               ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
               : "—"}
           </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Promedio ★</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Promedio ★</p>
         </div>
       </div>
 
@@ -1923,7 +1923,7 @@ function ResenasTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-sm text-[var(--text-primary)] truncate">{review.name || "Anónimo"}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cfg.className)}>
                       {cfg.label}
                     </span>
                   </div>
@@ -1934,7 +1934,7 @@ function ResenasTab() {
                         className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-gray-200")}
                       />
                     ))}
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-1">
+                    <span className="text-xs text-[var(--text-tertiary)] ml-1">
                       {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
@@ -1980,7 +1980,7 @@ function ResenasTab() {
               {/* Existing admin reply */}
               {review.adminReply && replyingTo !== review.id && (
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-1">Tu respuesta:</p>
+                  <p className="text-xs font-bold text-primary mb-1">Tu respuesta:</p>
                   <p className="text-xs text-[var(--text-primary)]">{review.adminReply}</p>
                 </div>
               )}
@@ -2081,7 +2081,7 @@ export default function MarketplaceModule() {
             ) : (
               <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
             )}
-            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
+            <p className="text-xs sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
           </div>
         ))}
       </div>

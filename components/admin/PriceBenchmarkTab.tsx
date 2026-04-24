@@ -10,7 +10,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Positioning = "competitivo" | "premium" | "economico" | "alineado";
+type Positioning = "competitivo" | "premium" | "económico" | "alineado";
 
 type BenchmarkItem = {
   id: string;
@@ -33,7 +33,7 @@ const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
 const POS_META: Record<Positioning, { label: string; color: string; bg: string }> = {
   competitivo: { label: "Competitivo", color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   premium:     { label: "Premium",     color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
-  economico:   { label: "Económico",   color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  económico:   { label: "Económico",   color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   alineado:    { label: "Alineado",    color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
 };
 
@@ -195,7 +195,7 @@ export default function PriceBenchmarkTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">{detail.product}</CardTitle>

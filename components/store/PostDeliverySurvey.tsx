@@ -119,7 +119,7 @@ export default function PostDeliverySurvey({
             Gracias por tu opinion
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Tu resena nos ayuda a mejorar cada dia. Hasta la proxima en Buleje.
+            Tu resena nos ayuda a mejorar cada dia. Hasta la próxima en Buleje.
           </p>
         </div>
         <div className="flex justify-center">

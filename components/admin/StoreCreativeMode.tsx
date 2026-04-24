@@ -80,7 +80,7 @@ const LABEL_CLASS =
 const VIEWPORTS: { id: Viewport; icon: typeof Monitor; width: string; label: string }[] = [
   { id: "desktop", icon: Monitor, width: "100%", label: "Escritorio" },
   { id: "tablet", icon: Tablet, width: "768px", label: "Tablet" },
-  { id: "mobile", icon: Smartphone, width: "390px", label: "Movil" },
+  { id: "mobile", icon: Smartphone, width: "390px", label: "Móvil" },
 ];
 
 const FONT_OPTIONS = [
@@ -793,7 +793,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <input className={INPUT_CLASS} value={draft.email} onChange={(e) => patch("email", e.target.value)} />
                 </div>
                 <div>
-                  <label className={LABEL_CLASS}>Telefono</label>
+                  <label className={LABEL_CLASS}>Teléfono</label>
                   <input className={INPUT_CLASS} value={draft.phone} onChange={(e) => patch("phone", e.target.value)} />
                 </div>
                 <div>
@@ -974,7 +974,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       {draft.heroBadge || "Oferta"}
                     </p>
                     <SectionTitle className="mt-3 text-2xl font-extrabold text-white leading-tight">{draft.heroTitle || "Todo lo que necesitas"}</SectionTitle>
-                    <p className="mt-2 text-sm text-white/90 line-clamp-2">{draft.heroSubtitle || "Delivery rapido en tu zona"}</p>
+                    <p className="mt-2 text-sm text-white/90 line-clamp-2">{draft.heroSubtitle || "Delivery rápido en tu zona"}</p>
                     <button
                       type="button"
                       className="mt-4 text-sm font-bold text-white px-4 py-2"

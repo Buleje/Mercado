@@ -286,7 +286,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "pareto-80-20",
       render: () => (
         <DashboardSection
-          kicker="Análisis Pareto · últimos 30 días"
+          kicker="Análisis Pareto · rango activo"
           title="Top 15 productos y concentración 80/20"
           kpis={[
             { label: "Ingresos 30d", value: fmtPEN(pareto.grandTotal), tone: "primary" },
@@ -323,7 +323,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "heatmap-hora-dia",
       render: () => (
         <DashboardSection
-          kicker="Densidad de ventas · últimos 30 días"
+          kicker="Densidad de ventas · rango activo"
           title="Heatmap hora × día de la semana"
           kpis={[
             { label: "Total 30d", value: fmtPEN(heatmap.total), tone: "primary" },
@@ -368,7 +368,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "mix-categoria",
       render: () => (
         <DashboardSection
-          kicker="Mix de categorías · últimos 14 días"
+          kicker="Mix de categorías · rango activo"
           title="Composición diaria de ingresos por categoría"
           kpis={[
             { label: "Total 14d", value: fmtPEN(mix.grand), tone: "primary" },
@@ -392,7 +392,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los últimos 14 días.
+              Sin datos en los rango activo.
             </div>
           )}
         </DashboardSection>

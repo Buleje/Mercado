@@ -8,7 +8,6 @@ import {
   Banknote, Coins, Info, RefreshCw, ExternalLink, PlusCircle,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
-import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -171,7 +170,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
           </div>
           <div className="text-left">
             <span className="block font-bold text-sm">Conteo de efectivo manual</span>
-            <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Contador por denominacion para validar caja en vivo</span>
+            <span className="block text-xs text-[var(--text-tertiary)] mt-0.5">Contador por denominaci&oacute;n para validar caja en vivo</span>
           </div>
         </span>
         <PlusCircle className={cn("h-4 w-4 text-primary transition-transform shrink-0", open && "rotate-45")} strokeWidth={1.75} aria-hidden />
@@ -183,7 +182,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
             {/* Billetes */}
             <div>
               <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 flex items-center gap-1">
-                <Banknote className="h-3.5 w-3.5" /> Billetes
+                <Banknote className="h-4 w-4" /> Billetes
               </p>
               <DataTable>
                 <thead>
@@ -223,7 +222,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
             {/* Monedas */}
             <div>
               <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 flex items-center gap-1">
-                <Coins className="h-3.5 w-3.5" /> Monedas
+                <Coins className="h-4 w-4" /> Monedas
               </p>
               <DataTable>
                 <thead>
@@ -264,11 +263,11 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
           {/* Resumen */}
           <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Esperado</p>
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Esperado</p>
               <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">{fmt(expectedAmount)}</p>
             </div>
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Contado</p>
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Contado</p>
               <p className={cn("font-extrabold text-sm", hasCount ? "text-[var(--text-primary)] dark:text-foreground" : "text-[var(--text-tertiary)]")}>
                 {hasCount ? fmt(counted) : "—"}
               </p>
@@ -280,7 +279,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
               difference > 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
               "bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20"
             )}>
-              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase text-[var(--text-tertiary)] dark:text-muted">Diferencia</p>
+              <p className="text-xs font-semibold uppercase text-[var(--text-tertiary)] dark:text-muted">Diferencia</p>
               <p className={cn(
                 "font-extrabold text-sm",
                 !hasCount ? "text-[var(--text-tertiary)]" :
@@ -348,7 +347,6 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
   return (
     <div className="space-y-4">
-      <SectionBreadcrumb icon={Calculator} section="Ventas" page="Cuadre" />
 
       {/* Toolbar — acciones alineadas a la derecha */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
@@ -388,7 +386,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", tones.bg)}>
               <Icon className={cn("h-5 w-5 mt-0.5", tones.iconColor)} strokeWidth={1.75} aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] truncate">{label}</p>
+                <p className="text-xs uppercase tracking-wider font-bold text-[var(--text-tertiary)] truncate">{label}</p>
                 <p className={cn("text-xl font-extrabold mt-0.5 tabular-nums", tones.color)}>{value}</p>
               </div>
             </div>
@@ -430,8 +428,8 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                     <td className="text-[var(--text-secondary)]">{fmt(a.expectedAmount)}</td>
                     <td className="font-bold text-[var(--text-primary)]">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
                     <td className={cn("font-extrabold", a.difference === 0 ? "text-[var(--text-tertiary)]" : a.difference > 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
-                    <td><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-3.5 w-3.5" />{STATUS_MAP[a.status].label}</span></td>
-                    <td><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-4 w-4" />{STATUS_MAP[a.status].label}</span></td>
+                    <td><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-4 w-4" /></button></td>
                   </tr>
                 );
               })}
@@ -442,7 +440,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>

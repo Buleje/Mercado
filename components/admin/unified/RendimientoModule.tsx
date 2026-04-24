@@ -158,7 +158,7 @@ function ConnectionQualityCard() {
         </div>
         <div className="text-right">
           <p className="text-lg font-bold text-[var(--text-primary)]">{quality.speed} <span className="text-xs font-normal text-[var(--text-secondary)]">Mbps</span></p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{quality.type} · {quality.rtt}ms</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{quality.type} · {quality.rtt}ms</p>
         </div>
       </div>
     </div>
@@ -310,7 +310,7 @@ function PerformanceHistoryTab() {
           <div className="space-y-3">
             {/* LCP chart */}
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-1.5">
+              <p className="text-xs font-bold text-[var(--text-tertiary)] mb-1.5">
                 LCP — Tiempo de carga principal (ms)
               </p>
               <div className="space-y-1">
@@ -319,7 +319,7 @@ function PerformanceHistoryTab() {
                   const width = Math.max((snap.lcp / maxLcp) * 100, 5);
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">
+                      <span className="text-xs text-[var(--text-tertiary)] w-14 shrink-0">
                         {new Date(snap.date).toLocaleDateString("es", { day: "2-digit", month: "short" })}
                       </span>
                       <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -328,7 +328,7 @@ function PerformanceHistoryTab() {
                           style={{ width: `${width}%` }}
                         />
                       </div>
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] w-14 text-right">
+                      <span className="text-xs font-bold text-[var(--text-primary)] w-14 text-right">
                         {snap.lcp}ms
                       </span>
                     </div>
@@ -339,7 +339,7 @@ function PerformanceHistoryTab() {
 
             {/* TTFB chart */}
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-1.5">
+              <p className="text-xs font-bold text-[var(--text-tertiary)] mb-1.5">
                 TTFB — Tiempo de respuesta del servidor (ms)
               </p>
               <div className="space-y-1">
@@ -348,7 +348,7 @@ function PerformanceHistoryTab() {
                   const width = Math.max((snap.ttfb / maxTtfb) * 100, 5);
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">
+                      <span className="text-xs text-[var(--text-tertiary)] w-14 shrink-0">
                         {new Date(snap.date).toLocaleDateString("es", { day: "2-digit", month: "short" })}
                       </span>
                       <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -357,7 +357,7 @@ function PerformanceHistoryTab() {
                           style={{ width: `${width}%` }}
                         />
                       </div>
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] w-14 text-right">
+                      <span className="text-xs font-bold text-[var(--text-primary)] w-14 text-right">
                         {snap.ttfb}ms
                       </span>
                     </div>
@@ -368,14 +368,14 @@ function PerformanceHistoryTab() {
 
             {/* CLS summary */}
             <div className="flex items-center gap-3 pt-2 border-t border-[var(--rule-soft)]">
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Última estabilidad visual (CLS):
               </p>
               {history.length > 0 && (() => {
                 const last = history[history.length - 1];
                 const grade = getGrade("cls", last.cls);
                 return (
-                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full text-white", grade.color)}>
+                  <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full text-white", grade.color)}>
                     {last.cls} — {grade.label}
                   </span>
                 );
@@ -546,7 +546,7 @@ function StorageCard({
         <span className="text-xs font-semibold text-[var(--text-primary)]">{label}</span>
       </div>
       <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">{description}</p>
+      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{description}</p>
     </div>
   );
 }

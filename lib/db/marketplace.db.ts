@@ -81,7 +81,7 @@ export const MarketplaceStoresDB = {
   /**
    * Registrar una nueva tienda en el marketplace.
    *
-   * **Fix 2026-04-09 (ADR-023):** antes este método recibía un `tenantId`
+   * **Fix 2026-04-09 (ADR-023):** antes este método recibea un `tenantId`
    * sintético como string (`store-${phone}`) que NUNCA existía como row real
    * en la tabla `Tenant`. Eso rompía el aislamiento multi-tenant, bloqueaba
    * el login del dueño al admin y dejaba los stores huérfanos.

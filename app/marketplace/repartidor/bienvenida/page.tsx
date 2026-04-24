@@ -62,7 +62,7 @@ export default function BienvenidaRepartidorPage() {
             Bienvenido al equipo
           </h1>
           <p className="mt-4 text-base sm:text-lg text-white/60 max-w-xl mx-auto leading-relaxed">
-            Ya eres parte de la red de repartidores de Buleje. Así empezás.
+            Ya eres parte de la red de repartidores de Buleje. Así empiezas.
           </p>
         </div>
       </section>

@@ -34,7 +34,7 @@ const TESTIMONIOS: Testimonial[] = [
     zone: "Pucallpa Centro",
     rating: 5,
     quote:
-      "Pedí a las 7 PM y me llegó antes de las 7:30. Pollo fresco, todo bien empacado. Es como tener una bodega en mi celular.",
+      "Pide a las 7 PM y me llegó antes de las 7:30. Pollo fresco, todo bien empacado. Es como tener una bodega en mi celular.",
   },
   {
     id: "2",

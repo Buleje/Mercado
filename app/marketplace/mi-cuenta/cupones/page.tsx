@@ -84,7 +84,7 @@ export default function CuponesPage() {
       <EmptyState
         eyebrow="Cupones"
         title="Aún no tienes cupones"
-        description="Los cupones aparecerán acá cuando la tienda te los asigne o cuando completes una compra con promoción."
+        description="Los cupones aparecerán aquí cuando la tienda te los asigne o cuando completes una compra con promoción."
         action={
           <Link
             href="/marketplace/ofertas"

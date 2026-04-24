@@ -500,7 +500,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
                   ? "Ingresa el código que te enviamos"
                   : initialName
                     ? "Casi listo — solo falta tu celular para terminar"
-                    : "Regístrate y empezá a comprar en tu barrio"}
+                    : "Regístrate y empieza a comprar en tu barrio"}
               </p>
             </div>
           </div>

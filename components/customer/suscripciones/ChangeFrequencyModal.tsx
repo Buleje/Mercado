@@ -4,7 +4,7 @@
  * ChangeFrequencyModal — Modal para cambiar la frecuencia de una suscripcion.
  *
  * Usa el patron overlay minimalista del DS. Permite elegir entre 4 frecuencias
- * predefinidas y muestra preview del impacto (cuando llega la proxima entrega).
+ * predefinidas y muestra preview del impacto (cuando llega la próxima entrega).
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -170,7 +170,7 @@ export default function ChangeFrequencyModal({
         {hasChange && (
           <div className="mx-4 mb-4 p-3 rounded-lg bg-[var(--surface-sunken)]">
             <BodyText className="text-[var(--text-secondary)] text-[length:var(--ts-xs)]">
-              Tu proxima entrega sera el{" "}
+              Tu próxima entrega sera el{" "}
               <strong className="text-[var(--text-primary)]">
                 {fmtDate(previewIso)}
               </strong>

@@ -57,7 +57,7 @@ export function DescubriHero() {
 
             <BodyText className="max-w-xl text-[length:var(--ts-base)] sm:text-[length:var(--ts-lg)] text-[var(--text-secondary)] leading-relaxed">
               Pucallpa y el Ucayali, ahora en una sola app. De la bodega del
-              barrio al mundo digital — todo lo que necesitás para tu casa,
+              barrio al mundo digital — todo lo que necesitas para tu casa,
               tu bodega y tu familia.
             </BodyText>
 

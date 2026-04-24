@@ -31,14 +31,20 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("framer-motion", () => ({
-  motion: {
+vi.mock("framer-motion", () => {
+  const motion = {
     div: ({ children, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
       <div {...rest}>{children}</div>
     ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+  };
+  return {
+    motion,
+    m: motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    domAnimation: {},
+  };
+});
 
 vi.mock("@/hooks/use-marketplace-cart", () => ({
   useMarketplaceCart: () => ({

@@ -6,7 +6,7 @@
  * Cuando una lista del admin está vacía (sin productos, sin pedidos,
  * sin clientes), este componente muestra:
  *   · ilustración grande
- *   · título Feynman ("Aún no tenés productos en el catálogo")
+ *   · título Feynman ("Aún no tienes productos en el catálogo")
  *   · descripción que explica por qué importa
  *   · 1-2 CTAs específicas (no genérico "Empezar")
  *   · tips opcionales de setup

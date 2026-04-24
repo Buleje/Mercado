@@ -38,7 +38,7 @@ export default function ROICalculator() {
             ¿Cuánto ganarías con Buleje?
           </h2>
           <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
-            Deslizá para ajustar tus ventas actuales y mirá en vivo el retorno
+            Deslizá para ajustar tus ventas actuales y mira en vivo el retorno
             estimado sobre la inversión.
           </p>
         </div>
@@ -48,7 +48,7 @@ export default function ROICalculator() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
             <label className="block">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                ¿Cuánto vendés al mes hoy?
+                ¿Cuánto vendes al mes hoy?
               </span>
               <div className="mt-3 text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white tabular-nums">
                 S/

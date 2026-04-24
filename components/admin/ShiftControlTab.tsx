@@ -319,7 +319,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Close shift form */}
       {showCloseForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCloseForm(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowCloseForm(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-[var(--data-error)]" /> Cerrar turno</CardTitle>
@@ -465,7 +465,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Print receipt modal */}
       {printingShift && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPrintingShift(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setPrintingShift(null)}>
           <div id="shift-receipt" className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
             <div className="text-center border-b border-dashed border-[var(--rule-base)] dark:border-card-border pb-3">
               <p className="text-xs font-bold text-[var(--text-tertiary)]">Buleje</p>

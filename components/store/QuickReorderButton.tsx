@@ -24,7 +24,7 @@ type LastOrder = {
 };
 
 /**
- * #24 — Floating "Repetir ultimo pedido" button.
+ * #24 — Floating "Repetir último pedido" button.
  * Reads from localStorage (buleje-last-order) or fetches from API.
  * Shows as a compact floating button that expands on tap.
  */
@@ -197,7 +197,7 @@ export default function QuickReorderButton() {
             ? "bg-gray-100 text-gray-600 dark:bg-card dark:text-gray-300"
             : "bg-primary text-white hover:bg-primary/90 shadow-primary/30"
         )}
-        aria-label="Repetir ultimo pedido"
+        aria-label="Repetir último pedido"
       >
         <RotateCcw className="h-5 w-5" />
         <span className="hidden text-sm sm:inline">Repetir pedido</span>

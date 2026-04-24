@@ -104,7 +104,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
         body: JSON.stringify({
           items: [{
             productId: 0,
-            name: note.trim() || "Venta rapida",
+            name: note.trim() || "Venta rápida",
             price: parsed,
             quantity: 1,
             unit: "",
@@ -161,7 +161,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
         <Zap className="h-4 w-4 text-secondary" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Cobro Rapido</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Cobro Rápido</span>
         <span className="ml-auto text-xs text-[var(--text-tertiary)] dark:text-muted">Para ventas rapidas sin producto</span>
       </div>
 
@@ -188,7 +188,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
               <div key={charge.id} className="flex items-center gap-2 px-3 py-2 text-xs bg-white dark:bg-card">
                 <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                 <span className="text-[var(--text-secondary)] dark:text-muted">{fmtTime(charge.createdAt)}</span>
-                <span className="flex-1 text-[var(--text-secondary)] dark:text-muted truncate">{charge.note ?? "Venta rapida"}</span>
+                <span className="flex-1 text-[var(--text-secondary)] dark:text-muted truncate">{charge.note ?? "Venta rápida"}</span>
                 <span className="font-semibold text-primary">{fmt(charge.amount)}</span>
                 <span className="text-[var(--text-tertiary)] dark:text-muted capitalize">{charge.payment}</span>
               </div>

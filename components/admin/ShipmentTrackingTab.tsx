@@ -413,7 +413,7 @@ export default function ShipmentTrackingTab() {
       filtered.map(o => ({
         pedido: o.id.slice(-6).toUpperCase(),
         cliente: o.customerName,
-        telefono: o.customerPhone ?? "",
+        teléfono: o.customerPhone ?? "",
         direccion: o.customerLocation ?? "",
         repartidor: o.riderName ?? "",
         estado: STATUS_CONFIG[o.status].label,

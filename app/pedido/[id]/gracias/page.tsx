@@ -183,7 +183,7 @@ export default function GraciasPage() {
                 Instala Buleje en tu celular
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Agrega a tu pantalla de inicio para pedir mas rapido la proxima vez.
+                Agrega a tu pantalla de inicio para pedir mas rápido la próxima vez.
                 Toca el menu del navegador y selecciona &quot;Agregar a inicio&quot;.
               </p>
             </div>

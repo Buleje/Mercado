@@ -25,14 +25,14 @@ const STEPS = [
     n: "02",
     Icon: Package,
     Illustration: DoniaElena,
-    title: "Subí tu catálogo",
-    copy: "De a uno o con una planilla Excel. Te ayudamos a sacar fotos decentes si las necesitás.",
+    title: "Sube tu catálogo",
+    copy: "De a uno o con una planilla Excel. Te ayudamos a sacar fotos decentes si las necesitas.",
   },
   {
     n: "03",
     Icon: ShoppingCart,
     Illustration: MotoRuta,
-    title: "Recibí pedidos",
+    title: "Recibe pedidos",
     copy: "El teléfono suena cuando alguien te compra. Confirmás, preparás el paquete y listo.",
   },
   {
@@ -60,7 +60,7 @@ export default function VenderSteps() {
           </h2>
           <p className="mt-3 text-[var(--text-secondary)]">
             Abrir tu tienda en Buleje es más fácil que pedir una caja de
-            cerveza al mayorista. Acá está todo lo que vas a hacer.
+            cerveza al mayorista. Aquí está todo lo que vas a hacer.
           </p>
         </header>
 

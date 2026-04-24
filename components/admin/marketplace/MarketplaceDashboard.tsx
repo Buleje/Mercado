@@ -201,10 +201,10 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
 
       {/* ── Row 2: FULL-WIDTH — GMV ── */}
       <ChartCard
-        title="GMV — ultimos 30 dias"
+        title="GMV — &uacute;ltimos 30 d&iacute;as"
         Icon={TrendingUp}
         height={340}
-        subtitle="Volumen bruto de mercancia diario"
+        subtitle="Volumen bruto de mercanc&iacute;a diario"
         isEmpty={data.gmvDaily.length === 0}
         emptyText="Sin GMV en el periodo"
       >
@@ -231,7 +231,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
           title="Crecimiento de tiendas"
           Icon={Store}
           height={280}
-          subtitle="Ultimos 6 meses (acumulado)"
+          subtitle="&Uacute;ltimos 6 meses (acumulado)"
           isEmpty={data.storeGrowth.length === 0}
           emptyText="Sin datos historicos"
         >

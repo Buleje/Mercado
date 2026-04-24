@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 type ParsedCustomer = {
   nombre: string;
-  telefono: string;
+  teléfono: string;
   email: string;
   _rowIndex: number;
   _errors: string[];
@@ -45,7 +45,7 @@ function parseCSV(text: string): ParsedCustomer[] {
   };
 
   const iNombre = guessIdx(["nombre", "name", "cliente"]);
-  const iTelefono = guessIdx(["telefono", "phone", "celular", "movil", "tel"]);
+  const iTelefono = guessIdx(["teléfono", "phone", "celular", "móvil", "tel"]);
   const iEmail = guessIdx(["email", "correo", "mail"]);
 
   const result: ParsedCustomer[] = [];
@@ -62,16 +62,16 @@ function parseCSV(text: string): ParsedCustomer[] {
 
     const telNorm = normalizePhone(telefonoRaw);
     if (!telefonoRaw.trim()) {
-      errors.push("Telefono vacio");
+      errors.push("Teléfono vacio");
     } else if (!PHONE_RE.test(telefonoRaw)) {
-      errors.push("Formato de telefono invalido");
+      errors.push("Formato de teléfono invalido");
     } else if (seenPhones.has(telNorm)) {
       errors.push("Duplicado en el archivo");
     } else {
       seenPhones.add(telNorm);
     }
 
-    result.push({ nombre, telefono: telefonoRaw, email, _rowIndex: i + 1, _errors: errors });
+    result.push({ nombre, teléfono: telefonoRaw, email, _rowIndex: i + 1, _errors: errors });
   }
 
   return result;
@@ -132,7 +132,7 @@ export default function CustomerImporter() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: c.nombre,
-            phone: normalizePhone(c.telefono),
+            phone: normalizePhone(c.teléfono),
             ...(c.email ? { email: c.email } : {}),
           }),
         });
@@ -179,7 +179,7 @@ export default function CustomerImporter() {
             Importar clientes desde CSV
           </SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)]">
-            Campos requeridos: nombre, telefono. Opcional: email
+            Campos requeridos: nombre, teléfono. Opcional: email
           </p>
         </div>
         {step !== "idle" && (
@@ -234,7 +234,7 @@ export default function CustomerImporter() {
             <table className="min-w-full text-sm">
               <thead className="bg-[var(--surface-sunken)]">
                 <tr>
-                  {["Fila", "Nombre", "Telefono", "Email", "Estado"].map((h) => (
+                  {["Fila", "Nombre", "Teléfono", "Email", "Estado"].map((h) => (
                     <th key={h} className="px-4 py-2 text-left font-medium text-[var(--text-tertiary)]">{h}</th>
                   ))}
                 </tr>
@@ -254,7 +254,7 @@ export default function CustomerImporter() {
                       {c.nombre || <span className="text-[var(--data-error)] italic">vacio</span>}
                     </td>
                     <td className="px-4 py-2 text-[var(--text-secondary)]">
-                      {c.telefono || <span className="text-[var(--data-error)] italic">vacio</span>}
+                      {c.teléfono || <span className="text-[var(--data-error)] italic">vacio</span>}
                     </td>
                     <td className="px-4 py-2 text-[var(--text-secondary)]">{c.email || "—"}</td>
                     <td className="px-4 py-2">

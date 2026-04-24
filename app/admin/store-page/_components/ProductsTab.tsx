@@ -165,7 +165,7 @@ export default function ProductsTab() {
         <LoadingState />
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-          Todavía no hay productos destacados. Agregá uno con el botón arriba.
+          Todavía no hay productos destacados. Agrega uno con el botón arriba.
         </div>
       ) : (
         <div className="space-y-2">

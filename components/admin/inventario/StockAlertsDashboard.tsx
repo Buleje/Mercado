@@ -145,7 +145,7 @@ export default function StockAlertsDashboard() {
                     <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Categoria</th>
-                      <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Ultima venta</th>
+                      <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Última venta</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -192,7 +192,7 @@ export default function StockAlertsDashboard() {
                     <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                       <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Stock</th>
-                      <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Minimo</th>
+                      <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Mínimo</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -249,7 +249,7 @@ export default function StockAlertsDashboard() {
                         <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                         <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Stock</th>
                         <th className="text-right py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Valor (S/)</th>
-                        <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Ultima venta</th>
+                        <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Última venta</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -292,7 +292,7 @@ export default function StockAlertsDashboard() {
         {!collapsed.porVencer && (
           <div className="px-4 pb-4">
             {data.porVencer.length === 0 ? (
-              <p className="text-sm text-[var(--data-success)] py-2">Ningun producto proximo a vencer</p>
+              <p className="text-sm text-[var(--data-success)] py-2">Ningun producto próximo a vencer</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

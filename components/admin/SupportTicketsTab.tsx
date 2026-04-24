@@ -13,7 +13,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 
 type TicketPriority = "critica" | "alta" | "media" | "baja";
 type TicketStatus = "abierto" | "en-progreso" | "resuelto" | "cerrado" | "escalado";
-type TicketSource = "pedido" | "chat" | "email" | "telefono" | "presencial";
+type TicketSource = "pedido" | "chat" | "email" | "teléfono" | "presencial";
 
 type Ticket = {
   id: string;
@@ -52,7 +52,7 @@ const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
 };
 
 const SOURCE_META: Record<TicketSource, string> = {
-  pedido: "Pedido", chat: "Chat", email: "Email", telefono: "Tel\u00e9fono", presencial: "Presencial",
+  pedido: "Pedido", chat: "Chat", email: "Email", teléfono: "Tel\u00e9fono", presencial: "Presencial",
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export default function SupportTicketsTab() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowFaq(!showFaq)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">FAQ</button>
-          <button onClick={() => exportToCSV(tickets.map(t => ({ numero: t.number, fecha: t.date, cliente: t.clientName, asunto: t.subject, prioridad: PRIORITY_META[t.priority].label, estado: STATUS_META[t.status].label, fuente: t.source, asignado: t.assignedTo, sla_hrs: t.slaHours, transcurrido: t.elapsedHours, sla_breach: t.slaBreached ? "Sí" : "No", satisfaccion: t.satisfaction ?? "—" })), "soporte-tickets")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(tickets.map(t => ({ número: t.number, fecha: t.date, cliente: t.clientName, asunto: t.subject, prioridad: PRIORITY_META[t.priority].label, estado: STATUS_META[t.status].label, fuente: t.source, asignado: t.assignedTo, sla_hrs: t.slaHours, transcurrido: t.elapsedHours, sla_breach: t.slaBreached ? "Sí" : "No", satisfaccion: t.satisfaction ?? "—" })), "soporte-tickets")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -192,7 +192,7 @@ export default function SupportTicketsTab() {
       </div>
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.number}</CardTitle>

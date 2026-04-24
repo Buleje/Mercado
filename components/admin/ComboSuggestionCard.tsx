@@ -98,7 +98,7 @@ export default function ComboSuggestionCard() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Basado en productos comprados juntos en los ultimos 100 pedidos
+        Basado en productos comprados juntos en los últimos 100 pedidos
       </p>
 
       {/* Loading */}
@@ -130,18 +130,18 @@ export default function ComboSuggestionCard() {
           {combos.map((combo, idx) => (
             <li
               key={idx}
-              className="flex items-center justify-between gap-3 rounded-md bg-muted dark:bg-muted/40 border border-border px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-lg bg-white dark:bg-surface border border-[var(--rule-base)] px-3 py-2.5"
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="text-sm font-medium text-foreground dark:text-foreground truncate">
+                <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                   {combo.products[0]}
                 </span>
-                <span className="text-muted-foreground shrink-0">+</span>
-                <span className="text-sm font-medium text-foreground dark:text-foreground truncate">
+                <span className="text-[var(--text-tertiary)] shrink-0 font-bold">+</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                   {combo.products[1]}
                 </span>
               </div>
-              <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+              <span className="text-xs font-semibold text-[var(--text-tertiary)] shrink-0 tabular-nums">
                 {combo.count} {combo.count === 1 ? "vez" : "veces"}
               </span>
             </li>

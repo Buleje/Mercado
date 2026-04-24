@@ -47,13 +47,13 @@ export function DescubriCTAFinal() {
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-5">
             <div className="space-y-7 lg:col-span-3">
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] opacity-70">
-                Empezá a explorar
+                Empieza a explorar
               </p>
               <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl">
                 Pucallpa y el Ucayali, a un toque de distancia
               </h2>
               <p className="max-w-lg text-sm opacity-85 sm:text-base">
-                Elegí el camino que te queda. Explorá, suscribite o abrí tu
+                Elige el camino que te queda. Explora, suscribite o abre tu
                 tienda — las tres puertas están abiertas hoy.
               </p>
 
@@ -87,7 +87,7 @@ export function DescubriCTAFinal() {
                 className="inline-flex items-center gap-2 text-sm font-semibold underline underline-offset-4 opacity-85 hover:opacity-100"
               >
                 <Bot className="h-4 w-4" aria-hidden strokeWidth={1.75} />
-                ¿Tenés dudas? Preguntale al asistente
+                ¿Tienes dudas? Preguntale al asistente
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
             </div>

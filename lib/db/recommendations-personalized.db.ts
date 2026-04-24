@@ -54,7 +54,7 @@ function normalize(s: string): string {
 
 export const RecommendationsPersonalizedDB = {
   /**
-   * Recomendaciones personalizadas "Para vos" basadas en historial de compras.
+   * Recomendaciones personalizadas "Para ti" basadas en historial de compras.
    * Si no hay historial, cae al cold start automáticamente.
    */
   async forMe(
@@ -223,7 +223,7 @@ export const RecommendationsPersonalizedDB = {
         score -= 5; // anti-repetición
       }
 
-      const reason = reasons.length > 0 ? reasons[0] : "Recomendado para vos";
+      const reason = reasons.length > 0 ? reasons[0] : "Recomendado para ti";
 
       return {
         productId: pid,

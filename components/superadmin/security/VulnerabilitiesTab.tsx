@@ -83,7 +83,7 @@ export function VulnerabilitiesTab() {
     setFeedback({
       kind: "warning",
       title: "Actualización solicitada (mock)",
-      description: `Se programó la actualización de ${cve.package} → ${cve.fixedInVersion}. Revisá el PR generado.`,
+      description: `Se programó la actualización de ${cve.package} → ${cve.fixedInVersion}. Revisa el PR generado.`,
     });
   };
 

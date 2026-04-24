@@ -120,8 +120,13 @@ build-output.txt
 /screenshot-*.png
 # Exploration screenshots at root (Playwright artifacts during dev — never commit)
 /*.png
+/*.jpg
+/*.jpeg
 # Playwright MCP working directory (exploration artifacts)
 /.playwright-mcp/
+# Vitest JSON reports (local per-session debugging)
+/vitest-result*.json
+/vitest-full.json
 # Superpowers brainstorm drafts (per-session, not shared)
 /.superpowers/brainstorm/
 

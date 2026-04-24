@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, CheckCircle, HandCoins, Loader2, X } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface FiadoResumen {
   montoPendiente: number;
@@ -61,7 +62,7 @@ export default function POSFiadoPanel({
     try {
       const res = await fetch(`/api/fiados/cobrar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           customerPhone,
           monto,

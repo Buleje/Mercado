@@ -39,7 +39,7 @@ const CONDITION_OPTIONS: { value: ConditionType; label: string; unit: string; pl
 
 const ACTION_OPTIONS: { value: ActionType; label: string; valuePlaceholder: string; valueLabel: string }[] = [
   { value: "create_alert",    label: "Crear alerta",               valueLabel: "Mensaje de alerta",     valuePlaceholder: "Revisar stock urgente" },
-  { value: "send_whatsapp",   label: "Enviar WhatsApp",            valueLabel: "Numero de destino",     valuePlaceholder: "51987654321" },
+  { value: "send_whatsapp",   label: "Enviar WhatsApp",            valueLabel: "Número de destino",     valuePlaceholder: "51987654321" },
   { value: "create_order",    label: "Crear pedido a proveedor",   valueLabel: "Proveedor",             valuePlaceholder: "Distribuidora XYZ" },
   { value: "apply_discount",  label: "Aplicar descuento",          valueLabel: "Porcentaje de descuento", valuePlaceholder: "10" },
 ];
@@ -113,7 +113,7 @@ export default function BusinessRuleBuilder() {
   const validate = () => {
     const e: Record<string, string> = {};
     const cv = Number(form.conditionValue);
-    if (!form.conditionValue.trim() || isNaN(cv)) e.conditionValue = "Ingresa un numero valido";
+    if (!form.conditionValue.trim() || isNaN(cv)) e.conditionValue = "Ingresa un número valido";
     if (form.conditionType === "hour_eq" && (cv < 0 || cv > 23)) e.conditionValue = "La hora debe estar entre 0 y 23";
     if (!form.actionValue.trim()) e.actionValue = "Este campo es obligatorio";
     setErrors(e);

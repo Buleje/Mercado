@@ -162,38 +162,38 @@ export function OrdersList({
 
                 {/* Customer info */}
                 <div className="flex-1 min-w-0">
-                  {/* Top row: nombre + telefono + status */}
+                  {/* Top row: nombre + teléfono + status */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-[var(--text-primary)] text-base">
                       {o.customer.name}
                     </span>
                     {o.customer.phone && (
-                      <span className="text-[length:var(--ts-xs)] font-mono text-[var(--text-tertiary)]">
+                      <span className="text-sm font-mono text-[var(--text-tertiary)]">
                         {o.customer.phone}
                       </span>
                     )}
                     <span
                       className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider border",
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border",
                         STATUS_STYLES[o.status],
                       )}
                     >
                       {STATUS_LABELS[o.status]}
                     </span>
                     {isUrgent2h && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--data-error)] text-white animate-pulse">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--data-error)] text-white animate-pulse">
                         <AlertTriangle className="h-3 w-3" strokeWidth={2.5} aria-hidden /> +2h
                       </span>
                     )}
                     {isUrgent1h && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--data-warning)] text-white">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--data-warning)] text-white">
                         <Clock className="h-3 w-3" strokeWidth={2.5} aria-hidden /> +1h
                       </span>
                     )}
                     {o.paymentMethod && (
                       <span
                         className={cn(
-                          "inline-flex px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider border",
+                          "inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border",
                           o.paymentMethod === "yape"
                             ? "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--rule-base)]"
                             : "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/25",
@@ -203,13 +203,13 @@ export function OrdersList({
                       </span>
                     )}
                     {o.paymentMethod === "efectivo" && o.deuda && (
-                      <span className="inline-flex px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--data-error)]/10 text-[var(--data-error)] border border-[var(--data-error)]/30">
+                      <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--data-error)]/10 text-[var(--data-error)] border border-[var(--data-error)]/30">
                         Deuda pendiente
                       </span>
                     )}
                     {driver && (
                       <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-white"
                         style={{ backgroundColor: driverColor(driver) }}
                       >
                         <Bike className="h-3 w-3" strokeWidth={2} aria-hidden /> {driver}
@@ -223,7 +223,7 @@ export function OrdersList({
                   </p>
 
                   {/* Bottom stats inline: distance + time + items + total */}
-                  <div className="mt-2 flex items-center gap-3 flex-wrap text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                  <div className="mt-2 flex items-center gap-3 flex-wrap text-sm text-[var(--text-tertiary)]">
                     {storeLat !== null && storeLon !== null && (() => {
                       const gps = parseGps(o.customer.location);
                       if (!gps) return null;
@@ -260,7 +260,7 @@ export function OrdersList({
                       <button
                         type="button"
                         onClick={() => onVerifyYape(o.id)}
-                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 transition-colors border border-[var(--data-success)]/30"
+                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 transition-colors border border-[var(--data-success)]/30"
                         title="Confirmar Yape como valido"
                       >
                         <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Confirmar
@@ -268,7 +268,7 @@ export function OrdersList({
                       <button
                         type="button"
                         onClick={() => onRejectYape(o.id)}
-                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-[length:var(--ts-xs)] font-bold text-[var(--data-error)] bg-[var(--data-error)]/5 hover:bg-[var(--data-error)]/10 transition-colors border border-[var(--data-error)]/30"
+                        className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-error)] bg-[var(--data-error)]/5 hover:bg-[var(--data-error)]/10 transition-colors border border-[var(--data-error)]/30"
                         title="Rechazar Yape (pago falso)"
                       >
                         <X className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Falso
@@ -279,7 +279,7 @@ export function OrdersList({
                     <button
                       type="button"
                       onClick={() => onMarkDeudaPaid(o.id)}
-                      className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-[length:var(--ts-xs)] font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 transition-colors border border-[var(--data-success)]/30"
+                      className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-bold text-[var(--data-success)] bg-[var(--data-success)]/10 hover:bg-[var(--data-success)]/15 transition-colors border border-[var(--data-success)]/30"
                       title="Marcar deuda como cobrada"
                     >
                       <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Cobrado
@@ -298,7 +298,7 @@ export function OrdersList({
                   <select
                     value={o.status}
                     onChange={(e) => onUpdateStatus(o.id, e.target.value as OrderStatus)}
-                    className="text-[length:var(--ts-xs)] font-bold rounded-lg border border-[var(--rule-base)] px-2.5 h-9 outline-none focus:border-[var(--accent)] text-[var(--text-primary)] bg-[var(--surface-raised)] cursor-pointer"
+                    className="text-sm font-bold rounded-lg border border-[var(--rule-base)] px-2.5 h-9 outline-none focus:border-[var(--accent)] text-[var(--text-primary)] bg-[var(--surface-raised)] cursor-pointer"
                     disabled={!VALID_TRANSITIONS[o.status]?.length}
                     aria-label="Cambiar estado del pedido"
                   >
@@ -332,11 +332,11 @@ export function OrdersList({
             type="button"
             disabled={safeOrdPage <= 1}
             onClick={() => onPageChange(Math.max(1, safeOrdPage - 1))}
-            className="h-9 px-4 rounded-lg text-[length:var(--ts-xs)] font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="h-9 px-4 rounded-lg text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
           >
             Anterior
           </button>
-          <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
+          <span className="text-sm text-[var(--text-tertiary)] tabular-nums">
             Pagina <strong className="text-[var(--text-primary)] font-bold">{safeOrdPage}</strong> de{" "}
             <strong className="text-[var(--text-primary)] font-bold">{ordTotalPages}</strong> ·{" "}
             {activeOrders.length} pedidos
@@ -345,7 +345,7 @@ export function OrdersList({
             type="button"
             disabled={safeOrdPage >= ordTotalPages}
             onClick={() => onPageChange(safeOrdPage + 1)}
-            className="h-9 px-4 rounded-lg text-[length:var(--ts-xs)] font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="h-9 px-4 rounded-lg text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
           >
             Siguiente
           </button>

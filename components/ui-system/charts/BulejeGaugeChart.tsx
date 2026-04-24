@@ -23,15 +23,15 @@ import { cn } from "@/lib/utils";
 interface BulejeGaugeChartProps {
   /** Valor actual 0-100 (porcentaje). */
   value: number;
-  /** Minimo rango — default 0. */
+  /** Mínimo rango — default 0. */
   min?: number;
-  /** Maximo rango — default 100. */
+  /** Máximo rango — default 100. */
   max?: number;
   /** Label superior (kicker) */
   label?: string;
-  /** Label debajo del numero grande */
+  /** Label debajo del número grande */
   sublabel?: string;
-  /** Formato del numero grande */
+  /** Formato del número grande */
   format?: "percentage" | "number" | "currency";
   /** Color del arc activo — default accent. */
   color?: string;

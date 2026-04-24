@@ -46,7 +46,7 @@ const RECIPES: Recipe[] = [
       { text: "Lavá las hojas de bijao con agua tibia y secalas." },
       { text: "Saltea el arroz con cúrcuma y el caldo de la gallina.", timerMin: 15 },
       { text: "Mezclá el arroz con huevo batido, presas de gallina y aceitunas." },
-      { text: "Armá los juanes envolviendo con las hojas y atalos bien." },
+      { text: "Arma los juanes envolviendo con las hojas y atalos bien." },
       { text: "Hervilos en una olla grande tapada.", timerMin: 45 },
     ],
   },
@@ -83,8 +83,8 @@ const RECIPES: Recipe[] = [
       { text: "Cociná la gallina en olla grande con sal y hojas de culantro.", timerMin: 25 },
       { text: "Licuá el maní tostado con un poco de caldo hasta formar crema." },
       { text: "Pelá la yuca y cortala en trozos medianos." },
-      { text: "Agregá el maní licuado y la yuca al caldo hirviendo.", timerMin: 20 },
-      { text: "Probá de sal, agregá ají charapita al gusto y servilo bien caliente." },
+      { text: "Agrega el maní licuado y la yuca al caldo hirviendo.", timerMin: 20 },
+      { text: "Prueba de sal, agrega ají charapita al gusto y servilo bien caliente." },
     ],
   },
   {
@@ -109,7 +109,7 @@ const RECIPES: Recipe[] = [
       { text: "Cortá el paiche en cubitos parejos y salá ligeramente." },
       { text: "Exprimí el jugo de limón fresco y mezclá con el pescado.", timerMin: 5 },
       { text: "Picá fino la cebolla roja, el ají charapita y el culantro." },
-      { text: "Mezclá todo, probá de sal, dejá reposar un momento.", timerMin: 3 },
+      { text: "Mezclá todo, prueba de sal, deja reposar un momento.", timerMin: 3 },
       { text: "Serví bien frío con cancha serrana o yuca hervida." },
     ],
   },
@@ -155,7 +155,7 @@ export default function MarketplaceRecipesWidget() {
       id="recetas"
       kicker="Cocina amazónica"
       title="Recetas de la selva"
-      subtitle="Armamos la lista de ingredientes por vos. Un click y al carrito."
+      subtitle="Armamos la lista de ingredientes por ti. Un click y al carrito."
     >
       <script
         type="application/ld+json"

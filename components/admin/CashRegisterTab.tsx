@@ -13,7 +13,6 @@ import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/desig
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 
 const CashRegisterChart = dynamic(
   () => import("./cash-register/CashRegisterChart"),
@@ -116,7 +115,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
   return (
     <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
       <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-1.5">
-        <Smartphone className="h-3.5 w-3.5 text-[var(--text-secondary)]" /> Conciliacion Digital
+        <Smartphone className="h-4 w-4 text-[var(--text-secondary)]" /> Conciliacion Digital
       </p>
       <div className="flex gap-1 mb-3">
         {(["yape", "plin"] as const).filter(m => breakdown[m]).map(m => (
@@ -128,11 +127,11 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
       </div>
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Ventas {concilTab} hoy</p>
+          <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">Ventas {concilTab} hoy</p>
           <p className={cn("text-xl font-extrabold font-mono", concilTab === "yape" ? "text-[var(--text-secondary)]" : "text-[var(--data-info)]")}>{fmt(ventasDigital)}</p>
         </div>
         <div className="flex-1">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">Saldo en tu app</p>
+          <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">Saldo en tu app</p>
           <div className="flex items-center gap-1">
             <span className="text-xs text-[var(--text-secondary)]">S/</span>
             <input type="number" value={concilAmount} onChange={e => setConcilAmount(e.target.value)} placeholder="0.00" step="0.50"
@@ -156,7 +155,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
       )}
       {concilHistory.length > 0 && (
         <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-2 mt-2">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1.5">Ultimas conciliaciones</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1.5">Ultimas conciliaciones</p>
           <div className="space-y-1">
             {concilHistory.slice(0, 3).map((h, i) => {
               const dateStr = (() => { try { return new Date(h.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); } catch { return ""; } })();
@@ -499,26 +498,25 @@ export default function CashRegisterTab() {
 
   return (
     <div className="space-y-4">
-      <SectionBreadcrumb icon={Calculator} section="Ventas" page="Caja registradora" />
-
-      {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
-      <div className="flex items-center justify-end flex-wrap gap-3">
+      {/* Toolbar (sin breadcrumb redundante — el nav ya indica el modulo) */}
+      <div className="flex items-center justify-end flex-wrap gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <ModuleTooltip />
-          {/* Mejora 12: Tolerancia configurable */}
+          {/* Tolerancia configurable */}
           <div className="relative">
             <button
               onClick={() => setShowToleranceConfig(p => !p)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-gray-50 dark:hover:bg-accent text-sm font-medium text-[var(--text-secondary)] transition-colors"
               title={`Tolerancia: ±S/${cashTolerance}`}
             >
-              <Settings className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
+              <Settings className="h-4 w-4" />
+              Tolerancia <span className="font-bold tabular-nums">&plusmn;S/{cashTolerance}</span>
             </button>
             {showToleranceConfig && (
-              <div className="absolute right-0 top-10 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 w-56">
-                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Tolerancia de diferencia</p>
+              <div className="absolute right-0 top-12 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 w-72 shadow-lg">
+                <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">Tolerancia de diferencia</p>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">S/</span>
+                  <span className="text-base font-bold text-[var(--text-tertiary)]">S/</span>
                   <input
                     type="number"
                     min="0"
@@ -529,39 +527,40 @@ export default function CashRegisterTab() {
                       setCashTolerance(v);
                       try { localStorage.setItem("cash-tolerance", String(v)); } catch {}
                     }}
-                    className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-center text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-base font-bold tabular-nums text-center text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Diferencias dentro de este rango se marcaran como aceptables</p>
-                <button onClick={() => setShowToleranceConfig(false)} className="mt-2 w-full py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors">
+                <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Diferencias dentro de este rango se marcan como aceptables.</p>
+                <button onClick={() => setShowToleranceConfig(false)} className="mt-3 w-full py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
                   Listo
                 </button>
               </div>
             )}
           </div>
           <AdminTooltip content="Refrescar datos de caja">
-            <button onClick={fetchData} aria-label="Refrescar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-              <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
+            <button onClick={fetchData} aria-label="Refrescar" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-gray-50 dark:hover:bg-accent text-sm font-medium text-[var(--text-secondary)] transition-colors">
+              <RefreshCw className="h-4 w-4" />
+              Refrescar
             </button>
           </AdminTooltip>
-          <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
+          <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1">
             <button
               onClick={() => setView("current")}
-              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "current" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "current" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Actual
             </button>
             <button
               onClick={() => setView("history")}
-              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "history" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "history" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Historial
             </button>
             <button
               onClick={() => setView("reconcile")}
-              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
-              Reconciliación
+              Reconciliaci&oacute;n
             </button>
           </div>
         </div>
@@ -573,44 +572,46 @@ export default function CashRegisterTab() {
           {!currentRegister ? (
             /* No open register — layout 2-col consistente con Turnos */
             <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 sm:p-6">
-                <div className="flex items-start gap-4 mb-5">
-                  <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
-                    <Lock className="h-5 w-5 text-primary" strokeWidth={1.75} aria-hidden />
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-6 sm:p-7">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                    <Lock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-base font-bold text-[var(--text-primary)]">Caja cerrada</CardTitle>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Abre una caja para registrar ventas en efectivo del dia.</p>
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Caja cerrada</CardTitle>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-1">Abre una caja para registrar ventas en efectivo del d&iacute;a.</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
-                >
-                  <Unlock className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                  Abrir caja
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors shadow-sm"
+                  >
+                    <Unlock className="h-5 w-5" strokeWidth={2} aria-hidden />
+                    Abrir caja
+                  </button>
+                </div>
               </div>
-              <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-col gap-3">
+              <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 flex flex-col gap-5">
                 <div>
-                  <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Que es la caja</p>
-                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                    Registro del efectivo fisico del dia. Abres con un monto inicial, registras ingresos / egresos durante el turno y al cerrar comparas lo contado con lo esperado.
+                  <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Qu&eacute; es la caja</p>
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                    Registro del efectivo f&iacute;sico del d&iacute;a. Abres con un monto inicial, registras ingresos y egresos durante el turno, y al cerrar comparas lo contado con lo esperado.
                   </p>
                 </div>
-                <div className="border-t border-[var(--rule-soft)] pt-3">
-                  <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider font-bold text-[var(--text-tertiary)] mb-1.5">Tolerancia actual</p>
+                <div className="border-t border-[var(--rule-soft)] pt-4">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Tolerancia actual</p>
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-[var(--text-primary)] font-mono">&plusmn; S/ {cashTolerance}</p>
+                    <p className="text-lg font-bold text-[var(--text-primary)] font-mono tabular-nums">&plusmn; S/ {cashTolerance}</p>
                     <button
                       type="button"
                       onClick={() => setShowToleranceConfig(true)}
-                      className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline"
+                      className="text-sm font-semibold text-primary hover:underline"
                     >
                       Ajustar
                     </button>
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Diferencias dentro del rango se marcan como aceptables.</p>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Diferencias dentro del rango se marcan como aceptables.</p>
                 </div>
               </aside>
             </div>
@@ -622,9 +623,9 @@ export default function CashRegisterTab() {
                 <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-                      <DollarSign className="h-3.5 w-3.5" />
+                      <DollarSign className="h-4 w-4" />
                     </div>
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Apertura</span>
+                    <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Apertura</span>
                   </div>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(currentRegister.openingAmount)}</p>
                 </div>
@@ -632,9 +633,9 @@ export default function CashRegisterTab() {
                 <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--accent-soft)] text-[var(--data-success)]">
-                      <Banknote className="h-3.5 w-3.5" />
+                      <Banknote className="h-4 w-4" />
                     </div>
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Ventas efectivo</span>
+                    <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Ventas efectivo</span>
                   </div>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(stats?.salesEfectivo ?? 0)}</p>
                 </div>
@@ -642,9 +643,9 @@ export default function CashRegisterTab() {
                 <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-                      <DollarSign className="h-3.5 w-3.5" />
+                      <DollarSign className="h-4 w-4" />
                     </div>
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Ventas digital</span>
+                    <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Ventas digital</span>
                   </div>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(stats?.salesDigital ?? 0)}</p>
                 </div>
@@ -652,9 +653,9 @@ export default function CashRegisterTab() {
                 <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--accent-soft)] text-[var(--data-success)]">
-                      <Calculator className="h-3.5 w-3.5" />
+                      <Calculator className="h-4 w-4" />
                     </div>
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Esperado caja</span>
+                    <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Esperado caja</span>
                   </div>
                   <p className="text-lg font-extrabold text-primary">{fmt(stats?.expectedCash ?? 0)}</p>
                 </div>
@@ -666,26 +667,26 @@ export default function CashRegisterTab() {
                   onClick={() => { setMvType("ingreso"); setShowMovement(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
                 >
-                  <ArrowUp className="h-3.5 w-3.5" /> Ingreso
+                  <ArrowUp className="h-4 w-4" /> Ingreso
                 </button>
                 <button
                   onClick={() => { setMvType("egreso"); setShowMovement(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] font-bold text-xs hover:bg-[var(--data-error-100)] transition-colors"
                 >
-                  <ArrowDown className="h-3.5 w-3.5" /> Egreso
+                  <ArrowDown className="h-4 w-4" /> Egreso
                 </button>
                 <button
                   onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setShowArqueo(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
                   title="Conteo físico del efectivo para verificar que cuadra con las ventas"
                 >
-                  <Scan className="h-3.5 w-3.5" /> Arqueo Express
+                  <Scan className="h-4 w-4" /> Arqueo Express
                 </button>
                 <button
                   onClick={() => { setGuiadoBilletes({}); setGuiadoMonedas({}); setShowArqueoGuiado(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] font-bold text-xs hover:bg-[var(--surface-sunken)] transition-colors"
                 >
-                  <Calculator className="h-3.5 w-3.5" /> Arqueo Guiado
+                  <Calculator className="h-4 w-4" /> Arqueo Guiado
                 </button>
                 {/* Mejora 8: Imprimir reporte */}
                 <button
@@ -735,14 +736,14 @@ export default function CashRegisterTab() {
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-accent text-[var(--text-primary)] dark:text-foreground font-bold text-xs hover:bg-gray-200 dark:hover:bg-surface transition-colors"
                 >
-                  <Printer className="h-3.5 w-3.5" /> Imprimir reporte
+                  <Printer className="h-4 w-4" /> Imprimir reporte
                 </button>
                 <div className="ml-auto">
                   <button
                     onClick={() => setShowClose(true)}
                     className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-colors"
                   >
-                    <Lock className="h-3.5 w-3.5" /> Cerrar caja
+                    <Lock className="h-4 w-4" /> Cerrar caja
                   </button>
                 </div>
               </div>
@@ -799,7 +800,7 @@ export default function CashRegisterTab() {
                             <span className={cn("text-xs font-bold capitalize", config.color)}>{method}</span>
                           </div>
                           <p className="text-lg font-extrabold font-mono text-[var(--text-primary)] dark:text-foreground">{fmt(amount)}</p>
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{pct.toFixed(0)}%</p>
+                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{pct.toFixed(0)}%</p>
                           <div className="mt-1.5 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
@@ -819,7 +820,7 @@ export default function CashRegisterTab() {
               {computedTimeline.length > 0 && (
                 <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
                   <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-1.5">
-                    <History className="h-3.5 w-3.5 text-primary" /> Movimientos de hoy
+                    <History className="h-4 w-4 text-primary" /> Movimientos de hoy
                   </p>
                   <div className="max-h-96 overflow-y-auto space-y-0">
                     {computedTimeline.map((item, idx) => {
@@ -846,10 +847,10 @@ export default function CashRegisterTab() {
                             onClick={() => setExpandedMovIdx(isExpanded ? null : idx)}
                           >
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-mono">{timeStr}</span>
-                              <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", badgeColor)}>{item.badge}</span>
+                              <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{timeStr}</span>
+                              <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-full", badgeColor)}>{item.badge}</span>
                               {item.method && item.type === "venta" && (
-                                <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] capitalize">{item.method}</span>
+                                <span className="text-xs font-medium text-[var(--text-tertiary)] capitalize">{item.method}</span>
                               )}
                             </div>
                             <p className="text-xs text-[var(--text-primary)] dark:text-foreground truncate">{item.description}</p>
@@ -872,7 +873,7 @@ export default function CashRegisterTab() {
                                   <p><span className="font-bold text-[var(--text-secondary)]">Motivo:</span> {item.description || "Sin especificar"}</p>
                                 )}
                                 {item.saleId && (
-                                  <p><span className="font-bold text-[var(--text-secondary)]">ID Venta:</span> <span className="font-mono text-[length:var(--ts-2xs)]">{item.saleId.slice(0, 8)}...</span></p>
+                                  <p><span className="font-bold text-[var(--text-secondary)]">ID Venta:</span> <span className="font-mono text-xs">{item.saleId.slice(0, 8)}...</span></p>
                                 )}
                               </div>
                             )}
@@ -886,7 +887,7 @@ export default function CashRegisterTab() {
                         <div className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning)] animate-pulse shrink-0 mt-1" />
                       </div>
                       <div className="pb-1">
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-mono">ahora</span>
+                        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">ahora</span>
                         <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Efectivo actual: {fmt(stats?.expectedCash ?? 0)}</p>
                       </div>
                     </div>
@@ -906,7 +907,7 @@ export default function CashRegisterTab() {
                 const displayHours = hours.slice(startH, endH + 1).map((v, i) => ({ hour: startH + i, value: v }));
                 return (
                   <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
-                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Ventas por hora</p>
+                    <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Ventas por hora</p>
                     <div className="flex items-end gap-1 h-16">
                       {displayHours.map(h => (
                         <div key={h.hour} className="flex-1 flex flex-col items-center gap-0.5">
@@ -915,7 +916,7 @@ export default function CashRegisterTab() {
                             style={{ height: `${maxH > 0 ? (h.value / maxH) * 48 : 0}px` }}
                             title={`${h.hour}:00 — ${fmt(h.value)}`}
                           />
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{h.hour}h</span>
+                          <span className="text-xs text-[var(--text-tertiary)]">{h.hour}h</span>
                         </div>
                       ))}
                     </div>
@@ -924,18 +925,18 @@ export default function CashRegisterTab() {
               })()}
 
               {/* Movements list */}
-              <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border overflow-hidden">
-                <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex flex-wrap items-center gap-2">
-                  <History className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground flex-1">Movimientos</CardTitle>
+              <div className="bg-white dark:bg-card rounded-2xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+                <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex flex-wrap items-center gap-3">
+                  <History className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-foreground flex-1">Movimientos</CardTitle>
                   {/* Method filter pills */}
-                  <div className="flex gap-1 overflow-x-auto scrollbar-none">
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
                     {(["all", "efectivo", "yape", "plin", "tarjeta"] as const).map(m => (
                       <button
                         key={m}
                         onClick={() => setMvFilter(m)}
                         className={cn(
-                          "shrink-0 px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors",
+                          "shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors",
                           mvFilter === m
                             ? "bg-primary text-white"
                             : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
@@ -947,29 +948,29 @@ export default function CashRegisterTab() {
                   </div>
                 </div>
                 {filteredMovements.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-24 text-[var(--text-tertiary)] dark:text-muted">
-                    <History className="h-5 w-5 mb-1" />
-                    <p className="text-xs font-semibold">Sin movimientos</p>
+                  <div className="flex flex-col items-center justify-center py-10 text-[var(--text-tertiary)] dark:text-muted gap-2">
+                    <History className="h-7 w-7 opacity-50" />
+                    <p className="text-base font-semibold">Sin movimientos</p>
                   </div>
                 ) : (
-                  <div className="divide-y max-h-80 overflow-y-auto">
+                  <div className="divide-y divide-[var(--rule-soft)] max-h-96 overflow-y-auto">
                     {filteredMovements.map(m => {
                       const isPos = ["venta", "ingreso", "apertura"].includes(m.type);
                       return (
-                        <div key={m.id} className="px-2 sm:px-4 py-1.5 sm:py-2.5 flex flex-wrap items-center gap-3 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                          <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
-                            {isPos ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                        <div key={m.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
+                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
+                            {isPos ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground capitalize">{m.type}</p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate">{m.description} {m.method !== "efectivo" ? `• ${m.method}` : ""}</p>
+                            <p className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground capitalize">{m.type}</p>
+                            <p className="text-sm text-[var(--text-tertiary)] dark:text-muted truncate">{m.description}{m.method !== "efectivo" ? ` · ${m.method}` : ""}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className={cn("text-sm font-bold", isPos ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
-                              {isPos ? "+" : "−"}{fmt(m.amount)}
+                            <p className={cn("text-base font-bold tabular-nums", isPos ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                              {isPos ? "+" : "&minus;"}{fmt(m.amount)}
                             </p>
+                            <p className="text-sm text-[var(--text-tertiary)] dark:text-muted tabular-nums">{fmtDate(m.createdAt)}</p>
                           </div>
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted shrink-0 hidden sm:block">{fmtDate(m.createdAt)}</span>
                         </div>
                       );
                     })}
@@ -1050,18 +1051,18 @@ export default function CashRegisterTab() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{fmtDateShort(r.openedAt)} → {r.closedAt ? fmtDateShort(r.closedAt) : "—"}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{r.movements.length} movimientos</p>
+                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{r.movements.length} movimientos</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(r.closingAmount ?? 0)}</p>
-                      <p className={cn("text-[length:var(--ts-2xs)] font-bold", withinTolerance ? "text-[var(--data-success)]" : diff > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
+                      <p className={cn("text-xs font-bold", withinTolerance ? "text-[var(--data-success)]" : diff > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]")}>
                         {diff > 0 ? "+" : ""}{fmt(diff)} diferencia
                       </p>
                     </div>
                   </div>
                   {/* Mejora 12: Tolerance badge */}
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted">
                     <span>Apertura: {fmt(r.openingAmount)}</span>
                     <span>Esperado: {fmt(r.expectedAmount ?? 0)}</span>
                     <span>Cierre: {fmt(r.closingAmount ?? 0)}</span>
@@ -1132,7 +1133,7 @@ export default function CashRegisterTab() {
                   <History className="h-4 w-4 text-primary" />
                   Flujo de Caja Semanal
                 </CardTitle>
-                <div className="flex flex-wrap items-center gap-3 text-[length:var(--ts-2xs)]">
+                <div className="flex flex-wrap items-center gap-3 text-xs">
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]"></div>
                     <span className="text-[var(--text-secondary)] dark:text-muted">Ingresos</span>
@@ -1162,8 +1163,8 @@ export default function CashRegisterTab() {
                           title={`Egresos: ${fmt(day.expenses)}`}
                         ></div>
                       </div>
-                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">{dayName}</p>
-                      <p className={cn("text-[length:var(--ts-2xs)] font-bold", day.net >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
+                      <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">{dayName}</p>
+                      <p className={cn("text-xs font-bold", day.net >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                         {fmt(day.net)}
                       </p>
                     </div>
@@ -1182,15 +1183,15 @@ export default function CashRegisterTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
                 <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{rows.length}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Días con cierres</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Días con cierres</p>
               </div>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
                 <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(rows.reduce((s, r) => s + r.totalClosing, 0))}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Total recaudado</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Total recaudado</p>
               </div>
               <div className={cn("border rounded-xl p-3 text-center", totalDiscrepancy > 10 ? "bg-[var(--data-error-50)] border-[var(--data-error)]" : totalDiscrepancy > 0 ? "bg-[var(--data-warning-50)] border-[var(--data-warning)]" : "bg-[var(--accent-soft)] border-[var(--data-success)]/30")}>
                 <p className={cn("text-lg font-extrabold", totalDiscrepancy > 10 ? "text-[var(--data-error)]" : totalDiscrepancy > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>{fmt(totalDiscrepancy)}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Diferencia acumulada</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Diferencia acumulada</p>
               </div>
             </div>
             {/* Daily rows */}
@@ -1231,11 +1232,11 @@ export default function CashRegisterTab() {
                           </td>
                           <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                             {isOk ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-[length:var(--ts-2xs)] font-bold"><Check className="h-3 w-3" />OK</span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
                             ) : isMinor ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-[length:var(--ts-2xs)] font-bold"><AlertTriangle className="h-3 w-3" />Menor</span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Menor</span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error)] text-[length:var(--ts-2xs)] font-bold"><AlertTriangle className="h-3 w-3" />Alerta</span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Alerta</span>
                             )}
                           </td>
                         </tr>
@@ -1251,16 +1252,30 @@ export default function CashRegisterTab() {
 
       {/* Open register modal */}
       {showOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowOpen(false)}>
-          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
-              <Unlock className="h-4 w-4 text-primary" /> Abrir caja
-            </CardTitle>
-            <div className="space-y-3">
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Unlock className="h-5 w-5 text-primary" strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Abrir caja</h3>
+                  <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del d&iacute;a</p>
+                </div>
+              </div>
+              <button onClick={() => setShowOpen(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Monto de apertura</label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto de apertura</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
                   <input
                     type="number"
                     min="0"
@@ -1268,34 +1283,61 @@ export default function CashRegisterTab() {
                     value={openAmount}
                     onChange={e => setOpenAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     autoFocus
                   />
                 </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {[100, 200, 300, 500].map(amount => {
+                    const active = parseFloat(openAmount || "0") === amount;
+                    return (
+                      <button
+                        key={amount}
+                        type="button"
+                        onClick={() => setOpenAmount(String(amount))}
+                        className={cn(
+                          "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                          active
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
+                        )}
+                      >
+                        S/ {amount}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el d&iacute;a.</p>
               </div>
+
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Notas (opcional)</label>
-                <input
-                  type="text"
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+                <textarea
                   value={openNotes}
                   onChange={e => setOpenNotes(e.target.value)}
-                  placeholder="Observaciones"
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                  placeholder="Ej: caja del turno de la tarde"
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => setShowOpen(false)} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleOpen}
-                  disabled={opening}
-                  className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark disabled:opacity-50 flex items-center justify-center gap-1"
-                >
-                  {opening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
-                  Abrir
-                </button>
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+              <button
+                onClick={() => setShowOpen(false)}
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleOpen}
+                disabled={opening}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                {opening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
+                Abrir caja
+              </button>
             </div>
           </div>
         </div>
@@ -1333,70 +1375,85 @@ export default function CashRegisterTab() {
         };
         
         return (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowClose(false)}>
-          <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-              <Lock className="h-4 w-4 text-[var(--text-primary)] dark:text-foreground" /> Cerrar caja
-            </CardTitle>
-            
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15 flex items-center justify-center shrink-0">
+                  <Lock className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Cerrar caja</h3>
+                  <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el d&iacute;a</p>
+                </div>
+              </div>
+              <button onClick={() => { setShowClose(false); setDenominations({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+              </button>
+            </div>
+
+            {/* Body scrollable */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
             {/* Shift Summary */}
-            <div className="bg-[var(--surface-sunken)] rounded-xl p-4 mb-4 border border-[var(--rule-base)]">
-              <h4 className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground mb-2 flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4" />
                 Resumen del turno
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              </p>
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Duración</p>
-                  <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{durationStr}</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Duraci&oacute;n</p>
+                  <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{durationStr}</p>
                 </div>
                 <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Total ventas</p>
-                  <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{ventasCount}</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Total ventas</p>
+                  <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{ventasCount}</p>
                 </div>
                 <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Efectivo</p>
-                  <p className="font-bold text-[var(--data-success)]">{fmt(ventasEfectivo)}</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Efectivo</p>
+                  <p className="text-base font-bold text-[var(--data-success)] tabular-nums">{fmt(ventasEfectivo)}</p>
                 </div>
                 <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Digital</p>
-                  <p className="font-bold text-[var(--text-secondary)]">{fmt(ventasDigital)}</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Digital</p>
+                  <p className="text-base font-bold text-[var(--text-secondary)] tabular-nums">{fmt(ventasDigital)}</p>
                 </div>
                 <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Ingresos manuales</p>
-                  <p className="font-bold text-[var(--data-success)]">{fmt(ingresosManual)}</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Ingresos manuales</p>
+                  <p className="text-base font-bold text-[var(--data-success)] tabular-nums">{fmt(ingresosManual)}</p>
                 </div>
                 <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Egresos manuales</p>
-                  <p className="font-bold text-[var(--data-error)]">{fmt(egresosManual)}</p>
+                  <p className="text-sm text-[var(--text-tertiary)]">Egresos manuales</p>
+                  <p className="text-base font-bold text-[var(--data-error)] tabular-nums">{fmt(egresosManual)}</p>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Promedio por venta</p>
-                  <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(promedioVenta)}</p>
+                <div className="col-span-2 pt-2 border-t border-[var(--rule-soft)]">
+                  <p className="text-sm text-[var(--text-tertiary)]">Promedio por venta</p>
+                  <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{fmt(promedioVenta)}</p>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 mb-4 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-              <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
-                <strong>Esperado en caja:</strong> {fmt(stats?.expectedCash ?? 0)}
-              </p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] mt-0.5">
-                Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) − Egresos ({fmt(stats?.totalOut ?? 0)})
+
+            {/* Esperado card */}
+            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4 border border-[var(--data-success)]/30">
+              <p className="text-xs uppercase tracking-wide font-semibold text-[var(--data-success)] mb-1">Esperado en caja</p>
+              <p className="text-2xl font-extrabold text-[var(--data-success)] tabular-nums mb-2">{fmt(stats?.expectedCash ?? 0)}</p>
+              <p className="text-sm text-[var(--data-success)]/80">
+                Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) &minus; Egresos ({fmt(stats?.totalOut ?? 0)})
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Denomination Helper */}
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">
-                    <Banknote className="h-3.5 w-3.5 text-primary" />
+                    <Banknote className="h-4 w-4 text-primary" />
                     Contador de denominaciones
                   </label>
                   {Object.keys(denominations).length > 0 && (
                     <button
                       onClick={handleDenomReset}
-                      className="text-[length:var(--ts-2xs)] text-[var(--data-error)] hover:text-[var(--data-error)] font-bold"
+                      className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)] font-bold"
                     >
                       Resetear
                     </button>
@@ -1411,7 +1468,7 @@ export default function CashRegisterTab() {
                     >
                       S/{d.toFixed(2)}
                       {(denominations[String(d)] ?? 0) > 0 && (
-                        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] flex items-center justify-center">
+                        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center">
                           {denominations[String(d)]}
                         </span>
                       )}
@@ -1420,7 +1477,7 @@ export default function CashRegisterTab() {
                 </div>
                 {denomTotal > 0 && (
                   <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-2 text-center">
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Total contado por denominaciones</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Total contado por denominaciones</p>
                     <p className="text-sm font-extrabold text-primary">{fmt(denomTotal)}</p>
                   </div>
                 )}
@@ -1460,19 +1517,25 @@ export default function CashRegisterTab() {
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => { setShowClose(false); setDenominations({}); }} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleClose}
-                  disabled={closing || !closeAmount}
-                  className="flex-1 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1"
-                >
-                  {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                  Cerrar
-                </button>
-              </div>
+            </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+              <button
+                onClick={() => { setShowClose(false); setDenominations({}); }}
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleClose}
+                disabled={closing || !closeAmount}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)]/90 disabled:opacity-50 transition-colors"
+              >
+                {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
+                Confirmar cierre
+              </button>
             </div>
           </div>
         </div>
@@ -1481,17 +1544,39 @@ export default function CashRegisterTab() {
 
       {/* Add movement modal */}
       {showMovement && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowMovement(false)}>
-          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
-              {mvType === "ingreso" ? <ArrowUp className="h-4 w-4 text-[var(--data-success)]" /> : <ArrowDown className="h-4 w-4 text-[var(--data-error)]" />}
-              {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
-            </CardTitle>
-            <div className="space-y-3">
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+                  mvType === "ingreso" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]/15"
+                )}>
+                  {mvType === "ingreso"
+                    ? <ArrowUp className="h-5 w-5 text-[var(--data-success)]" strokeWidth={2} />
+                    : <ArrowDown className="h-5 w-5 text-[var(--data-error)]" strokeWidth={2} />}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">
+                    {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
+                  </h3>
+                  <p className="text-sm text-[var(--text-tertiary)]">
+                    {mvType === "ingreso" ? "Dinero que entra a la caja" : "Dinero que sale de la caja"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowMovement(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Monto</label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
                   <input
                     type="number"
                     min="0.01"
@@ -1499,21 +1584,22 @@ export default function CashRegisterTab() {
                     value={mvAmount}
                     onChange={e => setMvAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     autoFocus
                   />
                 </div>
               </div>
+
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   Motivo {mvType === "egreso" && <span className="text-[var(--data-error)]">*</span>}
                 </label>
                 <select
                   value={mvMotivo}
                   onChange={e => setMvMotivo(e.target.value)}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary bg-white dark:bg-card"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-white/5 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 >
-                  <option value="">Seleccionar motivo...</option>
+                  <option value="">Selecciona un motivo...</option>
                   <option value="Cambio">Cambio</option>
                   <option value="Pago a proveedor">Pago a proveedor</option>
                   <option value="Retiro personal">Retiro personal</option>
@@ -1523,37 +1609,43 @@ export default function CashRegisterTab() {
                   <option value="Otro">Otro</option>
                 </select>
                 {mvType === "egreso" && !mvMotivo && !mvDescription.trim() && (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] mt-1">Motivo obligatorio para egresos</p>
+                  <p className="text-sm text-[var(--data-error)] mt-1.5 font-medium">Motivo obligatorio para egresos</p>
                 )}
               </div>
+
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                  Descripcion (opcional)
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                  Descripci&oacute;n <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span>
                 </label>
                 <textarea
                   value={mvDescription}
                   onChange={e => setMvDescription(e.target.value)}
                   placeholder="Detalle adicional..."
                   rows={2}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => setShowMovement(false)} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleAddMovement}
-                  disabled={addingMv || !mvAmount || (mvType === "egreso" && !mvMotivo && !mvDescription.trim())}
-                  className={cn(
-                    "flex-1 py-2.5 rounded-lg text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-1",
-                    mvType === "ingreso" ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]"
-                  )}
-                >
-                  {addingMv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  Registrar
-                </button>
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+              <button
+                onClick={() => setShowMovement(false)}
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddMovement}
+                disabled={addingMv || !mvAmount || (mvType === "egreso" && !mvMotivo && !mvDescription.trim())}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white disabled:opacity-50 transition-colors",
+                  mvType === "ingreso" ? "bg-[var(--data-success)] hover:bg-[var(--data-success)]/90" : "bg-[var(--data-error)] hover:bg-[var(--data-error)]/90"
+                )}
+              >
+                {addingMv ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                Registrar
+              </button>
             </div>
           </div>
         </div>
@@ -1577,44 +1669,53 @@ export default function CashRegisterTab() {
         const difference = countedCash - expectedCash;
         
         return (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowArqueo(false)}>
-            <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
-              <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-                <Scan className="h-4 w-4 text-[var(--data-success)]" /> Arqueo Express
-              </CardTitle>
-              
-              <div className="bg-[var(--surface-sunken)] rounded-xl p-4 mb-4 border border-[var(--rule-base)]">
-                <h4 className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground mb-2 flex items-center gap-1">
-                  <Calculator className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  Verificación rápida de caja
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-[var(--text-secondary)] dark:text-muted">Esperado en caja</p>
-                    <p className="font-bold text-[var(--data-success)]">{fmt(expectedCash)}</p>
+          <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)}>
+            <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                    <Scan className="h-5 w-5 text-[var(--data-success)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <p className="text-[var(--text-secondary)] dark:text-muted">Contado</p>
-                    <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(countedCash)}</p>
+                    <h3 className="text-lg font-bold text-[var(--text-primary)]">Arqueo Express</h3>
+                    <p className="text-sm text-[var(--text-tertiary)]">Verificaci&oacute;n r&aacute;pida sin cerrar caja</p>
                   </div>
                 </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] mt-2">
-                  Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) − Egresos ({fmt(stats?.totalOut ?? 0)})
-                </p>
+                <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
               </div>
-              
-              <div className="space-y-3">
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                {/* Summary card */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-[var(--text-secondary)]">Esperado en caja</span>
+                    <span className="font-bold text-[var(--data-success)] tabular-nums">{fmt(expectedCash)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-[var(--text-secondary)]">Contado</span>
+                    <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(countedCash)}</span>
+                  </div>
+                  <p className="text-sm text-[var(--text-tertiary)] pt-2 border-t border-[var(--rule-soft)]">
+                    Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) &minus; Egresos ({fmt(stats?.totalOut ?? 0)})
+                  </p>
+                </div>
+
+                <div className="space-y-4">
                 {/* Quick Denomination Counter */}
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">
-                      <Banknote className="h-3.5 w-3.5 text-primary" />
+                      <Banknote className="h-4 w-4 text-primary" />
                       Conteo rápido
                     </label>
                     {Object.keys(arqueoDenoms).length > 0 && (
                       <button
                         onClick={handleArqueoReset}
-                        className="text-[length:var(--ts-2xs)] text-[var(--data-error)] hover:text-[var(--data-error)] font-bold"
+                        className="text-xs text-[var(--data-error)] hover:text-[var(--data-error)] font-bold"
                       >
                         Resetear
                       </button>
@@ -1629,7 +1730,7 @@ export default function CashRegisterTab() {
                       >
                         S/{d}
                         {(arqueoDenoms[String(d)] ?? 0) > 0 && (
-                          <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] flex items-center justify-center font-bold">
+                          <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
                             {arqueoDenoms[String(d)]}
                           </span>
                         )}
@@ -1638,7 +1739,7 @@ export default function CashRegisterTab() {
                   </div>
                   {arqueoTotal > 0 && (
                     <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-2 text-center">
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Total contado</p>
+                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Total contado</p>
                       <p className="text-base font-extrabold text-primary">{fmt(arqueoTotal)}</p>
                     </div>
                   )}
@@ -1683,7 +1784,7 @@ export default function CashRegisterTab() {
                     )}>
                       {difference >= 0 ? "+" : ""}{fmt(difference)}
                     </p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mt-1">
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">
                       {Math.abs(difference) < 0.5 
                         ? "Cuadra correctamente" 
                         : difference > 0 
@@ -1693,29 +1794,36 @@ export default function CashRegisterTab() {
                   </div>
                 )}
                 
-                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-lg p-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] font-bold flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    Nota importante
-                  </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-1">
-                    El arqueo express NO cierra la caja. Solo registra una verificación intermedia para control.
-                  </p>
+                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-4 border border-[var(--data-warning)]/30 flex gap-3">
+                  <AlertTriangle className="h-5 w-5 text-[var(--data-warning)] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--data-warning)]">
+                      Nota importante
+                    </p>
+                    <p className="text-sm text-[var(--data-warning)] mt-0.5">
+                      El arqueo express NO cierra la caja. Solo registra una verificaci&oacute;n intermedia para control.
+                    </p>
+                  </div>
                 </div>
-                
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleArqueoExpress}
-                    disabled={addingArqueo || !arqueoAmount}
-                    className="flex-1 py-2.5 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] disabled:opacity-50 flex items-center justify-center gap-1"
-                  >
-                    {addingArqueo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    Registrar arqueo
-                  </button>
-                </div>
+              </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+                <button
+                  onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }}
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleArqueoExpress}
+                  disabled={addingArqueo || !arqueoAmount}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-success)] hover:bg-[var(--data-success)]/90 disabled:opacity-50 transition-colors"
+                >
+                  {addingArqueo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                  Registrar arqueo
+                </button>
               </div>
             </div>
           </div>
@@ -1724,30 +1832,42 @@ export default function CashRegisterTab() {
 
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowArqueoGuiado(false)}>
-          <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-              <Calculator className="h-4 w-4 text-[var(--text-secondary)]" /> Arqueo Guiado
-            </CardTitle>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
+                  <Calculator className="h-5 w-5 text-primary" strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Arqueo guiado</h3>
+                  <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y m&eacute;todos de pago</p>
+                </div>
+              </div>
+              <button onClick={() => setShowArqueoGuiado(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+              </button>
+            </div>
 
+            {/* Body scrollable */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
             {/* Expected */}
-            <div className="bg-[var(--surface-sunken)] rounded-xl p-4 mb-4 border border-[var(--rule-base)]">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Saldo esperado</p>
-                  <p className="font-bold text-[var(--text-primary)]">{fmt(guiadoExpected)}</p>
-                </div>
-                <div>
-                  <p className="text-[var(--text-secondary)] dark:text-muted">Total contado</p>
-                  <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(guiadoTotal)}</p>
-                </div>
+            <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between items-center text-base">
+                <span className="text-[var(--text-secondary)]">Saldo esperado</span>
+                <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(guiadoExpected)}</span>
+              </div>
+              <div className="flex justify-between items-center text-base border-t border-[var(--rule-soft)] pt-2">
+                <span className="text-[var(--text-secondary)]">Total contado</span>
+                <span className="font-bold text-[var(--data-success)] tabular-nums">{fmt(guiadoTotal)}</span>
               </div>
             </div>
 
             {/* Billetes section */}
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1 mb-2">
-                <Banknote className="h-3.5 w-3.5 text-[var(--data-success)]" />
+                <Banknote className="h-4 w-4 text-[var(--data-success)]" />
                 Billetes
               </label>
               <div className="space-y-2">
@@ -1777,7 +1897,7 @@ export default function CashRegisterTab() {
             {/* Monedas section */}
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1 mb-2">
-                <DollarSign className="h-3.5 w-3.5 text-[var(--data-warning)]" />
+                <DollarSign className="h-4 w-4 text-[var(--data-warning)]" />
                 Monedas
               </label>
               <div className="space-y-2">
@@ -1812,7 +1932,7 @@ export default function CashRegisterTab() {
                     key={tab}
                     onClick={() => setArqueoTab(tab)}
                     className={cn(
-                      "flex-1 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-colors capitalize",
+                      "flex-1 py-1.5 rounded-lg text-sm font-bold transition-colors capitalize",
                       arqueoTab === tab
                         ? "bg-primary text-white"
                         : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
@@ -1823,7 +1943,7 @@ export default function CashRegisterTab() {
                 ))}
               </div>
               {arqueoTab === "efectivo" && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Usa los conteos de billetes y monedas de arriba para el efectivo.</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Usa los conteos de billetes y monedas de arriba para el efectivo.</p>
               )}
               {arqueoTab === "yape" && (
                 <div>
@@ -1833,7 +1953,7 @@ export default function CashRegisterTab() {
                     <input type="number" min="0" step="0.10" value={arqueoYape} onChange={e => setArqueoYape(e.target.value)} placeholder="0.00"
                       className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--text-primary)]" />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
                 </div>
               )}
               {arqueoTab === "plin" && (
@@ -1844,7 +1964,7 @@ export default function CashRegisterTab() {
                     <input type="number" min="0" step="0.10" value={arqueoPlin} onChange={e => setArqueoPlin(e.target.value)} placeholder="0.00"
                       className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-info)]" />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
                 </div>
               )}
               {arqueoTab === "tarjeta" && (
@@ -1855,13 +1975,13 @@ export default function CashRegisterTab() {
                     <input type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
                       className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-success)]/30" />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
                 </div>
               )}
               {/* Comparacion por metodo */}
               {(Number(arqueoYape) > 0 || Number(arqueoPlin) > 0 || Number(arqueoTarjeta) > 0) && (
                 <div className="mt-3 pt-2 border-t border-[var(--rule-base)] dark:border-card-border space-y-1">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Comparacion por metodo</p>
+                  <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Comparacion por metodo</p>
                   {[
                     { method: "efectivo", contado: guiadoTotal, esperado: computedPaymentBreakdown["efectivo"] ?? 0 },
                     { method: "yape", contado: Number(arqueoYape) || 0, esperado: computedPaymentBreakdown["yape"] ?? 0 },
@@ -1886,7 +2006,7 @@ export default function CashRegisterTab() {
             {/* Mejora 10: Foto de evidencia */}
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1 mb-2">
-                <Camera className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+                <Camera className="h-4 w-4 text-[var(--text-secondary)]" />
                 Foto del cajon (opcional, recomendado)
               </label>
               {arqueoFoto ? (
@@ -1896,7 +2016,7 @@ export default function CashRegisterTab() {
                     onClick={() => setArqueoFoto(null)}
                     className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[var(--data-error)] text-white flex items-center justify-center"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
@@ -1933,10 +2053,10 @@ export default function CashRegisterTab() {
 
             {/* Total + Difference */}
             <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-3 border border-primary/20 mb-3 text-center">
-              <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted">Total contado</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Total contado</p>
               <p className="text-2xl font-extrabold text-primary">{fmt(guiadoTotal + (Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0))}</p>
               {(Number(arqueoYape) > 0 || Number(arqueoPlin) > 0 || Number(arqueoTarjeta) > 0) && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Efectivo: {fmt(guiadoTotal)} + Digital: {fmt((Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0))}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">Efectivo: {fmt(guiadoTotal)} + Digital: {fmt((Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0))}</p>
               )}
             </div>
 
@@ -1961,7 +2081,7 @@ export default function CashRegisterTab() {
                 )}>
                   {guiadoDiff >= 0 ? "+" : ""}{fmt(guiadoDiff)}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mt-1">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">
                   {Math.abs(guiadoDiff) < 0.5
                     ? "Cuadra correctamente"
                     : guiadoDiff > 0
@@ -1971,20 +2091,23 @@ export default function CashRegisterTab() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2 pt-1">
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
               <button
                 onClick={() => { setShowArqueoGuiado(false); setGuiadoBilletes({}); setGuiadoMonedas({}); }}
-                className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleArqueoGuiado}
                 disabled={addingArqueoGuiado || guiadoTotal <= 0}
-                className="flex-1 py-2.5 rounded-lg bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)] disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
-                {addingArqueoGuiado ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                Confirmar Arqueo
+                {addingArqueoGuiado ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                Confirmar arqueo
               </button>
             </div>
           </div>
@@ -1993,12 +2116,12 @@ export default function CashRegisterTab() {
 
       {/* Detail register modal (history) */}
       {detailRegister && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setDetailRegister(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetailRegister(null)}>
           <div className="bg-white dark:bg-card rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Detalle de caja</CardTitle>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => window.print()} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent print:hidden" title="Imprimir resumen">
@@ -2012,15 +2135,15 @@ export default function CashRegisterTab() {
             {/* Summary */}
             <div className="px-2 sm:px-4 py-2 sm:py-3 border-b bg-gray-50 dark:bg-surface grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-bold">Apertura</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-bold">Apertura</p>
                 <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detailRegister.openingAmount)}</p>
               </div>
               <div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-bold">Esperado</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-bold">Esperado</p>
                 <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detailRegister.expectedAmount ?? 0)}</p>
               </div>
               <div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-bold">Cierre</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-bold">Cierre</p>
                 <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detailRegister.closingAmount ?? 0)}</p>
               </div>
             </div>
@@ -2036,7 +2159,7 @@ export default function CashRegisterTab() {
               const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta" };
               return (
                 <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 border-b bg-white dark:bg-card">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase mb-1.5">Ventas por método</p>
+                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase mb-1.5">Ventas por método</p>
                   <div className="flex flex-wrap gap-3">
                     {methods.map(([m, total]) => (
                       <div key={m} className="flex items-center gap-1.5 text-xs">
@@ -2062,16 +2185,16 @@ export default function CashRegisterTab() {
                 return (
                   <div key={m.id} className="px-2 sm:px-4 py-1.5 sm:py-2.5 flex flex-wrap items-center gap-3">
                     <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
-                      {isPos ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                      {isPos ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground capitalize">{m.type}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate">{m.description}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted truncate">{m.description}</p>
                     </div>
                     <p className={cn("text-xs font-bold shrink-0", isPos ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                       {isPos ? "+" : "−"}{fmt(m.amount)}
                     </p>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted shrink-0">{fmtDate(m.createdAt)}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] dark:text-muted shrink-0">{fmtDate(m.createdAt)}</span>
                   </div>
                 );
               })}

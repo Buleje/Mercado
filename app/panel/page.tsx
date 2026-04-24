@@ -69,7 +69,7 @@ const SECTIONS: Section[] = [
       { label: "Login Admin", href: "/admin/login", description: "Iniciar sesion en el admin", icon: <Users className="h-4 w-4" /> },
       { label: "CMS", href: "/admin/cms", description: "Gestionar paginas y contenido", icon: <FileText className="h-4 w-4" /> },
       { label: "POS Kiosk", href: "/admin/kiosk", description: "Punto de venta modo kiosk", icon: <ShoppingCart className="h-4 w-4" /> },
-      { label: "POS Movil", href: "/admin/pos-mobile", description: "Punto de venta para celular", icon: <Smartphone className="h-4 w-4" /> },
+      { label: "POS Móvil", href: "/admin/pos-mobile", description: "Punto de venta para celular", icon: <Smartphone className="h-4 w-4" /> },
       { label: "Webhooks", href: "/admin/webhook-queue", description: "Cola de webhooks pendientes", icon: <Zap className="h-4 w-4" /> },
     ],
   },

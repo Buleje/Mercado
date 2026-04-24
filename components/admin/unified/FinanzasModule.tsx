@@ -148,7 +148,7 @@ function HealthSemaphore() {
         <div className={`w-20 h-20 rounded-full flex items-center justify-center ring-4 ${bgRing} shrink-0`} style={{ backgroundColor: `${color}20` }}>
           <div className="text-center">
             <span className="text-2xl font-extrabold" style={{ color }}>{score.total}</span>
-            <p className="text-[length:var(--ts-2xs)] font-bold" style={{ color }}>{label}</p>
+            <p className="text-xs font-bold" style={{ color }}>{label}</p>
           </div>
         </div>
         {/* Mini barras */}
@@ -156,14 +156,14 @@ function HealthSemaphore() {
           <p className="text-xs font-bold text-[var(--text-secondary)]">Salud Financiera</p>
           {factors.map(f => (
             <div key={f.label} className="flex items-center gap-2">
-              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] w-14">{f.label}</span>
+              <span className="text-xs font-semibold text-[var(--text-secondary)] w-14">{f.label}</span>
               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "#00B4A6" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
                 />
               </div>
-              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] w-10 text-right">{f.detail}</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] w-10 text-right">{f.detail}</span>
             </div>
           ))}
         </div>
@@ -326,7 +326,7 @@ function PuntoEquilibrio() {
               style={{ left: `${Math.min(100 / (pct > 100 ? pct / 100 : 1), 100)}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+          <div className="flex justify-between mt-1.5 text-xs text-[var(--text-secondary)]">
             <span>S/0</span>
             <span className="font-bold text-[var(--text-primary)]">Meta: S/{data.gastoDiario}</span>
             <span>S/{Math.round(data.gastoDiario * 1.5)}</span>
@@ -336,13 +336,13 @@ function PuntoEquilibrio() {
           <p className="text-lg font-extrabold" style={{ color: cubierto ? "#00B4A6" : "#ef4444" }}>
             S/{data.ventasHoy}
           </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">vendido hoy</p>
+          <p className="text-xs text-[var(--text-secondary)]">vendido hoy</p>
         </div>
       </div>
       <p className={`text-xs font-bold mt-2 ${cubierto ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
         {cubierto
           ? `Hoy ya cubriste los gastos (+S/${diferencia} de ganancia)`
-          : `Faltan S/${diferencia} para cubrir gastos del dia`}
+          : `Faltan S/${diferencia} para cubrir gastos del día`}
       </p>
     </div>
   );
@@ -482,7 +482,7 @@ function GastosDonut() {
                 <span className="flex-1 text-[var(--text-primary)] font-semibold truncate">{g.name}</span>
                 {isUnusual && (
                   <span
-                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-[length:var(--ts-2xs)] font-bold"
+                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning)] text-xs font-bold"
                     title={`Este gasto es ${pctOver}% mayor al promedio de S/${Math.round(avg)} en ${g.name}`}
                   >
                     Gasto inusual
@@ -553,15 +553,15 @@ function ProyeccionCierreMes() {
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Ventas proy.</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Ventas proy.</p>
           <p className={cn("text-base font-extrabold", ventasProyectadas === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(ventasProyectadas, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Gastos proy.</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Gastos proy.</p>
           <p className={cn("text-base font-extrabold", gastosProyectados === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error)]")}>{formatCurrency(gastosProyectados, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Utilidad est.</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Utilidad est.</p>
           <p className={cn("text-base font-extrabold", utilidadProyectada === 0 ? "text-[var(--text-tertiary)]" : utilidadProyectada >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
             {utilidadProyectada >= 0 ? "+" : ""}{formatCurrency(Math.abs(utilidadProyectada), { decimals: 0 })}
           </p>
@@ -569,7 +569,7 @@ function ProyeccionCierreMes() {
       </div>
       {/* Progress bar */}
       <div className="space-y-1.5">
-        <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+        <div className="flex justify-between text-xs text-[var(--text-secondary)]">
           <span>Dia {data.diasTranscurridos} de {data.diasTotales}</span>
           <span>{Math.round(progreso)}% del mes</span>
         </div>
@@ -579,7 +579,7 @@ function ProyeccionCierreMes() {
             style={{ width: `${progreso}%` }}
           />
         </div>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center">
+        <p className="text-xs text-[var(--text-tertiary)] text-center">
           Ventas actuales: {formatCurrency(Math.round(data.ventasMes), { decimals: 0 })} de {formatCurrency(ventasProyectadas, { decimals: 0 })} proyectados
         </p>
       </div>
@@ -654,7 +654,7 @@ function ResumenFiscal() {
           </span>
         </div>
       </div>
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 italic">
+      <p className="text-xs text-[var(--text-tertiary)] mt-3 italic">
         Referencia aproximada — consulte con su contador
       </p>
     </div>
@@ -710,7 +710,7 @@ function generarReporteBancario() {
 
       const fecha = now.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
 
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Financiero - Buleje</title><style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#333;font-size:14px}h1{color:var(--color-primary);border-bottom:3px solid var(--color-primary);padding-bottom:10px;font-size:22px}h2{color:#333;margin-top:30px;font-size:16px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#f8f9fa;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}td{padding:8px;font-size:13px}.kpi{display:inline-block;background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:15px 20px;margin:5px;text-align:center;min-width:150px}.kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}.kpi-value{font-size:20px;font-weight:bold;color:var(--color-primary);margin-top:4px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center}@media print{body{padding:20px}}</style></head><body><h1>REPORTE FINANCIERO &mdash; Buleje</h1><p style="color:#666;font-size:12px">Per&iacute;odo: &uacute;ltimos 6 meses &middot; Generado el ${fecha}</p><h2>1. Datos del Negocio</h2><table><tr><td style="padding:8px;border:1px solid #ddd;width:200px;font-weight:bold">Razon Social</td><td style="padding:8px;border:1px solid #ddd">Buleje</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Ubicacion</td><td style="padding:8px;border:1px solid #ddd">Pucallpa, Ucayali, Peru</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Giro</td><td style="padding:8px;border:1px solid #ddd">Comercio minorista - Abarrotes</td></tr></table><h2>2. Resumen de Ingresos</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Gastos</th><th style="text-align:right">Utilidad</th></tr></thead><tbody>${tablaRows}<tr style="background:#f0f0f0;font-weight:bold"><td style="padding:8px;border:1px solid #ddd">TOTAL</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalIngresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalGastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:${totalUtilidad >= 0 ? "var(--color-primary)" : "#e63946"}">S/${totalUtilidad.toLocaleString("es-PE")}</td></tr></tbody></table><h2>3. Tendencia de Ingresos</h2><div style="display:flex;align-items:end;gap:8px;height:140px;padding:10px;background:#fafafa;border:1px solid #eee;border-radius:8px">${barrasHtml}</div><h2>4. Indicadores Clave</h2><div style="display:flex;flex-wrap:wrap;gap:5px"><div class="kpi"><div class="kpi-label">Margen de utilidad</div><div class="kpi-value">${margen}%</div></div><div class="kpi"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${clientesActivos}</div></div><div class="kpi"><div class="kpi-label">Ingreso prom./mes</div><div class="kpi-value">S/${Math.round(avgIngresosMensual).toLocaleString("es-PE")}</div></div></div><h2>5. Proyeccion</h2><p>Basado en la tendencia de los ultimos 6 meses, el ingreso estimado para el proximo mes es: <strong style="color:var(--color-primary);font-size:18px">S/${proyeccion.toLocaleString("es-PE")}</strong></p><div class="footer">Generado el ${fecha} &mdash; Buleje &middot; Este reporte es de caracter informativo</div></body></html>`;
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Financiero - Buleje</title><style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#333;font-size:14px}h1{color:var(--color-primary);border-bottom:3px solid var(--color-primary);padding-bottom:10px;font-size:22px}h2{color:#333;margin-top:30px;font-size:16px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#f8f9fa;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}td{padding:8px;font-size:13px}.kpi{display:inline-block;background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:15px 20px;margin:5px;text-align:center;min-width:150px}.kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}.kpi-value{font-size:20px;font-weight:bold;color:var(--color-primary);margin-top:4px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center}@media print{body{padding:20px}}</style></head><body><h1>REPORTE FINANCIERO &mdash; Buleje</h1><p style="color:#666;font-size:12px">Per&iacute;odo: &uacute;ltimos 6 meses &middot; Generado el ${fecha}</p><h2>1. Datos del Negocio</h2><table><tr><td style="padding:8px;border:1px solid #ddd;width:200px;font-weight:bold">Razon Social</td><td style="padding:8px;border:1px solid #ddd">Buleje</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Ubicacion</td><td style="padding:8px;border:1px solid #ddd">Pucallpa, Ucayali, Peru</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Giro</td><td style="padding:8px;border:1px solid #ddd">Comercio minorista - Abarrotes</td></tr></table><h2>2. Resumen de Ingresos</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Gastos</th><th style="text-align:right">Utilidad</th></tr></thead><tbody>${tablaRows}<tr style="background:#f0f0f0;font-weight:bold"><td style="padding:8px;border:1px solid #ddd">TOTAL</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalIngresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalGastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:${totalUtilidad >= 0 ? "var(--color-primary)" : "#e63946"}">S/${totalUtilidad.toLocaleString("es-PE")}</td></tr></tbody></table><h2>3. Tendencia de Ingresos</h2><div style="display:flex;align-items:end;gap:8px;height:140px;padding:10px;background:#fafafa;border:1px solid #eee;border-radius:8px">${barrasHtml}</div><h2>4. Indicadores Clave</h2><div style="display:flex;flex-wrap:wrap;gap:5px"><div class="kpi"><div class="kpi-label">Margen de utilidad</div><div class="kpi-value">${margen}%</div></div><div class="kpi"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${clientesActivos}</div></div><div class="kpi"><div class="kpi-label">Ingreso prom./mes</div><div class="kpi-value">S/${Math.round(avgIngresosMensual).toLocaleString("es-PE")}</div></div></div><h2>5. Proyeccion</h2><p>Basado en la tendencia de los &uacute;ltimos 6 meses, el ingreso estimado para el próximo mes es: <strong style="color:var(--color-primary);font-size:18px">S/${proyeccion.toLocaleString("es-PE")}</strong></p><div class="footer">Generado el ${fecha} &mdash; Buleje &middot; Este reporte es de caracter informativo</div></body></html>`;
 
       const w = window.open("", "_blank");
       if (w) {
@@ -759,7 +759,7 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
   ];
   return (
     <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
-      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1">{label}</p>
+      <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">{label}</p>
       <div className="relative w-35 h-20">
         <ResponsiveContainer minWidth={0} width="100%" height={80}>
           <PieChart>
@@ -1143,7 +1143,7 @@ function FinanzasDashboard() {
                   <Icon className="h-5 w-5" style={{ color: def.color }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] truncate">{def.label}</p>
+                  <p className="text-xs font-bold text-[var(--text-secondary)] truncate">{def.label}</p>
                   <div className="flex items-center gap-2">
                     <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
                     <span className={`text-xs ${change >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]"}`}>
@@ -1151,7 +1151,7 @@ function FinanzasDashboard() {
                     </span>
                   </div>
                   {subtexto && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">{subtexto}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] font-medium">{subtexto}</p>
                   )}
                   {sparkData && (
                     <div className="h-8 w-20 mt-1">
@@ -1181,7 +1181,7 @@ function FinanzasDashboard() {
               <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos vs Gastos vs Utilidad</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Ultimos 6 meses</span>
+              <span className="text-xs text-[var(--text-tertiary)] font-medium">&Uacute;ltimos 6 meses</span>
               <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
@@ -1251,7 +1251,7 @@ function FinanzasDashboard() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium uppercase">Total gastos</p>
+                    <p className="text-xs text-[var(--text-tertiary)] font-medium uppercase">Total gastos</p>
                     <p className={cn("text-base font-extrabold", totalExpenses === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>{formatCurrency(totalExpenses, { decimals: 0 })}</p>
                   </div>
                 </div>
@@ -1293,7 +1293,7 @@ function FinanzasDashboard() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium uppercase">Total ingresos</p>
+                    <p className="text-xs text-[var(--text-tertiary)] font-medium uppercase">Total ingresos</p>
                     <p className={cn("text-base font-extrabold", totalIncome === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>{formatCurrency(totalIncome, { decimals: 0 })}</p>
                   </div>
                 </div>
@@ -1327,7 +1327,7 @@ function FinanzasDashboard() {
               <p className="text-sm font-bold text-[var(--text-primary)]">Flujo de Caja</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Ultimos 30 dias</span>
+              <span className="text-xs text-[var(--text-tertiary)] font-medium">&Uacute;ltimos 30 d&iacute;as</span>
               <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
@@ -1372,19 +1372,19 @@ function FinanzasDashboard() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" strokeWidth={1.75} />
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1">Ventas proyectadas</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Ventas proyectadas</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projVentas === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(projVentas, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1">Gastos proyectados</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Gastos proyectados</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projGastos === 0 ? "text-[var(--text-tertiary)]" : "text-[var(--data-error)]")}>{formatCurrency(projGastos, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase mb-1">Utilidad estimada</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Utilidad estimada</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projUtilidad === 0 ? "text-[var(--text-tertiary)]" : projUtilidad >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>
                 {projUtilidad >= 0 ? "+" : ""}{formatCurrency(Math.abs(projUtilidad), { decimals: 0 })}
               </p>
@@ -1428,8 +1428,8 @@ function FinanzasDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-base)]">
-                  <th className="text-left py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Concepto</th>
-                  <th className="text-right py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Monto</th>
+                  <th className="text-left py-2 text-xs font-bold text-[var(--text-tertiary)]">Concepto</th>
+                  <th className="text-right py-2 text-xs font-bold text-[var(--text-tertiary)]">Monto</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1461,7 +1461,7 @@ function FinanzasDashboard() {
               </tfoot>
             </table>
           </div>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 italic">
+          <p className="text-xs text-[var(--text-tertiary)] mt-3 italic">
             Referencia aproximada — consulte con su contador
           </p>
         </div>
@@ -1544,7 +1544,7 @@ function FinanzasDashboard() {
             </div>
           )}
           {topPayables.some(p => p.vencido) && (
-            <div className="flex items-center gap-2 mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <div className="flex items-center gap-2 mt-3 text-xs text-[var(--text-tertiary)]">
               <div className="w-2 h-2 rounded-full bg-[var(--data-error)]" /> Vencido
               <div className="w-2 h-2 rounded-full bg-secondary ml-2" /> Al dia
             </div>
@@ -1581,7 +1581,7 @@ function FinanzasDashboard() {
             </div>
           )}
           {topFiados.some(f => f.vencido) && (
-            <div className="flex items-center gap-2 mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <div className="flex items-center gap-2 mt-3 text-xs text-[var(--text-tertiary)]">
               <div className="w-2 h-2 rounded-full bg-[var(--data-error)]" /> Vencido
               <div className="w-2 h-2 rounded-full bg-[var(--data-warning)] ml-2" /> Al dia
             </div>
@@ -1629,7 +1629,7 @@ function FinanzasDashboard() {
                 {[
                   { label: "Margen bruto", pts: healthScore.margenPts, max: 33, detail: `${healthScore.margen.toFixed(1)}%`, desc: "Cuanto ganas por cada sol vendido" },
                   { label: "Liquidez", pts: healthScore.liquidezPts, max: 33, detail: `${healthScore.liquidez.toFixed(1)}x`, desc: "Efectivo vs gastos mensuales" },
-                  { label: "Rotacion inv.", pts: 17, max: 25, detail: "Est.", desc: "Que tan rapido vendes tu stock" },
+                  { label: "Rotacion inv.", pts: 17, max: 25, detail: "Est.", desc: "Que tan rápido vendes tu stock" },
                   { label: "Crecimiento", pts: Math.min(25, Math.max(5, monthlyData.length >= 2 && monthlyData[monthlyData.length - 2].ingresos > 0 ? Math.round(((monthlyData[monthlyData.length - 1].ingresos - monthlyData[monthlyData.length - 2].ingresos) / monthlyData[monthlyData.length - 2].ingresos) * 25 + 12.5) : 12)), max: 25, detail: monthlyData.length >= 2 ? `${Math.round(((monthlyData[monthlyData.length - 1].ingresos - monthlyData[monthlyData.length - 2].ingresos) / Math.max(monthlyData[monthlyData.length - 2].ingresos, 1)) * 100)}%` : "N/A", desc: "Ventas vs mes anterior" },
                 ].map(f => (
                   <div key={f.label}>
@@ -1640,7 +1640,7 @@ function FinanzasDashboard() {
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "#00B4A6" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{f.desc}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{f.desc}</p>
                   </div>
                 ))}
               </div>
@@ -1679,11 +1679,11 @@ function FinanzasDashboard() {
               <>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">Ventas</p>
+                    <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ventas</p>
                     <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
                   </div>
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase font-bold">Gastos</p>
+                    <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Gastos</p>
                     <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-[var(--data-success)]" : "text-[var(--data-error)]")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
                   </div>
                 </div>
@@ -1785,7 +1785,7 @@ function IntelligenceKPIStrip() {
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(c => (
         <div key={c.label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3  text-center">
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-semibold">{c.label}</p>
+          <p className="text-xs text-[var(--text-secondary)] font-semibold">{c.label}</p>
           <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
         </div>
       ))}

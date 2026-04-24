@@ -7,7 +7,7 @@
  * Representa una bodega: fachada con techo de dos aguas + ventana + puerta.
  * El "wobble humano" aplica aqui tambien: lineas no perfectas, detalle carino.
  *
- * Tecnica:
+ * Técnica:
  * - viewBox 48x48 (tamano logo optimo)
  * - stroke currentColor -> pinta teal cuando contexto es claro, white en dark
  * - strokeWidth 1.75 default (entre linea suave y logo visible)

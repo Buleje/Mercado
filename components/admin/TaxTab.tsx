@@ -145,7 +145,7 @@ export default function TaxTab() {
 
   const handleExportBook = (type: "ventas" | "compras") => {
     const filtered = lines.filter(l => l.type === (type === "ventas" ? "venta" : "compra"));
-    exportToCSV(filtered.map(l => ({ fecha: l.date, tipo_doc: l.docType, serie: l.serie, numero: l.number, entidad: l.entity, ruc_dni: l.entityDoc, base_imponible: l.base, igv: l.igv, total: l.total, estado: l.status })), `libro-${type}-${MONTHS[month]}-${year}`);
+    exportToCSV(filtered.map(l => ({ fecha: l.date, tipo_doc: l.docType, serie: l.serie, número: l.number, entidad: l.entity, ruc_dni: l.entityDoc, base_imponible: l.base, igv: l.igv, total: l.total, estado: l.status })), `libro-${type}-${MONTHS[month]}-${year}`);
   };
 
   return (

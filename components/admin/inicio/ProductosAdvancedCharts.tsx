@@ -417,7 +417,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
         >
           {quadrant.rows.length === 0 ? (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin data de ventas últimos 30 días.
+              Sin data de ventas rango activo.
             </div>
           ) : (
             <div className="relative rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-6 min-h-[340px] overflow-hidden">
@@ -571,7 +571,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los últimos 14 días.
+              Sin datos en los rango activo.
             </div>
           )}
         </DashboardSection>
@@ -666,7 +666,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-                Sin datos en los últimos 30 días.
+                Sin datos en los rango activo.
               </div>
             )}
           </DashboardSection>

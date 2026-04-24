@@ -100,7 +100,7 @@ export function QuotationComparator({ orders, suppliers }: {
   const savings = worstTotal - bestTotal;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+    <div className="modal-backdrop p-4" onClick={() => setOpen(false)}>
       <div className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
@@ -173,7 +173,7 @@ export function QuotationComparator({ orders, suppliers }: {
                       })}
                       <td className="py-2 px-2 text-center">
                         {best && (
-                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                          <span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
                             {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} ✓
                           </span>
                         )}
@@ -194,7 +194,7 @@ export function QuotationComparator({ orders, suppliers }: {
                     );
                   })}
                   <td className="py-2 px-2 text-center">
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
+                    <span className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
                       {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} ✓
                     </span>
                   </td>
@@ -286,7 +286,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
           <thead>
             <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
               <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Ultimo precio</th>
+              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Último precio</th>
               <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
               <th className="text-center py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted"># Compras</th>
               <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">vs Mejor</th>
@@ -306,7 +306,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
                     {c.supplierName}
                     {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
                         <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
                       </span>
                     )}

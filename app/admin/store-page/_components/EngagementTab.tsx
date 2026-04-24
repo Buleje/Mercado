@@ -32,14 +32,14 @@ const FEATURES: EngagementFeature[] = [
     id: "referral_program",
     icon: Trophy,
     title: "Programa de referidos",
-    description: "Clientes invitan amigos y ambos ganan descuento. Crecimiento organico sin publicidad.",
+    description: "Clientes invitan amigos y ambos ganan descuento. Crecimiento orgánico sin publicidad.",
     enabled: false,
   },
   {
     id: "scratch_card",
     icon: Sparkles,
     title: "Raspa y gana",
-    description: "Tarjeta virtual que el cliente raspa despues de comprar. Sorpresa instantanea con descuento para la proxima compra.",
+    description: "Tarjeta virtual que el cliente raspa despues de comprar. Sorpresa instantanea con descuento para la próxima compra.",
     enabled: false,
   },
   {

@@ -2,7 +2,7 @@
 
 /**
  * PersonalizedRecommendations
- * Sección "Para vos" en el storefront. Carousel horizontal de productos.
+ * Sección "Para ti" en el storefront. Carousel horizontal de productos.
  * Lee el phone del contexto customer. Si no hay customer → cold start.
  */
 
@@ -110,7 +110,7 @@ export default function PersonalizedRecommendations() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Para vos</h2>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">Para ti</h2>
         </div>
         {/* Flechas desktop */}
         <div className="hidden sm:flex items-center gap-1">

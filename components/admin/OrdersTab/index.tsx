@@ -149,7 +149,7 @@ export default function OrdersTab() {
           Acciones en slot children: filtros, imprimir, archivados. */}
       <AdminModuleHeader
         eyebrow="Operaciones · Hoy"
-        title="Pedidos del dia"
+        title="Pedidos del día"
         description={`Gestiona pedidos activos, asigna delivery y verifica pagos. ${inDeliveryOrders > 0 ? `${inDeliveryOrders} en preparacion / delivery.` : ""}`}
         icon={Package}
       >
@@ -172,7 +172,7 @@ export default function OrdersTab() {
         >
           <SlidersHorizontal className="h-4 w-4" /> Filtros
           {activeFiltersCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary text-white">
+            <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-bold bg-primary text-white">
               {activeFiltersCount}
             </span>
           )}
@@ -191,7 +191,7 @@ export default function OrdersTab() {
         >
           <FileText className="h-4 w-4" /> Archivados
           {archivedOrders.length > 0 && (
-            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
+            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
               {archivedOrders.length}
             </span>
           )}
@@ -216,7 +216,7 @@ export default function OrdersTab() {
             key={label}
             className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
           >
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {label}
             </p>
             <p
@@ -308,7 +308,7 @@ export default function OrdersTab() {
               }}
               aria-pressed={active}
               className={cn(
-                "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[length:var(--ts-xs)] font-bold transition-colors border",
+                "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
                 active
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
@@ -317,7 +317,7 @@ export default function OrdersTab() {
               {chip.label}
               <span
                 className={cn(
-                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums",
+                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-black tabular-nums",
                   active
                     ? "bg-[var(--surface-canvas)]/20 text-[var(--surface-canvas)]"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
@@ -336,7 +336,7 @@ export default function OrdersTab() {
             onClick={() => filtersDispatch({ type: "SET_HAS_DEBT", value: !filters.hasDebt })}
             aria-pressed={filters.hasDebt}
             className={cn(
-              "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[length:var(--ts-xs)] font-bold transition-colors border",
+              "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
               filters.hasDebt
                 ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)] border-[var(--data-warning)]/40"
                 : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--data-warning)] hover:text-[var(--data-warning)]",

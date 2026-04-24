@@ -271,7 +271,7 @@ export default function FiadoAnalyticsPanel() {
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
       <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
-        Analisis de Fiados
+        Análisis de Fiados
       </CardTitle>
 
       {/* KPI cards */}

@@ -291,7 +291,7 @@ export default function ChurnPrediction() {
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[var(--text-tertiary)]">
                       <span>
-                        Ultima compra:{" "}
+                        Última compra:{" "}
                         {r.lastOrder
                           ? r.lastOrder
                           : "Nunca ha comprado"}

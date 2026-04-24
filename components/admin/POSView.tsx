@@ -10,6 +10,7 @@ import {
   Volume2, VolumeX, MessageCircle, Send, RotateCcw,
   ChevronDown, ChevronRight, ShoppingCart, Settings,
   Leaf, UtensilsCrossed, Boxes, Droplets, Sparkles,
+  Smartphone, CreditCard, HandCoins,
 } from "@buleje/design-system/icons";
 
 // Mapeo de id de categoria → icono Lucide. Reemplaza los emojis originales
@@ -51,7 +52,7 @@ import POSCrossSell from "@/components/admin/pos/POSCrossSell";
 import POSCartDetail from "@/components/admin/pos/POSCartDetail";
 import POSVoiceInput from "@/components/admin/pos/POSVoiceInput";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
-import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const YapeQRPayment = dynamic(() => import("@/components/admin/YapeQRPayment"), { ssr: false });
@@ -156,7 +157,7 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
           <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos</span>
           <button onClick={() => setConfigMode(true)} className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline">Configurar</button>
         </div>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted italic">Configura tus 12 productos rapidos para atender mas rapido</p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted italic">Configura tus 12 productos rapidos para atender mas rápido</p>
       </div>
     );
   }
@@ -407,32 +408,37 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
     if (!fiado || paying) return;
     setPaying(true);
     try {
-      await fetch(`/api/fiados/${fiado.id}/pagar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ monto }) });
+      await fetch(`/api/fiados/${fiado.id}/pagar`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ monto }) });
       setDone(true);
     } catch { /* silent */ }
     setPaying(false);
   };
 
-  if (!fiado || done) return done ? <p className="text-xs text-[var(--data-success)] font-bold text-center py-1">Abono registrado</p> : null;
+  if (!fiado || done) return done ? (
+    <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30">
+      <Check className="h-5 w-5 text-[var(--data-success)]" strokeWidth={3} />
+      <span className="text-base font-semibold text-[var(--data-success)]">Abono registrado</span>
+    </div>
+  ) : null;
 
   const quickAmounts = [10, 20, 50].filter(a => a <= fiado.saldo);
   return (
-    <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 mb-2">
-      <p className="text-xs font-bold text-[var(--data-warning)] mb-2">
-        {customerName || customerPhone} tiene fiado de S/{fiado.saldo.toFixed(2)}. Abonar?
+    <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-3">
+      <p className="text-sm font-semibold text-[var(--data-warning)]">
+        {customerName || customerPhone} tiene fiado de <span className="font-bold">S/{fiado.saldo.toFixed(2)}</span>. ¿Abonar?
       </p>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {quickAmounts.map(a => (
           <button key={a} onClick={() => abonar(a)} disabled={paying}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] hover:bg-[var(--data-warning)] transition-colors disabled:opacity-50">
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning)] hover:bg-[var(--data-warning)] hover:text-white transition-colors disabled:opacity-50">
             S/{a}
           </button>
         ))}
         <button onClick={() => abonar(fiado.saldo)} disabled={paying}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50">
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--data-success)] hover:text-white transition-colors disabled:opacity-50">
           Todo S/{fiado.saldo.toFixed(2)}
         </button>
-        <button onClick={() => setFiado(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">No, gracias</button>
+        <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors">No, gracias</button>
       </div>
     </div>
   );
@@ -447,6 +453,7 @@ function SaleCompleteModal({
   paymentMethod,
   cart,
   onNewSale,
+  onClose,
 }: {
   saleComplete: { id: string; change: number };
   lastSaleDetails: {
@@ -463,6 +470,7 @@ function SaleCompleteModal({
   paymentMethod: string;
   cart: CartItem[];
   onNewSale: () => void;
+  onClose: () => void;
 }) {
   const [manualPhone, setManualPhone] = useState("");
   const displayTotal = lastSaleDetails?.total ?? cartTotal;
@@ -521,189 +529,171 @@ function SaleCompleteModal({
   const hasCustomerPhone = lastSaleDetails?.customerPhone;
   const customerName = lastSaleDetails?.customerName;
 
+  // Payment method → icono Lucide (no emojis). Consistente con el design system.
+  const method = (lastSaleDetails?.payment || paymentMethod || "efectivo").toLowerCase();
+  const MethodIcon: Record<string, typeof Banknote> = {
+    efectivo: Banknote,
+    yape: Smartphone,
+    plin: Smartphone,
+    tarjeta: CreditCard,
+    mixto: HandCoins,
+    fiado: HandCoins,
+  };
+  const PayIcon = MethodIcon[method] ?? Banknote;
+
+  const comprobanteLabel = (t?: string) =>
+    t === "boleta" ? "Boleta"
+    : t === "factura" ? "Factura"
+    : t === "cotizacion" ? "Cotización"
+    : t === "proforma" ? "Proforma"
+    : "Ticket";
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-3 sm:p-6 text-center relative overflow-hidden">
-        {/* Confetti */}
-        <SaleConfetti />
+    <div className="modal-backdrop p-4">
+      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header — success + titulo + total */}
+        <div className="px-6 pt-8 pb-6 text-center relative overflow-hidden">
+          <SaleConfetti />
 
-        {/* Mejora M-4: Icono grande del metodo de pago */}
-        {(() => {
-          const method = (lastSaleDetails?.payment || paymentMethod || "").toLowerCase();
-          const map: Record<string, { emoji: string; bg: string }> = {
-            efectivo: { emoji: "\uD83D\uDCB5", bg: "bg-[var(--surface-sunken)]" },
-            yape: { emoji: "\uD83D\uDCF1", bg: "bg-[var(--surface-sunken)]" },
-            plin: { emoji: "\uD83D\uDCF2", bg: "bg-[var(--surface-sunken)]" },
-            tarjeta: { emoji: "\uD83D\uDCB3", bg: "bg-[var(--surface-sunken)]" },
-            mixto: { emoji: "\uD83D\uDD00", bg: "bg-[var(--surface-sunken)]" },
-          };
-          const info = map[method] || map["efectivo"];
-          return (
-            <m.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.05 }}
-              className={cn("w-20 h-20 rounded-xl flex flex-col items-center justify-center mx-auto mb-2 relative z-20", info.bg)}
-            >
-              <span className="text-4xl leading-none">{info.emoji}</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mt-1 capitalize">{method || "efectivo"}</span>
-            </m.div>
-          );
-        })()}
+          {/* Boton cerrar (X) */}
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="absolute top-4 right-4 z-30 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+          >
+            <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
+          </button>
 
-        {/* Animated success icon */}
-        <m.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
-          className="h-14 w-14 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto mb-3 relative z-20"
-        >
-          <Check className="h-7 w-7 text-[var(--data-success)]" />
-        </m.div>
-        <m.h3
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-0.5"
-        >
-          Venta completada!
-        </m.h3>
-        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-1">ID: {saleComplete.id}</p>
-
-        {/* Sale summary with count-up */}
-        <m.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3 space-y-0.5"
-        >
-          <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-xl text-primary" style={{ color: "#00B4A6" }}>
+          <m.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="h-20 w-20 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto mb-4 relative z-20"
+          >
+            <Check className="h-10 w-10 text-[var(--data-success)]" strokeWidth={3} />
+          </m.div>
+          <m.h3
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4"
+          >
+            &iexcl;Venta completada!
+          </m.h3>
+          <m.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="text-4xl sm:text-5xl font-extrabold text-primary tabular-nums"
+          >
             {fmt(animatedTotal)}
-          </p>
-          {lastSaleDetails && (
-            <>
-              <p className="text-[var(--text-secondary)] dark:text-muted">
-                Pagado con: {lastSaleDetails.payment}
-              </p>
-              {lastSaleDetails.comprobanteNumero ? (
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3 mt-1.5">
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">Documento generado</p>
-                  <p className="text-base font-mono font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
-                    {lastSaleDetails.comprobanteTipo === "boleta" ? "Boleta"
-                      : lastSaleDetails.comprobanteTipo === "factura" ? "Factura"
-                      : lastSaleDetails.comprobanteTipo === "cotizacion" ? "Cotizacion"
-                      : lastSaleDetails.comprobanteTipo === "proforma" ? "Proforma"
-                      : "Ticket"} #{lastSaleDetails.comprobanteNumero}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Ticket de venta</p>
-              )}
-            </>
-          )}
-        </m.div>
-
-        {/* Change */}
-        {saleComplete.change === -1 ? (
-          <div className="bg-[var(--data-warning-50)] rounded-lg p-3 mb-4">
-            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">Fiado registrado</p>
-            <p className="text-sm text-[var(--data-warning)] font-semibold">Deuda pendiente del cliente</p>
+          </m.p>
+          <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-gray-50 dark:bg-surface border border-[var(--rule-soft)]">
+            <PayIcon className="h-4 w-4 text-[var(--text-secondary)]" />
+            <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
+              Pagado con <span className="capitalize">{method}</span>
+            </span>
           </div>
-        ) : saleComplete.change > 0 ? (
-          <div className="bg-[var(--data-warning-50)] rounded-lg p-3 mb-4">
-            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">Vuelto</p>
-            <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning)]">{fmt(saleComplete.change)}</p>
-          </div>
-        ) : null}
-
-        {/* Mejora QW-10g: Abono rápido desde la venta */}
-        <QuickAbonoFromSale customerPhone={lastSaleDetails?.customerPhone} customerName={lastSaleDetails?.customerName} />
-
-        {/* WhatsApp section */}
-        <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 mb-3">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-2.5">
-            Enviar comprobante
-          </p>
-
-          {/* If customer has phone */}
-          {hasCustomerPhone ? (
-            <a
-              href={buildWhatsAppUrl(hasCustomerPhone)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-2.5 rounded-lg bg-[var(--accent-soft)] text-white font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors flex items-center justify-center gap-2 mb-2"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Enviar a {customerName || hasCustomerPhone} ({hasCustomerPhone})
-            </a>
-          ) : (
-            /* Manual phone input */
-            <div className="flex gap-2 mb-2">
-              <div className="relative flex-1">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs">+51</span>
-                <input
-                  type="tel"
-                  value={manualPhone}
-                  onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  placeholder="N° WhatsApp"
-                  className="w-full pl-9 pr-2 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-medium text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-success)]/30 transition-colors"
-                />
-              </div>
-              {manualPhone.length >= 9 ? (
-                <a
-                  href={buildWhatsAppUrl(manualPhone)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2.5 rounded-lg bg-[var(--accent-soft)] text-white font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1.5 shrink-0"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Enviar
-                </a>
-              ) : (
-                <button
-                  disabled
-                  className="px-3 py-2.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] font-bold text-xs cursor-not-allowed flex items-center gap-1.5 shrink-0"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Enviar
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Documento generado automaticamente */}
-        {lastSaleDetails?.comprobanteNumero ? (
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-4 text-center mb-3">
-            <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)] font-bold">Documento generado</p>
-            <p className="text-lg font-mono font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">
-              {lastSaleDetails.comprobanteTipo === "boleta" ? "Boleta"
-                : lastSaleDetails.comprobanteTipo === "factura" ? "Factura"
-                : lastSaleDetails.comprobanteTipo === "cotizacion" ? "Cotizacion"
-                : lastSaleDetails.comprobanteTipo === "proforma" ? "Proforma"
-                : "Ticket"} #{lastSaleDetails.comprobanteNumero}
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted text-center mb-3">Ticket de venta</p>
-        )}
+        {/* Body scrollable */}
+        <div className="flex-1 overflow-y-auto px-6 pb-5 space-y-4">
+          {saleComplete.change === -1 ? (
+            <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)]/30 rounded-xl p-4 text-center">
+              <p className="text-sm font-semibold text-[var(--data-warning)] uppercase tracking-wide mb-1">Venta al fiado</p>
+              <p className="text-base text-[var(--data-warning)]">El cliente queda debiendo</p>
+            </div>
+          ) : saleComplete.change > 0 ? (
+            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 rounded-xl p-5 text-center">
+              <p className="text-sm font-semibold text-[var(--data-success)] uppercase tracking-wide mb-1">Dar de vuelto</p>
+              <p className="text-4xl font-extrabold text-[var(--data-success)] tabular-nums">{fmt(saleComplete.change)}</p>
+            </div>
+          ) : null}
 
-        {/* Action buttons */}
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
+          {lastSaleDetails?.comprobanteNumero ? (
+            <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Receipt className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Comprobante</p>
+                <p className="text-base font-mono font-bold text-[var(--text-primary)] dark:text-foreground">
+                  {comprobanteLabel(lastSaleDetails.comprobanteTipo)} #{lastSaleDetails.comprobanteNumero}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <QuickAbonoFromSale customerPhone={lastSaleDetails?.customerPhone} customerName={lastSaleDetails?.customerName} />
+
+          <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-4">
+            <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">
+              Enviar por WhatsApp
+            </p>
+            {hasCustomerPhone ? (
+              <a
+                href={buildWhatsAppUrl(hasCustomerPhone)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-xl bg-[var(--data-success)] hover:bg-[var(--data-success)]/90 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span className="truncate">Enviar a {customerName || hasCustomerPhone}</span>
+              </a>
+            ) : (
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm font-semibold">+51</span>
+                  <input
+                    type="tel"
+                    value={manualPhone}
+                    onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                    placeholder="N&uacute;mero del cliente"
+                    className="w-full pl-12 pr-3 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-base text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+                {manualPhone.length >= 9 ? (
+                  <a
+                    href={buildWhatsAppUrl(manualPhone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-3 rounded-xl bg-[var(--data-success)] text-white font-semibold text-base hover:bg-[var(--data-success)]/90 transition-colors flex items-center gap-2 shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                    Enviar
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="px-5 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] font-semibold text-base cursor-not-allowed flex items-center gap-2 shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                    Enviar
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer — acciones principales */}
+        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 space-y-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
             <a
               href={`/venta/${saleComplete.id}/recibo`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+              className="py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground font-semibold text-base hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
             >
-              <Printer className="h-3.5 w-3.5" /> Imprimir ticket
+              <Printer className="h-5 w-5" />
+              Imprimir
             </a>
             <button
               onClick={onNewSale}
-              className="flex-1 py-2.5 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors flex items-center justify-center gap-1.5"
+              className="py-3 rounded-xl bg-primary text-white font-bold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
             >
-              Nueva venta →
+              Nueva venta
+              <span aria-hidden>&rarr;</span>
             </button>
           </div>
           {isThermalPrintSupported() && (
@@ -724,9 +714,9 @@ function SaleCompleteModal({
                   alert(e instanceof Error ? e.message : "Error al imprimir");
                 }
               }}
-              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted font-medium text-xs hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-gray-100 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
             >
-              <Printer className="h-3.5 w-3.5" /> Ticket térmico (ESC/POS)
+              <Printer className="h-4 w-4" /> Ticket t&eacute;rmico (ESC/POS)
             </button>
           )}
         </div>
@@ -874,7 +864,7 @@ export default function POSView() {
   const searchRef = useRef<HTMLInputElement>(null);
   const [showYapeQR, setShowYapeQR] = useState<"yape" | "plin" | null>(null);
   const [saleError, setSaleError] = useState<string | null>(null);
-  // Mejora 4: Devolucion rapida
+  // Mejora 4: Devolucion rápida
   const [showReturn, setShowReturn] = useState(false);
   const [showMoreTools, setShowMoreTools] = useState(false);
 
@@ -927,7 +917,7 @@ export default function POSView() {
           searchTerm = matchInv[1].trim();
           qty = parseFloat(matchInv[2]) || 1;
         } else {
-          // Sin numero: "cebollas" -> qty 1
+          // Sin número: "cebollas" -> qty 1
           searchTerm = line.replace(/^\d+\s*/, "").trim() || line;
         }
       }
@@ -995,11 +985,11 @@ export default function POSView() {
     };
   }, []);
 
-  // Mejora P-1: Ultimo producto agregado parpadea verde
+  // Mejora P-1: Último producto agregado parpadea verde
   const [lastAddedId, setLastAddedId] = useState<number | null>(null);
   const lastAddedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Mejora P-3: Ultima venta rapida
+  // Mejora P-3: Última venta rápida
   const [lastSaleInfo, setLastSaleInfo] = useState<{ total: number; time: Date; id: string; minutesAgo: number } | null>(null);
 
   // Mejora P-3: Actualizar minutesAgo cada 30s
@@ -1355,12 +1345,14 @@ export default function POSView() {
     try {
       const res = await fetch("/api/sales", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(salePayload),
       });
       const sale = await res.json();
       if (res.ok) {
         playSaleComplete(effectiveTotal);
+        // Cerrar el modal de pago ANTES de abrir el de exito — evita stacking
+        setShowPayment(false);
         setSaleComplete({ id: sale.id, change: sale.change ?? effectiveChange });
         // Attach comprobanteNumero from API response
         if (sale.comprobanteNumero) {
@@ -1379,7 +1371,7 @@ export default function POSView() {
             try {
               const fiadoRes = await fetch("/api/fiados", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: csrfHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                   customerId: fiadoPhone,
                   total: effectiveTotal,
@@ -1421,6 +1413,7 @@ export default function POSView() {
       try {
         posOffline.addToQueue(salePayload);
         playSaleComplete(effectiveTotal);
+        setShowPayment(false);
         setSaleComplete({ id: `offline_${Date.now()}`, change: effectiveChange });
         setLastSaleDetails(saleDetailsForWhatsApp);
         setCart([]);
@@ -1559,198 +1552,6 @@ export default function POSView() {
         </div>
       )}
 
-      <SectionBreadcrumb icon={ShoppingBasket} section="Ventas" page="Punto de venta" />
-
-      {/* Toolbar unificada — estado a la izquierda, acciones a la derecha. */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5 min-w-0 text-xs text-[var(--text-tertiary)]">
-          <span className={cn("w-1.5 h-1.5 rounded-full", posOffline.isOnline ? "bg-[var(--data-success)]" : "bg-[var(--data-error)] animate-pulse")} aria-hidden />
-          <span className="font-semibold">{products.length} productos</span>
-          {!posOffline.isOnline && (
-            <span className="text-[var(--data-error)] font-bold">· Sin conexión</span>
-          )}
-          <ModuleTooltip />
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:justify-end">
-          {cashRegisterOpen === false && (
-            <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)] px-2.5 py-1 rounded-lg">Sin caja</span>
-          )}
-          {cashRegisterOpen === true && (
-            <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30 px-2.5 py-1 rounded-lg">Caja abierta</span>
-          )}
-          {/* Mejora P-3: Ultima venta rapida */}
-          {lastSaleInfo && (
-            <a
-              href={`/venta/${lastSaleInfo.id}/recibo`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted rounded-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-surface transition-colors"
-              title="Reimprimir ultima venta"
-            >
-              Ultima: {fmt(lastSaleInfo.total)} · hace {Math.max(1, lastSaleInfo.minutesAgo)}m
-              <Printer className="h-3 w-3" />
-            </a>
-          )}
-
-          {/* ── Grupo 1: Entrada ── */}
-          <POSExpressMode
-            products={products as { id: number; name: string; price: number; barcode?: string | null; stock?: number | null }[]}
-            onAddToCart={handleAddFromSearch}
-          />
-          <button
-            onClick={() => setShowScanner(true)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
-          >
-            <ScanBarcode className="h-4 w-4" /> <span className="hidden sm:inline">Escanear</span>
-          </button>
-          <label
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors cursor-pointer"
-            title="Escanear producto con camara"
-          >
-            &#128247; <span className="hidden sm:inline">Foto</span>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                e.target.value = "";
-                try {
-                  if ("BarcodeDetector" in window) {
-                    const bitmap = await createImageBitmap(file);
-                    const detector = new (window as unknown as { BarcodeDetector: new (opts?: { formats: string[] }) => { detect: (img: ImageBitmap) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector({ formats: ["ean_13", "ean_8", "code_128", "code_39", "qr_code", "upc_a", "upc_e"] });
-                    const barcodes = await detector.detect(bitmap);
-                    if (barcodes.length > 0) {
-                      handleBarcode(barcodes[0].rawValue);
-                      return;
-                    }
-                  }
-                  setSaleError("No se detecto codigo de barras en la foto. Busca el producto por nombre.");
-                } catch {
-                  setSaleError("No se pudo procesar la imagen. Busca el producto por nombre.");
-                }
-              }}
-            />
-          </label>
-
-          {/* ── Separador ── */}
-          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
-
-          {/* ── Dropdown "Opciones" consolidado — acciones secundarias + preferencias ── */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMoreTools(v => !v)}
-              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
-              title="Opciones del POS"
-            >
-              <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
-            </button>
-            {showMoreTools && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-lg">
-                  {/* Pedido por WhatsApp */}
-                  <button
-                    onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
-                    className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success)] hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
-                  >
-                    <MessageCircle className="h-4 w-4" /> Pedido por WhatsApp
-                  </button>
-                  {/* Historial */}
-                  <button
-                    onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
-                    className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
-                  >
-                    <History className="h-4 w-4" /> Historial de ventas
-                    <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded">F4</kbd>
-                  </button>
-                  {/* Repetir ultima venta — condicional */}
-                  {(() => {
-                    try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
-                    return (
-                      <button
-                        onClick={() => {
-                          try {
-                            const raw = localStorage.getItem("pos-last-sale-items");
-                            if (!raw) return;
-                            const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
-                            if (cart.length > 0 && !window.confirm("Reemplazar carrito actual?")) return;
-                            const newCart: CartItem[] = [];
-                            const skipped: string[] = [];
-                            for (const item of items) {
-                              const found = products.find(p => p.id === item.productId);
-                              if (!found || (found.stock != null && found.stock <= 0)) { skipped.push(item.name); continue; }
-                              newCart.push({ product: found, quantity: item.quantity });
-                            }
-                            if (newCart.length > 0) setCart(newCart);
-                            if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
-                          } catch { /* ignore */ }
-                          setShowMoreTools(false);
-                        }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-primary hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
-                      >
-                        <RotateCcw className="h-4 w-4" /> Repetir ultima venta
-                      </button>
-                    );
-                  })()}
-                  {/* Devolucion */}
-                  <button
-                    onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
-                    className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-warning)] hover:bg-[var(--data-warning)]/5 px-3 py-2 rounded-lg transition-colors"
-                  >
-                    <History className="h-4 w-4 rotate-180" /> Devolucion
-                  </button>
-
-                  {/* Separador */}
-                  <div className="h-px bg-[var(--rule-soft)] my-1.5" />
-
-                  {/* Tamano fuente */}
-                  <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1">
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wider">Tamano fuente</span>
-                  </div>
-                  <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 mx-2">
-                    {(["normal", "large", "xlarge"] as const).map(size => (
-                      <button
-                        key={size}
-                        onClick={() => changeFontSize(size)}
-                        className={cn(
-                          "flex-1 px-1.5 py-1 rounded-md text-xs font-bold transition-colors",
-                          fontSize === size ? "bg-white dark:bg-card text-primary " : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
-                        )}
-                        title={size === "normal" ? "Fuente normal" : size === "large" ? "Fuente grande" : "Fuente extra grande"}
-                      >
-                        {size === "normal" ? "A" : size === "large" ? "A+" : "A++"}
-                      </button>
-                    ))}
-                  </div>
-                  {/* Sonido */}
-                  <button
-                    onClick={() => { toggleSound(); setShowMoreTools(false); }}
-                    className={cn(
-                      "w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg transition-colors",
-                      soundEnabled ? "text-primary hover:bg-primary/5" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-50"
-                    )}
-                  >
-                    {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                    {soundEnabled ? "Sonido ON" : "Sonido OFF"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-lg transition-colors "
-            title={expanded ? "Reducir" : "Expandir"}
-          >
-            {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            <span className="hidden min-[390px]:inline sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
-          </button>
-        </div>
-      </div>
 
       {/* Body: products + cart */}
       <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
@@ -1759,20 +1560,188 @@ export default function POSView() {
           "flex-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden flex flex-col",
           expanded ? "min-h-[calc(100vh-12rem)]" : ""
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
-          {/* Search + Categories (Upgrade 2) */}
+          {/* Search + Actions + Categories — acciones a la derecha de la search bar
+              para compactar verticalmente (antes ocupaban una fila entera). */}
           <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-card-border relative">
-            <div className="flex items-start gap-2">
-              <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <div className="flex-1 min-w-[200px]">
                 <POSSearchBar
                   products={products as { id: number; name: string; price: number; image?: string; barcode?: string; stock?: number }[]}
                   onAddToCart={handleAddFromSearch}
-                  recentProductIds={recentProducts}
                 />
               </div>
               <POSVoiceInput
                 products={products.map(p => ({ id: p.id, name: p.name, price: p.price }))}
                 onAddToCart={handleAddFromSearch}
               />
+
+              {/* Acciones POS — badge caja + entrada + opciones + expandir */}
+              {cashRegisterOpen === false && (
+                <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)] px-2.5 py-1.5 rounded-lg">Sin caja</span>
+              )}
+              {cashRegisterOpen === true && (
+                <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] border border-[var(--data-success)]/30 px-2.5 py-1.5 rounded-lg">Caja abierta</span>
+              )}
+              {lastSaleInfo && (
+                <a
+                  href={`/venta/${lastSaleInfo.id}/recibo`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden md:inline-flex items-center gap-1 text-xs bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted rounded-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-surface transition-colors"
+                  title="Reimprimir última venta"
+                >
+                  Última: {fmt(lastSaleInfo.total)} · {Math.max(1, lastSaleInfo.minutesAgo)}m
+                  <Printer className="h-3 w-3" />
+                </a>
+              )}
+
+              <POSExpressMode
+                products={products as { id: number; name: string; price: number; barcode?: string | null; stock?: number | null }[]}
+                onAddToCart={handleAddFromSearch}
+              />
+              <button
+                onClick={() => setShowScanner(true)}
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
+                title="Escanear codigo de barras"
+              >
+                <ScanBarcode className="h-4 w-4" /> <span className="hidden sm:inline">Escanear</span>
+              </button>
+              <label
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                title="Escanear producto con camara"
+              >
+                &#128247; <span className="hidden sm:inline">Foto</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    e.target.value = "";
+                    try {
+                      if ("BarcodeDetector" in window) {
+                        const bitmap = await createImageBitmap(file);
+                        const detector = new (window as unknown as { BarcodeDetector: new (opts?: { formats: string[] }) => { detect: (img: ImageBitmap) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector({ formats: ["ean_13", "ean_8", "code_128", "code_39", "qr_code", "upc_a", "upc_e"] });
+                        const barcodes = await detector.detect(bitmap);
+                        if (barcodes.length > 0) {
+                          handleBarcode(barcodes[0].rawValue);
+                          return;
+                        }
+                      }
+                      setSaleError("No se detecto codigo de barras en la foto. Busca el producto por nombre.");
+                    } catch {
+                      setSaleError("No se pudo procesar la imagen. Busca el producto por nombre.");
+                    }
+                  }}
+                />
+              </label>
+
+              {/* Dropdown "Opciones" — acciones secundarias + preferencias */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreTools(v => !v)}
+                  className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                  title="Opciones del POS"
+                >
+                  <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
+                </button>
+                {showMoreTools && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
+                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-lg">
+                      <button
+                        onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
+                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success)] hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
+                      >
+                        <MessageCircle className="h-4 w-4" /> Pedido por WhatsApp
+                      </button>
+                      <button
+                        onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
+                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                      >
+                        <History className="h-4 w-4" /> Historial de ventas
+                        <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded">F4</kbd>
+                      </button>
+                      {(() => {
+                        try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
+                        return (
+                          <button
+                            onClick={() => {
+                              try {
+                                const raw = localStorage.getItem("pos-last-sale-items");
+                                if (!raw) return;
+                                const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
+                                if (cart.length > 0 && !window.confirm("Reemplazar carrito actual?")) return;
+                                const newCart: CartItem[] = [];
+                                const skipped: string[] = [];
+                                for (const item of items) {
+                                  const found = products.find(p => p.id === item.productId);
+                                  if (!found || (found.stock != null && found.stock <= 0)) { skipped.push(item.name); continue; }
+                                  newCart.push({ product: found, quantity: item.quantity });
+                                }
+                                if (newCart.length > 0) setCart(newCart);
+                                if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
+                              } catch { /* ignore */ }
+                              setShowMoreTools(false);
+                            }}
+                            className="w-full flex items-center gap-2 text-xs font-bold text-primary hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
+                          >
+                            <RotateCcw className="h-4 w-4" /> Repetir última venta
+                          </button>
+                        );
+                      })()}
+                      <button
+                        onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
+                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-warning)] hover:bg-[var(--data-warning)]/5 px-3 py-2 rounded-lg transition-colors"
+                      >
+                        <History className="h-4 w-4 rotate-180" /> Devolucion
+                      </button>
+
+                      <div className="h-px bg-[var(--rule-soft)] my-1.5" />
+
+                      <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1">
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wider">Tamano fuente</span>
+                      </div>
+                      <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 mx-2">
+                        {(["normal", "large", "xlarge"] as const).map(size => (
+                          <button
+                            key={size}
+                            onClick={() => changeFontSize(size)}
+                            className={cn(
+                              "flex-1 px-1.5 py-1 rounded-md text-xs font-bold transition-colors",
+                              fontSize === size ? "bg-white dark:bg-card text-primary " : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
+                            )}
+                            title={size === "normal" ? "Fuente normal" : size === "large" ? "Fuente grande" : "Fuente extra grande"}
+                          >
+                            {size === "normal" ? "A" : size === "large" ? "A+" : "A++"}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => { toggleSound(); setShowMoreTools(false); }}
+                        className={cn(
+                          "w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg transition-colors",
+                          soundEnabled ? "text-primary hover:bg-primary/5" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-50"
+                        )}
+                      >
+                        {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                        {soundEnabled ? "Sonido ON" : "Sonido OFF"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-lg transition-colors"
+                title={expanded ? "Reducir" : "Expandir"}
+              >
+                {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                <span className="hidden min-[390px]:inline sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
+              </button>
             </div>
             {/* Categorias — cards grandes, sin emojis, iconos Lucide.
                 Reemplaza chips pequeños + acordeones "Más vendidos/Rápidos/Favoritos"
@@ -2140,7 +2109,7 @@ export default function POSView() {
 
       {/* IDEA 6: Modal Pedido WhatsApp */}
       {showWhatsAppOrder && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowWhatsAppOrder(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowWhatsAppOrder(false)}>
           <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -2287,7 +2256,7 @@ export default function POSView() {
 
       {/* ── Idea 12: Trueque Digital ──────────────────────────────────────── */}
       {showTrueque && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowTrueque(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowTrueque(false)}>
           <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">&#128260;</span>
@@ -2369,7 +2338,7 @@ export default function POSView() {
         />
       )}
 
-      {/* ── Sale Complete Modal (Mejora 4: WhatsApp mejorado) ──────────── */}
+      {/* ── Sale Complete Modal ───────────────────────────────────────── */}
       {saleComplete && (
         <SaleCompleteModal
           saleComplete={saleComplete}
@@ -2378,6 +2347,7 @@ export default function POSView() {
           paymentMethod={paymentMethod}
           cart={cart}
           onNewSale={handleNewSale}
+          onClose={() => { setSaleComplete(null); setLastSaleDetails(null); }}
         />
       )}
 
@@ -2417,7 +2387,7 @@ export default function POSView() {
 
       {/* ── Mejora 7: Zero Stock Confirmation ────────────────────────────────── */}
       {showZeroStockConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="modal-backdrop p-4">
           <div className="bg-white dark:bg-card rounded-xl max-w-xs w-full p-4 sm:p-6 text-center">
             <div className="h-10 w-10 rounded-full bg-[var(--data-error-50)] flex items-center justify-center mx-auto mb-3">
               <Package className="h-5 w-5 text-[var(--data-error)]" />
@@ -2444,7 +2414,7 @@ export default function POSView() {
         </div>
       )}
 
-      {/* Mejora 4: Devolucion rapida modal */}
+      {/* Mejora 4: Devolucion rápida modal */}
       <POSReturnModal
         isOpen={showReturn}
         onClose={() => setShowReturn(false)}

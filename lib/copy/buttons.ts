@@ -34,14 +34,14 @@ export const BTN = {
   payWithPlin: "Pagar con Plin",
   payWithCash: "Pagar en efectivo al recibir",
   scanYapeQR: "Escanear QR de Yape",
-  uploadCapture: "Subí la captura del pago",
+  uploadCapture: "Sube la captura del pago",
   verifyPayment: "Verificar pago",
 
   // ── Delivery / Tracking ────────────────────────────────────
   trackOrder: "Seguir mi pedido",
   callDriver: "Llamar al repartidor",
   whatsappDriver: "WhatsApp al repartidor",
-  confirmReceived: "Ya recibí mi pedido",
+  confirmReceived: "Ya recibe mi pedido",
 
   // ── Admin — acción primaria ────────────────────────────────
   createProduct: "+ Nuevo producto",
@@ -63,7 +63,7 @@ export const BTN = {
   startFreeTrial: "Empezar gratis — sin tarjeta",
   requestDemo: "Ver demo de 15 minutos",
   contactSales: "Hablar con ventas",
-  openMyStore: "Abrí tu tienda gratis",
+  openMyStore: "Abre tu tienda gratis",
   seePricing: "Ver planes desde S/0",
 
   // ── Newsletter / CRM ───────────────────────────────────────

@@ -92,7 +92,7 @@ export default function StepDatosNegocio({
           />
           <FieldError message={errors.ruc} />
           <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Si todavía no tenés RUC, te ayudamos a sacarlo gratis en 48h.
+            Si todavía no tienes RUC, te ayudamos a sacarlo gratis en 48h.
           </p>
         </div>
 

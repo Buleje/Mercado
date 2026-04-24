@@ -152,14 +152,23 @@ export default function VendorDashboardModule() {
     return () => clearInterval(interval);
   }, [fetchDashboard, tab]);
 
+  const rangeLabel: Record<string, string> = {
+    diario: "de hoy",
+    semanal: "de la semana",
+    mensual: "del mes",
+    anual: "del año",
+    personalizado: "del período",
+  };
+  const rangeTxt = rangeLabel[dateRange.preset] ?? "del período";
+
   const TAB_DESCRIPTIONS: Record<InicioTab, string> = {
-    general: "Resumen general con KPIs clave del negocio.",
-    ventas: "Dashboard de ventas con tendencias y top productos.",
-    caja: "Movimientos de caja, arqueos y flujo de efectivo.",
-    inventario: "Stock critico, alertas de vencimiento y rotacion.",
-    compras: "Compras a proveedores, deudas y ordenes.",
-    productos: "Rendimiento de productos, categorias y margenes.",
-    clientes: "Segmentacion de clientes, retencion y fidelizacion.",
+    general: `Resumen ${rangeTxt} con KPIs, ventas, caja, inventario y clientes vinculados.`,
+    ventas: `Ventas ${rangeTxt}: tendencias, tickets y top productos.`,
+    caja: `Movimientos de caja ${rangeTxt}: ingresos, egresos y flujo.`,
+    inventario: "Stock crítico, alertas de vencimiento y rotación.",
+    compras: `Compras ${rangeTxt}: proveedores, deudas y órdenes.`,
+    productos: `Rendimiento ${rangeTxt}: categorías, unidades y márgenes.`,
+    clientes: `Clientes ${rangeTxt}: nuevos, recurrentes y ticket promedio.`,
     marketplace: lastUpdated
       ? `Marketplace actualizado a las ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
       : "Panel consolidado del canal marketplace.",
@@ -193,9 +202,9 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
-            {/* ADR-064 · Hub unificado "Hoy" con saludo dinámico por hora */}
-            <TodayHub />
-            {/* ADR-066 Ola M · Dashboard denso con compound charts + multi-signal KPIs */}
+            {/* Hub "Hoy" — saludo dinámico + hero KPI scoped al rango activo */}
+            <TodayHub dateRange={dateRange} />
+            {/* Dashboard denso con compound charts + multi-signal KPIs scoped al rango */}
             <InicioDashboardV2 dateRange={dateRange} />
           </div>
         )}

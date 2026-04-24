@@ -77,7 +77,7 @@ export default function MiTiendaPreviewPage() {
             Este es un preview con datos ficticios.
           </strong>
           El panel real se activa apenas aprobemos tu solicitud (24h máx). Ahí
-          vas a ver los pedidos de verdad, reportes por producto, y podés
+          vas a ver los pedidos de verdad, reportes por producto, y puedes
           lanzar promociones en un click.
         </aside>
       </main>

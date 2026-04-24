@@ -107,7 +107,7 @@ export default function ExplorarCategoriasGrid() {
         <ExplorarSectionHeader
           kicker="Catálogo completo"
           title="Todas las categorías"
-          subtitle="Explorá el marketplace por categoría."
+          subtitle="Explora el marketplace por categoría."
           ctaLabel="Ver catálogo completo"
           ctaHref="/marketplace?vista=catalogo"
         />

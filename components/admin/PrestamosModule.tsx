@@ -966,7 +966,7 @@ export default function PrestamosModule() {
 
   const prestamosDescription = activos.length > 0
     ? `Préstamos a clientes con cuotas programadas. ${activos.length} activos${saldoPendiente > 0 ? ` — saldo pendiente ${formatCurrency(saldoPendiente)}.` : "."}`
-    : "Préstamos a clientes con cuotas programadas. Registrá, calculá cuotas y llevá el seguimiento de pagos.";
+    : "Préstamos a clientes con cuotas programadas. Registra, calcula cuotas y lleva el seguimiento de pagos.";
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -2017,7 +2017,7 @@ ${cuotas.map(c => { const row = `<tr>
   <div class="row"><span>Tasa de interes:</span><b>${selected.tasaInteres}% mensual</b></div>
   ${selected.tea ? `<div class="row"><span>TEA:</span><b>${selected.tea}%</b></div>` : ""}
   <div class="row"><span>Amortización:</span><b>${SISTEMA_LABELS[selected.sistemaAmortizacion]}</b></div>
-  <div class="row"><span>Numero de cuotas:</span><b>${selected.numeroCuotas}</b></div>
+  <div class="row"><span>Número de cuotas:</span><b>${selected.numeroCuotas}</b></div>
   <div class="row"><span>Cuotas pagadas:</span><b>${pagadas.length}</b></div>
   <div class="row"><span>Cuotas pendientes:</span><b>${pendientes.length}</b></div>
   <div class="row" style="font-size:15px;margin-top:8px;"><span>Monto pendiente:</span><b style="color:#dc2626;">${selected.moneda === "USD" ? "$" : "S/"} ${saldoPendiente.toFixed(2)}</b></div>

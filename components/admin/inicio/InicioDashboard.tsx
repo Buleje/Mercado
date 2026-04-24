@@ -81,7 +81,7 @@ export interface DashboardData {
   ventasPorCategoria: { nombre: string; total: number; color: string }[];
   ventasPorMetodoPago: { metodo: string; total: number; color: string }[];
   topProductos: { nombre: string; ingresos: number; unidades: number }[];
-  stockAlerta: { nombre: string; stock: number; minimo: number; diasRestantes: number }[];
+  stockAlerta: { nombre: string; stock: number; mínimo: number; diasRestantes: number }[];
   ventasPorHora: { hora: string; cantidad: number }[];
   clientesPorTier: { tier: string; cantidad: number; color: string }[];
   funnelPedidos: { etapa: string; cantidad: number; color: string }[];
@@ -261,7 +261,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       .map(p => {
         const dailyRate = (sold30.get(p.id) ?? 0) / 30;
         const diasRestantes = dailyRate > 0 ? Math.round(p.stock! / dailyRate) : 999;
-        return { nombre: p.name, stock: p.stock!, minimo: p.stockMin!, diasRestantes };
+        return { nombre: p.name, stock: p.stock!, mínimo: p.stockMin!, diasRestantes };
       })
       .filter(p => p.diasRestantes < 30)
       .sort((a, b) => a.diasRestantes - b.diasRestantes)

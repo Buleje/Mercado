@@ -4,15 +4,20 @@ import NotificationHub from "@/components/notifications/NotificationHub";
 import type { NotificationItem } from "@/components/notifications/useNotificationCenter";
 
 // Mock framer-motion to avoid animation issues in tests
-vi.mock("framer-motion", () => ({
-  motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial: _i, animate: _a, exit: _e, transition: _t, ...rest } = props;
-      return <div {...rest}>{children}</div>;
-    },
-  },
-  AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
-}));
+vi.mock("framer-motion", () => {
+  const MotionDiv = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+    const { initial: _i, animate: _a, exit: _e, transition: _t, ...rest } = props;
+    return <div {...rest}>{children}</div>;
+  };
+  const motion = { div: MotionDiv };
+  return {
+    motion,
+    m: motion,
+    AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
+    LazyMotion: ({ children }: React.PropsWithChildren) => <>{children}</>,
+    domAnimation: {},
+  };
+});
 
 // Mock NotificationItem component
 vi.mock("@/components/notifications/NotificationItem", () => ({

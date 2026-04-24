@@ -40,7 +40,7 @@ const BENEFICIOS: readonly Beneficio[] = [
     Icon: Percent,
     title: "5% cashback en cada compra",
     description:
-      "Cada vez que pedís, acumulás saldo Socio que usás en tu próxima compra.",
+      "Cada vez que pides, acumulás saldo Socio que usás en tu próxima compra.",
   },
   {
     Icon: Tag,

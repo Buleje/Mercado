@@ -102,7 +102,7 @@ export default function SaasStorePreview() {
               <div className="px-4 py-6 text-center" style={{ background: `linear-gradient(135deg, ${color.primary}15, ${color.secondary}10)` }}>
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: color.primary }}>Bienvenido a</p>
                 <p className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">{displayName}</p>
-                <p className="text-xs text-gray-500 mt-1">Delivery rapido en tu zona</p>
+                <p className="text-xs text-gray-500 mt-1">Delivery rápido en tu zona</p>
                 <button
                   className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-white"
                   style={{ backgroundColor: color.secondary }}

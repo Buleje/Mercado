@@ -13,20 +13,20 @@ import BusinessTabsShowcase from "@/components/negocios/BusinessTabsShowcase";
 import ROICalculator from "@/components/negocios/ROICalculator";
 
 export const metadata: Metadata = {
-  title: "Buleje para Negocios — Software ERP para Bodegas del Peru",
+  title: "Buleje para Negocios — Software ERP para Bodegas del Perú",
   description:
-    "Sistema completo para tu bodega: inventario, POS, delivery, fiado digital, facturacion SUNAT y marketplace. Empieza gratis.",
+    "Sistema completo para tu bodega: inventario, POS, delivery, fiado digital, facturación SUNAT y marketplace. Empieza gratis.",
 };
 
 const FEATURES = [
-  { icon: ShoppingCart, title: "Punto de Venta (POS)", desc: "Vende rapido desde el mostrador. Escanea, cobra y genera boletas en segundos." },
+  { icon: ShoppingCart, title: "Punto de Venta (POS)", desc: "Vende rápido desde el mostrador. Escanea, cobra y genera boletas en segundos." },
   { icon: Package, title: "Inventario Inteligente", desc: "Stock en tiempo real, alertas de bajo stock, vencimientos y mermas controladas." },
   { icon: Truck, title: "Delivery Integrado", desc: "Recibe pedidos online, asigna repartidores y trackea entregas en vivo." },
   { icon: CreditCard, title: "Fiado Digital", desc: "Credito a clientes controlado. Saldos, limites, recordatorios automaticos por WhatsApp." },
   { icon: FileText, title: "Facturacion SUNAT", desc: "Boletas y facturas electronicas directas a SUNAT. Guias de remision incluidas." },
-  { icon: Globe, title: "Tu Tienda Online", desc: "Pagina web propia con catalogo, carrito y pasarela de pago. Lista en minutos." },
+  { icon: Globe, title: "Tu Tienda Online", desc: "Pagina web propia con catálogo, carrito y pasarela de pago. Lista en minutos." },
   { icon: BarChart3, title: "Analytics y Reportes", desc: "Dashboard con ventas diarias, productos top, margen de ganancia y tendencias." },
-  { icon: Users, title: "Gestion de Clientes", desc: "Base de datos de clientes, historial de compras, puntos de fidelidad y segmentacion." },
+  { icon: Users, title: "Gestión de Clientes", desc: "Base de datos de clientes, historial de compras, puntos de fidelidad y segmentacion." },
   { icon: MessageCircle, title: "WhatsApp Business", desc: "Notificaciones automaticas: pedidos, fiados, promociones y cumpleanos por WhatsApp." },
   { icon: Percent, title: "Promociones y Cupones", desc: "Ofertas relampago, cupones de descuento, combos y programa de referidos." },
   { icon: Shield, title: "Multi-usuario y Roles", desc: "Cajeros, administradores y repartidores con permisos separados. Turnos y arqueo de caja." },
@@ -34,9 +34,9 @@ const FEATURES = [
 ];
 
 const BENEFITS: { Icon: LucideIcon; title: string; desc: string }[] = [
-  { Icon: Coins, title: "Aumentá tus ventas", desc: "Clientes compran 24/7 desde su celular. Delivery amplía tu zona de cobertura." },
+  { Icon: Coins, title: "Aumenta tus ventas", desc: "Clientes compran 24/7 desde su celular. Delivery amplía tu zona de cobertura." },
   { Icon: Timer, title: "Ahorrá tiempo", desc: "Automatizá cobros, inventario y reportes. Lo que antes tomaba horas, ahora es 1 click." },
-  { Icon: TrendingDown, title: "Reducí pérdidas", desc: "Control de vencimientos, mermas y fiados. Sabés exactamente cuánto ganás y cuánto perdés." },
+  { Icon: TrendingDown, title: "Reduce pérdidas", desc: "Control de vencimientos, mermas y fiados. Sabes exactamente cuánto ganás y cuánto perdés." },
   { Icon: Trophy, title: "Competí con los grandes", desc: "Tu bodega con la misma tecnología que las cadenas. Presencia online profesional." },
 ];
 
@@ -49,7 +49,7 @@ const PLANS = [
     popular: false,
     features: [
       "Hasta 100 productos",
-      "Punto de venta basico",
+      "Punto de venta básico",
       "1 usuario",
       "Pagina de tienda online",
       "Reportes basicos",
@@ -66,7 +66,7 @@ const PLANS = [
     popular: true,
     features: [
       "Productos ilimitados",
-      "POS completo + facturacion SUNAT",
+      "POS completo + facturación SUNAT",
       "Hasta 5 usuarios con roles",
       "Delivery integrado",
       "Fiado digital + recordatorios",
@@ -102,7 +102,7 @@ const PLANS = [
 const TESTIMONIALS = [
   { name: "Carlos M.", business: "Bodega El Amigo", text: "Antes perdia plata en fiados que no cobraba. Ahora todo esta controlado y mis clientes pagan a tiempo.", rating: 5 },
   { name: "Maria S.", business: "Minimarket Santa Rosa", text: "El delivery me trajo clientes de toda la zona. Mis ventas subieron 40% el primer mes.", rating: 5 },
-  { name: "Pedro L.", business: "Bodega Don Pedro", text: "La facturacion electronica me ahorra 2 horas diarias. Ya no tengo que ir a la SUNAT.", rating: 5 },
+  { name: "Pedro L.", business: "Bodega Don Pedro", text: "La facturación electrónica me ahorra 2 horas diarias. Ya no tengo que ir a la SUNAT.", rating: 5 },
 ];
 
 export default function NegociosPage() {
@@ -119,7 +119,7 @@ export default function NegociosPage() {
             Tu bodega, <span className="text-primary">digital</span>
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            El sistema completo para administrar y hacer crecer tu bodega. Inventario, ventas, delivery, fiado y facturacion — todo en un solo lugar.
+            El sistema completo para administrar y hacer crecer tu bodega. Inventario, ventas, delivery, fiado y facturación — todo en un solo lugar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
             <Link
@@ -153,7 +153,7 @@ export default function NegociosPage() {
               Todo en un solo panel
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white">
-              Mirá cómo funciona
+              Mira cómo funciona
             </h2>
             <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
               Tocá cada feature para ver el mockup real. Son los mismos paneles que

@@ -78,10 +78,10 @@ export default function ShareCartButton() {
         disabled={isEmpty}
         aria-label={
           isEmpty
-            ? "Agregá productos para compartir"
+            ? "Agrega productos para compartir"
             : "Compartir carrito — copia el link"
         }
-        title={isEmpty ? "Agregá productos para compartir" : "Compartir carrito"}
+        title={isEmpty ? "Agrega productos para compartir" : "Compartir carrito"}
         className={[
           "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all",
           isEmpty
@@ -107,7 +107,7 @@ export default function ShareCartButton() {
           role="tooltip"
           className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover/share:opacity-100 dark:bg-gray-700"
         >
-          Agregá productos para compartir
+          Agrega productos para compartir
           <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
         </div>
       )}

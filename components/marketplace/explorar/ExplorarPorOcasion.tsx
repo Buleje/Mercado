@@ -3,7 +3,7 @@
 /**
  * ExplorarPorOcasion — Grid 2x3 cards editorial con ilustracion grande.
  * 6 ocasiones (desayuno, almuerzo familiar, parrilla, fiesta infantil,
- * noche de pelicula, cena rapida). Ilustraciones reutilizadas del DS.
+ * noche de pelicula, cena rápida). Ilustraciones reutilizadas del DS.
  */
 
 import Link from "next/link";
@@ -68,12 +68,12 @@ const OCASIONES: Ocasion[] = [
     href: "/marketplace?ocasion=pelicula",
   },
   {
-    id: "cena-rapida",
+    id: "cena-rápida",
     kicker: "Express",
-    title: "Cena rapida",
+    title: "Cena rápida",
     description: "Listo en 20 minutos con ingredientes frescos.",
     Illustration: VerduraFresca,
-    href: "/marketplace?ocasion=cena-rapida",
+    href: "/marketplace?ocasion=cena-rápida",
   },
 ];
 

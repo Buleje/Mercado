@@ -9,7 +9,7 @@ import { BulejeSparkline } from "./BulejeSparkline";
 /**
  * BulejeSparklineKPICard — tarjeta KPI editorial con:
  *   • Kicker label
- *   • Numero grande animado (NumberFlow)
+ *   • Número grande animado (NumberFlow)
  *   • Delta con flecha y % vs comparativa
  *   • Sparkline 30-day o 7-day trend
  *

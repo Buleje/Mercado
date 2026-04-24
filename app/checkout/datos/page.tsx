@@ -3,7 +3,7 @@
 /**
  * /checkout/datos — Step 2: datos personales.
  *
- * Form pill-style: nombre + telefono + email opcional.
+ * Form pill-style: nombre + teléfono + email opcional.
  * Pre-llena con useCustomer si esta logged in. Fast-track al confirmar
  * cuando el perfil esta completo. Auto-redirect al carrito si vacio.
  */
@@ -148,7 +148,7 @@ export default function CheckoutDatosPage() {
                   </span>
                 </p>
                 <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
-                  Tenemos tus datos guardados — saltá directo a confirmar el pedido en 1 click.
+                  Tenemos tus datos guardados — salta directo a confirmar el pedido en 1 click.
                 </p>
               </div>
               <button
@@ -176,7 +176,7 @@ export default function CheckoutDatosPage() {
                     Hola, {savedCustomer.name?.split(" ")[0] ?? "vecino"}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                    Pre-llenamos tus datos guardados. Podés editarlos.
+                    Pre-llenamos tus datos guardados. Puedes editarlos.
                   </p>
                 </div>
               </div>
@@ -290,8 +290,8 @@ export default function CheckoutDatosPage() {
                   className={pillCls(false)}
                 />
               </div>
-              <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                Te enviamos el comprobante del pedido acá.
+              <p className="mt-2 ml-4 text-xs text-[var(--text-tertiary)]">
+                Te enviamos el comprobante del pedido aquí.
               </p>
             </div>
 

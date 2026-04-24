@@ -5,7 +5,7 @@
  *
  * Si hay `useCustomer().customer`, muestra:
  *   - "Hola, {nombre}" + última compra/zona
- *   - CTA rapido: "Continuar comprando"
+ *   - CTA rápido: "Continuar comprando"
  *
  * Si NO hay customer, no renderea (vacio en SSR — sin layout shift).
  */

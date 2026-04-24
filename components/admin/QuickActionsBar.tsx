@@ -352,7 +352,7 @@ export default function QuickActionsBar({
         className
       )}
     >
-      {/* ── Botón: Ultima venta ── */}
+      {/* ── Botón: Última venta ── */}
       <div className="relative">
         <div className="flex items-stretch rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card ">
           <button
@@ -370,7 +370,7 @@ export default function QuickActionsBar({
               ? <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
               : <History className="h-4 w-4 text-[var(--data-warning)] shrink-0" />
             }
-            <span className="hidden sm:inline">Ultima venta</span>
+            <span className="hidden sm:inline">Última venta</span>
             {lastSale && !lastSaleLoading && (
               <span className="text-[length:var(--ts-xs)] font-mono text-[var(--data-warning)] dark:text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-1.5 py-0.5 rounded-md">
                 {fmt(lastSale.total)}
@@ -413,7 +413,7 @@ export default function QuickActionsBar({
         )}
       </div>
 
-      {/* ── Botón: Producto rapido ── */}
+      {/* ── Botón: Producto rápido ── */}
       <div className="relative">
         <button
           onClick={toggleProducts}
@@ -425,7 +425,7 @@ export default function QuickActionsBar({
           )}
         >
           <Package className="h-4 w-4 text-primary shrink-0" />
-          <span className="hidden sm:inline">Producto rapido</span>
+          <span className="hidden sm:inline">Producto rápido</span>
         </button>
 
         {activePanel === "products" && (

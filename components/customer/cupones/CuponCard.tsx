@@ -93,7 +93,7 @@ export default function CuponCard({ cupon }: Props) {
           <dl className="space-y-1 text-xs">
             {cupon.minPurchase !== null && (
               <Row
-                label="Minimo de compra"
+                label="Mínimo de compra"
                 value={`S/ ${cupon.minPurchase.toFixed(2)}`}
                 icon={Tag}
               />

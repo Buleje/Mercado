@@ -6,11 +6,11 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
-  // → Ventas & Caja (ventas-caja removido — redirigir a pedidos/analytics-pro)
-  pos: "pedidos", caja: "pedidos", "pos-caja": "pedidos", "arqueo-caja": "pedidos",
+  // → Ventas & Caja — `ventas-caja` es el ID ACTUAL del POS (no migrar).
+  // Tabs antiguos (pos / caja / pos-caja / arqueo-caja) sí se redirigen al POS.
+  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja",
   "ventas-marketing": "analytics-pro", marketing: "analytics-pro", "forecast-ventas": "analytics-pro",
   "metricas-conversion": "analytics-pro", referidos: "analytics-pro",
-  "ventas-caja": "pedidos",
   // → Inventario
   inventario: "inventario", kardex: "inventario", lotes: "inventario",
   "inventario-fisico": "inventario", mermas: "inventario", almacenes: "inventario",

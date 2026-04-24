@@ -1,10 +1,10 @@
 /**
  * /zona/[ciudad] — City landing page for Programmatic SEO
  *
- * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
+ * Buleje = Software SaaS ERP para bodegas y tiendas de todo Perú.
  *
  * Targets: "software para bodegas Lima", "sistema ERP tienda Arequipa",
- *          "app de bodega Pucallpa", "gestion inventario tienda Peru"
+ *          "app de bodega Pucallpa", "gestión inventario tienda Perú"
  *
  * Renders category grid, platform features, FAQ, JSON-LD.
  */
@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!zone) return { title: "Zona no encontrada" };
 
   const title = `Software para Bodegas en ${zone.name} — Buleje ERP | Inventario, POS y Delivery`;
-  const description = `Buleje: sistema ERP para bodegas y tiendas en ${zone.name}, ${zone.region}. Inventario en tiempo real, punto de venta POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo.`;
+  const description = `Buleje: sistema ERP para bodegas y tiendas en ${zone.name}, ${zone.region}. Inventario en tiempo real, punto de venta POS, delivery, fiado digital y facturación SUNAT. Funciona con Yape y efectivo.`;
   const url = `${BASE_URL}/zona/${zone.slug}`;
 
   return {
@@ -367,9 +367,9 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <footer className="mt-12 border-t border-slate-100 pt-6">
         <p className="text-xs text-slate-400 leading-relaxed">
           Buleje es un software ERP creado en Pucallpa para bodegas y
-          tiendas de todo el Peru. Disponible en {zone.name},{" "}
-          {zone.region} y en mas de 10 ciudades del pais.
-          Inventario, ventas POS, delivery, fiado digital, facturacion
+          tiendas de todo el Perú. Disponible en {zone.name},{" "}
+          {zone.region} y en más de 10 ciudades del país.
+          Inventario, ventas POS, delivery, fiado digital, facturación
           SUNAT y reportes automaticos por WhatsApp.
           Funciona con Yape, Plin y efectivo.
         </p>
@@ -385,7 +385,7 @@ export default function ZonaCiudadPage({ params }: Props) {
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="animate-pulse text-sm text-slate-400">
-            Cargando informacion de tu zona...
+            Cargando información de tu zona...
           </div>
         </div>
       }

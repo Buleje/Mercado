@@ -52,9 +52,9 @@ export function CheckoutAccountStep({
           </div>
         </div>
 
-        {/* 2 columnas: buscar numero | cliente nuevo */}
+        {/* 2 columnas: buscar número | cliente nuevo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Col 1: Buscar numero */}
+          {/* Col 1: Buscar número */}
           <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-5 flex flex-col gap-3">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               Buscar cuenta
@@ -86,7 +86,7 @@ export function CheckoutAccountStep({
               </p>
             )}
             {phoneNotFound && (
-              <p className="text-xs text-red-500 font-semibold">Numero no encontrado</p>
+              <p className="text-xs text-red-500 font-semibold">Número no encontrado</p>
             )}
             <m.button
               type="button"
@@ -116,7 +116,7 @@ export function CheckoutAccountStep({
             </div>
             <div className="text-center">
               <p className="text-sm font-extrabold text-primary">Soy nuevo</p>
-              <p className="text-xs text-gray-400 mt-1">Registro rapido sin cuenta</p>
+              <p className="text-xs text-gray-400 mt-1">Registro rápido sin cuenta</p>
             </div>
             <m.button
               type="button"

@@ -162,7 +162,7 @@ export default function PurchasePlanningTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urg.bg, urg.color)}>{urg.label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{i.product}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{i.category} · {i.unit}</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">{i.category} · {i.unit}</p>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs text-[var(--text-primary)] dark:text-foreground">{num(i.stock)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{i.avgDailyDemand}</td>

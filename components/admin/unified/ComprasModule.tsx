@@ -265,7 +265,7 @@ function ComprasDashboard() {
       });
   }, [data.payables, nowTs]);
 
-  /* ── Tendencia con promedio movil ── */
+  /* ── Tendencia con promedio móvil ── */
   const trendData = useMemo(() => {
     return purchasesByMonth.map((m, i, arr) => {
       const windowSize = Math.min(3, i + 1);
@@ -326,7 +326,7 @@ function ComprasDashboard() {
 
       {/* === Compras por Mes (AreaChart) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
-        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (ultimos 6 meses)</CardTitle></div>
+        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (&uacute;ltimos 6 meses)</CardTitle></div>
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
             <defs>
@@ -408,8 +408,8 @@ function ComprasDashboard() {
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                         </div>
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{s.count} OCs</span>
+                        <span className="text-xs text-[var(--text-tertiary)] shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
+                        <span className="text-xs text-[var(--text-tertiary)] shrink-0">{s.count} OCs</span>
                       </div>
                     </div>
                   </div>
@@ -485,10 +485,10 @@ function ComprasDashboard() {
                       <p className="text-lg font-mono font-bold text-[var(--text-primary)]">S/ {p.amount.toLocaleString()}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className={cn("text-[length:var(--ts-2xs)] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
+                      <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", badgeColor)}>
                         {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
                       </span>
-                      <button className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline flex items-center gap-1">
+                      <button className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Pagado
                       </button>
                     </div>
@@ -500,10 +500,10 @@ function ComprasDashboard() {
         </div>
       </div>
 
-      {/* === Tendencia de Gastos vs Promedio Movil (ComposedChart) === */}
+      {/* === Tendencia de Gastos vs Promedio Móvil (ComposedChart) === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Tendencia de gastos</CardTitle>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Gasto real vs promedio movil 3 meses</p>
+        <p className="text-xs text-[var(--text-tertiary)] mb-4">Gasto real vs promedio móvil 3 meses</p>
         <ResponsiveContainer minWidth={0} width="100%" height={260}>
           <ComposedChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
@@ -512,7 +512,7 @@ function ComprasDashboard() {
             <Tooltip content={<ChartTooltip />} />
             <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
             <Bar dataKey="total" fill="var(--color-primary)" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
-            <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. movil 3m" />
+            <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. móvil 3m" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

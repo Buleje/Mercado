@@ -47,7 +47,7 @@ export default function VenderSocialProof() {
             </h2>
           </div>
           <p className="text-sm text-[var(--text-secondary)]">
-            Vecinos tuyos que ya viven de Buleje. Mirá cómo les va.
+            Vecinos tuyos que ya viven de Buleje. Mira cómo les va.
           </p>
         </header>
 

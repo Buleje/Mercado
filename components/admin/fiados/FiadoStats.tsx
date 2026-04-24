@@ -90,7 +90,7 @@ type FiadoStatsProps = {
 /**
  * STATUS_META — mapeo estado -> variante semantica StatusBadge.
  * ADR-074 Phase 2: eliminamos los bg-amber-100/emerald-100/red-100/gray-100
- * hardcoded. La variante es lo unico que importa; el color cae via tokens.
+ * hardcoded. La variante es lo único que importa; el color cae via tokens.
  */
 const STATUS_META: Record<FiadoStatus, { label: string; variant: "warning" | "success" | "error" | "neutral"; icon: typeof CheckCircle2 }> = {
   ACTIVO: { label: "Activo", variant: "warning", icon: Clock },
@@ -197,29 +197,29 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora 19 (ronda 3): Proyeccion de cobro */}
+      {/* Mejora 19 (ronda 3): Proyecci&oacute;n de cobro */}
       {!loading && fiados.length > 0 && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" />
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyeccion de cobro</p>
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyecci&oacute;n de cobro</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
             <div className="text-center">
               <p className="text-lg font-extrabold text-[var(--accent)] tabular-nums">{formatCurrency(proyeccionCobro.cobradoHoy)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Cobrado hoy</p>
+              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Cobrado hoy</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(proyeccionCobro.cobradoSemana)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Esta semana</p>
+              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Esta semana</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-[var(--data-warning)] tabular-nums">{formatCurrency(proyeccionCobro.promedioDiario)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Promedio/dia</p>
+              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Promedio/d&iacute;a</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-[var(--data-error)] tabular-nums">{formatCurrency(proyeccionCobro.totalPendiente)}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Pendiente</p>
+              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">Pendiente</p>
             </div>
           </div>
           {/* Progress bar */}
@@ -228,9 +228,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           </div>
           <p className="text-xs text-[var(--text-secondary)]">
             {proyeccionCobro.promedioDiario > 0 ? (
-              <>Si cobras <span className="font-bold text-[var(--accent)]">{formatCurrency(proyeccionCobro.promedioDiario)}/dia</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} dias</span></>
+              <>Si cobras <span className="font-bold text-[var(--accent)]">{formatCurrency(proyeccionCobro.promedioDiario)}/d&iacute;a</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} d&iacute;as</span></>
             ) : (
-              <span className="text-[var(--data-warning)] font-bold">Aun no has cobrado esta semana — empieza hoy!</span>
+              <span className="text-[var(--data-warning)] font-bold">A&uacute;n no has cobrado esta semana — &iexcl;empieza hoy!</span>
             )}
           </p>
         </div>
@@ -392,7 +392,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
         return (
           <div className="space-y-2">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5 text-[var(--text-primary)]" /> Top Deudores por Riesgo
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
@@ -411,7 +411,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     </div>
                     <p className="text-sm font-extrabold tabular-nums" style={{ color: tone.dataVar }}>
                       {formatCurrency(f.saldo)}
-                      {f.diasVencido > 0 && <span className="text-[length:var(--ts-2xs)] font-normal ml-1">· {f.diasVencido}d vencido</span>}
+                      {f.diasVencido > 0 && <span className="text-xs font-normal ml-1">· {f.diasVencido}d vencido</span>}
                     </p>
                     <div className="flex gap-1.5 mt-2">
                       <button
@@ -419,7 +419,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                           e.stopPropagation();
                           openDetail(f);
                         }}
-                        className="flex-1 text-[length:var(--ts-2xs)] font-bold text-center py-1 rounded-lg bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] transition-colors border border-[var(--rule-soft)]"
+                        className="flex-1 text-xs font-bold text-center py-1 rounded-lg bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] transition-colors border border-[var(--rule-soft)]"
                       >
                         Cobrar
                       </button>
@@ -433,7 +433,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                             window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                           }}
                           // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)
-                          className="text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                          className="text-xs font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                         >
                           <MessageCircle className="h-3 w-3" />
                         </button>
@@ -517,7 +517,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                       tieneVencidos ? "bg-[var(--data-error)]" : "bg-[var(--data-warning)]",
                     )}
                   />
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{fiadosDia.length}</span>
+                  <span className="text-xs font-bold text-[var(--text-secondary)]">{fiadosDia.length}</span>
                 </div>
               )}
             </button>
@@ -527,7 +527,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
+              <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-[var(--text-primary)]" /> Calendario de Vencimientos
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
@@ -554,18 +554,18 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               {/* Header dias */}
               <div className="grid grid-cols-7 gap-0.5 mb-0.5">
                 {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map(d => (
-                  <div key={d} className="text-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] py-1">{d}</div>
+                  <div key={d} className="text-center text-xs font-bold text-[var(--text-tertiary)] py-1">{d}</div>
                 ))}
               </div>
               {/* Grid dias */}
               <div className="grid grid-cols-7 gap-0.5">{celdas}</div>
               {sinVence > 0 && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-2 text-center">
+                <p className="text-xs text-[var(--data-warning)] mt-2 text-center">
                   {sinVence} fiados activos sin fecha de vencimiento
                 </p>
               )}
             </div>
-            {/* Detalle del dia seleccionado */}
+            {/* Detalle del día seleccionado */}
             {calDiaSeleccionado && porDia[calDiaSeleccionado] && (
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 space-y-2">
                 <p className="text-xs font-bold text-[var(--text-primary)]">
@@ -584,7 +584,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                       }}
                       // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)
-                      className="shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                      className="shrink-0 px-2 py-1 rounded-lg text-xs font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                     >
                       Cobrar
                     </button>

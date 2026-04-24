@@ -158,7 +158,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                       Generar orden de compra
                     </h2>
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                      Ajustá las cantidades sugeridas y generá la OC borrador.
+                      Ajusta las cantidades sugeridas y genera la OC borrador.
                     </p>
                   </div>
                 </div>

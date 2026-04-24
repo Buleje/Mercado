@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const QUEUE_KEY = "pos-offline-queue";
 
@@ -54,7 +55,7 @@ export function usePOSOffline() {
         const { _offlineId, _synced, _hasError, _errorMessage, ...salePayload } = sale;
         const res = await fetch("/api/sales", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(salePayload),
         });
 

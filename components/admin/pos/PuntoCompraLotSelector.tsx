@@ -25,7 +25,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
   const unitPrice = product.costPrice ?? 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="modal-backdrop p-4">
       <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-xs overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-[var(--rule-base)] dark:border-card-border">

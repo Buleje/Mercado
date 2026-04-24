@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import RegistroClient from "./RegistroClient";
 
 export const metadata: Metadata = {
-  title: "Registrá tu negocio — Vender en Buleje",
+  title: "Registra tu negocio — Vender en Buleje",
   description:
-    "Abrí tu tienda en Buleje en 5 pasos. Datos del negocio, contacto, verificación, horarios y plan. Gratis el primer mes.",
+    "Abre tu tienda en Buleje en 5 pasos. Datos del negocio, contacto, verificación, horarios y plan. Gratis el primer mes.",
   robots: { index: false, follow: false },
 };
 

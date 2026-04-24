@@ -129,7 +129,7 @@ export default function CxPCalendar() {
           <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="h-4 w-4 text-[var(--data-warning)] dark:text-[var(--data-warning)]" />
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Vence esta semana</p>
+              <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Vence esta semana</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               S/ {data.resumen.venceEstaSemana.toFixed(2)}
@@ -138,7 +138,7 @@ export default function CxPCalendar() {
           <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="h-4 w-4 text-[var(--data-success)] dark:text-[var(--data-success)]" />
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Vence este mes</p>
+              <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Vence este mes</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               S/ {data.resumen.venceEsteMes.toFixed(2)}
@@ -147,7 +147,7 @@ export default function CxPCalendar() {
           <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="h-4 w-4 text-[var(--data-error)] dark:text-[var(--data-error)]" />
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)] dark:text-[var(--data-error)] uppercase">Vencido</p>
+              <p className="text-xs font-bold text-[var(--data-error)] dark:text-[var(--data-error)] uppercase">Vencido</p>
             </div>
             <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
               S/ {data.resumen.vencido.toFixed(2)}
@@ -179,7 +179,7 @@ export default function CxPCalendar() {
         {/* Day headers */}
         <div className="grid grid-cols-7 bg-gray-50 dark:bg-accent/50">
           {DAYS_ES.map((d) => (
-            <div key={d} className="text-center py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted uppercase">
+            <div key={d} className="text-center py-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">
               {d}
             </div>
           ))}
@@ -222,12 +222,12 @@ export default function CxPCalendar() {
                   <div className="mt-0.5">
                     <div className="flex items-center gap-0.5">
                       <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", hasOverdue ? "bg-[var(--data-error)]" : "bg-primary")} />
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground truncate">
+                      <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">
                         S/{totalAmount.toFixed(0)}
                       </span>
                     </div>
                     {entries.length > 1 && (
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
+                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
                         +{entries.length - 1} mas
                       </span>
                     )}
@@ -272,7 +272,7 @@ export default function CxPCalendar() {
                     S/ {(entry.amount - entry.paidAmount).toFixed(2)}
                   </p>
                   {entry.paidAmount > 0 && entry.status !== "pagado" && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                       Abonado: S/ {entry.paidAmount.toFixed(2)}
                     </p>
                   )}

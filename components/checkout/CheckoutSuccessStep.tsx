@@ -101,7 +101,7 @@ export function CheckoutSuccessStep({ orderId, onClose }: CheckoutSuccessStepPro
             className="bg-linear-to-r from-primary/5 to-emerald-50 dark:from-primary/10 dark:to-emerald-900/20 rounded-2xl px-6 py-4 border border-primary/20 w-full max-w-xs"
           >
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-              Numero de pedido
+              Número de pedido
             </p>
             <p className="text-2xl font-extrabold text-primary font-mono mt-1">#{orderId}</p>
           </m.div>

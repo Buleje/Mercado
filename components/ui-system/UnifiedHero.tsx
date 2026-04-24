@@ -27,8 +27,8 @@
  * @example
  * <UnifiedHero
  *   kicker="Seller Central"
- *   title="Vendé en Buleje, llegá a todo Pucallpa"
- *   description="Abrí tu tienda online..."
+ *   title="Vende en Buleje, llegá a todo Pucallpa"
+ *   description="Abre tu tienda online..."
  *   trustChips={["Gratis el primer mes", "Soporte en español"]}
  *   ctaPrimary={{ label: "Empezar gratis", href: "/vender/registro" }}
  *   illustration={DoniaElena}

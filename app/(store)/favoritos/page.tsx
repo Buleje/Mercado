@@ -228,7 +228,7 @@ export default function FavoritosPage() {
 
   function handleWhatsApp() {
     const url = `${window.location.origin}/favoritos`;
-    const text = `Mirá mi lista de favoritos en Buleje: ${url}`;
+    const text = `Mira mi lista de favoritos en Buleje: ${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   }
 
@@ -268,7 +268,7 @@ export default function FavoritosPage() {
             <div className="flex-1">
               <Kicker className="text-white/40 mb-2">FAVORITOS</Kicker>
               <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-[-0.02em]">
-                Lo que querés, guardado
+                Lo que quieres, guardado
               </h1>
               <p className="text-sm text-white/50 mt-2 max-w-sm leading-relaxed">
                 Productos que apartaste para comprar después
@@ -442,8 +442,8 @@ export default function FavoritosPage() {
               <EmptyState
                 illustration={<CanastaVacia size={140} />}
                 eyebrow="Favoritos"
-                title="No tenés favoritos aún"
-                description="Tocá el corazón en cualquier producto para guardarlo acá y comprarlo después."
+                title="No tienes favoritos aún"
+                description="Tocá el corazón en cualquier producto para guardarlo aquí y comprarlo después."
                 action={
                   <Link
                     href="/tienda"
@@ -531,10 +531,10 @@ export default function FavoritosPage() {
                     id="share-heading"
                     className="text-sm font-semibold text-[var(--text-primary)]"
                   >
-                    Compartí tu lista con amigos
+                    Comparte tu lista con amigos
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                    Enviala por WhatsApp o copiá el enlace
+                    Enviala por WhatsApp o copia el enlace
                   </p>
                 </div>
               </div>

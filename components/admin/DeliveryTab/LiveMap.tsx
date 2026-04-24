@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import "leaflet/dist/leaflet.css";
 import { cn } from "@/lib/utils";
 import type { DeliveryStopView, LiveTrackingEvent } from "./types";
 
@@ -38,18 +39,6 @@ export function LiveMap({ stops, trackingEvents, className }: LiveMapProps) {
     (async () => {
       const L = await import("leaflet");
       if (cancelled || !containerRef.current) return;
-
-      // Cargar el CSS de Leaflet inyectando un <link> en el head una sola vez.
-      // Evita import estático del .css (TS no tipa CSS imports en este setup).
-      if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-        link.crossOrigin = "";
-        document.head.appendChild(link);
-      }
 
       if (mapRef.current) return; // ya inicializado
 
@@ -151,7 +140,7 @@ export function LiveMap({ stops, trackingEvents, className }: LiveMapProps) {
       <div
         ref={containerRef}
         className={cn(
-          "h-full w-full rounded-xl border border-slate-200 dark:border-slate-700",
+          "h-full w-full min-h-[400px] rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden",
           className,
         )}
         role="application"

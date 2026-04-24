@@ -27,7 +27,7 @@ type CotizacionItem = {
 
 type Cotizacion = {
   id: string;
-  numero: number;
+  número: number;
   clienteNombre: string;
   clienteRuc?: string;
   customerId?: string;
@@ -67,17 +67,17 @@ function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
   return (
     <div className="w-[300px] bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-secondary)]">COT-{String(cotizacion.numero).padStart(4, "0")}</span>
-        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>{meta.label}</span>
+        <span className="font-mono text-xs text-[var(--text-secondary)]">COT-{String(cotizacion.número).padStart(4, "0")}</span>
+        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
       </div>
       <p className="font-bold text-[var(--text-primary)] text-sm">{cotizacion.clienteNombre}</p>
-      {cotizacion.clienteRuc && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">RUC: {cotizacion.clienteRuc}</p>}
+      {cotizacion.clienteRuc && <p className="text-xs text-[var(--text-tertiary)]">RUC: {cotizacion.clienteRuc}</p>}
       <div className="border-t border-[var(--rule-soft)] pt-2">
-        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase mb-1">Items</p>
+        <p className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Items</p>
         {cotizacion.items.slice(0, 3).map((it, i) => (
           <p key={i} className="text-xs text-[var(--text-secondary)] truncate">{it.cantidad}x {it.descripcion}</p>
         ))}
-        {cotizacion.items.length > 3 && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">y {cotizacion.items.length - 3} mas...</p>}
+        {cotizacion.items.length > 3 && <p className="text-xs text-[var(--text-tertiary)]">y {cotizacion.items.length - 3} mas...</p>}
       </div>
       <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
         <span className="text-xs text-[var(--text-secondary)]">{formatDate(cotizacion.createdAt)}</span>
@@ -193,7 +193,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         <BarChart3 className="h-6 w-6 text-[var(--text-tertiary)]" />
       </div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{msg}</p>
-      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos apareceran cuando crees cotizaciones</p>
+      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando crees cotizaciones</p>
     </div>
   );
 
@@ -205,11 +205,11 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         {[
           { label: "Emitidas mes", value: String(emitidasMes), valueTone: "neutral" as const },
           { label: "Convertidas", value: String(convertidas), valueTone: "neutral" as const },
-          { label: "Tasa conversion", value: `${tasaConversion.toFixed(1)}%`, valueTone: (tasaConversion > 0 && tasaConversion < 15 ? "warning" : "neutral") as "neutral" | "warning" },
+          { label: "Tasa conversión", value: `${tasaConversion.toFixed(1)}%`, valueTone: (tasaConversion > 0 && tasaConversion < 15 ? "warning" : "neutral") as "neutral" | "warning" },
           { label: "Monto cotizado", value: formatCurrency(montoCotizado), valueTone: "neutral" as const },
         ].map(k => (
           <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-5">
-            <p className="text-[length:var(--ts-2xs)] uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{k.label}</p>
+            <p className="text-xs uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{k.label}</p>
             <p className={cn(
               "text-2xl font-mono font-bold mt-1 tabular-nums",
               k.valueTone === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]",
@@ -222,7 +222,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
       {/* Funnel */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
       <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6 ">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Funnel de conversion</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Funnel de conversión</CardTitle>
         {cotizaciones.length > 0 ? (
           <div className="space-y-2.5">
             {stages.map((stage, i) => {
@@ -234,7 +234,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
                   <div className={cn("rounded-lg px-3 py-2 text-xs font-bold transition-all", stage.bg, stage.text)} style={{ width: `${widthPct}%`, minWidth: "fit-content" }}>
                     {stage.label} ({stage.count})
                   </div>
-                  {i > 0 && prevCount > 0 && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{convPct}%</span>}
+                  {i > 0 && prevCount > 0 && <span className="text-xs text-[var(--text-tertiary)] shrink-0">{convPct}%</span>}
                 </div>
               );
             })}
@@ -264,7 +264,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
                 <Area type="monotone" dataKey="count" stroke="#457b9d" fill="url(#cotGrad)" strokeWidth={2} dot={{ r: 3, fill: "#457b9d" }} />
               </AreaChart>
             </ResponsiveContainer>
-          ) : emptyCot("Sin cotizaciones en los ultimos meses")}
+          ) : emptyCot("Sin cotizaciones en los últimos meses")}
         </div>
 
         {/* Top 5 clientes */}
@@ -615,7 +615,7 @@ export default function CotizacionesModule() {
             {id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
             {label}
             {id === "lista" && cotizaciones.length > 0 && (
-              <span className="bg-gray-200 text-[length:var(--ts-2xs)] px-1.5 rounded-full">{cotizaciones.length}</span>
+              <span className="bg-gray-200 text-xs px-1.5 rounded-full">{cotizaciones.length}</span>
             )}
           </button>
         ))}
@@ -627,7 +627,7 @@ export default function CotizacionesModule() {
       {/* ── TAB: LISTA ──────────────────────────────────────────────────── */}
       {activeTab === "lista" && (
         <>
-          {/* Mejora M9: KPIs de tasa de conversion */}
+          {/* Mejora M9: KPIs de tasa de conversión */}
           {!loading && cotizaciones.length > 0 && (() => {
             const total = cotizaciones.length;
             const convertidas = cotizaciones.filter(c => c.status === "CONVERTIDA").length;
@@ -648,15 +648,15 @@ export default function CotizacionesModule() {
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Total cotizaciones</p>
+                  <p className="text-xs uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Total cotizaciones</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{total}</p>
                 </div>
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Convertidas</p>
+                  <p className="text-xs uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Convertidas</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{convertidas}</p>
                 </div>
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Tasa conversion</p>
+                  <p className="text-xs uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Tasa conversión</p>
                   <p className={cn(
                     "text-lg font-extrabold tabular-nums",
                     tasaConversion > 0 && tasaConversion < 15
@@ -666,21 +666,21 @@ export default function CotizacionesModule() {
                     {tasaConversion.toFixed(1)}%
                   </p>
                   {cotsMesAnterior.length > 0 && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                       Este mes: {tasaMesActual.toFixed(0)}% vs anterior: {tasaMesAnterior.toFixed(0)}%
                       {tasaMesActual > tasaMesAnterior ? " ↑" : tasaMesActual < tasaMesAnterior ? " ↓" : ""}
                     </p>
                   )}
                 </div>
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Monto cotizado</p>
+                  <p className="text-xs uppercase font-bold tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Monto cotizado</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(montoTotal)}</p>
                 </div>
               </div>
             );
           })()}
 
-          {/* Mejora nueva: Funnel de conversion */}
+          {/* Mejora nueva: Funnel de conversión */}
           {!loading && cotizaciones.length > 0 && (() => {
             const stages = [
               { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-200", text: "text-[var(--text-primary)]" },
@@ -691,7 +691,7 @@ export default function CotizacionesModule() {
             const maxCount = Math.max(...stages.map(s => s.count), 1);
             return (
               <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
-                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-3">Funnel de conversion</p>
+                <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] mb-3">Funnel de conversión</p>
                 <div className="space-y-2">
                   {stages.map((stage, i) => {
                     const widthPct = Math.max(15, (stage.count / maxCount) * 100);
@@ -706,7 +706,7 @@ export default function CotizacionesModule() {
                           {stage.label} ({stage.count})
                         </div>
                         {i > 0 && prevCount > 0 && (
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{convPct}%</span>
+                          <span className="text-xs text-[var(--text-tertiary)] shrink-0">{convPct}%</span>
                         )}
                       </div>
                     );
@@ -734,7 +734,7 @@ export default function CotizacionesModule() {
                 type="button"
                 onClick={() => setShowQuickClient(true)}
                 className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
-                title="Crear cliente rapido"
+                title="Crear cliente rápido"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -770,7 +770,7 @@ export default function CotizacionesModule() {
                   description={
                     <>
                       <span className="line-clamp-2 block">
-                        {vencidas.slice(0, 3).map(c => `COT-${String(c.numero).padStart(4, "0")} para ${c.clienteNombre} (${formatCurrency(c.total)})`).join(" \u00B7 ")}
+                        {vencidas.slice(0, 3).map(c => `COT-${String(c.número).padStart(4, "0")} para ${c.clienteNombre} (${formatCurrency(c.total)})`).join(" \u00B7 ")}
                         {vencidas.length > 3 && ` y ${vencidas.length - 3} mas...`}
                       </span>
                       <div className="flex gap-2 mt-3">
@@ -857,18 +857,18 @@ export default function CotizacionesModule() {
                       return (
                         <div key={c.id} onClick={() => openDetail(c)} className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
-                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">COT-{String(c.numero).padStart(4, "0")}</span>
-                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>{meta.label}</span>
+                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">COT-{String(c.número).padStart(4, "0")}</span>
+                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
                           </div>
                           <div className="p-4 space-y-2">
                             <p className="font-bold text-[var(--text-primary)] truncate group-hover:text-primary transition-colors">{c.clienteNombre}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-lg font-extrabold text-primary">{formatCurrency(c.total)}</span>
-                              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
+                              <span className="text-xs text-[var(--text-tertiary)]">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-[var(--rule-soft)]">
                               <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
-                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.numero).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] py-1.5 rounded-lg transition-colors">WhatsApp</button>
+                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
                           </div>
                         </div>
@@ -899,7 +899,7 @@ export default function CotizacionesModule() {
                             <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                               {/* Mejora 17: Preview al hover */}
                               <HoverPreviewRow preview={<CotizacionPreview cotizacion={c} />}>
-                                <span>{String(c.numero).padStart(4, "0")}</span>
+                                <span>{String(c.número).padStart(4, "0")}</span>
                               </HoverPreviewRow>
                             </td>
                             <td className="px-4 py-3">
@@ -1202,7 +1202,7 @@ export default function CotizacionesModule() {
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización #{String(selected.numero).padStart(4, "0")}</CardTitle>
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización #{String(selected.número).padStart(4, "0")}</CardTitle>
                   <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
@@ -1223,9 +1223,9 @@ export default function CotizacionesModule() {
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
-                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Subtotal</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.subtotal)}</p></div>
-                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">IGV</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.igv)}</p></div>
-                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total</p><p className="text-sm font-bold text-primary">{formatCurrency(selected.total)}</p></div>
+                    <div><p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Subtotal</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.subtotal)}</p></div>
+                    <div><p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">IGV</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.igv)}</p></div>
+                    <div><p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Total</p><p className="text-sm font-bold text-primary">{formatCurrency(selected.total)}</p></div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                     <Calendar className="h-3.5 w-3.5" />
@@ -1270,15 +1270,15 @@ export default function CotizacionesModule() {
                       return (
                         <div key={idx} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)]", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-tertiary)]")}>
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-100 text-[var(--text-tertiary)]")}>
                               {isDone ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                             </div>
                             {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-[var(--accent-soft)]" : "bg-gray-200")} />}
                           </div>
                           <div className="pb-3">
                             <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{step.label}</p>
-                            {step.date && isDone && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(step.date)}</p>}
-                            {!isDone && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic">pendiente</p>}
+                            {step.date && isDone && <p className="text-xs text-[var(--text-tertiary)]">{formatDate(step.date)}</p>}
+                            {!isDone && <p className="text-xs text-[var(--text-tertiary)] italic">pendiente</p>}
                           </div>
                         </div>
                       );
@@ -1313,7 +1313,7 @@ export default function CotizacionesModule() {
                     }
                     if (diasEnviada > 3) {
                       const _phone = selected.customerId || "";
-                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.numero).padStart(4, "0")} por S/${selected.total.toFixed(2)}. ¿Te interesa?`;
+                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.número).padStart(4, "0")} por S/${selected.total.toFixed(2)}. ¿Te interesa?`;
                       return (
                         <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3 space-y-2">
                           <p className="text-xs font-bold text-[var(--data-warning)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
@@ -1368,7 +1368,7 @@ export default function CotizacionesModule() {
                         `${i + 1}. ${it.descripcion} x ${it.cantidad} — S/ ${it.subtotal.toFixed(2)}`
                       ).join("\n");
                       const texto = [
-                        `*Cotizacion #${String(c.numero).padStart(4, "0")} — Buleje*`,
+                        `*Cotizacion #${String(c.número).padStart(4, "0")} — Buleje*`,
                         `Cliente: ${c.clienteNombre}`,
                         `Fecha: ${formatDate(c.createdAt)}`,
                         `Valida hasta: ${formatDate(c.validoHasta)}`,
@@ -1499,7 +1499,7 @@ export default function CotizacionesModule() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                            <p className="text-xs text-[var(--text-tertiary)]">
                               {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
                             </p>
                           </div>
@@ -1556,13 +1556,13 @@ export default function CotizacionesModule() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                          <p className="text-xs text-[var(--text-tertiary)]">
                             {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
                           </p>
                         </div>
                         <button
                           onClick={() => handleLoadTemplate(tpl)}
-                          className="px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
+                          className="px-2 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
                         >
                           Usar
                         </button>

@@ -68,8 +68,8 @@ export default function ChatTab() {
             Chat con clientes
           </PageTitle>
           <p className="text-xs text-slate-500">
-            Bloque D2 del Marketplace · polling 5-8s · los clientes reciben respuesta automática
-            por WhatsApp cuando estás ausente
+            Mensajes de tus clientes desde la tienda. Cuando no estés en línea,
+            reciben respuesta automática por WhatsApp.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -149,7 +149,7 @@ export default function ChatTab() {
               emptyState={
                 selectedThread
                   ? "Todavía no hay mensajes en esta conversación"
-                  : "Elegí una conversación de la lista"
+                  : "Elige una conversación de la lista"
               }
             />
           </div>

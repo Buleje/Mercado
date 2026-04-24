@@ -385,7 +385,7 @@ export default function ProductDetailPage() {
               aria-label="Abrir el asistente Buleje para preguntar sobre este producto"
             >
               <BotMessageSquare className="h-4 w-4" />
-              ¿Tenés dudas? Preguntale al asistente
+              ¿Tienes dudas? Preguntale al asistente
             </button>
 
             {/* Variants */}

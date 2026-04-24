@@ -162,7 +162,7 @@ export default function ABTestsTab() {
 
       {/* Create modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowCreate(false)}>
           <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <CardTitle className="text-lg font-extrabold text-foreground">Nuevo A/B Test</CardTitle>

@@ -43,7 +43,7 @@ export default function VenderMiniCTA() {
           </CardTitle>
           <Caption className="mt-1 text-[var(--text-secondary)]">
             Publica tu catalogo, recibe pedidos por WhatsApp y Buleje se encarga
-            del cobro y la logistica. Sin costo de inscripcion.
+            del cobro y la logística. Sin costo de inscripcion.
           </Caption>
         </div>
 

@@ -314,7 +314,7 @@ export default function FleetManagementTab() {
 
       {/* Change status modal */}
       {showStatusModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowStatusModal(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowStatusModal(null)}>
           <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Estado — {showStatusModal.name}</CardTitle>
@@ -344,7 +344,7 @@ export default function FleetManagementTab() {
 
       {/* Register maintenance modal */}
       {showMaintModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowMaintModal(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowMaintModal(false)}>
           <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md border border-[var(--rule-base)] dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Registrar mantenimiento</CardTitle>

@@ -63,47 +63,50 @@ export default function FiadoFormModal({
 }: FiadoFormModalProps) {
   if (!showNew) return null;
   return (
-    <>
-        {showNew && (
-          <>
-            <m.div
-              key="new-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => setShowNew(false)}
-            />
-            <m.div
-              key="new-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowNew(false)}
-            >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl flex flex-col max-h-[90vh]">
-                {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nuevo Fíado</CardTitle>
-                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <m.div
+      key="new-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="modal-backdrop p-4"
+      onClick={e => e.target === e.currentTarget && setShowNew(false)}
+    >
+      <m.div
+        key="new-modal"
+        initial={{ scale: 0.95, y: 10 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/15 flex items-center justify-center shrink-0">
+              <Plus className="h-5 w-5 text-[var(--data-warning)]" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Nuevo fiado</h3>
+              <p className="text-sm text-[var(--text-tertiary)]">Registra una venta al cr&eacute;dito</p>
+            </div>
+          </div>
+          <button onClick={() => setShowNew(false)} aria-label="Cerrar" className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
+            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+          </button>
+        </div>
 
-                <div className="space-y-3">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cliente (nombre o teléfono)</label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(nombre o tel&eacute;fono)</span></label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
                       <input
                         type="text"
                         value={newForm.customerId}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }))}
-                        placeholder="Ej: 987654321"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        placeholder="Ej: 987654321 o Maria Rodr&iacute;guez"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
@@ -120,7 +123,7 @@ export default function FiadoFormModal({
                         <div className="border-2 border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 space-y-1">
                           <p className="text-sm font-bold text-[var(--data-error)] dark:text-[var(--data-error)]">Cliente bloqueado por morosidad</p>
                           <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
-                            {clienteResumen.nombre} tiene deudas vencidas hace mas de 60 dias. Deuda actual: {formatCurrency(clienteResumen.deudaActual)}
+                            {clienteResumen.nombre} tiene deudas vencidas hace m&aacute;s de 60 d&iacute;as. Deuda actual: {formatCurrency(clienteResumen.deudaActual)}
                           </p>
                         </div>
                       ) : (
@@ -158,9 +161,9 @@ export default function FiadoFormModal({
                   )}
 
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto total (S/)</label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto total</label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
                       <input
                         type="number"
                         step="0.01"
@@ -168,34 +171,34 @@ export default function FiadoFormModal({
                         value={newForm.total}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, total: e.target.value }))}
                         placeholder="0.00"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción (opcional)</label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Descripci&oacute;n <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
                     <div className="relative">
-                      <FileText className="absolute left-3 top-3 h-4 w-4 text-[var(--text-tertiary)]" />
+                      <FileText className="absolute left-4 top-3.5 h-5 w-5 text-[var(--text-tertiary)]" />
                       <textarea
                         value={newForm.descripcion}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, descripcion: e.target.value }))}
-                        placeholder="Detalle de lo que se llevó..."
+                        placeholder="Detalle de lo que se llev&oacute;..."
                         rows={2}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha de vencimiento (opcional)</label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Fecha de vencimiento <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
                       <input
                         type="date"
                         value={newForm.fechaVence}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, fechaVence: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     </div>
                   </div>
@@ -238,7 +241,7 @@ export default function FiadoFormModal({
                               const file = e.target.files?.[0];
                               if (!file) return;
                               if (file.size > 2 * 1024 * 1024) {
-                                setCreateError("La imagen no puede pesar mas de 2MB");
+                                setCreateError("La imagen no puede pesar m&aacute;s de 2MB");
                                 return;
                               }
                               const reader = new FileReader();
@@ -250,33 +253,32 @@ export default function FiadoFormModal({
                       )}
                     </div>
                   )}
-                </div>
 
                 {createError && (
-                  <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-semibold">{createError}</p>
+                  <div className="rounded-xl bg-[var(--data-error-50)] border border-[var(--data-error)]/30 px-4 py-3">
+                    <p className="text-sm text-[var(--data-error)] font-semibold">{createError}</p>
+                  </div>
                 )}
-                </div>
-                {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
-                  <button
-                    onClick={() => setShowNew(false)}
-                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleCreate}
-                    disabled={creating}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-lg  transition-colors"
-                  >
-                    {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    Crear Fíado
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-    </>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+          <button
+            onClick={() => setShowNew(false)}
+            className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+          >
+            {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+            Crear fiado
+          </button>
+        </div>
+      </m.div>
+    </m.div>
   );
 }

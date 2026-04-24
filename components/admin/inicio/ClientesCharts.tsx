@@ -112,7 +112,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "retencion-6m",
       render: () => (
         <DashboardSection
-          kicker="Retención · últimos 6 meses"
+          kicker="Retención · rango activo"
           title="Nuevos vs recurrentes por mes"
           kpis={[
             { label: "Total 6m", value: String(retencionKpis.total), tone: "primary" },
@@ -150,7 +150,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "clientes-por-dia",
       render: () => (
         <DashboardSection
-          kicker="Actividad · últimos 14 días"
+          kicker="Actividad · rango activo"
           title="Clientes nuevos y activos por día"
           kpis={[
             { label: "Nuevos 14d", value: String(porDiaKpis.nuevos), tone: "success" },

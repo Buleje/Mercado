@@ -162,7 +162,7 @@ export default function WebVitalsWidget() {
         />
       </div>
 
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 text-center mt-3">
+      <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 text-center mt-3">
         Datos de tu navegador actual
       </p>
     </div>

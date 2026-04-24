@@ -48,7 +48,7 @@ const QUICK_LINKS: readonly QuickLink[] = [
     matchPrefix: "/marketplace/explorar?sort=newest",
   },
   {
-    label: "Mas vendidos",
+    label: "Más vendidos",
     href: "/marketplace/explorar?sort=best-sellers",
     matchPrefix: "/marketplace/explorar?sort=best-sellers",
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { VocabularyProvider } from "@/contexts/vocabulary-context";
 import { ModuleTabsProvider } from "@/contexts/module-tabs-context";
@@ -35,9 +35,81 @@ const FAB_EXCLUDED_TABS = new Set([
   "ventas-caja",
   "fiados",
   "pedidos",
+  "turnos",
+  "caja",
+  "productos",
+  "inventario",
+  "clientes",
+  "compras",
+  "plata",
+  "analytics-pro",
+  "marketplace",
+  "mi-tienda",
+  "store-customizer",
+  "vendor-dashboard",
+  "delivery-partners",
+  "delivery-live",
+  "rendimiento",
+  "asistente-ia",
+  "ai-command",
+  "sugerencias-ia",
+  "metas-logros",
+  "marketplace-chat",
+  "colas",
+  "config",
+  "plan",
+  "cotizaciones",
+  "guias-remision",
+  "notas-credito",
+  "contratos",
+  "auditoria",
+  "devoluciones-proveedor",
+  "recetas",
+  "prestamos",
+  "facturacion",
+  "scoring",
+  "subscriptions",
+  "gift-cards-admin",
+  "socio-members",
+  "lives-admin",
+  "mi-perfil",
+  "support-inbox",
+  "pagina-inicio",
 ]);
 
+/**
+ * Wrapper público — encapsula Suspense boundary alrededor del contenido que
+ * usa `useSearchParams()` (Next 16 exige Suspense explícito para no marcar
+ * la ruta como "blocking"). El fallback es `{children}` sin FAB para que
+ * la UI sea funcional durante el primer paint.
+ */
 export function AdminProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<AdminProvidersBare>{children}</AdminProvidersBare>}>
+      <AdminProvidersInner>{children}</AdminProvidersInner>
+    </Suspense>
+  );
+}
+
+/**
+ * Fallback minimal — mismos providers pero SIN consumir search params ni FAB.
+ * Se usa durante el Suspense boundary mientras Next resuelve los search params.
+ */
+function AdminProvidersBare({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminMotionProvider>
+      <VocabularyProvider>
+        <ModuleTabsProvider>
+          <UndoToastProvider>
+            <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+          </UndoToastProvider>
+        </ModuleTabsProvider>
+      </VocabularyProvider>
+    </AdminMotionProvider>
+  );
+}
+
+function AdminProvidersInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = searchParams?.get("tab") ?? "";

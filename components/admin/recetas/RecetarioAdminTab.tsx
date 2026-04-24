@@ -27,7 +27,7 @@ type RecetaPublica = {
   emoji: string;
   tiempoMinutos: number;
   porciones: number;
-  dificultad: "Facil" | "Media" | "Dificil";
+  dificultad: "Fácil" | "Media" | "Dificil";
   categoria: string;
   videoUrl: string | null;
   ingredientes: Ingrediente[];
@@ -45,7 +45,7 @@ type ProductSearch = {
 
 const CATEGORIAS = ["Entradas", "Platos de fondo", "Sopas", "Postres", "Bebidas"];
 const UNIDADES = ["unidad", "kg", "litro", "atado", "botella", "bolsa", "sobre", "lata", "paquete", "pack"];
-const DIFICULTADES: ("Facil" | "Media" | "Dificil")[] = ["Facil", "Media", "Dificil"];
+const DIFICULTADES: ("Fácil" | "Media" | "Dificil")[] = ["Fácil", "Media", "Dificil"];
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
@@ -67,7 +67,7 @@ export default function RecetarioAdminTab() {
   const [emoji, setEmoji] = useState("");
   const [tiempoMinutos, setTiempoMinutos] = useState(30);
   const [porciones, setPorciones] = useState(4);
-  const [dificultad, setDificultad] = useState<"Facil" | "Media" | "Dificil">("Facil");
+  const [dificultad, setDificultad] = useState<"Fácil" | "Media" | "Dificil">("Fácil");
   const [categoria, setCategoria] = useState("Platos de fondo");
   const [videoUrl, setVideoUrl] = useState("");
   const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
@@ -100,7 +100,7 @@ export default function RecetarioAdminTab() {
   // ── Form helpers ──
   const resetForm = () => {
     setNombre(""); setDescripcion(""); setEmoji(""); setTiempoMinutos(30);
-    setPorciones(4); setDificultad("Facil"); setCategoria("Platos de fondo");
+    setPorciones(4); setDificultad("Fácil"); setCategoria("Platos de fondo");
     setVideoUrl(""); setIngredientes([]); setPasos([""]); setModalTab("info");
     setEditing(null);
   };
@@ -370,7 +370,7 @@ export default function RecetarioAdminTab() {
             <m.div key="del-modal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
                 <p className="text-base font-bold text-[var(--text-primary)]">Eliminar receta?</p>
-                <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario publico.</p>
+                <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">Cancelar</button>
                   <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-[var(--data-error)] text-white hover:bg-[var(--data-error)] transition-colors">Eliminar</button>
@@ -418,14 +418,14 @@ export default function RecetarioAdminTab() {
                           : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                       )}
                     >
-                      {t === "info" ? "Info Basica" : t === "ingredientes" ? "Ingredientes" : t === "pasos" ? "Pasos" : "Vista previa"}
+                      {t === "info" ? "Info Básica" : t === "ingredientes" ? "Ingredientes" : t === "pasos" ? "Pasos" : "Vista previa"}
                     </button>
                   ))}
                 </div>
 
                 {/* Modal Body */}
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                  {/* A) Info Basica */}
+                  {/* A) Info Básica */}
                   {modalTab === "info" && (
                     <div className="space-y-3">
                       <div>
@@ -605,7 +605,7 @@ export default function RecetarioAdminTab() {
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" />{porciones} porciones</span>
                                 <span className={cn(
                                   "px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
-                                  dificultad === "Facil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning)]/30" : "bg-[var(--data-error)]/30"
+                                  dificultad === "Fácil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning)]/30" : "bg-[var(--data-error)]/30"
                                 )}>{dificultad}</span>
                               </div>
                             </div>

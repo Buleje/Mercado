@@ -354,12 +354,12 @@ export default function ScoringCrediticioTab() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => {
+                {filtered.map((c, idx) => {
                   const cfg = LEVEL_CONFIG[c.level];
                   const LevelIcon = cfg.icon;
                   return (
                     <tr
-                      key={c.customerId}
+                      key={c.customerId || `row-${idx}`}
                       className={cn(
                         "border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors",
                       )}
@@ -416,12 +416,12 @@ export default function ScoringCrediticioTab() {
 
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
-            {filtered.map(c => {
+            {filtered.map((c, idx) => {
               const cfg = LEVEL_CONFIG[c.level];
               const LevelIcon = cfg.icon;
               return (
                 <div
-                  key={c.customerId}
+                  key={c.customerId || `card-${idx}`}
                   className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 "
                 >
                   <div className="flex items-start justify-between mb-3">

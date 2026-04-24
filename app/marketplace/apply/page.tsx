@@ -202,7 +202,7 @@ export default function MarketplaceApplyPage() {
             {[
               "Revisamos tu solicitud (máximo 24 horas)",
               "Te enviamos acceso a tu panel de administración",
-              "Subís tus productos y empezás a vender",
+              "Subes tus productos y empiezas a vender",
             ].map((t, i) => (
               <div
                 key={i}
@@ -248,7 +248,7 @@ export default function MarketplaceApplyPage() {
             Registro gratuito · 3 minutos
           </span>
           <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Abrí tu tienda en <span className="gradient-text">Buleje</span>
+            Abre tu tienda en <span className="gradient-text">Buleje</span>
           </h1>
         </div>
 
@@ -285,7 +285,7 @@ export default function MarketplaceApplyPage() {
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 min-h-[440px] flex flex-col">
               <AnimatePresence mode="wait">
-                {/* ── STEP 1: Vos ── */}
+                {/* ── STEP 1: Tú ── */}
                 {step === 1 && (
                   <m.div
                     key="step-1"
@@ -322,7 +322,7 @@ export default function MarketplaceApplyPage() {
                     <div>
                       <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
                         <Phone className="h-3.5 w-3.5 inline mr-1.5" />
-                        WhatsApp (te llamamos por acá)
+                        WhatsApp (te llamamos por aquí)
                       </label>
                       <input
                         type="tel"
@@ -480,7 +480,7 @@ export default function MarketplaceApplyPage() {
                         Paso 4 de 4
                       </p>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
-                        Revisá y listo
+                        Revisa y listo
                       </h2>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                         Si todo se ve bien, enviá tu solicitud.
@@ -626,7 +626,7 @@ export default function MarketplaceApplyPage() {
                     </span>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 line-clamp-3 min-h-[3rem]">
-                    {form.description || "Tu descripción aparecerá acá — contale a los vecinos qué hace tu tienda especial."}
+                    {form.description || "Tu descripción aparecerá aquí — contale a los vecinos qué hace tu tienda especial."}
                   </p>
                   <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[length:var(--ts-2xs)]">
                     <span className="inline-flex items-center gap-1 text-amber-500 font-bold">

@@ -297,7 +297,7 @@ export default function AutoSegmentsTab() {
 
       {/* Modal crear/editar */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowModal(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-lg w-full border border-[var(--rule-base)] dark:border-card-border max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</CardTitle>
             <div className="space-y-6">

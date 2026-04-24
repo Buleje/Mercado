@@ -247,7 +247,7 @@ export default function ShrinkageTab() {
       </div>
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="modal-backdrop p-4">
           <div className="w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
             <div className="mb-4 flex items-start justify-between">
               <div>

@@ -464,7 +464,7 @@ export default function EmployeePerformanceChart() {
           {/* Top 5 productos */}
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
-              Productos mas vendidos (esta semana)
+              Productos más vendidos (esta semana)
             </CardTitle>
             <TopProductsTable products={selected.topProducts} />
           </div>

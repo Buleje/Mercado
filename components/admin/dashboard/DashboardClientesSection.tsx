@@ -75,7 +75,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 return "Nuevo";
               };
               const rows = customers.map((c: any) => ({
-                telefono: c.phone,
+                teléfono: c.phone,
                 nombre: c.name,
                 ubicacion: c.location,
                 registrado: c.createdAt.slice(0, 10),

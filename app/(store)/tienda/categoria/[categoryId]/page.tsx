@@ -56,7 +56,7 @@ const categoryDescriptions: Record<string, string> = {
     "Abarrotes esenciales: arroz, fideos, aceite, azúcar, enlatados y más. Compra tus productos de despensa con delivery rápido.",
   carnes:
     "Carnes frescas de calidad: pollo, res, cerdo y más. Delivery en frío garantizado. Buleje.",
-  lacteos:
+  lácteos:
     "Productos lácteos frescos: leche, queso, yogurt, mantequilla y más. Delivery rápido.",
   bebidas:
     "Bebidas para toda la familia: agua, gaseosas, jugos naturales y más. Delivery con Buleje.",

@@ -91,7 +91,7 @@ export default function ReorderModal({
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0) {
-      setError("Agregá al menos un producto.");
+      setError("Agrega al menos un producto.");
       return;
     }
     setSubmitting(true);

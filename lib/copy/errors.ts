@@ -7,13 +7,13 @@
  *   3. Instruct: qué hacer AHORA para resolverlo
  *
  * MAL: "Error: invalid input"
- * BIEN: "No pudimos validar tu número. Debe empezar con 9. Probá de nuevo."
+ * BIEN: "No pudimos validar tu número. Debe empezar con 9. Prueba de nuevo."
  */
 
 export const ERROR = {
   // ── Red / conexión ────────────────────────────────────────
   networkOffline:
-    "Estás sin internet. Revisá tu WiFi o datos y volvé a intentar.",
+    "Estás sin internet. Revisa tu WiFi o datos y vuelve a intentar.",
   networkSlow:
     "La conexión está lenta. Esperá un momento — no cierres la página.",
   serverDown:
@@ -21,15 +21,15 @@ export const ERROR = {
 
   // ── Auth ──────────────────────────────────────────────────
   loginWrongCode:
-    "El código no coincide. Revisá el SMS o pedí uno nuevo.",
+    "El código no coincide. Revisa el SMS o pide uno nuevo.",
   loginExpiredCode:
-    "Tu código venció. Pedí uno nuevo — llega en 30 segundos.",
+    "Tu código venció. Pide uno nuevo — llega en 30 segundos.",
   loginBlocked:
     "Muchos intentos fallidos. Esperá 5 minutos antes de volver a probar.",
   phoneInvalid:
     "El número debe tener 9 dígitos y empezar con 9. Revisalo.",
   emailInvalid:
-    "Ese email no parece válido. Revisá que tenga @ y punto.",
+    "Ese email no parece válido. Revisa que tenga @ y punto.",
 
   // ── Formularios ───────────────────────────────────────────
   required: "Este campo es obligatorio.",
@@ -41,37 +41,37 @@ export const ERROR = {
   yapeNumberInvalid:
     "Tu número de Yape debe empezar con 9 y tener 9 dígitos. Revisalo.",
   yapeCaptureUnreadable:
-    "No pudimos leer la captura. Tomá otra más clara o ingresá el código manual.",
+    "No pudimos leer la captura. Toma otra más clara o ingresá el código manual.",
   yapeAmountMismatch: (expected: string, got: string) =>
     `El monto de tu Yape (${got}) no coincide con el pedido (${expected}). Contactá a la tienda.`,
   paymentFailed:
-    "Tu pago no se procesó. No te cobramos — intentá de nuevo o elegí otro método.",
+    "Tu pago no se procesó. No te cobramos — intentá de nuevo o elige otro método.",
   paymentTimeout:
     "Tardamos demasiado en confirmar el pago. Tu dinero está seguro — contactá a soporte si no lo ves en 5 min.",
 
   // ── Checkout ──────────────────────────────────────────────
   cartEmpty:
-    "Tu carrito está vacío. Agregá productos antes de ir a pagar.",
+    "Tu carrito está vacío. Agrega productos antes de ir a pagar.",
   stockInsufficient: (productName: string, available: number) =>
-    `Solo quedan ${available} de "${productName}". Ajustá la cantidad.`,
+    `Solo quedan ${available} de "${productName}". Ajusta la cantidad.`,
   addressIncomplete:
     "Falta tu dirección. Escribila para que llegue tu pedido.",
   deliveryZoneOutside:
-    "Tu dirección queda fuera de nuestra zona. Contactanos por WhatsApp para ver opciones.",
+    "Tu dirección queda fuera de nuestra zona. Contáctanos por WhatsApp para ver opciones.",
 
   // ── Admin ─────────────────────────────────────────────────
   notAuthorized:
-    "No tenés permiso para esta acción. Hablá con el dueño de la tienda.",
+    "No tienes permiso para esta acción. Hablá con el dueño de la tienda.",
   notFound:
     "Ese elemento ya no existe. Puede que alguien lo haya borrado.",
   duplicateEntry: (what: string) =>
-    `Ya existe ${what} con esos datos. Revisá los registros.`,
+    `Ya existe ${what} con esos datos. Revisa los registros.`,
   cannotDelete: (what: string, reason: string) =>
     `No podemos borrar ${what}: ${reason}.`,
 
   // ── SUNAT / facturación ───────────────────────────────────
   sunatRucInvalid:
-    "El RUC debe tener 11 dígitos. Revisalo y volvé a intentar.",
+    "El RUC debe tener 11 dígitos. Revisalo y vuelve a intentar.",
   sunatDniInvalid:
     "El DNI debe tener 8 dígitos. Revisalo.",
   sunatServiceDown:
@@ -79,15 +79,15 @@ export const ERROR = {
 
   // ── Uploads ───────────────────────────────────────────────
   fileTooBig: (maxMb: number) =>
-    `El archivo pesa más de ${maxMb}MB. Usá una imagen más liviana.`,
+    `El archivo pesa más de ${maxMb}MB. Usa una imagen más liviana.`,
   fileWrongType:
     "Solo aceptamos imágenes JPG o PNG. Convertí tu archivo.",
 
   // ── Genéricos (evitar usar — preferir específicos) ────────
   unknown:
-    "Nos pasó algo inesperado. Ya lo estamos revisando — volvé a intentar.",
+    "Nos pasó algo inesperado. Ya lo estamos revisando — vuelve a intentar.",
   unsaved:
-    "Tu trabajo no se guardó. Revisá tu conexión y volvé a intentar.",
+    "Tu trabajo no se guardó. Revisa tu conexión y vuelve a intentar.",
 } as const;
 
 /**

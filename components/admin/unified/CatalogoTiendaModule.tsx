@@ -311,7 +311,7 @@ function ProductsDashboard() {
               <text x="50%" y="48%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-lg font-bold font-mono">
                 S/ {totalInventoryValue.toLocaleString()}
               </text>
-              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
+              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-xs">
                 Total inv.
               </text>
             </PieChart>
@@ -366,8 +366,8 @@ function ProductsDashboard() {
 
       {/* === SECCION 5: Scatter de margenes === */}
       <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Analisis de margenes</CardTitle>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-4">Precio venta vs margen % — tamano = stock</p>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Análisis de margenes</CardTitle>
+        <p className="text-xs text-[var(--text-tertiary)] mb-4">Precio venta vs margen % — tamano = stock</p>
         <ResponsiveContainer minWidth={0} width="100%" height={300}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
@@ -403,9 +403,9 @@ function ProductsDashboard() {
           </ScatterChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-3 justify-center">
-          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
-          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" /> 10-25%</span>
-          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error)]" /> {"<"}10%</span>
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning)]" /> 10-25%</span>
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error)]" /> {"<"}10%</span>
         </div>
       </div>
 
@@ -424,7 +424,7 @@ function ProductsDashboard() {
             <text x="50%" y="70%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-2xl font-bold font-mono">
               {kpis.total}
             </text>
-            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
+            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-xs">
               total
             </text>
           </PieChart>
@@ -441,7 +441,7 @@ function ProductsDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[var(--data-warning)]">{kpis.sinImagen} sin imagen</p>
               <p className="text-xs text-[var(--data-warning)] mt-0.5">Productos sin foto se venden menos</p>
-              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] bg-[var(--data-warning-100)] px-3 py-1 rounded-full hover:bg-[var(--data-warning)] transition-colors">
+              <button className="mt-2 text-xs font-semibold text-[var(--data-warning)] bg-[var(--data-warning-100)] px-3 py-1 rounded-full hover:bg-[var(--data-warning)] transition-colors">
                 Completar
               </button>
             </div>
@@ -455,7 +455,7 @@ function ProductsDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[var(--data-error)]">{kpis.sinCosto} sin costo</p>
               <p className="text-xs text-[var(--data-error)] mt-0.5">Sin costo no se calcula el margen</p>
-              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error)] bg-[var(--data-error-100)] px-3 py-1 rounded-full hover:bg-[var(--data-error)] transition-colors">
+              <button className="mt-2 text-xs font-semibold text-[var(--data-error)] bg-[var(--data-error-100)] px-3 py-1 rounded-full hover:bg-[var(--data-error)] transition-colors">
                 Agregar costos
               </button>
             </div>
@@ -469,7 +469,7 @@ function ProductsDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[var(--text-primary)]">{kpis.sinStock} sin stock</p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">Estos productos no se muestran en la tienda</p>
-              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+              <button className="mt-2 text-xs font-semibold text-[var(--text-primary)] bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
                 Ver productos
               </button>
             </div>

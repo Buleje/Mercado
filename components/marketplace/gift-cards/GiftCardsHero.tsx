@@ -27,7 +27,7 @@ export default function GiftCardsHero() {
         "WhatsApp o email",
         "Personalizable",
       ]}
-      ctaPrimary={{ label: "Elegí un monto", href: "#denominaciones" }}
+      ctaPrimary={{ label: "Elige un monto", href: "#denominaciones" }}
       ctaSecondary={{ label: "Mis tarjetas", href: "/cuenta/gift-cards" }}
       illustration={PaicheEnOlla}
       illustrationSize={280}

@@ -29,7 +29,6 @@ import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
-import { _AdminSubSidebar } from "@/components/admin/layout/AdminSubSidebar";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
 // AdminCommandPalette, AdminGlobalModals and AdminOverlaysLayer are not on the
@@ -133,6 +132,8 @@ function AdminPage() {
     if (typeof window === "undefined") return false;
     try { return localStorage.getItem("admin-sidebar-compact") === "true"; } catch { return false; }
   });
+  // Config mode: cuando editando barra lateral, sidebar se expande a 400px
+  const [sidebarConfigMode, setSidebarConfigMode] = useState<boolean>(false);
   useEffect(() => {
     const syncFromStorage = () => {
       try { setSidebarCompact(localStorage.getItem("admin-sidebar-compact") === "true"); } catch { /* ignore */ }
@@ -141,11 +142,17 @@ function AdminPage() {
       const detail = (e as CustomEvent<{ compact: boolean }>).detail;
       if (detail && typeof detail.compact === "boolean") setSidebarCompact(detail.compact);
     };
+    const syncConfigMode = (e: Event) => {
+      const detail = (e as CustomEvent<{ configMode: boolean }>).detail;
+      if (detail && typeof detail.configMode === "boolean") setSidebarConfigMode(detail.configMode);
+    };
     window.addEventListener("storage", syncFromStorage);
     window.addEventListener("admin-sidebar-compact-change", syncFromEvent);
+    window.addEventListener("admin-sidebar-config-change", syncConfigMode);
     return () => {
       window.removeEventListener("storage", syncFromStorage);
       window.removeEventListener("admin-sidebar-compact-change", syncFromEvent);
+      window.removeEventListener("admin-sidebar-config-change", syncConfigMode);
     };
   }, []);
   const swipeHandlers = useSwipeNavigation(tab, navigateTab, TAB_CATEGORIES);
@@ -271,6 +278,8 @@ function AdminPage() {
         presentationMode ? "sm:ml-0"
           : focusMode ? "sm:ml-16"
           : sidebarCompact ? "sm:ml-[60px]"
+          /* configMode: sidebar (260px) + config panel (400px) = 660px */
+          : sidebarConfigMode ? "sm:ml-[660px]"
           : "sm:ml-[260px]",
       )}>
         <AdminTopHeader

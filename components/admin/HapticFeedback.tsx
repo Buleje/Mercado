@@ -140,7 +140,7 @@ export default function HapticFeedback() {
     {
       key: "short",
       label: "Corto",
-      desc: "50ms — tap rapido",
+      desc: "50ms — tap rápido",
       pattern: 50,
       fn: haptic.vibrateShort,
     },

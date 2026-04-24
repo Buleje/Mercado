@@ -180,13 +180,13 @@ export default function SimpleExpiryTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{b.productName}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.bg, cfg.color)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cfg.bg, cfg.color)}>
                       {b.days < 0 ? `Venció hace ${Math.abs(b.days)} días` :
                        b.days === 0 ? "Vence hoy" :
                        `Vence en ${b.days} días`}
                     </span>
                     {isReviewed && (
-                      <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
                         ✓ Revisado
                       </span>
                     )}

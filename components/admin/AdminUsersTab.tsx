@@ -404,7 +404,7 @@ export default function AdminUsersTab() {
 
       {/* ── Delete confirmation ────────────────────────────────────────────── */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmDeleteId(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setConfirmDeleteId(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 flex items-center justify-center shrink-0">
@@ -491,7 +491,7 @@ function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving:
 
 function ModalWrapper({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="modal-backdrop p-4" onClick={onClose}>
       <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">

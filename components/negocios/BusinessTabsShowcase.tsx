@@ -282,7 +282,7 @@ const FEATURES: TabFeature[] = [
     id: "pos",
     icon: ShoppingCart,
     title: "Punto de Venta",
-    shortDesc: "Vendé rápido desde el mostrador",
+    shortDesc: "Vende rápido desde el mostrador",
     bullets: [
       "Escaneás código y cobrás en segundos",
       "Genera boleta/factura automática",
@@ -297,7 +297,7 @@ const FEATURES: TabFeature[] = [
     title: "Inventario",
     shortDesc: "Stock en tiempo real, alertas y vencimientos",
     bullets: [
-      "Sabés qué producto te está por faltar",
+      "Sabes qué producto te está por faltar",
       "Alertas de vencimiento automáticas",
       "Control de mermas y pérdidas",
       "Conteo físico vs sistema con 1 click",

@@ -299,7 +299,7 @@ export function ExclusiveOffersTab() {
                   <tr key={o.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-bold text-[var(--text-primary)]">{o.productName}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{o.id}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{o.id}</p>
                     </td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell line-through">
                       {fmt(o.regularPrice)}

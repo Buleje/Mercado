@@ -39,7 +39,7 @@ export default function RoutesList({ routes, activeCategory }: Props) {
           Sin resultados
         </h3>
         <p className="text-sm text-[var(--text-tertiary)] max-w-sm mx-auto">
-          No hay rutas que coincidan con la búsqueda. Probá otra categoría o limpiá el filtro.
+          No hay rutas que coincidan con la búsqueda. Prueba otra categoría o limpiá el filtro.
         </p>
       </div>
     );

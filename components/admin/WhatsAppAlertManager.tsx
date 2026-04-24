@@ -206,7 +206,7 @@ export default function WhatsAppAlertManager() {
         {/* Phone */}
         <div>
           <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-            Numero WhatsApp del dueno
+            Número WhatsApp del dueno
           </label>
           <input
             type="tel"
@@ -220,7 +220,7 @@ export default function WhatsAppAlertManager() {
         {/* Big sale threshold */}
         <div>
           <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-            Monto minimo para alerta de venta grande (S/)
+            Monto mínimo para alerta de venta grande (S/)
           </label>
           <input
             type="number"

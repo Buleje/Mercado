@@ -5,7 +5,7 @@
  * (ej. `CategoryMegaMenu`) y desde DB classes. La constante `CATEGORIAS` es
  * datos puros: si hay que consultarla desde el server con Prisma, hacer la
  * query en `lib/db/marketplace-catalog.db.ts` (server-only) pero reutilizar
- * el mapping de acá.
+ * el mapping de aquí.
  *
  * Los slugs son estables — renombrar uno requiere mantener el antiguo como
  * redirect para no romper SEO.

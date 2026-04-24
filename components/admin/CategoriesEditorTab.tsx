@@ -116,7 +116,7 @@ export default function CategoriesEditorTab() {
     const cat = cats[idx];
     if (!cat) return;
     const metaTitle = `${cat.label} - Buleje | Compra Online`;
-    const metaDescription = `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rapida a domicilio. Compra ahora en Buleje!`;
+    const metaDescription = `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio. Compra ahora en Buleje!`;
     const keywords = [cat.label.toLowerCase(), "delivery", "buleje", "compra online"];
     const slug = cat.id;
     
@@ -141,7 +141,7 @@ export default function CategoriesEditorTab() {
       seo: {
         ...cat.seo,
         metaTitle: `${cat.label} - Buleje | Compra Online`,
-        metaDescription: `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rapida a domicilio. Compra ahora en Buleje!`,
+        metaDescription: `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio. Compra ahora en Buleje!`,
         keywords: [cat.label.toLowerCase(), "delivery", "buleje", "compra online"],
         slug: cat.id,
       }

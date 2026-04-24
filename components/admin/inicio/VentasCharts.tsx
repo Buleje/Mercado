@@ -80,7 +80,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-utilidad-14d",
       render: () => (
         <DashboardSection
-          kicker="Evolución · últimos 14 días"
+          kicker="Evolución · rango activo"
           title="Ventas, utilidad y promedio móvil"
           rightSlot={
             data.wowGrowth != null && (

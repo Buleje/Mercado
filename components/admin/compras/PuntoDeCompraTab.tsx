@@ -170,12 +170,12 @@ function ProductCard({
       <p className="text-xs font-semibold text-[var(--text-primary)] truncate leading-tight">
         {product.name}
       </p>
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{product.category}</p>
+      <p className="text-xs text-[var(--text-tertiary)] truncate">{product.category}</p>
       <div className="flex items-center justify-between mt-1.5">
         <span className="text-xs font-bold text-primary">
           {product.costPrice ? fmtCurrency(product.costPrice) : "—"}
         </span>
-        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        <span className="text-xs text-[var(--text-tertiary)]">
           Stock: {product.stock ?? "—"}
         </span>
       </div>
@@ -772,7 +772,7 @@ export default function PuntoDeCompraTab() {
               </div>
               <div>
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Orden de Compra</CardTitle>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                <p className="text-xs text-[var(--text-tertiary)]">
                   {cart.length} producto{cart.length !== 1 ? "s" : ""} · {totalItems} unidades
                 </p>
               </div>
@@ -798,7 +798,7 @@ export default function PuntoDeCompraTab() {
 
           {/* Supplier Selector */}
           <div className="relative">
-            <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] mb-1 block">
+            <label className="text-xs font-semibold text-[var(--text-secondary)] mb-1 block">
               Proveedor
             </label>
             <div className="flex gap-1.5">
@@ -860,14 +860,14 @@ export default function PuntoDeCompraTab() {
                             }}
                             className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                           >
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-primary shrink-0">
+                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                               {getInitials(sup.name)}
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-[var(--text-primary)] truncate">
                                 {sup.name}
                               </p>
-                              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
+                              <p className="text-xs text-[var(--text-tertiary)] truncate">
                                 {sup.ruc ? `RUC: ${sup.ruc}` : sup.phone || "Sin datos"}
                               </p>
                             </div>
@@ -891,7 +891,7 @@ export default function PuntoDeCompraTab() {
 
             {/* Supplier info chip */}
             {selectedSupplier && (
-              <div className="mt-1.5 flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+              <div className="mt-1.5 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                 {selectedSupplier.ruc && (
                   <span className="flex items-center gap-0.5">
                     <Hash className="h-2.5 w-2.5" /> {selectedSupplier.ruc}
@@ -962,7 +962,7 @@ export default function PuntoDeCompraTab() {
                         <Trash2 className="h-3 w-3 text-[var(--data-error)]" />
                       </button>
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       {item.category} · {item.unit}
                       {item.stock != null && ` · Stock: ${item.stock}`}
                     </p>
@@ -975,7 +975,7 @@ export default function PuntoDeCompraTab() {
                       />
                       <div className="flex-1">
                         <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
                             S/
                           </span>
                           <input
@@ -990,7 +990,7 @@ export default function PuntoDeCompraTab() {
                           />
                         </div>
                         {item.lastCost != null && item.unitCost !== item.lastCost && (
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
+                          <p className="text-xs text-[var(--data-warning)] dark:text-[var(--data-warning)] mt-0.5">
                             Antes: {fmtCurrency(item.lastCost)}
                           </p>
                         )}
@@ -1159,14 +1159,14 @@ export default function PuntoDeCompraTab() {
                         className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-primary shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                             {getInitials(order.supplierName || "?")}
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
                               {order.supplierName || "Sin proveedor"}
                             </p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                            <p className="text-xs text-[var(--text-tertiary)]">
                               {fmtDate(order.createdAt)} · {order.items.length} items ·{" "}
                               <span
                                 className={cn(
@@ -1280,7 +1280,7 @@ export default function PuntoDeCompraTab() {
 
               <form onSubmit={handleCreateSupplier} className="space-y-3">
                 <div>
-                  <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] uppercase">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                     Nombre / Razón Social *
                   </label>
                   <input
@@ -1294,7 +1294,7 @@ export default function PuntoDeCompraTab() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] uppercase">RUC</label>
+                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">RUC</label>
                     <input
                       type="text"
                       value={newSupRuc}
@@ -1305,7 +1305,7 @@ export default function PuntoDeCompraTab() {
                     />
                   </div>
                   <div>
-                    <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] uppercase">Teléfono</label>
+                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Teléfono</label>
                     <input
                       type="tel"
                       value={newSupPhone}
@@ -1316,7 +1316,7 @@ export default function PuntoDeCompraTab() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] uppercase">Email</label>
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Email</label>
                   <input
                     type="email"
                     value={newSupEmail}
@@ -1326,7 +1326,7 @@ export default function PuntoDeCompraTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] uppercase">Dirección</label>
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Dirección</label>
                   <input
                     type="text"
                     value={newSupAddress}
@@ -1336,7 +1336,7 @@ export default function PuntoDeCompraTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] uppercase">Categoría</label>
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Categoría</label>
                   <select
                     value={newSupCategoria}
                     onChange={(e) => setNewSupCategoria(e.target.value)}
@@ -1391,7 +1391,7 @@ export default function PuntoDeCompraTab() {
                   <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
                     Confirmar Orden de Compra
                   </CardTitle>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Revisa los datos antes de generar</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">Revisa los datos antes de generar</p>
                 </div>
               </div>
 
@@ -1427,7 +1427,7 @@ export default function PuntoDeCompraTab() {
 
                 {/* Items summary */}
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                  <table className="w-full text-[length:var(--ts-xs)]">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-[var(--surface-sunken)]">
                         <th className="text-left px-2.5 py-1.5 text-[var(--text-secondary)]">Producto</th>

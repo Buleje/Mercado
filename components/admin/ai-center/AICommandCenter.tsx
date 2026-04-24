@@ -31,7 +31,7 @@ type SectionDef = {
 const SECTIONS: SectionDef[] = [
   { id: "resumen", label: "Resumen", icon: BarChart3 },
   { id: "acciones", label: "Acciones", icon: ClipboardList },
-  { id: "analisis", label: "Analisis", icon: LineChart },
+  { id: "analisis", label: "Análisis", icon: LineChart },
   { id: "fiados", label: "Fiados", icon: CreditCard },
 ];
 

@@ -136,7 +136,7 @@ export default function CancelConfirmModal({
           <BodyText className="text-[var(--text-tertiary)] text-[length:var(--ts-xs)]">
             Tip: si solo queres saltarte una entrega, usa{" "}
             <strong className="text-[var(--text-primary)]">
-              &quot;Saltar proxima entrega&quot;
+              &quot;Saltar próxima entrega&quot;
             </strong>{" "}
             en vez de cancelar.
           </BodyText>

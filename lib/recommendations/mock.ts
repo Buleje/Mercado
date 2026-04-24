@@ -67,7 +67,7 @@ export function pickByCategory(
   return seededShuffle(matches, dailySeed()).slice(0, n);
 }
 
-/** Top N — simula "mas vendidos" (los primeros de la lista tienen mas score) */
+/** Top N — simula "más vendidos" (los primeros de la lista tienen mas score) */
 export function pickTopN(products: MockProduct[], n: number): MockProduct[] {
   return products.slice(0, n);
 }

@@ -21,7 +21,7 @@ type NCStatus = "BORRADOR" | "EMITIDA" | "ANULADA";
 
 type NotaCredito = {
   id: string;
-  numero: string;
+  número: string;
   tenantId: string;
   orderId?: string;
   saleId?: string;
@@ -47,7 +47,7 @@ type NotaCredito = {
 
 type SaleDoc = {
   id: string;
-  numero: string;
+  número: string;
   comprobanteTipo: "ticket" | "boleta" | "factura";
   comprobanteNumero: string;
   fecha: string;
@@ -66,7 +66,7 @@ type SaleDoc = {
 
 type PickerDocType = "all" | "factura" | "boleta" | "ticket";
 type DocType = "all" | "factura" | "boleta" | "nota_credito";
-type SortField = "numero" | "total" | "createdAt" | "status";
+type SortField = "número" | "total" | "createdAt" | "status";
 type SortDir = "asc" | "desc";
 type ViewMode = "table" | "cards" | "kanban";
 
@@ -127,10 +127,10 @@ function formatDate(iso: string) {
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
-function getDocIcon(numero: string): string {
-  if (numero.startsWith("F")) return "\u{1F9FE}";
-  if (numero.startsWith("B")) return "\u{1F4C4}";
-  if (numero.startsWith("NC")) return "\u{1F4CB}";
+function getDocIcon(número: string): string {
+  if (número.startsWith("F")) return "\u{1F9FE}";
+  if (número.startsWith("B")) return "\u{1F4C4}";
+  if (número.startsWith("NC")) return "\u{1F4CB}";
   return "\u{1F4CE}";
 }
 
@@ -195,8 +195,8 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
         <div className="flex-1 min-w-0" onClick={onSelect}>
           <div className="flex items-center justify-between mb-1">
             <span className="flex items-center gap-1.5">
-              <span className="text-lg">{getDocIcon(nc.numero)}</span>
-              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
+              <span className="text-lg">{getDocIcon(nc.número)}</span>
+              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.número}</span>
             </span>
             <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
@@ -294,7 +294,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
               {style.label}
             </span>
             <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
-              {doc.comprobanteNumero || `#${doc.numero}`}
+              {doc.comprobanteNumero || `#${doc.número}`}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] mb-2">
@@ -475,7 +475,7 @@ export default function NotasCreditoModule() {
         const sales = (Array.isArray(data) ? data : data.sales ?? data.data ?? []).slice(0, 24);
         setPickerDocs(sales.map((s: Record<string, unknown>) => ({
           id: String(s.id ?? ""),
-          numero: String(s.numero ?? s.orderNumber ?? s.id ?? ""),
+          número: String(s.número ?? s.orderNumber ?? s.id ?? ""),
           comprobanteTipo: (["factura", "boleta", "ticket"].includes(String(s.comprobanteTipo ?? "")) ? String(s.comprobanteTipo) : "ticket") as SaleDoc["comprobanteTipo"],
           comprobanteNumero: String(s.comprobanteNumero ?? ""),
           fecha: String(s.createdAt ?? s.fecha ?? ""),
@@ -578,7 +578,7 @@ export default function NotasCreditoModule() {
     if (maxAmount) list = list.filter(nc => nc.total <= parseFloat(maxAmount));
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortField === "numero") cmp = a.numero.localeCompare(b.numero);
+      if (sortField === "número") cmp = a.número.localeCompare(b.número);
       else if (sortField === "total") cmp = a.total - b.total;
       else if (sortField === "createdAt") cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       else if (sortField === "status") cmp = a.status.localeCompare(b.status);
@@ -613,8 +613,8 @@ export default function NotasCreditoModule() {
 
   const exportCSV = () => {
     const items = someChecked ? filteredNotas.filter(nc => checkedIds.has(nc.id)) : filteredNotas;
-    const header = "Numero,Motivo,Codigo,Monto,IGV,Total,Status,Fecha\n";
-    const rows = items.map(nc => `${nc.numero},"${nc.descripcionMotivo}",${nc.codigoMotivo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
+    const header = "Número,Motivo,Codigo,Monto,IGV,Total,Status,Fecha\n";
+    const rows = items.map(nc => `${nc.número},"${nc.descripcionMotivo}",${nc.codigoMotivo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `notas-credito-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
@@ -725,7 +725,7 @@ export default function NotasCreditoModule() {
     doc.setTextColor(60, 60, 60);
     const col1 = 20, col2 = 120;
     const rows = [
-      ["N° Documento:", nc.numero],
+      ["N° Documento:", nc.número],
       ["Fecha:", formatDate(nc.createdAt)],
       ["Estado:", STATUS_META[nc.status].label],
       ["Cliente:", nc.clienteNombre ?? "—"],
@@ -755,12 +755,12 @@ export default function NotasCreditoModule() {
     if (nc.notas) { doc.setFontSize(10); doc.setTextColor(120, 120, 120); doc.setFont("helvetica", "italic"); doc.text(`Notas: ${nc.notas}`, col1, y + 8); }
     doc.setFontSize(8); doc.setTextColor(160, 160, 160);
     doc.text("Documento generado por Buleje", 105, 285, { align: "center" });
-    doc.save(`NC-${nc.numero}-${nc.createdAt.slice(0, 10)}.pdf`);
+    doc.save(`NC-${nc.número}-${nc.createdAt.slice(0, 10)}.pdf`);
   };
 
   // ── Enviar por WhatsApp ───────────────────────────────────────────────────
   const sendWhatsApp = (nc: NotaCredito) => {
-    const text = `*Nota de Crédito ${nc.numero}*\nMotivo: [${nc.codigoMotivo}] ${nc.descripcionMotivo}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
+    const text = `*Nota de Crédito ${nc.número}*\nMotivo: [${nc.codigoMotivo}] ${nc.descripcionMotivo}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -1110,7 +1110,7 @@ export default function NotasCreditoModule() {
                       onClick={() => setSelected(nc)}
                       className="bg-white border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-primary/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.numero}</span>
+                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.número}</span>
                         <span className="text-sm font-extrabold text-[var(--text-primary)]">{formatCurrency(nc.total)}</span>
                       </div>
                       <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
@@ -1179,8 +1179,8 @@ export default function NotasCreditoModule() {
                         {allChecked && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                       </button>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("numero")}>
-                      <span className="flex items-center gap-1">Documento <SortIcon field="numero" /></span>
+                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("número")}>
+                      <span className="flex items-center gap-1">Documento <SortIcon field="número" /></span>
                     </th>
                     <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Referencia</th>
                     <th className="px-3 py-3 font-semibold text-[var(--text-secondary)]">Motivo</th>
@@ -1209,8 +1209,8 @@ export default function NotasCreditoModule() {
                         </td>
                         <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(nc)}>
                           <span className="flex items-center gap-2">
-                            <span className="text-base">{getDocIcon(nc.numero)}</span>
-                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
+                            <span className="text-base">{getDocIcon(nc.número)}</span>
+                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.número}</span>
                           </span>
                           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{nc.clienteNombre}</p>}
                         </td>
@@ -1283,8 +1283,8 @@ export default function NotasCreditoModule() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                      <span className="text-xl">{getDocIcon(selected.numero)}</span>
-                      NC {selected.numero}
+                      <span className="text-xl">{getDocIcon(selected.número)}</span>
+                      NC {selected.número}
                     </CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>
@@ -1482,7 +1482,7 @@ export default function NotasCreditoModule() {
                                     {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                                   </span>
                                   <span className="font-mono text-sm font-bold text-primary">
-                                    {selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}
+                                    {selectedVenta.comprobanteNumero || `#${selectedVenta.número}`}
                                   </span>
                                   <span className="text-xs text-[var(--text-tertiary)]">{"\u00b7"} {selectedVenta.clienteNombre}</span>
                                   <span className="text-sm font-bold text-[var(--text-primary)]">{"\u00b7"} {formatCurrency(selectedVenta.total)}</span>
@@ -1715,7 +1715,7 @@ export default function NotasCreditoModule() {
                               <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
                                 {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                               </span>
-                              <span className="font-mono text-sm font-bold text-[var(--text-primary)] ml-2">{selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}</span>
+                              <span className="font-mono text-sm font-bold text-[var(--text-primary)] ml-2">{selectedVenta.comprobanteNumero || `#${selectedVenta.número}`}</span>
                             </div>
                             <div className="flex-1" />
                             <div className="text-right">

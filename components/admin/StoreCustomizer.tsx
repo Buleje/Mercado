@@ -79,7 +79,7 @@ const DEFAULT_THEME: StoreTheme = {
   accentColor: "var(--color-primary)",
   darkModeDefault: false,
   heroTitle: "Todo lo que necesitas, en tu puerta",
-  heroSubtitle: "Delivery rapido en Pucallpa. Paga con Yape o efectivo.",
+  heroSubtitle: "Delivery rápido en Pucallpa. Paga con Yape o efectivo.",
   heroCTA: "Ver productos",
   heroLink: "tienda",
   heroBadge: "Delivery gratis +S/50",
@@ -343,7 +343,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
     >
       {/* Badge */}
-      <div className="absolute top-3 right-3 z-10 bg-black/40 text-white text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
+      <div className="absolute top-3 right-3 z-10 bg-black/40 text-white text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
         Vista previa
       </div>
 
@@ -365,7 +365,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
               {theme.storeName || "Mi Tienda"}
             </span>
             {theme.slogan && (
-              <span className="text-white/60 text-[length:var(--ts-2xs)] leading-tight truncate block max-w-[110px]">
+              <span className="text-white/60 text-xs leading-tight truncate block max-w-[110px]">
                 {theme.slogan}
               </span>
             )}
@@ -409,7 +409,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       {/* Categories mockup */}
       {theme.sections.includes("categories") && (
         <div className="px-3 pt-3 pb-1 shrink-0">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-muted mb-2">Categorías</p>
+          <p className="text-xs font-bold text-muted mb-2">Categorías</p>
           <div className="flex gap-2 overflow-hidden">
             {["Abarrotes", "Bebidas", "Lácteos", "Snacks"].map((cat) => (
               <div
@@ -423,7 +423,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
                   {cat[0]}
                 </div>
                 <span
-                  className="text-[length:var(--ts-2xs)] font-semibold"
+                  className="text-xs font-semibold"
                   style={{ color: theme.darkModeDefault ? "#d1d5db" : "#374151" }}
                 >
                   {cat}
@@ -437,7 +437,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       {/* Products mockup */}
       {theme.sections.includes("popular") && (
         <div className="px-3 pt-3 flex-1">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-muted mb-2">Populares</p>
+          <p className="text-xs font-bold text-muted mb-2">Populares</p>
           <div className="grid grid-cols-2 gap-2">
             {["Aceite 1L", "Arroz 5kg"].map((prod) => (
               <div
@@ -457,8 +457,8 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
                     borderRadius: `${Math.min(theme.borderRadius, 12)}px`,
                   }}
                 />
-                <p className="text-[length:var(--ts-2xs)] font-bold leading-tight">{prod}</p>
-                <p className="text-[length:var(--ts-2xs)] font-extrabold mt-0.5" style={{ color: theme.primaryColor }}>
+                <p className="text-xs font-bold leading-tight">{prod}</p>
+                <p className="text-xs font-extrabold mt-0.5" style={{ color: theme.primaryColor }}>
                   S/ 8.50
                 </p>
               </div>
@@ -469,7 +469,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
 
       {/* Footer mockup */}
       <div
-        className="shrink-0 px-3 py-2 text-[length:var(--ts-2xs)] text-center"
+        className="shrink-0 px-3 py-2 text-xs text-center"
         style={{
           color: theme.darkModeDefault ? "#6b7280" : "#9ca3af",
           borderTop: `1px solid ${theme.darkModeDefault ? "#374151" : "#f3f4f6"}`,
@@ -681,8 +681,8 @@ export default function StoreCustomizer() {
         title="Mi tienda personal"
         description={
           hasUnsavedChanges
-            ? "⚠️ Tenés cambios sin guardar. Cambiá el aspecto, colores y contenido de tu tienda online."
-            : "Cambiá el aspecto, colores y contenido de tu tienda online. Lo que ve el cliente cuando entra."
+            ? "Tienes cambios sin guardar. Cambia el aspecto, colores y contenido de tu tienda online."
+            : "Cambia el aspecto, colores y contenido de tu tienda online. Lo que ve el cliente cuando entra."
         }
       >
         <div className="flex items-center gap-2">
@@ -744,7 +744,7 @@ export default function StoreCustomizer() {
             {TAB_GROUPS.map((group, gi) => (
               <div key={group.group}>
                 {gi > 0 && <div className="border-t border-[var(--rule-soft)] dark:border-card-border my-1.5" />}
-                <p className="text-[length:var(--ts-2xs)] font-bold text-muted/70 px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
+                <p className="text-xs font-bold text-muted/70 px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
                   {group.icon}
                   {group.group}
                 </p>
@@ -787,13 +787,13 @@ export default function StoreCustomizer() {
                 {/* Logo + Nombre en fila */}
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 w-20">
-                    <p className="text-[length:var(--ts-2xs)] font-semibold text-muted mb-1.5">Logo</p>
+                    <p className="text-xs font-semibold text-muted mb-1.5">Logo</p>
                     <div className="w-20 h-20 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors relative group">
                       {theme.logo ? (
                         <>
                           <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="80px" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button type="button" onClick={() => update("logo", "")} className="text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-error)]/80 px-2 py-0.5 rounded">Quitar</button>
+                            <button type="button" onClick={() => update("logo", "")} className="text-xs font-bold text-white bg-[var(--data-error)]/80 px-2 py-0.5 rounded">Quitar</button>
                           </div>
                         </>
                       ) : (
@@ -821,7 +821,7 @@ export default function StoreCustomizer() {
                 </div>
 
                 {/* Descripción */}
-                <FieldRow label={`Descripcion (${theme.description.length}/200)`}>
+                <FieldRow label={`Descripción (${theme.description.length}/200)`}>
                   <textarea
                     value={theme.description}
                     onChange={(e) => update("description", e.target.value.slice(0, 200))}
@@ -866,7 +866,7 @@ export default function StoreCustomizer() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-foreground truncate">{t.name}</p>
-                          <p className="text-[length:var(--ts-2xs)] text-muted truncate">{t.description}</p>
+                          <p className="text-xs text-muted truncate">{t.description}</p>
                         </div>
                       </button>
                     ))}
@@ -1107,7 +1107,7 @@ export default function StoreCustomizer() {
                       <button key={s.value} type="button" onClick={() => update("cardStyle", s.value)}
                         className={cn("p-3 rounded-xl border text-left transition-all", theme.cardStyle === s.value ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40")}>
                         <p className="text-xs font-bold text-foreground">{s.label}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-muted">{s.desc}</p>
+                        <p className="text-xs text-muted">{s.desc}</p>
                       </button>
                     ))}
                   </div>
@@ -1130,7 +1130,7 @@ export default function StoreCustomizer() {
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted">Estilo del navbar</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {([{ value: "solid", label: "Solido" }, { value: "transparent", label: "Transparente" }, { value: "blur", label: "Con blur" }, { value: "minimal", label: "Minimalista" }] as const).map((s) => (
+                    {([{ value: "solid", label: "Sólido" }, { value: "transparent", label: "Transparente" }, { value: "blur", label: "Con blur" }, { value: "minimal", label: "Minimalista" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("navbarStyle", s.value)}
                         className={cn("py-2 rounded-lg text-xs font-bold border transition-all", theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
@@ -1156,7 +1156,7 @@ export default function StoreCustomizer() {
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted">Animaciones</p>
                   <div className="flex gap-2">
-                    {([{ value: "none", label: "Ninguna" }, { value: "subtle", label: "Suaves" }, { value: "dynamic", label: "Dinamicas" }] as const).map((s) => (
+                    {([{ value: "none", label: "Ninguna" }, { value: "subtle", label: "Suaves" }, { value: "dynamic", label: "Dinámicas" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("animations", s.value)}
                         className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.animations === s.value ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
@@ -1187,7 +1187,7 @@ export default function StoreCustomizer() {
                 <FieldRow label="Mensaje de WhatsApp">
                   <input type="text" value={theme.whatsappMessage} onChange={(e) => update("whatsappMessage", e.target.value)}
                     placeholder="Hola! Quiero hacer un pedido" className={inputCls} maxLength={200} />
-                  <p className="text-[length:var(--ts-2xs)] text-muted mt-1">Texto predeterminado cuando el cliente toca WhatsApp</p>
+                  <p className="text-xs text-muted mt-1">Texto predeterminado cuando el cliente toca WhatsApp</p>
                 </FieldRow>
 
                 {/* Hero badge */}
@@ -1207,7 +1207,7 @@ export default function StoreCustomizer() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-foreground">Popup de bienvenida</p>
-                      <p className="text-[length:var(--ts-2xs)] text-muted">Se muestra una vez al visitante nuevo</p>
+                      <p className="text-xs text-muted">Se muestra una vez al visitante nuevo</p>
                     </div>
                     <button type="button" onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
                       className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -1226,7 +1226,7 @@ export default function StoreCustomizer() {
                 {/* QR de la tienda */}
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-soft)] dark:border-card-border">
                   <p className="text-xs font-bold text-foreground">QR de tu tienda</p>
-                  <p className="text-[length:var(--ts-2xs)] text-muted">Codigo QR para pegar en tu local fisico. Los clientes escanean y entran a tu tienda.</p>
+                  <p className="text-xs text-muted">Codigo QR para pegar en tu local fisico. Los clientes escanean y entran a tu tienda.</p>
                   <div className="flex items-center gap-4">
                     <div className="bg-white p-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border">
                       {/* QR usando API publica */}
@@ -1246,7 +1246,7 @@ export default function StoreCustomizer() {
                       >
                         Descargar QR grande
                       </a>
-                      <p className="text-[length:var(--ts-2xs)] text-muted">Imprimelo y pegalo en tu puerta o mostrador</p>
+                      <p className="text-xs text-muted">Imprimelo y pegalo en tu puerta o mostrador</p>
                     </div>
                   </div>
                 </div>
@@ -1254,7 +1254,7 @@ export default function StoreCustomizer() {
                 {/* CSS personalizado */}
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-foreground">CSS personalizado</p>
-                  <p className="text-[length:var(--ts-2xs)] text-muted">CSS inyectado directamente en tu tienda. Para usuarios avanzados.</p>
+                  <p className="text-xs text-muted">CSS inyectado directamente en tu tienda. Para usuarios avanzados.</p>
                   <textarea value={theme.customCSS} onChange={(e) => update("customCSS", e.target.value)}
                     placeholder=".product-card { border: 2px solid gold; }" rows={4}
                     className={cn(inputCls, "font-mono text-[length:var(--ts-xs)] resize-y min-h-[80px]")} />
@@ -1300,7 +1300,7 @@ export default function StoreCustomizer() {
                     onChange={(e) => update("borderRadius", Number(e.target.value))}
                     className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
                   />
-                  <div className="flex justify-between text-[length:var(--ts-2xs)] text-muted">
+                  <div className="flex justify-between text-xs text-muted">
                     <span>Cuadrado</span>
                     <span>Muy redondo</span>
                   </div>
@@ -1350,7 +1350,7 @@ export default function StoreCustomizer() {
                   >
                     Restaurar valores por defecto
                   </button>
-                  <p className="text-[length:var(--ts-2xs)] text-muted text-center mt-1.5">Esta acción borra los cambios no guardados</p>
+                  <p className="text-xs text-muted text-center mt-1.5">Esta acción borra los cambios no guardados</p>
                 </div>
 
                 {/* Tracking */}
@@ -1407,7 +1407,7 @@ export default function StoreCustomizer() {
                 <><Save className="h-4 w-4" /> Guardar cambios</>
               )}
               {hasUnsavedChanges && !saving && !saved && (
-                <span className="absolute -top-1.5 -right-1.5 h-5 px-1.5 rounded-full bg-[var(--data-warning)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] flex items-center">
+                <span className="absolute -top-1.5 -right-1.5 h-5 px-1.5 rounded-full bg-[var(--data-warning)] text-xs font-bold text-[var(--text-primary)] flex items-center">
                   Sin guardar
                 </span>
               )}
@@ -1426,7 +1426,7 @@ export default function StoreCustomizer() {
               {/* Toggle responsive */}
               <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
                 {([
-                  { label: "Movil", w: 375 },
+                  { label: "Móvil", w: 375 },
                   { label: "Tablet", w: 768 },
                   { label: "Desktop", w: 0 },
                 ]).map((v) => (

@@ -50,7 +50,7 @@ export default function POSFrequentProducts({
       <div className="flex items-center gap-1.5 mb-1.5">
         <TrendingUp className="h-3.5 w-3.5 text-[var(--data-warning)]" />
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-          Mas vendidos hoy
+          Más vendidos hoy
         </span>
       </div>
       <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">

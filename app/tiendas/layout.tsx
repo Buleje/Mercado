@@ -14,7 +14,7 @@ import { SkipLink } from "@/components/ui-system/SkipLink";
  * Layout de `/tiendas` — alineado con `/marketplace/layout.tsx`.
  *
  * Chrome persistente (NO se remonta entre navegaciones):
- *   - Navbar, SecondaryNav, Footer viven acá.
+ *   - Navbar, SecondaryNav, Footer viven aquí.
  *   - Providers: Store + Motion + QuickAdd + AddedToCartDrawer.
  *   - Sólo el `<main>` interior se re-renderiza al cambiar de ruta.
  */

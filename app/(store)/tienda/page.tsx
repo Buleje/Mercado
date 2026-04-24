@@ -19,25 +19,25 @@ import TiendaHero from "@/components/store/TiendaHero";
 import TrustBar from "@/components/store/TrustBar";
 
 export const metadata: Metadata = {
-  title: "Catalogo de Productos — Buleje ERP",
+  title: "Catálogo de Productos — Buleje ERP",
   description:
-    "Explora el catalogo completo de productos: abarrotes, bebidas, carnes, limpieza y mas. Gestionado con Buleje, el software ERP para bodegas del Peru.",
+    "Explora el catálogo completo de productos: abarrotes, bebidas, carnes, limpieza y más. Gestionado con Buleje, el software ERP para bodegas del Perú.",
   alternates: {
     canonical: "https://www.buleje.pe/tienda",
   },
   openGraph: {
-    title: "Catalogo de Productos — Buleje",
-    description: "Abarrotes, bebidas, carnes, limpieza y mas. Gestionado con Buleje ERP. Delivery con Yape y efectivo.",
+    title: "Catálogo de Productos — Buleje",
+    description: "Abarrotes, bebidas, carnes, limpieza y más. Gestionado con Buleje ERP. Delivery con Yape y efectivo.",
     url: "https://www.buleje.pe/tienda",
     type: "website",
     locale: "es_PE",
     siteName: "Buleje",
-    images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Peru" }],
+    images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Perú" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Catalogo — Buleje ERP",
-    description: "Productos gestionados con Buleje. Software para bodegas del Peru.",
+    title: "Catálogo — Buleje ERP",
+    description: "Productos gestionados con Buleje. Software para bodegas del Perú.",
     images: ["https://www.buleje.pe/api/og"],
   },
 };
@@ -207,7 +207,7 @@ export default async function TiendaPage() {
             showEmptyPlaceholders=true → regla 1: seccion habilitada sin productos
             muestra placeholder amable ("No hay productos agregados todavia").
             strictAdminOnly=true → regla anti-magia: si admin no asigno productos,
-            ninguna seccion pickea al azar del catalogo. */}
+            ninguna seccion pickea al azar del catálogo. */}
         <TiendaSections
           serverProducts={initialProducts as any}
           visibleSections={visible}
@@ -229,7 +229,7 @@ export default async function TiendaPage() {
       <section className="bg-slate-50 dark:bg-slate-900/50 py-8 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">
-            Buleje — Software para bodegas en todo el Peru
+            Buleje — Software para bodegas en todo el Perú
           </h2>
           <div className="flex flex-wrap gap-2">
             {zones.map((zone) => (

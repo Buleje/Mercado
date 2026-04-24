@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * LastOrderBanner — "¿Querés repetir tu último pedido?"
+ * LastOrderBanner — "¿Quieres repetir tu último pedido?"
  *
  * Qué hace (Feynman): cuando el cliente entra a mi-cuenta y ya compró antes,
  * le mostramos su último pedido con un botón que lo pide igual — así no tiene

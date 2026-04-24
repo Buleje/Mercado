@@ -161,7 +161,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div className="modal-backdrop p-4">
       <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
           <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Nueva Campaña</CardTitle>
@@ -562,7 +562,7 @@ export default function CampañasTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div className="modal-backdrop p-4">
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-md">
             <div className="p-6 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>

@@ -209,7 +209,7 @@ export default function ExcelProductImporter() {
       categoria: guess(["categoria", "category", "tipo", "grupo"]),
       codigoBarras: guess(["barras", "barcode", "ean", "codigo"]),
       precioCosto: guess(["costo", "cost", "precio_costo"]),
-      stockMinimo: guess(["minimo", "stock_min", "stockmin"]),
+      stockMinimo: guess(["mínimo", "stock_min", "stockmin"]),
       unidad: guess(["unidad", "unit", "um", "medida"]),
     });
 
@@ -249,7 +249,7 @@ export default function ExcelProductImporter() {
       precio: p.precio,
       precio_costo: p.precioCosto,
       stock: p.stock,
-      stock_minimo: p.stockMinimo,
+      stock_mínimo: p.stockMinimo,
       unidad: p.unidad,
       codigo_barras: p.codigoBarras || undefined,
     }));
@@ -381,7 +381,7 @@ export default function ExcelProductImporter() {
               Arrastra tu archivo aqui
             </p>
             <p className="text-sm text-[var(--text-tertiary)]">
-              Acepta .xlsx, .xls, .csv, .txt — maximo 1000 filas
+              Acepta .xlsx, .xls, .csv, .txt — máximo 1000 filas
             </p>
           </div>
           <input
@@ -416,7 +416,7 @@ export default function ExcelProductImporter() {
                 { key: "categoria", label: "Categoria" },
                 { key: "codigoBarras", label: "Codigo de barras" },
                 { key: "precioCosto", label: "Precio costo" },
-                { key: "stockMinimo", label: "Stock minimo" },
+                { key: "stockMinimo", label: "Stock mínimo" },
                 { key: "unidad", label: "Unidad" },
               ] as { key: keyof ColumnMap; label: string }[]
             ).map(({ key, label }) => (

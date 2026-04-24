@@ -253,8 +253,8 @@ export default function PuntosPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { Icon: ShoppingCart, title: "Compra", desc: "Ganás 1 punto por cada S/ 1 que gastás" },
-                  { Icon: Star, title: "Acumulá", desc: "Subí de nivel comprando más: Bronce → Plata → Oro → Diamante" },
-                  { Icon: Gift, title: "Canjeá", desc: "Usá tus puntos por descuentos, delivery gratis o productos" },
+                  { Icon: Star, title: "Acumulá", desc: "Sube de nivel comprando más: Bronce → Plata → Oro → Diamante" },
+                  { Icon: Gift, title: "Canjeá", desc: "Usa tus puntos por descuentos, delivery gratis o productos" },
                 ].map((step, i) => {
                   const SIcon = step.Icon;
                   return (

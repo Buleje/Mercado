@@ -115,7 +115,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="modal-backdrop p-4">
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
@@ -294,15 +294,15 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Recibidos</p>
+                  <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Recibidos</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsRecibidos.length}</p>
                 </div>
                 <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Con diferencia</p>
+                  <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsConDiferencia.length}</p>
                 </div>
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Total factura</p>
+                  <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase">Total factura</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {totalFactura.toFixed(2)}</p>
                 </div>
               </div>
@@ -365,7 +365,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Confirmar Recepcion
+              Confirmar recepci&oacute;n
             </button>
           )}
         </div>

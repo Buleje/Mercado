@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import type { DateRange } from "./DashboardDateRange";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
@@ -58,25 +59,120 @@ const CAT_LABEL: Record<string, string> = {
 };
 
 const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-function last7Days() {
-  const now = new Date();
-  return Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(now);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - (6 - i));
-    return d;
-  });
+const MS_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Construye hasta 14 buckets cubriendo el rango [from, to].
+ * - Rango <= 1 día: 6 buckets de 4h
+ * - Rango <= 14 días: buckets diarios
+ * - Rango más largo: buckets de (span/14) días
+ */
+function buildBuckets(from: Date, to: Date): Array<{ label: string; start: number; end: number }> {
+  const span = to.getTime() - from.getTime();
+  const days = span / MS_DAY;
+
+  if (days <= 1) {
+    const out: Array<{ label: string; start: number; end: number }> = [];
+    const fromStart = new Date(from);
+    fromStart.setHours(Math.floor(fromStart.getHours() / 4) * 4, 0, 0, 0);
+    for (let i = 0; i < 6; i++) {
+      const start = new Date(fromStart.getTime() + i * 4 * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
+      out.push({
+        label: `${String(start.getHours()).padStart(2, "0")}h`,
+        start: start.getTime(),
+        end: end.getTime(),
+      });
+    }
+    return out;
+  }
+
+  if (days <= 14) {
+    const out: Array<{ label: string; start: number; end: number }> = [];
+    const cursor = new Date(from);
+    cursor.setHours(0, 0, 0, 0);
+    const last = new Date(to);
+    last.setHours(23, 59, 59, 999);
+    while (cursor.getTime() <= last.getTime()) {
+      const dayEnd = new Date(cursor);
+      dayEnd.setHours(23, 59, 59, 999);
+      out.push({
+        label: DAY_LABELS[cursor.getDay()] ?? `${cursor.getDate()}`,
+        start: cursor.getTime(),
+        end: dayEnd.getTime(),
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return out;
+  }
+
+  // Rango largo: máx 14 buckets uniformes
+  const bucketSize = Math.ceil(days / 14);
+  const out: Array<{ label: string; start: number; end: number }> = [];
+  const cursor = new Date(from);
+  cursor.setHours(0, 0, 0, 0);
+  while (cursor.getTime() <= to.getTime()) {
+    const bucketEnd = new Date(cursor.getTime() + bucketSize * MS_DAY - 1);
+    const actualEnd = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
+    out.push({
+      label: days > 60
+        ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getDate()}`
+        : `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      start: cursor.getTime(),
+      end: actualEnd.getTime(),
+    });
+    cursor.setTime(cursor.getTime() + bucketSize * MS_DAY);
+  }
+  return out;
 }
 
-function dayIndex(iso: string, days: Date[]): number {
-  const t = new Date(iso).setHours(0, 0, 0, 0);
-  return days.findIndex((b) => b.getTime() === t);
+function bucketIndex(iso: string | Date, buckets: Array<{ start: number; end: number }>): number {
+  const t = typeof iso === "string" ? new Date(iso).getTime() : iso.getTime();
+  return buckets.findIndex((b) => t >= b.start && t <= b.end);
+}
+
+function defaultLast7Range(): { from: Date; to: Date } {
+  const to = new Date();
+  to.setHours(23, 59, 59, 999);
+  const from = new Date(to);
+  from.setDate(from.getDate() - 6);
+  from.setHours(0, 0, 0, 0);
+  return { from, to };
 }
 
 
-export const InicioMultiCharts = memo(function InicioMultiCharts() {
+const RANGE_LABEL: Record<string, string> = {
+  diario: "hoy",
+  semanal: "esta semana",
+  mensual: "este mes",
+  anual: "este año",
+  personalizado: "rango seleccionado",
+};
+const KPI_SUFFIX: Record<string, string> = {
+  diario: "hoy",
+  semanal: "semana",
+  mensual: "mes",
+  anual: "año",
+  personalizado: "rango",
+};
+
+export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: { dateRange?: DateRange }) {
   const { data } = useDashboardData();
+
+  // Rango efectivo (default: rango activo si no se pasa)
+  const { from: rangeFrom, to: rangeTo } = useMemo(() => {
+    if (dateRange) return { from: dateRange.from, to: dateRange.to };
+    return defaultLast7Range();
+  }, [dateRange?.from, dateRange?.to]);
+
+  const buckets = useMemo(() => buildBuckets(rangeFrom, rangeTo), [rangeFrom, rangeTo]);
+  const rangeFromMs = rangeFrom.getTime();
+  const rangeToMs = rangeTo.getTime();
+  const presetKey = dateRange?.preset ?? "semanal";
+  const rangeLabel = RANGE_LABEL[presetKey] ?? "rango";
+  const kpiSuffix = KPI_SUFFIX[presetKey] ?? "rango";
 
   const products = (data?.products ?? []) as Product[];
   const orders = (data?.orders ?? []) as Order[];
@@ -87,24 +183,23 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
 
   // ── 1. CAJA — ingresos vs egresos + saldo neto acumulado ─────────────────
   const cajaChart = useMemo(() => {
-    const days = last7Days();
-    const rows = days.map((d) => ({
-      day: DAY_LABELS[d.getDay()],
+    const rows = buckets.map((b) => ({
+      day: b.label,
       ingresos: 0,
       egresos: 0,
       neto: 0,
     }));
     orders.forEach((o) => {
       if (o.status === "cancelado") return;
-      const i = dayIndex(o.createdAt, days);
+      const i = bucketIndex(o.createdAt, buckets);
       if (i >= 0) rows[i].ingresos += Number(o.total ?? 0);
     });
     sales.forEach((s) => {
-      const i = dayIndex(s.createdAt, days);
+      const i = bucketIndex(s.createdAt, buckets);
       if (i >= 0) rows[i].ingresos += Number(s.total ?? 0);
     });
     purchases.forEach((p) => {
-      const i = dayIndex(p.createdAt, days);
+      const i = bucketIndex(p.createdAt, buckets);
       if (i >= 0) rows[i].egresos += Number(p.total ?? 0);
     });
     let acc = 0;
@@ -115,7 +210,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
       r.egresos = Math.round(r.egresos);
     });
     return rows;
-  }, [orders, sales, purchases]);
+  }, [orders, sales, purchases, buckets]);
 
   const cajaKpis = useMemo(() => {
     const ingresos = cajaChart.reduce((s, r) => s + r.ingresos, 0);
@@ -167,9 +262,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
   // ── 3. COMPRAS — monto + órdenes + pendiente por proveedor top-7 ─────────
   const compChart = useMemo(() => {
     const m = new Map<string, { monto: number; ordenes: number; pendiente: number }>();
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     purchases
-      .filter((p) => new Date(p.createdAt).getTime() >= last30)
+      .filter((p) => {
+        const t = new Date(p.createdAt).getTime();
+        return t >= rangeFromMs && t <= rangeToMs;
+      })
       .forEach((p) => {
         const key = p.supplierName ?? "Sin proveedor";
         const cur = m.get(key) ?? { monto: 0, ordenes: 0, pendiente: 0 };
@@ -187,22 +284,23 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
         ordenes: v.ordenes,
         pendiente: Math.round(v.pendiente),
       }));
-  }, [purchases]);
+  }, [purchases, rangeFromMs, rangeToMs]);
 
   const compKpis = useMemo(() => {
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const recent = purchases.filter((p) => new Date(p.createdAt).getTime() >= last30);
+    const recent = purchases.filter((p) => {
+      const t = new Date(p.createdAt).getTime();
+      return t >= rangeFromMs && t <= rangeToMs;
+    });
     const total = recent.reduce((s, p) => s + Number(p.total ?? 0), 0);
     const provActivos = new Set(recent.map((p) => p.supplierName ?? "Sin proveedor")).size;
     const pendiente = recent.filter((p) => !p.paid).reduce((s, p) => s + Number(p.total ?? 0), 0);
     return { total: Math.round(total), provActivos, pendiente: Math.round(pendiente), ordenes: recent.length };
-  }, [purchases]);
+  }, [purchases, rangeFromMs, rangeToMs]);
 
-  // ── 4. CLIENTES — nuevos + recurrentes + ticket prom. últimos 7 días ─────
+  // ── 4. CLIENTES — nuevos + recurrentes + ticket prom. en el rango ──────
   const cliChart = useMemo(() => {
-    const days = last7Days();
-    const rows = days.map((d) => ({
-      day: DAY_LABELS[d.getDay()],
+    const rows = buckets.map((b) => ({
+      day: b.label,
       nuevos: 0,
       recurrentes: 0,
       ticketProm: 0,
@@ -210,54 +308,64 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
     const newMap = new Map<string, number>();
     customers.forEach((c) => {
       if (!c.createdAt) return;
-      const i = dayIndex(c.createdAt, days);
+      const i = bucketIndex(c.createdAt, buckets);
       if (i >= 0) rows[i].nuevos += 1;
       if (c.phone) newMap.set(c.phone, new Date(c.createdAt).setHours(0, 0, 0, 0));
     });
-    const ticketsByDay: number[][] = Array.from({ length: 7 }, () => []);
+    const ticketsByBucket: number[][] = Array.from({ length: buckets.length }, () => []);
     orders.forEach((o) => {
       if (o.status === "cancelado") return;
-      const i = dayIndex(o.createdAt, days);
+      const i = bucketIndex(o.createdAt, buckets);
       if (i < 0) return;
-      ticketsByDay[i].push(Number(o.total ?? 0));
+      ticketsByBucket[i].push(Number(o.total ?? 0));
       const phone = o.customer?.phone;
-      if (phone && newMap.has(phone) && newMap.get(phone)! < days[i].getTime()) {
+      if (phone && newMap.has(phone) && newMap.get(phone)! < buckets[i].start) {
         rows[i].recurrentes += 1;
       } else if (!phone || !newMap.has(phone)) {
-        rows[i].recurrentes += 1; // walk-in tratado como recurrente si no es nuevo del día
+        rows[i].recurrentes += 1;
       }
     });
     sales.forEach((s) => {
-      const i = dayIndex(s.createdAt, days);
+      const i = bucketIndex(s.createdAt, buckets);
       if (i < 0) return;
-      ticketsByDay[i].push(Number(s.total ?? 0));
+      ticketsByBucket[i].push(Number(s.total ?? 0));
     });
     rows.forEach((r, i) => {
-      const arr = ticketsByDay[i];
+      const arr = ticketsByBucket[i];
       r.ticketProm = Math.round(
         arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0,
       );
     });
     return rows;
-  }, [customers, orders, sales]);
+  }, [customers, orders, sales, buckets]);
 
   const cliKpis = useMemo(() => {
     const total = customers.length;
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const nuevosMes = customers.filter(
-      (c) => c.createdAt && new Date(c.createdAt).getTime() >= last30,
+    const nuevosEnRango = customers.filter(
+      (c) => {
+        if (!c.createdAt) return false;
+        const t = new Date(c.createdAt).getTime();
+        return t >= rangeFromMs && t <= rangeToMs;
+      },
     ).length;
-    const uniquePhones = new Set(orders.map((o) => o.customer?.phone).filter(Boolean)).size;
-    const ticketArr = [...orders, ...sales].map((x) => Number(x.total ?? 0)).filter((v) => v > 0);
+    const ordersInRange = orders.filter((o) => {
+      const t = new Date(o.createdAt).getTime();
+      return t >= rangeFromMs && t <= rangeToMs && o.status !== "cancelado";
+    });
+    const salesInRange = sales.filter((s) => {
+      const t = new Date(s.createdAt).getTime();
+      return t >= rangeFromMs && t <= rangeToMs;
+    });
+    const uniquePhones = new Set(ordersInRange.map((o) => o.customer?.phone).filter(Boolean)).size;
+    const ticketArr = [...ordersInRange, ...salesInRange].map((x) => Number(x.total ?? 0)).filter((v) => v > 0);
     const ticketProm = ticketArr.length
       ? Math.round(ticketArr.reduce((a, b) => a + b, 0) / ticketArr.length)
       : 0;
-    return { total, nuevosMes, activos: uniquePhones, ticketProm };
-  }, [customers, orders, sales]);
+    return { total, nuevosMes: nuevosEnRango, activos: uniquePhones, ticketProm };
+  }, [customers, orders, sales, rangeFromMs, rangeToMs]);
 
-  // ── 5. PRODUCTOS — unidades + ingresos + margen top-7 últimos 30d ────────
+  // ── 5. PRODUCTOS — unidades + ingresos + margen top-7 en el rango ──────
   const prodChart = useMemo(() => {
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<
       string | number,
       { name: string; unidades: number; ingresos: number; margen: number }
@@ -267,7 +375,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
       return { price: p?.price ?? 0, cost: p?.costPrice ?? (p?.price ?? 0) * 0.7, name: p?.name ?? "—" };
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => {
+        if (o.status === "cancelado") return false;
+        const t = new Date(o.createdAt).getTime();
+        return t >= rangeFromMs && t <= rangeToMs;
+      })
       .forEach((o) =>
         o.items.forEach((it) => {
           const pc = priceCost(it.id);
@@ -284,7 +396,10 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
         }),
       );
     sales
-      .filter((s) => new Date(s.createdAt).getTime() >= last30)
+      .filter((s) => {
+        const t = new Date(s.createdAt).getTime();
+        return t >= rangeFromMs && t <= rangeToMs;
+      })
       .forEach((s) =>
         s.items.forEach((it) => {
           const pc = priceCost(it.productId);
@@ -309,7 +424,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
         ingresos: Math.round(v.ingresos),
         margen: Math.round(v.margen),
       }));
-  }, [products, orders, sales]);
+  }, [products, orders, sales, rangeFromMs, rangeToMs]);
 
   const prodKpis = useMemo(() => {
     const activos = products.filter((p) => p.active).length;
@@ -328,11 +443,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
       id: "caja",
       render: () => (
         <DashboardSection
-          kicker="Flujo de caja · últimos 7 días"
+          kicker={`Flujo de caja · ${rangeLabel}`}
           title="Ingresos, egresos y saldo neto"
           kpis={[
-            { label: "Ingresos 7d", value: fmtPEN(cajaKpis.ingresos), tone: "success" },
-            { label: "Egresos 7d", value: fmtPEN(cajaKpis.egresos), tone: "warning" },
+            { label: `Ingresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.ingresos), tone: "success" },
+            { label: `Egresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.egresos), tone: "warning" },
             {
               label: "Neto",
               value: fmtPEN(cajaKpis.neto),
@@ -396,10 +511,10 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
       id: "compras",
       render: () => (
         <DashboardSection
-          kicker="Compras · top 7 proveedores · últimos 30 días"
+          kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
           title="Monto, órdenes y deuda por proveedor"
           kpis={[
-            { label: "Compras 30d", value: fmtPEN(compKpis.total), tone: "primary" },
+            { label: `Compras ${kpiSuffix}`, value: fmtPEN(compKpis.total), tone: "primary" },
             { label: "Órdenes", value: String(compKpis.ordenes), tone: "neutral" },
             { label: "Proveedores", value: String(compKpis.provActivos), tone: "neutral" },
             { label: "Por pagar", value: fmtPEN(compKpis.pendiente), tone: "warning" },
@@ -430,11 +545,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
       id: "clientes",
       render: () => (
         <DashboardSection
-          kicker="Clientes · últimos 7 días"
+          kicker={`Clientes · ${rangeLabel}`}
           title="Nuevos, recurrentes y ticket promedio"
           kpis={[
             { label: "Total clientes", value: cliKpis.total.toLocaleString("es-PE"), tone: "primary" },
-            { label: "Nuevos 30d", value: String(cliKpis.nuevosMes), tone: "success" },
+            { label: `Nuevos ${kpiSuffix}`, value: String(cliKpis.nuevosMes), tone: "success" },
             { label: "Activos", value: String(cliKpis.activos), tone: "neutral" },
             { label: "Ticket prom.", value: fmtPEN(cliKpis.ticketProm), tone: "primary" },
           ]}
@@ -464,7 +579,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts() {
       id: "productos",
       render: () => (
         <DashboardSection
-          kicker="Productos · top 7 · últimos 30 días"
+          kicker={`Productos · top 7 · ${rangeLabel}`}
           title="Unidades, ingresos y margen por producto"
           kpis={[
             { label: "SKUs activos", value: String(prodKpis.activos), tone: "neutral" },

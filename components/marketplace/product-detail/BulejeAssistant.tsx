@@ -61,7 +61,7 @@ function welcomeMessage(name: string): AssistantMessage {
   return {
     id: `welcome-${name.length}`,
     role: "assistant",
-    text: `Hola, soy el asistente de Buleje. Puedo ayudarte con preguntas sobre ${name}. ¿Qué querés saber?`,
+    text: `Hola, soy el asistente de Buleje. Puedo ayudarte con preguntas sobre ${name}. ¿Qué quieres saber?`,
     t: 0,
   };
 }

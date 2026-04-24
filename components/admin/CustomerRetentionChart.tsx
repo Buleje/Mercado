@@ -276,7 +276,7 @@ export default function CustomerRetentionChart() {
       </div>
 
       <p className="text-xs text-[var(--text-tertiary)]">
-        Basado en fecha de ultima compra vs mes de ingreso. Para cohortes exactas se requiere historial completo de pedidos por cliente.
+        Basado en fecha de última compra vs mes de ingreso. Para cohortes exactas se requiere historial completo de pedidos por cliente.
       </p>
     </div>
   );

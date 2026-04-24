@@ -292,7 +292,7 @@ export default function AyudaPage() {
                   ¿En qué podemos ayudarte?
                 </PageTitle>
                 <BodyText className="mb-8 text-base text-[var(--text-secondary)] leading-relaxed">
-                  Encontrá respuestas rápidas o contactanos por WhatsApp. Nuestro equipo responde en menos de 5 minutos.
+                  Encuentra respuestas rápidas o contáctanos por WhatsApp. Nuestro equipo responde en menos de 5 minutos.
                 </BodyText>
 
                 {/* Search decorativo — sin JS, redirige a buscar */}
@@ -394,7 +394,7 @@ export default function AyudaPage() {
                   Preguntas más comunes
                 </SectionTitle>
                 <BodyText className="text-[var(--text-secondary)] leading-relaxed">
-                  Estas son las consultas que recibimos con más frecuencia. Si no encontrás lo que buscás, el equipo de soporte está disponible por WhatsApp.
+                  Estas son las consultas que recibimos con más frecuencia. Si no encuentras lo que buscas, el equipo de soporte está disponible por WhatsApp.
                 </BodyText>
 
                 <div

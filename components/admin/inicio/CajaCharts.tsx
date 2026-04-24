@@ -104,7 +104,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "flujo-14d",
       render: () => (
         <DashboardSection
-          kicker="Flujo diario · últimos 14 días"
+          kicker="Flujo diario · rango activo"
           title="Ingresos, egresos y balance"
           kpis={[
             { label: "Mejor día", value: mejorDia.best?.dia ?? "—", tone: "success" },
@@ -134,7 +134,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "tendencia-mensual",
       render: () => (
         <DashboardSection
-          kicker="Tendencia · últimos 6 meses"
+          kicker="Tendencia · rango activo"
           title="Ingresos y egresos por mes"
           kpis={[
             { label: "Mejor mes", value: mesTop.top?.mes ?? "—", tone: "success" },

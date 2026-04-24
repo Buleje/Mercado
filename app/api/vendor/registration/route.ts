@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Ya tenés una aplicación con ese RUC. Contactá a soporte para consultar su estado.",
+              "Ya tienes una aplicación con ese RUC. Contactá a soporte para consultar su estado.",
             code: err.code,
           },
           { status: 409 },

@@ -5,7 +5,7 @@
  *
  * 2-3 sugerencias inteligentes segun estado del user:
  *   - intent "urgent" -> gift card pendiente, cupon por vencer
- *   - intent "schedule" -> proxima entrega Bodega al Mes
+ *   - intent "schedule" -> próxima entrega Bodega al Mes
  *   - intent "upgrade" -> si no es Socio
  *   - intent "suggestion" -> cupones disponibles, ofertas
  */
@@ -73,7 +73,7 @@ export const PersonalizedRecommendations = memo(function PersonalizedRecommendat
       <div className="mb-4">
         <Kicker>Podes aprovechar</Kicker>
         <SectionTitle id="recos-heading" className="mt-0.5">
-          Ideas para tu proxima compra
+          Ideas para tu próxima compra
         </SectionTitle>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

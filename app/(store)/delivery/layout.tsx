@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Delivery — Seguimiento de Entrega | Buleje",
   description:
-    "Rastrea tu pedido en tiempo real. Delivery rapido con seguimiento GPS.",
+    "Rastrea tu pedido en tiempo real. Delivery rápido con seguimiento GPS.",
   robots: { index: false, follow: false },
 };
 

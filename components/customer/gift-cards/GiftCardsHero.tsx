@@ -29,8 +29,8 @@ export default function GiftCardsHero({ totalBalance, activeCount }: Props) {
         title="Tarjetas de regalo Buleje"
         description={
           activeCount > 0
-            ? "Revisá tu saldo, reenviá invitaciones o regalá una nueva tarjeta."
-            : "Todavía no tenés tarjetas. Regalá una o canjeá la que te mandaron."
+            ? "Revisa tu saldo, reenviá invitaciones o regalá una nueva tarjeta."
+            : "Todavía no tienes tarjetas. Regalá una o canjeá la que te mandaron."
         }
         illustration={<GiftCardIlustrada size={160} />}
         stats={stats}

@@ -392,7 +392,7 @@ export default function SignupPage() {
                 />
               </FormField>
 
-              <FormField label="Correo electronico" error={fieldErrors.ownerEmail}>
+              <FormField label="Correo electrónico" error={fieldErrors.ownerEmail}>
                 <input
                   type="email"
                   placeholder="juan@micorreo.com"
@@ -423,7 +423,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Min. 10 chars, 1 mayuscula, 1 numero, 1 especial"
+                    placeholder="Min. 10 chars, 1 mayuscula, 1 número, 1 especial"
                     value={form.adminPassword}
                     onChange={(e) => setForm((p) => ({ ...p, adminPassword: e.target.value }))}
                     className={inputCls(!!fieldErrors.adminPassword) + " pr-10"}
@@ -448,7 +448,7 @@ export default function SignupPage() {
                 </div>
               </FormField>
 
-              <FormField label="Telefono / WhatsApp (opcional)" error={fieldErrors.ownerPhone}>
+              <FormField label="Teléfono / WhatsApp (opcional)" error={fieldErrors.ownerPhone}>
                 <input
                   type="tel"
                   placeholder="+51 961 234 567"
@@ -599,7 +599,7 @@ export default function SignupPage() {
                   }
                 />
                 {form.ownerPhone && (
-                  <SummaryRow label="Telefono" value={form.ownerPhone} />
+                  <SummaryRow label="Teléfono" value={form.ownerPhone} />
                 )}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">

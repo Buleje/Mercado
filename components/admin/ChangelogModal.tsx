@@ -10,7 +10,7 @@ const CHANGELOG = [
     version: "2.5",
     fecha: "25/03/2026",
     items: [
-      "Recetario publico con 20 recetas peruanas",
+      "Recetario público con 20 recetas peruanas",
       "Microfono IA en el POS — dicta productos por voz",
       "Pago mixto — combina efectivo + Yape",
       "Analytics PRO con 11 secciones y Recharts",

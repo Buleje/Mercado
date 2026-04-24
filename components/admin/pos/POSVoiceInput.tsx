@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Mic, MicOff, X, Check, Loader2, Plus, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -51,7 +52,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
     try {
       const res = await fetch("/api/pos/voice-interpret", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           transcript: text,
           availableProducts: products.map(p => p.name),

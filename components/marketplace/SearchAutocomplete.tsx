@@ -146,7 +146,7 @@ export default function SearchAutocomplete({
       setIsListening(false);
       window.dispatchEvent(
         new CustomEvent("marketplace-toast", {
-          detail: { message: "No pudimos escucharte, probá de nuevo", type: "error" },
+          detail: { message: "No pudimos escucharte, prueba de nuevo", type: "error" },
         }),
       );
     };

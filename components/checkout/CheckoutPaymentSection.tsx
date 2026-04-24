@@ -502,7 +502,7 @@ export function CheckoutPaymentSection({
           <p className="text-xs text-red-500 font-semibold">
             {!paymentMethod
               ? "Selecciona un metodo de pago para continuar"
-              : "Ingresa el numero de operacion de Yape para continuar"}
+              : "Ingresa el número de operacion de Yape para continuar"}
           </p>
         )}
       </div>

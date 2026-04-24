@@ -306,7 +306,7 @@ export const SearchSuggestionsDB = {
    *
    * IMPORTANT: cross-tenant — el marketplace agrega productos de TODAS las
    * tiendas (no solo del tenant actual). Por eso NO filtramos por tenantId
-   * acá. Para autocomplete tenant-scoped usar `getProductFuzzyMatches`.
+   * aquí. Para autocomplete tenant-scoped usar `getProductFuzzyMatches`.
    */
   async getProductBasicMatches(
     _tenantId: string,

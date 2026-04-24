@@ -4,81 +4,159 @@ import { requireAdmin } from "@/lib/require-admin";
 /**
  * GET /api/admin/overview
  *
- * Endpoint UNIFICADO del admin home (Hub "Hoy" — ADR-064).
- * Reemplaza fetches duplicados de:
- *   - /api/admin/resume
- *   - /api/admin/today-summary
- *   - /api/admin/metrics
- *   - /api/marketplace/admin/overview (para dueño de tienda)
+ * Endpoint UNIFICADO del admin home (tab Resumen).
  *
- * Retorna en 1 fetch paralelo:
- *   - Hero KPI: ventas hoy + delta vs ayer
- *   - 4 contextual: pedidos, clientes, ticket promedio, stock crítico
- *   - Trend: últimos 7 días de ventas (sparkline)
- *   - Heatmap: ventas por hora/día últimos 30 días
- *   - Top 5 productos con trend
- *   - Pedidos en curso (activos)
- *   - Alertas accionables (vencimiento, stock, fiados atrasados)
- *   - Insight IA (regla heurística en backend, no LLM para velocidad)
+ * Acepta query params opcionales para scoping por rango:
+ *   - ?from=YYYY-MM-DD (inclusive)
+ *   - ?to=YYYY-MM-DD   (inclusive)
+ *   - ?preset=diario|semanal|mensual|anual|personalizado
  *
- * Cache: privado (tenant-scoped) 1 min + SWR 30s.
+ * Si `from`/`to` se omiten, comportamiento default = "hoy" (retrocompatible).
+ *
+ * Retorna:
+ *   - hero.totalRange — total ventas en el rango
+ *   - hero.deltaVsPrevious — % vs ventana previa equivalente
+ *   - hero.sparkline — buckets del rango (hasta 14 puntos)
+ *   - contextual — pedidos/clientes/ticket/stock en el rango
+ *   - heatmap — hora×día del rango (cuándo vende más)
+ *   - topProducts — top 5 por unidades en el rango
+ *   - alerts — stock crítico, vencimientos, fiados atrasados (siempre "ahora")
+ *   - insight — heurística IA según el rango + comparativa
  */
+
+function parseDate(s: string | null): Date | null {
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+
+function endOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+}
+
+type Preset = "diario" | "semanal" | "mensual" | "anual" | "personalizado";
+
+function resolveRange(from: Date | null, to: Date | null): { from: Date; to: Date } {
+  const now = new Date();
+  const today = startOfDay(now);
+  if (from && to) return { from: startOfDay(from), to: endOfDay(to) };
+  return { from: today, to: endOfDay(now) };
+}
+
+function previousWindow(from: Date, to: Date): { from: Date; to: Date } {
+  const ms = to.getTime() - from.getTime();
+  const prevTo = new Date(from.getTime() - 1);
+  const prevFrom = new Date(prevTo.getTime() - ms);
+  return { from: prevFrom, to: prevTo };
+}
+
+/**
+ * Genera buckets (<= 14) dentro del rango.
+ * Si span <= 1d → 24 horas / 14 buckets (cada 1.7h aprox; redondeamos a 24 → pero cap 14).
+ * Si span <= 14d → buckets diarios.
+ * Si span > 14d → buckets (span/14) días.
+ * Retorna array [{ label: string, start: Date, end: Date }].
+ */
+function buildBuckets(from: Date, to: Date): Array<{ label: string; start: Date; end: Date }> {
+  const msDay = 24 * 60 * 60 * 1000;
+  const span = to.getTime() - from.getTime();
+  const days = span / msDay;
+
+  if (days <= 1) {
+    // Intradía: 6 buckets de 4h
+    const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+    for (let i = 0; i < 6; i++) {
+      const start = new Date(from.getTime() + i * 4 * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
+      buckets.push({ label: `${String(start.getHours()).padStart(2, "0")}h`, start, end });
+    }
+    return buckets;
+  }
+
+  if (days <= 14) {
+    // Diario
+    const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+    const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
+    let cursor = startOfDay(from);
+    while (cursor.getTime() <= to.getTime()) {
+      const end = endOfDay(cursor);
+      buckets.push({
+        label: DAY_LABELS[cursor.getDay()] ?? `${cursor.getDate()}`,
+        start: new Date(cursor),
+        end: new Date(end),
+      });
+      cursor = new Date(cursor.getTime() + msDay);
+    }
+    return buckets;
+  }
+
+  // Rango largo → máximo 14 buckets uniformes
+  const bucketSize = Math.ceil(days / 14);
+  const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+  let cursor = startOfDay(from);
+  while (cursor.getTime() <= to.getTime()) {
+    const bucketEnd = new Date(cursor.getTime() + bucketSize * msDay - 1);
+    const end = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
+    buckets.push({
+      label: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      start: new Date(cursor),
+      end: new Date(end),
+    });
+    cursor = new Date(cursor.getTime() + bucketSize * msDay);
+  }
+  return buckets;
+}
+
 export async function GET(req: NextRequest) {
-  // Auth check (propaga tenantId)
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
 
   const { prisma } = await import("@/lib/prisma");
 
+  // ── Parse query params ─────────────────────────────────────────────────────
+  const url = new URL(req.url);
+  const fromParam = parseDate(url.searchParams.get("from"));
+  const toParam = parseDate(url.searchParams.get("to"));
+  const preset = (url.searchParams.get("preset") as Preset | null) ?? "diario";
+
+  const { from: rangeFrom, to: rangeTo } = resolveRange(fromParam, toParam);
+  const { from: prevFrom, to: prevTo } = previousWindow(rangeFrom, rangeTo);
+
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfYesterday = new Date(startOfToday);
-  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-  const startOf7dAgo = new Date(startOfToday);
-  startOf7dAgo.setDate(startOf7dAgo.getDate() - 7);
-  const startOf30dAgo = new Date(startOfToday);
+  const startOf30dAgo = new Date(rangeTo);
   startOf30dAgo.setDate(startOf30dAgo.getDate() - 30);
 
   try {
-    // Paralelizar TODAS las queries
     const [
-      todayOrders,
-      yesterdayOrders,
-      last7dOrders,
+      rangeOrders,
+      prevOrders,
       activeOrders,
       last30dOrders,
       criticalStockCount,
       expiringCount,
       overdueCreditCount,
       topProducts,
-      newCustomersToday,
+      newCustomersInRange,
     ] = await Promise.all([
-      // Ventas de hoy
       prisma.order
         .findMany({
-          where: { tenantId, createdAt: { gte: startOfToday }, status: { not: "cancelado" } },
+          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: { not: "cancelado" } },
           select: { total: true, customerPhone: true, createdAt: true },
         })
         .catch(() => [] as Array<{ total: number; customerPhone: string | null; createdAt: Date }>),
 
-      // Ventas de ayer (para delta)
       prisma.order
         .findMany({
-          where: { tenantId, createdAt: { gte: startOfYesterday, lt: startOfToday }, status: { not: "cancelado" } },
+          where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: { not: "cancelado" } },
           select: { total: true },
         })
         .catch(() => [] as Array<{ total: number }>),
 
-      // Últimos 7 días (para sparkline trend)
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: startOf7dAgo }, status: { not: "cancelado" } },
-          select: { total: true, createdAt: true },
-        })
-        .catch(() => [] as Array<{ total: number; createdAt: Date }>),
-
-      // Pedidos en curso (no entregados ni cancelados)
       prisma.order
         .count({
           where: {
@@ -88,23 +166,20 @@ export async function GET(req: NextRequest) {
         })
         .catch(() => 0),
 
-      // Últimos 30 días (heatmap hora/día)
       prisma.order
         .findMany({
-          where: { tenantId, createdAt: { gte: startOf30dAgo }, status: { not: "cancelado" } },
+          where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo }, status: { not: "cancelado" } },
           select: { createdAt: true },
           take: 5000,
         })
         .catch(() => [] as Array<{ createdAt: Date }>),
 
-      // Stock crítico (<=5)
       prisma.product
         .count({
           where: { tenantId, stock: { lte: 5, gt: 0 }, active: true },
         })
         .catch(() => 0),
 
-      // Productos por vencer en 7 días (campo `expiresAt` en Product)
       prisma.product
         .count({
           where: {
@@ -118,22 +193,17 @@ export async function GET(req: NextRequest) {
         })
         .catch(() => 0),
 
-      // Fiados atrasados (modelo Fiado con status overdue)
       prisma.fiado
         .count({
-          where: {
-            tenantId,
-            status: "VENCIDO",
-          },
+          where: { tenantId, status: "VENCIDO" },
         })
         .catch(() => 0),
 
-      // Top 5 productos últimos 7 días
       prisma.orderItem
         .groupBy({
           by: ["productId"],
           where: {
-            order: { tenantId, createdAt: { gte: startOf7dAgo }, status: { not: "cancelado" } },
+            order: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: { not: "cancelado" } },
           },
           _sum: { quantity: true },
           orderBy: { _sum: { quantity: "desc" } },
@@ -141,44 +211,38 @@ export async function GET(req: NextRequest) {
         })
         .catch(() => [] as Array<{ productId: number | null; _sum: { quantity: number | null } }>),
 
-      // Clientes nuevos hoy (primera orden hoy)
       prisma.customer
         .count({
-          where: { tenantId, createdAt: { gte: startOfToday } },
+          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
         })
         .catch(() => 0),
     ]);
 
-    // Compute aggregates
-    const totalToday = todayOrders.reduce((sum: number, o) => sum + Number(o.total ?? 0), 0);
-    const totalYesterday = yesterdayOrders.reduce((sum: number, o) => sum + Number(o.total ?? 0), 0);
-    const deltaVsYesterday = totalYesterday > 0
-      ? ((totalToday - totalYesterday) / totalYesterday) * 100
-      : totalToday > 0 ? 100 : 0;
+    // ── Aggregates ─────────────────────────────────────────────────────────
+    const totalRange = rangeOrders.reduce((sum: number, o) => sum + Number(o.total ?? 0), 0);
+    const totalPrev = prevOrders.reduce((sum: number, o) => sum + Number(o.total ?? 0), 0);
+    const deltaVsPrevious = totalPrev > 0
+      ? ((totalRange - totalPrev) / totalPrev) * 100
+      : totalRange > 0 ? 100 : 0;
 
-    const ordersTodayCount = todayOrders.length;
-    const ticketAverage = ordersTodayCount > 0 ? totalToday / ordersTodayCount : 0;
+    const ordersCount = rangeOrders.length;
+    const ticketAverage = ordersCount > 0 ? totalRange / ordersCount : 0;
+    const uniqueCustomers = new Set(rangeOrders.map((o) => o.customerPhone).filter(Boolean)).size;
 
-    // Unique customers today
-    const uniqueCustomersToday = new Set(todayOrders.map((o) => o.customerPhone).filter(Boolean)).size;
+    // Sparkline: buckets dentro del rango
+    const buckets = buildBuckets(rangeFrom, rangeTo);
+    const sparkline = buckets.map((b) => {
+      const sum = rangeOrders
+        .filter((o) => o.createdAt >= b.start && o.createdAt <= b.end)
+        .reduce((s, o) => s + Number(o.total ?? 0), 0);
+      return Math.round(sum);
+    });
+    const sparklineLabels = buckets.map((b) => b.label);
 
-    // Sparkline: agrupar por dia ultimos 7 dias
-    const sparkline: number[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const dayStart = new Date(startOfToday);
-      dayStart.setDate(dayStart.getDate() - i);
-      const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-      const daySum = last7dOrders
-        .filter((o) => o.createdAt >= dayStart && o.createdAt < dayEnd)
-        .reduce((s: number, o) => s + Number(o.total ?? 0), 0);
-      sparkline.push(Math.round(daySum));
-    }
-
-    // Heatmap: [{ day: 0-6, hour: 0-23, value }]
+    // Heatmap: últimos 30d (no depende del rango — tendencia larga)
     const heatmapRaw: Record<string, number> = {};
     for (const o of last30dOrders) {
-      const day = (o.createdAt.getDay() + 6) % 7; // 0 = Lunes
+      const day = (o.createdAt.getDay() + 6) % 7;
       const hour = o.createdAt.getHours();
       const key = `${day}-${hour}`;
       heatmapRaw[key] = (heatmapRaw[key] ?? 0) + 1;
@@ -191,14 +255,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Alertas accionables
+    // ── Alerts accionables (siempre "ahora") ───────────────────────────────
     const alerts: Array<{ id: string; severity: "info" | "warning" | "danger"; text: string; href?: string }> = [];
     if (criticalStockCount > 0) {
       alerts.push({
         id: "stock-critical",
         severity: "warning",
         text: `${criticalStockCount} ${criticalStockCount === 1 ? "producto" : "productos"} con stock crítico`,
-        href: "/admin?module=operar&section=inventario&filter=critical",
+        href: "/admin?tab=inventario&filter=critical",
       });
     }
     if (expiringCount > 0) {
@@ -206,7 +270,7 @@ export async function GET(req: NextRequest) {
         id: "expiring",
         severity: "warning",
         text: `${expiringCount} ${expiringCount === 1 ? "producto vence" : "productos vencen"} en 7 días`,
-        href: "/admin?module=operar&section=inventario&filter=expiring",
+        href: "/admin?tab=inventario&filter=expiring",
       });
     }
     if (overdueCreditCount > 0) {
@@ -214,7 +278,7 @@ export async function GET(req: NextRequest) {
         id: "overdue",
         severity: "danger",
         text: `${overdueCreditCount} ${overdueCreditCount === 1 ? "fiado atrasado" : "fiados atrasados"}`,
-        href: "/admin?module=cobrar&section=fiados&filter=overdue",
+        href: "/admin?tab=fiados&filter=overdue",
       });
     }
     if (activeOrders > 0) {
@@ -222,49 +286,74 @@ export async function GET(req: NextRequest) {
         id: "active-orders",
         severity: "info",
         text: `${activeOrders} ${activeOrders === 1 ? "pedido en curso" : "pedidos en curso"}`,
-        href: "/admin?module=operar&section=pedidos&filter=active",
+        href: "/admin?tab=pedidos&filter=active",
       });
     }
 
-    // Insight IA (regla heurística)
+    // ── Insight heurístico según rango + comparativa ──────────────────────
+    const presetLabel: Record<Preset, string> = {
+      diario: "hoy",
+      semanal: "esta semana",
+      mensual: "este mes",
+      anual: "este año",
+      personalizado: "este rango",
+    };
+    const prevLabel: Record<Preset, string> = {
+      diario: "ayer",
+      semanal: "la semana pasada",
+      mensual: "el mes pasado",
+      anual: "el año pasado",
+      personalizado: "el rango anterior",
+    };
+
     let insight: { type: "opportunity" | "warning" | "info"; text: string; cta?: { label: string; href: string } } | null = null;
-    if (deltaVsYesterday < -15 && ordersTodayCount >= 3) {
+    if (deltaVsPrevious < -15 && ordersCount >= 3) {
       insight = {
         type: "opportunity",
-        text: `Tus ventas están ${Math.abs(deltaVsYesterday).toFixed(0)}% abajo vs ayer. Una promo flash de 2×1 en bebidas puede recuperar el ritmo.`,
-        cta: { label: "Crear promo flash", href: "/admin?module=operar&section=productos&action=promo" },
+        text: `Tus ventas ${presetLabel[preset]} están ${Math.abs(deltaVsPrevious).toFixed(0)}% abajo vs ${prevLabel[preset]}. Una promo flash puede recuperar el ritmo.`,
+        cta: { label: "Crear promo", href: "/admin?tab=productos&action=promo" },
       };
-    } else if (deltaVsYesterday > 20) {
+    } else if (deltaVsPrevious > 20) {
       insight = {
         type: "opportunity",
-        text: `Vas ${deltaVsYesterday.toFixed(0)}% arriba vs ayer. Capturá el momentum: aprovechá para pedir reseñas a clientes que ya compraron.`,
-        cta: { label: "Ver clientes de hoy", href: "/admin?module=crecer&section=clientes&filter=today" },
+        text: `Vas ${deltaVsPrevious.toFixed(0)}% arriba vs ${prevLabel[preset]}. Aprovecha el momentum — pide reseñas a clientes que compraron ${presetLabel[preset]}.`,
+        cta: { label: "Ver clientes", href: "/admin?tab=clientes" },
       };
     } else if (criticalStockCount > 3) {
       insight = {
         type: "warning",
-        text: `${criticalStockCount} productos tienen stock crítico. Los clientes ya no los pueden comprar — reponé pronto.`,
-        cta: { label: "Ver inventario", href: "/admin?module=operar&section=inventario" },
+        text: `${criticalStockCount} productos tienen stock crítico. Los clientes ya no los pueden comprar — repón pronto.`,
+        cta: { label: "Ver inventario", href: "/admin?tab=inventario" },
       };
-    } else if (ordersTodayCount === 0 && now.getHours() > 11) {
+    } else if (ordersCount === 0 && preset === "diario" && now.getHours() > 11) {
       insight = {
         type: "info",
-        text: `Sin pedidos hoy aún. ¿Compartís tu tienda por WhatsApp? Los clientes de la mañana suelen ser los más recurrentes.`,
-        cta: { label: "Compartir mi tienda", href: "/admin?module=crecer&section=marketplace&action=share" },
+        text: `Sin pedidos hoy aún. Comparte tu tienda por WhatsApp — los clientes de la mañana suelen ser los más recurrentes.`,
+        cta: { label: "Compartir tienda", href: "/admin?tab=marketplace&action=share" },
       };
     }
 
     return NextResponse.json(
       {
         hero: {
-          totalToday: Math.round(totalToday * 100) / 100,
-          deltaVsYesterday: Math.round(deltaVsYesterday * 10) / 10,
+          totalRange: Math.round(totalRange * 100) / 100,
+          deltaVsPrevious: Math.round(deltaVsPrevious * 10) / 10,
           sparkline,
+          sparklineLabels,
+          // Retrocompat: clientes viejos esperan `totalToday` / `deltaVsYesterday`
+          totalToday: Math.round(totalRange * 100) / 100,
+          deltaVsYesterday: Math.round(deltaVsPrevious * 10) / 10,
+        },
+        range: {
+          from: rangeFrom.toISOString(),
+          to: rangeTo.toISOString(),
+          preset,
         },
         contextual: {
-          ordersToday: ordersTodayCount,
-          uniqueCustomers: uniqueCustomersToday,
-          newCustomers: newCustomersToday,
+          ordersToday: ordersCount, // legacy name mantenido
+          ordersInRange: ordersCount,
+          uniqueCustomers,
+          newCustomers: newCustomersInRange,
           ticketAverage: Math.round(ticketAverage * 100) / 100,
           activeOrders,
           criticalStock: criticalStockCount,

@@ -305,7 +305,7 @@ export default function SearchFilters({
             }
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
             min={0}
-            aria-label="Precio minimo"
+            aria-label="Precio mínimo"
           />
           <span className="text-gray-400 text-xs" aria-hidden="true">
             —
@@ -322,7 +322,7 @@ export default function SearchFilters({
             }
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
             min={0}
-            aria-label="Precio maximo"
+            aria-label="Precio máximo"
           />
         </div>
       </FilterGroup>

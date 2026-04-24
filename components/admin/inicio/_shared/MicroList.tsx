@@ -4,7 +4,7 @@
  * MicroList — lista top-N con bar proportion inline.
  *
  * Para mostrar "Top 5 productos" o "Top proveedores" en cards pequeños,
- * con un mini-bar de fondo proporcional al valor maximo.
+ * con un mini-bar de fondo proporcional al valor máximo.
  *
  * Uso:
  *   <MicroList
@@ -40,7 +40,7 @@ interface MicroListProps {
   items: MicroListItem[];
   /** Color base del bar de fondo. Default brand. */
   barColor?: string;
-  /** Mostrar numero de ranking (1, 2, 3...) a la izquierda. */
+  /** Mostrar número de ranking (1, 2, 3...) a la izquierda. */
   showRank?: boolean;
   /** Texto cuando items esta vacio. */
   emptyText?: string;

@@ -34,7 +34,7 @@ import GiftCardsBanner from "@/components/marketplace/gift-cards/GiftCardsBanner
 import MarketplaceWelcomeCoupon from "@/components/marketplace/MarketplaceWelcomeCoupon";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 // AddedToCartDrawerProvider vive en app/marketplace/layout.tsx (persistente).
-// Footer también vive en el layout — NO volver a incluirlo acá.
+// Footer también vive en el layout — NO volver a incluirlo aquí.
 // ── Home narrative modules (ENRICH-6) ────────────────────────────────────────
 import OfertasDelDiaHero from "@/components/marketplace/home/OfertasDelDiaHero";
 import OfertasFlashSection from "@/components/marketplace/home/OfertasFlashSection";
@@ -201,7 +201,7 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
       {!SHOW_SECONDARY_HOME_SECTIONS && (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
           <p className="text-sm text-[var(--text-tertiary)] mb-3">
-            ¿Querés más? Explorá lo que hay en el ecosistema Buleje.
+            ¿Quieres más? Explora lo que hay en el ecosistema Buleje.
           </p>
           <Link
             href="/descubri"
@@ -227,14 +227,14 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
             Para bodegueros
           </p>
           <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-            ¿Tenés una tienda?
+            ¿Tienes una tienda?
             <br />
             <span className="italic font-serif text-[var(--accent)]">
               Sumate al marketplace.
             </span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-            Publicá tus productos, recibí pedidos automáticamente y llegá a
+            Publica tus productos, recibe pedidos automáticamente y llegá a
             miles de clientes. Sin costo de inscripción.
           </p>
           <div className="mt-12 flex flex-wrap justify-center gap-3">
@@ -243,7 +243,7 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
               className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
             >
               <Store className="h-4 w-4" strokeWidth={1.75} />
-              Registrá tu tienda gratis
+              Registra tu tienda gratis
               <ArrowUpRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 strokeWidth={2.25}

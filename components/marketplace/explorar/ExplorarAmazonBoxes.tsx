@@ -52,7 +52,7 @@ type Box = {
 const BOXES: Box[] = [
   {
     id: "sigue-comprando",
-    kicker: "Para vos",
+    kicker: "Para ti",
     title: "Volve a tu lista",
     subtitle: "Lo que viste y los que mas pediste — todo a un toque",
     href: "/marketplace?sort=popular",
@@ -141,7 +141,7 @@ export default function ExplorarAmazonBoxes() {
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <ExplorarSectionHeader
           kicker="Tu hub"
-          title="Donde querés empezar"
+          title="Donde quieres empezar"
           subtitle="Atajos pensados para cómo comprás. Sin filtros, sin pestañas."
         />
 

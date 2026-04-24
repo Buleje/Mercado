@@ -21,7 +21,7 @@ const BENEFITS = [
     Illustration: MotoRuta,
     Icon: Timer,
     title: "Entregas en 25 min",
-    copy: "Coordinamos los motorizados por vos. Tu única preocupación es que el producto esté listo cuando llega la moto. Nosotros trackeamos al cliente.",
+    copy: "Coordinamos los motorizados por ti. Tu única preocupación es que el producto esté listo cuando llega la moto. Nosotros trackeamos al cliente.",
   },
   {
     Illustration: BodegueroCelebrando,

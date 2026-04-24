@@ -355,12 +355,12 @@ const DEMO_TABS: DemoTab[] = [
     label: "Punto de Venta",
     icon: <ShoppingCart className="h-4 w-4" />,
     title: "Prueba el POS ahora mismo",
-    description: "Agrega productos, cambia cantidades, elige como pagar. Asi de rapido es vender con Buleje.",
+    description: "Agrega productos, cambia cantidades, elige como pagar. Asi de rápido es vender con Buleje.",
     gradient: "from-teal-500 to-emerald-600",
     miniApp: <POSMiniApp />,
     links: [
       { label: "Ver POS completo", href: "/admin/kiosk" },
-      { label: "POS movil", href: "/admin/pos-mobile" },
+      { label: "POS móvil", href: "/admin/pos-mobile" },
     ],
   },
   {
@@ -380,7 +380,7 @@ const DEMO_TABS: DemoTab[] = [
     label: "Reportes",
     icon: <BarChart3 className="h-4 w-4" />,
     title: "Graficos que cuentan historias",
-    description: "Cambia entre semana y mes. Pasa el mouse por las barras. Los numeros se actualizan solos.",
+    description: "Cambia entre semana y mes. Pasa el mouse por las barras. Los números se actualizan solos.",
     gradient: "from-violet-500 to-purple-600",
     miniApp: <ReportsMiniApp />,
     links: [

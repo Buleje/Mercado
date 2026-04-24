@@ -5,9 +5,9 @@ import ExplorarClient from "@/components/marketplace/explorar/ExplorarClient";
 const BASE_URL = "https://www.buleje.pe";
 
 export const metadata: Metadata = {
-  title: "Explorar — Todo el catalogo de Buleje",
+  title: "Explorar — Todo el catálogo de Buleje",
   description:
-    "Descubri bodegas, ofertas, categorias y ocasiones en un solo lugar. Tu hub de compras en Pucallpa con delivery rapido y pago Yape o efectivo.",
+    "Descubri bodegas, ofertas, categorias y ocasiones en un solo lugar. Tu hub de compras en Pucallpa con delivery rápido y pago Yape o efectivo.",
   alternates: {
     canonical: `${BASE_URL}/marketplace/explorar`,
   },
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Explorar — Todo el catalogo de Buleje",
+    title: "Explorar — Todo el catálogo de Buleje",
     description:
-      "Descubri bodegas, ofertas y categorias de todo Pucallpa en un solo lugar. Delivery rapido, pago Yape o efectivo.",
+      "Descubri bodegas, ofertas y categorias de todo Pucallpa en un solo lugar. Delivery rápido, pago Yape o efectivo.",
     url: `${BASE_URL}/marketplace/explorar`,
     siteName: "Buleje",
     locale: "es_PE",

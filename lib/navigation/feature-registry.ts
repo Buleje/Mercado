@@ -11,7 +11,7 @@
  *   const related = relatedFor("gift-cards", 3);
  *   // → [socio-buleje, cupones, bodega-al-mes]
  *
- * Extender: agregá una key nueva al map `FEATURES`. Mantené `category` y
+ * Extender: agrega una key nueva al map `FEATURES`. Mantené `category` y
  * `priority` para que el matching siga siendo determinístico.
  */
 
@@ -71,7 +71,7 @@ export const FEATURES = {
     icon: "Package",
     title: "Bodega al Mes",
     description:
-      "Suscripción recurrente con 5% off. Pausá o cancelá cuando quieras.",
+      "Suscripción recurrente con 5% off. Pausá o cancela cuando quieras.",
     href: "/cuenta/suscripciones",
     cta: "Ver planes",
     category: "ahorro",
@@ -82,7 +82,7 @@ export const FEATURES = {
     icon: "Flashlight",
     title: "Buleje en Vivo",
     description:
-      "Transmisiones desde las bodegas de Pucallpa. Comprá sin salir del stream.",
+      "Transmisiones desde las bodegas de Pucallpa. Compra sin salir del stream.",
     href: "/marketplace/en-vivo",
     cta: "Mirar ahora",
     category: "descubrimiento",
@@ -113,9 +113,9 @@ export const FEATURES = {
   "vender": {
     id: "vender",
     icon: "Store",
-    title: "Vendé en Buleje",
+    title: "Vende en Buleje",
     description:
-      "Sumá tu bodega al marketplace. Gratis el primer mes, pagos con Yape.",
+      "Suma tu bodega al marketplace. Gratis el primer mes, pagos con Yape.",
     href: "/vender",
     cta: "Abrir tienda",
     category: "seller",
@@ -159,7 +159,7 @@ export const FEATURES = {
     icon: "Truck",
     title: "Seguimiento en vivo",
     description:
-      "Seguí cada pedido en el mapa y recibí notificaciones en WhatsApp.",
+      "Sigue cada pedido en el mapa y recibe notificaciones en WhatsApp.",
     href: "/tracking",
     cta: "Rastrear",
     category: "soporte",

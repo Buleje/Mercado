@@ -399,7 +399,7 @@ export default function CollectionCenterTab() {
       {/* Modal detalle */}
       {detail && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="modal-backdrop p-4"
           onClick={() => setDetail(null)}
         >
           <div

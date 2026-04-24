@@ -131,7 +131,7 @@ function calcScore(customer: Customer, orders: Order[]): CreditResult {
     score >= 70
       ? `Puede fiar hasta S/ ${maxCredit.toFixed(2)}`
       : score >= 40
-      ? `Limite bajo — maximo S/ ${maxCredit.toFixed(2)}`
+      ? `Limite bajo — máximo S/ ${maxCredit.toFixed(2)}`
       : totalPending > 0
       ? `Tiene S/ ${totalPending.toFixed(2)} pendiente sin pagar`
       : "Historial insuficiente o deudas antiguas";
@@ -269,7 +269,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
         {!loading && !error && !customerPhone && (
           <div className="flex flex-col items-center gap-2 py-6 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
             <User className="h-8 w-8" />
-            <p className="text-sm">Ingresa un telefono para calcular el score</p>
+            <p className="text-sm">Ingresa un teléfono para calcular el score</p>
           </div>
         )}
 

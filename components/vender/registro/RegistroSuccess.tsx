@@ -26,7 +26,7 @@ const NEXT_STEPS = [
   },
   {
     n: "03",
-    title: "Entrás al panel vendedor",
+    title: "Entras al panel vendedor",
     detail: "Desde ahí vas a manejar pedidos, stock, promociones y ver tus ingresos.",
   },
 ] as const;

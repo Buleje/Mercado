@@ -341,7 +341,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                 />
               </div>
 
-              {/* RUC + Telefono */}
+              {/* RUC + Teléfono */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>RUC</label>
@@ -354,7 +354,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Telefono</label>
+                  <label className={labelCls}>Teléfono</label>
                   <input
                     value={form.phone}
                     onChange={e => set('phone', e.target.value)}
@@ -414,7 +414,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     </select>
                   </div>
                   <div>
-                    <label className={labelCls}>Numero documento</label>
+                    <label className={labelCls}>Número documento</label>
                     <input value={form.documento} onChange={e => set('documento', e.target.value)} placeholder="20xxxxxxxxx" className={cn(inputCls, "font-mono")} />
                   </div>
                 </div>
@@ -447,12 +447,12 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
               {/* Seccion 2: Contacto */}
               <Section title="2. Contacto" defaultOpen={true}>
                 <div>
-                  <label className={labelCls}>Telefono</label>
+                  <label className={labelCls}>Teléfono</label>
                   <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="987 654 321" className={inputCls} />
                 </div>
                 <div>
                   <label className={labelCls}>WhatsApp secundario</label>
-                  <input value={form.whatsappSecundario} onChange={e => set('whatsappSecundario', e.target.value)} placeholder="Otro numero" className={inputCls} />
+                  <input value={form.whatsappSecundario} onChange={e => set('whatsappSecundario', e.target.value)} placeholder="Otro número" className={inputCls} />
                 </div>
                 <div>
                   <label className={labelCls}>Email</label>

@@ -22,15 +22,15 @@ type QA = {
 const FAQ: QA[] = [
   {
     q: "¿Son gratis todas estas features?",
-    a: "Casi todas. Comparar, Asistente, Gift Cards, En Vivo, Seguimiento, 1-Click Buy y Vendé en Buleje son 100% gratis. Socio Buleje es la única membresía paga (desde S/ 19/mes con 30 días gratis).",
+    a: "Casi todas. Comparar, Asistente, Gift Cards, En Vivo, Seguimiento, 1-Click Buy y Vende en Buleje son 100% gratis. Socio Buleje es la única membresía paga (desde S/ 19/mes con 30 días gratis).",
   },
   {
     q: "¿Cómo me hago Socio Buleje?",
-    a: "Entrás a /socio-buleje, elegís plan mensual o anual, y te suscribís. No pedimos tarjeta para el trial de 30 días. Podés cancelar cuando quieras desde tu panel de cuenta.",
+    a: "Entras a /socio-buleje, eliges plan mensual o anual, y te suscribís. No pedimos tarjeta para el trial de 30 días. Puedes cancelar cuando quieras desde tu panel de cuenta.",
   },
   {
     q: "¿Qué pasa si mi barrio no está cubierto?",
-    a: "Estamos en todo Pucallpa (Callería, Yarinacocha, Manantay y Centro) con 200+ bodegas activas. Si tu zona no aparece, escribinos por WhatsApp y priorizamos sumar una bodega del sector.",
+    a: "Estamos en todo Pucallpa (Callería, Yarinacocha, Manantay y Centro) con 200+ bodegas activas. Si tu zona no aparece, escríbenos por WhatsApp y priorizamos sumar una bodega del sector.",
   },
   {
     q: "¿El asistente responde en Shipibo?",
@@ -38,7 +38,7 @@ const FAQ: QA[] = [
   },
   {
     q: "¿Puedo usar Buleje sin registrarme?",
-    a: "Sí. Podés explorar el marketplace, comparar productos y preguntarle al asistente sin cuenta. Solo pedimos registro para comprar, guardar favoritos o suscribirte a Socio.",
+    a: "Sí. Puedes explorar el marketplace, comparar productos y preguntarle al asistente sin cuenta. Solo pedimos registro para comprar, guardar favoritos o suscribirte a Socio.",
   },
   {
     q: "¿Qué medios de pago aceptan?",
@@ -50,7 +50,7 @@ const FAQ: QA[] = [
   },
   {
     q: "¿Cómo abro mi bodega en Buleje?",
-    a: "Entrás a /vender, completás un registro de 5 minutos con foto del local y tu DNI, y en 24h tu tienda queda online. El primer mes es gratis, sin contrato.",
+    a: "Entras a /vender, completás un registro de 5 minutos con foto del local y tu DNI, y en 24h tu tienda queda online. El primer mes es gratis, sin contrato.",
   },
 ];
 

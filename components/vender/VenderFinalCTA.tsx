@@ -25,10 +25,10 @@ export default function VenderFinalCTA() {
                 Última parada
               </p>
               <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-                Empezá hoy mismo, cobrá esta semana
+                Empieza hoy mismo, cobrá esta semana
               </h2>
               <p className="max-w-lg text-sm opacity-85 sm:text-base">
-                Mañana ya tenés tu primer pedido. No hay excusa: abrir la
+                Mañana ya tienes tu primer pedido. No hay excusa: abrir la
                 tienda cuesta menos que una cajita de cerveza al mayorista.
               </p>
 

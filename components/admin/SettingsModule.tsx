@@ -1546,7 +1546,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       {/* Restore modal */}
       {showRestoreModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
+        <div className="modal-backdrop p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Restaurar Base de Datos</CardTitle>

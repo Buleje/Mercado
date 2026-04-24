@@ -162,7 +162,7 @@ export default function SubscribeAndSaveSection() {
       id="subscribe-save"
       kicker="Bodega al Mes"
       title="Productos que podes suscribir y ahorrar 5%"
-      subtitle="Entrega automatica, pausa o cancela cuando quieras. Tu bodega recuerda por vos."
+      subtitle="Entrega automatica, pausa o cancela cuando quieras. Tu bodega recuerda por ti."
       actions={
         <Link
           href="/cuenta/suscripciones"

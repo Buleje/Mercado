@@ -38,7 +38,7 @@ async function fetchProductos(): Promise<Record<string, string | number | boolea
     "Costo (S/)": p.costPrice as number ?? "",
     "Unidad": p.unit as string,
     "Stock actual": p.stock as number ?? 0,
-    "Stock minimo": p.stockMin as number ?? 0,
+    "Stock mínimo": p.stockMin as number ?? 0,
     "Codigo barras": p.barcode as string ?? "",
     "Activo": (p.active !== false) ? "Si" : "No",
     "Descripcion": p.description as string ?? "",
@@ -52,7 +52,7 @@ async function fetchClientes(): Promise<Record<string, string | number | boolean
   const data = Array.isArray(raw) ? raw as Record<string, unknown>[] : ((raw as { customers?: Record<string, unknown>[] }).customers ?? []);
   return data.map((c) => ({
     "Nombre": c.name as string,
-    "Telefono": c.phone as string,
+    "Teléfono": c.phone as string,
     "Ubicacion": c.location as string ?? "",
     "Nivel fidelidad": c.loyaltyTier as string ?? "bronce",
     "Puntos": c.loyaltyPoints as number ?? 0,
@@ -70,7 +70,7 @@ async function fetchVentas(): Promise<Record<string, string | number | boolean |
   return data.map((o) => ({
     "ID pedido": o.id as string,
     "Cliente": (o.customer as Record<string, unknown>)?.name as string ?? "",
-    "Telefono": (o.customer as Record<string, unknown>)?.phone as string ?? "",
+    "Teléfono": (o.customer as Record<string, unknown>)?.phone as string ?? "",
     "Total (S/)": o.total as number,
     "Estado": o.status as string,
     "Metodo pago": o.paymentMethod as string ?? "",
@@ -90,8 +90,8 @@ async function fetchInventario(): Promise<Record<string, string | number | boole
       "Producto": p.name as string,
       "Categoria": p.category as string,
       "Stock actual": p.stock as number ?? 0,
-      "Stock minimo": p.stockMin as number ?? 0,
-      "Stock maximo": p.stockMax as number ?? "",
+      "Stock mínimo": p.stockMin as number ?? 0,
+      "Stock máximo": p.stockMax as number ?? "",
       "Unidad": p.unit as string,
     }));
   }

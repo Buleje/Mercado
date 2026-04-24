@@ -57,7 +57,7 @@ export const SectionsGrid = memo(function SectionsGrid({ data }: SectionsGridPro
           metric={`${data.orders.recentCount} pedidos`}
           detail={
             data.orders.lastDeliveredAt
-              ? "Ultimo entregado hace 2 dias"
+              ? "Último entregado hace 2 dias"
               : "Sin historial aun"
           }
           href="/cuenta/pedidos"

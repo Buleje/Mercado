@@ -3,7 +3,7 @@
 /**
  * LiveViewers
  *
- * Muestra "N personas lo vieron en la ultima hora" cuando N >= 3.
+ * Muestra "N personas lo vieron en la última hora" cuando N >= 3.
  * Datos reales desde /api/marketplace/stores/[slug]/live-viewers.
  * Umbral >= 3 para evitar el efecto "1 persona" que suena vacio
  * (coherente con LowStockUrgency).

@@ -16,13 +16,18 @@ import ProductGallery from "@/components/marketplace/ProductGallery";
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("framer-motion", () => ({
-  motion: {
-    div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode }) =>
-      <div {...props}>{children}</div>,
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock("framer-motion", () => {
+  const MotionDiv = ({ children, ...props }: React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode }) =>
+    <div {...props}>{children}</div>;
+  const motion = { div: MotionDiv };
+  return {
+    motion,
+    m: motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    domAnimation: {},
+  };
+});
 
 vi.mock("next/image", () => ({
   default: ({

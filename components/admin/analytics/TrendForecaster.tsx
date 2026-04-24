@@ -145,7 +145,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
           </p>
         </div>
         <div className="flex-1 rounded-lg bg-primary/10 dark:bg-primary/20 border border-primary/30 p-2 text-center">
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Proyeccion proxima semana</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Proyeccion próxima semana</p>
           <p className="text-xs font-bold text-primary dark:text-primary">
             {fmt(forecastRange.min)} — {fmt(forecastRange.max)}
           </p>
@@ -164,7 +164,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-primary" />
-          Media movil 7d
+          Media móvil 7d
         </div>
       </div>
 
@@ -246,7 +246,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
 
       {/* Weekly forecast detail */}
       <div className="rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20 p-2">
-        <p className="text-xs text-[var(--text-secondary)] font-medium mb-1">Proyeccion diaria (proxima semana)</p>
+        <p className="text-xs text-[var(--text-secondary)] font-medium mb-1">Proyeccion diaria (próxima semana)</p>
         <div className="grid grid-cols-7 gap-0.5">
           {points.filter((p) => p.isForecast).map((pt) => (
             <div key={pt.date} className="text-center">

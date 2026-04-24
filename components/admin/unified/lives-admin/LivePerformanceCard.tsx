@@ -65,28 +65,28 @@ export function LivePerformanceCard({ live, onClick }: Props) {
         <div>
           <div className="flex items-center gap-1 text-[var(--text-tertiary)] mb-0.5">
             <Eye className="h-3 w-3" />
-            <span className="text-[length:var(--ts-2xs)] uppercase tracking-wide font-bold">Views</span>
+            <span className="text-xs uppercase tracking-wide font-bold">Views</span>
           </div>
           <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">{live.totalViews}</p>
         </div>
         <div>
           <div className="flex items-center gap-1 text-[var(--text-tertiary)] mb-0.5">
             <Clock className="h-3 w-3" />
-            <span className="text-[length:var(--ts-2xs)] uppercase tracking-wide font-bold">Engage</span>
+            <span className="text-xs uppercase tracking-wide font-bold">Engage</span>
           </div>
           <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">{live.engagement}%</p>
         </div>
         <div>
           <div className="flex items-center gap-1 text-[var(--text-tertiary)] mb-0.5">
             <ShoppingBag className="h-3 w-3" />
-            <span className="text-[length:var(--ts-2xs)] uppercase tracking-wide font-bold">Pedidos</span>
+            <span className="text-xs uppercase tracking-wide font-bold">Pedidos</span>
           </div>
           <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">{live.ordersGenerated}</p>
         </div>
         <div>
           <div className="flex items-center gap-1 text-[var(--text-tertiary)] mb-0.5">
             <DollarSign className="h-3 w-3" />
-            <span className="text-[length:var(--ts-2xs)] uppercase tracking-wide font-bold">Ventas</span>
+            <span className="text-xs uppercase tracking-wide font-bold">Ventas</span>
           </div>
           <p className="text-sm font-extrabold text-primary tabular-nums">{fmt(live.revenue)}</p>
         </div>

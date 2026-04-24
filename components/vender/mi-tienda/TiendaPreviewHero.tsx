@@ -29,7 +29,7 @@ export default function TiendaPreviewHero({ nombreNegocio }: TiendaPreviewHeroPr
             <p className="max-w-xl text-sm text-[var(--text-secondary)]">
               Esto es un preview de cómo se ve el panel completo una vez
               verificamos tu solicitud. Pronto vas a gestionar pedidos, stock
-              y promociones desde acá.
+              y promociones desde aquí.
             </p>
           </div>
 

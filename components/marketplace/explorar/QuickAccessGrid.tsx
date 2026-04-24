@@ -86,7 +86,7 @@ const BOXES: QuickAccessBox[] = [
   },
   {
     id: "delivery",
-    kicker: "Rapido",
+    kicker: "Rápido",
     title: "Delivery express",
     illustrations: [MotoRuta, MapaUcayaliAutentico, PedidoLlegando, MotorizadoUcayali],
     cta: "Pide en 25 min",
@@ -110,7 +110,7 @@ export default function QuickAccessGrid() {
     >
       <header className="mb-6 sm:mb-8">
         <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 mb-2">
-          Acceso rapido
+          Acceso rápido
         </span>
         <h2
           id="quick-access-heading"

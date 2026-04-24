@@ -83,7 +83,7 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
                     -{store.maxDiscountPct}%
                   </p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-                    Maximo
+                    Máximo
                   </p>
                 </div>
                 <div className="p-3 flex flex-col items-center text-center">

@@ -176,7 +176,7 @@ export default function SuppliersTab() {
     const lastDate = Math.max(...dates);
     const daysSince = Math.floor((today.getTime() - lastDate) / (1000 * 60 * 60 * 24));
     if (daysSince > 60) return { daysSince, label: `Sin compra hace ${daysSince}d`, color: "bg-[var(--data-error-100)] dark:bg-[var(--data-error)]/30 text-[var(--data-error)] dark:text-[var(--data-error)]" };
-    if (daysSince > 30) return { daysSince, label: `Ultima compra hace ${daysSince}d`, color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]" };
+    if (daysSince > 30) return { daysSince, label: `Última compra hace ${daysSince}d`, color: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/30 text-[var(--data-warning)] dark:text-[var(--data-warning)]" };
     return null; // Normal, no badge
   };
 
@@ -523,7 +523,7 @@ export default function SuppliersTab() {
                   <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Telefono</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Teléfono</label>
                   <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>

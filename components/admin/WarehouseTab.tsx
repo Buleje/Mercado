@@ -75,7 +75,7 @@ function ModuleTooltip() {
         <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
           <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Multi-Almacén</p>
           <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Centraliza almacenes, stock por sede y transferencias internas para saber donde esta cada producto y cuanto vale.</p>
-          <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: comparas el stock del Almacen Principal contra el Punto de Venta y detectas rapido donde falta reponer.</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: comparas el stock del Almacen Principal contra el Punto de Venta y detectas rápido donde falta reponer.</p>
         </div>
       )}
     </div>

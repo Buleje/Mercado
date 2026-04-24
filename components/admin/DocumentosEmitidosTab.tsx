@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 interface Documento {
   id: string;
   tipo: string;
-  numero: string;
+  número: string;
   cliente: string;
   ruc?: string;
   total: number;
@@ -118,7 +118,7 @@ export default function DocumentosEmitidosTab() {
             docs = (cData.contratos || []).map((c: Record<string, unknown>) => ({
               id: c.id,
               tipo: "contrato",
-              numero: c.numero,
+              número: c.número,
               cliente: c.clienteNombre,
               ruc: c.clienteDoc,
               total: Number(c.monto) || 0,
@@ -145,7 +145,7 @@ export default function DocumentosEmitidosTab() {
   }, [fetchDocumentos, fetchContratoKpis]);
 
   const handleWhatsApp = (doc: Documento) => {
-    const text = `Documento: ${TIPO_BADGES[doc.tipo]?.label || doc.tipo} N° ${doc.numero}\nCliente: ${doc.cliente}\nTotal: ${fmt(doc.total)}\nFecha: ${new Date(doc.fecha).toLocaleDateString("es-PE")}\n\nBuleje - Pucallpa`;
+    const text = `Documento: ${TIPO_BADGES[doc.tipo]?.label || doc.tipo} N° ${doc.número}\nCliente: ${doc.cliente}\nTotal: ${fmt(doc.total)}\nFecha: ${new Date(doc.fecha).toLocaleDateString("es-PE")}\n\nBuleje - Pucallpa`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -238,7 +238,7 @@ export default function DocumentosEmitidosTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)]" />
             <input
               type="text"
-              placeholder="Buscar por numero o cliente..."
+              placeholder="Buscar por número o cliente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
@@ -305,7 +305,7 @@ export default function DocumentosEmitidosTab() {
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{doc.numero}</td>
+                      <td className="px-3 py-2.5 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{doc.número}</td>
                       <td className="px-3 py-2.5 text-[var(--text-primary)] dark:text-foreground truncate max-w-[150px]">{doc.cliente}</td>
                       <td className="px-3 py-2.5 text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
                         {new Date(doc.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}

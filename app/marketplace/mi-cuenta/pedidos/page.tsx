@@ -132,7 +132,7 @@ export default function PedidosPage() {
       <EmptyState
         eyebrow="Pedidos"
         title="Aún no tienes pedidos"
-        description="Cuando compres en una tienda, tu pedido aparecerá acá con su estado actualizado en tiempo real."
+        description="Cuando compres en una tienda, tu pedido aparecerá aquí con su estado actualizado en tiempo real."
         action={
           <Link
             href="/marketplace"

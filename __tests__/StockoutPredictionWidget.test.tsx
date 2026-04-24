@@ -16,13 +16,19 @@ vi.mock("next/image", () => ({
 }));
 
 // Mock framer-motion (simplificado)
-vi.mock("framer-motion", () => ({
-  motion: {
+vi.mock("framer-motion", () => {
+  const motion = {
     li: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <li {...props}>{children}</li>,
     div: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <div {...props}>{children}</div>,
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+  };
+  return {
+    motion,
+    m: motion,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    domAnimation: {},
+  };
+});
 
 const mockFetch = vi.fn();
 
@@ -139,11 +145,13 @@ describe("StockoutPredictionWidget", () => {
     });
   });
 
-  it("muestra error cuando el fetch falla", async () => {
+  it("cae a empty state cuando el fetch falla (widget secundario)", async () => {
+    // Decision: este widget es secundario, asi que en error muestra el empty
+    // state en vez de bloquear la UI con un mensaje de error.
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
     render(<StockoutPredictionWidget storeSlug="mi-bodega" />);
     await waitFor(() => {
-      expect(screen.getByText(/No se pudieron cargar las predicciones/i)).toBeInTheDocument();
+      expect(screen.getByText(/Todo bien, no hay productos en riesgo/i)).toBeInTheDocument();
     });
   });
 });

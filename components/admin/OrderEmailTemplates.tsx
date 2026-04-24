@@ -131,7 +131,7 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
         <span style="font-size:13px;font-weight:700;color:#333;">${payLabel}</span>
       </div>
       ${order.customerPhone ? `<div style="margin-top:8px;background:#f9fafb;border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:13px;color:#666;">Telefono de contacto</span>
+        <span style="font-size:13px;color:#666;">Teléfono de contacto</span>
         <span style="font-size:13px;font-weight:700;color:#333;">${order.customerPhone}</span>
       </div>` : ""}
     </div>
@@ -194,7 +194,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
         fue entregado exitosamente. Esperamos que estes satisfecho con tu compra.
       </p>
 
-      <!-- Resumen rapido -->
+      <!-- Resumen rápido -->
       <div style="background:#f0fdf4;border-radius:8px;padding:16px;margin-bottom:20px;">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <tr>
@@ -223,10 +223,10 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
       </div>` : `
       <div style="text-align:center;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:20px 16px;margin-bottom:20px;">
         <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#92400e;">Como fue tu experiencia?</p>
-        <p style="margin:0 0 0;font-size:13px;color:#78350f;">Respondenos por WhatsApp para mejorar tu proxima compra.</p>
+        <p style="margin:0 0 0;font-size:13px;color:#78350f;">Respondenos por WhatsApp para mejorar tu próxima compra.</p>
       </div>`}
 
-      <!-- Invitacion proxima compra -->
+      <!-- Invitacion próxima compra -->
       <div style="text-align:center;">
         <p style="margin:0 0 12px;font-size:14px;color:#555;">Visitanos de nuevo para encontrar los mejores precios en productos de primera necesidad.</p>
       </div>

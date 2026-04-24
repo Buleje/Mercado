@@ -99,7 +99,7 @@ export default function CheckoutAuthGate() {
               <ShieldCheck className="h-7 w-7" strokeWidth={1.75} aria-hidden />
             </span>
             <p className="text-xl sm:text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-              Iniciá sesión para continuar
+              Inicia sesión para continuar
             </p>
             <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
               Te pedimos loguearte para guardar tu pedido y poder trackearlo.

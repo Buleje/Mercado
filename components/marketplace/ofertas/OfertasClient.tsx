@@ -73,7 +73,7 @@ function FinalCTA() {
             aria-hidden
             className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
           />
-          Seguí explorando
+          Sigue explorando
         </p>
         <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
           Más allá de

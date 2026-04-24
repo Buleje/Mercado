@@ -280,7 +280,7 @@ function HiddenPlaceholder() {
     <div className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] py-6 px-5 flex items-center gap-3">
       <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />
       <p className="text-sm text-[var(--text-tertiary)]">
-        Sección oculta — pasá el mouse por encima y click al ojo para volver a mostrarla.
+        Sección oculta — pasa el mouse por encima y click al ojo para volver a mostrarla.
       </p>
     </div>
   );

@@ -25,13 +25,13 @@ interface Guia {
 
 const GUIAS: Guia[] = [
   {
-    id: "despensa-basica",
-    kicker: "Guia practica",
-    title: "Como armar tu despensa basica",
+    id: "despensa-básica",
+    kicker: "Guia práctica",
+    title: "Como armar tu despensa básica",
     summary: "Los 20 productos que siempre deberias tener para no quedarte sin nada a mitad de semana.",
     readingTime: "5 min",
     Illustration: EstanteVacio,
-    href: "/marketplace/recetas?guia=despensa-basica",
+    href: "/marketplace/recetas?guia=despensa-básica",
   },
   {
     id: "parrilla",

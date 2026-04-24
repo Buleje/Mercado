@@ -68,10 +68,10 @@ export function CancelarMembresiaModal({
               id="cancel-modal-title"
               className="text-[length:var(--ts-lg)]"
             >
-              ¿Seguro que querés cancelar?
+              ¿Seguro que quieres cancelar?
             </CardTitle>
             <BodyText className="mt-1 text-[var(--text-secondary)]">
-              Perderás los beneficios al final del período pagado. Podés volver
+              Perderás los beneficios al final del período pagado. Puedes volver
               a suscribirte cuando quieras.
             </BodyText>
           </div>
@@ -88,7 +88,7 @@ export function CancelarMembresiaModal({
         <div className="p-6 space-y-4">
           <WarningAlert
             title="Tu historial como Socio"
-            description={`Llevás ${daysAsSocio || 182} días como Socio y ahorraste S/ ${totalSaved || 312}. Seguro que querés dejarlo?`}
+            description={`Llevás ${daysAsSocio || 182} días como Socio y ahorraste S/ ${totalSaved || 312}. Seguro que quieres dejarlo?`}
           />
           <ul className="space-y-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
             <li className="flex items-start gap-2">

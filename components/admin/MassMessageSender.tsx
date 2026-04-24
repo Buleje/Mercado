@@ -194,7 +194,7 @@ export default function MassMessageSender({
     const lines = filtered
       .map((c) => {
         const msg = applyTemplate(template, c);
-        const phone = c.phone ? `+51${c.phone.replace(/\D/g, "")}` : "sin-numero";
+        const phone = c.phone ? `+51${c.phone.replace(/\D/g, "")}` : "sin-número";
         return `${c.name} | ${phone} | ${msg}`;
       })
       .join("\n");

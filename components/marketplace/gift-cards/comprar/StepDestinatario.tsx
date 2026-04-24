@@ -62,7 +62,7 @@ export default function StepDestinatario({
           <div className="mt-2 grid grid-cols-2 gap-2">
             {[
               { id: "whatsapp" as const, label: "WhatsApp", icon: MessageCircle, hint: "Le llega al celular" },
-              { id: "email" as const, label: "Email", icon: Mail, hint: "Correo electronico" },
+              { id: "email" as const, label: "Email", icon: Mail, hint: "Correo electrónico" },
             ].map((opt) => {
               const isActive = contactMethod === opt.id;
               return (
@@ -101,7 +101,7 @@ export default function StepDestinatario({
         </fieldset>
 
         <Field
-          label={contactMethod === "whatsapp" ? "Numero de celular" : "Email del destinatario"}
+          label={contactMethod === "whatsapp" ? "Número de celular" : "Email del destinatario"}
           htmlFor="recipient-contact"
         >
           <input

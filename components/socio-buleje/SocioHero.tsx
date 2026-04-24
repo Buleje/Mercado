@@ -77,7 +77,7 @@ export function SocioHero() {
       ) : (
         <SuccessAlert
           title="Ya sos Socio Buleje"
-          description="Tus beneficios están activos. Revisá tu panel para ver el saldo de cashback."
+          description="Tus beneficios están activos. Revisa tu panel para ver el saldo de cashback."
           action={
             <PrimaryButton size="sm" asChild>
               <Link href="/cuenta/socio-buleje">Ir al panel</Link>

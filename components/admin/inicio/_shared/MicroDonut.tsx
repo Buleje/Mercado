@@ -31,13 +31,13 @@ interface MicroDonutProps {
   centerLabel?: string;
   /** Sub-label central (sobre el center label, mas pequeño). */
   centerSubLabel?: string;
-  /** Prefijo del tooltip. Default "" (numero). */
+  /** Prefijo del tooltip. Default "" (número). */
   tooltipPrefix?: string;
   /** Formatter del tooltip. */
   tooltipFormatter?: (v: number) => string;
   /** Altura del chart. Default 180. */
   height?: number;
-  /** Numero max de items en leyenda. Default 4. */
+  /** Número max de items en leyenda. Default 4. */
   maxLegendItems?: number;
 }
 

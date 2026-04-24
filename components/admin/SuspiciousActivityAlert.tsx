@@ -41,7 +41,7 @@ function detectPatterns(logs: ActivityEntry[]): Alert[] {
       type: "anulaciones_masivas",
       label: "Multiples anulaciones de venta",
       count: recentAnulaciones.length,
-      details: `${recentAnulaciones.length} anulaciones en la ultima hora`,
+      details: `${recentAnulaciones.length} anulaciones en la última hora`,
       severity: "high",
       entries: recentAnulaciones.slice(0, 5),
     });
@@ -80,7 +80,7 @@ function detectPatterns(logs: ActivityEntry[]): Alert[] {
       type: "eliminaciones_masivas",
       label: "Eliminaciones masivas",
       count: recentEliminaciones.length,
-      details: `${recentEliminaciones.length} eliminaciones en la ultima hora`,
+      details: `${recentEliminaciones.length} eliminaciones en la última hora`,
       severity: "high",
       entries: recentEliminaciones.slice(0, 5),
     });

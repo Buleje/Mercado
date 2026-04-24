@@ -36,7 +36,7 @@ export default function DeliveryPage() {
   const [successId, setSuccessId] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (phone.trim().length < 6) { setError("Ingresa tu numero de telefono"); return; }
+    if (phone.trim().length < 6) { setError("Ingresa tu número de teléfono"); return; }
     setLoading(true);
     setError("");
     try {
@@ -50,7 +50,7 @@ export default function DeliveryPage() {
         setLoggedIn(true);
         localStorage.setItem("delivery-driver", JSON.stringify({ phone: phone.trim(), name }));
       } else {
-        setError("No se pudo verificar tu telefono");
+        setError("No se pudo verificar tu teléfono");
       }
     } catch {
       setError("Error de conexion");
@@ -133,7 +133,7 @@ export default function DeliveryPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Buleje · Entregas</p>
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase block mb-1.5">Tu telefono</label>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase block mb-1.5">Tu teléfono</label>
             <input
               type="tel"
               value={phone}

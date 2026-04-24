@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
 
 /* ── Types ── */
 export interface TouchGestureOptions {
-  threshold?: number;      // px minimo para swipe (default 50)
+  threshold?: number;      // px mínimo para swipe (default 50)
   longPressMs?: number;    // ms para long press (default 600)
   doubleTapMs?: number;    // ms max entre taps para doble tap (default 300)
   onSwipeRight?: () => void;
@@ -203,7 +203,7 @@ export function TouchGesturesDemo() {
         className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 dark:bg-primary/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
       >
         <p className="text-sm font-medium text-[var(--text-secondary)] text-center">
-          Area de prueba — toca aqui desde un movil o tablet
+          Area de prueba — toca aqui desde un móvil o tablet
         </p>
         <p className="text-xs text-[var(--text-tertiary)] mt-1 text-center">
           Swipe / Long press / Doble tap
@@ -221,7 +221,7 @@ export function TouchGesturesDemo() {
         </p>
         <div className="space-y-1.5 text-xs font-mono">
           {[
-            ["threshold", "number (default 50px)", "Minimo para swipe"],
+            ["threshold", "number (default 50px)", "Mínimo para swipe"],
             ["longPressMs", "number (default 600)", "Duracion long press"],
             ["doubleTapMs", "number (default 300)", "Intervalo doble tap"],
             ["onSwipeRight", "() => void", "Swipe hacia la derecha"],
@@ -229,7 +229,7 @@ export function TouchGesturesDemo() {
             ["onSwipeUp", "() => void", "Swipe hacia arriba"],
             ["onSwipeDown", "() => void", "Swipe hacia abajo"],
             ["onLongPress", "() => void", "Mantener presionado"],
-            ["onDoubleTap", "() => void", "Doble toque rapido"],
+            ["onDoubleTap", "() => void", "Doble toque rápido"],
           ].map(([prop, type, desc]) => (
             <div
               key={prop}

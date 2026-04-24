@@ -7,7 +7,7 @@
  * padding horizontal y vertical, y estructura de header (title + actions).
  *
  * Tokens canonicos:
- *   max-width : max-w-[1600px] (unificado con ofertas del dia, catalogo, para vos)
+ *   max-width : max-w-[1600px] (unificado con ofertas del dia, catalogo, para ti)
  *   px        : px-4 sm:px-6 lg:px-8
  *   py        : py-8
  *   gap cards : gap-4 (grid) / gap-3 (carrusel)
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 export type MarketplaceSectionTone =
   | "default"
   | "hot" // rojo-naranja: ofertas flash, aprovecha ahora
-  | "ranking" // dorado: top mas vendidos
+  | "ranking" // dorado: top más vendidos
   | "fresh"; // verde: selva, productos frescos
 
 export interface MarketplaceSectionProps {

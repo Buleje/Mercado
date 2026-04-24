@@ -50,7 +50,7 @@ type Props = {
   features: FeatureCard[];
   /** Kicker override. Default: "Descubrí más". */
   kicker?: string;
-  /** Título override. Default: "Todo lo que podés hacer con Buleje". */
+  /** Título override. Default: "Todo lo que puedes hacer con Buleje". */
   title?: string;
   /** Classes extra para el wrapper. */
   className?: string;
@@ -68,7 +68,7 @@ type Props = {
 export default function RelatedFeatures({
   features,
   kicker = "Descubrí más",
-  title = "Todo lo que podés hacer con Buleje",
+  title = "Todo lo que puedes hacer con Buleje",
   className,
 }: Props) {
   const list = features.slice(0, 3);

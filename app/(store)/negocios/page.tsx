@@ -32,14 +32,14 @@ import { DoniaElena, CuadernoFiadoReal } from "@/components/ui-system/illustrati
 import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
 
 export const metadata: Metadata = {
-  title: "Buleje para Negocios — Software ERP para Bodegas del Peru | Inventario, POS, Delivery",
+  title: "Buleje para Negocios — Software ERP para Bodegas del Perú | Inventario, POS, Delivery",
   description:
-    "Buleje: el sistema completo para tu bodega. Inventario, punto de venta POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo. Disponible en todo el Peru.",
+    "Buleje: el sistema completo para tu bodega. Inventario, punto de venta POS, delivery, fiado digital y facturación SUNAT. Funciona con Yape y efectivo. Disponible en todo el Perú.",
   alternates: {
     canonical: "https://www.buleje.pe/negocios",
   },
   openGraph: {
-    title: "Buleje para Negocios — Software para Bodegas del Peru",
+    title: "Buleje para Negocios — Software para Bodegas del Perú",
     description:
       "Sistema ERP completo: inventario, POS, delivery, fiado digital y SUNAT. Empieza gratis.",
     url: "https://www.buleje.pe/negocios",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
         url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "Buleje — Software ERP para Bodegas y Tiendas del Peru",
+        alt: "Buleje — Software ERP para Bodegas y Tiendas del Perú",
       },
     ],
   },
@@ -111,7 +111,7 @@ function BulejeJsonLd() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Android, iOS",
     description:
-      "Sistema ERP completo para bodegas y tiendas: inventario, POS, delivery, facturacion SUNAT y marketplace.",
+      "Sistema ERP completo para bodegas y tiendas: inventario, POS, delivery, facturación SUNAT y marketplace.",
     url: "https://www.buleje.pe/negocios",
     offers: [
       {
@@ -119,7 +119,7 @@ function BulejeJsonLd() {
         price: "0",
         priceCurrency: "PEN",
         name: "Plan Gratis",
-        description: "Hasta 50 productos, tienda online basica, POS digital",
+        description: "Hasta 50 productos, tienda online básica, POS digital",
       },
       {
         "@type": "Offer",
@@ -127,7 +127,7 @@ function BulejeJsonLd() {
         priceCurrency: "PEN",
         name: "Plan Pro",
         description:
-          "Productos ilimitados, facturacion SUNAT, delivery integrado, reportes avanzados",
+          "Productos ilimitados, facturación SUNAT, delivery integrado, reportes avanzados",
       },
     ],
     aggregateRating: {
@@ -184,7 +184,7 @@ async function BulejeHeroServer() {
 
             {/* H1 beneficio directo */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.02] tracking-[-0.025em]">
-              Vendé más{" "}
+              Vende más{" "}
               <span className="text-white/50">sin dejar tu caja</span>
             </h1>
             <p className="mt-6 text-base sm:text-lg text-white/65 max-w-xl leading-relaxed">
@@ -284,9 +284,9 @@ async function MarketplaceReviewsServer() {
   const reviews = await getMarketplaceReviews();
 
   const fallbackReviews = [
-    { id: "f1", name: "Maria L.", text: "Increible lo facil que es manejar mi inventario ahora. Antes usaba cuadernos y perdia productos.", rating: 5, date: new Date("2025-12-15") },
+    { id: "f1", name: "Maria L.", text: "Increible lo fácil que es manejar mi inventario ahora. Antes usaba cuadernos y perdia productos.", rating: 5, date: new Date("2025-12-15") },
     { id: "f2", name: "Carlos R.", text: "Mis clientes piden por WhatsApp y el pedido llega directo al sistema. Me ahorro horas.", rating: 5, date: new Date("2025-11-20") },
-    { id: "f3", name: "Ana P.", text: "El punto de venta es super rapido. Mis clientes ya no hacen cola.", rating: 4, date: new Date("2025-10-10") },
+    { id: "f3", name: "Ana P.", text: "El punto de venta es super rápido. Mis clientes ya no hacen cola.", rating: 4, date: new Date("2025-10-10") },
   ];
 
   const displayReviews = reviews.length > 0 ? reviews : fallbackReviews;
@@ -331,10 +331,10 @@ async function MarketplaceReviewsServer() {
 // ── Cómo funciona ──
 function HowBulejeWorks() {
   const steps = [
-    { num: "01", Icon: Search, title: "Buscá lo que necesitás", desc: "Entrá al Marketplace, explorá las tiendas o busca un producto específico." },
-    { num: "02", Icon: ShoppingCart, title: "Armá tu pedido", desc: "Elegí tus productos de cualquier tienda. El carrito organiza todo por tienda automáticamente." },
-    { num: "03", Icon: CreditCard, title: "Pagá fácil", desc: "Elegí Yape, Plin o efectivo contra entrega. Sin tarjetas, sin complicaciones." },
-    { num: "04", Icon: Truck, title: "Recibí en tu puerta", desc: "Cada tienda prepara y envía tu pedido. Delivery rápido a toda tu zona." },
+    { num: "01", Icon: Search, title: "Busca lo que necesitas", desc: "Entra al Marketplace, explora las tiendas o busca un producto específico." },
+    { num: "02", Icon: ShoppingCart, title: "Arma tu pedido", desc: "Elige tus productos de cualquier tienda. El carrito organiza todo por tienda automáticamente." },
+    { num: "03", Icon: CreditCard, title: "Paga fácil", desc: "Elige Yape, Plin o efectivo contra entrega. Sin tarjetas, sin complicaciones." },
+    { num: "04", Icon: Truck, title: "Recibe en tu puerta", desc: "Cada tienda prepara y envía tu pedido. Delivery rápido a toda tu zona." },
   ];
 
   return (
@@ -391,7 +391,7 @@ function CategoriesSection() {
     { key: "carnes", label: "Carnes", slug: "carnes" },
     { key: "verduras", label: "Verduras", slug: "verduras" },
     { key: "frutas", label: "Frutas", slug: "frutas" },
-    { key: "lacteos", label: "Lácteos", slug: "lacteos" },
+    { key: "lácteos", label: "Lácteos", slug: "lácteos" },
     { key: "panadería", label: "Panadería", slug: "panaderia" },
     { key: "limpieza", label: "Limpieza", slug: "limpieza" },
     { key: "otros", label: "Higiene", slug: "higiene" },
@@ -409,10 +409,10 @@ function CategoriesSection() {
             Categorías
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
-            Encontrá todo lo que necesitás
+            Encuentra todo lo que necesitas
           </h2>
           <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
-            Miles de productos de distintas bodegas, organizados para vos.
+            Miles de productos de distintas bodegas, organizados para ti.
           </p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -454,7 +454,7 @@ function BulejeFeatures() {
     { Icon: Store, title: "Punto de venta (POS)", desc: "Caja registradora digital con soporte para Yape, efectivo y múltiples métodos de pago." },
     { Icon: Truck, title: "Delivery integrado", desc: "Tus clientes piden online y reciben en su puerta. Gestión de repartos incluida." },
     { Icon: BarChart3, title: "Reportes y métricas", desc: "Dashboards con ventas del día, productos más vendidos, clientes frecuentes y más." },
-    { Icon: FileText, title: "Facturación SUNAT", desc: "Generá boletas y facturas electrónicas directamente desde el sistema." },
+    { Icon: FileText, title: "Facturación SUNAT", desc: "Genera boletas y facturas electrónicas directamente desde el sistema." },
     { Icon: Smartphone, title: "Tu tienda online", desc: "Cada negocio recibe su propia tienda web con catálogo, carrito y checkout." },
   ];
 
@@ -543,7 +543,7 @@ function PricingSection() {
             Planes
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
-            Empezá gratis, crecé a tu ritmo
+            Empieza gratis, crecé a tu ritmo
           </h2>
         </div>
         <div className="grid sm:grid-cols-3 gap-4 max-w-5xl">
@@ -618,7 +618,7 @@ function ValueStackB2B() {
     {
       IconIllustration: MotoRuta,
       title: "Delivery gestionado",
-      desc: "Nosotros coordinamos la entrega. Vos te dedicás a vender.",
+      desc: "Nosotros coordinamos la entrega. Tú te dedicas a vender.",
     },
     {
       Icon: Wallet,
@@ -628,7 +628,7 @@ function ValueStackB2B() {
     {
       Icon: BarChart3,
       title: "Reportes diarios",
-      desc: "Sabés cuánto vendiste hoy en tiempo real, desde tu celular.",
+      desc: "Sabes cuánto vendiste hoy en tiempo real, desde tu celular.",
     },
   ];
 
@@ -683,7 +683,7 @@ function ValueStackB2B() {
 function BodegueroTestimonials() {
   const testimonials = [
     {
-      quote: "Desde que abrí mi tienda en Buleje, vendo 40% más. Los vecinos piden por WhatsApp y ya no tengo que atender cola tras cola.",
+      quote: "Desde que abre mi tienda en Buleje, vendo 40% más. Los vecinos piden por WhatsApp y ya no tengo que atender cola tras cola.",
       name: "Doña Elena",
       role: "Buleje · Callería",
       stat: "+40% ventas primer mes",
@@ -760,14 +760,14 @@ function BodegueroTestimonials() {
 // ── FAQ del Marketplace ──
 function MarketplaceFAQ() {
   const faqs = [
-    { q: "¿Que es Buleje?", a: "Buleje es una plataforma que conecta bodegas y tiendas de barrio con sus clientes a traves de un marketplace digital. Cada tienda tiene su propio panel de administracion con inventario, ventas, delivery y mas." },
+    { q: "¿Qué es Buleje?", a: "Buleje es una plataforma que conecta bodegas y tiendas de barrio con sus clientes a través de un marketplace digital. Cada tienda tiene su propio panel de administración con inventario, ventas, delivery y más." },
     { q: "¿Como compro en el Marketplace?", a: "Entra a la seccion Marketplace, explora las tiendas disponibles, agrega productos al carrito y completa tu pedido. Puedes pagar con Yape, Plin o efectivo contra entrega." },
     { q: "¿El delivery es gratis?", a: "El delivery es gratis en pedidos mayores a S/50 dentro de la zona de cobertura de cada tienda. Para pedidos menores, el costo de envio lo define cada tienda." },
-    { q: "¿Que productos puedo encontrar?", a: "Abarrotes, bebidas, carnes, frutas, verduras, lacteos, productos de limpieza, higiene personal, snacks y mucho mas. Cada tienda ofrece su propio catalogo de productos." },
+    { q: "¿Qué productos puedo encontrar?", a: "Abarrotes, bebidas, carnes, frutas, verduras, lácteos, productos de limpieza, higiene personal, snacks y mucho más. Cada tienda ofrece su propio catálogo de productos." },
     { q: "¿Puedo pagar con Yape?", a: "Si, aceptamos Yape y Plin como metodos de pago. Tambien puedes pagar en efectivo cuando recibas tu pedido." },
     { q: "¿Como abro mi tienda en Buleje?", a: "Haz clic en 'Abre tu tienda gratis', completa el registro con los datos de tu negocio y en minutos tendras tu tienda online lista para vender." },
     { q: "¿Cuanto demora el delivery?", a: "El tiempo promedio de entrega es de 30 minutos dentro de la zona de cobertura. Puede variar segun la distancia y la disponibilidad del repartidor." },
-    { q: "¿Puedo devolver un producto?", a: "Si recibiste un producto en mal estado o diferente al pedido, contacta a la tienda a traves del Marketplace y te lo cambian o devuelven tu dinero dentro de 24 horas." },
+    { q: "¿Puedo devolver un producto?", a: "Si recibiste un producto en mal estado o diferente al pedido, contacta a la tienda a través del Marketplace y te lo cambian o devuelven tu dinero dentro de 24 horas." },
   ];
 
   return (
@@ -779,7 +779,7 @@ function MarketplaceFAQ() {
             Preguntas frecuentes
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
-            ¿Tenés dudas?
+            ¿Tienes dudas?
           </h2>
         </div>
         <div className="divide-y divide-gray-200 dark:divide-gray-800 border-y border-gray-200 dark:border-gray-800">
@@ -844,10 +844,10 @@ function ScheduleSection() {
               Dueños de bodega
             </p>
             <h3 className="text-2xl font-extrabold tracking-tight mb-4">
-              ¿Tenés una bodega?
+              ¿Tienes una bodega?
             </h3>
             <p className="text-white/70 dark:text-gray-600 mb-6 text-sm leading-relaxed">
-              Registrá tu negocio en Buleje y empezá a vender online hoy. Es gratis, rápido y sin compromisos.
+              Registra tu negocio en Buleje y empieza a vender online hoy. Es gratis, rápido y sin compromisos.
             </p>
             <Link
               href="/marketplace/registrar"
@@ -874,7 +874,7 @@ function ContactSection() {
             Contacto
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
-            ¿Querés saber más?
+            ¿Quieres saber más?
           </h2>
           <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-lg mx-auto leading-relaxed">
             Dejanos tus datos y te contactamos para mostrarte cómo Buleje puede ayudar a tu negocio.
@@ -901,7 +901,7 @@ function ContactSection() {
             </div>
             <div>
               <label htmlFor="contact-phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-                Telefono / WhatsApp
+                Teléfono / WhatsApp
               </label>
               <input
                 id="contact-phone"
@@ -934,7 +934,7 @@ function ContactSection() {
               name="message"
               required
               rows={4}
-              placeholder="Cuentanos sobre tu negocio..."
+              placeholder="Cuéntanos sobre tu negocio..."
               className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none"
             />
           </div>

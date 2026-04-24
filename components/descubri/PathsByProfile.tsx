@@ -40,7 +40,7 @@ const PATHS: Path[] = [
   {
     slug: "nuevo",
     kicker: "Si sos nuevo",
-    title: "Explorá las tiendas",
+    title: "Explora las tiendas",
     description:
       "200+ bodegas del barrio esperando que las descubras. Arrancá por la más cercana.",
     href: "/marketplace",
@@ -59,8 +59,8 @@ const PATHS: Path[] = [
   },
   {
     slug: "bodeguero",
-    kicker: "Si tenés bodega",
-    title: "Vendé con nosotros",
+    kicker: "Si tienes bodega",
+    title: "Vende con nosotros",
     description:
       "Sumate al marketplace y llegá a todo Pucallpa. Gratis el primer mes, sin contrato.",
     href: "/vender",
@@ -69,7 +69,7 @@ const PATHS: Path[] = [
   },
   {
     slug: "regalar",
-    kicker: "Si buscás regalar",
+    kicker: "Si buscas regalar",
     title: "Gift Cards Buleje",
     description:
       "Tarjetas desde S/ 20 que se canjean en cualquier bodega. Envío por WhatsApp o email.",
@@ -85,13 +85,13 @@ export function PathsByProfile() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="max-w-2xl space-y-3 mb-10 sm:mb-14">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
-            Empezá por aquí
+            Empieza por aquí
           </span>
           <SectionTitle className="text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)] font-extrabold">
-            ¿Cuál sos vos hoy?
+            ¿Cuál eres tú hoy?
           </SectionTitle>
           <BodyText className="text-[length:var(--ts-base)] text-[var(--text-secondary)] leading-relaxed">
-            Cada persona llega con una necesidad distinta. Elegí el camino que
+            Cada persona llega con una necesidad distinta. Elige el camino que
             te queda y te llevamos directo.
           </BodyText>
         </header>

@@ -25,8 +25,8 @@ const FAQS = [
     a: "Si. El saldo se descuenta por compra hasta agotarse. Si tu compra es menor al saldo, el resto queda disponible para otra ocasion.",
   },
   {
-    q: "Cual es el monto minimo y maximo?",
-    a: "El minimo es S/ 10 y el maximo es S/ 1000. Si queres regalar mas, podes enviar varias tarjetas al mismo destinatario.",
+    q: "Cual es el monto mínimo y máximo?",
+    a: "El mínimo es S/ 10 y el máximo es S/ 1000. Si queres regalar mas, podes enviar varias tarjetas al mismo destinatario.",
   },
 ];
 

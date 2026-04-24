@@ -20,7 +20,7 @@ import { DURATION, EASE } from "@/components/ui-system";
  * <OnboardingChecklist
  *   items={[
  *     { id: "store-setup", label: "Configurá tu tienda", done: true, href: "..." },
- *     { id: "first-product", label: "Creá tu primer producto", done: true },
+ *     { id: "first-product", label: "Crea tu primer producto", done: true },
  *     { id: "whatsapp", label: "Conectá WhatsApp", done: false },
  *     ...
  *   ]}

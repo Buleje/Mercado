@@ -82,7 +82,7 @@ export default function ExplorarHeroSearch() {
           </p>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[0.95]">
-            Encontrá lo que necesitás,{" "}
+            Encuentra lo que necesitas,{" "}
             <span className="relative inline-block">
               <span className="relative z-10">en un toque.</span>
               <span

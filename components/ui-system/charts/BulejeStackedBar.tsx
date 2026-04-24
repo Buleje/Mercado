@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
  * BulejeStackedBar — barras apiladas (stacked).
  *
  * Uso tipico: ventas por categoría × día, composicion de ingresos por canal.
- * Reemplaza dona + bar chart separados cuando querés ver TOTAL + BREAKDOWN.
+ * Reemplaza dona + bar chart separados cuando quieres ver TOTAL + BREAKDOWN.
  *
  * @example
  * <BulejeStackedBar
@@ -138,7 +138,7 @@ export const BulejeStackedBar = memo(function BulejeStackedBar({
               name={s.label}
               stackId="stack"
               fill={resolveColor(s.color)}
-              // Solo el ultimo tiene radius top
+              // Solo el último tiene radius top
               radius={idx === stacks.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
               maxBarSize={maxBarSize}
               isAnimationActive={true}

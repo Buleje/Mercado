@@ -274,7 +274,7 @@ export default function SugerenciasCompraTab() {
                           <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
                             {s.productName}
                           </span>
-                          <span className="text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted">
+                          <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted">
                             {s.category}
                           </span>
                         </div>
@@ -298,7 +298,7 @@ export default function SugerenciasCompraTab() {
                               : "Sin proveedor anterior"}
                           </span>
                           {s.lastPrice != null && (
-                            <span>Ultimo: S/ {s.lastPrice.toFixed(2)}</span>
+                            <span>Último: S/ {s.lastPrice.toFixed(2)}</span>
                           )}
                         </div>
                       </div>

@@ -4,7 +4,7 @@
  * ParaVosSection — 3 carousels horizontales de recomendaciones personalizadas.
  *
  * Se ubica inmediatamente despues del hero. Muestra tres cortes:
- *   1) "Porque compraste pan" — afinidad a ultima compra (mock).
+ *   1) "Porque compraste pan" — afinidad a última compra (mock).
  *   2) "Porque sos Socio" — solo si isSocio (precio exclusivo visible).
  *   3) "En tu zona" — populares en el distrito del user.
  *
@@ -182,7 +182,7 @@ export default function ParaVosSection() {
           id="para-vos-title"
           className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
         >
-          Para vos
+          Para ti
         </h2>
       </div>
 

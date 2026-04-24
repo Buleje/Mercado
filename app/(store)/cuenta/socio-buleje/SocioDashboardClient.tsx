@@ -69,7 +69,7 @@ export function SocioDashboardClient() {
               Todavía no sos Socio Buleje
             </h2>
             <p className="mt-2 text-sm text-[var(--text-tertiary)] leading-relaxed max-w-sm">
-              Unite y empezá a ahorrar desde el primer pedido. 30 días de prueba
+              Únete y empieza a ahorrar desde el primer pedido. 30 días de prueba
               sin tarjeta.
             </p>
             <div className="mt-6">
@@ -104,7 +104,7 @@ export function SocioDashboardClient() {
           {status === "canceled" && (
             <InfoAlert
               title="Membresía en cancelación"
-              description="Tus beneficios siguen activos hasta el final del período pagado. Podés reactivar cuando quieras."
+              description="Tus beneficios siguen activos hasta el final del período pagado. Puedes reactivar cuando quieras."
             />
           )}
 
@@ -147,7 +147,7 @@ export function SocioDashboardClient() {
                   <CardTitle>Cancelar membresía</CardTitle>
                   <BodyText className="mt-1 text-[var(--text-secondary)]">
                     Si cancelás, tus beneficios siguen hasta fin del ciclo.
-                    Podés volver cuando quieras y retomar tu saldo de cashback
+                    Puedes volver cuando quieras y retomar tu saldo de cashback
                     acumulado.
                   </BodyText>
                   <div className="mt-3">

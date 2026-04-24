@@ -171,11 +171,11 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
   },
   {
     id: "fiados",
-    label: "Fíados",
+    label: "Fiados",
     icon: CreditCard,
     group: "finanzas",
     tabs: [
-      { id: "fiados", label: "Fíados" },
+      { id: "fiados", label: "Fiados" },
     ],
   },
   {

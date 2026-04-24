@@ -21,7 +21,6 @@ import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { SectionBreadcrumb } from "@/components/admin/shared/SectionBreadcrumb";
 const FiadoFormModal = dynamic(() => import("./fiados/FiadoFormModal"), { ssr: false });
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
@@ -183,7 +182,7 @@ function FiadoStreakBadge({ customerId, fiados }: { customerId: string; fiados: 
   if (streak < 3) return null;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
+      "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold",
       streak >= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
     )}>
       {streak >= 5 ? "\u2B50" : "\uD83D\uDD25"} {streak} pagos a tiempo
@@ -206,7 +205,7 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
 
   if (!score.sufficientHistory) {
     return (
-      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic ml-1">Sin historial</span>
+      <span className="text-xs text-[var(--text-tertiary)] italic ml-1">Sin historial</span>
     );
   }
 
@@ -220,7 +219,7 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
 
   return (
     <span
-      className={cn("text-[length:var(--ts-2xs)] font-bold ml-1", colorMap[score.score] ?? "text-[var(--text-tertiary)]")}
+      className={cn("text-xs font-bold ml-1", colorMap[score.score] ?? "text-[var(--text-tertiary)]")}
       title={`Calificación basada en pagos a tiempo. 5 estrellas = siempre puntual. Pagos a tiempo: ${score.pagosATiempo}/${score.pagosTotal} · Promedio: ${Math.round(score.diasPromedioPago)} días`}
     >
       {score.label}
@@ -280,7 +279,7 @@ function FiadoTendenciaCobro() {
         <p className="text-xs font-bold text-[var(--text-secondary)]">Tendencia de Cobro</p>
         <StatusBadge
           variant={lastNeto >= 0 ? "success" : "error"}
-          label={lastNeto >= 0 ? "Recuperando mas de lo que prestas" : "Prestando mas de lo que cobras"}
+          label={lastNeto >= 0 ? "Recuperando m&aacute;s de lo que prestas" : "Prestando mas de lo que cobras"}
         />
       </div>
       <ResponsiveContainer minWidth={0} width="100%" height={200}>
@@ -402,7 +401,7 @@ export default function FiadosModule() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error al crear fiado" }));
-        setError(err.error || "Error al crear fiado rapido");
+        setError(err.error || "Error al crear fiado rápido");
         setQuickFiadoCreating(false);
         return;
       }
@@ -809,7 +808,7 @@ export default function FiadosModule() {
     return best;
   }, [fiados]);
 
-  // ── Mejora 19 (ronda 3): Proyeccion de cobro ─────────────────────────────────
+  // ── Mejora 19 (ronda 3): Proyecci&oacute;n de cobro ─────────────────────────────────
   const proyeccionCobro = useMemo(() => {
     const now = new Date();
     const startOfWeek = new Date(now);
@@ -952,47 +951,8 @@ export default function FiadosModule() {
 
   return (
     <div className="space-y-4">
-      <SectionBreadcrumb icon={HandCoins} section="Ventas" page="Fiados" />
-
-      {/* Fila 1 — Acciones del modulo. Compact, sin tabs de vista (solo Lista). */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Total pendiente — chips inline */}
-        {totalSaldo > 0 && (
-          <div className="flex items-center gap-2 text-xs ml-1">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendiente</span>
-            <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{formatCurrency(totalSaldo)}</span>
-            <span className="text-[var(--text-tertiary)]">·</span>
-            <span className="font-semibold text-[var(--data-success)]">{activosCount} activos</span>
-            {vencidosCount > 0 && (
-              <>
-                <span className="text-[var(--text-tertiary)]">·</span>
-                <span className="font-semibold text-[var(--data-error)]">{vencidosCount} vencidos</span>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="flex-1" />
-
-        <ModuleActionMenu
-          label="Opciones"
-          items={[
-            { label: "Mapa de deudores", icon: MapPin, onClick: () => setShowDebtorsMap(true), description: "Ver ubicacion de quienes te deben" },
-            { label: "Lista de cobro", icon: Printer, onClick: handleImprimirListaCobro, description: "Imprimir hoja de ruta diaria" },
-            { label: "Exportar deudores", icon: Download, onClick: handleExportarDeudores, description: "Excel con saldos y dias", dividerBefore: true },
-          ]}
-        />
-        <button
-          onClick={() => setShowNew(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Nuevo fiado
-        </button>
-      </div>
-
-      {/* Fila 2 — Search + Filtros + contador + reload. */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row). */}
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <input
@@ -1004,13 +964,13 @@ export default function FiadosModule() {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap">
           {STATUS_FILTERS.map(f => (
             <button
               key={f.key}
               onClick={() => setStatusFilter(f.key)}
               className={cn(
-                "inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold border transition-colors",
+                "inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-semibold border transition-colors",
                 statusFilter === f.key
                   ? "bg-primary text-white border-primary"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white hover:border-primary/40 hover:text-primary"
@@ -1020,6 +980,21 @@ export default function FiadosModule() {
             </button>
           ))}
         </div>
+
+        {totalSaldo > 0 && (
+          <div className="hidden md:flex items-center gap-1.5 text-xs pl-2 border-l border-[var(--rule-soft)]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pend.</span>
+            <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{formatCurrency(totalSaldo)}</span>
+            <span className="text-[var(--text-tertiary)]">·</span>
+            <span className="font-semibold text-[var(--data-success)]">{activosCount}</span>
+            {vencidosCount > 0 && (
+              <>
+                <span className="text-[var(--text-tertiary)]">·</span>
+                <span className="font-semibold text-[var(--data-error)]">{vencidosCount} venc.</span>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="flex-1" />
 
@@ -1032,22 +1007,38 @@ export default function FiadosModule() {
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
           </button>
         </AdminTooltip>
+
+        <ModuleActionMenu
+          label="Opciones"
+          items={[
+            { label: "Mapa de deudores", icon: MapPin, onClick: () => setShowDebtorsMap(true), description: "Ver ubicacion de quienes te deben" },
+            { label: "Lista de cobro", icon: Printer, onClick: handleImprimirListaCobro, description: "Imprimir hoja de ruta diaria" },
+            { label: "Exportar deudores", icon: Download, onClick: handleExportarDeudores, description: "Excel con saldos y dias", dividerBefore: true },
+          ]}
+        />
+        <button
+          onClick={() => setShowNew(true)}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+          Nuevo fiado
+        </button>
       </div>
 
       {/* Stats, KPIs, Calendar, Risk Ranking, Projections */}
       <FiadoStats fiados={fiados} loading={loading} totalSaldo={totalSaldo} tendenciaMorosidad={tendenciaMorosidad} proyeccionCobro={proyeccionCobro} fiadoMasAntiguo={fiadoMasAntiguo} pagosEstaSemana={pagosEstaSemana} mejorPagadorMes={mejorPagadorMes} openDetail={openDetail} search={search} setSearch={setSearch} setSelected={setSelected} statusFilter={statusFilter} setStatusFilter={setStatusFilter} FiadoTendenciaCobro={FiadoTendenciaCobro} />
 
-      {/* Unica vista: lista. Se eliminaron Cobranza/Libreta/Kanban por
+      {/* Única vista: lista. Se eliminaron Cobranza/Libreta/Kanban por
           duplicar info de FiadoStats sin aportar valor. */}
 
       {/* UX Mejora 20: Density toggle */}
       {<div className="flex items-center gap-1 mb-2">
-        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mr-1">Densidad:</span>
+        <span className="text-xs font-bold text-[var(--text-tertiary)] mr-1">Densidad:</span>
         {(["compact", "normal", "wide"] as const).map(d => (
           <button
             key={d}
             onClick={() => { setTableDensity(d); try { localStorage.setItem("table-density", d); } catch {} }}
-            className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}
+            className={cn("px-2 py-0.5 rounded-full text-xs font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}
           >
             {d === "compact" ? "Compacta" : d === "normal" ? "Normal" : "Amplia"}
           </button>
@@ -1122,7 +1113,7 @@ export default function FiadosModule() {
                               let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
                               const color = avatarColors[Math.abs(h) % avatarColors.length];
                               const initials = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
-                              return <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold shrink-0" style={{ backgroundColor: color }}>{initials}</div>;
+                              return <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: color }}>{initials}</div>;
                             })()}
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -1230,7 +1221,7 @@ export default function FiadosModule() {
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle del Fíado</CardTitle>
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem("panel-width-preference", next ? "wide" : "normal"); } catch {} }}
@@ -1278,15 +1269,15 @@ export default function FiadosModule() {
                   )}
                   <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total</p>
+                      <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Total</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.total)}</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Pagado</p>
+                      <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Pagado</p>
                       <p className="text-sm font-bold text-[var(--data-success)]">{formatCurrency(selected.total - selected.saldo)}</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Saldo</p>
+                      <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Saldo</p>
                       <p className="text-sm font-bold text-[var(--data-error)]">{formatCurrency(selected.saldo)}</p>
                     </div>
                   </div>
@@ -1327,7 +1318,7 @@ export default function FiadosModule() {
                                 <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</p>
                                 <StatusBadge variant="success" label="Pagado" size="sm" />
                               </div>
-                              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                                 {new Date(c.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}
                                 {" "}
                                 {new Date(c.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}

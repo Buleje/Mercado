@@ -501,16 +501,16 @@ function InventoryAnalyticsDashboard() {
           {top10Value.slice(0, 10).map((p, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <div className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
-              <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] truncate max-w-[80px]">{p.name}</span>
+              <span className="text-xs text-[var(--text-secondary)] truncate max-w-[80px]">{p.name}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── 4. Analisis de Rotacion (Scatter) ── */}
+      {/* ── 4. Análisis de Rotacion (Scatter) ── */}
       <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="text-sm font-bold text-[var(--text-primary)]">Analisis de Rotacion</h4>
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">Análisis de Rotacion</h4>
           <FavStar id="rotacion" favs={invFavs} />
         </div>
         <p className="text-xs text-[var(--text-tertiary)] mb-3">Dias de stock vs ventas estimadas mensuales</p>
@@ -542,10 +542,10 @@ function InventoryAnalyticsDashboard() {
             </ScatterChart>
           </ResponsiveContainer>
           {/* Quadrant labels */}
-          <div className="absolute top-6 left-8 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]/60 pointer-events-none">Impulsar ventas</div>
-          <div className="absolute top-6 right-8 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)]/60 pointer-events-none">Mantener stock</div>
-          <div className="absolute bottom-10 left-8 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error)]/60 pointer-events-none">Liquidar</div>
-          <div className="absolute bottom-10 right-8 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]/60 pointer-events-none">Reducir pedidos</div>
+          <div className="absolute top-6 left-8 text-xs font-bold text-[var(--data-warning)]/60 pointer-events-none">Impulsar ventas</div>
+          <div className="absolute top-6 right-8 text-xs font-bold text-[var(--data-success)]/60 pointer-events-none">Mantener stock</div>
+          <div className="absolute bottom-10 left-8 text-xs font-bold text-[var(--data-error)]/60 pointer-events-none">Liquidar</div>
+          <div className="absolute bottom-10 right-8 text-xs font-bold text-[var(--text-tertiary)]/60 pointer-events-none">Reducir pedidos</div>
         </div>
       </div>
 
@@ -861,7 +861,7 @@ export default function InventarioAlmacenesModule() {
 
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="modal-backdrop p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <DemandForecast
               productId={forecastProductId}
@@ -884,7 +884,7 @@ export default function InventarioAlmacenesModule() {
 
       {/* ── Mejora 7: Price Labels Modal ── */}
       {showPriceLabels && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPriceLabels(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowPriceLabels(false)}>
           <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Imprimir Etiquetas de Precio</CardTitle>

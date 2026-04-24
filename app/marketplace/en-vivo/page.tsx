@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { EnVivoClient } from "./EnVivoClient";
 
 export const metadata: Metadata = {
-  title: "Buleje en Vivo — mirá lo fresco del día",
+  title: "Buleje en Vivo — mira lo fresco del día",
   description:
-    "Transmisiones de bodegas y tiendas de Pucallpa. Mirá qué llegó fresco, preguntá en el chat y comprá sin salir del stream.",
+    "Transmisiones de bodegas y tiendas de Pucallpa. Mira qué llegó fresco, pregunta en el chat y compra sin salir del stream.",
   openGraph: {
-    title: "Buleje en Vivo — mirá lo fresco del día",
+    title: "Buleje en Vivo — mira lo fresco del día",
     description:
       "Transmisiones de bodegas y tiendas de Pucallpa. Chat en vivo, productos destacados y delivery en el momento.",
     url: "https://www.buleje.pe/marketplace/en-vivo",

@@ -258,7 +258,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
         <div className="flex items-center gap-2">
           <CheckSquare className="h-4 w-4 text-[var(--data-success)]" />
           <span className="text-sm font-medium text-[var(--text-primary)]">
-            Checklist del dia
+            Checklist del día
           </span>
         </div>
         <span className="text-xs text-[var(--text-tertiary)]">

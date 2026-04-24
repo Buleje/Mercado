@@ -51,9 +51,9 @@ const _PERIODS: { key: AnalyticsPeriod; label: string }[] = [
 const _PERIOD_DISPLAY: Record<AnalyticsPeriod, string> = {
   "1d": "Hoy",
   "7d": "Ultimos 7 dias",
-  "30d": "Ultimos 30 dias",
+  "30d": "&Uacute;ltimos 30 d&iacute;as",
   "90d": "Ultimos 90 dias",
-  "1y": "Ultimo ano",
+  "1y": "Último ano",
 };
 
 const MODULE_ID = "analytics-bi";
@@ -172,7 +172,7 @@ function InlineKPIStrip() {
           key={item.label}
           className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2.5  text-center"
         >
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -228,7 +228,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
         <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2  text-center">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -346,7 +346,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
+              <tr key={c.id || `cust-${i}`} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
                 <td className="px-3 py-3 text-center">
                   {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>}
                 </td>
@@ -578,9 +578,9 @@ export default function AnalyticsBIModule() {
           {
             id: "sales-trend",
             label: "Tendencia de Ventas",
-            description: "Ventas diarias con media movil y proyeccion",
+            description: "Ventas diarias con media móvil y proyección",
             component: (
-              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media movil y proyeccion" icon={TrendingUp}>
+              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media móvil y proyección" icon={TrendingUp}>
                 <div className="min-h-80">
                   <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
                 </div>
@@ -632,9 +632,9 @@ export default function AnalyticsBIModule() {
           {
             id: "ventas-trend",
             label: "Tendencia de Ventas",
-            description: "Ventas diarias con media movil y prediccion",
+            description: "Ventas diarias con media móvil y predicción",
             component: (
-              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media movil y prediccion" icon={TrendingUp}>
+              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media móvil y predicción" icon={TrendingUp}>
                 <div className="min-h-80">
                   <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
                 </div>

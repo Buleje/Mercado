@@ -15,7 +15,7 @@ const HINTS = [
   { ok: true, text: "PNG con fondo transparente o WebP con alpha" },
   { ok: true, text: "Producto centrado, ocupa ~80% del cuadro" },
   { ok: true, text: "Cuadrado 800x800 px (recomendado)" },
-  { ok: true, text: "Maximo 200 KB" },
+  { ok: true, text: "Máximo 200 KB" },
   { ok: false, text: "JPG/JPEG (no soporta transparencia)" },
   { ok: false, text: "Fondos blancos, gradientes, o fotos con sombras" },
 ];
@@ -30,7 +30,7 @@ export default function ImageUploadHints({ className }: { className?: string }) 
     >
       <div className="flex items-center gap-2">
         <Info className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
-        <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-primary)]">
+        <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
           Requisitos de imagen
         </p>
       </div>
@@ -42,7 +42,7 @@ export default function ImageUploadHints({ className }: { className?: string }) 
             ? "bg-[var(--accent-soft)] text-[var(--accent)]"
             : "bg-[var(--data-error-50)] text-[var(--data-error)]";
           return (
-            <li key={i} className="flex items-center gap-2.5 text-[length:var(--ts-xs)]">
+            <li key={i} className="flex items-center gap-2.5 text-sm">
               <span
                 className={cn(
                   "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
@@ -59,7 +59,7 @@ export default function ImageUploadHints({ className }: { className?: string }) 
         })}
       </ul>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-[var(--rule-soft)] text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+      <div className="flex items-center gap-2 pt-2 border-t border-[var(--rule-soft)] text-xs text-[var(--text-tertiary)]">
         <ImageIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden />
         <span>
           Imagenes que no cumplen aparecen marcadas con <strong className="text-[var(--data-warning)]">badge naranja</strong> en el listado.

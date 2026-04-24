@@ -44,7 +44,7 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
     {
       id: "reorder",
       icon: Repeat,
-      title: "Reordenar ultimo pedido",
+      title: "Reordenar último pedido",
       description: "Misma canasta en 1 tap",
       href: "/cuenta/pedidos",
     },
@@ -54,7 +54,7 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
       title: hasActive ? "Segui tu pedido" : "Sin pedidos activos",
       description: hasActive
         ? `${activeOrder?.storeName ?? "En camino"} - ${activeOrder?.deliveryWindow ?? "pronto"}`
-        : "Hace tu proximo pedido",
+        : "Hace tu próximo pedido",
       href: hasActive ? `/cuenta/pedidos` : "/tienda",
       accent: hasActive,
     },

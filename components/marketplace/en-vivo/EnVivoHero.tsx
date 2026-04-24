@@ -51,7 +51,7 @@ export function EnVivoHero({ liveCount, nextInHours }: EnVivoHeroProps) {
               id="en-vivo-hero-heading"
               className="text-[clamp(2.75rem,8vw,5.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]"
             >
-              Mirá lo fresco
+              Mira lo fresco
               <br />
               <span className="italic font-serif text-[var(--accent)]">
                 del día.
@@ -59,8 +59,8 @@ export function EnVivoHero({ liveCount, nextInHours }: EnVivoHeroProps) {
             </h1>
 
             <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
-              Las bodegas muestran sus productos en vivo. Preguntá en el chat,
-              mirá lo que{" "}
+              Las bodegas muestran sus productos en vivo. Pregunta en el chat,
+              mira lo que{" "}
               <span className="text-[var(--text-primary)] font-bold">
                 acaba de llegar
               </span>{" "}

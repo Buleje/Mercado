@@ -301,7 +301,7 @@ export default function VentasHeatmap() {
         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Mayor</span>
       </div>
 
-      {/* Mejora 20: Analisis de horario optimo */}
+      {/* Mejora 20: Análisis de horario optimo */}
       {(() => {
         // Encontrar mejor y peor horario
         let bestSlot = { dow: 0, hour: 0, avg: 0, count: 0 };
@@ -328,7 +328,7 @@ export default function VentasHeatmap() {
         return (
           <div className="mt-4 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-l-4 border-[var(--data-success)]/30 p-4 rounded-r-lg space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Analisis de Horario</span>
+              <span className="text-sm font-bold text-[var(--data-success)] dark:text-[var(--data-success)]">Análisis de Horario</span>
             </div>
             <div className="space-y-2 text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
               {bestSlot.avg > 0 && (

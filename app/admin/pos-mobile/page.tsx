@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import MobilePOSLoader from "./MobilePOSLoader";
 
 export const metadata: Metadata = {
-  title: "POS Movil | Buleje",
+  title: "POS Móvil | Buleje",
   description: "Punto de venta optimizado para celular",
 };
 

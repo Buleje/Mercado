@@ -3,7 +3,7 @@
 /**
  * SubscriptionCard — Tarjeta individual de suscripcion en /cuenta/suscripciones.
  *
- * Acciones: pausar / reanudar / cancelar / saltar proxima / cambiar frecuencia.
+ * Acciones: pausar / reanudar / cancelar / saltar próxima / cambiar frecuencia.
  * Estado visual: active (verde subtil), paused (neutro), cancelled (gris opaco).
  */
 
@@ -196,7 +196,7 @@ export default function SubscriptionCard({
                               setMenuOpen(false);
                             }}
                             icon={CalendarOff}
-                            label="Saltar proxima entrega"
+                            label="Saltar próxima entrega"
                           />
                         )}
                         <MenuButton
@@ -226,7 +226,7 @@ export default function SubscriptionCard({
                       aria-hidden
                     />
                     <span>
-                      Proxima: <strong>{fmtDate(subscription.nextDelivery)}</strong>
+                      Próxima: <strong>{fmtDate(subscription.nextDelivery)}</strong>
                       {daysToNext <= 3 && daysToNext >= 0 && (
                         <span
                           className="ml-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold uppercase"
@@ -284,7 +284,7 @@ export default function SubscriptionCard({
                 <ActionButton
                   onClick={onSkipNext}
                   icon={CalendarOff}
-                  label="Saltar proxima"
+                  label="Saltar próxima"
                 />
                 <ActionButton
                   onClick={onChangeFrequency}

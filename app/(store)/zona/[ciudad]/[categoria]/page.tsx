@@ -1,7 +1,7 @@
 /**
  * /zona/[ciudad]/[categoria] — City x Category page for Programmatic SEO
  *
- * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
+ * Buleje = Software SaaS ERP para bodegas y tiendas de todo Perú.
  *
  * Targets: "vender abarrotes con software Pucallpa",
  *          "sistema para bodega de bebidas Lima"
@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!zone || !cat) return { title: "No encontrado" };
 
   const title = `Vender ${cat.label} en ${zone.name} — Buleje ERP para Bodegas`;
-  const description = `Usa Buleje para gestionar ${cat.label.toLowerCase()} en tu bodega de ${zone.name}. Inventario, precios, delivery y facturacion SUNAT integrados. Software gratuito para empezar.`;
+  const description = `Usa Buleje para gestionar ${cat.label.toLowerCase()} en tu bodega de ${zone.name}. Inventario, precios, delivery y facturación SUNAT integrados. Software gratuito para empezar.`;
   const url = `${BASE_URL}/zona/${zone.slug}/${cat.id}`;
 
   return {
@@ -241,7 +241,7 @@ async function CategoryZoneContent({
           Empieza a vender {cat.label.toLowerCase()} online
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          Buleje te da inventario, POS, delivery y facturacion SUNAT
+          Buleje te da inventario, POS, delivery y facturación SUNAT
           todo en un solo lugar.
         </p>
         <Link
@@ -255,7 +255,7 @@ async function CategoryZoneContent({
       {/* Cross-links to other categories */}
       <section className="mt-10">
         <h2 className="text-lg font-bold text-slate-800 mb-4">
-          Mas categorias en {zone.name}
+          Más categorias en {zone.name}
         </h2>
         <div className="flex flex-wrap gap-2">
           {realCategories
@@ -336,10 +336,10 @@ async function CategoryZoneContent({
       <footer className="mt-10 border-t border-slate-100 pt-4">
         <p className="text-xs text-slate-400 leading-relaxed">
           Buleje es un software ERP para bodegas y tiendas creado en
-          Pucallpa, Peru. Gestiona {cat.label.toLowerCase()} y todas las
+          Pucallpa, Perú. Gestiona {cat.label.toLowerCase()} y todas las
           categorias de tu negocio en {zone.name} con inventario, POS,
-          delivery, fiado digital y facturacion SUNAT. Disponible en todo
-          el Peru.
+          delivery, fiado digital y facturación SUNAT. Disponible en todo
+          el Perú.
         </p>
       </footer>
     </div>

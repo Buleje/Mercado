@@ -115,7 +115,7 @@ function CategoriasTile() {
     <div className={cn(TILE_BASE, "p-4 sm:p-5")}>
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-          Explorá por categoría
+          Explora por categoría
         </h3>
         <Link
           href="/marketplace/explorar?view=grid"

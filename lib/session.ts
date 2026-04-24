@@ -68,6 +68,7 @@ function b64Decode(str: string): string {
 }
 
 export type AdminRole =
+  | "superadmin"
   | "admin"
   | "cajero"
   | "almacenero"

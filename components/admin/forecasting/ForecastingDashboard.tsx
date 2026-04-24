@@ -379,7 +379,7 @@ export default function ForecastingDashboard() {
             Prediccion de Ventas
           </SectionTitle>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Proyecciones basadas en media movil ponderada (ultimos 30 dias)
+            Proyecciones basadas en media móvil ponderada (&uacute;ltimos 30 d&iacute;as)
           </p>
         </div>
         <button
@@ -472,7 +472,7 @@ export default function ForecastingDashboard() {
 
               {/* Mini-barras diarias */}
               <div>
-                <p className="text-[length:var(--ts-2xs)] font-semibold text-slate-400 dark:text-slate-500 mb-2">
+                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">
                   Proyeccion dia a dia
                 </p>
                 <div className="flex items-end gap-1 h-20" role="img" aria-label="Grafico de barras proyeccion semanal">
@@ -481,7 +481,7 @@ export default function ForecastingDashboard() {
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
                         {/* Valor sobre la barra */}
-                        <span className="text-[length:var(--ts-2xs)] text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
                           {formatCurrency(d.rev).replace("S/ ", "")}
                         </span>
                         {/* Barra */}
@@ -492,7 +492,7 @@ export default function ForecastingDashboard() {
                           />
                         </div>
                         {/* Nombre del día */}
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-slate-500 dark:text-slate-400">
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                           {d.dia}
                         </span>
                       </div>
@@ -631,7 +631,7 @@ export default function ForecastingDashboard() {
                               <span className="font-semibold text-slate-800 dark:text-slate-200">
                                 {item.productName}
                               </span>
-                              <span className="text-[length:var(--ts-2xs)] text-slate-400 dark:text-slate-500">
+                              <span className="text-xs text-slate-400 dark:text-slate-500">
                                 {item.supplierName} · LT {item.leadTimeDays}d
                               </span>
                             </div>
@@ -670,12 +670,12 @@ export default function ForecastingDashboard() {
                           <td className="py-2.5 px-2">
                             <div className="flex items-center justify-end gap-1 flex-wrap">
                               {critico && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/50 dark:text-[var(--data-error)]">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/50 dark:text-[var(--data-error)]">
                                   Critico
                                 </span>
                               )}
                               {item.confidence < 0.5 && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/50 dark:text-[var(--data-warning)]">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/50 dark:text-[var(--data-warning)]">
                                   Baja conf.
                                 </span>
                               )}
@@ -848,7 +848,7 @@ function MetricChip({
 }) {
   return (
     <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 text-center">
-      <p className="text-[length:var(--ts-2xs)] text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
       <p className={cn(
         "text-sm font-extrabold",
         danger
@@ -907,7 +907,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           {s.productName}
         </p>
         <span className={cn(
-          "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+          "text-xs font-bold px-1.5 py-0.5 rounded-full shrink-0",
           reasonCls,
         )}>
           {reasonLabel}
@@ -929,7 +929,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           {formatCurrency(s.suggestedPrice)}
         </span>
         <span className={cn(
-          "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
+          "text-xs font-bold px-1.5 py-0.5 rounded-full",
           esBaja
             ? "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/40 dark:text-[var(--data-error)]"
             : "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
@@ -939,12 +939,12 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
       </div>
 
       {/* Detalle */}
-      <p className="text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400 leading-relaxed">
+      <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
         {s.detail}
       </p>
 
       {/* Stock */}
-      <p className="text-[length:var(--ts-2xs)] text-slate-400 dark:text-slate-600">
+      <p className="text-xs text-slate-400 dark:text-slate-600">
         Stock actual: {s.currentStock} u.
       </p>
 

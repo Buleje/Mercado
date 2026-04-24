@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { X, Search, Loader2, Check, RotateCcw, Package, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -151,7 +152,7 @@ export default function POSReturnModal({
 
       const res = await fetch("/api/sales/devolucion", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           saleId: selectedSale.id,
           items,
@@ -457,7 +458,7 @@ export default function POSReturnModal({
                       const desc = devueltos.map(i => `${i.returnQty}x ${i.name}`).join(", ");
                       const res = await fetch("/api/notas-credito", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: csrfHeaders({ "Content-Type": "application/json" }),
                         body: JSON.stringify({
                           orderId: selectedSale.id,
                           codigoMotivo: "06",
@@ -467,7 +468,7 @@ export default function POSReturnModal({
                       });
                       if (res.ok) {
                         const data = await res.json();
-                        setNcResult(`NC ${data.numero || ""} creada`);
+                        setNcResult(`NC ${data.número || ""} creada`);
                       } else {
                         setNcResult("Error al crear NC");
                       }

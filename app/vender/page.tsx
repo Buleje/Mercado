@@ -15,13 +15,13 @@ import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
 
 export const metadata: Metadata = {
-  title: "Vendé en Buleje — Abrí tu tienda en Pucallpa en 5 minutos",
+  title: "Vende en Buleje — Abre tu tienda en Pucallpa en 5 minutos",
   description:
-    "Sumá tu bodega al marketplace de Ucayali. Sin letra chica, sin comisiones escondidas. Gratis el primer mes, soporte en español, pagos con Yape.",
+    "Suma tu bodega al marketplace de Ucayali. Sin letra chica, sin comisiones escondidas. Gratis el primer mes, soporte en español, pagos con Yape.",
   openGraph: {
-    title: "Vendé en Buleje",
+    title: "Vende en Buleje",
     description:
-      "Abrí tu tienda online con la plataforma que usan las bodegas de Pucallpa. Gratis el primer mes.",
+      "Abre tu tienda online con la plataforma que usan las bodegas de Pucallpa. Gratis el primer mes.",
     type: "website",
   },
   alternates: {
@@ -50,7 +50,7 @@ export default function VenderLandingPage() {
           <main id="main-content">
             <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
-                <Breadcrumbs items={[{ label: "Vendé en Buleje" }]} />
+                <Breadcrumbs items={[{ label: "Vende en Buleje" }]} />
               </div>
             </div>
             <VenderHero />

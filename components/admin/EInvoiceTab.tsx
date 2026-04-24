@@ -94,7 +94,7 @@ export default function EInvoiceTab() {
       const invoices = (data.data ?? data.invoices ?? []) as Array<{
         id: string;
         serie: string;
-        numero: string;
+        número: string;
         tipo: string;
         status: string;
         clienteNombre?: string;
@@ -110,7 +110,7 @@ export default function EInvoiceTab() {
       const mapped: EDocument[] = invoices.map(inv => ({
         id: inv.id,
         serie: inv.serie || (inv.tipo === "factura" ? "F001" : "B001"),
-        number: inv.numero || "0",
+        number: inv.número || "0",
         date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-PE") : "-",
         type: (inv.tipo === "factura" ? "factura" : inv.tipo === "nota-credito" ? "nota-credito" : inv.tipo === "nota-debito" ? "nota-debito" : "boleta") as DocType,
         status: (["emitido", "aceptado", "rechazado", "anulado", "pendiente"].includes(inv.status) ? inv.status : "emitido") as DocStatus,
@@ -189,7 +189,7 @@ export default function EInvoiceTab() {
       xmlUrl?: string | null;
       hash?: string | null;
       error?: string;
-      invoice?: { id: string; serie: string; numero: string; total: number; subtotal: number; igv: number };
+      invoice?: { id: string; serie: string; número: string; total: number; subtotal: number; igv: number };
     };
     try {
       data = await res.json();
@@ -210,7 +210,7 @@ export default function EInvoiceTab() {
     const newDoc: EDocument = {
       id: data.invoice?.id || `${serie}-${Date.now()}`,
       serie,
-      number: data.invoice?.numero || String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
+      number: data.invoice?.número || String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
       date: new Date().toLocaleDateString("es-PE"),
       type: tipo,
       status: "emitido",
@@ -251,7 +251,7 @@ export default function EInvoiceTab() {
           <Send className="h-4 w-4" /> Emitir comprobante
         </button>
         <button
-          onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, numero: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
+          onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, número: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
@@ -400,7 +400,7 @@ export default function EInvoiceTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.serie}-{detail.number}</CardTitle>
@@ -444,7 +444,7 @@ export default function EInvoiceTab() {
 
       {/* Emit modal */}
       {emitForm !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !emitLoading && setEmitForm(null)}>
+        <div className="modal-backdrop p-4" onClick={() => !emitLoading && setEmitForm(null)}>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">

@@ -229,7 +229,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                           )}>
                             {p.margin.pct.toFixed(0)}%
                           </span>
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
+                          <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
                             S/{p.margin.soles.toFixed(2)}
                           </span>
                         </div>
@@ -241,19 +241,19 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     {/* Movimiento (sin movimiento / con movimiento) */}
                     <td className="px-4 py-3">
                       {p.daysSinceMove === null ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">
                           Nunca vendido
                         </span>
                       ) : noMovement ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">
                           <TrendingDown className="h-3 w-3" /> {p.daysSinceMove}d sin mov.
                         </span>
                       ) : recentMove ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]">
                           <TrendingUp className="h-3 w-3" /> Hace {p.daysSinceMove}d
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-amber-950/30 dark:text-[var(--data-warning)]">
                           Hace {p.daysSinceMove}d
                         </span>
                       )}
@@ -263,10 +263,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     <td className="px-4 py-3">
                       {(() => {
                         const spw = p.salesWeek;
-                        if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]">Rápido</span>;
-                        if (spw >= 3) return <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Normal</span>;
-                        if (spw >= 1) return <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/30 dark:text-[var(--data-warning)]">Lento</span>;
-                        if ((p.stock ?? 0) > 0) return <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">Sin rotar</span>;
+                        if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-orange-950/30 dark:text-[var(--data-warning)]">Rápido</span>;
+                        if (spw >= 3) return <span className="text-xs text-[var(--text-secondary)] dark:text-muted">Normal</span>;
+                        if (spw >= 1) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-yellow-950/30 dark:text-[var(--data-warning)]">Lento</span>;
+                        if ((p.stock ?? 0) > 0) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]">Sin rotar</span>;
                         return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
                       })()}
                     </td>

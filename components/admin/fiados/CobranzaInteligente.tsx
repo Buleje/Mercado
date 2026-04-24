@@ -193,7 +193,7 @@ function KpiCard({
           {value}
         </p>
         {sub && (
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{sub}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{sub}</p>
         )}
       </div>
     </div>
@@ -272,7 +272,7 @@ function ModalDescuento({
                     -{op.desc}%
                   </span>
                 </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-1.5">
+                <p className="text-xs text-[var(--text-tertiary)] italic bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-1.5">
                   {msg}
                 </p>
                 <button
@@ -479,13 +479,13 @@ export default function CobranzaInteligente() {
 
       {/* Filtro por nivel */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+        <span className="text-xs font-bold text-[var(--text-tertiary)]">
           Filtrar:
         </span>
         <button
           onClick={() => setFiltroNivel(0)}
           className={cn(
-            "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
+            "px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
             filtroNivel === 0
               ? "bg-primary text-white"
               : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] hover:bg-gray-200"
@@ -501,7 +501,7 @@ export default function CobranzaInteligente() {
               key={nivel}
               onClick={() => setFiltroNivel(nivel)}
               className={cn(
-                "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
+                "px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
                 filtroNivel === nivel
                   ? "ring-2 ring-offset-1 " + meta.colorBadge
                   : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] hover:bg-gray-200"
@@ -587,7 +587,7 @@ export default function CobranzaInteligente() {
                               .toUpperCase();
                             return (
                               <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold shrink-0"
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                                 style={{ backgroundColor: color }}
                               >
                                 {initials}
@@ -598,7 +598,7 @@ export default function CobranzaInteligente() {
                             <p className="font-medium text-[var(--text-primary)] truncate max-w-[140px]">
                               {nombre}
                             </p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">
+                            <p className="text-xs text-[var(--text-tertiary)] font-mono">
                               {f.customerId}
                             </p>
                           </div>
@@ -611,7 +611,7 @@ export default function CobranzaInteligente() {
                           S/{f.saldo.toFixed(2)}
                         </span>
                         {f.total !== f.saldo && (
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                          <p className="text-xs text-[var(--text-tertiary)]">
                             de S/{f.total.toFixed(2)}
                           </p>
                         )}
@@ -637,7 +637,7 @@ export default function CobranzaInteligente() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold",
+                            "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold",
                             meta.colorBadge
                           )}
                         >
@@ -654,14 +654,14 @@ export default function CobranzaInteligente() {
                         {f.nivel === 3 && (
                           <a
                             href={`tel:${f.customerId.replace(/\D/g, "")}`}
-                            className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-warning)] hover:underline font-bold mt-0.5"
+                            className="inline-flex items-center gap-1 text-xs text-[var(--data-warning)] hover:underline font-bold mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
                             Llamar
                           </a>
                         )}
                         {f.nivel === 4 && (
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error)] dark:text-[var(--data-error)] font-bold mt-0.5">
+                          <p className="text-xs text-[var(--data-error)] dark:text-[var(--data-error)] font-bold mt-0.5">
                             Bloquear credito
                           </p>
                         )}
@@ -677,7 +677,7 @@ export default function CobranzaInteligente() {
                               abrirWhatsApp(f, msg);
                             }}
                             className={cn(
-                              "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
+                              "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors",
                               meta.colorBtn
                             )}
                             title={`Enviar recordatorio nivel ${f.nivel}`}
@@ -690,7 +690,7 @@ export default function CobranzaInteligente() {
                           {f.nivel >= 2 && (
                             <button
                               onClick={() => setModalDescuento(f)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                               title="Ofrecer descuento por pronto pago"
                             >
                               <Gift className="h-3 w-3" />
@@ -745,10 +745,10 @@ export default function CobranzaInteligente() {
                 <NivelIcon className="h-3.5 w-3.5" />
               </span>
               <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] leading-tight">
+                <p className="text-xs font-extrabold text-[var(--text-primary)] leading-tight">
                   Nivel {nivel}: {meta.label}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                   {meta.rango} · {meta.descripcion}
                 </p>
               </div>

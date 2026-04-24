@@ -5,7 +5,7 @@
  *
  * Monocromo, sin gradientes. Alineado a ADR-068/075. Muestra 3 StatCards
  * con KPIs del usuario: total ahorrado (proyectado), productos activos,
- * proxima entrega.
+ * próxima entrega.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -109,7 +109,7 @@ export default function SuscripcionesHero() {
             }
           />
           <StatCard
-            label="Proxima entrega"
+            label="Próxima entrega"
             value={fmtDateShort(upcomingDelivery?.nextDelivery)}
             icon={CalendarClock}
             subValue={upcomingLabel}

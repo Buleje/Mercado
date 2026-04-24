@@ -38,7 +38,7 @@ import KPICard from "@/components/admin/shared/KPICard";
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type SubStatus = "activa" | "pausada" | "cancelada" | "prueba";
-type SubPlan = "basico" | "estandar" | "premium";
+type SubPlan = "básico" | "estandar" | "premium";
 
 interface Subscription {
   id: string;
@@ -96,7 +96,7 @@ const MOCK_SUBS: Subscription[] = [
     id: "SUB-003",
     customerName: "Carlos Ramírez",
     customerPhone: "998877665",
-    plan: "basico",
+    plan: "básico",
     status: "pausada",
     startDate: "2025-12-01",
     nextBilling: "2026-05-01",
@@ -120,7 +120,7 @@ const MOCK_SUBS: Subscription[] = [
 
 const PLANS: PlanCatalog[] = [
   {
-    id: "basico",
+    id: "básico",
     label: "Básico",
     monthlyPrice: 95,
     description: "Canasta esencial mensual (10 productos de uso diario)",
@@ -146,7 +146,7 @@ const PLANS: PlanCatalog[] = [
 ];
 
 const PLAN_LABELS: Record<SubPlan, string> = {
-  basico: "Básico",
+  básico: "Básico",
   estandar: "Estándar",
   premium: "Premium",
 };
@@ -180,7 +180,7 @@ function fmtDate(iso: string) {
 }
 
 function exportCSV(rows: Subscription[]) {
-  const headers = ["ID", "Cliente", "Telefono", "Plan", "Estado", "Inicio", "Proximo cobro", "Monto mensual", "Total facturado"];
+  const headers = ["ID", "Cliente", "Teléfono", "Plan", "Estado", "Inicio", "Próximo cobro", "Monto mensual", "Total facturado"];
   const csvRows = rows.map((r) => [
     r.id,
     r.customerName,
@@ -247,7 +247,7 @@ function SubscriptionList({
           className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
         >
           <option value="all">Todos los planes</option>
-          <option value="basico">Básico</option>
+          <option value="básico">Básico</option>
           <option value="estandar">Estándar</option>
           <option value="premium">Premium</option>
         </select>

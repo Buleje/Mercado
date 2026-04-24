@@ -266,7 +266,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
         );
       })()}
 
-      {/* Meta del dia */}
+      {/* Meta del día */}
       {!loading && (() => {
         let dailyGoal = 800;
         try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
@@ -275,7 +275,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" /> Meta del dia
+                <Target className="h-4 w-4 text-primary" /> Meta del día
               </p>
               <span className="text-xs font-bold text-primary">{dailyGoalPct.toFixed(0)}%</span>
             </div>
@@ -293,7 +293,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                <span className="text-sm font-semibold text-[var(--text-primary)]">Top 10 productos mas vendidos</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Top 10 productos más vendidos</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={10} />

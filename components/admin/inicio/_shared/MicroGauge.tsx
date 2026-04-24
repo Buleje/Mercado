@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 interface MicroGaugeProps {
   /** Valor actual. */
   value: number;
-  /** Valor maximo (denominador). Default 100. */
+  /** Valor máximo (denominador). Default 100. */
   max?: number;
   /** Texto principal en el centro. */
   centerLabel: string;

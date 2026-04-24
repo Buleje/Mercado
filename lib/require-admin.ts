@@ -36,7 +36,16 @@ export async function requireAdmin(
     return NextResponse.json({ error: "session expired" }, { status: 401 });
   }
 
-  if (allowedRoles && !allowedRoles.includes(payload.role)) {
+  // Management-tier bypass — roles con visibilidad total del tenant:
+  //   superadmin (plataforma) > admin (tenant) > owner (dueño) > manager (encargado)
+  // Deben poder acceder a cualquier endpoint admin sin que cada route los
+  // liste explicitamente en allowedRoles. Evita cascadas de 403 para dueño/
+  // encargado y el super-bypass de la plataforma. cajero/almacenero/analista
+  // siguen siendo chequeados explicitamente porque su scope es limitado.
+  const managementTier: readonly AdminRole[] = ["superadmin", "admin", "owner", "manager"];
+  const isManagementTier = managementTier.includes(payload.role);
+
+  if (allowedRoles && !isManagementTier && !allowedRoles.includes(payload.role)) {
     logger.warn("[AUTH] Forbidden", { username: payload.username, role: payload.role, method, path });
     return NextResponse.json(
       { error: "forbidden", message: `Requires: ${allowedRoles.join(", ")}` },

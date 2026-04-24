@@ -229,7 +229,7 @@ export default function ReceivingTab() {
                     <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition">
                       <td className="px-4 py-3">
                         <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{r.ref}</div>
-                        <div className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{r.orderRef}</div>
+                        <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
                       </td>
                       <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.supplier}</td>
                       <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
@@ -275,7 +275,7 @@ export default function ReceivingTab() {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div
             className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
             onClick={e => e.stopPropagation()}
@@ -323,7 +323,7 @@ export default function ReceivingTab() {
                       )}>
                         {it.receivedQty}
                         {it.receivedQty !== it.expectedQty && (
-                          <span className="ml-1 text-[length:var(--ts-2xs)]">({it.receivedQty > it.expectedQty ? "+" : ""}{it.receivedQty - it.expectedQty})</span>
+                          <span className="ml-1 text-xs">({it.receivedQty > it.expectedQty ? "+" : ""}{it.receivedQty - it.expectedQty})</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5">
@@ -355,7 +355,7 @@ export default function ReceivingTab() {
 
       {/* New reception modal */}
       {showNew && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowNew(false)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowNew(false)}>
           <div
             className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
             onClick={e => e.stopPropagation()}

@@ -11,7 +11,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type AssetStatus = "activo" | "mantenimiento" | "dado-de-baja";
-type AssetCategory = "equipo" | "mobiliario" | "vehiculo" | "electronico" | "infraestructura";
+type AssetCategory = "equipo" | "mobiliario" | "vehiculo" | "electrónico" | "infraestructura";
 
 type Asset = {
   id: string;
@@ -59,7 +59,7 @@ const CATEGORY_META: Record<AssetCategory, { label: string }> = {
   equipo:          { label: "Equipo" },
   mobiliario:      { label: "Mobiliario" },
   vehiculo:        { label: "Vehículo" },
-  electronico:     { label: "Electrónico" },
+  electrónico:     { label: "Electrónico" },
   infraestructura: { label: "Infraestructura" },
 };
 
@@ -277,7 +277,7 @@ export default function AssetManagerTab() {
       {detail && (() => {
         const dep = calcDepreciation(detail.acquisitionCost, detail.usefulLifeYears, detail.acquisitionDate);
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+          <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
             <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle del activo</CardTitle>

@@ -61,11 +61,10 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
-  // Ventas & Caja (ventas-caja removido — redirigir a pedidos/analytics-pro)
-  pos: "pedidos", caja: "pedidos", "pos-caja": "pedidos", "arqueo-caja": "pedidos",
+  // Ventas & Caja — `ventas-caja` es el ID ACTUAL del POS (no migrar).
+  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja",
   "ventas-marketing": "analytics-pro", marketing: "analytics-pro", "forecast-ventas": "analytics-pro",
   "metricas-conversion": "analytics-pro", referidos: "analytics-pro",
-  "ventas-caja": "pedidos",
   // → Inventario
   inventario: "inventario", kardex: "inventario", lotes: "inventario",
   "inventario-fisico": "inventario", mermas: "inventario", almacenes: "inventario",
@@ -158,16 +157,16 @@ export const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: strin
 
 // Rich metadata for every module: priority, description and a helpful tip
 export const MODULE_INFO: Partial<Record<Tab, { priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
-  "asistente-ia":  { priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empezá acá cada mañana para tener el pulso del negocio." },
+  "asistente-ia":  { priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empieza acá cada mañana para tener el pulso del negocio." },
   "inventario":    { priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
   "productos":     { priority: "high",   desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",         tip: "Gestioná tu catálogo y optimizá precios." },
   "compras":       { priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepción.",            tip: "Flujo completo de compras desde la cotización hasta la recepción." },
   "plata":         { priority: "high",   desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",          tip: "Visión financiera completa del negocio en un solo módulo." },
-  "clientes":      { priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conocé a tus clientes y personalizá la atención." },
+  "clientes":      { priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conoce a tus clientes y personalizá la atención." },
   "config":        { priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configurá esto primero para que todo funcione correctamente." },
   "pedidos":       { priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centralizá pedidos de WhatsApp, tienda online y mostrador." },
-  "plan":          { priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisá tu plan para aprovechar al máximo la plataforma." },
-  "fiados":        { priority: "high",   desc: "Control de créditos informales: registro, pagos y saldos pendientes.",  tip: "Llevá la cuenta de lo que te deben tus clientes de confianza." },
+  "plan":          { priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisa tu plan para aprovechar al máximo la plataforma." },
+  "fiados":        { priority: "high",   desc: "Control de créditos informales: registro, pagos y saldos pendientes.",  tip: "Lleva la cuenta de lo que te deben tus clientes de confianza." },
   "turnos":        { priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cuánto entró." },
   "recetas":       { priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calculá costos de producción y descontá stock automáticamente." },
   "prestamos":     { priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestioná préstamos con calculadora integrada y seguimiento de pagos." },

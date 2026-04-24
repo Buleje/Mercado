@@ -12,7 +12,7 @@ import { BulejeSparkline } from "@/components/ui-system/charts";
  *
  * Patrón F-pattern de research 2026: hero KPI top-left, más grande.
  * 3-5 contextual metrics debajo. Un insight accionable al final
- * (Cialdini commitment — "ya detectamos X, probá Y").
+ * (Cialdini commitment — "ya detectamos X, prueba Y").
  *
  * @example
  * <AdminInsightCard

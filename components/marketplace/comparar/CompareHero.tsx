@@ -30,7 +30,7 @@ export default function CompareHero({ count, max, onClear }: CompareHeroProps) {
       <UnifiedHero
         kicker="Comparador"
         title="Compará productos lado a lado"
-        description={`Revisá precio, stock, tienda y características de hasta ${max} productos al mismo tiempo. Así elegís con confianza antes de llevar al carrito.`}
+        description={`Revisa precio, stock, tienda y características de hasta ${max} productos al mismo tiempo. Así eliges con confianza antes de llevar al carrito.`}
         trustChips={
           count > 0
             ? [`Comparando ${count} de ${max} productos`]

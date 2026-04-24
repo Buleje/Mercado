@@ -56,10 +56,10 @@ export default function StepPlan({ value, onChange }: StepPlanProps) {
       <header className="space-y-1.5">
         <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
           <Wallet className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={1.5} aria-hidden="true" />
-          Elegí tu plan
+          Elige tu plan
         </h2>
         <p className="text-sm text-[var(--text-secondary)]">
-          Podés cambiar cuando quieras. Sin multas ni trámites escondidos.
+          Puedes cambiar cuando quieras. Sin multas ni trámites escondidos.
         </p>
       </header>
 
@@ -154,7 +154,7 @@ export default function StepPlan({ value, onChange }: StepPlanProps) {
       </div>
 
       <p className="text-center text-xs text-[var(--text-tertiary)]">
-        Podés cambiar o cancelar desde tu panel cuando quieras.
+        Puedes cambiar o cancelar desde tu panel cuando quieras.
       </p>
     </div>
   );

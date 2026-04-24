@@ -376,7 +376,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         </div>
       )}
 
-      {/* Combo del dia */}
+      {/* Combo del día */}
       {!loading && comboData.products.some(p => p.found) && (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -384,7 +384,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               <Lightbulb className="h-5 w-5 text-[var(--data-warning)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-[var(--text-primary)]">Combo del dia disponible</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Combo del día disponible</p>
               <p className="text-xs text-[var(--text-tertiary)]">La IA tiene sugerencias de combos para ti</p>
             </div>
           </div>

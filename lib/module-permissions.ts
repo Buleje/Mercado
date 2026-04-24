@@ -49,11 +49,12 @@ export type ModuleId =
 /**
  * Default module access per role.
  *
- * - admin   → all modules (enforced in UI, not listed here — use canAccessModule() which always returns true for admin)
- * - cajero  → front-of-house operations: POS, orders, customers, catalog, promotions, loyalty, returns
+ * - superadmin → todos los módulos (se maneja igual que admin: canAccessModule() retorna true)
+ * - admin      → all modules (enforced in UI, not listed here — use canAccessModule() which always returns true for admin)
+ * - cajero     → front-of-house operations: POS, orders, customers, catalog, promotions, loyalty, returns
  * - almacenero → back-of-house: inventory, purchasing, suppliers, logistics, returns
  */
-export const MODULE_PERMISSIONS: Record<Exclude<AdminRole, "admin">, ModuleId[]> = {
+export const MODULE_PERMISSIONS: Record<Exclude<AdminRole, "admin" | "superadmin">, ModuleId[]> = {
   // Roles básicos del sistema (acceso mínimo operativo)
   proveedor: [
     "vendor-dashboard",
@@ -220,8 +221,8 @@ export function canAccessModule(
   moduleId: string,
   overrides?: Record<string, string[]>,
 ): boolean {
-  if (role === "admin") return true;
-  const allowed = overrides?.[role] ?? MODULE_PERMISSIONS[role as Exclude<AdminRole, "admin">] ?? [];
+  if (role === "admin" || role === "superadmin") return true;
+  const allowed = overrides?.[role] ?? MODULE_PERMISSIONS[role as Exclude<AdminRole, "admin" | "superadmin">] ?? [];
   return allowed.includes(moduleId as ModuleId);
 }
 
@@ -238,7 +239,7 @@ export function filterModulesByRole<T extends string>(
   allModules: T[],
   overrides?: Record<string, string[]>,
 ): T[] {
-  if (role === "admin") return allModules;
-  const allowed = overrides?.[role] ?? MODULE_PERMISSIONS[role as Exclude<AdminRole, "admin">] ?? [];
+  if (role === "admin" || role === "superadmin") return allModules;
+  const allowed = overrides?.[role] ?? MODULE_PERMISSIONS[role as Exclude<AdminRole, "admin" | "superadmin">] ?? [];
   return allModules.filter((m) => allowed.includes(m));
 }

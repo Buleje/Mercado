@@ -596,7 +596,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
             : "—";
         return (
           <DashboardSection
-            kicker="Heatmap · franja × día · últimos 30 días"
+            kicker="Heatmap · franja × día · rango activo"
             title="Cuándo compran tus clientes"
             kpis={[
               { label: "Total compras 30d", value: String(heatmap.matrix.flat().reduce((s, v) => s + v, 0)), tone: "primary" },

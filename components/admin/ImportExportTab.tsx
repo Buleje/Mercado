@@ -41,7 +41,7 @@ async function fetchModuleData(moduleId: string): Promise<Record<string, unknown
     const data = await res.json() as { customers?: Record<string, unknown>[] } | Record<string, unknown>[];
     const list = Array.isArray(data) ? data : ((data as { customers?: Record<string, unknown>[] }).customers ?? []);
     return list.map(c => ({
-      nombre: c.name, telefono: c.phone, ubicacion: c.location ?? "",
+      nombre: c.name, teléfono: c.phone, ubicacion: c.location ?? "",
       puntos: c.loyaltyPoints ?? 0, nivel: c.loyaltyTier ?? "bronce",
       total_gastado: c.totalSpent ?? 0, credito: c.creditBalance ?? 0,
       registrado: c.createdAt ? String(c.createdAt).slice(0, 10) : "",
@@ -53,7 +53,7 @@ async function fetchModuleData(moduleId: string): Promise<Record<string, unknown
     const data = await res.json() as { orders?: Record<string, unknown>[] } | Record<string, unknown>[];
     const list = Array.isArray(data) ? data : ((data as { orders?: Record<string, unknown>[] }).orders ?? []);
     return list.map(o => ({
-      id: o.id, cliente: (o.customer as Record<string, unknown>)?.name ?? "", telefono: (o.customer as Record<string, unknown>)?.phone ?? "",
+      id: o.id, cliente: (o.customer as Record<string, unknown>)?.name ?? "", teléfono: (o.customer as Record<string, unknown>)?.phone ?? "",
       total: o.total, estado: o.status, pago: o.paymentMethod ?? "",
       fecha: o.createdAt ? String(o.createdAt).slice(0, 10) : "",
       num_productos: Array.isArray(o.items) ? o.items.length : 0,

@@ -158,7 +158,7 @@ export default function PagosPage() {
           <BalanzaVacia size={60} className="text-gray-200 dark:text-muted/30" />
           <div>
             <p className="text-sm font-semibold text-foreground">
-              Mas opciones proximamente
+              Más opciones proximamente
             </p>
             <p className="text-xs text-muted mt-1 max-w-xs mx-auto">
               Estamos trabajando para agregar tarjetas de debito y credito como opcion de pago.
@@ -178,7 +178,7 @@ export default function PagosPage() {
           <div className="flex items-start gap-3">
             <CreditCard className="h-4 w-4 text-muted shrink-0 mt-0.5" />
             <p className="text-xs text-muted leading-relaxed">
-              Tus datos de pago estan protegidos. No almacenamos informacion de tarjetas. Los pagos digitales se procesan directamente en la app de Yape.
+              Tus datos de pago están protegidos. No almacenamos información de tarjetas. Los pagos digitales se procesan directamente en la app de Yape.
             </p>
           </div>
         </div>

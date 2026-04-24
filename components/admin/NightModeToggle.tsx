@@ -83,7 +83,7 @@ export default function NightModeToggle() {
   const setOverride = (override: ModeOverride) => save({ ...prefs, override });
   const setFontSize = (fontSize: "normal" | "large") => save({ ...prefs, fontSize });
 
-  /* Proxima transicion */
+  /* Próxima transicion */
   const nextTransition = () => {
     const h = currentHour;
     if (h >= NIGHT_HOURS_START) {

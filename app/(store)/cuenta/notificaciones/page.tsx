@@ -295,7 +295,7 @@ function NotifSettingsSection({
             id="settings-heading"
             className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight"
           >
-            Cómo querés recibir avisos
+            Cómo quieres recibir avisos
           </h2>
         </div>
 
@@ -570,7 +570,7 @@ export default function NotificacionesPage() {
                 description={
                   activeTab === "sin-leer"
                     ? "Estás al día. Bien hecho."
-                    : "Las notificaciones de esta categoría aparecerán acá."
+                    : "Las notificaciones de esta categoría aparecerán aquí."
                 }
                 size="sm"
               />
@@ -613,7 +613,7 @@ export default function NotificacionesPage() {
             href="/ayuda"
             className="flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)] hover:opacity-80 transition-opacity shrink-0"
           >
-            Contactanos
+            Contáctanos
             <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>

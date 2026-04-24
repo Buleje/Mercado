@@ -7,7 +7,7 @@
  * tipografía black grande, quote con quote marks decorativos.
  *
  * Psicología: humanizar las tiendas detrás del marketplace genera empatía
- * y confianza. "Conocé a la persona que te vende" es uno de los principales
+ * y confianza. "Conoce a la persona que te vende" es uno de los principales
  * drivers de fidelidad en marketplaces locales.
  *
  * Data: hoy mock (3 bodegueros rotando). Cuando haya CMS, reemplazar.
@@ -38,7 +38,7 @@ const BODEGUEROS: Bodeguero[] = [
     zona: "Yarinacocha",
     yearsActive: 7,
     quote:
-      "Vendo arroz desde antes de que existiera el delivery. Acá cada cliente se vuelve amigo del barrio.",
+      "Vendo arroz desde antes de que existiera el delivery. Aquí cada cliente se vuelve amigo del barrio.",
     initial: "P",
     rating: 4.9,
   },
@@ -82,7 +82,7 @@ export default function BodegueroSpotlight() {
 
   return (
     <section
-      aria-label="Conocé a tu bodeguero"
+      aria-label="Conoce a tu bodeguero"
       className="w-full py-8 sm:py-12"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,7 +91,7 @@ export default function BodegueroSpotlight() {
             Detrás del mostrador
           </p>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.015em] text-[var(--text-primary)]">
-            Conocé a tu bodeguero
+            Conoce a tu bodeguero
           </h2>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
             Las personas reales detrás de cada pedido en Buleje.

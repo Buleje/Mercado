@@ -101,9 +101,9 @@ export default function AsistentePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
-              { title: "Responde rápido", body: "Te contesta en segundos, no tenés que esperar al vendedor." },
+              { title: "Responde rápido", body: "Te contesta en segundos, no tienes que esperar al vendedor." },
               { title: "Conoce el producto", body: "Sabe frescura, usos, combinaciones y alternativas." },
-              { title: "Te acompaña al carrito", body: "Si querés, te sugiere agregar al tiro sin salir del chat." },
+              { title: "Te acompaña al carrito", body: "Si quieres, te sugiere agregar al tiro sin salir del chat." },
             ].map((f) => (
               <div
                 key={f.title}

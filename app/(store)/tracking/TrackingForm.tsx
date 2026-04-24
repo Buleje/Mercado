@@ -160,7 +160,7 @@ function OrderResult({ order }: { order: PublicOrder }) {
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/40 dark:bg-red-950/20">
           <p className="text-sm font-semibold text-red-700 dark:text-red-400">Pedido cancelado</p>
           <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-            Este pedido fue cancelado. Si tienes dudas, contactanos por WhatsApp.
+            Este pedido fue cancelado. Si tienes dudas, contáctanos por WhatsApp.
           </p>
         </div>
       )}
@@ -209,7 +209,7 @@ export default function TrackingForm() {
     const phoneTrim = phone.trim();
     if (!id) return;
     if (!phoneTrim) {
-      setError("Ingresa tu telefono para proteger tu privacidad.");
+      setError("Ingresa tu teléfono para proteger tu privacidad.");
       return;
     }
 
@@ -223,7 +223,7 @@ export default function TrackingForm() {
         const url = `/api/orders/${encodeURIComponent(id)}/public?phone=${encodeURIComponent(phoneTrim)}`;
         const res = await fetch(url);
         if (res.status === 404) {
-          setError("No encontramos ese pedido. Verifica el numero y telefono e intenta de nuevo.");
+          setError("No encontramos ese pedido. Verifica el número y teléfono e intenta de nuevo.");
           return;
         }
         if (!res.ok) {
@@ -245,7 +245,7 @@ export default function TrackingForm() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Numero de pedido (ej. abc12345)"
+          placeholder="Número de pedido (ej. abc12345)"
           required
           className={cn(
             "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
@@ -258,7 +258,7 @@ export default function TrackingForm() {
           inputMode="numeric"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          placeholder="Tu telefono"
+          placeholder="Tu teléfono"
           required
           className={cn(
             "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",

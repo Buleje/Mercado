@@ -64,7 +64,7 @@ export const ActivityFeed = memo(function ActivityFeed({ data }: ActivityFeedPro
       <div className="mb-4">
         <Kicker>Actividad reciente</Kicker>
         <SectionTitle id="activity-heading" className="mt-0.5">
-          Lo ultimo en tu cuenta
+          Lo último en tu cuenta
         </SectionTitle>
       </div>
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">

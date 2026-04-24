@@ -104,8 +104,8 @@ export default function IllustrationsDemoPage() {
               <IllustrationCard
                 illustration={<CanastaVacia size={140} />}
                 kicker="Favoritos"
-                title="Guardá tus favoritos"
-                description="Tocá el corazón en cualquier producto para verlos acá cuando vuelvas."
+                title="Guarda tus favoritos"
+                description="Tocá el corazón en cualquier producto para verlos aquí cuando vuelvas."
                 primaryAction={
                   <button className="rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold">
                     Explorar productos

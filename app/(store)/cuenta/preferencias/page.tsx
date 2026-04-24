@@ -241,7 +241,7 @@ export default function PreferenciasPage() {
               Icon={Smartphone}
             />
             <ToggleRow
-              label="Correo electronico"
+              label="Correo electrónico"
               sublabel="Resumen semanal y comprobantes"
               checked={notifEmail}
               onChange={setNotifEmail}

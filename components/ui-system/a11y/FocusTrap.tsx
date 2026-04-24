@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
  * FocusTrap — atrapa el foco dentro del contenedor (modales, drawers).
  *
  * Si el usuario Tabs fuera del contenedor, lo trae de vuelta al primer
- * elemento focusable. Shift+Tab desde el primero va al ultimo.
+ * elemento focusable. Shift+Tab desde el primero va al último.
  *
  * WCAG 2.4.3 Focus Order. Complementa Radix Dialog que ya trapea foco
  * pero util para modales custom.

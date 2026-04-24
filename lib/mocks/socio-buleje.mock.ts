@@ -197,19 +197,19 @@ export const MOCK_TESTIMONIOS = [
 export const MOCK_FAQS = [
   {
     q: "¿Cómo cancelo mi membresía?",
-    a: "Podés cancelar desde tu panel de Socio en cualquier momento. No hay permanencia ni penalidades.",
+    a: "Puedes cancelar desde tu panel de Socio en cualquier momento. No hay permanencia ni penalidades.",
   },
   {
     q: "¿Hay contrato o permanencia mínima?",
-    a: "No. Es una suscripción mes a mes (o anual) que podés cancelar cuando quieras.",
+    a: "No. Es una suscripción mes a mes (o anual) que puedes cancelar cuando quieras.",
   },
   {
     q: "¿El cashback es dinero en efectivo?",
-    a: "El cashback se acumula en tu saldo Socio y podés aplicarlo como descuento en tus próximas compras.",
+    a: "El cashback se acumula en tu saldo Socio y puedes aplicarlo como descuento en tus próximas compras.",
   },
   {
     q: "¿Cómo me suscribo?",
-    a: "Elegí tu plan (mensual o anual), confirmá tu método de pago y listo. La membresía se activa al instante.",
+    a: "Elige tu plan (mensual o anual), confirmá tu método de pago y listo. La membresía se activa al instante.",
   },
   {
     q: "¿Aplica en todas las bodegas de Buleje?",
@@ -217,7 +217,7 @@ export const MOCK_FAQS = [
   },
   {
     q: "¿Puedo cambiar de plan mensual a anual?",
-    a: "Sí, desde tu panel podés cambiar al plan anual y se ajusta el prorrateo automáticamente.",
+    a: "Sí, desde tu panel puedes cambiar al plan anual y se ajusta el prorrateo automáticamente.",
   },
   {
     q: "¿Qué pasa si no uso los beneficios un mes?",

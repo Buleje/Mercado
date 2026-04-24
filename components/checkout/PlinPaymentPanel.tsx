@@ -84,7 +84,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
       <div>
         <label className="text-xs font-bold text-gray-600 mb-1 block">
           <Hash className="h-3 w-3 inline mr-1" />
-          Numero de operacion Plin
+          Número de operacion Plin
         </label>
         <div className="relative">
           <input
@@ -95,7 +95,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
             maxLength={20}
             value={plinOpNumber}
             onChange={(e) => onOpNumberChange(e.target.value.replace(/\D/g, ""))}
-            placeholder="Ingresa el numero de operacion"
+            placeholder="Ingresa el número de operacion"
             className={cn(
               "w-full px-4 py-3 rounded-xl border-2 text-sm font-bold outline-none transition-colors",
               opEntered
@@ -111,7 +111,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
 
       {countdown === 0 && (
         <p className="text-xs text-red-600 font-bold text-center">
-          Tiempo agotado. Si ya pagaste, ingresa el numero de operacion.
+          Tiempo agotado. Si ya pagaste, ingresa el número de operacion.
         </p>
       )}
     </div>

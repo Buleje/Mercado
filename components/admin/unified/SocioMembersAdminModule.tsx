@@ -160,7 +160,7 @@ function fmtDate(iso: string) {
 }
 
 function exportCSV(rows: SocioMember[]) {
-  const headers = ["ID", "Nombre", "Telefono", "Plan", "Estado", "Inicio", "Renovacion", "Cashback", "Gastado", "Pedidos"];
+  const headers = ["ID", "Nombre", "Teléfono", "Plan", "Estado", "Inicio", "Renovacion", "Cashback", "Gastado", "Pedidos"];
   const csvRows = rows.map((r) => [
     r.id,
     r.name,

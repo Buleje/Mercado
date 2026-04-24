@@ -463,7 +463,7 @@ export function LoyaltyWidget({
               <div className="mt-1.5 flex items-center gap-1.5">
                 <GoldSparkles />
                 <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">
-                  Nivel maximo alcanzado
+                  Nivel máximo alcanzado
                 </span>
               </div>
             ) : (
@@ -506,7 +506,7 @@ export function LoyaltyWidget({
               aria-valuenow={100}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Nivel maximo alcanzado"
+              aria-label="Nivel máximo alcanzado"
             />
           ) : (
             <ProgressBar pct={progressPct} tierClass={config.fillClass} />

@@ -50,7 +50,7 @@ function exportCSV(rows: VendorApplication[]) {
     "Razon social",
     "RUC",
     "Propietario",
-    "Telefono",
+    "Teléfono",
     "Distrito",
     "Categoria",
     "Estado",

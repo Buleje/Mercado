@@ -42,7 +42,7 @@ const FEATURES: Feature[] = [
     icon: Scale,
     title: "Comparar productos",
     description:
-      "Poné hasta 4 productos lado a lado. Precio, tienda, stock — todo en una vista para decidir tranquilo.",
+      "Pon hasta 4 productos lado a lado. Precio, tienda, stock — todo en una vista para decidir tranquilo.",
     href: "/marketplace/comparar",
     cta: "Comparar ahora",
   },
@@ -51,7 +51,7 @@ const FEATURES: Feature[] = [
     icon: Calendar,
     title: "Bodega al Mes",
     description:
-      "Suscribite a tus productos de todos los días y olvidate de reordenar. Llegan solos, cuando los pedís.",
+      "Suscribite a tus productos de todos los días y olvidate de reordenar. Llegan solos, cuando los pides.",
     href: "/marketplace",
     cta: "Suscribirme",
   },
@@ -78,7 +78,7 @@ const FEATURES: Feature[] = [
     icon: CircleDot,
     title: "En Vivo",
     description:
-      "Las bodegas transmiten lo fresco del día. Preguntá en el chat y comprá sin salir del stream.",
+      "Las bodegas transmiten lo fresco del día. Pregunta en el chat y compra sin salir del stream.",
     href: "/marketplace/en-vivo",
     cta: "Ver transmisiones",
   },
@@ -96,7 +96,7 @@ const FEATURES: Feature[] = [
     icon: MapPin,
     title: "Seguimiento en tiempo real",
     description:
-      "Mirá dónde está tu pedido minuto a minuto. El motorizado en el mapa, como esperar a un amigo.",
+      "Mira dónde está tu pedido minuto a minuto. El motorizado en el mapa, como esperar a un amigo.",
     href: "/tracking",
     cta: "Ver mis pedidos",
   },
@@ -105,16 +105,16 @@ const FEATURES: Feature[] = [
     icon: Zap,
     title: "1-Click Buy",
     description:
-      "Comprá lo de siempre con un toque. Dirección y pago ya configurados — listo en segundos.",
+      "Compra lo de siempre con un toque. Dirección y pago ya configurados — listo en segundos.",
     href: "/marketplace",
     cta: "Ir al marketplace",
   },
   {
     slug: "vender",
     icon: Store,
-    title: "Vendé en Buleje",
+    title: "Vende en Buleje",
     description:
-      "Abrí tu tienda online como si abrieras la persiana de tu bodega. Gratis el primer mes.",
+      "Abre tu tienda online como si abrieras la persiana de tu bodega. Gratis el primer mes.",
     href: "/vender",
     cta: "Abrir tienda",
   },

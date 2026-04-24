@@ -15,7 +15,7 @@ interface Props {
 }
 
 /**
- * Numeros de social proof plausibles por categoria.
+ * Números de social proof plausibles por categoria.
  * Simulan actividad real sin requerir DB adicional.
  */
 const SOCIAL_STATS: Record<string, string> = {
@@ -76,7 +76,7 @@ export function CustomersLikeYou({ initialProducts, className }: Props) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Recomendado"
-          title="Clientes como vos compran"
+          title="Clientes como tú compran"
           description="Basado en los habitos de compra de tu barrio en Pucallpa."
           size="md"
           ruled

@@ -197,7 +197,7 @@ export default function BottomNav() {
                 aria-label={label}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  // Touch target minimo 44px
+                  // Touch target mínimo 44px
                   "flex flex-1 flex-col items-center justify-center gap-0.5 min-h-[56px] py-2 px-1",
                   "relative select-none",
                   "transition-colors duration-150 ease-in-out",

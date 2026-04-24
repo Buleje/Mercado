@@ -25,8 +25,8 @@ export async function generateMetadata({
     : "Buscar productos — Buleje";
 
   const description = q
-    ? `Encuentra "${q}" en bodegas y tiendas cerca tuyo en Pucallpa. Delivery rapido, Yape y efectivo.`
-    : "Busca productos en todas las bodegas y tiendas del marketplace Buleje. Pucallpa, Peru.";
+    ? `Encuentra "${q}" en bodegas y tiendas cerca tuyo en Pucallpa. Delivery rápido, Yape y efectivo.`
+    : "Busca productos en todas las bodegas y tiendas del marketplace Buleje. Pucallpa, Perú.";
 
   return {
     title,
@@ -48,8 +48,8 @@ export async function generateMetadata({
  *   cat    — categorias (pueden ser multiples: ?cat=arroz&cat=fideos)
  *   store  — tiendas (multiples: ?store=id1&store=id2)
  *   sort   — relevance | price_asc | price_desc | rating | newest
- *   min    — precio minimo (S/)
- *   max    — precio maximo (S/)
+ *   min    — precio mínimo (S/)
+ *   max    — precio máximo (S/)
  *   page   — pagina (1-indexed)
  */
 export default async function BuscarPage({ searchParams }: PageProps) {

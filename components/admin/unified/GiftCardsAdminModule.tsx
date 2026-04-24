@@ -253,7 +253,7 @@ export default function GiftCardsAdminModule() {
     void refetch();
   }, [refetch]);
 
-  // Suprimir referencias no usadas al mock (se deja para referencia rapida en dev).
+  // Suprimir referencias no usadas al mock (se deja para referencia rápida en dev).
   void MOCK_CARDS;
 
   const filtered = useMemo(() => {
@@ -506,7 +506,7 @@ export default function GiftCardsAdminModule() {
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-mono text-xs font-bold text-[var(--text-primary)]">{maskCode(c.code)}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{c.id}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{c.id}</p>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <p className="font-semibold text-[var(--text-primary)] text-sm">{c.recipientName}</p>

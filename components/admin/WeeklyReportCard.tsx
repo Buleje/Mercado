@@ -185,7 +185,7 @@ export default function WeeklyReportCard() {
         head: [["Metrica", "Valor"]],
         body: [
           ["Ventas de la semana", fmt(weekTotal)],
-          ["Numero de transacciones", String(data.sales.length)],
+          ["Número de transacciones", String(data.sales.length)],
           ["Ticket promedio", fmt(data.sales.length > 0 ? weekTotal / data.sales.length : 0)],
           ["Margen promedio estimado", `${data.margin.toFixed(1)}%`],
           ["Gastos del periodo", fmt(expTotal)],

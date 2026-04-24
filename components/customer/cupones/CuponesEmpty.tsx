@@ -13,10 +13,10 @@ export default function CuponesEmpty() {
       </div>
 
       <h3 className="mt-4 text-lg font-extrabold tracking-tight text-[var(--text-primary)] max-w-sm">
-        Aún no tenés cupones
+        Aún no tienes cupones
       </h3>
       <p className="mt-2 max-w-sm text-sm text-[var(--text-tertiary)] leading-relaxed">
-        Aplicá un código que te hayan compartido o explorá el marketplace —
+        Aplicá un código que te hayan compartido o explora el marketplace —
         encontrás cupones en la sección de cada tienda.
       </p>
       <Link

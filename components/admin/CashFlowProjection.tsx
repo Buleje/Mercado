@@ -51,7 +51,7 @@ function fmt(n: number) {
 function computeCashBalance(registers: CashRegister[]): number {
   const open = registers.find(r => r.status === "open" || r.status === "abierta");
   if (!open) {
-    // Si no hay caja abierta, tomar la ultima cerrada
+    // Si no hay caja abierta, tomar la última cerrada
     if (registers.length === 0) return 0;
     const last = registers[registers.length - 1];
     return last.closingAmount ?? last.openingAmount ?? 0;

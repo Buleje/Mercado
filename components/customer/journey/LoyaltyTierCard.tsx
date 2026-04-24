@@ -86,7 +86,7 @@ export const LoyaltyTierCard = memo(function LoyaltyTierCard({
             </div>
             <p className="text-white/60 text-sm leading-relaxed max-w-sm">
               {currentTier.cashback}% de vuelta en cada compra.
-              {nextTier && ` Subí a ${nextTier.label} para más beneficios.`}
+              {nextTier && ` Sube a ${nextTier.label} para más beneficios.`}
             </p>
           </div>
           <div className="text-right">

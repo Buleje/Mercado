@@ -1,7 +1,7 @@
 /**
  * /zona/[ciudad]/producto/[slug] — City x Product page for Programmatic SEO
  *
- * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
+ * Buleje = Software SaaS ERP para bodegas y tiendas de todo Perú.
  *
  * Targets: "precio aceite palma pucallpa", "comprar arroz lima",
  *          "donde comprar cerveza cusco barato"
@@ -410,7 +410,7 @@ async function ZoneProductContent({
           <strong>{product.name}</strong> en bodegas de{" "}
           {zone.districts.join(", ")} y toda la zona de {zone.name}.
           Los precios y disponibilidad son gestionados en tiempo real
-          por cada bodega a traves del software ERP Buleje.
+          por cada bodega a través del software ERP Buleje.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {zone.districts.map((district) => (
@@ -461,7 +461,7 @@ async function ZoneProductContent({
       {relatedProducts.length > 0 && (
         <section className="mt-10">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">
-            {category ? `Mas ${category.label.toLowerCase()} en ${zone.name}` : `Mas productos en ${zone.name}`}
+            {category ? `Más ${category.label.toLowerCase()} en ${zone.name}` : `Más productos en ${zone.name}`}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {relatedProducts.map((p) => (
@@ -497,7 +497,7 @@ async function ZoneProductContent({
       {category && (
         <section className="mt-8">
           <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            Mas categorias en {zone.name}
+            Más categorias en {zone.name}
           </h2>
           <div className="flex flex-wrap gap-2">
             {realCategories
@@ -525,8 +525,8 @@ async function ZoneProductContent({
           {product.name} disponible en {zone.name}, {zone.region}.
           Precio S/{price} por {product.unit ?? "und"}.
           Gestionado con Buleje, el software ERP para bodegas y tiendas
-          creado en Pucallpa, Peru. Inventario, ventas POS, delivery,
-          fiado digital y facturacion SUNAT. Disponible en todo el Peru.
+          creado en Pucallpa, Perú. Inventario, ventas POS, delivery,
+          fiado digital y facturación SUNAT. Disponible en todo el Perú.
         </p>
       </footer>
     </div>

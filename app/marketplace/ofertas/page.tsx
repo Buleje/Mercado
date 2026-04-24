@@ -4,9 +4,9 @@ import OfertasClient from "@/components/marketplace/ofertas/OfertasClient";
 const BASE_URL = "https://www.buleje.pe";
 
 export const metadata: Metadata = {
-  title: "Ofertas — Precios que no te podés perder",
+  title: "Ofertas — Precios que no te puedes perder",
   description:
-    "Descuentos reales en bodegas cerca tuyo. Hoy ahorrás en lo que mas usas. Ofertas de esta semana en Pucallpa — delivery rapido, pago Yape o efectivo.",
+    "Descuentos reales en bodegas cerca tuyo. Hoy ahorrás en lo que mas usas. Ofertas de esta semana en Pucallpa — delivery rápido, pago Yape o efectivo.",
   alternates: {
     canonical: `${BASE_URL}/marketplace/ofertas`,
   },
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Ofertas — Precios que no te podés perder",
+    title: "Ofertas — Precios que no te puedes perder",
     description:
       "Descuentos reales en bodegas de Pucallpa. Ahorra en abarrotes, frescos, bebidas y mas. Termina pronto.",
     url: `${BASE_URL}/marketplace/ofertas`,

@@ -140,7 +140,7 @@ export function InspiredByHistory({ initialProducts, className }: Props) {
           <div className="flex flex-col items-center gap-4 py-12 text-[var(--text-tertiary)]">
             <CanastaVacia size={100} strokeWidth={1.5} />
             <p className="text-sm">
-              Todavia no encontramos recomendaciones para vos.
+              Todavia no encontramos recomendaciones para ti.
             </p>
             <Link
               href="/marketplace"

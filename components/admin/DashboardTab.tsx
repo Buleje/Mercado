@@ -879,13 +879,13 @@ export default function DashboardTab() {
       const rows = [
         ...orders.filter(o => inPeriod(o.createdAt, period) && o.status !== "cancelado").map(o => ({
           tipo: "Pedido", id: o.id, fecha: o.createdAt.slice(0,10), hora: o.createdAt.slice(11,16),
-          cliente: o.customer.name, telefono: o.customer.phone ?? "",
+          cliente: o.customer.name, teléfono: o.customer.phone ?? "",
           items: o.items.map(i => `${i.name} x${i.quantity}`).join("; "),
           total: o.total, pago: o.paymentMethod ?? "efectivo", estado: o.status,
         })),
         ...sales.filter(s => inPeriod(s.createdAt, period)).map(s => ({
           tipo: "POS", id: s.id, fecha: s.createdAt.slice(0,10), hora: s.createdAt.slice(11,16),
-          cliente: s.customerPhone ?? "Mostrador", telefono: s.customerPhone ?? "",
+          cliente: s.customerPhone ?? "Mostrador", teléfono: s.customerPhone ?? "",
           items: (s.items ?? []).map(i => `${i.name} x${i.quantity}`).join("; "),
           total: s.total, pago: s.payment, estado: "completado",
         })),
@@ -899,7 +899,7 @@ export default function DashboardTab() {
       })), `productos_${today}.csv`);
     } else if (type === "clientes") {
       exportToCSV(customers.map(c => ({
-        telefono: c.phone, nombre: c.name, ubicacion: c.location,
+        teléfono: c.phone, nombre: c.name, ubicacion: c.location,
         registrado: (c.createdAt ?? "").slice(0,10),
       })), `clientes_${today}.csv`);
     } else if (type === "pedidos") {
@@ -2160,7 +2160,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           
           {/* Edit Goals Modal */}
           {editingMonthlyGoals && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingMonthlyGoals(false)}>
+            <div className="modal-backdrop p-4" onClick={() => setEditingMonthlyGoals(false)}>
               <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -2245,7 +2245,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           
           {/* Goal History Modal */}
           {showGoalHistory && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowGoalHistory(false)}>
+            <div className="modal-backdrop p-4" onClick={() => setShowGoalHistory(false)}>
               <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -2740,7 +2740,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
 
           {/* A/B Test Modal */}
           {showABTestModal && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowABTestModal(false)}>
+            <div className="modal-backdrop p-4" onClick={() => setShowABTestModal(false)}>
               <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <div className="flex flex-wrap items-center gap-2.5">

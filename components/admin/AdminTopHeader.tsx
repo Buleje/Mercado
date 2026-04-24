@@ -18,6 +18,7 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
+import { useEffect, useState } from "react";
 import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -25,6 +26,32 @@ import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
+
+type HeaderThemingEvent = {
+  applyToHeader: boolean;
+  theme: "light" | "dark" | "cristal" | "shaded";
+  accent: "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
+};
+
+function readInitialHeaderTheming(): HeaderThemingEvent {
+  if (typeof window === "undefined") return { applyToHeader: false, theme: "light", accent: "teal" };
+  try {
+    const applyToHeader = localStorage.getItem("admin-sidebar-apply-to-header") === "true";
+    const rawTheme = localStorage.getItem("admin-sidebar-theme");
+    const theme: HeaderThemingEvent["theme"] =
+      rawTheme === "cristal" || rawTheme === "dark" || rawTheme === "light" || rawTheme === "shaded"
+        ? (rawTheme as HeaderThemingEvent["theme"])
+        : "light";
+    const rawAccent = localStorage.getItem("admin-sidebar-accent");
+    const accent: HeaderThemingEvent["accent"] =
+      rawAccent === "teal" || rawAccent === "emerald" || rawAccent === "sky" || rawAccent === "violet" || rawAccent === "amber" || rawAccent === "rose"
+        ? (rawAccent as HeaderThemingEvent["accent"])
+        : "teal";
+    return { applyToHeader, theme, accent };
+  } catch {
+    return { applyToHeader: false, theme: "light", accent: "teal" };
+  }
+}
 
 export interface AdminTopHeaderProps {
   presentationMode: boolean;
@@ -67,10 +94,32 @@ export function AdminTopHeader({
   onNavigate,
   onLogout,
 }: AdminTopHeaderProps) {
+  // Theming reactivo desde el sidebar
+  const [theming, setTheming] = useState<HeaderThemingEvent>(readInitialHeaderTheming);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<HeaderThemingEvent>).detail;
+      if (detail) setTheming(detail);
+    };
+    window.addEventListener("admin-sidebar-theming-change", handler);
+    return () => window.removeEventListener("admin-sidebar-theming-change", handler);
+  }, []);
+
+  /* Clases del header según si aplica tema del sidebar o no. */
+  const headerThemeClasses = theming.applyToHeader
+    ? theming.theme === "cristal" || theming.theme === "shaded"
+      ? "bg-[#0b1f2b] border-white/[0.08] text-white/80"
+      : theming.theme === "dark"
+        ? "bg-zinc-950 border-white/[0.06] text-zinc-300"
+        : "bg-white border-[var(--rule-base)] text-[var(--text-primary)]"
+    : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border";
+
   return (
     <header
       className={cn(
-        "bg-white dark:bg-card border-b border-[var(--rule-base)] dark:border-card-border px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40",
+        "border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
+        headerThemeClasses,
         presentationMode && "hidden!"
       )}
     >

@@ -37,7 +37,7 @@ interface Props {
 function formatMetric(metric: string): string {
   const map: Record<string, string> = {
     daily_revenue: "ventas diarias",
-    order_count: "numero de pedidos",
+    order_count: "número de pedidos",
     avg_ticket: "ticket promedio",
     product_sales: "ventas de producto",
   };

@@ -13,7 +13,7 @@ export interface Crumb {
  * BreadcrumbEditorial — kicker-style breadcrumbs para admin.
  *
  * Patron editorial: uppercase tracking, separador con rule soft,
- * ultimo crumb sin link (current page).
+ * último crumb sin link (current page).
  *
  * @example
  * <BreadcrumbEditorial

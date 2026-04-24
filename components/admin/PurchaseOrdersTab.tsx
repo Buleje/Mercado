@@ -68,7 +68,7 @@ function OCProgressBar({ status }: { status: string }) {
       </div>
       <div className="flex justify-between px-0">
         {labels.map((label, idx) => (
-          <span key={idx} className={cn("text-[length:var(--ts-2xs)] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-primary dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} style={{ width: idx < 3 ? undefined : "auto" }}>
+          <span key={idx} className={cn("text-xs font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-primary dark:text-[var(--data-success)]" : "text-[var(--text-tertiary)]")} style={{ width: idx < 3 ? undefined : "auto" }}>
             {label}
           </span>
         ))}
@@ -494,7 +494,7 @@ export default function PurchaseOrdersTab() {
 
       {/* Mejora 15: Modal de configuración recurrente */}
       {showRecurringModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowRecurringModal(null)}>
+        <div className="modal-backdrop p-4" onClick={() => setShowRecurringModal(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">Hacer recurrente</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
@@ -518,7 +518,7 @@ export default function PurchaseOrdersTab() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Proximo pedido</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Próximo pedido</label>
               <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
                 {nextRecurringDateLabel}
               </p>
@@ -581,19 +581,19 @@ export default function PurchaseOrdersTab() {
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase mb-1">Órdenes</p>
+                      <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.count}</p>
                     </div>
                     <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30">
-                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase mb-1">Total gastado</p>
+                      <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] uppercase mb-1">Total gastado</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{stats.totalAmount.toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
-                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
+                      <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{stats.avgAmount.toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning)] dark:border-[var(--data-warning)]/30">
-                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase mb-1">Última compra</p>
+                      <p className="text-xs font-bold text-[var(--data-warning)] dark:text-[var(--data-warning)] uppercase mb-1">Última compra</p>
                       <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
                     </div>
                   </div>
@@ -638,7 +638,7 @@ export default function PurchaseOrdersTab() {
                                 title={`${m.month}: S/${m.amount.toFixed(2)}`}
                               ></div>
                             </div>
-                            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted uppercase">{m.month}</p>
+                            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">{m.month}</p>
                           </div>
                         );
                       })}
@@ -655,7 +655,7 @@ export default function PurchaseOrdersTab() {
                         <div key={order.id} className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{formatDate(order.createdAt)}</span>
-                            <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", STATUS_COLORS[order.status])}>
+                            <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[order.status])}>
                               {STATUS_LABELS[order.status]}
                             </span>
                           </div>
@@ -823,7 +823,7 @@ export default function PurchaseOrdersTab() {
                     <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{o.supplierName}</span>
                     {/* Mejora 13: Progress bar visual */}
                     <OCProgressBar status={o.status} />
-                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", STATUS_COLORS[o.status])}>
+                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
                       {STATUS_LABELS[o.status]}
                     </span>
                   </div>
@@ -889,7 +889,7 @@ export default function PurchaseOrdersTab() {
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Detalle de productos</p>
                   <div className="space-y-1.5">
                     {o.items.map((item, i) => {
-                      // Mejora 20: Buscar ultimo precio del mismo producto + mismo proveedor
+                      // Mejora 20: Buscar último precio del mismo producto + mismo proveedor
                       const prevOC = orders.find(po =>
                         po.id !== o.id &&
                         po.supplierId === o.supplierId &&
@@ -921,7 +921,7 @@ export default function PurchaseOrdersTab() {
                           {/* Mejora 20: Referencia de precio anterior */}
                           {prevPrice != null && (
                             <p className="text-xs text-[var(--text-tertiary)] pl-5 mt-0.5">
-                              Ultima vez: S/{prevPrice.toFixed(2)} ({prevDateRelative})
+                              Última vez: S/{prevPrice.toFixed(2)} ({prevDateRelative})
                               {diff != null && diff > 0 && <span className="text-[var(--data-error)] ml-1">↑ S/{diff.toFixed(2)} mas caro</span>}
                               {diff != null && diff < 0 && <span className="text-[var(--data-success)] ml-1">↓ S/{Math.abs(diff).toFixed(2)} mas barato</span>}
                               {diff != null && diff === 0 && <span className="text-[var(--text-tertiary)] ml-1">= Mismo precio</span>}
@@ -953,8 +953,8 @@ export default function PurchaseOrdersTab() {
                           ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning)] dark:text-[var(--data-warning)]"
                           : "bg-gray-50 dark:bg-surface text-[var(--text-secondary)]"
                       )}>
-                        {diff < 0 ? `Ahorraste S/${Math.abs(diff).toFixed(2)} vs ultima compra` :
-                         diff > 0 ? `Pagaste S/${diff.toFixed(2)} mas vs ultima compra` :
+                        {diff < 0 ? `Ahorraste S/${Math.abs(diff).toFixed(2)} vs última compra` :
+                         diff > 0 ? `Pagaste S/${diff.toFixed(2)} mas vs última compra` :
                          "Mismo total que la compra anterior"}
                       </div>
                     );

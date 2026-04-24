@@ -278,14 +278,14 @@ export default function PedidosPage() {
             </p>
             <p className="mt-1 text-sm text-muted max-w-sm mx-auto leading-relaxed">
               Realizá un pedido y podrás hacerle seguimiento en tiempo real desde
-              acá — con ETA y estado en cada paso.
+              aquí — con ETA y estado en cada paso.
             </p>
             <Link
               href="/tienda"
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-bold text-background hover:opacity-90 transition-opacity"
             >
               <ShoppingBag className="h-3.5 w-3.5" strokeWidth={1.75} />
-              Empezá a comprar
+              Empieza a comprar
             </Link>
           </section>
         )}

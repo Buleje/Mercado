@@ -6,8 +6,8 @@
  * Rediseñado con DashboardSection + primitivas Buleje DS + DraggableSections.
  *
  * Secciones:
- *  1. Compras diarias (últimos 14 días)
- *  2. Tendencia mensual (últimos 6 meses)
+ *  1. Compras diarias (rango activo)
+ *  2. Tendencia mensual (rango activo)
  *  3. Top proveedores del periodo (monto + órdenes)
  *  4. Estado de cuentas por pagar (Donut)
  *  5. Cuentas por vencer (Composed con umbrales)
@@ -74,7 +74,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "compras-diarias",
       render: () => (
         <DashboardSection
-          kicker="Compras · últimos 14 días"
+          kicker="Compras · rango activo"
           title="Monto de compras por día"
           kpis={[
             { label: "Total periodo", value: fmtS(diariasKpis.total), tone: "primary" },
@@ -100,7 +100,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "tendencia-mensual",
       render: () => (
         <DashboardSection
-          kicker="Compras · últimos 6 meses"
+          kicker="Compras · rango activo"
           title="Tendencia mensual"
           kpis={[
             { label: "Total 6m", value: fmtS(mensualKpis.total), tone: "primary" },

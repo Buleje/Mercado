@@ -119,7 +119,7 @@ export default function ChatBubble({
               <button
                 type="button"
                 onClick={() => {
-                  if (window.confirm("¿Cerrar esta sesión de chat? Podés volver a abrir otra cuando quieras.")) {
+                  if (window.confirm("¿Cerrar esta sesión de chat? Puedes volver a abrir otra cuando quieras.")) {
                     clearSession();
                   }
                 }}

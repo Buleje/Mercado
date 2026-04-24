@@ -41,7 +41,7 @@ const DEFAULT_BANNERS: PromoBanner[] = [
   {
     id: "envio-gratis",
     title: "Envio GRATIS en pedidos mayores a S/50",
-    subtitle: "Delivery rapido a toda la zona",
+    subtitle: "Delivery rápido a toda la zona",
     ctaText: "Comprar ahora",
     ctaLink: "/tienda",
     bgColor: "bg-[var(--accent)]",

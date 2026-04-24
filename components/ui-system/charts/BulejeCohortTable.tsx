@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 export interface CohortRow {
   /** Etiqueta de la cohorte — ej "Ene 2026", "S1" */
   label: string;
-  /** Numero inicial de usuarios/clientes */
+  /** Número inicial de usuarios/clientes */
   size: number;
   /** Retencion % por periodo (null = no data) */
   retention: (number | null)[];

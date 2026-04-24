@@ -71,7 +71,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
     const statsMap: Record<string, { totalSpent: number; orderCount: number; lastDate: Date | null }> = {};
 
     sales.forEach((sale) => {
-      const phone = sale.customerPhone ?? "sin-telefono";
+      const phone = sale.customerPhone ?? "sin-teléfono";
       if (!statsMap[phone]) statsMap[phone] = { totalSpent: 0, orderCount: 0, lastDate: null };
       statsMap[phone].totalSpent += sale.total ?? 0;
       statsMap[phone].orderCount += 1;

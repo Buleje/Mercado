@@ -246,7 +246,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "pareto-proveedores",
       render: () => (
         <DashboardSection
-          kicker="Pareto · proveedores · últimos 30 días"
+          kicker="Pareto · proveedores · rango activo"
           title="Concentración del gasto (80/20)"
           kpis={[
             { label: "Compras 30d", value: fmtS(pareto.total), tone: "primary" },
@@ -360,7 +360,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "mix-proveedores",
       render: () => (
         <DashboardSection
-          kicker="Mix de compras · últimos 14 días"
+          kicker="Mix de compras · rango activo"
           title="Composición diaria por proveedor top-5"
           kpis={[
             { label: "Días con data", value: String(mixProv.rows.length), tone: "neutral" },
@@ -394,7 +394,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los últimos 14 días.
+              Sin datos en los rango activo.
             </div>
           )}
         </DashboardSection>
@@ -404,7 +404,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "waterfall-deuda",
       render: () => (
         <DashboardSection
-          kicker="Δ Deuda · últimos 30 días"
+          kicker="Δ Deuda · rango activo"
           title="De deuda inicial a deuda actual"
           kpis={[
             { label: "Deuda inicio", value: fmtS(waterfall.deudaInicio), tone: "neutral" },

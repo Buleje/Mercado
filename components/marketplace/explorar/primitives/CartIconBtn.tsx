@@ -60,7 +60,7 @@ export default function CartIconBtn({
       disabled={disabled}
       aria-label={
         hasInCart
-          ? `${label} — tenés ${quantityInCart} en el carrito`
+          ? `${label} — tienes ${quantityInCart} en el carrito`
           : label
       }
       className={cn(

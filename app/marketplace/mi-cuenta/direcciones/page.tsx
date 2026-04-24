@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
 const DireccionSchema = z.object({
-  location: z.string().min(5, "Minimo 5 caracteres").max(200),
-  reference: z.string().min(3, "Minimo 3 caracteres").max(200),
+  location: z.string().min(5, "Mínimo 5 caracteres").max(200),
+  reference: z.string().min(3, "Mínimo 3 caracteres").max(200),
 });
 
 type DireccionForm = z.infer<typeof DireccionSchema>;

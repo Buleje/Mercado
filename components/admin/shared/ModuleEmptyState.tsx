@@ -6,7 +6,7 @@
  * Fiados (libreta vacia). En vez de duplicar el markup con iconos/headers/etc
  * 20+ veces, centralizamos aqui.
  *
- * Uso basico:
+ * Uso básico:
  *   <ModuleEmptyState icon={Clock} title="Sin turnos registrados"
  *     description="Abre tu primer turno para empezar." />
  *

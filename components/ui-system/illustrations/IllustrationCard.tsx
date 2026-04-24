@@ -15,8 +15,8 @@ import { EASE, DURATION } from "../motion";
  * <IllustrationCard
  *   illustration={<CanastaVacia size={180} />}
  *   kicker="Favoritos"
- *   title="Guardá tus favoritos"
- *   description="Tocá el corazón en cualquier producto para verlos acá cuando vuelvas."
+ *   title="Guarda tus favoritos"
+ *   description="Tocá el corazón en cualquier producto para verlos aquí cuando vuelvas."
  *   primaryAction={<Button>Ver marketplace</Button>}
  * />
  */

@@ -58,7 +58,7 @@ export default function AccountPicker({
           Tus cuentas
         </p>
         <h2 className="text-xl sm:text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-          Elegí con cuál comprás hoy
+          Elige con cuál comprás hoy
         </h2>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           {accounts.length} {accounts.length === 1 ? "cuenta guardada" : "cuentas guardadas"}{" "}
@@ -169,7 +169,7 @@ export default function AccountPicker({
             Iniciar sesión con otra cuenta
           </p>
           <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-            Agregá otro Gmail o número — quedará disponible para futuras compras.
+            Agrega otro Gmail o número — quedará disponible para futuras compras.
           </p>
         </div>
       </button>

@@ -85,16 +85,16 @@ function RecetasDashboard() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
 
-  // Top 5 recetas mas producidas
-  const recetaProduccion = new Map<string, { nombre: string; count: number }>();
+  // Top 5 recetas más producidas
+  const recetaProducción = new Map<string, { nombre: string; count: number }>();
   for (const l of lotes) {
     const recetaId = String(l.recetaId ?? "");
     const recetaNombre = (l.receta as Record<string, unknown>)?.nombre as string ?? recetaId;
-    const prev = recetaProduccion.get(recetaId) ?? { nombre: recetaNombre, count: 0 };
+    const prev = recetaProducción.get(recetaId) ?? { nombre: recetaNombre, count: 0 };
     prev.count += Number(l.cantidad) || 1;
-    recetaProduccion.set(recetaId, prev);
+    recetaProducción.set(recetaId, prev);
   }
-  const top5Recetas = Array.from(recetaProduccion.values())
+  const top5Recetas = Array.from(recetaProducción.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
@@ -110,7 +110,7 @@ function RecetasDashboard() {
           { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success)]/30" },
         ].map(k => (
           <div key={k.label} className={cn("bg-white rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-medium">{k.label}</p>
+            <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
             <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
           </div>
         ))}
@@ -127,12 +127,12 @@ function RecetasDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={((v: number) => [`${v} lotes`, "Produccion"]) as any} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
+              <Tooltip formatter={((v: number) => [`${v} lotes`, "Producción"]) as any} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
               <Bar dataKey="lotes" fill="#2563EB" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <EmptyChart message="Sin lotes producidos en las ultimas semanas" />
+          <EmptyChart message="Sin lotes producidos en las últimas semanas" />
         )}
       </div>
       </m.div>
@@ -152,18 +152,18 @@ function RecetasDashboard() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyChart message="Sin datos de categorias" />
+            <EmptyChart message="Sin datos de categorías" />
           )}
         </div>
 
-        {/* Top 5 recetas mas producidas */}
+        {/* Top 5 recetas más producidas */}
         <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas mas producidas</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas más producidas</CardTitle>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
               {top5Recetas.map((r, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full bg-[#2563EB] text-white text-[length:var(--ts-2xs)] flex items-center justify-center font-bold shrink-0">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-[#2563EB] text-white text-xs flex items-center justify-center font-bold shrink-0">{i + 1}</span>
                   <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{r.nombre}</span>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{r.count}</span>
                 </div>
@@ -187,7 +187,7 @@ function EmptyChart({ message }: { message: string }) {
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
-      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos apareceran cuando registres actividad</p>
+      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres actividad</p>
     </div>
   );
 }
@@ -222,7 +222,7 @@ type ProductInfo = {
   costPrice?: number | null;
 };
 
-type ProduccionLote = {
+type ProducciónLote = {
   id: string;
   tenantId: string;
   recetaId: string;
@@ -299,8 +299,8 @@ export default function RecetasModule() {
   const [producing, setProducing] = useState(false);
   const [producirError, setProducirError] = useState<string | null>(null);
 
-  // Produccion tab
-  const [lotes, _setLotes] = useState<ProduccionLote[]>([]);
+  // Producción tab
+  const [lotes, _setLotes] = useState<ProducciónLote[]>([]);
   const [_lotesLoading, _setLotesLoading] = useState(false);
   const [lotesPage, _setLotesPage] = useState(1);
 
@@ -523,7 +523,7 @@ export default function RecetasModule() {
                 : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            {t === "dashboard" ? <><BarChart3 className="h-3.5 w-3.5" /> Dashboard</> : t === "recetas" ? "Recetas" : t === "produccion" ? "Produccion" : <><BookOpen className="h-3.5 w-3.5" /> Recetario Web</>}
+            {t === "dashboard" ? <><BarChart3 className="h-3.5 w-3.5" /> Dashboard</> : t === "recetas" ? "Recetas" : t === "produccion" ? "Producción" : <><BookOpen className="h-3.5 w-3.5" /> Recetario Web</>}
           </button>
         ))}
       </div>
@@ -628,7 +628,7 @@ export default function RecetasModule() {
                           )}
                         >
                           {!r.activa && (
-                            <span className="absolute top-2 right-2 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-[var(--text-secondary)]">Inactiva</span>
+                            <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 text-[var(--text-secondary)]">Inactiva</span>
                           )}
                           <div className="text-center mb-3">
                             <span className="text-4xl">
@@ -642,7 +642,7 @@ export default function RecetasModule() {
                           </div>
                           <p className="font-bold text-[var(--text-primary)] text-center truncate group-hover:text-[#2563EB] transition-colors">{r.nombre}</p>
                           <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] bg-gray-100 rounded-full px-2 py-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] bg-gray-100 rounded-full px-2 py-0.5">
                               <Package className="h-3 w-3" /> {r.ingredientes.length} ing.
                             </span>
                           </div>
@@ -674,7 +674,7 @@ export default function RecetasModule() {
                             return (
                               <div className="mt-2 text-center">
                                 <span className={cn(
-                                  "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
+                                  "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
                                   faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
                                     : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
                                     : "bg-[var(--data-error-100)] text-[var(--data-error)]"
@@ -709,9 +709,9 @@ export default function RecetasModule() {
         </>
       )}
 
-      {/* ── Tab: Produccion ───────────────────────────────────────────────────── */}
+      {/* ── Tab: Producción ───────────────────────────────────────────────────── */}
       {activeTab === "produccion" && (
-        <ProduccionTab />
+        <ProducciónTab />
       )}
 
       {/* ── Tab: Recetario Web ─────────────────────────────────────────────────── */}
@@ -763,7 +763,7 @@ export default function RecetasModule() {
                 {costData && (
                   <div className="bg-[var(--accent-soft)] border border-[var(--data-success)]/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--data-success)]">Análisis de costo</p>
+                      <p className="text-xs uppercase font-bold text-[var(--data-success)]">Análisis de costo</p>
                       <span className={cn(
                         "text-xs font-bold px-2 py-0.5 rounded-lg",
                         costData.margenPorcentaje >= 30
@@ -779,19 +779,19 @@ export default function RecetasModule() {
                     {/* Desglose por componente */}
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-white/60 rounded-lg p-2">
-                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-secondary)]">Ingredientes</p>
+                        <p className="text-xs uppercase text-[var(--text-secondary)]">Ingredientes</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIngredientes)}</p>
                       </div>
                       <div className="bg-white/60 rounded-lg p-2">
-                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-secondary)]">Mano de obra</p>
+                        <p className="text-xs uppercase text-[var(--text-secondary)]">Mano de obra</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoManoObra)}</p>
                       </div>
                       <div className="bg-white/60 rounded-lg p-2">
-                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-secondary)]">Indirectos</p>
+                        <p className="text-xs uppercase text-[var(--text-secondary)]">Indirectos</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIndirectos)}</p>
                       </div>
                       <div className="bg-white rounded-lg p-2 border border-[var(--data-success)]/30">
-                        <p className="text-[length:var(--ts-2xs)] uppercase text-[var(--data-success)]">Total unitario</p>
+                        <p className="text-xs uppercase text-[var(--data-success)]">Total unitario</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoTotalUnitario)}</p>
                       </div>
                     </div>
@@ -811,7 +811,7 @@ export default function RecetasModule() {
 
                     {costData.ingredientes.length > 0 && (
                       <div className="space-y-1.5 pt-2 border-t border-[var(--data-success)]/30">
-                        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-secondary)]">Desglose de ingredientes</p>
+                        <p className="text-xs uppercase font-bold text-[var(--text-secondary)]">Desglose de ingredientes</p>
                         {costData.ingredientes.map((ing, i) => (
                           <div key={i} className="flex items-center justify-between text-xs">
                             <span className="text-[var(--text-primary)] truncate flex-1 mr-2">
@@ -839,7 +839,7 @@ export default function RecetasModule() {
                       {/* Cost summary */}
                       <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                         <div className="flex items-center justify-between">
-                          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Costo total estimado</p>
+                          <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo total estimado</p>
                           <p className="text-xl font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
                         </div>
                         {prodFinal && (
@@ -900,7 +900,7 @@ export default function RecetasModule() {
                                     <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                                       {prod?.name ?? `Producto #${ing.productoId}`}
                                     </p>
-                                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                                    <p className="text-xs text-[var(--text-tertiary)]">
                                       {ing.cantidad} {ing.unidad} x {formatCurrency(costoUnit)}
                                     </p>
                                   </div>
@@ -1030,7 +1030,7 @@ export default function RecetasModule() {
                     {newIngredientes.map((ing, i) => (
                       <div key={i} className="flex gap-2 items-end bg-gray-50 rounded-xl p-3">
                         <div className="flex-1">
-                          <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">ID Producto</label>
+                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">ID Producto</label>
                           <input
                             type="number"
                             value={ing.productoId}
@@ -1040,7 +1040,7 @@ export default function RecetasModule() {
                           />
                         </div>
                         <div className="w-20">
-                          <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
+                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
                           <input
                             type="number"
                             step="0.01"
@@ -1051,7 +1051,7 @@ export default function RecetasModule() {
                           />
                         </div>
                         <div className="w-20">
-                          <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
+                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
                           <input
                             type="text"
                             value={ing.unidad}
@@ -1178,7 +1178,7 @@ export default function RecetasModule() {
 
                     return (
                       <div className="bg-[#2563EB]/5 border border-[#2563EB]/20 rounded-xl p-3 space-y-1.5">
-                        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[#2563EB]">Estimacion de costos</p>
+                        <p className="text-xs uppercase font-bold text-[#2563EB]">Estimacion de costos</p>
                         <div className="flex justify-between text-xs text-[var(--text-primary)]">
                           <span>Costo por lote ({qty} uds):</span>
                           <span className="font-bold">{formatCurrency(costoLote)}</span>
@@ -1289,10 +1289,10 @@ export default function RecetasModule() {
   );
 }
 
-// ── Produccion Tab (sub-component) ────────────────────────────────────────────
+// ── Producción Tab (sub-component) ────────────────────────────────────────────
 
-function ProduccionTab() {
-  const [lotes, setLotes] = useState<ProduccionLote[]>([]);
+function ProducciónTab() {
+  const [lotes, setLotes] = useState<ProducciónLote[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -1307,7 +1307,7 @@ function ProduccionTab() {
         try {
           const lotesRes = await fetch("/api/produccion");
           if (lotesRes.ok) {
-            const lotesData: ProduccionLote[] = await lotesRes.json();
+            const lotesData: ProducciónLote[] = await lotesRes.json();
             setLotes(lotesData);
           } else {
             setLotes([]);
@@ -1370,15 +1370,15 @@ function ProduccionTab() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
-              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
+              <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{lotesEsteMes.length}</p>
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
-              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Costo promedio</p>
+              <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo promedio</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(costoPromedio)}</p>
             </div>
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
-              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Unidades producidas</p>
+              <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Unidades producidas</p>
               <p className="text-lg font-extrabold text-[#2563EB]">{unidadesProducidas}</p>
             </div>
           </div>
@@ -1387,7 +1387,7 @@ function ProduccionTab() {
           {chartData.some(d => d.lotes > 0) && (
             <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
               <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
-                <BarChart3 className="h-3.5 w-3.5" /> Produccion semanal (ultimas 4 semanas)
+                <BarChart3 className="h-3.5 w-3.5" /> Producción semanal (ultimas 4 semanas)
               </h4>
               <ResponsiveContainer minWidth={0} width="100%" height={180}>
                 <BarChart data={chartData}>

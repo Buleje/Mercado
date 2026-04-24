@@ -94,7 +94,7 @@ const FEATURES = [
         />
       </svg>
     ),
-    title: "POS rapido",
+    title: "POS rápido",
     badge: "< 2 seg por venta",
     description:
       "Cobra en menos de 2 segundos con teclado, lector de codigos o pantalla tactil. Vuelto automatico, Yape, efectivo y tarjeta.",
@@ -260,9 +260,9 @@ const SIMPLE_PLANS = [
     features: [
       "100 productos",
       "1 usuario",
-      "POS basico",
+      "POS básico",
       "Inventario simple",
-      "App movil",
+      "App móvil",
     ],
     cta: "Empieza gratis",
     href: "/plataforma/registro?plan=free",
@@ -457,7 +457,7 @@ function HeroSection() {
             {/* Catalogo izquierda */}
             <div className="col-span-3 border-r border-border/40 p-4 sm:p-6">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
-                Catalogo rapido
+                Catalogo rápido
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {[

@@ -55,7 +55,7 @@ export default function OfertasHero({ summary }: OfertasHeroProps) {
               Precios que
               <br />
               <span className="italic font-serif text-[var(--accent)]">
-                no te podés perder.
+                no te puedes perder.
               </span>
             </h1>
 

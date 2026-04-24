@@ -142,7 +142,7 @@ const MODULE_INDEX: ModuleEntry[] = [
       { id: "compras", label: "Plan de compras", keywords: ["plan compras"] },
       { id: "compras", label: "Cotizaciones", keywords: ["cotizaciones", "rfq"] },
       { id: "compras", label: "Aprobacion", keywords: ["aprobación", "aprobar"] },
-      { id: "compras", label: "Recepcion", keywords: ["recepción", "recibir"] },
+      { id: "compras", label: "Recepci\u00f3n", keywords: ["recepción", "recibir"] },
     ],
   },
   {
@@ -152,15 +152,15 @@ const MODULE_INDEX: ModuleEntry[] = [
     keywords: ["proveedores", "proveedor", "portal proveedor", "evaluación", "calidad proveedor", "pagos proveedor"],
   },
   {
-    tab: "logistica",
+    tab: "logística",
     label: "Logística",
     icon: MapPin,
     keywords: ["logística", "delivery", "entregas", "rutas", "flota", "envíos", "tracking", "costos envío"],
     subtabs: [
-      { id: "logistica", label: "Calendario de entregas", keywords: ["calendario", "entregas"] },
-      { id: "logistica", label: "Rutas de delivery", keywords: ["rutas", "delivery"] },
-      { id: "logistica", label: "Seguimiento de envios", keywords: ["seguimiento", "tracking"] },
-      { id: "logistica", label: "Flota", keywords: ["flota", "vehículos", "moto"] },
+      { id: "logística", label: "Calendario de entregas", keywords: ["calendario", "entregas"] },
+      { id: "logística", label: "Rutas de delivery", keywords: ["rutas", "delivery"] },
+      { id: "logística", label: "Seguimiento de envios", keywords: ["seguimiento", "tracking"] },
+      { id: "logística", label: "Flota", keywords: ["flota", "vehículos", "moto"] },
     ],
   },
   {
@@ -592,7 +592,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             )}
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] bg-gray-100 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border">
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono text-[var(--text-tertiary)] bg-gray-100 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border">
               Esc
             </kbd>
           </div>
@@ -621,7 +621,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                   {/* Cabecera de grupo */}
                   <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                     <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} />
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">
+                    <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                       {meta.label}
                     </span>
                   </div>
@@ -667,7 +667,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                         <div className="flex items-center gap-2 shrink-0">
                           {r.badge && (
                             <span
-                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
+                              className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
                               style={{ background: r.badgeColor ?? "#6b7280" }}
                             >
                               {r.badge}
@@ -689,7 +689,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         {/* ── Acceso rápido (estado vacío) ── */}
         {!isSearching && (
           <div className="px-4 py-3">
-            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
+            <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
               Acceso rápido
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -716,7 +716,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
         {/* ── Footer ── */}
         <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
+          <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
             <span className="flex items-center gap-1">
               <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">↑↓</kbd>
               navegar
@@ -730,7 +730,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               cerrar
             </span>
           </div>
-          <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
+          <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] dark:text-muted">
             <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Ctrl</kbd>
             <span>+</span>
             <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">K</kbd>

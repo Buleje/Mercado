@@ -14,7 +14,7 @@ type NotifyContext = Record<string, unknown>;
 
 const TEMPLATES: Record<string, (ctx: NotifyContext) => string> = {
   new_order: (ctx) =>
-    `Hola ${ctx.vendorName ?? "vendedor"}, tenés una nueva orden #${ctx.orderId} por S/ ${ctx.total}.`,
+    `Hola ${ctx.vendorName ?? "vendedor"}, tienes una nueva orden #${ctx.orderId} por S/ ${ctx.total}.`,
   low_stock: (ctx) =>
     `Stock bajo: ${ctx.productName} solo te quedan ${ctx.stock} unidades.`,
   new_review: (ctx) =>

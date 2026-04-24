@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type BatchStatus = "vigente" | "proximo" | "por-vencer" | "critico" | "vencido";
+type BatchStatus = "vigente" | "próximo" | "por-vencer" | "critico" | "vencido";
 
 type Batch = {
   id: string;
@@ -45,7 +45,7 @@ function batchStatus(expiryDate: string): BatchStatus {
   if (d < 0) return "vencido";
   if (d <= 7) return "critico";
   if (d <= 30) return "por-vencer";
-  if (d <= 60) return "proximo";
+  if (d <= 60) return "próximo";
   return "vigente";
 }
 
@@ -59,7 +59,7 @@ function fmtDate(iso: string) {
 
 const STATUS_META: Record<BatchStatus, { label: string; color: string; bg: string; icon: typeof AlertTriangle }> = {
   vigente:     { label: "Vigente",    color: "text-[var(--data-success)] dark:text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-  proximo:     { label: "Próximo",    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: Clock },
+  próximo:     { label: "Próximo",    color: "text-[var(--data-success)] dark:text-[var(--data-success)]",      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: Clock },
   "por-vencer":{ label: "Por vencer", color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",    icon: Clock },
   critico:     { label: "Crítico",    color: "text-[var(--data-warning)] dark:text-[var(--data-warning)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30",  icon: AlertTriangle },
   vencido:     { label: "Vencido",    color: "text-[var(--data-error)] dark:text-[var(--data-error)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",        icon: AlertTriangle },

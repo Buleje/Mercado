@@ -43,7 +43,7 @@ export default function A11yPerfDemoPage() {
               Accesible <span className="text-white/45">y rápido</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-white/60 max-w-2xl">
-              Primitives WCAG 2.2 AA + hooks para Core Web Vitals. Probá Tab
+              Primitives WCAG 2.2 AA + hooks para Core Web Vitals. Prueba Tab
               desde aquí para ver focus ring editorial + skip-to-content.
             </p>
           </div>
@@ -86,7 +86,7 @@ export default function A11yPerfDemoPage() {
             <h2 className="text-fs-h2 mb-3">Anuncios dinámicos para SR</h2>
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-2xl">
               Cambios dinámicos (carrito, notificaciones) se anuncian sin mover el
-              foco. Activá VoiceOver/NVDA y tocá agregar.
+              foco. Activa VoiceOver/NVDA y tocá agregar.
             </p>
             <div className="flex items-center gap-4">
               <button
@@ -130,7 +130,7 @@ export default function A11yPerfDemoPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscá arroz, aceite, gaseosas…"
+                  placeholder="Busca arroz, aceite, gaseosas…"
                   className="w-full rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] pl-10 pr-4 py-2.5 text-sm focus:outline-none"
                 />
               </div>

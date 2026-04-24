@@ -59,7 +59,7 @@ const PLAN_RESULTS: Record<string, PlanResult> = {
     color: "text-gray-600",
     gradient: "from-gray-500 to-gray-600",
     icon: <Gift className="h-6 w-6" />,
-    description: "Perfecto para empezar. Tendras todo lo basico para digitalizar tu bodega sin costo.",
+    description: "Perfecto para empezar. Tendras todo lo básico para digitalizar tu bodega sin costo.",
     price: "S/ 0/mes",
     cta: "Empezar gratis",
   },
@@ -128,7 +128,7 @@ export default function SaasPlanQuiz() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-10">
           <span className="inline-flex items-center gap-1.5 bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
-            <Sparkles className="h-3 w-3" /> Quiz rapido
+            <Sparkles className="h-3 w-3" /> Quiz rápido
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
             Que plan necesitas?

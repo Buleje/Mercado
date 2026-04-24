@@ -54,7 +54,7 @@ interface ContractVersion {
 interface _Contract {
   id: string;
   templateId: string;
-  numero: string;
+  número: string;
   tipo: ContratoTipo;
   estado: ContratoEstado;
   parties: { emisor: string; contraparte: string };
@@ -70,7 +70,7 @@ interface _Contract {
 // Re-export old API-compatible type
 type ContratoAPI = {
   id: string;
-  numero: string;
+  número: string;
   tenantId: string;
   tipo: ContratoTipo;
   clienteNombre: string;
@@ -123,7 +123,7 @@ const PLANTILLAS: ContractTemplate[] = [
       "CLAUSULA SEGUNDA.- PRECIO Y FORMA DE PAGO: El precio total pactado por la mercaderia objeto del presente contrato es de S/ {{PRECIO_TOTAL}} (Son: {{PRECIO_LETRAS}} soles). La forma de pago sera: {{FORMA_PAGO}}. En caso de pago diferido, el incumplimiento en el pago de cualquier cuota dara derecho al VENDEDOR a exigir el pago total del saldo pendiente, conforme al articulo 1561 del Codigo Civil.",
       "CLAUSULA TERCERA.- ENTREGA DE LA MERCADERIA: EL VENDEDOR se obliga a entregar la mercaderia en {{LUGAR_ENTREGA}}, en la fecha {{FECHA_ENTREGA}}. La entrega se acreditara mediante guia de remision y/o acta de conformidad suscrita por ambas partes. El riesgo de perdida o deterioro de los bienes se transfiere al COMPRADOR en el momento de la entrega, conforme al articulo 1567 del Codigo Civil.",
       "CLAUSULA CUARTA.- GARANTIA: EL VENDEDOR garantiza que la mercaderia se encuentra libre de vicios ocultos y defectos de fabricacion. EL COMPRADOR dispondra de un plazo de {{PLAZO_GARANTIA}} dias calendario desde la recepcion para formular reclamos por defectos visibles, faltantes o disconformidades. Vencido dicho plazo sin observacion, se entendera otorgada la conformidad total, conforme al articulo 1503 del Codigo Civil (saneamiento por vicios ocultos).",
-      "CLAUSULA QUINTA.- PENALIDAD POR INCUMPLIMIENTO: En caso de incumplimiento en la entrega por parte del VENDEDOR, este pagara una penalidad equivalente al {{PENALIDAD_PORCENTAJE}}% del precio total por cada semana de retraso, hasta un maximo del 10% del monto total. En caso de falta de pago oportuno por parte del COMPRADOR, se aplicara un interes moratorio conforme a la tasa maxima fijada por el Banco Central de Reserva del Peru (BCRP).",
+      "CLAUSULA QUINTA.- PENALIDAD POR INCUMPLIMIENTO: En caso de incumplimiento en la entrega por parte del VENDEDOR, este pagara una penalidad equivalente al {{PENALIDAD_PORCENTAJE}}% del precio total por cada semana de retraso, hasta un máximo del 10% del monto total. En caso de falta de pago oportuno por parte del COMPRADOR, se aplicara un interes moratorio conforme a la tasa maxima fijada por el Banco Central de Reserva del Peru (BCRP).",
       "CLAUSULA SEXTA.- RESOLUCION DEL CONTRATO: Cualquiera de las partes podra resolver el presente contrato ante el incumplimiento sustancial de las obligaciones por la otra parte, previa comunicacion notarial otorgando un plazo de subsanacion de siete (7) dias habiles, conforme al articulo 1429 del Codigo Civil. La resolucion no libera al incumpliente del pago de la penalidad pactada ni de la indemnizacion por danos y perjuicios.",
       "CLAUSULA SEPTIMA.- DOMICILIO Y JURISDICCION: Para todos los efectos del presente contrato, las partes senalan como sus domicilios los indicados en la parte introductoria, donde se les hara llegar las comunicaciones y notificaciones de ley. Cualquier controversia derivada del presente contrato sera resuelta por los jueces y tribunales del distrito judicial de {{CIUDAD}}, renunciando ambas partes a cualquier otro fuero que pudiera corresponderles.",
       "En senal de conformidad, las partes suscriben el presente contrato en dos (2) ejemplares de igual tenor y valor, en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
@@ -161,7 +161,7 @@ const PLANTILLAS: ContractTemplate[] = [
       { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
     ],
     clausulas: [
-      "Conste por el presente documento, el contrato de trabajo sujeto a modalidad que celebran al amparo del Texto Unico Ordenado del Decreto Legislativo 728 — Ley de Productividad y Competitividad Laboral, aprobado por Decreto Supremo N.o 003-97-TR, de una parte, {{NOMBRE_EMPLEADOR}}, con RUC N.o {{RUC_EMPLEADOR}}, con domicilio en {{DOMICILIO_EMPLEADOR}}, representada por {{REPRESENTANTE_EMPLEADOR}}, a quien en adelante se denominara EL EMPLEADOR; y de otra parte, {{NOMBRE_TRABAJADOR}}, identificado(a) con DNI N.o {{DNI_TRABAJADOR}}, con domicilio en {{DOMICILIO_TRABAJADOR}}, a quien en adelante se denominara EL TRABAJADOR; en los terminos y condiciones siguientes:",
+      "Conste por el presente documento, el contrato de trabajo sujeto a modalidad que celebran al amparo del Texto Único Ordenado del Decreto Legislativo 728 — Ley de Productividad y Competitividad Laboral, aprobado por Decreto Supremo N.o 003-97-TR, de una parte, {{NOMBRE_EMPLEADOR}}, con RUC N.o {{RUC_EMPLEADOR}}, con domicilio en {{DOMICILIO_EMPLEADOR}}, representada por {{REPRESENTANTE_EMPLEADOR}}, a quien en adelante se denominara EL EMPLEADOR; y de otra parte, {{NOMBRE_TRABAJADOR}}, identificado(a) con DNI N.o {{DNI_TRABAJADOR}}, con domicilio en {{DOMICILIO_TRABAJADOR}}, a quien en adelante se denominara EL TRABAJADOR; en los terminos y condiciones siguientes:",
       "CLAUSULA PRIMERA.- ANTECEDENTES Y CAUSA OBJETIVA: EL EMPLEADOR es una persona juridica dedicada al comercio minorista de abarrotes y productos de primera necesidad. Requiere contratar los servicios de EL TRABAJADOR bajo la modalidad de {{MODALIDAD}}, por la siguiente causa objetiva: {{CAUSA_OBJETIVA}}. Esta contratacion se realiza conforme a los articulos 53 al 83 del D.S. 003-97-TR.",
       "CLAUSULA SEGUNDA.- OBJETO: EL EMPLEADOR contrata los servicios de EL TRABAJADOR para desempenar el cargo de {{CARGO}}, realizando las funciones propias del puesto conforme al Manual de Organizacion y Funciones (MOF) de la empresa.",
       "CLAUSULA TERCERA.- DURACION Y PERIODO DE PRUEBA: El presente contrato tiene una duracion determinada, iniciandose el {{FECHA_INICIO}} y concluyendo el {{FECHA_FIN}}, sin necesidad de previo aviso para su terminacion. El periodo de prueba sera de {{PERIODO_PRUEBA}}, conforme al articulo 10 del D.S. 003-97-TR. Durante el periodo de prueba, cualquiera de las partes puede resolver el contrato sin expresion de causa.",
@@ -169,7 +169,7 @@ const PLANTILLAS: ContractTemplate[] = [
       "CLAUSULA QUINTA.- JORNADA Y HORARIO DE TRABAJO: La jornada laboral sera de {{JORNADA}}, conforme al articulo 25 de la Constitucion Politica del Peru y al D.S. 007-2002-TR. El horario de trabajo sera de {{HORARIO}}, de lunes a sabado. Las horas extras se remuneraran con la sobretasa de ley: 25% las dos primeras horas y 35% las siguientes, conforme al D.S. 007-2002-TR.",
       "CLAUSULA SEXTA.- BENEFICIOS SOCIALES: EL TRABAJADOR gozara de todos los beneficios laborales que le corresponden conforme a la legislacion peruana vigente: (a) Compensacion por Tiempo de Servicios (CTS) conforme al D.S. 001-97-TR, depositada semestralmente en mayo y noviembre; (b) Gratificaciones legales en julio y diciembre equivalentes a una remuneracion mensual cada una, conforme a la Ley 27735; (c) Descanso vacacional de 30 dias calendario por cada ano completo de servicios, conforme al D.Leg. 713; (d) Seguro social de salud (EsSalud) a cargo del empleador, equivalente al 9% de la remuneracion; (e) Seguro Complementario de Trabajo de Riesgo (SCTR) si corresponde a la actividad; (f) Asignacion familiar de S/ 102.50 cuando corresponda, conforme a la Ley 25129.",
       "CLAUSULA SEPTIMA.- OBLIGACIONES DEL TRABAJADOR: EL TRABAJADOR se compromete a: (a) Cumplir con las funciones asignadas con diligencia y eficiencia; (b) Respetar el Reglamento Interno de Trabajo; (c) Cuidar los bienes, mercaderia e instalaciones del negocio; (d) Mantener la confidencialidad de la informacion comercial, de clientes y proveedores; (e) Someterse a los controles de inventario y arqueos de caja que disponga el empleador.",
-      "CLAUSULA OCTAVA.- CAUSALES DE EXTINCION: El presente contrato se extinguira por las causales previstas en el articulo 16 del D.S. 003-97-TR: vencimiento del plazo, fallecimiento, renuncia (con 30 dias de preaviso), mutuo disenso, invalidez absoluta permanente, jubilacion, despido por causa justa, y las demas previstas por ley. En caso de despido injustificado antes del vencimiento del plazo, EL EMPLEADOR abonara una indemnizacion equivalente a una remuneracion y media mensual por cada mes dejado de laborar hasta el vencimiento del contrato, con un maximo de doce remuneraciones, conforme al articulo 76 del D.S. 003-97-TR.",
+      "CLAUSULA OCTAVA.- CAUSALES DE EXTINCION: El presente contrato se extinguira por las causales previstas en el articulo 16 del D.S. 003-97-TR: vencimiento del plazo, fallecimiento, renuncia (con 30 dias de preaviso), mutuo disenso, invalidez absoluta permanente, jubilacion, despido por causa justa, y las demas previstas por ley. En caso de despido injustificado antes del vencimiento del plazo, EL EMPLEADOR abonara una indemnizacion equivalente a una remuneracion y media mensual por cada mes dejado de laborar hasta el vencimiento del contrato, con un máximo de doce remuneraciones, conforme al articulo 76 del D.S. 003-97-TR.",
       "CLAUSULA NOVENA.- JURISDICCION: Para la solucion de cualquier controversia derivada del presente contrato, las partes se someten a la jurisdiccion de los juzgados laborales del distrito judicial de {{CIUDAD}}, conforme a la Ley 29497 — Nueva Ley Procesal del Trabajo.",
       "En senal de conformidad, las partes suscriben el presente contrato en tres (3) ejemplares de igual tenor y valor (uno para cada parte y uno para el Ministerio de Trabajo), en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
     ],
@@ -202,14 +202,14 @@ const PLANTILLAS: ContractTemplate[] = [
       { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
     ],
     clausulas: [
-      "Conste por el presente documento, el contrato de trabajo a plazo indeterminado que celebran al amparo del Texto Unico Ordenado del Decreto Legislativo 728, aprobado por Decreto Supremo N.o 003-97-TR, de una parte, {{NOMBRE_EMPLEADOR}}, con RUC N.o {{RUC_EMPLEADOR}}, con domicilio en {{DOMICILIO_EMPLEADOR}}, representada por {{REPRESENTANTE_EMPLEADOR}}, a quien en adelante se denominara EL EMPLEADOR; y de otra parte, {{NOMBRE_TRABAJADOR}}, identificado(a) con DNI N.o {{DNI_TRABAJADOR}}, con domicilio en {{DOMICILIO_TRABAJADOR}}, a quien en adelante se denominara EL TRABAJADOR.",
+      "Conste por el presente documento, el contrato de trabajo a plazo indeterminado que celebran al amparo del Texto Único Ordenado del Decreto Legislativo 728, aprobado por Decreto Supremo N.o 003-97-TR, de una parte, {{NOMBRE_EMPLEADOR}}, con RUC N.o {{RUC_EMPLEADOR}}, con domicilio en {{DOMICILIO_EMPLEADOR}}, representada por {{REPRESENTANTE_EMPLEADOR}}, a quien en adelante se denominara EL EMPLEADOR; y de otra parte, {{NOMBRE_TRABAJADOR}}, identificado(a) con DNI N.o {{DNI_TRABAJADOR}}, con domicilio en {{DOMICILIO_TRABAJADOR}}, a quien en adelante se denominara EL TRABAJADOR.",
       "CLAUSULA PRIMERA.- OBJETO: EL EMPLEADOR contrata los servicios de EL TRABAJADOR para que desempene el cargo de {{CARGO}} de manera permanente e indeterminada, realizando las funciones inherentes a dicho puesto.",
       "CLAUSULA SEGUNDA.- INICIO: El presente contrato surte efectos a partir del {{FECHA_INICIO}}, siendo de duracion indeterminada. El periodo de prueba sera de tres (3) meses, conforme al articulo 10 del D.S. 003-97-TR.",
       "CLAUSULA TERCERA.- REMUNERACION: EL TRABAJADOR percibira una remuneracion mensual bruta de S/ {{REMUNERACION}}, sujeta a los descuentos y aportes de ley. El pago se realizara de forma mensual.",
       "CLAUSULA CUARTA.- JORNADA Y HORARIO: La jornada laboral sera de {{JORNADA}}. El horario de trabajo sera de {{HORARIO}}. Las horas extras se remuneraran conforme al D.S. 007-2002-TR.",
       "CLAUSULA QUINTA.- BENEFICIOS SOCIALES: EL TRABAJADOR gozara de todos los beneficios que la ley establece: CTS (D.S. 001-97-TR), gratificaciones (Ley 27735), vacaciones (D.Leg. 713), EsSalud (9%), y asignacion familiar (Ley 25129) cuando corresponda.",
       "CLAUSULA SEXTA.- OBLIGACIONES: EL TRABAJADOR se compromete a cumplir con sus funciones, respetar el reglamento interno, cuidar los bienes de la empresa y mantener la confidencialidad de la informacion comercial.",
-      "CLAUSULA SEPTIMA.- EXTINCION: El contrato podra extinguirse unicamente por las causales previstas en el articulo 16 del D.S. 003-97-TR. En caso de despido arbitrario, EL EMPLEADOR pagara una indemnizacion equivalente a una remuneracion y media mensual por cada ano completo de servicios, con un maximo de doce remuneraciones (Art. 38 D.S. 003-97-TR).",
+      "CLAUSULA SEPTIMA.- EXTINCION: El contrato podra extinguirse unicamente por las causales previstas en el articulo 16 del D.S. 003-97-TR. En caso de despido arbitrario, EL EMPLEADOR pagara una indemnizacion equivalente a una remuneracion y media mensual por cada ano completo de servicios, con un máximo de doce remuneraciones (Art. 38 D.S. 003-97-TR).",
       "CLAUSULA OCTAVA.- JURISDICCION: Las partes se someten a la jurisdiccion de los juzgados laborales de {{CIUDAD}}.",
       "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
     ],
@@ -243,7 +243,7 @@ const PLANTILLAS: ContractTemplate[] = [
     clausulas: [
       "Conste por el presente documento, el contrato de locacion de servicios que celebran de conformidad con los articulos 1764 al 1770 del Codigo Civil Peruano, de una parte, {{NOMBRE_COMITENTE}}, con RUC N.o {{RUC_COMITENTE}}, con domicilio en {{DOMICILIO_COMITENTE}}, a quien en adelante se denominara EL COMITENTE; y de otra parte, {{NOMBRE_LOCADOR}}, identificado(a) con DNI/RUC N.o {{DNI_LOCADOR}}, con domicilio en {{DOMICILIO_LOCADOR}}, a quien en adelante se denominara EL LOCADOR.",
       "CLAUSULA PRIMERA.- OBJETO: EL LOCADOR se obliga a prestar el siguiente servicio a favor de EL COMITENTE, sin subordinacion: {{DESCRIPCION_SERVICIO}}. EL LOCADOR realizara el servicio con sus propios medios, herramientas y conocimientos tecnicos, conforme al articulo 1764 del Codigo Civil.",
-      "CLAUSULA SEGUNDA.- RETRIBUCION: La retribucion por el servicio sera de S/ {{RETRIBUCION}}. La forma de pago sera: {{FORMA_PAGO}}. EL LOCADOR emitira el correspondiente recibo por honorarios electronico (SUNAT) para cada pago recibido. Se aplicara la retencion del impuesto a la renta de cuarta categoria cuando corresponda (8%).",
+      "CLAUSULA SEGUNDA.- RETRIBUCION: La retribucion por el servicio sera de S/ {{RETRIBUCION}}. La forma de pago sera: {{FORMA_PAGO}}. EL LOCADOR emitira el correspondiente recibo por honorarios electrónico (SUNAT) para cada pago recibido. Se aplicara la retencion del impuesto a la renta de cuarta categoria cuando corresponda (8%).",
       "CLAUSULA TERCERA.- PLAZO: El servicio sera ejecutado desde el {{FECHA_INICIO}} hasta el {{FECHA_FIN}}. EL LOCADOR no podra ceder su posicion contractual sin autorizacion escrita del COMITENTE.",
       "CLAUSULA CUARTA.- INDEPENDENCIA Y NO SUBORDINACION: Queda expresamente establecido que EL LOCADOR presta sus servicios de forma autonoma e independiente, sin sujecion a horario fijo, sin exclusividad, y sin relacion laboral de subordinacion o dependencia con EL COMITENTE, conforme al articulo 1764 del Codigo Civil. El presente contrato no genera vinculo laboral alguno.",
       "CLAUSULA QUINTA.- OBLIGACIONES DEL LOCADOR: EL LOCADOR se obliga a: (a) ejecutar el servicio personalmente y con la diligencia debida; (b) informar periodicamente al COMITENTE sobre el avance del servicio; (c) entregar el resultado del servicio en el plazo pactado.",
@@ -272,7 +272,7 @@ const PLANTILLAS: ContractTemplate[] = [
       { key: "DOMICILIO_SUMINISTRADO", label: "Domicilio del Adquirente", type: "text", required: true, placeholder: "Jr. San Martin 123, Pucallpa", group: "contraparte" },
       { key: "LISTA_PRODUCTOS", label: "Productos a Suministrar", type: "textarea", required: true, placeholder: "Arroz, azucar, aceite, fideos...", group: "contrato" },
       { key: "FRECUENCIA", label: "Frecuencia de Entrega", type: "select", required: true, options: ["Semanal", "Quincenal", "Mensual", "Bimensual"], group: "contrato" },
-      { key: "PEDIDO_MINIMO", label: "Pedido Minimo (S/)", type: "number", required: true, placeholder: "500.00", group: "contrato" },
+      { key: "PEDIDO_MINIMO", label: "Pedido Mínimo (S/)", type: "number", required: true, placeholder: "500.00", group: "contrato" },
       { key: "PLAZO_PAGO", label: "Plazo de Pago (dias)", type: "select", required: true, options: ["Contado", "7 dias", "15 dias", "30 dias", "60 dias"], group: "contrato" },
       { key: "VIGENCIA_MESES", label: "Vigencia (meses)", type: "number", required: true, placeholder: "12", group: "contrato" },
       { key: "EXCLUSIVIDAD", label: "Clausula de Exclusividad", type: "select", required: false, options: ["No aplica", "Exclusividad por zona", "Exclusividad por marca", "Exclusividad total"], group: "contrato" },
@@ -282,7 +282,7 @@ const PLANTILLAS: ContractTemplate[] = [
     clausulas: [
       "Conste por el presente documento, el contrato de suministro que celebran de conformidad con los articulos 1604 al 1620 del Codigo Civil Peruano, de una parte, {{NOMBRE_SUMINISTRANTE}}, con RUC N.o {{RUC_SUMINISTRANTE}}, con domicilio en {{DOMICILIO_SUMINISTRANTE}}, a quien en adelante se denominara EL SUMINISTRANTE; y de otra parte, {{NOMBRE_SUMINISTRADO}}, con RUC N.o {{RUC_SUMINISTRADO}}, con domicilio en {{DOMICILIO_SUMINISTRADO}}, a quien en adelante se denominara EL SUMINISTRADO.",
       "CLAUSULA PRIMERA.- OBJETO: EL SUMINISTRANTE se obliga a proveer de forma periodica y continuada los siguientes productos: {{LISTA_PRODUCTOS}}, conforme a las condiciones de calidad, cantidad y especificaciones acordadas (Art. 1604 del Codigo Civil).",
-      "CLAUSULA SEGUNDA.- FRECUENCIA Y CANTIDAD: Las entregas se realizaran con frecuencia {{FRECUENCIA}}, con un pedido minimo de S/ {{PEDIDO_MINIMO}} por cada orden. Los pedidos se cursaran con al menos 3 dias habiles de anticipacion.",
+      "CLAUSULA SEGUNDA.- FRECUENCIA Y CANTIDAD: Las entregas se realizaran con frecuencia {{FRECUENCIA}}, con un pedido mínimo de S/ {{PEDIDO_MINIMO}} por cada orden. Los pedidos se cursaran con al menos 3 dias habiles de anticipacion.",
       "CLAUSULA TERCERA.- PRECIO: Los precios se fijan conforme a la lista de precios vigente al momento de cada pedido. Los precios podran revisarse trimestralmente con previo aviso de 15 dias. Los incrementos no podran superar el indice de precios al consumidor (IPC) publicado por el INEI.",
       "CLAUSULA CUARTA.- FORMA DE PAGO: El pago se realizara a {{PLAZO_PAGO}} de recibida la factura y la mercaderia conforme, mediante transferencia bancaria o deposito en cuenta.",
       "CLAUSULA QUINTA.- CALIDAD Y RECLAMOS: EL SUMINISTRANTE garantiza que los productos cumplen con las normas sanitarias (DIGESA), las Normas Tecnicas Peruanas aplicables y los registros sanitarios vigentes. EL SUMINISTRADO podra rechazar mercaderia defectuosa, vencida o que no cumpla especificaciones dentro de las 24 horas de recibida, conforme al articulo 1612 del Codigo Civil.",
@@ -292,7 +292,7 @@ const PLANTILLAS: ContractTemplate[] = [
       "CLAUSULA NOVENA.- JURISDICCION: Las partes se someten a los jueces comerciales de {{CIUDAD}}.",
       "En senal de conformidad, ambas partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
     ],
-    summaryTemplate: "Contrato de suministro periodico entre {{NOMBRE_SUMINISTRANTE}} (proveedor) y {{NOMBRE_SUMINISTRADO}} (comprador). Productos: {{LISTA_PRODUCTOS}}. Entregas: {{FRECUENCIA}}. Pedido minimo: S/ {{PEDIDO_MINIMO}}. Pago: {{PLAZO_PAGO}}. Vigencia: {{VIGENCIA_MESES}} meses.",
+    summaryTemplate: "Contrato de suministro periodico entre {{NOMBRE_SUMINISTRANTE}} (proveedor) y {{NOMBRE_SUMINISTRADO}} (comprador). Productos: {{LISTA_PRODUCTOS}}. Entregas: {{FRECUENCIA}}. Pedido mínimo: S/ {{PEDIDO_MINIMO}}. Pago: {{PLAZO_PAGO}}. Vigencia: {{VIGENCIA_MESES}} meses.",
   },
 
   // 6. ARRENDAMIENTO DE LOCAL COMERCIAL
@@ -328,7 +328,7 @@ const PLANTILLAS: ContractTemplate[] = [
       "CLAUSULA TERCERA.- GARANTIA: EL ARRENDATARIO entrega en calidad de garantia la suma equivalente a {{GARANTIA_MESES}} de renta, la cual sera devuelta al termino del contrato previa verificacion del buen estado del inmueble, descontando reparaciones pendientes y servicios impagos.",
       "CLAUSULA CUARTA.- PLAZO: El plazo del arrendamiento es de {{DURACION_MESES}} meses, iniciandose el {{FECHA_INICIO}}. La renovacion se pactara por acuerdo escrito de ambas partes con 30 dias de anticipacion al vencimiento.",
       "CLAUSULA QUINTA.- MANTENIMIENTO: EL ARRENDATARIO se obliga a mantener el inmueble en buen estado de conservacion y a realizar las reparaciones locativas (menores). Las reparaciones mayores o estructurales corresponden al ARRENDADOR (Art. 1680-1681 CC). Queda prohibido realizar modificaciones estructurales sin autorizacion escrita.",
-      "CLAUSULA SEXTA.- SERVICIOS: Los pagos de energia electrica, agua potable, internet y telefono corren por cuenta de EL ARRENDATARIO. El impuesto predial y los arbitrios municipales son de cargo de EL ARRENDADOR.",
+      "CLAUSULA SEXTA.- SERVICIOS: Los pagos de energia electrica, agua potable, internet y teléfono corren por cuenta de EL ARRENDATARIO. El impuesto predial y los arbitrios municipales son de cargo de EL ARRENDADOR.",
       "CLAUSULA SEPTIMA.- SUBARRENDAMIENTO: EL ARRENDATARIO no podra subarrendar total ni parcialmente el inmueble, ni ceder su posicion contractual, sin autorizacion expresa y escrita de EL ARRENDADOR (Art. 1692 CC).",
       "CLAUSULA OCTAVA.- DESALOJO EXPRESS (LEY 30201): Las partes acuerdan someterse al procedimiento de desalojo notarial establecido en la Ley 30201, por lo que el presente contrato se inscribira en el Registro de Predios de SUNARP. Ante el vencimiento del plazo o la falta de pago de dos meses de renta, EL ARRENDADOR podra iniciar el desalojo notarial sin necesidad de proceso judicial.",
       "CLAUSULA NOVENA.- DEVOLUCION: Al termino del contrato, EL ARRENDATARIO devolvera el inmueble en el mismo estado en que lo recibio, salvo el deterioro por uso normal.",
@@ -365,8 +365,8 @@ const PLANTILLAS: ContractTemplate[] = [
     clausulas: [
       "Conste por el presente documento, el contrato de distribucion comercial que celebran, de una parte, {{NOMBRE_PRINCIPAL}}, con RUC N.o {{RUC_PRINCIPAL}}, con domicilio en {{DOMICILIO_PRINCIPAL}}, a quien en adelante se denominara EL PRINCIPAL; y de otra parte, {{NOMBRE_DISTRIBUIDOR}}, con DNI/RUC N.o {{RUC_DISTRIBUIDOR}}, con domicilio en {{DOMICILIO_DISTRIBUIDOR}}, a quien en adelante se denominara EL DISTRIBUIDOR.",
       "CLAUSULA PRIMERA.- OBJETO: EL PRINCIPAL otorga a EL DISTRIBUIDOR la distribucion de los siguientes productos: {{PRODUCTOS}}, en la zona geografica de: {{ZONA}}.",
-      "CLAUSULA SEGUNDA.- EXCLUSIVIDAD: EL DISTRIBUIDOR sera el unico autorizado para comercializar los productos del PRINCIPAL en la zona asignada. A su vez, EL DISTRIBUIDOR se compromete a no comercializar productos de la competencia directa en la misma zona.",
-      "CLAUSULA TERCERA.- PRECIOS Y COMISIONES: EL DISTRIBUIDOR percibira una comision del {{COMISION}}% sobre el precio de venta al publico. Los precios de venta seran fijados por EL PRINCIPAL. Las liquidaciones se realizaran quincenalmente.",
+      "CLAUSULA SEGUNDA.- EXCLUSIVIDAD: EL DISTRIBUIDOR sera el único autorizado para comercializar los productos del PRINCIPAL en la zona asignada. A su vez, EL DISTRIBUIDOR se compromete a no comercializar productos de la competencia directa en la misma zona.",
+      "CLAUSULA TERCERA.- PRECIOS Y COMISIONES: EL DISTRIBUIDOR percibira una comision del {{COMISION}}% sobre el precio de venta al público. Los precios de venta seran fijados por EL PRINCIPAL. Las liquidaciones se realizaran quincenalmente.",
       "CLAUSULA CUARTA.- METAS MINIMAS: EL DISTRIBUIDOR se compromete a alcanzar una meta minima de ventas de S/ {{META_MENSUAL}} mensuales. El incumplimiento reiterado (3 meses consecutivos) facultara al PRINCIPAL a resolver el contrato y revocar la exclusividad.",
       "CLAUSULA QUINTA.- USO DE MARCA: EL DISTRIBUIDOR podra utilizar las marcas y signos distintivos del PRINCIPAL exclusivamente para la comercializacion de los productos objeto del contrato, conforme al D.Leg. 1075.",
       "CLAUSULA SEXTA.- VIGENCIA: El contrato tendra una vigencia de {{VIGENCIA_MESES}} meses, renovable por acuerdo de las partes.",
@@ -402,7 +402,7 @@ const PLANTILLAS: ContractTemplate[] = [
     ],
     clausulas: [
       "Conste por el presente documento, el contrato estimatorio (consignacion) que celebran de conformidad con los articulos 1804 al 1814 del Codigo Civil Peruano, de una parte, {{NOMBRE_CONSIGNANTE}}, con RUC N.o {{RUC_CONSIGNANTE}}, con domicilio en {{DOMICILIO_CONSIGNANTE}}, a quien en adelante se denominara EL CONSIGNANTE; y de otra parte, {{NOMBRE_CONSIGNATARIO}}, con RUC N.o {{RUC_CONSIGNATARIO}}, con domicilio en {{DOMICILIO_CONSIGNATARIO}}, a quien en adelante se denominara EL CONSIGNATARIO.",
-      "CLAUSULA PRIMERA.- OBJETO: EL CONSIGNANTE entrega al CONSIGNATARIO la siguiente mercaderia para su venta al publico: {{MERCADERIA}}. La propiedad de los bienes permanece en el CONSIGNANTE hasta que se realice la venta efectiva al consumidor final (Art. 1804 CC).",
+      "CLAUSULA PRIMERA.- OBJETO: EL CONSIGNANTE entrega al CONSIGNATARIO la siguiente mercaderia para su venta al público: {{MERCADERIA}}. La propiedad de los bienes permanece en el CONSIGNANTE hasta que se realice la venta efectiva al consumidor final (Art. 1804 CC).",
       "CLAUSULA SEGUNDA.- VALOR Y PRECIO: El valor total de la mercaderia consignada es de S/ {{VALOR_TOTAL}}. EL CONSIGNATARIO vendera al precio establecido por el CONSIGNANTE, reteniendo una comision del {{COMISION}}% sobre cada venta realizada.",
       "CLAUSULA TERCERA.- LIQUIDACION: EL CONSIGNATARIO liquidara las ventas realizadas cada {{PLAZO_LIQUIDACION}} dias calendario, entregando al CONSIGNANTE el importe correspondiente menos su comision. La liquidacion se acompanara de un detalle de ventas.",
       "CLAUSULA CUARTA.- DEVOLUCION: La mercaderia no vendida debera ser devuelta al CONSIGNANTE en las mismas condiciones en que fue recibida, a solicitud de cualquiera de las partes. El CONSIGNATARIO no podra disponer de la mercaderia para fines distintos a la venta (Art. 1808 CC).",
@@ -456,7 +456,7 @@ const PLANTILLAS: ContractTemplate[] = [
   {
     id: "transporte-mercancia",
     name: "Contrato de Transporte de Mercancias",
-    category: "Logistica",
+    category: "Logística",
     description: "Contrato para el transporte terrestre de mercaderia con seguro y responsabilidad.",
     legalBasis: "Ley 27181 (Ley Gral. de Transporte), D.S. 017-2009-MTC",
     icon: "Truck",
@@ -516,9 +516,9 @@ const PLANTILLAS: ContractTemplate[] = [
     clausulas: [
       "Conste por el presente documento, el acuerdo de confidencialidad que celebran en el marco del Decreto Legislativo 1075 — Ley de Propiedad Industrial y el articulo 1321 del Codigo Civil Peruano, de una parte, {{NOMBRE_REVELADOR}}, con RUC N.o {{RUC_REVELADOR}}, con domicilio en {{DOMICILIO_REVELADOR}}, a quien en adelante se denominara LA PARTE REVELADORA; y de otra parte, {{NOMBRE_RECEPTOR}}, identificado(a) con DNI/RUC N.o {{DNI_RECEPTOR}}, con domicilio en {{DOMICILIO_RECEPTOR}}, a quien en adelante se denominara LA PARTE RECEPTORA.",
       "CLAUSULA PRIMERA.- OBJETO: El presente acuerdo tiene por objeto proteger la informacion confidencial que LA PARTE REVELADORA compartira con LA PARTE RECEPTORA para el siguiente proposito: {{PROPOSITO}}.",
-      "CLAUSULA SEGUNDA.- DEFINICION DE INFORMACION CONFIDENCIAL: Se considera informacion confidencial toda informacion comercial, financiera, tecnica, de clientes, proveedores, precios, estrategias, bases de datos, procesos, know-how y cualquier otra informacion que LA PARTE REVELADORA identifique como confidencial, ya sea oral, escrita, electronica o en cualquier otro soporte.",
+      "CLAUSULA SEGUNDA.- DEFINICION DE INFORMACION CONFIDENCIAL: Se considera informacion confidencial toda informacion comercial, financiera, técnica, de clientes, proveedores, precios, estrategias, bases de datos, procesos, know-how y cualquier otra informacion que LA PARTE REVELADORA identifique como confidencial, ya sea oral, escrita, electrónica o en cualquier otro soporte.",
       "CLAUSULA TERCERA.- OBLIGACIONES DEL RECEPTOR: LA PARTE RECEPTORA se obliga a: (a) Mantener en estricta reserva la informacion confidencial; (b) No divulgar, publicar, reproducir ni transmitir dicha informacion a terceros; (c) Utilizar la informacion unicamente para el proposito declarado; (d) Restringir el acceso a la informacion solo al personal estrictamente necesario; (e) Devolver o destruir toda la informacion al termino del acuerdo.",
-      "CLAUSULA CUARTA.- EXCEPCIONES: No se considerara informacion confidencial aquella que: (a) Sea de dominio publico; (b) Ya era conocida por el receptor antes de la revelacion; (c) Sea revelada por mandato judicial o legal; (d) Sea desarrollada independientemente por el receptor.",
+      "CLAUSULA CUARTA.- EXCEPCIONES: No se considerara informacion confidencial aquella que: (a) Sea de dominio público; (b) Ya era conocida por el receptor antes de la revelacion; (c) Sea revelada por mandato judicial o legal; (d) Sea desarrollada independientemente por el receptor.",
       "CLAUSULA QUINTA.- DURACION: La obligacion de confidencialidad se mantendra durante {{DURACION_ANOS}} anos contados desde la fecha de suscripcion del presente acuerdo, subsistiendo incluso despues del termino de la relacion comercial.",
       "CLAUSULA SEXTA.- PENALIDAD: El incumplimiento de la obligacion de confidencialidad generara una penalidad convencional de S/ {{PENALIDAD}}, sin perjuicio de la indemnizacion por danos y perjuicios efectivamente causados (Art. 1321 CC).",
       "CLAUSULA SEPTIMA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}.",
@@ -681,14 +681,14 @@ const LEGAL_TOOLTIPS: Record<string, { explanation: string; example: string }> =
   RESOLUCION: { explanation: "Terminar/cancelar el contrato legalmente", example: "Si el proveedor no entrega la mercaderia en 3 ocasiones, puedes cancelar el contrato" },
   SANEAMIENTO: { explanation: "Garantia de que el bien esta libre de problemas", example: "Si compras un lote de arroz y resulta que esta vencido, el vendedor debe reemplazarlo" },
   CONFIDENCIALIDAD: { explanation: "Obligacion de no revelar informacion privada", example: "El contador no puede contarle a otros cuanto ganas o quienes son tus proveedores" },
-  RUC_VENDEDOR: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_EMPLEADOR: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_COMITENTE: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_PRINCIPAL: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_REVELADOR: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_SUMINISTRANTE: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_REMITENTE: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_CONSIGNANTE: { explanation: "Numero de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_VENDEDOR: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_EMPLEADOR: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_COMITENTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_PRINCIPAL: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_REVELADOR: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_SUMINISTRANTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_REMITENTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
+  RUC_CONSIGNANTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
   TASA_INTERES: { explanation: "IGV: Impuesto del 18% sobre ventas y servicios", example: "Si vendes S/100, S/15.25 es IGV que debes pagar a SUNAT" },
   PLAZO_GARANTIA: { explanation: "Garantia de que el bien esta libre de problemas (saneamiento)", example: "Si compras un lote de arroz y resulta que esta vencido, el vendedor debe reemplazarlo" },
   EXCLUSIVIDAD: { explanation: "Solo tu puedes vender esos productos en esa zona", example: "Si tienes exclusividad en Calleria, ningun otro distribuidor puede vender esos productos ahi" },
@@ -983,7 +983,7 @@ export default function ContratosModule() {
     let list = contratos;
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      list = list.filter(c => c.clienteNombre.toLowerCase().includes(q) || c.numero.toLowerCase().includes(q) || c.descripcion.toLowerCase().includes(q));
+      list = list.filter(c => c.clienteNombre.toLowerCase().includes(q) || c.número.toLowerCase().includes(q) || c.descripcion.toLowerCase().includes(q));
     }
     if (filterTipo !== "ALL") list = list.filter(c => c.tipo === filterTipo);
     if (filterEstado !== "ALL") list = list.filter(c => getEstado(c) === filterEstado);
@@ -1170,13 +1170,13 @@ export default function ContratosModule() {
   const downloadPDF = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const html = `<!DOCTYPE html><html><head><title>Contrato ${c.numero}</title>
+    const html = `<!DOCTYPE html><html><head><title>Contrato ${c.número}</title>
 <style>
 @media print { @page { size: A4; margin: 25mm; } body { margin: 0; } }
 body { font-family: 'Times New Roman', Georgia, serif; max-width: 680px; margin: 0 auto; padding: 40px 30px; font-size: 12.5px; line-height: 1.7; color: #111; }
 .header { text-align: center; border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 25px; }
 h1 { font-size: 16px; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 5px; }
-.numero { font-size: 13px; color: #555; }
+.número { font-size: 13px; color: #555; }
 .summary { background: #f8f8f0; border-left: 4px solid #00B4A6; padding: 12px 16px; margin: 20px 0; font-size: 12px; color: #333; }
 .summary strong { color: #00B4A6; }
 .clause { margin: 14px 0; text-align: justify; }
@@ -1185,7 +1185,7 @@ h1 { font-size: 16px; text-transform: uppercase; letter-spacing: 3px; margin: 0 
 .firma-line { border-top: 1px solid #000; padding-top: 8px; font-size: 11px; margin-top: 60px; }
 .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
 </style></head><body>
-<div class="header"><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><div class="numero">N.o ${c.numero}</div></div>
+<div class="header"><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><div class="número">N.o ${c.número}</div></div>
 ${summary ? `<div class="summary"><strong>RESUMEN:</strong> ${summary}</div>` : ""}
 ${content.split("\n\n").map(p => `<div class="clause">${p}</div>`).join("")}
 <div class="firmas">
@@ -1201,9 +1201,9 @@ ${content.split("\n\n").map(p => `<div class="clause">${p}</div>`).join("")}
   const downloadWord = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.numero}</title>
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.número}</title>
 <style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;}h1{text-align:center;font-size:14pt;text-transform:uppercase;}p{text-align:justify;margin:8pt 0;}</style></head>
-<body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.numero}</p>
+<body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.número}</p>
 ${summary ? `<p style="background:#f0f0e0;padding:10px;border-left:4px solid #00B4A6;"><b>RESUMEN:</b> ${summary}</p>` : ""}
 ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 <br/><br/><table width="100%"><tr><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">PRIMERA PARTE</td><td width="10%"></td><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">SEGUNDA PARTE</td></tr></table>
@@ -1211,24 +1211,24 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
     const blob = new Blob(["\ufeff" + html], { type: "application/msword" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `Contrato_${c.numero}.doc`; a.click();
+    a.href = url; a.download = `Contrato_${c.número}.doc`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const downloadTxt = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const text = `CONTRATO DE ${tipoLabel.toUpperCase()}\nN.o ${c.numero}\n${"=".repeat(50)}\n\nRESUMEN: ${summary}\n\n${"=".repeat(50)}\n\n${content}\n\n${"=".repeat(50)}\n\n_________________________          _________________________\n    PRIMERA PARTE                      SEGUNDA PARTE\n\nFecha: ${new Date().toLocaleDateString("es-PE")}`;
+    const text = `CONTRATO DE ${tipoLabel.toUpperCase()}\nN.o ${c.número}\n${"=".repeat(50)}\n\nRESUMEN: ${summary}\n\n${"=".repeat(50)}\n\n${content}\n\n${"=".repeat(50)}\n\n_________________________          _________________________\n    PRIMERA PARTE                      SEGUNDA PARTE\n\nFecha: ${new Date().toLocaleDateString("es-PE")}`;
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `Contrato_${c.numero}.txt`; a.click();
+    a.href = url; a.download = `Contrato_${c.número}.txt`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const copyToClipboard = async (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
-    const text = `CONTRATO N.o ${c.numero}\n\nRESUMEN: ${summary}\n\n${content}`;
+    const text = `CONTRATO N.o ${c.número}\n\nRESUMEN: ${summary}\n\n${content}`;
     try { await navigator.clipboard.writeText(text); } catch { /* noop */ }
   };
 
@@ -1264,7 +1264,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             Contratos
             {contratos.length > 0 && <span className="bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full font-semibold text-[var(--text-secondary)]">{contratos.length}</span>}
           </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Gestion legal de contratos con plantillas peruanas</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Gestión legal de contratos con plantillas peruanas</p>
         </div>
         <button
           onClick={() => setActiveTab("plantillas")}
@@ -1408,7 +1408,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="space-y-2">
                       {contratos.filter(c => getEstado(c) === "POR_VENCER").slice(0, 5).map(c => (
                         <div key={c.id} className="flex items-center justify-between text-xs">
-                          <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)]">{c.clienteNombre} — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
+                          <span className="text-[var(--data-warning)] dark:text-[var(--data-warning)]">{c.clienteNombre} — {c.número} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
                           <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning)]/40 text-[var(--data-warning)] font-bold hover:bg-[var(--data-warning)] transition-colors">
                             Ver
                           </button>
@@ -1462,7 +1462,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                     <input
                       type="text"
-                      placeholder="Buscar por cliente, numero..."
+                      placeholder="Buscar por cliente, número..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -1506,7 +1506,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.numero}</p>
+                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.número}</p>
                                 <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5">{TIPO_LABELS[c.tipo] || c.tipo}</p>
                               </div>
                               <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
@@ -1556,7 +1556,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             const estado = getEstado(c);
                             return (
                               <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors">
-                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
+                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.número}</td>
                                 <td className="px-4 py-3">
                                   <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
                                   <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDocumento}</p>
@@ -2088,7 +2088,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.número}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
                   <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">

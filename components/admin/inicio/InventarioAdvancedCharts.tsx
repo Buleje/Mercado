@@ -98,7 +98,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       const s = json.summary;
       if (s.total === 0) {
         toast("Sin data de demanda", {
-          description: "Necesitás historial de ventas para calcular EOQ.",
+          description: "Necesitas historial de ventas para calcular EOQ.",
         });
       } else {
         toast.success("EOQ calculado", {
@@ -480,7 +480,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "rotacion-categoria",
       render: () => (
         <DashboardSection
-          kicker="Rotación · últimos 30 días"
+          kicker="Rotación · rango activo"
           title="Velocidad y cobertura por categoría"
           kpis={[
             {
@@ -529,7 +529,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "salidas-stacked",
       render: () => (
         <DashboardSection
-          kicker="Salidas por categoría · últimos 14 días"
+          kicker="Salidas por categoría · rango activo"
           title="Composición diaria de unidades salidas"
           kpis={[
             { label: "Días con data", value: String(salidasStacked.rows.length), tone: "neutral" },
@@ -561,7 +561,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los últimos 14 días.
+              Sin datos en los rango activo.
             </div>
           )}
         </DashboardSection>
@@ -571,7 +571,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "waterfall-inventario",
       render: () => (
         <DashboardSection
-          kicker="Δ Inventario · últimos 30 días"
+          kicker="Δ Inventario · rango activo"
           title="De stock inicio a stock actual"
           kpis={[
             { label: "Stock inicio", value: fmtU(waterfall.stockInicio), tone: "neutral" },
@@ -596,7 +596,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
           : "—";
         return (
           <DashboardSection
-            kicker="Heatmap · categoría × día · últimos 30 días"
+            kicker="Heatmap · categoría × día · rango activo"
             title="Cuándo rota cada categoría"
             kpis={[
               { label: "Categorías", value: String(heatmapCatDia.cats.length), tone: "neutral" },
@@ -664,7 +664,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-                Sin datos en los últimos 30 días.
+                Sin datos en los rango activo.
               </div>
             )}
           </DashboardSection>

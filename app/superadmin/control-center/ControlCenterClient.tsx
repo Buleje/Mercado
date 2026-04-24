@@ -83,7 +83,7 @@ const PLATFORMS: readonly PlatformDef[] = [
   },
   {
     id: "vender",
-    name: "Vendé en Buleje",
+    name: "Vende en Buleje",
     description: "Landing B2B vendor onboarding.",
     href: "/vender",
     icon: Building2,
@@ -256,7 +256,7 @@ export function ControlCenterClient({
       {/* ── A. Launchpad ────────────────────────────────────────────── */}
       <AdminSection
         title="Plataformas"
-        description="Abrí cualquier destino en una pestaña nueva. La URL es copiable."
+        description="Abre cualquier destino en una pestaña nueva. La URL es copiable."
       >
         <AdminGrid cols={3} gap={4}>
           {PLATFORMS.map((p) => {

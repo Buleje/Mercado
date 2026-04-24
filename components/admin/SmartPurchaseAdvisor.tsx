@@ -399,7 +399,7 @@ export default function SmartPurchaseAdvisor() {
                       <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Analisis de stock</p>
                         <p className="text-sm font-medium text-[var(--text-primary)]">
-                          Stock minimo: {item.product.stockMin} {item.product.unit ?? "u"}
+                          Stock mínimo: {item.product.stockMin} {item.product.unit ?? "u"}
                         </p>
                         <p className="text-sm font-medium text-[var(--text-primary)]">
                           Venta diaria: {Math.round((item.weeklySales / 7) * 10) / 10} {item.product.unit ?? "u"}
@@ -419,7 +419,7 @@ export default function SmartPurchaseAdvisor() {
                           {item.suggestedQty} {item.product.unit ?? "u"}
                         </p>
                         <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                          Cubre 14 dias de ventas + stock minimo
+                          Cubre 14 dias de ventas + stock mínimo
                         </p>
                         {item.bestCost && (
                           <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">

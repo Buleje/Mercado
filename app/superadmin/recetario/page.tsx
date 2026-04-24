@@ -71,10 +71,10 @@ const CATEGORIAS = [
   "Bebidas",
 ];
 
-const DIFICULTADES = ["Facil", "Media", "Dificil"];
+const DIFICULTADES = ["Fácil", "Media", "Dificil"];
 
 const DIFICULTAD_BADGE: Record<string, string> = {
-  Facil: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
+  Fácil: "bg-[var(--data-success-100)] text-[var(--data-success)] dark:bg-[var(--data-success)]/30 dark:text-[var(--data-success)]",
   Media: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
   Dificil: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
 };

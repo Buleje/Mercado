@@ -51,7 +51,7 @@ export function RecommendationsEngine({
         <FlashDealsOfTheDay initialProducts={initialProducts} />
       )}
 
-      {/* Slot 5: Clientes como vos compran (social proof) */}
+      {/* Slot 5: Clientes como tú compran (social proof) */}
       {initialProducts.length > 0 && (
         <CustomersLikeYou initialProducts={initialProducts} />
       )}

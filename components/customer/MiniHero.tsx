@@ -12,7 +12,7 @@
  * <MiniHero
  *   kicker="GIFT CARDS"
  *   title="Tus tarjetas de regalo"
- *   description="Recibí y enviá, sin vencimiento."
+ *   description="Recibe y enviá, sin vencimiento."
  *   illustration={<GiftCardIlustrada size={140} />}
  *   stats={[
  *     { label: "Activas", value: 3 },

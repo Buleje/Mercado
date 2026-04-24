@@ -8,7 +8,7 @@ import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot"
 export const metadata: Metadata = {
   title: "404 — El paiche se fue por otro río | Buleje",
   description:
-    "La pagina que buscas no existe o fue movida. Explora productos, zonas de cobertura o vuelve al inicio.",
+    "La página que buscas no existe o fue movida. Explora productos, zonas de cobertura o vuelve al inicio.",
   robots: { index: false, follow: true },
 };
 
@@ -31,8 +31,8 @@ export default function NotFound() {
           El paiche se fue por otro río
         </h1>
         <p className="mt-4 text-lg text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto">
-          La página que buscás no existe. Pero tu próxima compra sí —
-          volvé al inicio o buscá lo que necesitás.
+          La página que buscas no existe. Pero tu próxima compra sí —
+          vuelve al inicio o busca lo que necesitas.
         </p>
 
         {/* Search prompt */}
@@ -97,7 +97,7 @@ export default function NotFound() {
         </div>
 
         <p className="mt-8 text-xs text-muted">
-          Buleje — Software ERP para Bodegas del Peru
+          Buleje — Software ERP para Bodegas del Perú
         </p>
       </div>
     </main>

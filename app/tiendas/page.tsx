@@ -7,7 +7,7 @@ const BASE_URL = "https://www.buleje.pe";
 export const metadata: Metadata = {
   title: "Tiendas en Pucallpa | Buleje",
   description:
-    "Todas las bodegas, minimarkets y tiendas de Pucallpa en un solo lugar. Buscá por zona, categoría y recibí delivery rápido con Yape o efectivo.",
+    "Todas las bodegas, minimarkets y tiendas de Pucallpa en un solo lugar. Busca por zona, categoría y recibe delivery rápido con Yape o efectivo.",
   alternates: {
     canonical: `${BASE_URL}/tiendas`,
   },
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Tiendas en Pucallpa | Buleje",
     description:
-      "Encontrá bodegas y tiendas cerca tuyo en Pucallpa. Delivery rápido, pago Yape o efectivo.",
+      "Encuentra bodegas y tiendas cerca tuyo en Pucallpa. Delivery rápido, pago Yape o efectivo.",
     url: `${BASE_URL}/tiendas`,
     siteName: "Buleje",
     locale: "es_PE",

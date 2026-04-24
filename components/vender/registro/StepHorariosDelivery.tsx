@@ -62,7 +62,7 @@ export default function StepHorariosDelivery({
           Horarios y entregas
         </h2>
         <p className="text-sm text-[var(--text-secondary)]">
-          Cuándo recibís pedidos y a qué zonas entregás. Después podés cambiarlo cuando quieras.
+          Cuándo recibes pedidos y a qué zonas entregás. Después puedes cambiarlo cuando quieras.
         </p>
       </header>
 
@@ -73,7 +73,7 @@ export default function StepHorariosDelivery({
             Horario semanal
           </p>
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Marcá cerrado los días que descansás
+            Marca cerrado los días que descansás
           </span>
         </div>
         <ul className="space-y-2">
@@ -186,7 +186,7 @@ export default function StepHorariosDelivery({
         </div>
         <FieldError message={errors.tarifaDelivery} />
         <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          El cliente lo paga aparte. Si querés delivery gratis, poné S/ 0.
+          El cliente lo paga aparte. Si quieres delivery gratis, pon S/ 0.
         </p>
       </div>
     </div>

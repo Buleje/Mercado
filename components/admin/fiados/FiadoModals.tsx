@@ -272,13 +272,13 @@ export default function FiadoModals({
                 {/* Distribution preview */}
                 {cobroMonto && parseFloat(cobroMonto) > 0 && (
                   <div className="bg-primary/5 rounded-xl p-3 space-y-1.5">
-                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Distribucion (antiguo primero)</p>
+                    <p className="text-xs font-bold text-[var(--text-secondary)]">Distribucion (antiguo primero)</p>
                     {computeDistribution(parseFloat(cobroMonto)).map((d, i) => (
                       <div key={i} className="flex items-center justify-between text-xs">
                         <span className="text-[var(--text-primary)]">{d.customerName}</span>
                         <span className="font-bold">
                           {formatCurrency(d.pago)}
-                          <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">({d.tipo})</span>
+                          <span className="ml-1 text-xs text-[var(--text-tertiary)]">({d.tipo})</span>
                         </span>
                       </div>
                     ))}
@@ -357,7 +357,7 @@ export default function FiadoModals({
                     <span className="font-bold text-[var(--text-primary)]">{reciboData.clienteNombre}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)] print:text-black">Telefono:</span>
+                    <span className="text-[var(--text-secondary)] print:text-black">Teléfono:</span>
                     <span className="font-bold text-[var(--text-secondary)]">{reciboData.clientePhone}</span>
                   </div>
                   <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
@@ -578,7 +578,7 @@ export default function FiadoModals({
                     <p className="text-xs text-[var(--text-tertiary)] mb-1">Firma:</p>
                     <div className="h-[80px] border-b border-gray-400" />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-right">
+                  <p className="text-xs text-[var(--text-tertiary)] text-right">
                     Fecha: {new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
                   </p>
                 </div>
@@ -731,8 +731,8 @@ export default function FiadoModals({
                       <>
                         {!hasAddresses && (
                           <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl p-3">
-                            <p className="text-xs text-[var(--data-warning)] font-bold">Registra direcciones de tus clientes para usar esta funcion al maximo</p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning)] mt-0.5">Agrega direcciones en la descripcion del fiado (ej: &quot;Jr. Ucayali 123, Centro&quot;)</p>
+                            <p className="text-xs text-[var(--data-warning)] font-bold">Registra direcciones de tus clientes para usar esta funcion al máximo</p>
+                            <p className="text-xs text-[var(--data-warning)] mt-0.5">Agrega direcciones en la descripcion del fiado (ej: &quot;Jr. Ucayali 123, Centro&quot;)</p>
                           </div>
                         )}
                         {Array.from(zones.entries()).map(([zone, items]) => {
@@ -752,7 +752,7 @@ export default function FiadoModals({
                                     <div key={f.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                                       <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
-                                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{formatCurrency(f.saldo)}</p>
+                                        <p className="text-xs text-[var(--text-secondary)]">{formatCurrency(f.saldo)}</p>
                                       </div>
                                       <div className="flex gap-1 shrink-0">
                                         <a

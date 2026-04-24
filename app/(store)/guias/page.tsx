@@ -384,7 +384,7 @@ export default async function GuiasPage({ searchParams }: GuiasPageProps) {
                   Nuevas guías cada semana
                 </SectionTitle>
                 <BodyText className="mb-6 text-[var(--text-secondary)]">
-                  Consejos para comprar y cocinar mejor, sin spam. Cancelá cuando quieras.
+                  Consejos para comprar y cocinar mejor, sin spam. Cancela cuando quieras.
                 </BodyText>
 
                 {/* Form stub — action a implementar con API route */}

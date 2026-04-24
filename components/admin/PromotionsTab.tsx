@@ -436,21 +436,21 @@ export default function PromotionsTab() {
           </CardTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Activas</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Activas</p>
               <p className="text-lg font-extrabold text-[var(--data-success)]">{active.length}</p>
             </div>
             <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Total usos est.</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Total usos est.</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{promoMetrics.reduce((s, p) => s + p.estimatedUses, 0)}</p>
             </div>
             <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Revenue est.</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Revenue est.</p>
               <p className="text-lg font-extrabold text-primary">S/{promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0).toFixed(0)}</p>
             </div>
             <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase">Mas popular</p>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Mas popular</p>
               <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground truncate">{topPromo?.name || "-"}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
+              <p className="text-xs text-[var(--text-tertiary)]">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
             </div>
           </div>
           {/* Badges de rendimiento inline por promo */}

@@ -31,7 +31,7 @@ const SaleSchema = z.object({
 }).strip(); // Strip unknown fields (e.g. _offlineId from offline queue)
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
   const raw = await req.json();

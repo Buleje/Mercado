@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * CountUpNumber — animacion de numero contando desde 0 hasta el target.
+ * CountUpNumber — animacion de número contando desde 0 hasta el target.
  *
  * Uso: landing heros, KPI cards on-mount, celebrations.
  * Duracion: ~800ms con easing editorial.
