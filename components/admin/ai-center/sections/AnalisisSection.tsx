@@ -52,16 +52,16 @@ function SubTabBar({
   onChange: (t: SubTab) => void;
 }) {
   return (
-    <div className="flex gap-0 border-b border-[var(--rule-base)] mb-4">
+    <div className="flex gap-1 border-b border-[var(--rule-soft)] mb-5 -mx-1">
       {SUBTABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
           className={cn(
-            "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+            "px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors",
             active === tab.id
-              ? "text-[var(--data-success)] border-[var(--data-success)]/30 dark:text-[var(--data-success)]"
-              : "text-[var(--text-secondary)] border-transparent hover:text-[var(--text-secondary)] dark:hover:text-gray-200",
+              ? "text-[var(--text-primary)] border-[var(--text-primary)]"
+              : "text-[var(--text-tertiary)] border-transparent hover:text-[var(--text-secondary)]",
           )}
         >
           {tab.label}
@@ -93,16 +93,16 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)]">
-              <th className="text-left py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
+              <th className="text-left py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Producto
               </th>
-              <th className="text-right py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
+              <th className="text-right py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Costo
               </th>
-              <th className="text-right py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
+              <th className="text-right py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Precio
               </th>
-              <th className="text-right py-2 pr-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
+              <th className="text-right py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Margen
               </th>
               <th className="text-left py-2 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">

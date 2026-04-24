@@ -251,22 +251,47 @@ interface DailyChecklistProps {
 function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
   const total = CHECKLIST_ITEMS.length;
+  const pct = Math.round((completedCount / total) * 100);
 
   return (
-    <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3 dark:border-[var(--rule-base)]">
-        <div className="flex items-center gap-2">
-          <CheckSquare className="h-4 w-4 text-[var(--data-success)]" />
-          <span className="text-sm font-medium text-[var(--text-primary)]">
-            Checklist del día
-          </span>
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 overflow-hidden">
+      <div className="border-b border-[var(--rule-soft)] px-5 py-4 dark:border-[var(--rule-base)]">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+              <CheckSquare className="h-5 w-5 text-[var(--data-success)]" />
+            </span>
+            <div>
+              <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                Checklist del día
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
+                Hábitos diarios para no olvidarte de nada
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
+              {completedCount}
+              <span className="text-base font-bold text-[var(--text-tertiary)]">/{total}</span>
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              {pct}% hecho
+            </p>
+          </div>
         </div>
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {completedCount}/{total} completados
-        </span>
+        <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              pct === 100 ? "bg-[var(--data-success)]" : "bg-[var(--text-primary)]",
+            )}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </div>
 
-      <div className="divide-y divide-gray-50 dark:divide-gray-800">
+      <div className="divide-y divide-[var(--rule-soft)] dark:divide-[var(--rule-base)]">
         {CHECKLIST_ITEMS.map((item) => {
           const done = !!checked[item.id];
           return (
@@ -274,21 +299,24 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
               key={item.id}
               onClick={() => onToggle(item.id)}
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                "hover:bg-[var(--surface-sunken)]/50",
+                "flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors",
+                "hover:bg-[var(--surface-sunken)]/60",
+                done && "bg-[var(--surface-sunken)]/40",
               )}
             >
               {done ? (
-                <CheckSquare className="h-4 w-4 shrink-0 text-[var(--data-success)]" />
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[var(--data-success)]">
+                  <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                </span>
               ) : (
-                <Square className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
+                <span className="inline-flex h-5 w-5 shrink-0 rounded-md border-2 border-[var(--rule-base)] hover:border-[var(--text-primary)]/40 transition-colors" />
               )}
               <span
                 className={cn(
-                  "text-sm",
+                  "text-[15px] font-semibold transition-colors",
                   done
-                    ? "text-[var(--text-tertiary)] line-through dark:text-[var(--text-secondary)]"
-                    : "text-[var(--text-secondary)]",
+                    ? "text-[var(--text-tertiary)] line-through"
+                    : "text-[var(--text-primary)]",
                 )}
               >
                 {item.label}
@@ -299,10 +327,10 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
       </div>
 
       {completedCount === total && (
-        <div className="flex items-center gap-2 border-t border-[var(--rule-soft)] px-4 py-2.5 dark:border-[var(--rule-base)]">
+        <div className="flex items-center justify-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-5 py-3">
           <Check className="h-4 w-4 text-[var(--data-success)]" />
-          <span className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">
-            Checklist completo
+          <span className="text-sm font-extrabold text-[var(--data-success)]">
+            ¡Día completo! Buen trabajo.
           </span>
         </div>
       )}
@@ -322,24 +350,38 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
 
   if (done) return null;
 
+  // Color del borde lateral segun prioridad — feedback visual rapido.
+  const borderColor =
+    task.priority === "urgente"
+      ? "var(--data-error)"
+      : task.priority === "importante"
+        ? "var(--data-warning)"
+        : "var(--text-tertiary)";
+
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-[var(--rule-base)] bg-white px-4 py-3",
+        "flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-white px-5 py-4",
         "dark:border-[var(--rule-base)] dark:bg-gray-900",
+        "border-l-4 transition-all hover:shadow-sm",
       )}
+      style={{ borderLeftColor: borderColor }}
     >
       {/* Dot */}
-      <div className="mt-1 flex shrink-0 items-center gap-1.5">
-        <span className={cn("h-2 w-2 rounded-full", config.dotClass)} />
-      </div>
+      <span className={cn("mt-2 h-2.5 w-2.5 rounded-full shrink-0", config.dotClass)} />
 
       {/* Icon + Content */}
-      <div className="flex min-w-0 flex-1 items-start gap-2">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)]">
+          <Icon className="h-4 w-4 text-[var(--text-secondary)]" />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-[var(--text-primary)]">{task.description}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{task.impact}</p>
+          <p className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">
+            {task.description}
+          </p>
+          <p className="mt-1 text-[13px] text-[var(--text-tertiary)] leading-relaxed">
+            {task.impact}
+          </p>
         </div>
       </div>
 
@@ -347,12 +389,12 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
       <button
         onClick={() => onMarkDone(task.id)}
         className={cn(
-          "shrink-0 rounded border border-[var(--rule-base)] px-2.5 py-1 text-xs text-[var(--text-secondary)]",
-          "transition-colors hover:border-[var(--data-success)]/30 hover:text-[var(--data-success)]",
-          "dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:border-[var(--data-success)]/30 dark:hover:text-[var(--data-success)]",
+          "shrink-0 inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
+          "transition-colors hover:border-[var(--data-success)] hover:bg-[var(--data-success)] hover:text-white",
         )}
       >
-        Hecho
+        <Check className="h-3.5 w-3.5" />
+        <span>Hecho</span>
       </button>
     </div>
   );
@@ -371,12 +413,25 @@ function PriorityGroup({ priority, tasks, doneTasks, onMarkDone }: PriorityGroup
   if (visible.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5">
-        <span className={cn("text-xs font-medium", config.labelClass)}>{config.label}</span>
-        <span className="text-xs text-[var(--text-tertiary)]">({visible.length})</span>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md",
+            priority === "urgente"
+              ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error)]"
+              : priority === "importante"
+                ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning)]"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+          )}
+        >
+          {config.label}
+        </span>
+        <span className="text-[13px] font-bold tabular-nums text-[var(--text-tertiary)]">
+          {visible.length} {visible.length === 1 ? "tarea" : "tareas"}
+        </span>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {visible.map((task) => (
           <TaskCard
             key={task.id}

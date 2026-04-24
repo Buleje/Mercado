@@ -110,14 +110,18 @@ function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProp
   }[accent];
 
   return (
-    <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="flex items-center gap-2 mb-2">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 h-full flex flex-col justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
+          {label}
+        </span>
         <Icon className={cn("w-4 h-4 shrink-0", iconColor)} />
-        <span className="text-xs text-[var(--text-tertiary)] truncate">{label}</span>
       </div>
-      <p className={cn("text-xl font-semibold leading-none", valueColor)}>{value}</p>
+      <p className={cn("text-2xl sm:text-3xl font-extrabold leading-none tabular-nums tracking-tight", valueColor)}>
+        {value}
+      </p>
       {sub && (
-        <p className="text-xs text-[var(--text-tertiary)] mt-1">{sub}</p>
+        <p className="text-xs font-medium text-[var(--text-secondary)]">{sub}</p>
       )}
     </div>
   );
