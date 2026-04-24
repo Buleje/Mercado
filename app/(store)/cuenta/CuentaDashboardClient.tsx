@@ -14,6 +14,7 @@
 
 import { useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
+import { useCustomerIntelligence } from "@/hooks/use-customer-intelligence";
 import { MOCK_DASHBOARD } from "@/lib/customer-dashboard.mock";
 import { Breadcrumbs } from "@/components/ui-system/Breadcrumbs";
 import WelcomeHero from "@/components/customer/cuenta-dashboard/WelcomeHero";
@@ -22,9 +23,39 @@ import SectionsGrid from "@/components/customer/cuenta-dashboard/SectionsGrid";
 import PersonalizedRecommendations from "@/components/customer/cuenta-dashboard/PersonalizedRecommendations";
 import ActivityFeed from "@/components/customer/cuenta-dashboard/ActivityFeed";
 import CuentaFooter from "@/components/customer/cuenta-dashboard/CuentaFooter";
+import LoyaltyPointsWidget from "@/components/ui-system/LoyaltyPointsWidget";
+
+// Threshold de puntos por tier — consistente con hooks/use-customer-intelligence.ts.
+const TIER_THRESHOLDS: Record<"bronce" | "plata" | "oro" | "diamante", number> = {
+  bronce: 0,
+  plata: 500,
+  oro: 2000,
+  diamante: 5000,
+};
+const TIER_ORDER: Array<"bronce" | "plata" | "oro" | "diamante"> = [
+  "bronce",
+  "plata",
+  "oro",
+  "diamante",
+];
+
+function nextTierInfo(
+  currentTier: "bronce" | "plata" | "oro" | "diamante",
+  points: number,
+): { nextTierName: string | null; pointsToNextTier: number | null } {
+  const idx = TIER_ORDER.indexOf(currentTier);
+  const next = TIER_ORDER[idx + 1];
+  if (!next) return { nextTierName: null, pointsToNextTier: null };
+  const threshold = TIER_THRESHOLDS[next];
+  return {
+    nextTierName: next.charAt(0).toUpperCase() + next.slice(1),
+    pointsToNextTier: Math.max(0, threshold - points),
+  };
+}
 
 export function CuentaDashboardClient() {
   const { customer, clear } = useCustomer();
+  const { data: intelligence } = useCustomerIntelligence();
   const data = MOCK_DASHBOARD;
 
   // Si hay customer en contexto, usamos su nombre real. Si no, fallback a mock.
@@ -36,6 +67,15 @@ export function CuentaDashboardClient() {
     clear();
   }, [clear]);
 
+  // Loyalty widget visible solo si el user es socio o tiene puntos
+  const showLoyalty =
+    isAuthenticated && intelligence.loyaltyTier !== null && intelligence.loyaltyPoints > 0;
+  const tierForWidget = intelligence.loyaltyTier ?? "bronce";
+  const { nextTierName, pointsToNextTier } = nextTierInfo(
+    tierForWidget,
+    intelligence.loyaltyPoints,
+  );
+
   return (
     <div className="space-y-8">
       <Breadcrumbs items={[{ label: "Mi cuenta" }]} />
@@ -45,6 +85,17 @@ export function CuentaDashboardClient() {
         data={data}
         isAuthenticated={isAuthenticated}
       />
+
+      {showLoyalty && (
+        <LoyaltyPointsWidget
+          points={intelligence.loyaltyPoints}
+          tier={tierForWidget}
+          nextTierName={nextTierName}
+          pointsToNextTier={pointsToNextTier}
+          href="/cuenta/socio-buleje"
+          variant="full"
+        />
+      )}
 
       <QuickActionsGrid data={data} />
 
