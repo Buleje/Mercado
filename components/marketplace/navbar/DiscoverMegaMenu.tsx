@@ -39,6 +39,12 @@ const MEGA_ITEMS: MegaMenuItem[] = [
     href: "/marketplace/en-vivo",
   },
   {
+    icon: Compass,
+    title: "Para vos",
+    description: "Feed curado según tu historial y ofertas.",
+    href: "/marketplace/para-vos",
+  },
+  {
     icon: Sparkles,
     title: "Asistente IA",
     description: "Preguntale al bot sobre frescura y usos.",
@@ -159,7 +165,7 @@ export default function DiscoverMegaMenu({
           onClick={() => onNavigate?.()}
           className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-bold text-primary hover:border-primary/60 hover:bg-primary/10 transition-colors"
         >
-          <span>¿Nuevo en Buleje? Conocé todas las novedades</span>
+          <span>¿Nuevo en Buleje? Conoce todas las novedades</span>
           <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
         </Link>
       </div>
@@ -244,7 +250,7 @@ export default function DiscoverMegaMenu({
             >
               <span className="inline-flex items-center gap-2">
                 <Store className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                ¿Nuevo en Buleje? Conocé todas las novedades
+                ¿Nuevo en Buleje? Conoce todas las novedades
               </span>
               <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
             </Link>
