@@ -443,6 +443,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "caja",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker={`Flujo de caja · ${rangeLabel}`}
           title="Ingresos, egresos y saldo neto"
           kpis={[
@@ -477,6 +478,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "inventario",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Inventario · top 7 categorías"
           title="Stock, valor y SKUs por categoría"
           kpis={[
@@ -511,6 +513,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "compras",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
           title="Monto, órdenes y deuda por proveedor"
           kpis={[
@@ -545,6 +548,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "clientes",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker={`Clientes · ${rangeLabel}`}
           title="Nuevos, recurrentes y ticket promedio"
           kpis={[
@@ -579,6 +583,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "productos",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker={`Productos · top 7 · ${rangeLabel}`}
           title="Unidades, ingresos y margen por producto"
           kpis={[

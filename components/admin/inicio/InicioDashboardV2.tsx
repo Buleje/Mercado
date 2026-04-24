@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+// CardTitle removido — header inline eliminado en Row 2.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "./DashboardDateRange";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
@@ -50,13 +50,7 @@ interface OverviewData {
 // duplicado con TodayHub que tambien fue removido. Si se restaura el hero,
 // volver a declararlos aqui (estaban con las 5 variantes: diario/semanal/
 // mensual/anual/personalizado).
-const PRESET_CORRELATION: Record<string, string> = {
-  diario: "Correlación · últimas horas",
-  semanal: "Correlación · rango activo",
-  mensual: "Correlación · últimos días",
-  anual: "Correlación · últimos meses",
-  personalizado: "Correlación · período",
-};
+// PRESET_CORRELATION removido — header inline eliminado en Row 2.
 const PRESET_META_LABEL: Record<string, string> = {
   diario: "Meta del día",
   semanal: "Meta de la semana",
@@ -257,14 +251,8 @@ export default function InicioDashboardV2({ dateRange }: Props) {
 
       {/* ── Row 2: Compound chart — 3 series correlacionadas ── */}
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
-        <header className="mb-5">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-            {PRESET_CORRELATION[presetKey] ?? PRESET_CORRELATION.diario}
-          </p>
-          <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            Ventas, pedidos y clientes
-          </CardTitle>
-        </header>
+        {/* Header removido 2026-04-24 para consistencia con el resto de
+            secciones (hideHeader pattern). */}
         <BulejeComposedChart
           data={weeklyData}
           xKey="day"

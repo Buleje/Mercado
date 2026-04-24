@@ -16,3 +16,7 @@ export { MicroGauge } from "./MicroGauge";
 export { DashboardSectionHeader } from "./DashboardSectionHeader";
 export { DashboardSection, type SectionKPI } from "./DashboardSection";
 export { BulejeLoader, BulejeSkeleton, BulejeDashboardSkeleton } from "./BulejeLoader";
+export {
+  ChartPresentationModal,
+  type ChartPresentationItem,
+} from "./ChartPresentationModal";

@@ -1,11 +1,10 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Sparkles, ArrowUpRight, Lightbulb } from "@buleje/design-system/icons";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 import { PrimaryButton } from "@buleje/design-system";
-import { BulejeSparkline } from "@/components/ui-system/charts";
 
 /**
  * AdminInsightCard — hero card "Hoy" del admin.
@@ -63,10 +62,129 @@ interface Props {
   heroDelta?: number;
   heroDeltaLabel?: string;
   trend?: number[];
+  /** Labels opcionales para cada punto del trend (ej dias de la semana). */
+  trendLabels?: string[];
   insight?: InsightAction;
   contextualMetrics?: ContextualMetric[];
   loading?: boolean;
   className?: string;
+}
+
+/**
+ * WeekStripChart — reemplaza el sparkline plano por un strip informativo.
+ *
+ * Muestra:
+ *  - 1 mini barra vertical por dia (N dias segun trend.length)
+ *  - Label de dia arriba (L M X J V S D o fechas cortas)
+ *  - Valor numerico arriba de cada barra (truncado: S/342 -> "342")
+ *  - Dia actual destacado con color accent + marca "HOY"
+ *  - Mejor dia marcado con un dot dorado + valor en bold
+ *  - Linea horizontal del promedio con label
+ *
+ * Aporta info real: ve cuanto vendiste cada dia y comparas facil.
+ */
+function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] }) {
+  const { max, avg, maxIdx, todayIdx, displayData } = useMemo(() => {
+    const max = Math.max(...data, 1);
+    const avg = data.reduce((s, v) => s + v, 0) / Math.max(1, data.length);
+    const maxIdx = data.indexOf(max);
+    const todayIdx = data.length - 1;
+    const defaultDays = ["L", "M", "X", "J", "V", "S", "D"];
+    const displayData = data.map((value, i) => {
+      const label = labels?.[i] ?? defaultDays[i % 7];
+      return { value, label, isToday: i === todayIdx, isMax: i === maxIdx };
+    });
+    return { max, avg, maxIdx, todayIdx, displayData };
+  }, [data, labels]);
+
+  const avgPct = (avg / max) * 100;
+
+  // Formateador compacto: 4520 -> "4.5k", 342 -> "342"
+  const fmt = (n: number) => {
+    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+    return n.toFixed(0);
+  };
+
+  return (
+    <div className="w-full">
+      {/* Chart area — 7 barras con label encima */}
+      <div className="relative flex items-end justify-between gap-1 h-20">
+        {/* Linea del promedio */}
+        <div
+          className="absolute left-0 right-0 border-t border-dashed border-[var(--text-tertiary)] opacity-40 pointer-events-none"
+          style={{ bottom: `${avgPct}%` }}
+          aria-hidden
+        >
+          <span className="absolute right-0 -top-3 text-[length:var(--ts-3xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] bg-[var(--surface-raised)] px-1">
+            prom · {fmt(avg)}
+          </span>
+        </div>
+
+        {displayData.map((d, i) => {
+          const heightPct = Math.max(6, (d.value / max) * 100);
+          return (
+            <div
+              key={i}
+              className="flex-1 flex flex-col items-center justify-end gap-1 relative group"
+              title={`${d.label}: ${d.value.toLocaleString("es-PE")}`}
+            >
+              <span
+                className={cn(
+                  "text-[length:var(--ts-3xs)] font-bold tabular-nums leading-none",
+                  d.isToday
+                    ? "text-[color:var(--section-primary,var(--text-primary))]"
+                    : d.isMax
+                      ? "text-[var(--data-warning)]"
+                      : "text-[var(--text-tertiary)]",
+                )}
+              >
+                {fmt(d.value)}
+              </span>
+              <div
+                className={cn(
+                  "w-full rounded-t-sm transition-all",
+                  d.isToday
+                    ? "bg-[color:var(--section-primary,var(--text-primary))]"
+                    : d.isMax
+                      ? "bg-[var(--data-warning)] opacity-80"
+                      : "bg-[var(--text-tertiary)] opacity-30 group-hover:opacity-60",
+                )}
+                style={{ height: `${heightPct}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Labels inferiores con etiquetas HOY / MEJOR */}
+      <div className="flex items-start justify-between gap-1 mt-1.5">
+        {displayData.map((d, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+            <span
+              className={cn(
+                "text-[length:var(--ts-3xs)] font-bold uppercase tracking-wider tabular-nums",
+                d.isToday
+                  ? "text-[color:var(--section-primary,var(--text-primary))]"
+                  : "text-[var(--text-tertiary)]",
+              )}
+            >
+              {d.label}
+            </span>
+            {d.isToday && (
+              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[color:var(--section-primary,var(--text-primary))]">
+                hoy
+              </span>
+            )}
+            {d.isMax && i !== todayIdx && (
+              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning)]">
+                pico
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export const AdminInsightCard = memo(function AdminInsightCard({
@@ -79,6 +197,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
   heroDelta,
   heroDeltaLabel = "vs ayer",
   trend,
+  trendLabels,
   insight,
   contextualMetrics = [],
   loading = false,
@@ -93,7 +212,8 @@ export const AdminInsightCard = memo(function AdminInsightCard({
       ? "text-[var(--data-error)]"
       : "text-[var(--text-tertiary)]";
 
-  const sparklineTrend = deltaUp ? "up" : deltaDown ? "down" : "neutral";
+  // sparklineTrend eliminado — reemplazado por WeekStripChart que infiere
+  // el color via CSS var --section-primary.
 
   return (
     <section
@@ -147,15 +267,12 @@ export const AdminInsightCard = memo(function AdminInsightCard({
           )}
         </div>
 
-        {/* Sparkline trend — top-right */}
+        {/* WeekStripChart — reemplaza el sparkline plano con info real:
+            mini-barras + valor por dia + HOY destacado + PICO + promedio. */}
         {trend && trend.length > 1 && !loading && (
-          <div className="lg:col-span-7 flex items-end justify-end">
-            <div className="w-full max-w-sm">
-              <BulejeSparkline data={trend} trend={sparklineTrend} width="100%" height={64} strokeWidth={2} />
-              <div className="flex justify-between mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] tabular-nums">
-                <span>Hace 7 días</span>
-                <span>Hoy</span>
-              </div>
+          <div className="lg:col-span-7 flex items-end">
+            <div className="w-full">
+              <WeekStripChart data={trend} labels={trendLabels} />
             </div>
           </div>
         )}

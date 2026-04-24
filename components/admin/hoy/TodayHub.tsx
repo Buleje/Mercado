@@ -214,6 +214,7 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, clas
         heroDelta={heroDelta}
         heroDeltaLabel={deltaLabel}
         trend={data.hero.sparkline}
+        trendLabels={data.hero.sparklineLabels}
         contextualMetrics={contextualMetrics}
         insight={insightAction}
       />

@@ -21,12 +21,18 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Eye, EyeOff, RotateCcw } from "@buleje/design-system/icons";
+import { GripVertical, Eye, EyeOff, RotateCcw, Maximize2 } from "@buleje/design-system/icons";
 import { SECTION_PALETTE } from "@/components/ui-system/charts/palette";
+import { ChartPresentationModal } from "./_shared/ChartPresentationModal";
 
 export interface DraggableItem {
   id: string;
   render: () => ReactNode;
+  /**
+   * Titulo legible para mostrar en el modal de presentacion (header +
+   * thumbnail strip). Opcional — si no se provee se usa el id.
+   */
+  title?: string;
   /**
    * Ancho en grid mode:
    *  - "half" (default): ocupa 1 celda del grid (2 por fila en lg+).
@@ -82,6 +88,8 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
   }));
   const [hydrated, setHydrated] = useState(false);
   const firstDragRef = useRef(true);
+  // Presentation modal — guarda el id del chart activo (null = cerrado).
+  const [presentingId, setPresentingId] = useState<string | null>(null);
 
   // Hydrate desde localStorage
   useEffect(() => {
@@ -208,6 +216,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     hydrated={hydrated}
                     hidden={hiddenSet.has(id)}
                     onToggle={() => toggleHidden(id)}
+                    onPresent={() => setPresentingId(id)}
                     fullSpan={isFullSpan}
                   >
                     {item.render()}
@@ -231,6 +240,25 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           </button>
         </div>
       )}
+
+      {/* Modal de presentacion — renderiza el chart activo fullscreen con
+          navegacion entre todos los charts visibles del modulo. */}
+      <ChartPresentationModal
+        items={validOrder.map((id) => {
+          const item = items.find((i) => i.id === id)!;
+          // Si no hay title explicito, formatear el id: "abc-pareto" -> "Abc Pareto".
+          const title =
+            item.title ??
+            item.id
+              .split("-")
+              .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+              .join(" ");
+          return { id: item.id, title, render: item.render };
+        })}
+        activeId={presentingId}
+        onClose={() => setPresentingId(null)}
+        onNavigate={setPresentingId}
+      />
     </div>
   );
 }
@@ -241,6 +269,7 @@ function DraggableSection({
   hydrated,
   hidden,
   onToggle,
+  onPresent,
   fullSpan,
   children,
 }: {
@@ -249,6 +278,7 @@ function DraggableSection({
   hydrated: boolean;
   hidden: boolean;
   onToggle: () => void;
+  onPresent: () => void;
   fullSpan?: boolean;
   children: ReactNode;
 }) {
@@ -311,6 +341,15 @@ function DraggableSection({
         }}
       >
         <div className="absolute top-3 right-3 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+          <button
+            type="button"
+            onClick={onPresent}
+            aria-label="Presentar en pantalla completa"
+            title="Presentar (abre en modal para navegación)"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={onToggle}
