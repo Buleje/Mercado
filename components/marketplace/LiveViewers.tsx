@@ -27,13 +27,12 @@ const MIN_VIEWERS = 3;
 
 export default function LiveViewers({ storeSlug, compact = false, className }: Props) {
   const [count, setCount] = useState<number>(0);
-  const [status, setStatus] = useState<FetchState>("loading");
+  // Init condicional evita setStatus("error") sincronico dentro del effect
+  // cuando storeSlug es falsy (regla react-hooks/set-state-in-effect de React 19).
+  const [status, setStatus] = useState<FetchState>(storeSlug ? "loading" : "error");
 
   useEffect(() => {
-    if (!storeSlug) {
-      setStatus("error");
-      return;
-    }
+    if (!storeSlug) return;
 
     let cancelled = false;
     setStatus("loading");
