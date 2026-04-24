@@ -1,12 +1,14 @@
 -- CreateTable AIConversation
+-- Postgres-compatible rewrite (previous version used SQLite `DATETIME` which
+-- doesn't exist in Postgres — replaced with `TIMESTAMP(3)`, Prisma default).
 CREATE TABLE "AIConversation" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "tenantId" TEXT NOT NULL,
     "user" TEXT NOT NULL,
     "channel" TEXT NOT NULL DEFAULT 'assistant',
     "title" TEXT NOT NULL DEFAULT '',
-    "updatedAt" DATETIME NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateIndex AIConversation on tenantId
@@ -32,7 +34,7 @@ CREATE TABLE "AIMessage" (
     "mode" TEXT,
     "tokensUsed" INTEGER,
     "latencyMs" INTEGER,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "AIMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "AIConversation" ("id") ON DELETE CASCADE
 );
 
