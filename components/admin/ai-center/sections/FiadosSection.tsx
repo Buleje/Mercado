@@ -7,6 +7,7 @@ import {
   CreditCard,
   ShieldAlert,
   ArrowRight,
+  MessageCircle,
 } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -15,11 +16,25 @@ import { cn, formatCurrency } from "@/lib/utils";
 type FiadoEntry = {
   id: string;
   customerName?: string;
+  customerPhone?: string;
   balance?: number;
   status?: "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
   dueDate?: string;
   createdAt?: string;
 };
+
+function buildReminderText(name: string, balance: number, dueDate?: string): string {
+  const nice = name && name !== "—" ? name.split(" ")[0] : "vecino(a)";
+  const monto = `S/${balance.toFixed(2)}`;
+  const fecha = dueDate ? new Date(dueDate).toLocaleDateString("es-PE", { day: "numeric", month: "long" }) : "";
+  const ext = fecha ? ` con vencimiento al ${fecha}` : "";
+  return `Hola ${nice}! Te recuerdo desde Buleje que tienes un saldo pendiente de ${monto}${ext}. ¿Podemos coordinar el pago hoy? Gracias.`;
+}
+
+function openWhatsApp(phone: string, text: string) {
+  const cleaned = phone.replace(/\D/g, "");
+  window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(text)}`, "_blank");
+}
 
 type FilterKey = "todos" | "vencidos" | "por-vencer" | "al-dia";
 
@@ -365,11 +380,12 @@ export default function FiadosSection() {
       ) : (
         <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
             <span className="text-xs text-[var(--text-tertiary)]">Cliente</span>
             <span className="text-xs text-[var(--text-tertiary)] text-right">Monto</span>
             <span className="text-xs text-[var(--text-tertiary)]">Estado</span>
             <span className="text-xs text-[var(--text-tertiary)]">Plazo</span>
+            <span className="text-xs text-[var(--text-tertiary)] text-right">Acción</span>
           </div>
 
           {/* Rows */}
@@ -378,7 +394,7 @@ export default function FiadosSection() {
               <li
                 key={entry.id}
                 className={cn(
-                  "grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center px-4 py-3",
+                  "grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center px-4 py-3",
                   idx !== filtered.length - 1 &&
                     "border-b border-[var(--rule-base)]"
                 )}
@@ -410,6 +426,31 @@ export default function FiadosSection() {
                 <span className="text-right min-w-[90px]">
                   <DaysInfo entry={entry} />
                 </span>
+
+                {/* WhatsApp action */}
+                {entry.customerPhone && entry.status !== "PAGADO" && entry.status !== "CANCELADO" ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openWhatsApp(
+                        entry.customerPhone!,
+                        buildReminderText(
+                          entry.customerName ?? "—",
+                          entry.balance ?? 0,
+                          entry.dueDate,
+                        ),
+                      )
+                    }
+                    title="Recordar pago por WhatsApp"
+                    aria-label={`Recordar pago a ${entry.customerName ?? "cliente"}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 py-1 text-[11px] font-bold text-[#1a8a4a] hover:bg-[#25D366]/20 transition-colors"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Cobrar
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-[var(--text-tertiary)] text-right">—</span>
+                )}
               </li>
             ))}
           </ul>

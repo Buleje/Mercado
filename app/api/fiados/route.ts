@@ -57,16 +57,27 @@ export async function GET(req: NextRequest) {
         tenantId: r.tenantId,
         customerId: r.customerId,
         customerName: r.customerId,
+        customerPhone: r.customerId,
+        balance: Number(r.saldo),
         total: Number(r.total),
         saldo: Number(r.saldo),
         descripcion: r.descripcion,
         status: r.status,
+        dueDate: r.fechaVence?.toISOString(),
         fechaVence: r.fechaVence?.toISOString(),
         cuotas: [],
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
       }));
     }
+
+    // Enriquecer con aliases que el frontend espera (balance, dueDate, customerPhone)
+    fiados = fiados.map((f: any) => ({
+      ...f,
+      balance: f.balance ?? f.saldo,
+      dueDate: f.dueDate ?? f.fechaVence,
+      customerPhone: f.customerPhone ?? f.customerId,
+    }));
 
     // Client-side name search filter
     if (search) {

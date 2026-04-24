@@ -18,6 +18,8 @@ import {
   Package,
   Activity,
   Clock,
+  Sparkles,
+  ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
@@ -472,7 +474,7 @@ export default function ResumenSection({ data }: Props) {
   return (
     <div className="space-y-4">
       {/* ── Greeting bar ──────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">
             {getGreeting()}
@@ -481,6 +483,16 @@ export default function ResumenSection({ data }: Props) {
             {formatDateHeader()}
           </p>
         </div>
+
+        {/* CTA principal — ver oportunidades del día (módulo Sugerencias IA) */}
+        <a
+          href="?tab=sugerencias-ia"
+          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-lg bg-[var(--text-primary)] px-3.5 py-2 text-xs font-bold text-white hover:bg-[var(--text-secondary)] transition-colors shrink-0"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Ver oportunidades del día
+          <ArrowRight className="h-3.5 w-3.5" />
+        </a>
       </div>
 
       {/* ── KPI grid — paleta rotativa por posicion ──

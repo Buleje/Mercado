@@ -326,7 +326,20 @@ export default function AICommandCenter() {
           {maximized && (
             <button
               type="button"
-              onClick={() => setAutoplay((a) => !a)}
+              onClick={() => {
+                setAutoplay((a) => {
+                  const next = !a;
+                  if (next) {
+                    toast.success(
+                      `Modo TV activado · cambia de tab cada ${TV_ROTATION_MS / 1000} segundos`,
+                      { duration: 4000, description: "Pulsá Pausar o Esc para detener" },
+                    );
+                  } else {
+                    toast(`Modo TV pausado`, { duration: 2000 });
+                  }
+                  return next;
+                });
+              }}
               aria-label={autoplay ? "Pausar Modo TV" : "Activar Modo TV"}
               title={autoplay ? "Pausar rotación automática" : `Rotar tabs cada ${TV_ROTATION_MS / 1000}s`}
               className={cn(
