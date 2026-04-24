@@ -51,7 +51,7 @@ export interface LLMResponse {
   /** Mensaje de error legible si ok=false. */
   error?: string;
   /** Identificador del provider que atendió la llamada (para observabilidad). */
-  provider: "groq" | "anthropic" | "openai";
+  provider: "groq" | "anthropic" | "openai" | "xai";
   /** Modelo concreto usado (para observabilidad). */
   model: string;
   /**
@@ -65,7 +65,7 @@ export interface LLMResponse {
 }
 
 export interface LLMProvider {
-  readonly name: "groq" | "anthropic" | "openai";
+  readonly name: "groq" | "anthropic" | "openai" | "xai";
   /** Modelo default para este provider en cada tier. */
   readonly models: Readonly<Record<"cheap" | "balanced" | "premium", string>>;
   /** Indica si el provider tiene API key configurada en el entorno actual. */

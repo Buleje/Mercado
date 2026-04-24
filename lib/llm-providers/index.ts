@@ -6,6 +6,7 @@
 
 export { groqProvider } from "./groq";
 export { anthropicProvider } from "./anthropic";
+export { xaiProvider } from "./xai";
 export type {
   LLMProvider,
   LLMCallOptions,

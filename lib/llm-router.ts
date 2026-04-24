@@ -26,7 +26,7 @@
  * declarados explícitamente por el caller.
  */
 
-import { groqProvider, anthropicProvider } from "./llm-providers";
+import { groqProvider, anthropicProvider, xaiProvider } from "./llm-providers";
 import type { LLMCallOptions, LLMProvider, LLMResponse } from "./llm-providers";
 
 export type LLMTier = "cheap" | "balanced" | "premium";
@@ -44,6 +44,11 @@ interface TierConfig {
   fallbackModel: string | null;
 }
 
+// 2026-04-24: si XAI_API_KEY está configurado, xAI (Grok) tiene prioridad
+// sobre Groq en los tiers balanced/premium. Esto se evalúa en runtime via
+// isAvailable() — Groq queda como fallback automático si xAI cae.
+const xaiAvailable = Boolean(process.env.XAI_API_KEY);
+
 const TIER_CONFIG: Record<LLMTier, TierConfig> = {
   // Chat al cliente, auto-reply, OCR simple, voice interpret.
   // Barato y rápido — Groq llama-3.1-8b-instant. Si cae, sube a llama-3.3-70b.
@@ -54,22 +59,36 @@ const TIER_CONFIG: Record<LLMTier, TierConfig> = {
     fallbackModel: groqProvider.models.balanced,
   },
   // Asistente admin, coach, promotions, demand prediction.
-  // Calidad media — Groq llama-3.3-70b. Si cae, a llama-4-scout. Si cae,
-  // a Claude (cuando anthropicProvider esté implementado).
-  balanced: {
-    primary: groqProvider,
-    primaryModel: groqProvider.models.balanced,
-    fallback: groqProvider,
-    fallbackModel: groqProvider.models.premium,
-  },
-  // Decisiones críticas. Requiere Claude (hoy STUB — ADR-010 pendiente).
-  // Mientras no haya Anthropic, degrada a Groq llama-4-scout.
-  premium: {
-    primary: anthropicProvider,
-    primaryModel: anthropicProvider.models.balanced,
-    fallback: groqProvider,
-    fallbackModel: groqProvider.models.premium,
-  },
+  // Si hay xAI: Grok-2-latest (128k contexto, mejor razonamiento). Fallback Groq.
+  // Si no hay xAI: Groq llama-3.3-70b → llama-4-scout.
+  balanced: xaiAvailable
+    ? {
+        primary: xaiProvider,
+        primaryModel: xaiProvider.models.balanced,
+        fallback: groqProvider,
+        fallbackModel: groqProvider.models.balanced,
+      }
+    : {
+        primary: groqProvider,
+        primaryModel: groqProvider.models.balanced,
+        fallback: groqProvider,
+        fallbackModel: groqProvider.models.premium,
+      },
+  // Decisiones críticas. Si hay xAI: grok-beta. Si no: Anthropic Claude.
+  // Si nada: Groq llama-4-scout.
+  premium: xaiAvailable
+    ? {
+        primary: xaiProvider,
+        primaryModel: xaiProvider.models.premium,
+        fallback: groqProvider,
+        fallbackModel: groqProvider.models.premium,
+      }
+    : {
+        primary: anthropicProvider,
+        primaryModel: anthropicProvider.models.balanced,
+        fallback: groqProvider,
+        fallbackModel: groqProvider.models.premium,
+      },
 };
 
 // ── Public API ───────────────────────────────────────────────────────────────
