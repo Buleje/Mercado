@@ -20,7 +20,10 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const MODULE_ID = "chat-ia";
 
-const AIAssistant = dynamic(() => import("@/components/admin/AIAssistant"), {
+// ChatIAClean: componente nuevo con diseño limpio (2026-04-24) que reemplaza
+// al antiguo AIAssistant (widget complejo con ~1245 líneas). ChatIAClean
+// consume el mismo endpoint /api/ai-assistant vía SSE streaming.
+const ChatIAClean = dynamic(() => import("@/components/admin/chat-ia/ChatIAClean"), {
   ssr: false,
   loading: S,
 });
@@ -262,18 +265,12 @@ export default function ChatIAModule() {
 
       {/* Layout chat + settings side panel */}
       <div className="flex-1 flex overflow-hidden">
-        <div
-          className={cn(
-            "flex-1 overflow-hidden transition-all",
-            // Tipografía base para el chat — evita que la IA responda en texto muy chico.
-            "[&_.prose]:text-[15px] [&_.prose]:leading-relaxed",
-            "[&_p]:text-[15px] [&_p]:leading-relaxed",
-            "[&_li]:text-[15px] [&_li]:leading-relaxed",
-            "[&_textarea]:text-[15px]",
-            "[&_input]:text-[15px]",
-          )}
-        >
-          <AIAssistant embedded />
+        <div className="flex-1 overflow-hidden transition-all">
+          <ChatIAClean
+            tone={settings.tone}
+            model={settings.model}
+            maxTokens={settings.maxTokens}
+          />
         </div>
 
         {/* Settings panel (slide-in from right) */}
