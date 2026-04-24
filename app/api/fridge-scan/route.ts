@@ -14,7 +14,9 @@ import { generateObject } from "ai";
  * Sin AI key → fallback mock con lista tipica peruana.
  */
 
-export const runtime = "nodejs";
+// Next 16 + cacheComponents prohibe segment configs — el runtime se infiere
+// de Fluid Compute (Node.js por default). maxDuration se configura en
+// vercel.ts (ADR-019).
 export const maxDuration = 30;
 
 const MAX_IMAGE_SIZE_MB = 8;

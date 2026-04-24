@@ -16,7 +16,8 @@ import { generateText } from "ai";
  * mensaje de WhatsApp fallback.
  */
 
-export const runtime = "nodejs";
+// Next 16 + cacheComponents prohibe segment configs — runtime se infiere de
+// Fluid Compute. maxDuration se configura en vercel.ts (ADR-019).
 export const maxDuration = 30;
 
 const RequestSchema = z.object({

@@ -16,7 +16,8 @@ import { generateObject } from "ai";
  * precargadas de cocina peruana (nunca falla el endpoint).
  */
 
-export const runtime = "nodejs";
+// Next 16 + cacheComponents prohibe segment configs — runtime se infiere de
+// Fluid Compute. Ver ADR-019.
 
 const RequestSchema = z.object({
   presupuesto: z.number().min(10).max(500),

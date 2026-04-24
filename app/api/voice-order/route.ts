@@ -17,7 +17,8 @@ import { generateObject } from "ai";
  * Web Speech API (SpeechRecognition) que es gratis en Chrome/Edge.
  */
 
-export const runtime = "nodejs";
+// Next 16 + cacheComponents prohibe segment configs — runtime se infiere de
+// Fluid Compute. maxDuration se configura en vercel.ts (ADR-019).
 export const maxDuration = 30;
 
 const ItemSchema = z.object({
