@@ -1,12 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
-import { useToastStore, toast } from "@/hooks/use-toast";
 
-// ---------- mocks ----------
+/**
+ * useCartWithUndo — tests contra el contrato actual (2026-04-24).
+ *
+ * Historia: el hook llamaba a `toast.show()` con una action "Deshacer" y un
+ * timer de 3s. En 2026-04 se reemplazo ese toast por un drawer lateral
+ * (<AddedToCartDrawer> + `useAddedToCartDrawer().open(...)`).
+ *
+ * Los tests ahora verifican que:
+ *  1. `useMarketplaceCart.addItem` recibe el payload limpio (sin description
+ *     ni variations — esos campos son solo del drawer).
+ *  2. `useAddedToCartDrawer.open` recibe el snapshot completo del producto
+ *     (incluyendo description y variations si se pasaron).
+ */
 
 const mockAddItem = vi.fn();
 const mockRemoveItem = vi.fn();
+const mockOpenDrawer = vi.fn();
 
 vi.mock("@/hooks/use-marketplace-cart", () => ({
   useMarketplaceCart: () => ({
@@ -23,7 +34,14 @@ vi.mock("@/hooks/use-marketplace-cart", () => ({
   }),
 }));
 
-// ---------- helpers ----------
+vi.mock("@/components/marketplace/AddedToCartDrawer", () => ({
+  useAddedToCartDrawer: () => ({
+    open: mockOpenDrawer,
+    close: vi.fn(),
+  }),
+}));
+
+import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 
 const PRODUCT_BASE = {
   storeId: "store-1",
@@ -38,24 +56,15 @@ const PRODUCT_BASE = {
 } as const;
 
 beforeEach(() => {
-  vi.useFakeTimers();
   mockAddItem.mockClear();
   mockRemoveItem.mockClear();
-  toast.clear();
+  mockOpenDrawer.mockClear();
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.useRealTimers();
 });
 
-// ---------- tests ----------
-
-// TODO(tests): useCartWithUndo dejó de usar el toast store (`toast.show()` con
-// acción "Deshacer") — ahora abre el <AddedToCartDrawer> via
-// useAddedToCartDrawer. Los tests necesitan rewrite para mockear openDrawer y
-// verificar que recibe el payload correcto, en vez de inspeccionar el toast
-// store. El test `"calls underlying addItem..."` aun pasa y se preserva.
 describe("useCartWithUndo", () => {
   it("calls underlying addItem with the correct arguments", () => {
     const { result } = renderHook(() => useCartWithUndo());
@@ -68,92 +77,57 @@ describe("useCartWithUndo", () => {
     expect(mockAddItem).toHaveBeenCalledWith(PRODUCT_BASE);
   });
 
-  it.skip("(legacy) shows a toast with message 'Agregado al carrito' and 'Deshacer' action", () => {
+  it("opens the AddedToCartDrawer with the product snapshot", () => {
     const { result } = renderHook(() => useCartWithUndo());
-    const { result: storeResult } = renderHook(() => useToastStore());
 
     act(() => {
       result.current.addItemWithUndo(PRODUCT_BASE);
     });
 
-    expect(storeResult.current.toasts).toHaveLength(1);
-    const t = storeResult.current.toasts[0];
-    expect(t.message).toBe("Agregado al carrito");
-    expect(t.action?.label).toBe("Deshacer");
-    expect(typeof t.action?.onClick).toBe("function");
+    expect(mockOpenDrawer).toHaveBeenCalledTimes(1);
+    expect(mockOpenDrawer).toHaveBeenCalledWith({
+      storeId: "store-1",
+      storeName: "Bodega La Fe",
+      storeSlug: "bodega-la-fe",
+      productId: 42,
+      storeProductId: "sp-42",
+      name: "Arroz costeño 5kg",
+      price: 18.5,
+      image: null,
+      unit: "bolsa",
+      description: null,
+      variations: undefined,
+    });
   });
 
-  it.skip("(legacy) clicking Deshacer within 3s calls removeItem with correct storeId and productId", () => {
+  it("strips description and variations before calling addItem (cart payload vs drawer snapshot)", () => {
     const { result } = renderHook(() => useCartWithUndo());
-    const { result: storeResult } = renderHook(() => useToastStore());
 
     act(() => {
-      result.current.addItemWithUndo(PRODUCT_BASE);
+      result.current.addItemWithUndo({
+        ...PRODUCT_BASE,
+        description: "1kg de arroz",
+        variations: [{ label: "Marca", value: "Costeño" }],
+      });
     });
 
-    // Advance 1 second — still within window
-    act(() => {
-      vi.advanceTimersByTime(1000);
+    // addItem recibe el payload del cart (sin description/variations)
+    expect(mockAddItem).toHaveBeenCalledWith(PRODUCT_BASE);
+
+    // openDrawer recibe el snapshot completo (con description + variations)
+    expect(mockOpenDrawer).toHaveBeenCalledWith({
+      storeId: "store-1",
+      storeName: "Bodega La Fe",
+      storeSlug: "bodega-la-fe",
+      productId: 42,
+      storeProductId: "sp-42",
+      name: "Arroz costeño 5kg",
+      price: 18.5,
+      image: null,
+      unit: "bolsa",
+      description: "1kg de arroz",
+      variations: [{ label: "Marca", value: "Costeño" }],
     });
-
-    const t = storeResult.current.toasts[0];
-    expect(t).toBeDefined();
-
-    act(() => {
-      t.action!.onClick();
-    });
-
-    expect(mockRemoveItem).toHaveBeenCalledTimes(1);
-    expect(mockRemoveItem).toHaveBeenCalledWith(
-      PRODUCT_BASE.storeId,
-      PRODUCT_BASE.productId
-    );
-  });
-
-  it.skip("(legacy) auto-dismisses the toast after 3 seconds", () => {
-    const { result } = renderHook(() => useCartWithUndo());
-    const { result: storeResult } = renderHook(() => useToastStore());
-
-    act(() => {
-      result.current.addItemWithUndo(PRODUCT_BASE);
-    });
-
-    expect(storeResult.current.toasts).toHaveLength(1);
-
-    act(() => {
-      vi.advanceTimersByTime(3000);
-    });
-
-    expect(storeResult.current.toasts).toHaveLength(0);
-  });
-
-  it.skip("(legacy) after 3s the toast is gone — Deshacer cannot be invoked", () => {
-    const { result } = renderHook(() => useCartWithUndo());
-    const { result: storeResult } = renderHook(() => useToastStore());
-
-    act(() => {
-      result.current.addItemWithUndo(PRODUCT_BASE);
-    });
-
-    // Capture the action before dismissal
-    const undoFn = storeResult.current.toasts[0].action!.onClick;
-
-    act(() => {
-      vi.advanceTimersByTime(3000);
-    });
-
-    // Toast gone from store
-    expect(storeResult.current.toasts).toHaveLength(0);
-
-    // The captured undo callback still calls removeItem if invoked directly,
-    // but the toast UI is no longer visible so the user cannot reach it.
-    // Verify that after dismissal calling the fn does call removeItem
-    // (the closure is still valid — the protection is the UI being gone).
-    act(() => {
-      undoFn();
-    });
-
-    expect(mockRemoveItem).toHaveBeenCalledTimes(1);
   });
 
   it("passes quantity when provided", () => {
@@ -164,5 +138,17 @@ describe("useCartWithUndo", () => {
     });
 
     expect(mockAddItem).toHaveBeenCalledWith({ ...PRODUCT_BASE, quantity: 3 });
+  });
+
+  it("handles null description gracefully", () => {
+    const { result } = renderHook(() => useCartWithUndo());
+
+    act(() => {
+      result.current.addItemWithUndo({ ...PRODUCT_BASE, description: null });
+    });
+
+    expect(mockOpenDrawer).toHaveBeenCalledWith(
+      expect.objectContaining({ description: null }),
+    );
   });
 });
