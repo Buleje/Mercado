@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { m as motion } from "framer-motion";
-import { Gift, Share2, Users, Copy, Check, TrendingUp } from "@buleje/design-system/icons";
+import { Gift, Share2, Users, Copy, Check, TrendingUp, Crown } from "@buleje/design-system/icons";
 import { useCustomerSafe } from "@/hooks/use-customer-safe";
 import { useToast } from "@/contexts/toast-context";
 
@@ -13,6 +13,24 @@ type ReferralData = {
   shareUrl: string;
   shareMessage: string;
 };
+
+// Tiers de recompensa — cuantos mas amigos refieras, mas gana tu vecino Y tu
+const REFERRAL_TIERS = [
+  { count: 1, bonus: 10, label: "Empezá", emoji: "" },
+  { count: 3, bonus: 30, label: "Conector", emoji: "" },
+  { count: 5, bonus: 60, label: "Influencer del barrio", emoji: "" },
+  { count: 10, bonus: 150, label: "VIP — el/la embajador/a", emoji: "Crown" },
+] as const;
+
+function getTierInfo(referredCount: number) {
+  const unlocked = REFERRAL_TIERS.filter((t) => referredCount >= t.count).length;
+  const current = REFERRAL_TIERS[Math.max(0, unlocked - 1)];
+  const next = REFERRAL_TIERS[unlocked] ?? null;
+  const progress = next
+    ? Math.min(100, Math.round(((referredCount - (current?.count ?? 0)) / (next.count - (current?.count ?? 0))) * 100))
+    : 100;
+  return { unlocked, current, next, progress };
+}
 
 export default function ReferralProgram() {
   const customer = useCustomerSafe();
@@ -37,6 +55,11 @@ export default function ReferralProgram() {
       .finally(() => setLoading(false));
   }, [customer?.phone]);
 
+  const tierInfo = useMemo(
+    () => (data ? getTierInfo(data.referredCount) : null),
+    [data],
+  );
+
   if (loading) {
     return (
       <div className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-6 animate-pulse">
@@ -46,7 +69,7 @@ export default function ReferralProgram() {
     );
   }
 
-  if (!data) return null;
+  if (!data || !tierInfo) return null;
 
   const handleCopy = async () => {
     try {
@@ -83,20 +106,48 @@ export default function ReferralProgram() {
       animate={{ opacity: 1, y: 0 }}
       className="bg-[var(--surface-sunken)] rounded-2xl border border-[#00B4A6]/20 p-5 sm:p-6"
     >
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-5">
-        <div className="h-11 w-11 rounded-xl bg-[#f97316]/15 flex items-center justify-center flex-shrink-0">
-          <Gift className="h-5 w-5 text-[#f97316]" />
+      {/* Header — tier-aware */}
+      <div className="flex items-start gap-3 mb-4">
+        <div className="h-11 w-11 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center flex-shrink-0">
+          {tierInfo.unlocked >= 4 ? (
+            <Crown className="h-5 w-5 text-[var(--accent)]" strokeWidth={1.75} />
+          ) : (
+            <Gift className="h-5 w-5 text-[var(--accent)]" strokeWidth={1.75} />
+          )}
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="text-base font-extrabold text-[var(--text-primary)]">
-            Invita a un amigo y ambos ganan S/5
+            {tierInfo.next
+              ? `Te faltan ${tierInfo.next.count - data.referredCount} para ${tierInfo.next.label}`
+              : "Sos VIP — máximo nivel desbloqueado"}
           </h3>
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-            Comparte tu codigo y gana descuentos
+            {tierInfo.next
+              ? `Próximo bonus: S/ ${tierInfo.next.bonus} extra`
+              : "Gracias por invitar a tantos vecinos"}
           </p>
         </div>
       </div>
+
+      {/* Progress bar — milestone actual → próximo tier */}
+      {tierInfo.next && (
+        <div className="mb-4 space-y-1.5">
+          <div className="flex items-baseline justify-between text-xs">
+            <span className="font-bold text-[var(--text-secondary)] tabular-nums">
+              {data.referredCount} / {tierInfo.next.count} amigos
+            </span>
+            <span className="font-bold uppercase tracking-wider text-[length:var(--ts-2xs)] text-[var(--accent)]">
+              +S/ {tierInfo.next.bonus}
+            </span>
+          </div>
+          <div aria-hidden className="h-1.5 w-full rounded-full bg-[var(--surface-raised)] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-700 ease-out"
+              style={{ width: `${tierInfo.progress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Code display */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 mb-4">
