@@ -78,21 +78,22 @@ describe("QuotaAlertBanner", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("se renderiza en amarillo cuando alguna métrica está entre 70% y 90%", () => {
+  it("se renderiza con estilo warning cuando alguna métrica está entre 70% y 90%", () => {
+    // Banner usa design tokens (--data-warning) en vez de colores Tailwind amber/red.
     const snapshot = buildSnapshotAtPct("order.created", 0.75); // 75%
     render(<QuotaAlertBanner snapshot={snapshot} />);
     const banner = screen.getByRole("alert");
     expect(banner).toBeInTheDocument();
-    expect(banner.className).toContain("amber");
+    expect(banner.className).toContain("data-warning");
     expect(screen.getByText(/Estás cerca del límite/i)).toBeInTheDocument();
   });
 
-  it("se renderiza en rojo cuando alguna métrica supera el 90%", () => {
+  it("se renderiza con estilo critical cuando alguna métrica supera el 90%", () => {
     const snapshot = buildSnapshotAtPct("order.created", 0.95); // 95%
     render(<QuotaAlertBanner snapshot={snapshot} />);
     const banner = screen.getByRole("alert");
     expect(banner).toBeInTheDocument();
-    expect(banner.className).toContain("red");
+    expect(banner.className).toContain("data-error");
     expect(screen.getByText(/Has alcanzado el límite/i)).toBeInTheDocument();
   });
 

@@ -35,6 +35,9 @@ const NO_TABS_MODULES = [
 const CUSTOM_HEADER_MODULES = [
   // FinanzasModule usa PageTitle + AdminTabBar como estructura alternativa (ADR-074 Phase 3)
   "FinanzasModule.tsx",
+  // POSCajaModule usa layout custom con CardTitle + AdminTabBar — es el modulo
+  // de ventas/caja con UI especializada que no encaja en el header estandar.
+  "POSCajaModule.tsx",
 ];
 // Módulos que legítimamente usan dark: classes (dark mode habilitado)
 const DARK_MODE_MODULES = [

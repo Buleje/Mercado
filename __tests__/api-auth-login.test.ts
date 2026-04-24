@@ -210,17 +210,18 @@ describe("POST /api/auth/login", () => {
       expect(setCookie).toContain("bsm-admin-sess");
     });
 
-    it("returns 200 with plain-text stored password when it matches", async () => {
+    it("returns 401 when stored password is plain-text (fail-closed security)", async () => {
+      // Security hardening: checkPassword() rechaza cualquier password que no
+      // empiece con $2a$/$2b$/$2y$ (bcrypt). Plain-text en DB es un bug legacy
+      // que NO debe autorizar login — comportamiento correcto es rechazar.
       const plainUser = { ...DB_USER, passwordHash: PLAIN_STORED };
       mockFindMany.mockResolvedValue([plainUser]);
-      // compare() is not called for plain-text — no need to set mockCompare
 
       const res = await POST(makeReq({ username: "admin", password: PLAIN_STORED }));
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(401);
       const body = await res.json();
-      expect(body.ok).toBe(true);
-      expect(body.role).toBe("admin");
+      expect(body.error).toMatch(/incorrect/i);
     });
 
     it("returns 200 when login is attempted without a username (matches first valid user)", async () => {
@@ -239,9 +240,12 @@ describe("POST /api/auth/login", () => {
   // ── 5. Settings fallback ─────────────────────────────────────────────────
 
   describe("200 – settings admin password fallback", () => {
-    it("returns 200 via settings fallback when DB has no users and settings match", async () => {
+    it("returns 200 via settings fallback when DB has no users and bcrypt-hashed settings password matches", async () => {
+      // Security: settings fallback solo acepta adminPassword si esta bcrypt-hashed
+      // (mismo checkPassword fail-closed). Usamos un hash dummy y forzamos compare=true.
       mockFindMany.mockResolvedValue([]);
-      mockSettingsGet.mockResolvedValue({ adminPassword: "adminpass123" });
+      mockSettingsGet.mockResolvedValue({ adminPassword: BCRYPT_HASH });
+      mockCompare.mockResolvedValue(true);
 
       const res = await POST(makeReq({ password: "adminpass123" }));
 
@@ -249,6 +253,16 @@ describe("POST /api/auth/login", () => {
       const body = await res.json();
       expect(body.ok).toBe(true);
       expect(body.role).toBe("admin");
+    });
+
+    it("returns 401 via settings fallback when settings adminPassword is plain-text (fail-closed)", async () => {
+      // Plain-text en settings.adminPassword es rechazado — checkPassword fail-closed.
+      mockFindMany.mockResolvedValue([]);
+      mockSettingsGet.mockResolvedValue({ adminPassword: "plaintext-admin-pass" });
+
+      const res = await POST(makeReq({ password: "plaintext-admin-pass" }));
+
+      expect(res.status).toBe(401);
     });
 
     it("returns 401 when DB is empty and settings password does not match", async () => {

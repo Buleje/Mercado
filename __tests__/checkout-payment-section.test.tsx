@@ -237,8 +237,9 @@ describe("CheckoutPaymentSection — validation hints", () => {
 
   it("shows the Yape operation-number hint when showPaymentHint and method=yape", () => {
     renderSection({ showPaymentHint: true, paymentMethod: "yape" });
+    // Nota: texto real usa "número" (con tilde) — la regex tolera ambas variantes.
     expect(
-      screen.getByText(/ingresa el numero de operacion de yape para continuar/i)
+      screen.getByText(/ingresa el n[úu]mero de operacion de yape para continuar/i)
     ).toBeInTheDocument();
   });
 
@@ -248,7 +249,7 @@ describe("CheckoutPaymentSection — validation hints", () => {
       screen.queryByText(/selecciona un metodo de pago para continuar/i)
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText(/ingresa el numero de operacion de yape/i)
+      screen.queryByText(/ingresa el n[úu]mero de operacion de yape/i)
     ).not.toBeInTheDocument();
   });
 });

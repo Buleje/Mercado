@@ -66,7 +66,8 @@ describe("ShareCartButton", () => {
 
     const btn = screen.getByRole("button");
     expect(btn).toBeDisabled();
-    expect(btn).toHaveAttribute("aria-label", "Agregá productos para compartir");
+    // Copy switch from voseo ("Agregá") to tuteo ("Agrega") — 2026-04 i18n pass.
+    expect(btn).toHaveAttribute("aria-label", "Agrega productos para compartir");
   });
 
   it("llama a navigator.clipboard.writeText con la URL correcta", async () => {

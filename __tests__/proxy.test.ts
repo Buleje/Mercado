@@ -19,11 +19,15 @@ import { NextRequest } from "next/server";
 // ── Mocks de dependencias externas ───────────────────────────────────────────
 
 // verifySessionToken: por defecto retorna true (sesión válida)
-const { mockVerifySessionToken } = vi.hoisted(() => ({
+// getSessionPayload: lib/middleware/tenant.ts lo usa para verificar HMAC del JWT
+// antes de leer tenantId — necesitamos exponer ambos en el mock.
+const { mockVerifySessionToken, mockGetSessionPayload } = vi.hoisted(() => ({
   mockVerifySessionToken: vi.fn(async () => true),
+  mockGetSessionPayload: vi.fn(async (_token: string) => null as null | { tenantId?: string; role?: string; username?: string }),
 }));
 vi.mock("@/lib/session", () => ({
   verifySessionToken: mockVerifySessionToken,
+  getSessionPayload: mockGetSessionPayload,
   SESSION: { COOKIE_NAME: "bsm-admin-sess" },
 }));
 

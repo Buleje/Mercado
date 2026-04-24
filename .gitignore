@@ -127,6 +127,10 @@ build-output.txt
 # Vitest JSON reports (local per-session debugging)
 /vitest-result*.json
 /vitest-full.json
+/vitest-auth.json
+/vitest-proxy.json
+/vitest-tenant*.json
+/v-*.json
 # Superpowers brainstorm drafts (per-session, not shared)
 /.superpowers/brainstorm/
 
