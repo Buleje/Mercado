@@ -12,8 +12,10 @@
  */
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { ChevronRight, Home, Store } from "@buleje/design-system/icons";
 import { Caption } from "@buleje/design-system";
+import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ProductGalleryDS } from "./ProductGalleryDS";
 import { ProductInfo } from "./ProductInfo";
 import { ProductActions } from "./ProductActions";
@@ -195,12 +197,26 @@ export function ProductDetailClient({
   relatedProducts,
   storeProductId,
 }: ProductDetailClientProps) {
+  const { track } = useRecentlyViewed();
   const galleryBadge = deriveBadge(
     product.stock,
     product.badge,
     product.previousPrice,
     product.price
   );
+
+  // Track visit to populate "Recently viewed" drawer (ronda 4)
+  useEffect(() => {
+    track({
+      id: product.id,
+      storeProductId,
+      name: product.name,
+      price: product.price,
+      image: product.imageUrl,
+      url: `/marketplace/${store.slug}/producto/${storeProductId}`,
+      unit: product.unit,
+    });
+  }, [product.id, product.name, product.price, product.imageUrl, product.unit, storeProductId, store.slug, track]);
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
