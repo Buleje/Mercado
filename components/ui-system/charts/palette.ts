@@ -26,15 +26,23 @@ export const CHART_PALETTE = {
 } as const;
 
 export const CHART_GRID_STROKE = "var(--rule-soft, #f5f5f5)";
-export const CHART_AXIS_COLOR = "var(--text-tertiary, #a3a3a3)";
-export const CHART_LABEL_COLOR = "var(--text-secondary, #525252)";
+// 2026-04-24: axis color subido de tertiary (#a3a3a3 — muy pale) a secondary
+// (#525252) para que los labels de ejes tengan contraste aceptable. Con
+// axisSize 13 + fontWeight 600 + secondary color los ticks son legibles.
+export const CHART_AXIS_COLOR = "var(--text-secondary, #525252)";
+export const CHART_LABEL_COLOR = "var(--text-primary, #0a0a0a)";
 
-/** Standard font family and sizes for axis/tooltip */
+/** Standard font family and sizes for axis/tooltip
+ *
+ * 2026-04-24: subido axis 10→13, label 11→14, tooltip 12→14. El texto en 10px
+ * era ilegible en desktop normal y especialmente en laptops 1366px. Los nuevos
+ * valores siguen aptos para mini-charts (sparklines) que no usan estas
+ * constantes — ellos pintan sin ejes. */
 export const CHART_FONT = {
   family: "var(--font-geist-sans), system-ui, sans-serif",
-  axisSize: 10,
-  labelSize: 11,
-  tooltipSize: 12,
+  axisSize: 13,
+  labelSize: 14,
+  tooltipSize: 14,
 } as const;
 
 /** Series palette ordered by visual priority */

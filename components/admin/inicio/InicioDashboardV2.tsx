@@ -1,11 +1,12 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "./DashboardDateRange";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
-import { BulejeMetricHeroCard } from "@/components/ui-system/cards";
+// BulejeMetricHeroCard removido (duplicado con TodayHub). Re-importar si se
+// restaura el hero en esta pantalla.
 import { SkeletonEditorial } from "@/components/ui-system";
 import { InicioMultiCharts } from "./InicioMultiCharts";
 
@@ -45,26 +46,16 @@ interface OverviewData {
   };
 }
 
-const PRESET_HERO: Record<string, string> = {
-  diario: "Ventas de hoy",
-  semanal: "Ventas de la semana",
-  mensual: "Ventas del mes",
-  anual: "Ventas del año",
-  personalizado: "Ventas del período",
-};
+// PRESET_HERO y PRESET_DELTA removidos (2026-04-24) — solo los usaba el hero
+// duplicado con TodayHub que tambien fue removido. Si se restaura el hero,
+// volver a declararlos aqui (estaban con las 5 variantes: diario/semanal/
+// mensual/anual/personalizado).
 const PRESET_CORRELATION: Record<string, string> = {
   diario: "Correlación · últimas horas",
   semanal: "Correlación · rango activo",
   mensual: "Correlación · últimos días",
   anual: "Correlación · últimos meses",
   personalizado: "Correlación · período",
-};
-const PRESET_DELTA: Record<string, string> = {
-  diario: "vs ayer",
-  semanal: "vs semana pasada",
-  mensual: "vs mes pasado",
-  anual: "vs año pasado",
-  personalizado: "vs período anterior",
 };
 const PRESET_META_LABEL: Record<string, string> = {
   diario: "Meta del día",
@@ -86,6 +77,14 @@ export default function InicioDashboardV2({ dateRange }: Props) {
   const [loading, setLoading] = useState(true);
   // Hook llamado SIEMPRE — antes de cualquier early return (Rules of Hooks).
   const sharedRaw = useDashboardData();
+  // Date.now() via useRef lazy-init — evita react-hooks/purity violation
+  // (Date.now es impure en render body). El ref se setea UNA vez al mount
+  // y es estable para fallback de daysInRange calculation.
+  const nowRef = useRef<number | null>(null);
+  if (nowRef.current === null) nowRef.current = Date.now();
+  // dayOfMonth idem — estable dentro del lifecycle del componente.
+  const dayOfMonthRef = useRef<number | null>(null);
+  if (dayOfMonthRef.current === null) dayOfMonthRef.current = new Date().getDate();
 
   const rangeQuery = useMemo(() => {
     if (!dateRange) return "";
@@ -140,13 +139,11 @@ export default function InicioDashboardV2({ dateRange }: Props) {
   }
 
   const presetKey = dateRange?.preset ?? "diario";
-  const {
-    hero,
-    contextual: { uniqueCustomers, ticketAverage, criticalStock },
-  } = data;
+  // ticketAverage y heroDelta quedaron huerfanos tras remover el hero duplicado;
+  // uniqueCustomers sigue en uso (weeklyData.clientes abajo).
+  const { hero, contextual: { uniqueCustomers, criticalStock } } = data;
   const ordersInRange = data.contextual.ordersInRange ?? data.contextual.ordersToday ?? 0;
   const heroValue = hero.totalRange ?? hero.totalToday ?? 0;
-  const heroDelta = hero.deltaVsPrevious ?? hero.deltaVsYesterday ?? 0;
 
   // Weekly data desde sparkline — labels dinámicos según rango
   const lastSpark = hero.sparkline[hero.sparkline.length - 1] || 1;
@@ -160,16 +157,17 @@ export default function InicioDashboardV2({ dateRange }: Props) {
 
   // Meta proyectada según preset activo
   const avgDaily = hero.sparkline.reduce((s, v) => s + v, 0) / Math.max(1, hero.sparkline.length);
-  const daysInRange = Math.max(
-    1,
-    Math.ceil(((dateRange?.to?.getTime() ?? Date.now()) - (dateRange?.from?.getTime() ?? Date.now())) / (24 * 60 * 60 * 1000)) + 1,
-  );
+  // `nowRef` y `dayOfMonthRef` se inicializaron al tope del componente (puro).
+  const now = nowRef.current ?? 0;
+  const toMs = dateRange?.to?.getTime() ?? now;
+  const fromMs = dateRange?.from?.getTime() ?? now;
+  const daysInRange = Math.max(1, Math.ceil((toMs - fromMs) / (24 * 60 * 60 * 1000)) + 1);
+  const dayOfMonth = dayOfMonthRef.current ?? 1;
   // Target: 10% sobre promedio diario × días del rango, con piso mínimo 10k (mensual) / 300 (diario)
   const metaFloor = presetKey === "diario" ? 300 : presetKey === "semanal" ? 2500 : presetKey === "anual" ? 120000 : 10000;
   const metaRango = Math.max(metaFloor, avgDaily * daysInRange * 1.1);
   // Acumulado real = totalRange del backend (no simulado)
   const acumRango = heroValue;
-  const dayOfMonth = new Date().getDate();
   // Proyección: extrapola el promedio diario al rango completo
   const proyectado = avgDaily * daysInRange;
   const metaPct = Math.min(100, Math.round((acumRango / metaRango) * 100));
@@ -196,22 +194,12 @@ export default function InicioDashboardV2({ dateRange }: Props) {
           deadstock, stock critico, cohort retention, cash runway, funnel. */}
       {null /* legacy — migrar a DashboardTab */}
 
-      {/* ── Row 1: Hero con 3 sub-metrics + sparkline + delta matrix ── */}
-      <BulejeMetricHeroCard
-        kicker={PRESET_HERO[presetKey] ?? PRESET_HERO.diario}
-        heroValue={heroValue}
-        prefix="S/ "
-        decimals={2}
-        subMetrics={[
-          { label: "Pedidos", value: ordersInRange },
-          { label: "Ticket prom.", value: ticketAverage, prefix: "S/ ", decimals: 2 },
-          { label: "Clientes", value: uniqueCustomers },
-        ]}
-        sparkline={hero.sparkline}
-        deltas={[
-          { label: PRESET_DELTA[presetKey] ?? PRESET_DELTA.diario, value: heroDelta },
-        ]}
-      />
+      {/* ── Row 1 (REMOVIDO 2026-04-24): hero duplicado ──
+          TodayHub arriba ya renderiza el mismo kicker "Ventas del mes" +
+          heroValue + sparkline + deltas. Mantener 2 heros idénticos era
+          ruido visual sin aporte informativo. Los sub-metrics (Pedidos,
+          Ticket prom., Clientes) quedan cubiertos por las KPI cards de
+          las siguientes secciones. */}
 
       {/* ── Meta + hora pico (enriquece el hero) · ambos dinámicos por preset ── */}
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">

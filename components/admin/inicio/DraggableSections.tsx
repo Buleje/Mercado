@@ -18,6 +18,7 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Eye, EyeOff, RotateCcw } from "@buleje/design-system/icons";
@@ -33,6 +34,13 @@ interface Props {
   storageKey?: string;
   /** gap in rem entre secciones — default 1 */
   gap?: number;
+  /**
+   * Layout mode:
+   *  - "column" (default): todas las secciones full-width apiladas.
+   *  - "grid": 1 col en mobile, 2 cols en lg+. Usa rectSortingStrategy
+   *    para drag bidireccional.
+   */
+  layout?: "column" | "grid";
 }
 
 interface PersistState {
@@ -56,7 +64,7 @@ interface PersistState {
  *  - Toast "Layout guardado" en primer drag
  *  - Persiste en localStorage (orden + hidden)
  */
-export function DraggableSections({ items, storageKey, gap = 1 }: Props) {
+export function DraggableSections({ items, storageKey, gap = 1, layout = "column" }: Props) {
   const [state, setState] = useState<PersistState>(() => ({
     order: items.map((i) => i.id),
     hidden: [],
@@ -155,8 +163,21 @@ export function DraggableSections({ items, storageKey, gap = 1 }: Props) {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={validOrder} strategy={verticalListSortingStrategy}>
-          <div style={{ display: "flex", flexDirection: "column", gap: `${gap}rem` }}>
+        <SortableContext
+          items={validOrder}
+          strategy={layout === "grid" ? rectSortingStrategy : verticalListSortingStrategy}
+        >
+          <div
+            style={
+              layout === "grid"
+                ? {
+                    display: "grid",
+                    gap: `${gap}rem`,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 36rem), 1fr))",
+                  }
+                : { display: "flex", flexDirection: "column", gap: `${gap}rem` }
+            }
+          >
             <AnimatePresence initial={false}>
               {validOrder.map((id, index) => {
                 const render = renderById.get(id);

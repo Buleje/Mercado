@@ -132,7 +132,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             fontSize={CHART_FONT.axisSize}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: CHART_AXIS_COLOR }}
+            tick={{ fill: CHART_AXIS_COLOR, fontWeight: 600 }}
           />
           <YAxis
             yAxisId="left"
@@ -140,7 +140,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             fontSize={CHART_FONT.axisSize}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: CHART_AXIS_COLOR }}
+            tick={{ fill: CHART_AXIS_COLOR, fontWeight: 600 }}
             tickFormatter={leftAxisFormat}
             // Bars always zero-based per research rule
             domain={[0, "auto"]}
@@ -153,7 +153,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
               fontSize={CHART_FONT.axisSize}
               tickLine={false}
               axisLine={false}
-              tick={{ fill: CHART_AXIS_COLOR }}
+              tick={{ fill: CHART_AXIS_COLOR, fontWeight: 600 }}
               tickFormatter={rightAxisFormat}
             />
           )}
@@ -164,12 +164,13 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
           {showLegend && (
             <Legend
               wrapperStyle={{
-                paddingTop: 12,
+                paddingTop: 16,
                 fontSize: CHART_FONT.labelSize,
                 fontFamily: CHART_FONT.family,
+                fontWeight: 600,
               }}
               iconType="circle"
-              iconSize={8}
+              iconSize={12}
             />
           )}
 

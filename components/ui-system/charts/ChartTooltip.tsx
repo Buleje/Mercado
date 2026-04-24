@@ -21,26 +21,30 @@ interface TooltipProps {
 export function ChartTooltip({ active, label, payload, format }: TooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
+  // 2026-04-24: tipografia escalada para legibilidad
+  //   label (X axis tick): text-2xs -> text-xs
+  //   items (name/value):  text-xs  -> text-sm
+  //   dot indicator:       h-2 w-2 -> h-2.5 w-2.5
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg px-3 py-2 shadow-sm">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg px-3.5 py-2.5 shadow-sm min-w-[140px]">
       {label !== undefined && (
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-1">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
           {label}
         </p>
       )}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {payload.map((item, i) => {
           const formatted = format
             ? format(item.value ?? 0, item.name)
             : String(item.value ?? "");
           return (
-            <div key={i} className="flex items-center gap-2 text-xs">
+            <div key={i} className="flex items-center gap-2.5 text-sm">
               <span
-                className="h-2 w-2 rounded-full shrink-0"
+                className="h-2.5 w-2.5 rounded-full shrink-0"
                 style={{ background: item.color }}
               />
               {item.name && (
-                <span className="text-gray-500">{item.name}</span>
+                <span className="text-[var(--text-secondary)]">{item.name}</span>
               )}
               <span className="font-bold text-[var(--text-primary)] tabular-nums ml-auto">
                 {formatted}

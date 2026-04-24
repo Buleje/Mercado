@@ -619,5 +619,14 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="inicio-multi-order" />;
+  // layout="grid" (2026-04-24): los 5 charts (caja, inventario, compras,
+  // clientes, productos) se renderizan 2 por fila en lg+ en vez de 1 por
+  // fila. Reduce el scroll y permite leer comparaciones en paralelo.
+  return (
+    <DraggableSections
+      items={sections}
+      storageKey="inicio-multi-order"
+      layout="grid"
+    />
+  );
 });
