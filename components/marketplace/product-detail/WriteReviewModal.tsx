@@ -1,8 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Star, Send, CheckCircle2 } from "@buleje/design-system/icons";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { X, Star, Send, CheckCircle2, Camera, Image as ImageIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+
+// Limites para upload de fotos en reviews
+const MAX_PHOTOS = 4;
+const MAX_FILE_SIZE_MB = 5;
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+interface ReviewPhoto {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
 
 interface WriteReviewModalProps {
   open: boolean;
@@ -24,17 +35,59 @@ export default function WriteReviewModal({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [name, setName] = useState("");
+  const [photos, setPhotos] = useState<ReviewPhoto[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoAdd = useCallback((files: FileList | null) => {
+    if (!files) return;
+    setError(null);
+    const newPhotos: ReviewPhoto[] = [];
+    for (let i = 0; i < files.length; i++) {
+      if (photos.length + newPhotos.length >= MAX_PHOTOS) {
+        setError(`Maximo ${MAX_PHOTOS} fotos por reseña`);
+        break;
+      }
+      const file = files[i];
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        setError("Solo JPG, PNG o WebP");
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        setError(`Cada foto debe pesar menos de ${MAX_FILE_SIZE_MB}MB`);
+        continue;
+      }
+      newPhotos.push({
+        id: `${Date.now()}-${i}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    }
+    if (newPhotos.length) setPhotos((prev) => [...prev, ...newPhotos]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [photos.length]);
+
+  const removePhoto = useCallback((id: string) => {
+    setPhotos((prev) => {
+      const toRemove = prev.find((p) => p.id === id);
+      if (toRemove) URL.revokeObjectURL(toRemove.previewUrl);
+      return prev.filter((p) => p.id !== id);
+    });
+  }, []);
 
   useEffect(() => {
     if (open) {
       const t = setTimeout(() => titleRef.current?.focus(), 100);
       return () => clearTimeout(t);
     }
-    // Reset al cerrar
+    // Reset al cerrar — revoca URLs de preview para evitar leak
+    setPhotos((prev) => {
+      prev.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      return [];
+    });
     setRating(0);
     setHover(0);
     setTitle("");
@@ -211,6 +264,62 @@ export default function WriteReviewModal({
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
                 />
                 <p className="mt-1 text-xs text-gray-400">{body.length} / 1000</p>
+              </div>
+
+              {/* Photos — upload con preview (feature NEW 2026-04-24) */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+                  Fotos (opcional, hasta {MAX_PHOTOS})
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {photos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="relative h-20 w-20 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.previewUrl}
+                        alt="Foto de la reseña"
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(photo.id)}
+                        aria-label="Eliminar foto"
+                        className="absolute top-1 right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-900 transition-colors"
+                      >
+                        <X className="h-3 w-3" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  ))}
+                  {photos.length < MAX_PHOTOS && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-20 w-20 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary hover:text-primary transition-colors"
+                      aria-label="Agregar foto"
+                    >
+                      <Camera className="h-5 w-5" strokeWidth={1.5} />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Agregar
+                      </span>
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_TYPES.join(",")}
+                  multiple
+                  onChange={(e) => handlePhotoAdd(e.target.files)}
+                  className="hidden"
+                  aria-hidden
+                />
+                <p className="mt-1.5 text-xs text-gray-400 inline-flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" />
+                  Las fotos dan más confianza (hasta {MAX_PHOTOS} · {MAX_FILE_SIZE_MB}MB c/u)
+                </p>
               </div>
 
               {/* Name */}
