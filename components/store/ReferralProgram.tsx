@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { Gift, Share2, Users, Copy, Check, TrendingUp } from "@buleje/design-system/icons";
 import { useCustomerSafe } from "@/hooks/use-customer-safe";
 import { useToast } from "@/contexts/toast-context";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { m as motion, useInView, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
 // ─── Animated counter ─────────────────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {

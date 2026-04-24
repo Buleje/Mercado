@@ -15,7 +15,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ZoomIn, X } from "@buleje/design-system/icons";
 import { cn, ProductBadge, type ProductBadgeIntent } from "@buleje/design-system";
 import {
@@ -80,6 +80,10 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
   const showThumbs = images.length > 1;
   const activeImage = hasImages ? images[activeIndex] : null;
 
+  // getCategoryIllustration retorna uno de 5 componentes stateless del DS —
+  // el rule react-hooks/static-components detecta un falso positivo porque
+  // es un patron de switch dinamico, no una creacion en render con closure.
+  // eslint-disable-next-line react-hooks/static-components
   const FallbackIllustration = getCategoryIllustration(category);
 
   const prev = useCallback(() => {
@@ -97,7 +101,10 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return;
     const diff = touchStart - (e.changedTouches[0]?.clientX ?? 0);
-    if (Math.abs(diff) > 40) diff > 0 ? next() : prev();
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) next();
+      else prev();
+    }
     setTouchStart(null);
   };
 
@@ -140,6 +147,7 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
           ) : FallbackIllustration ? (
             /* Ilustración DS por categoría */
             <div className="flex h-full w-full items-center justify-center">
+              {/* eslint-disable-next-line react-hooks/static-components */}
               <FallbackIllustration
                 size={140}
                 className="text-[var(--text-tertiary)] opacity-60"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import {
   X, CheckCheck, Bell, RefreshCw,
   AlertTriangle, Package, Clock,
@@ -419,7 +419,8 @@ export default function NotificationHub({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-60"
+            className="fixed inset-0 bg-black/20 dark:bg-black/40"
+            style={{ zIndex: 60 }}
             aria-hidden="true"
           />
 
@@ -431,7 +432,8 @@ export default function NotificationHub({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full sm:w-105 bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl z-61 flex flex-col"
+            className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl flex flex-col"
+            style={{ zIndex: 61 }}
           >
             {/* Header */}
             <div className="px-4 py-3 border-b border-gray-200 dark:border-card-border flex items-center justify-between shrink-0">

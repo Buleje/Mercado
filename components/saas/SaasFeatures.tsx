@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import {
   Shield, MessageCircle, TrendingUp, BarChart3, WifiOff,
   DollarSign, Camera, Gift, ChevronDown, Tag, RefreshCw,
@@ -35,7 +35,7 @@ const C_ICON:   Record<Cat, string> = {
 const STARS: StarFeature[] = [
   { id:1, icon:Shield,        title:"Semáforo de Crédito",   category:"Ventas", problema:"Don Jorge fiaba a todos y perdía S/ 300 al mes en deudas que nunca se cobraban", solucion:"El semáforo evalúa al cliente: verde = fiar tranquilo, amarillo = cuidado, rojo = no fiar", label:"cobros al mes",             num:85, suffix:"%", prefix:"+" },
   { id:2, icon:MessageCircle, title:"Vendedor IA WhatsApp",   category:"IA",     problema:"Rosa no podía atender WhatsApp mientras vendía en mostrador y perdía pedidos", solucion:"El bot toma pedidos, confirma y cobra — todo automático por WhatsApp las 24 horas",    label:"pedidos",                  num:40, suffix:"%", prefix:"+" },
-  { id:3, icon:TrendingUp,    title:"Predicción de Stock",    category:"Stock",  problema:"Carlos se enteraba que faltaba arroz justo cuando el cliente lo pedía y ya era tarde", solucion:"El sistema avisa 3 días antes de que se agote según las ventas reales de tu tienda", label:"quiebres de stock",         num:70, suffix:"%", prefix:"-" },
+  { id:3, icon:TrendingUp,    title:"Predicción de Stock",    category:"Stock",  problema:"Carlos se enteraba que faltaba arroz justo cuando el cliente lo pidea y ya era tarde", solucion:"El sistema avisa 3 días antes de que se agote según las ventas reales de tu tienda", label:"quiebres de stock",         num:70, suffix:"%", prefix:"-" },
   { id:4, icon:BarChart3,     title:"Panel del Día",          category:"Ventas", problema:"Ana cerraba la tienda cada noche sin saber si ese día había ganado o perdido plata", solucion:"Un panel verde/rojo te dice cómo va tu día en tiempo real, sin calcular nada a mano",  label:"control del negocio",      num:25, suffix:"%", prefix:"+" },
   { id:5, icon:WifiOff,       title:"Modo Offline",           category:"Ventas", problema:"En Pucallpa se va el internet 2 o 3 veces por semana y la venta se paraba completo", solucion:"Sigues vendiendo aunque no haya señal. Cuando vuelve el internet, todo se sincroniza", label:"ventas perdidas por corte", num:0,  suffix:"",  prefix:"" },
   { id:6, icon:DollarSign,    title:"Cobranza Inteligente",   category:"Ventas", problema:"Pedro tenía 15 clientes con deuda y no sabía a quién cobrar primero ni cómo", solucion:"4 niveles automáticos: recordatorio suave → descuento → mensaje urgente → bloqueo",       label:"deudas recuperadas",       num:60, suffix:"%", prefix:"+" },

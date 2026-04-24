@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import {
   Store, ArrowRight, ArrowLeft, CheckCircle2, Loader2,
   Eye, EyeOff, Zap, ShoppingBag, Users, ShoppingCart,

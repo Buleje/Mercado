@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import {
   Search, Clock, Users, ChefHat, ShoppingCart, Flame,
   X, Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
@@ -132,7 +132,7 @@ function RecetaCard({
       whileHover={{ y: -4 }}
       className="group"
     >
-      <div className="rounded-xl overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_24px_-12px_rgba(0,180,166,0.18)] transition-[border-color,box-shadow,transform] duration-200">
+      <div className="rounded-xl overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-md transition-[border-color,box-shadow,transform] duration-200">
         {/* Image area — click abre modal preview en lugar de navegar */}
         <button
           type="button"
@@ -151,9 +151,9 @@ function RecetaCard({
               />
             ) : (
               /* Placeholder más grande con icono y texto visible */
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] text-[var(--text-tertiary)] gap-3">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] text-[var(--text-tertiary)] gap-3">
                 <ChefHat className="h-14 w-14" strokeWidth={1.25} aria-hidden />
-                <span className="text-[length:var(--ts-xs)] uppercase tracking-[0.18em] font-bold">
+                <span className="text-[length:var(--ts-xs)] uppercase tracking-wider font-bold">
                   {receta.categoria ?? "Receta"}
                 </span>
               </div>

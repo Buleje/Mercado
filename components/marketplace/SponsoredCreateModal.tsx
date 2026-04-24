@@ -9,7 +9,7 @@
 import { useState, useEffect, useId } from "react";
 import { X, Loader2, AlertCircle } from "@buleje/design-system/icons";
 import { z } from "zod";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // ── Schema Zod ────────────────────────────────────────────────────────────────
@@ -18,13 +18,13 @@ const CreateBoostSchema = z.object({
   productId: z.string().min(1, "Selecciona un producto"),
   bidAmount: z
     .number({ error: "Ingresa un valor numerico" })
-    .min(1, "Minimo S/ 1")
-    .max(100, "Maximo S/ 100"),
+    .min(1, "Mínimo S/ 1")
+    .max(100, "Máximo S/ 100"),
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().min(1, "Fecha de fin requerida"),
   maxBudgetPen: z
     .number({ error: "Ingresa un valor numerico" })
-    .min(10, "Minimo S/ 10"),
+    .min(10, "Mínimo S/ 10"),
 });
 
 type FormErrors = Partial<Record<keyof z.infer<typeof CreateBoostSchema>, string>>;

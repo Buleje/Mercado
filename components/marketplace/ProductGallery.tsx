@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ZoomIn, X, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
