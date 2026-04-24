@@ -372,6 +372,12 @@ body {
   to { transform: translateY(0); }
 }
 
+/* ── Slide from top (banners) ── */
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 /* ── ConfettiBurst: particula dispara desde origen con rotacion ── */
 @keyframes confettiBurst {
   0% {
