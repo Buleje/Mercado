@@ -35,6 +35,7 @@ import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
+import OrderSummaryCard from "@/components/ui-system/OrderSummaryCard";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { useSavedAddresses } from "@/hooks/use-saved-addresses";
 
@@ -415,7 +416,7 @@ export default function CheckoutConfirmarPage() {
           Volver a entrega
         </Link>
         <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-          Revisá tu pedido
+          Revisa tu pedido
         </h1>
         <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
           Verificá que todo esté bien antes de confirmar.
@@ -439,11 +440,11 @@ export default function CheckoutConfirmarPage() {
               </span>
               <div className="relative flex-1 min-w-0">
                 <p className="text-base sm:text-lg font-black tracking-[-0.01em] text-[var(--text-primary)]">
-                  Iniciá sesión para{" "}
+                  Inicia sesión para{" "}
                   <span className="italic font-serif text-[var(--accent)]">trackearlo.</span>
                 </p>
                 <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
-                  Recibí updates por WhatsApp, acumulá puntos Buleje y comprá más rápido la próxima.
+                  Recibe updates por WhatsApp, acumulá puntos Buleje y compra más rápido la próxima.
                 </p>
               </div>
               <div className="relative flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
@@ -669,8 +670,15 @@ export default function CheckoutConfirmarPage() {
             </div>
           )}
 
-          {/* Mobile sticky CTA */}
-          <div className="lg:hidden">
+          {/* Mobile sticky CTA (ronda 4: OrderSummaryCard compact con breakdown rapido) */}
+          <div className="lg:hidden space-y-3">
+            <OrderSummaryCard
+              variant="compact"
+              itemCount={itemCount}
+              savings={couponDiscountTotal + loyaltyDiscountTotal}
+              lines={[]}
+              total={grandTotal - couponDiscountTotal - loyaltyDiscountTotal}
+            />
             <button
               type="button"
               onClick={handleConfirm}
