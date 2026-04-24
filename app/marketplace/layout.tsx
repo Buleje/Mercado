@@ -4,11 +4,10 @@ import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import MarketplacePromoBar from "@/components/marketplace/MarketplacePromoBar";
 import MarketplaceStoreProviders from "@/components/MarketplaceStoreProviders";
 import MotionProvider from "@/components/MotionProvider";
-import CompareFloatingBadge from "@/components/marketplace/CompareFloatingBadge";
-import ProductCompareDrawer from "@/components/marketplace/ProductCompareDrawer";
-import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
+// Widgets floating lazy-loaded (dynamic ssr:false) — reducen el bundle
+// initial del layout en ~300-500kb de framer-motion.
+import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import MarketplaceSecondaryNav from "@/components/marketplace/MarketplaceSecondaryNav";
-import LocalStorageDoctor from "@/components/LocalStorageDoctor";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
@@ -16,11 +15,11 @@ import { SkipLink } from "@/components/ui-system/SkipLink";
 
 export const metadata: Metadata = {
   title: {
-    default: "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru",
+    default: "Marketplace Buleje — Bodegas y Tiendas de Todo el Perú",
     template: "%s | Marketplace · Buleje",
   },
   description:
-    "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra con delivery rapido. Yape y efectivo.",
+    "Encuentra bodegas, minimarkets y tiendas de todo el Perú en un solo lugar. Compra con delivery rápido. Yape y efectivo.",
 };
 
 /**
@@ -42,9 +41,6 @@ export default function MarketplaceLayout({
       <MotionProvider>
         <QuickAddProvider>
           <AddedToCartDrawerProvider>
-            <Suspense fallback={null}>
-              <LocalStorageDoctor />
-            </Suspense>
             <div className="relative min-h-screen bg-[var(--surface-canvas)]">
               <SkipLink />
               {/* Chrome persistente — NO se remonta al navegar entre páginas
@@ -61,11 +57,9 @@ export default function MarketplaceLayout({
               </Suspense>
               {/* Footer persistente — evita flash / remount al navegar. */}
               <Footer />
-              <Suspense fallback={null}>
-                <CompareFloatingBadge />
-                <ProductCompareDrawer />
-                <QuickAddDrawer />
-              </Suspense>
+              {/* 4 widgets floating (compare, quick-add, storage doctor)
+                  lazy-loadeados — descarga diferida post-FCP. */}
+              <MarketplaceFloatingWidgets />
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>
