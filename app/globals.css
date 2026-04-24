@@ -336,6 +336,12 @@ body {
   100% { background-position: -200% 0; }
 }
 
+/* ── Undo toast countdown progress bar (shrinks width to 0) ── */
+@keyframes undoShrink {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
 /* ── Wave animation for emoji ── */
 @keyframes wave {
   0%, 100% { transform: rotate(0deg); }
@@ -994,9 +1000,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgb(255 255 255 / 0.75); /* blanco 75% opacidad */
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgb(255 255 255); /* blanco solido — sin transparencia */
   animation: modal-backdrop-in 180ms ease-out;
   /* Display flex para centrar automaticamente el modal-content hijo.
      Si el consumer ya agrega flex-X, estos se sobreescriben. */
@@ -1004,10 +1008,10 @@ body {
   align-items: center;
   justify-content: center;
 }
-[data-admin-shell="true"] .modal-backdrop,
 .dark .modal-backdrop {
   background: rgb(15 23 42 / 0.72); /* slate-900 72% para dark mode */
 }
+/* Admin shell: mantiene el whiteout blanco (override explicito del usuario). */
 /* NOTE: algunos modales ya aplican su propio `flex items-center` al
  * lado de .modal-backdrop. El display:flex default no rompe porque
  * align/justify son idempotentes cuando coincide. */
