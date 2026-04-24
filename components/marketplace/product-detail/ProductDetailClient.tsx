@@ -24,6 +24,9 @@ import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
 import { ProductFaq } from "./ProductFaq";
 import type { ProductBadgeIntent } from "@buleje/design-system";
+// Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
+import LiveViewersChip from "@/components/marketplace/trust/LiveViewersChip";
+import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -212,6 +215,14 @@ export function ProductDetailClient({
               category={product.category}
               badge={product.badge}
             />
+
+            {/* Trust signals (ronda 4): viendo ahora + stock bajo si aplica */}
+            <div className="flex flex-wrap items-center gap-2">
+              <LiveViewersChip productId={String(product.id)} />
+              {product.stock !== null && product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+                <LowStockBadge stock={product.stock} />
+              )}
+            </div>
 
             <div className="border-t border-[var(--rule-soft)]" />
 
