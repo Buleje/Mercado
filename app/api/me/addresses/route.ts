@@ -19,7 +19,8 @@ import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Next 16 con cacheComponents: force-dynamic es incompatible. La route es
+// dinamica implicitamente porque usa cookies/headers via requireCustomer.
 
 const AddressBody = z.object({
   location: z.string().min(3, "Direccion muy corta").max(300),

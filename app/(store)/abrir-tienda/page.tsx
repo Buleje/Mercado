@@ -21,14 +21,14 @@ const LandingHeader = dynamic(
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 
 export const metadata: Metadata = {
-  title: "Abrí tu tienda | Buleje — Planes y precios para bodegas",
+  title: "Abre tu tienda | Buleje — Planes y precios para bodegas",
   description:
-    "Vendé online con Buleje. Planes desde S/0 al mes, sin comisiones escondidas, sin permanencia. Empezá gratis hoy.",
+    "Vende online con Buleje. Planes desde S/0 al mes, sin comisiones escondidas, sin permanencia. Empieza gratis hoy.",
   alternates: { canonical: "/abrir-tienda" },
   openGraph: {
-    title: "Abrí tu tienda — Buleje",
+    title: "Abre tu tienda — Buleje",
     description:
-      "Planes transparentes para bodegas del Perú. Empezá gratis, crecé sin límites.",
+      "Planes transparentes para bodegas del Perú. Empieza gratis, crecé sin límites.",
     type: "website",
   },
 };
@@ -37,7 +37,7 @@ const BENEFITS = [
   {
     icon: Zap,
     title: "Lista en 5 minutos",
-    desc: "Subís tu catálogo y ya podés vender. Sin código, sin técnicos, sin complicaciones.",
+    desc: "Subes tu catálogo y ya puedes vender. Sin código, sin técnicos, sin complicaciones.",
   },
   {
     icon: Shield,
@@ -47,17 +47,17 @@ const BENEFITS = [
   {
     icon: BarChart3,
     title: "Reportes reales",
-    desc: "Sabés qué vende, a qué hora, a quién. Decisiones basadas en datos, no en corazonada.",
+    desc: "Sabes qué vende, a qué hora, a quién. Decisiones basadas en datos, no en corazonada.",
   },
   {
     icon: Smartphone,
     title: "Tu celular es tu POS",
-    desc: "Vendés desde el mostrador con el celular. Imprime boletas, cobra con Yape.",
+    desc: "Vendes desde el mostrador con el celular. Imprime boletas, cobra con Yape.",
   },
   {
     icon: Users,
     title: "Miles de clientes cerca",
-    desc: "Aparecés en el marketplace de Buleje. Miles de vecinos ya buscan lo que vendés.",
+    desc: "Aparecés en el marketplace de Buleje. Miles de vecinos ya buscan lo que vendes.",
   },
   {
     icon: TrendingUp,
@@ -131,15 +131,15 @@ const PLANS = [
 const FAQS = [
   {
     q: "¿Puedo cambiar de plan después?",
-    a: "Sí. Subís o bajás de plan cuando quieras. Los cambios se aplican al siguiente ciclo de facturación.",
+    a: "Sí. Subes o bajás de plan cuando quieras. Los cambios se aplican al siguiente ciclo de facturación.",
   },
   {
     q: "¿Hay contrato o permanencia mínima?",
-    a: "No. Todos los planes son mensuales y podés cancelar cuando quieras sin penalidades.",
+    a: "No. Todos los planes son mensuales y puedes cancelar cuando quieras sin penalidades.",
   },
   {
     q: "¿El plan Gratis tiene límite de tiempo?",
-    a: "No. Es para siempre. Solo tiene límite de 50 productos. Si crecés, subís al Pro.",
+    a: "No. Es para siempre. Solo tiene límite de 50 productos. Si creces, subes al Pro.",
   },
   {
     q: "¿Qué métodos de pago aceptan para la suscripción?",
@@ -147,7 +147,7 @@ const FAQS = [
   },
   {
     q: "¿La facturación SUNAT tiene costo adicional?",
-    a: "No, está incluida en el plan Pro. Generás boletas y facturas electrónicas directo desde Buleje.",
+    a: "No, está incluida en el plan Pro. Generas boletas y facturas electrónicas directo desde Buleje.",
   },
   {
     q: "¿Incluye soporte técnico?",
@@ -184,18 +184,18 @@ export default function AbrirTiendaPage() {
                   Para bodegueros
                 </p>
                 <h1 className="text-[clamp(2.75rem,7.5vw,5.5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-                  Abrí tu tienda,
+                  Abre tu tienda,
                   <br />
                   <span className="italic font-serif text-[var(--accent)]">
-                    vendé más.
+                    vende más.
                   </span>
                 </h1>
                 <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
-                  Miles de vecinos buscan lo que vos vendés. Subí tu catálogo en{" "}
+                  Miles de vecinos buscan lo que tú vendes. Sube tu catálogo en{" "}
                   <span className="text-[var(--text-primary)] font-bold">
                     5 minutos
                   </span>{" "}
-                  y empezá a recibir pedidos hoy mismo.
+                  y empieza a recibir pedidos hoy mismo.
                 </p>
 
                 <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -217,7 +217,7 @@ export default function AbrirTiendaPage() {
                   </a>
                 </div>
                 <p className="mt-5 text-sm text-[var(--text-tertiary)]">
-                  Sin tarjeta · Sin contrato · Cancelá cuando quieras
+                  Sin tarjeta · Sin contrato · Cancela cuando quieras
                 </p>
               </div>
 
@@ -225,7 +225,7 @@ export default function AbrirTiendaPage() {
               <div className="relative">
                 <div className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 sm:p-10">
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)] mb-8">
-                    En números — {new Date().getFullYear()}
+                    En números — 2026
                   </p>
                   <div className="space-y-8">
                     {[
@@ -322,7 +322,7 @@ export default function AbrirTiendaPage() {
                   Planes mensuales
                 </p>
                 <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-                  Empezá gratis.
+                  Empieza gratis.
                   <br />
                   <span className="italic font-serif text-[var(--accent)]">
                     Crecé sin límites.
@@ -413,7 +413,7 @@ export default function AbrirTiendaPage() {
             </div>
 
             <p className="mt-10 text-center text-sm text-[var(--text-tertiary)]">
-              Plan Gratis sin límite de tiempo · Subí a Pro cuando tu negocio crezca
+              Plan Gratis sin límite de tiempo · Sube a Pro cuando tu negocio crezca
             </p>
           </div>
         </section>
@@ -433,7 +433,7 @@ export default function AbrirTiendaPage() {
                 Todo lo que
                 <br />
                 <span className="italic font-serif text-[var(--accent)]">
-                  querés saber.
+                  quieres saber.
                 </span>
               </h2>
               <p className="mt-6 text-base text-[var(--text-secondary)] leading-relaxed">
@@ -494,7 +494,7 @@ export default function AbrirTiendaPage() {
               </span>
             </h2>
             <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-              Empezá gratis, sin tarjeta. En 5 minutos estás recibiendo pedidos.
+              Empieza gratis, sin tarjeta. En 5 minutos estás recibiendo pedidos.
             </p>
             <div className="mt-12 flex flex-wrap justify-center gap-3">
               <Link

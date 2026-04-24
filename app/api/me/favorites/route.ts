@@ -19,7 +19,7 @@ import { ProductsDB } from "@/lib/db/products.db";
 import { slugify } from "@/data/products";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Next 16 con cacheComponents: force-dynamic es redundante.
 
 export async function GET(req: NextRequest) {
   const anon = anonymousGate(req);

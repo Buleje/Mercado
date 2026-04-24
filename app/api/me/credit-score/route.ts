@@ -19,7 +19,8 @@ import { prisma } from "@/lib/prisma";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
-export const dynamic = "force-dynamic";
+// Next 16 con cacheComponents: force-dynamic es redundante (cookies/headers
+// hacen la route dinamica implicitamente).
 
 export async function GET(req: NextRequest) {
   const anon = anonymousGate(req);

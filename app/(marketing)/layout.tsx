@@ -55,7 +55,7 @@ const NAV_LINKS = [
   { href: "/admin", label: "Iniciar sesión" },
 ];
 
-const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_YEAR = 2026;
 
 const FOOTER_LINKS = [
   { href: "/terminos", label: "Términos" },

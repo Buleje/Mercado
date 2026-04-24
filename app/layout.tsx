@@ -176,6 +176,11 @@ async function getCachedReviewStats() {
 
 // Async component that isolates headers() inside a Suspense boundary
 // so it doesn't block the entire page render (Next.js 16 streaming).
+async function CachedSchemaMarkup() {
+  const { ratingValue, ratingCount } = await getCachedReviewStats();
+  return <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />;
+}
+
 async function DynamicHeadContent() {
   const reqHeaders = await headers();
   const requestId = reqHeaders.get("x-request-id") ?? undefined;
@@ -204,20 +209,20 @@ async function DynamicHeadContent() {
   );
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { ratingValue, ratingCount } = await getCachedReviewStats();
-
   return (
     <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />
         </Suspense>
-        <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />
+        <Suspense fallback={<SchemaMarkup />}>
+          <CachedSchemaMarkup />
+        </Suspense>
         
         {/* Critical preconnects — max 4 (more hurts performance per Lighthouse) */}
         <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />

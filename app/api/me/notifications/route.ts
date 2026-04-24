@@ -19,7 +19,7 @@ import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Next 16 con cacheComponents: force-dynamic es redundante.
 
 export async function GET(req: NextRequest) {
   const anon = anonymousGate(req);
