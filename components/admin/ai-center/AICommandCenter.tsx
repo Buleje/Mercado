@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import {
   BarChart3, ClipboardList, CreditCard, LineChart, AlertCircle, WifiOff,
+  Maximize2, Minimize2, RefreshCw,
 } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,7 @@ export default function AICommandCenter() {
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [maximized, setMaximized] = useState(false);
   const [, setTick] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -96,18 +98,28 @@ export default function AICommandCenter() {
     try { localStorage.setItem(STORAGE_KEY, id); } catch { /* noop */ }
   }, []);
 
-  // Keyboard shortcuts: Alt+1..4
+  // Keyboard shortcuts: Alt+1..4 y Esc para salir de maximize
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.altKey && e.key >= "1" && e.key <= "4") {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
         if (SECTIONS[idx]) changeSection(SECTIONS[idx].id);
+      } else if (e.key === "Escape" && maximized) {
+        setMaximized(false);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [changeSection]);
+  }, [changeSection, maximized]);
+
+  // Body scroll lock mientras maximizado
+  useEffect(() => {
+    if (!maximized) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [maximized]);
 
   // Online/offline detection
   useEffect(() => {
@@ -182,17 +194,18 @@ export default function AICommandCenter() {
   }, [fetchData]);
 
   return (
-    <div className="flex min-h-[600px] bg-[var(--surface-canvas)] rounded-xl border border-[var(--rule-base)] overflow-hidden">
-      {/* ── Inline sidebar ──────────────────────────────────────────── */}
-      <aside className="hidden sm:flex w-48 flex-col border-r border-[var(--rule-base)] bg-gray-50/80 dark:bg-gray-900/60 shrink-0">
-        <div className="px-3 py-3.5 border-b border-[var(--rule-base)]">
-          <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-            Centro IA
-          </p>
-        </div>
-
-        <nav className="flex-1 py-2 px-2">
-          {SECTIONS.map(s => {
+    <div
+      className={cn(
+        "flex flex-col bg-white dark:bg-card overflow-hidden",
+        maximized
+          ? "fixed inset-0 z-[9999]"
+          : "rounded-xl border border-[var(--rule-base)] min-h-[600px]",
+      )}
+    >
+      {/* ── Toolbar superior: tabs horizontales + acciones ──────────── */}
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
+        <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+          {SECTIONS.map((s) => {
             const Icon = s.icon;
             const isActive = activeSection === s.id;
             const badge = badges[s.id];
@@ -200,20 +213,26 @@ export default function AICommandCenter() {
               <button
                 key={s.id}
                 onClick={() => changeSection(s.id)}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all mb-0.5",
+                  "relative inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap",
                   isActive
-                    ? "bg-primary/10 text-primary dark:bg-primary/20 font-semibold border-l-[3px] border-primary"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border-l-[3px] border-transparent",
+                    ? "bg-[var(--text-primary)] text-white"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                 )}
+                title={`${s.label} (Alt+${SECTIONS.indexOf(s) + 1})`}
               >
-                <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-[var(--text-tertiary)]")} />
-                <span className="truncate flex-1 text-left">{s.label}</span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{s.label}</span>
                 {badge != null && badge > 0 && (
-                  <span className={cn(
-                    "text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                    isActive ? "bg-primary/20 text-primary" : "bg-[var(--data-error)] text-white",
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[10px] font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
+                      isActive
+                        ? "bg-white/25 text-white"
+                        : "bg-[var(--data-error)] text-white",
+                    )}
+                  >
                     {badge > 99 ? "99+" : badge}
                   </span>
                 )}
@@ -221,66 +240,48 @@ export default function AICommandCenter() {
             );
           })}
         </nav>
-
-        <div className="border-t border-[var(--rule-base)] px-3 py-2">
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
-            {lastRefresh ? getRelativeTime(lastRefresh) : "Cargando..."}
-          </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] px-2 py-1">
+            <RefreshCw className="h-3 w-3" />
+            {lastRefresh ? getRelativeTime(lastRefresh) : "Cargando…"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setMaximized((m) => !m)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors"
+            aria-label={maximized ? "Salir pantalla completa" : "Pantalla completa"}
+            title={maximized ? "Volver al panel (Esc)" : "Pantalla completa"}
+          >
+            {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{maximized ? "Salir" : "Maximizar"}</span>
+          </button>
         </div>
-      </aside>
-
-      {/* ── Mobile nav (visible < sm) ─────────────────────────────── */}
-      <div className="sm:hidden flex items-center gap-1 p-1 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-x-auto scrollbar-hide w-full absolute top-0 left-0 z-10">
-        {SECTIONS.map(s => {
-          const Icon = s.icon;
-          const isActive = activeSection === s.id;
-          const badge = badges[s.id];
-          return (
-            <button
-              key={s.id}
-              onClick={() => changeSection(s.id)}
-              className={cn(
-                "relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
-                isActive
-                  ? "bg-primary text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {s.label}
-              {badge != null && badge > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[var(--data-error)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1 min-w-4 text-center">
-                  {badge > 99 ? "99+" : badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
       </div>
 
+      {/* ── Banners (approvals, offline, error) ─────────────────────── */}
+      <HITLApprovalsBanner />
+
+      {isOffline && (
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-b border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm font-semibold">
+          <WifiOff className="w-4 h-4 shrink-0" />
+          <span>Sin conexión. Los datos pueden estar desactualizados.</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-[var(--data-error-50)] dark:bg-red-950/30 border-b border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm font-semibold">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* ── Content area ──────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 sm:pt-0 pt-12">
-        <HITLApprovalsBanner />
-
-        {isOffline && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-b border-[var(--data-warning)] dark:border-[var(--data-warning)]/40 text-[var(--data-warning)] dark:text-[var(--data-warning)] text-sm">
-            <WifiOff className="w-4 h-4 shrink-0" />
-            <span>Sin conexion. Datos pueden estar desactualizados.</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--data-error-50)] dark:bg-red-950/30 border-b border-[var(--data-error)] dark:border-[var(--data-error)]/40 text-[var(--data-error)] dark:text-[var(--data-error)] text-sm">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <div className="flex-1 p-4 overflow-auto">
+      <main className="flex-1 overflow-auto">
+        <div className="p-5 sm:p-6">
           {loading && !data ? (
             <LoadingSkeleton />
           ) : !data ? (
-            <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
+            <div className="text-center py-16 text-[var(--text-tertiary)] text-sm">
               No se pudieron cargar los datos. Intenta recargar.
             </div>
           ) : (

@@ -14,13 +14,12 @@ const AICommandCenter = dynamic(
 const _MODULE_ID = "ai-command";
 
 export default function AICommandModule() {
+  // 2026-04-24: description removida — los tabs + KPIs + acciones ya
+  // comunican el propósito del centro. Consistencia con el resto del
+  // admin (Ventas/Caja/Inventario/etc también están sin subtítulo).
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Centro de Comando IA"
-        description="Ejecuta comandos de inteligencia artificial para tu bodega"
-        icon={Brain}
-      />
+      <AdminModuleHeader title="Centro de Comando IA" icon={Brain} />
       <AICommandCenter />
     </div>
   );
