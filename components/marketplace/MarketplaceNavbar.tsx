@@ -326,10 +326,12 @@ export default function MarketplaceNavbar() {
             </Link>
 
             {/* ── Search bar autocomplete (desktop + tablet) ── */}
-            <NavbarSearchAutocomplete
-              className="hidden md:block flex-1 max-w-[680px]"
-              placeholder={t("nav.searchPlaceholder")}
-            />
+            <div data-tour="search" className="hidden md:block flex-1 max-w-[680px]">
+              <NavbarSearchAutocomplete
+                className="block"
+                placeholder={t("nav.searchPlaceholder")}
+              />
+            </div>
 
             {/* ── Nav links transaccionales (lg+) ── */}
             <div className="hidden lg:flex items-center gap-0.5">
@@ -380,7 +382,9 @@ export default function MarketplaceNavbar() {
               <NotificationsMenu />
 
               {/* Cart */}
-              <CartBadge onClick={handleOpenCart} />
+              <span data-tour="cart" className="inline-flex">
+                <CartBadge onClick={handleOpenCart} />
+              </span>
 
               {/* Divider sutil */}
               <div
@@ -390,7 +394,7 @@ export default function MarketplaceNavbar() {
 
               {/* Auth — Avatar circular con iniciales o Ingresar */}
               {customer ? (
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative" ref={userMenuRef} data-tour="user-menu">
                   <button
                     onClick={() => setUserMenuOpen((o) => !o)}
                     aria-expanded={userMenuOpen}
@@ -531,6 +535,7 @@ export default function MarketplaceNavbar() {
               ) : (
                 <button
                   onClick={openAuthModal}
+                  data-tour="user-menu"
                   className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[var(--accent)] min-h-[40px]"
                 >
                   {t("nav.login")}
@@ -540,7 +545,9 @@ export default function MarketplaceNavbar() {
 
             {/* ── Mobile: cart + hamburger ── */}
             <div className="flex md:hidden items-center gap-1 ml-auto">
-              <CartBadge onClick={handleOpenCart} />
+              <span data-tour="cart" className="inline-flex">
+                <CartBadge onClick={handleOpenCart} />
+              </span>
               <button
                 onClick={() => setMobileMenuOpen((o) => !o)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"

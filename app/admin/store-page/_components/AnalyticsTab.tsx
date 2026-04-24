@@ -2,7 +2,8 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, TrendingUp, Eye, Target, Percent } from "@buleje/design-system/icons";
+import { TrendingUp, Eye, Target, Percent } from "@buleje/design-system/icons";
+import StatsWidget from "@/components/ui-system/StatsWidget";
 
 type Analytics = {
   visits7d: number;
@@ -47,31 +48,37 @@ export default function AnalyticsTab() {
 
   return (
     <div className="space-y-6">
-      {/* KPIs */}
+      {/* KPIs (ronda 4: StatsWidget con deltas + sparkline opcional) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi
-          icon={Eye}
+        <StatsWidget
           label="Visitas 7d"
-          value={data.visits7d.toLocaleString("es-PE")}
-          color="teal"
+          value={data.visits7d}
+          previousValue={Math.max(1, data.visits30d - data.visits7d) / 3}
+          icon={<Eye className="h-4 w-4" strokeWidth={2} />}
+          subtitle="vs semana previa"
+          trend={data.visitsByDay.slice(-7).map((d) => d.visits)}
         />
-        <Kpi
-          icon={Eye}
+        <StatsWidget
           label="Visitas 30d"
-          value={data.visits30d.toLocaleString("es-PE")}
-          color="blue"
+          value={data.visits30d}
+          icon={<Eye className="h-4 w-4" strokeWidth={2} />}
+          subtitle="últimos 30 días"
+          trend={data.visitsByDay.map((d) => d.visits)}
         />
-        <Kpi
-          icon={Target}
+        <StatsWidget
           label="Conversiones 30d"
-          value={data.conversions30d.toLocaleString("es-PE")}
-          color="green"
+          value={data.conversions30d}
+          previousValue={data.conversions7d * 4}
+          icon={<Target className="h-4 w-4" strokeWidth={2} />}
+          subtitle="vs proyección semanal x4"
+          trend={data.visitsByDay.map((d) => d.conversions)}
         />
-        <Kpi
-          icon={Percent}
+        <StatsWidget
           label="Tasa conversión 30d"
-          value={`${data.conversionRate30d.toFixed(1)}%`}
-          color="amber"
+          value={data.conversionRate30d}
+          format="percent"
+          icon={<Percent className="h-4 w-4" strokeWidth={2} />}
+          variant="featured"
         />
       </div>
 
@@ -165,30 +172,3 @@ export default function AnalyticsTab() {
   );
 }
 
-function Kpi({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: typeof Eye;
-  label: string;
-  value: string;
-  color: "teal" | "blue" | "green" | "amber";
-}) {
-  const colors: Record<string, string> = {
-    teal: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-    blue: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-    green: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-    amber: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",
-  };
-  return (
-    <div className="p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${colors[color]}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <p className="text-2xl font-extrabold">{value}</p>
-      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
-    </div>
-  );
-}

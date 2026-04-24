@@ -46,6 +46,11 @@ const FloatingDockController = dynamic(
   { ssr: false },
 );
 
+const MarketplaceFirstVisitTour = dynamic(
+  () => import("@/components/marketplace/MarketplaceFirstVisitTour"),
+  { ssr: false },
+);
+
 export default function MarketplaceFloatingWidgets() {
   return (
     <>
@@ -54,6 +59,7 @@ export default function MarketplaceFloatingWidgets() {
       <ProductCompareDrawer />
       <QuickAddDrawer />
       <FloatingDockController />
+      <MarketplaceFirstVisitTour />
     </>
   );
 }
