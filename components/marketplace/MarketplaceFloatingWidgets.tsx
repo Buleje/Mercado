@@ -1,17 +1,22 @@
 "use client";
 
 /**
- * MarketplaceFloatingWidgets — Client wrapper que lazy-loadea los 4 widgets
- * floating del marketplace (CompareFloatingBadge, ProductCompareDrawer,
- * QuickAddDrawer, LocalStorageDoctor).
+ * MarketplaceFloatingWidgets — Client wrapper que lazy-loadea los widgets
+ * floating del marketplace.
  *
- * Estos widgets:
- *   - Solo aparecen visualmente si hay estado (items en compare, quick-add
- *     trigger, localStorage issues)
- *   - Suman ~300-500kb de framer-motion al bundle inicial del layout
+ * Widgets originales (pre-ronda4):
+ *   - CompareFloatingBadge
+ *   - ProductCompareDrawer
+ *   - QuickAddDrawer
+ *   - LocalStorageDoctor
+ *
+ * Ronda 4 UX additions (todos controlados por el FloatingDockController):
+ *   - QuickActionsDock: dock flotante (scroll top, historial, ayuda)
+ *   - RecentlyViewedDrawer: drawer con productos vistos recientemente
+ *   - ShortcutHelpModal: modal con ? para ver atajos
  *
  * Al ser dynamic() con ssr: false, se descargan DESPUES del primer paint,
- * cuando el browser esta idle.
+ * cuando el browser esta idle — no inflan el bundle inicial.
  */
 
 import dynamic from "next/dynamic";
@@ -36,6 +41,11 @@ const LocalStorageDoctor = dynamic(
   { ssr: false },
 );
 
+const FloatingDockController = dynamic(
+  () => import("@/components/marketplace/FloatingDockController"),
+  { ssr: false },
+);
+
 export default function MarketplaceFloatingWidgets() {
   return (
     <>
@@ -43,6 +53,7 @@ export default function MarketplaceFloatingWidgets() {
       <CompareFloatingBadge />
       <ProductCompareDrawer />
       <QuickAddDrawer />
+      <FloatingDockController />
     </>
   );
 }

@@ -14,7 +14,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   Minus,
   Plus,
@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
 import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import CartCouponSection from "@/components/marketplace/CartCouponSection";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { useCustomer } from "@/contexts/customer-context";
 
@@ -132,11 +133,12 @@ function ItemRow({
 }
 
 export default function CarritoPage() {
-  const { byStore, totalByStore, itemCount, updateQuantity, removeItem, clearAll } =
+  const { byStore, totalByStore, grandTotal, itemCount, updateQuantity, removeItem, clearAll } =
     useMarketplaceCart();
   const { customer: loggedCustomer } = useCustomer();
   const storeIds = Object.keys(byStore);
   const isEmpty = storeIds.length === 0;
+  const [couponDiscount, setCouponDiscount] = useState(0);
   // Si no hay sesión, mandamos al gate auth que fuerza el modal con fondo vacío
   const continueHref = loggedCustomer ? "/checkout/datos" : "/checkout/auth";
 
@@ -287,10 +289,14 @@ export default function CarritoPage() {
             ctaLabel="Continuar"
             ctaHref={continueHref}
             showItems={false}
+            couponDiscount={couponDiscount}
             helperText={
               loggedCustomer
                 ? "Pago al recibir o por Yape · sin sorpresas"
                 : "Te pedimos iniciar sesión para continuar"
+            }
+            beforeBreakdown={
+              <CartCouponSection subtotal={grandTotal} onDiscountChange={setCouponDiscount} />
             }
           />
         </div>

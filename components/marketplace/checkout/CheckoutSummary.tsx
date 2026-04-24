@@ -24,6 +24,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import Tooltip from "@/components/ui-system/Tooltip";
 
 const FREE_SHIPPING_THRESHOLD = 50;
 
@@ -40,6 +41,8 @@ export type SummaryProps = {
   loyaltyDiscount?: number;
   showItems?: boolean;
   helperText?: string;
+  /** Slot para CouponInput u otro widget encima del breakdown (ronda 4). */
+  beforeBreakdown?: React.ReactNode;
 };
 
 export default function CheckoutSummary({
@@ -52,6 +55,7 @@ export default function CheckoutSummary({
   loyaltyDiscount = 0,
   showItems = false,
   helperText,
+  beforeBreakdown,
 }: SummaryProps) {
   const { byStore, grandTotal, itemCount } = useMarketplaceCart();
   const storeIds = Object.keys(byStore);
@@ -152,6 +156,11 @@ export default function CheckoutSummary({
         </ul>
       )}
 
+      {/* ── Slot ronda 4 (CouponInput, etc) ───────────────────────── */}
+      {!isEmpty && beforeBreakdown && (
+        <div>{beforeBreakdown}</div>
+      )}
+
       {/* ── Breakdown (uppercase 11px, valores base) ─────────────── */}
       {!isEmpty ? (
         <dl className="space-y-3 text-base border-t border-[var(--rule-soft)] pt-5">
@@ -182,7 +191,9 @@ export default function CheckoutSummary({
           <div className="flex items-baseline justify-between">
             <dt className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
               <Truck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              Envío
+              <Tooltip content={`Envío gratis desde S/${FREE_SHIPPING_THRESHOLD}`}>
+                <span className="underline decoration-dotted cursor-help">Envío</span>
+              </Tooltip>
             </dt>
             <dd>
               {shipping === 0 ? (
