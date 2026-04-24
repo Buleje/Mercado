@@ -244,8 +244,10 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
   const sections: DraggableItem[] = [
     {
       id: "pareto-proveedores",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Pareto · proveedores · rango activo"
           title="Concentración del gasto (80/20)"
           kpis={[
@@ -283,6 +285,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "salud-cuentas",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Salud de cuentas · estado al día"
           title="Porcentaje de cuentas sin problemas"
           kpis={[
@@ -323,8 +326,10 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
     },
     {
       id: "comparativa-anual",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Compras · 12 meses"
           title="Año actual vs año pasado"
           kpis={[
@@ -360,6 +365,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "mix-proveedores",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Mix de compras · rango activo"
           title="Composición diaria por proveedor top-5"
           kpis={[
@@ -402,8 +408,10 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
     },
     {
       id: "waterfall-deuda",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Δ Deuda · rango activo"
           title="De deuda inicial a deuda actual"
           kpis={[
@@ -425,6 +433,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "comparativa-semana",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Comparativa · compras semana a semana"
           title="Esta semana vs semana pasada"
         >
@@ -444,5 +453,5 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="compras-advanced-order" layout="grid" />;
 });

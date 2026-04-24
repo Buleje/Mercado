@@ -16,7 +16,8 @@ const ComprasAdvancedCharts = dynamic(
   () => import("./ComprasAdvancedCharts").then((m) => ({ default: m.ComprasAdvancedCharts })),
   { ssr: false },
 );
-import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
+// DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
+import { BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -184,12 +185,7 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
 
   return (
     <div className="space-y-6">
-      <DashboardSectionHeader
-        eyebrow="Dashboard · Compras y proveedores"
-        title="Cómo entra"
-        titleAccent="el stock"
-        subtitle="Órdenes de compra, deuda con proveedores, costo promedio y rotación del inventario."
-      />
+      {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

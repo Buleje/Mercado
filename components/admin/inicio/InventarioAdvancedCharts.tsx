@@ -388,8 +388,10 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
   const sections: DraggableItem[] = [
     {
       id: "abc-analysis",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="ABC analysis · concentración del valor"
           title="Top 15 SKUs y curva 80/20"
           kpis={[
@@ -423,6 +425,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "salud-inventario",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Salud general · % SKUs sin problema"
           title="Estado actual del inventario"
           rightSlot={
@@ -480,6 +483,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "rotacion-categoria",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Rotación · rango activo"
           title="Velocidad y cobertura por categoría"
           kpis={[
@@ -527,8 +531,10 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     },
     {
       id: "salidas-stacked",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Salidas por categoría · rango activo"
           title="Composición diaria de unidades salidas"
           kpis={[
@@ -571,6 +577,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "waterfall-inventario",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Δ Inventario · rango activo"
           title="De stock inicio a stock actual"
           kpis={[
@@ -590,12 +597,14 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     },
     {
       id: "heatmap-cat-dia",
+      span: "full",
       render: () => {
         const peakName = heatmapCatDia.peakCat.idx >= 0
           ? CAT_LABEL[heatmapCatDia.cats[heatmapCatDia.peakCat.idx]] ?? heatmapCatDia.cats[heatmapCatDia.peakCat.idx]
           : "—";
         return (
           <DashboardSection
+          hideHeader
             kicker="Heatmap · categoría × día · rango activo"
             title="Cuándo rota cada categoría"
             kpis={[
@@ -675,6 +684,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "comparativa-semana",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Comparativa · salidas semana a semana"
           title="Unidades salidas · esta semana vs pasada"
         >
@@ -694,5 +704,5 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="inventario-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="inventario-advanced-order" layout="grid" />;
 });

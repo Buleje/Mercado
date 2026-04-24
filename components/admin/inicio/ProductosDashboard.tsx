@@ -16,7 +16,8 @@ const ProductosAdvancedCharts = dynamic(
   () => import("./ProductosAdvancedCharts").then((m) => ({ default: m.ProductosAdvancedCharts })),
   { ssr: false },
 );
-import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
+// DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
+import { BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -233,12 +234,7 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
 
   return (
     <div className="space-y-6">
-      <DashboardSectionHeader
-        eyebrow="Dashboard · Productos y catálogo"
-        title="Tu catálogo"
-        titleAccent="en números"
-        subtitle="Productos activos, categorías, precios y los que más rotan en el periodo."
-      />
+      {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

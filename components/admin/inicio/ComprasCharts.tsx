@@ -72,8 +72,10 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
   const sections: DraggableItem[] = [
     {
       id: "compras-diarias",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Compras · rango activo"
           title="Monto de compras por día"
           kpis={[
@@ -98,8 +100,10 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
     },
     {
       id: "tendencia-mensual",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Compras · rango activo"
           title="Tendencia mensual"
           kpis={[
@@ -126,6 +130,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "top-proveedores-periodo",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Proveedores · periodo"
           title="Top 10 proveedores por monto y órdenes"
           kpis={[
@@ -177,6 +182,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "estado-cuentas",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Cuentas por pagar · estado"
           title="Distribución por estado de cuenta"
           kpis={[
@@ -229,6 +235,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "cuentas-por-vencer",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Cuentas · próximos vencimientos"
           title="Días restantes para pagar"
           kpis={[
@@ -274,6 +281,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "top-proveedores-historico",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Proveedores · histórico total"
           title="Top 10 proveedores acumulados"
           kpis={[
@@ -301,5 +309,5 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-base-order" />;
+  return <DraggableSections items={sections} storageKey="compras-base-order" layout="grid" />;
 }

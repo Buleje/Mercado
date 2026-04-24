@@ -85,6 +85,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "top-10-clientes",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Ranking · top 10 clientes del periodo"
           title="Quién más te compra"
           kpis={[
@@ -112,6 +113,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "retencion-6m",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Retención · rango activo"
           title="Nuevos vs recurrentes por mes"
           kpis={[
@@ -148,8 +150,10 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
     },
     {
       id: "clientes-por-dia",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Actividad · rango activo"
           title="Clientes nuevos y activos por día"
           kpis={[
@@ -180,6 +184,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "distribucion-gasto",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Distribución · gasto histórico"
           title="Cuántos clientes en cada rango de gasto"
           kpis={[
@@ -224,6 +229,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "frecuencia-compra",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Frecuencia · en el periodo"
           title="Cuántas veces compran tus clientes"
           kpis={[
@@ -260,6 +266,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "ticket-por-cliente",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Ticket promedio · top clientes"
           title="Cuánto gastan por visita"
           kpis={[
@@ -309,5 +316,5 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="clientes-base-order" />;
+  return <DraggableSections items={sections} storageKey="clientes-base-order" layout="grid" />;
 }

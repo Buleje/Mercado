@@ -340,8 +340,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
   const sections: DraggableItem[] = [
     {
       id: "cohort-retention",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Cohort analysis · retención mes a mes"
           title="Cuántos vuelven después de la 1ra compra"
           kpis={[
@@ -448,6 +450,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "rfm-quadrant",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="RFM · recency × frequency · monetary = tamaño"
           title="Segmentación estratégica de clientes"
           kpis={[
@@ -530,6 +533,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "rating-distribution",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Satisfacción · todos los periodos"
           title="Distribución de reseñas por rating"
           kpis={[
@@ -570,6 +574,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "comparativa-nuevos",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Comparativa · nuevos clientes semana a semana"
           title="Adquisición · esta semana vs pasada"
         >
@@ -589,6 +594,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     },
     {
       id: "heatmap-actividad",
+      span: "full",
       render: () => {
         const peakLabel =
           heatmap.peak.idx >= 0
@@ -596,6 +602,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
             : "—";
         return (
           <DashboardSection
+          hideHeader
             kicker="Heatmap · franja × día · rango activo"
             title="Cuándo compran tus clientes"
             kpis={[
@@ -654,8 +661,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     },
     {
       id: "churn-risk",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Churn risk · clientes en peligro de abandono"
           title="Clientes valiosos que no vuelven"
           kpis={[
@@ -728,5 +737,5 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="clientes-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="clientes-advanced-order" layout="grid" />;
 });

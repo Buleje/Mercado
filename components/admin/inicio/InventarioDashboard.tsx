@@ -16,7 +16,8 @@ const InventarioAdvancedCharts = dynamic(
   () => import("./InventarioAdvancedCharts").then((m) => ({ default: m.InventarioAdvancedCharts })),
   { ssr: false },
 );
-import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
+// DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
+import { BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -228,12 +229,7 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
 
   return (
     <div className="space-y-6">
-      <DashboardSectionHeader
-        eyebrow="Dashboard · Inventario y stock"
-        title="Qué hay"
-        titleAccent="en bodega"
-        subtitle="Stock disponible, alertas de reposición, productos por vencer y valor total del inventario."
-      />
+      {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

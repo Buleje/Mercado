@@ -26,6 +26,16 @@ import { GripVertical, Eye, EyeOff, RotateCcw } from "@buleje/design-system/icon
 export interface DraggableItem {
   id: string;
   render: () => ReactNode;
+  /**
+   * Ancho en grid mode:
+   *  - "half" (default): ocupa 1 celda del grid (2 por fila en lg+).
+   *  - "full": ocupa TODAS las columnas del grid en la fila (grid-column:
+   *    1 / -1). Usar para charts que necesitan mucho espacio horizontal:
+   *    series temporales largas, heatmaps, comparativas con >7 categorías.
+   *
+   * En layout="column" esta prop se ignora (todas full).
+   */
+  span?: "full" | "half";
 }
 
 interface Props {
@@ -180,8 +190,9 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           >
             <AnimatePresence initial={false}>
               {validOrder.map((id, index) => {
-                const render = renderById.get(id);
-                if (!render) return null;
+                const item = items.find((i) => i.id === id);
+                if (!item) return null;
+                const isFullSpan = layout === "grid" && item.span === "full";
                 return (
                   <DraggableSection
                     key={id}
@@ -190,8 +201,9 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     hydrated={hydrated}
                     hidden={hiddenSet.has(id)}
                     onToggle={() => toggleHidden(id)}
+                    fullSpan={isFullSpan}
                   >
-                    {render()}
+                    {item.render()}
                   </DraggableSection>
                 );
               })}
@@ -222,6 +234,7 @@ function DraggableSection({
   hydrated,
   hidden,
   onToggle,
+  fullSpan,
   children,
 }: {
   id: string;
@@ -229,6 +242,7 @@ function DraggableSection({
   hydrated: boolean;
   hidden: boolean;
   onToggle: () => void;
+  fullSpan?: boolean;
   children: ReactNode;
 }) {
   const {
@@ -246,6 +260,9 @@ function DraggableSection({
     transition,
     zIndex: isDragging ? 30 : 1,
     position: "relative",
+    // fullSpan: en grid mode hace que el item ocupe TODAS las columnas
+    // de la fila (1 / -1 = desde la primera hasta la ultima track line).
+    ...(fullSpan ? { gridColumn: "1 / -1" } : null),
   };
 
   return (

@@ -147,6 +147,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "valor-categoria",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Valor del inventario · por categoría"
           title="Cuánto vale y cuánto hay por categoría"
           kpis={[
@@ -188,8 +189,10 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
     },
     {
       id: "movimiento-diario",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Movimiento · rango activo"
           title="Entradas y salidas de stock"
           kpis={[
@@ -222,6 +225,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "top-salidas",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Productos · más rotación · periodo"
           title="Top 10 productos por unidades salidas"
           kpis={[
@@ -255,6 +259,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "distribucion-stock",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Distribución · SKUs por rango de stock"
           title="Cuántos productos hay en cada rango"
           kpis={[
@@ -303,6 +308,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "dias-cobertura",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Cobertura · días restantes top-10"
           title="Días de stock para los productos más expuestos"
           kpis={[
@@ -338,8 +344,10 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
     },
     {
       id: "stockout-proyeccion",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Proyección · cuándo se agota"
           title="Días hasta agotarse · top 10 riesgo"
           rightSlot={
@@ -408,7 +416,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
 
   return (
     <>
-      <DraggableSections items={sections} storageKey="inventario-base-order" />
+      <DraggableSections items={sections} storageKey="inventario-base-order" layout="grid" />
       <ReorderModal
         open={reorderOpen}
         candidates={reorderCandidates}

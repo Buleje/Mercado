@@ -390,6 +390,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "margen-volumen-quadrant",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Matriz BCG · margen × volumen · 30d"
           title="Clasificación estratégica de productos"
           kpis={[
@@ -494,6 +495,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "rotacion-margen",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Rotación vs margen · por categoría · 30d"
           title="Qué categoría rota rápido y con qué margen"
           kpis={[
@@ -543,6 +545,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "top5-evolution",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Top-5 productos · evolución 14d"
           title="Cómo rinde la élite día a día"
           kpis={[
@@ -581,6 +584,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "comparativa-unidades",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Unidades vendidas · semana a semana"
           title="Esta semana vs semana pasada"
         >
@@ -600,6 +604,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
     },
     {
       id: "heatmap-cat-dia",
+      span: "full",
       render: () => {
         const peakName =
           heatmap.peakCat.idx >= 0
@@ -607,6 +612,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
             : "—";
         return (
           <DashboardSection
+          hideHeader
             kicker="Heatmap · categoría × día · 30d"
             title="Cuándo se vende cada categoría"
             kpis={[
@@ -677,6 +683,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "margen-cat",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Margen ranking · por categoría · 30d"
           title="Qué categorías dan más utilidad por sol vendido"
           kpis={[
@@ -721,5 +728,5 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="productos-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="productos-advanced-order" layout="grid" />;
 });

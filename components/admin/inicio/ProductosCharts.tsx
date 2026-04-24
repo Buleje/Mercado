@@ -84,6 +84,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "top-10-productos",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Rankings · top 10 del periodo"
           title="Los productos que más venden"
           kpis={[
@@ -103,8 +104,10 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
     },
     {
       id: "abc-pareto",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="ABC analysis · concentración de ingresos"
           title="Top 20 productos con curva acumulada 80/20"
           kpis={[
@@ -142,6 +145,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "ventas-categoria",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Categorías · periodo"
           title="Ingresos por categoría"
           kpis={[
@@ -170,8 +174,10 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
     },
     {
       id: "stock-proyeccion",
+      span: "full",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Riesgo · proyección top 10"
           title="Días hasta agotarse"
           kpis={[
@@ -217,6 +223,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "sin-movimiento",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Dead stock · top 10 zombies"
           title="Productos sin movimiento · capital inmovilizado"
           kpis={[
@@ -248,6 +255,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "afinidades",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Análisis de cesta · co-compra"
           title="Pares que se venden juntos"
           kpis={[
@@ -319,5 +327,5 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="productos-base-order" />;
+  return <DraggableSections items={sections} storageKey="productos-base-order" layout="grid" />;
 }
