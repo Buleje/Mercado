@@ -8,10 +8,11 @@
  */
 
 import Link from "next/link";
-import { Star, Store, MapPin, Truck } from "@buleje/design-system/icons";
-import { Kicker, BodyText, Caption, ProductPrice, ProductBadge } from "@buleje/design-system";
-import { cn } from "@buleje/design-system";
+import { Store, MapPin, Truck } from "@buleje/design-system/icons";
+import { BodyText, Caption, ProductPrice, ProductBadge } from "@buleje/design-system";
 import { SocioBadge } from "./SocioBadge";
+import RatingStars from "@/components/ui-system/RatingStars";
+import Tooltip from "@/components/ui-system/Tooltip";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -31,32 +32,6 @@ export interface ProductInfoProps {
   badge?: string | null;
   ratingAverage?: number;
   ratingCount?: number;
-}
-
-// ── Rating stars ───────────────────────────────────────────────────────────────
-
-function StarRating({ rating, count }: { rating: number; count: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-0.5" aria-label={`${rating} de 5 estrellas`}>
-        {[1, 2, 3, 4, 5].map((s) => (
-          <Star
-            key={s}
-            className={cn(
-              "h-4 w-4",
-              s <= Math.round(rating)
-                ? "text-[var(--text-primary)] fill-[var(--text-primary)]"
-                : "text-[var(--rule-base)] fill-[var(--rule-base)]"
-            )}
-            aria-hidden
-          />
-        ))}
-      </div>
-      <Caption className="text-[var(--text-secondary)]">
-        ({count} reseñas)
-      </Caption>
-    </div>
-  );
 }
 
 // ── Stock indicator ────────────────────────────────────────────────────────────
@@ -137,7 +112,7 @@ export function ProductInfo({
       </h1>
 
       {/* Rating */}
-      <StarRating rating={ratingAverage} count={ratingCount} />
+      <RatingStars value={ratingAverage} count={ratingCount} size="sm" />
 
       {/* Precio + badge oferta */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -163,12 +138,14 @@ export function ProductInfo({
       {/* Stock indicator */}
       <StockIndicator stock={stock} />
 
-      {/* Delivery estimate */}
+      {/* Delivery estimate (ronda 4: Tooltip sobre tiempo explicando origen) */}
       <div className="flex items-center gap-2 py-2.5 px-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-muted)]">
         <Truck className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-        <BodyText className="text-[var(--text-secondary)]">
-          Llega en 25 min aprox
-        </BodyText>
+        <Tooltip content="Tiempo estimado desde que la bodega confirma tu pedido">
+          <BodyText className="text-[var(--text-secondary)] underline decoration-dotted cursor-help">
+            Llega en 25 min aprox
+          </BodyText>
+        </Tooltip>
         <span className="text-[var(--rule-base)]">·</span>
         <div className="flex items-center gap-1">
           <MapPin className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
