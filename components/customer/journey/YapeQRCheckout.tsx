@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { Upload, Check, Copy, Smartphone, Loader2, X } from "@buleje/design-system/icons";
+import { Upload, Check, Copy, Smartphone, Loader2, X, Zap } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BTN } from "@/lib/copy";
@@ -40,7 +40,7 @@ interface Props {
   qrImageUrl: string;
   /** Nombre del receptor que aparece en Yape */
   recipientName: string;
-  /** Numero de celular Yape (formato 9XXXXXXXX) */
+  /** Número de celular Yape (formato 9XXXXXXXX) */
   recipientPhone: string;
   /** Endpoint que valida la captura con vision LLM */
   validateEndpoint?: string;
@@ -94,7 +94,7 @@ export function YapeQRCheckout({
         }, 1200);
       } else {
         setStatus("error");
-        setErrorMsg(data.error ?? "No pudimos validar tu pago. Tomá otra captura o revisá el monto.");
+        setErrorMsg(data.error ?? "No pudimos validar tu pago. Toma otra captura o revisa el monto.");
       }
     } catch {
       setStatus("error");
@@ -186,6 +186,24 @@ export function YapeQRCheckout({
         </div>
       </div>
 
+      {/* Deeplink 1-tap — abre app Yape directo con monto pre-llenado */}
+      <div className="p-5 border-b border-[var(--rule-soft)]">
+        <a
+          href={`yape://payment?phone=${encodeURIComponent(recipientPhone)}&amount=${amount.toFixed(2)}`}
+          className="flex items-center justify-center gap-2 w-full rounded-full bg-[#722D82] text-white font-bold py-4 text-base hover:bg-[#5d2470] transition-colors md:hidden"
+          aria-label="Abrir Yape con el monto exacto"
+        >
+          <Zap className="h-5 w-5" strokeWidth={2} aria-hidden />
+          Abrir Yape — Pagar S/ {amount.toFixed(2)}
+        </a>
+        <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center md:hidden">
+          Se abre tu app con el monto listo. Si no tenés Yape, usá el QR abajo.
+        </p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center hidden md:block">
+          En móvil aparece un botón para abrir Yape directo. En desktop escaneá el QR.
+        </p>
+      </div>
+
       {/* Steps */}
       <div className="p-5 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
@@ -194,7 +212,7 @@ export function YapeQRCheckout({
         <ol className="space-y-2 text-sm text-[var(--text-secondary)]">
           <li className="flex items-start gap-2">
             <IconBadge size="xs" className="mt-0.5">1</IconBadge>
-            Abrí tu app de Yape y tocá &ldquo;Pagar con QR&rdquo; o &ldquo;Yapear&rdquo;
+            Abre tu app de Yape y tocá &ldquo;Pagar con QR&rdquo; o &ldquo;Yapear&rdquo;
           </li>
           <li className="flex items-start gap-2">
             <IconBadge size="xs" className="mt-0.5">2</IconBadge>
@@ -202,11 +220,11 @@ export function YapeQRCheckout({
           </li>
           <li className="flex items-start gap-2">
             <IconBadge size="xs" className="mt-0.5">3</IconBadge>
-            Pagá exacto <span className="font-semibold tabular-nums">S/ {amount.toFixed(2)}</span> y tomá captura
+            Paga exacto <span className="font-semibold tabular-nums">S/ {amount.toFixed(2)}</span> y toma captura
           </li>
           <li className="flex items-start gap-2">
             <IconBadge size="xs" className="mt-0.5">4</IconBadge>
-            Subí la captura abajo — validamos en 5 segundos
+            Sube la captura abajo — validamos en 5 segundos
           </li>
         </ol>
       </div>
@@ -321,7 +339,7 @@ export function YapeQRCheckout({
         {/* Footer note */}
         <p className="mt-4 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] text-center leading-relaxed">
           <Smartphone className="inline h-3 w-3 -mt-0.5" strokeWidth={1.75} aria-hidden />{" "}
-          Si tenés problemas, escribinos por WhatsApp y te ayudamos con el pago
+          Si tienes problemas, escríbenos por WhatsApp y te ayudamos con el pago
         </p>
       </div>
     </div>
