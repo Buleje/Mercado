@@ -51,6 +51,11 @@ const MarketplaceFirstVisitTour = dynamic(
   { ssr: false },
 );
 
+const DockFeatureSpotlight = dynamic(
+  () => import("@/components/marketplace/DockFeatureSpotlight"),
+  { ssr: false },
+);
+
 export default function MarketplaceFloatingWidgets() {
   return (
     <>
@@ -60,6 +65,7 @@ export default function MarketplaceFloatingWidgets() {
       <QuickAddDrawer />
       <FloatingDockController />
       <MarketplaceFirstVisitTour />
+      <DockFeatureSpotlight />
     </>
   );
 }

@@ -16,8 +16,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 import {
-  Minus,
-  Plus,
   Trash2,
   Store,
   ShoppingCart,
@@ -28,6 +26,7 @@ import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart"
 import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CartCouponSection from "@/components/marketplace/CartCouponSection";
+import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { useCustomer } from "@/contexts/customer-context";
 
@@ -36,13 +35,11 @@ const fmt = (n: number) =>
 
 function ItemRow({
   item,
-  onInc,
-  onDec,
+  onQty,
   onRemove,
 }: {
   item: CartItem;
-  onInc: () => void;
-  onDec: () => void;
+  onQty: (qty: number) => void;
   onRemove: () => void;
 }) {
   return (
@@ -84,30 +81,14 @@ function ItemRow({
         </p>
 
         <div className="mt-3 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-            <button
-              type="button"
-              onClick={onDec}
-              aria-label="Reducir cantidad"
-              className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] rounded-l-full transition-colors"
-            >
-              <Minus className="h-3.5 w-3.5" strokeWidth={2} />
-            </button>
-            <span
-              aria-live="polite"
-              className="min-w-[2.5rem] text-center text-[length:var(--ts-sm)] font-bold tabular-nums text-[var(--text-primary)]"
-            >
-              {item.quantity}
-            </span>
-            <button
-              type="button"
-              onClick={onInc}
-              aria-label="Aumentar cantidad"
-              className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] rounded-r-full transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            </button>
-          </div>
+          <QuantityStepper
+            value={item.quantity}
+            onChange={onQty}
+            min={1}
+            max={99}
+            size="md"
+            label={`Cantidad de ${item.name}`}
+          />
 
           <button
             type="button"
@@ -142,12 +123,8 @@ export default function CarritoPage() {
   // Si no hay sesión, mandamos al gate auth que fuerza el modal con fondo vacío
   const continueHref = loggedCustomer ? "/checkout/datos" : "/checkout/auth";
 
-  const handleInc = useCallback(
-    (item: CartItem) => updateQuantity(item.storeId, item.productId, item.quantity + 1),
-    [updateQuantity],
-  );
-  const handleDec = useCallback(
-    (item: CartItem) => updateQuantity(item.storeId, item.productId, item.quantity - 1),
+  const handleQty = useCallback(
+    (item: CartItem, qty: number) => updateQuantity(item.storeId, item.productId, qty),
     [updateQuantity],
   );
   const handleRemove = useCallback(
@@ -269,8 +246,7 @@ export default function CarritoPage() {
                       <ItemRow
                         key={`${item.storeId}-${item.productId}`}
                         item={item}
-                        onInc={() => handleInc(item)}
-                        onDec={() => handleDec(item)}
+                        onQty={(qty) => handleQty(item, qty)}
                         onRemove={() => handleRemove(item)}
                       />
                     ))}
