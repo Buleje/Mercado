@@ -104,6 +104,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "flujo-14d",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Flujo diario · rango activo"
           title="Ingresos, egresos y balance"
           kpis={[
@@ -134,6 +135,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "tendencia-mensual",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Tendencia · rango activo"
           title="Ingresos y egresos por mes"
           kpis={[
@@ -162,6 +164,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "ingresos-por-hora",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Ingresos hoy · por hora"
           title="Distribución horaria de cobros"
           kpis={[
@@ -199,6 +202,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "metodo-pago",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Cobros por método"
           title="Composición de ingresos"
           kpis={[
@@ -256,6 +260,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "ratio-liquido",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Salud financiera · periodo"
           title="Ratio líquido (balance / ingresos)"
           kpis={[
@@ -292,6 +297,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "waterfall-flujo",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Descomposición · periodo"
           title="De ventas a balance neto"
           kpis={[
@@ -315,5 +321,5 @@ export default function CajaCharts({ data }: { data: CajaData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="caja-base-order" />;
+  return <DraggableSections items={sections} storageKey="caja-base-order" layout="grid" />;
 }

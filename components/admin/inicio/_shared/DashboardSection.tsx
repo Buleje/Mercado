@@ -17,6 +17,12 @@ interface Props {
   rightSlot?: ReactNode;
   children: ReactNode;
   className?: string;
+  /**
+   * Si true, no renderiza el header (kicker + title). Útil en dashboards
+   * compactos donde KPIs + chart ya comunican el contenido sin necesidad
+   * de texto descriptivo arriba. KPIs y rightSlot se siguen mostrando.
+   */
+  hideHeader?: boolean;
 }
 
 /**
@@ -31,7 +37,7 @@ interface Props {
  *
  * Se usa en Resumen, Ventas base y Ventas advanced para consistencia total.
  */
-export function DashboardSection({ kicker, title, kpis, rightSlot, children, className }: Props) {
+export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader }: Props) {
   return (
     <section
       className={
@@ -39,17 +45,25 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
         (className ?? "")
       }
     >
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-            {kicker}
-          </p>
-          <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            {title}
-          </CardTitle>
-        </div>
-        {rightSlot && <div className="flex-shrink-0 pr-10">{rightSlot}</div>}
-      </header>
+      {hideHeader ? (
+        rightSlot && (
+          <div className="mb-4 flex justify-end">
+            <div className="flex-shrink-0 pr-10">{rightSlot}</div>
+          </div>
+        )
+      ) : (
+        <header className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+              {kicker}
+            </p>
+            <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+              {title}
+            </CardTitle>
+          </div>
+          {rightSlot && <div className="flex-shrink-0 pr-10">{rightSlot}</div>}
+        </header>
+      )}
       {kpis && kpis.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {kpis.map((k) => (

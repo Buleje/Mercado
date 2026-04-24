@@ -80,6 +80,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-utilidad-14d",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Evolución · rango activo"
           title="Ventas, utilidad y promedio móvil"
           rightSlot={
@@ -123,6 +124,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-por-dia-semana",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Día de la semana · periodo"
           title="Distribución por día · L a D"
           kpis={[
@@ -160,6 +162,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-por-hora",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Horario · hoy"
           title="Volumen de tickets y monto por hora"
           kpis={[
@@ -195,6 +198,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "metodo-pago",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Distribución de cobros"
           title="Método de pago"
           kpis={[
@@ -252,6 +256,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "meta-periodo",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Objetivo vs real · periodo"
           title="Meta del periodo"
           kpis={[
@@ -290,6 +295,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "forecast-7d",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Tendencia lineal · próximos 7 días"
           title="Pronóstico de ventas"
           kpis={[
@@ -319,5 +325,5 @@ export default function VentasCharts({ data }: { data: VentasData }) {
     });
   }
 
-  return <DraggableSections items={sections} storageKey="ventas-base-order" />;
+  return <DraggableSections items={sections} storageKey="ventas-base-order" layout="grid" />;
 }

@@ -286,6 +286,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "pareto-80-20",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Análisis Pareto · rango activo"
           title="Top 15 productos y concentración 80/20"
           kpis={[
@@ -323,6 +324,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "heatmap-hora-dia",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Densidad de ventas · rango activo"
           title="Heatmap hora × día de la semana"
           kpis={[
@@ -343,6 +345,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "waterfall-semanal",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Descomposición semanal · qué movió las ventas"
           title="De la semana pasada a la actual"
           kpis={[
@@ -368,6 +371,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "mix-categoria",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Mix de categorías · rango activo"
           title="Composición diaria de ingresos por categoría"
           kpis={[
@@ -402,6 +406,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "comparativa-semanal",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Comparativa · semana a semana"
           title="Esta semana vs semana pasada"
         >
@@ -421,5 +426,5 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="ventas-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="ventas-advanced-order" layout="grid" />;
 });

@@ -16,7 +16,8 @@ const VentasAdvancedCharts = dynamic(
   () => import("./VentasAdvancedCharts").then((m) => ({ default: m.VentasAdvancedCharts })),
   { ssr: false },
 );
-import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
+// DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
+import { BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -263,12 +264,9 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
 
   return (
     <div className="space-y-6">
-      <DashboardSectionHeader
-        eyebrow="Dashboard · Ventas y utilidad"
-        title="Tu negocio en"
-        titleAccent="ingresos"
-        subtitle="Ventas netas, margen y tickets del periodo. Miralo todos los días para saber si estás ganando."
-      />
+      {/* 2026-04-24: DashboardSectionHeader removido por decision UX —
+          los KPI tiles + charts comunican el contenido sin necesidad del
+          eyebrow + titulo + subtitulo descriptivos arriba. */}
 
       {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) — con sparklines ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

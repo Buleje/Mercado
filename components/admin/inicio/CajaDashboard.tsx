@@ -16,7 +16,8 @@ const CajaAdvancedCharts = dynamic(
   () => import("./CajaAdvancedCharts").then((m) => ({ default: m.CajaAdvancedCharts })),
   { ssr: false },
 );
-import { DashboardSectionHeader, BulejeDashboardSkeleton } from "./_shared";
+// DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
+import { BulejeDashboardSkeleton } from "./_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -212,12 +213,9 @@ export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
 
   return (
     <div className="space-y-6">
-      <DashboardSectionHeader
-        eyebrow="Dashboard · Caja y flujo de efectivo"
-        title="Dónde está"
-        titleAccent="el efectivo"
-        subtitle="Arqueos, métodos de pago, movimientos y diferencias. Saber a dónde se va la plata."
-      />
+      {/* 2026-04-24: DashboardSectionHeader removido por decision UX —
+          los KPI tiles + charts comunican el contenido sin necesidad del
+          eyebrow + titulo + subtitulo descriptivos arriba. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta — con sparklines ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

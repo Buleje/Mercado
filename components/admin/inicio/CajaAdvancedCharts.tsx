@@ -341,6 +341,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "cash-runway",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Cash runway · rango activo"
           title="Días de operación con balance actual"
           kpis={[
@@ -384,6 +385,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "pareto-metodos",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Pareto · métodos de pago · rango activo"
           title="Qué métodos concentran el cash"
           kpis={[
@@ -421,6 +423,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "metodos-stacked",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Evolución de métodos · rango activo"
           title="Composición diaria de cobros por método"
           kpis={[
@@ -466,6 +469,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "comparativa-semana",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Comparativa · semana a semana"
           title="Balance neto — esta semana vs pasada"
         >
@@ -487,6 +491,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "margen-trend",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Evolución del margen · rango activo"
           title="Utilidad neta y margen día a día"
           kpis={[
@@ -535,6 +540,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "balance-acumulado",
       render: () => (
         <DashboardSection
+          hideHeader
           kicker="Balance acumulado · rango activo"
           title="Trayectoria de caja (running total)"
           kpis={[
@@ -564,5 +570,5 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="caja-advanced-order" />;
+  return <DraggableSections items={sections} storageKey="caja-advanced-order" layout="grid" />;
 });
