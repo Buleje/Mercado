@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Star, Send, CheckCircle2, Camera, Image as ImageIcon } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { X, Send, CheckCircle2, Camera, Image as ImageIcon } from "@buleje/design-system/icons";
+import RatingStars from "@/components/ui-system/RatingStars";
 
 // Limites para upload de fotos en reviews
 const MAX_PHOTOS = 4;
@@ -31,7 +31,6 @@ export default function WriteReviewModal({
   onSubmitted,
 }: WriteReviewModalProps) {
   const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [name, setName] = useState("");
@@ -89,7 +88,6 @@ export default function WriteReviewModal({
       return [];
     });
     setRating(0);
-    setHover(0);
     setTitle("");
     setBody("");
     setName("");
@@ -197,33 +195,18 @@ export default function WriteReviewModal({
                 Estás reseñando: <span className="font-medium text-gray-700 dark:text-gray-300">{productName}</span>
               </p>
 
-              {/* Rating */}
+              {/* Rating (ronda 4: RatingStars input con hover + keyboard nav) */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
                   Tu calificación
                 </label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setRating(i)}
-                      onMouseEnter={() => setHover(i)}
-                      onMouseLeave={() => setHover(0)}
-                      aria-label={`${i} estrellas`}
-                      className="p-1"
-                    >
-                      <Star
-                        className={cn(
-                          "h-7 w-7 transition-colors",
-                          (hover || rating) >= i
-                            ? "text-amber-500 fill-amber-500"
-                            : "text-gray-300 dark:text-gray-600",
-                        )}
-                      />
-                    </button>
-                  ))}
-                </div>
+                <RatingStars
+                  value={rating}
+                  onChange={setRating}
+                  mode="input"
+                  size="lg"
+                  label="Calificación del producto"
+                />
               </div>
 
               {/* Title */}
