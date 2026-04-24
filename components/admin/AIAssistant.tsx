@@ -481,6 +481,12 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     const history = messages.filter(m => m.role !== "system" && m.id !== "greeting").slice(-8).map(m => ({ role: m.role, content: m.content }));
     const assistantId = `a-${Date.now()}`;
 
+    // Dispara evento global para que el ChatIAModule wrapper actualice
+    // el progress bar de uso (consultas consumidas vs limite mensual).
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("chat-ia:query", { detail: { message: msg } }));
+    }
+
     try {
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
