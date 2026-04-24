@@ -30,17 +30,16 @@ import SchemaMarkup from "@/components/SchemaMarkup";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
-import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
-import InstallPrompt from "@/components/InstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ToastContainer";
 import { Toaster as SonnerToaster } from "sonner";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { LocaleProvider } from "@/contexts/locale-context";
 import { CurrencyProvider } from "@/contexts/currency-context";
-import CommandPalette from "@/components/CommandPalette";
-import ClientEffects from "@/components/ui/ClientEffects";
-import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+// 5 widgets client-only lazy-loaded post-FCP (Lenis + CommandPalette +
+// ServiceWorker + InstallPrompt + ClientEffects). Reducen el bundle
+// del root layout en ~100-150kb.
+import RootDeferredWidgets from "@/components/RootDeferredWidgets";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -254,13 +253,9 @@ export default async function RootLayout({
         <LocaleProvider>
         <CurrencyProvider>
         <ErrorBoundary>
-        {/* Smooth scroll global (desktop only, respeta reduced-motion) */}
-        <SmoothScrollProvider />
-        {/* Global interactive UX layer */}
-        <ClientEffects />
-        <ServiceWorkerRegistrar />
-        <InstallPrompt />
-        <CommandPalette />
+        {/* 5 widgets client-only deferred — SmoothScroll, ClientEffects,
+            ServiceWorker, InstallPrompt, CommandPalette. Descarga post-FCP. */}
+        <RootDeferredWidgets />
         {children}
         <ToastContainer position="bottom-right" />
         <SonnerToaster

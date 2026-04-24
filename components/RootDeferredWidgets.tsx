@@ -1,0 +1,51 @@
+"use client";
+
+/**
+ * RootDeferredWidgets — lazy-load de 5 widgets del root layout que no
+ * son criticos para First Contentful Paint:
+ *
+ *   - SmoothScrollProvider (Lenis, ~40kb)
+ *   - ClientEffects (keyboard shortcuts, analytics mounts)
+ *   - ServiceWorkerRegistrar (PWA SW install)
+ *   - InstallPrompt (prompt PWA, solo aparece si browser lo soporta)
+ *   - CommandPalette (Cmd+K menu, solo abre al shortcut)
+ *
+ * Todos son `ssr: false` porque requieren window/document o son pure
+ * client-side effects. Se descargan DESPUES del paint inicial.
+ */
+
+import dynamic from "next/dynamic";
+
+const SmoothScrollProvider = dynamic(
+  () => import("@/components/SmoothScrollProvider"),
+  { ssr: false },
+);
+
+const ClientEffects = dynamic(() => import("@/components/ui/ClientEffects"), {
+  ssr: false,
+});
+
+const ServiceWorkerRegistrar = dynamic(
+  () => import("@/components/ServiceWorkerRegistrar"),
+  { ssr: false },
+);
+
+const InstallPrompt = dynamic(() => import("@/components/InstallPrompt"), {
+  ssr: false,
+});
+
+const CommandPalette = dynamic(() => import("@/components/CommandPalette"), {
+  ssr: false,
+});
+
+export default function RootDeferredWidgets() {
+  return (
+    <>
+      <SmoothScrollProvider />
+      <ClientEffects />
+      <ServiceWorkerRegistrar />
+      <InstallPrompt />
+      <CommandPalette />
+    </>
+  );
+}
