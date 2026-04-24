@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import {
   BarChart3, ClipboardList, CreditCard, LineChart, AlertCircle, WifiOff,
-  Maximize2, Minimize2, RefreshCw,
+  Maximize2, Minimize2, RefreshCw, Play, Pause, Download,
 } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./ai-center.types";
 export type {
@@ -88,8 +90,14 @@ export default function AICommandCenter() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [autoplay, setAutoplay] = useState(false);
+  const [autoplayProgress, setAutoplayProgress] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const [, setTick] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const contentAreaRef = useRef<HTMLDivElement | null>(null);
+  // Modo TV — rota entre tabs cada N segundos.
+  const TV_ROTATION_MS = 8000;
 
   const badges = useSectionBadges(data);
 
@@ -120,6 +128,60 @@ export default function AICommandCenter() {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, [maximized]);
+
+  // Modo TV — autoplay rotation entre tabs
+  useEffect(() => {
+    if (!autoplay) {
+      setAutoplayProgress(0);
+      return;
+    }
+    const start = Date.now();
+    const tick = window.setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min(100, (elapsed / TV_ROTATION_MS) * 100);
+      setAutoplayProgress(pct);
+      if (elapsed >= TV_ROTATION_MS) {
+        window.clearInterval(tick);
+        const currentIdx = SECTIONS.findIndex((s) => s.id === activeSection);
+        const nextIdx = (currentIdx + 1) % SECTIONS.length;
+        changeSection(SECTIONS[nextIdx].id);
+      }
+    }, 50);
+    return () => window.clearInterval(tick);
+  }, [autoplay, activeSection, changeSection]);
+
+  // Export PNG del contenido visible
+  const handleExport = useCallback(async () => {
+    const el = contentAreaRef.current;
+    if (!el) return;
+    setExporting(true);
+    try {
+      const dataUrl = await toPng(el, {
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+        pixelRatio: 2,
+        filter: (node) => {
+          if (!(node instanceof HTMLElement)) return true;
+          if (node.dataset.exportHide === "true") return false;
+          return true;
+        },
+      });
+      const link = document.createElement("a");
+      link.download = `centro-comando-${activeSection}-${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Vista exportada", {
+        description: `${SECTIONS.find((s) => s.id === activeSection)?.label ?? activeSection} · descargada como PNG`,
+        duration: 2500,
+      });
+    } catch (err) {
+      toast.error("No se pudo exportar", {
+        description: err instanceof Error ? err.message : "Error desconocido",
+      });
+    } finally {
+      setExporting(false);
+    }
+  }, [activeSection]);
 
   // Online/offline detection
   useEffect(() => {
@@ -240,14 +302,47 @@ export default function AICommandCenter() {
             );
           })}
         </nav>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0" data-export-hide="true">
           <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] px-2 py-1">
             <RefreshCw className="h-3 w-3" />
             {lastRefresh ? getRelativeTime(lastRefresh) : "Cargando…"}
           </span>
+          {/* Export PNG */}
           <button
             type="button"
-            onClick={() => setMaximized((m) => !m)}
+            onClick={handleExport}
+            disabled={exporting}
+            aria-label="Exportar vista como PNG"
+            title="Descargar la vista actual como imagen"
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors",
+              exporting && "opacity-60 cursor-wait",
+            )}
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{exporting ? "Exportando…" : "PNG"}</span>
+          </button>
+          {/* Modo TV — solo en maximize para no distraer en el embed */}
+          {maximized && (
+            <button
+              type="button"
+              onClick={() => setAutoplay((a) => !a)}
+              aria-label={autoplay ? "Pausar Modo TV" : "Activar Modo TV"}
+              title={autoplay ? "Pausar rotación automática" : `Rotar tabs cada ${TV_ROTATION_MS / 1000}s`}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
+                autoplay
+                  ? "bg-[var(--data-success)] text-white border-[var(--data-success)]"
+                  : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
+              )}
+            >
+              {autoplay ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{autoplay ? "Pausar" : "Modo TV"}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => { setMaximized((m) => !m); setAutoplay(false); }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors"
             aria-label={maximized ? "Salir pantalla completa" : "Pantalla completa"}
             title={maximized ? "Volver al panel (Esc)" : "Pantalla completa"}
@@ -257,6 +352,18 @@ export default function AICommandCenter() {
           </button>
         </div>
       </div>
+
+      {/* Modo TV progress bar */}
+      {autoplay && maximized && (
+        <div className="h-1 bg-gray-100 shrink-0 overflow-hidden" data-export-hide="true">
+          <div
+            className="h-full bg-[var(--data-success)] transition-[width] duration-75 ease-linear"
+            style={{ width: `${autoplayProgress}%` }}
+            role="progressbar"
+            aria-valuenow={Math.round(autoplayProgress)}
+          />
+        </div>
+      )}
 
       {/* ── Banners (approvals, offline, error) ─────────────────────── */}
       <HITLApprovalsBanner />
@@ -275,8 +382,14 @@ export default function AICommandCenter() {
         </div>
       )}
 
-      {/* ── Content area ──────────────────────────────────────────── */}
-      <main className="flex-1 overflow-auto">
+      {/* ── Content area ──
+          Tipografia scoped: subimos minimum text size en todos los descendientes
+          a 13px (text-xs default) para evitar el ts-2xs/ts-3xs que se veia
+          ilegible. Excepto badges chiquitos (.badge-xs) si los hubiera. */}
+      <main
+        ref={contentAreaRef}
+        className="flex-1 overflow-auto [&_.text-xs]:text-[13px] [&_p]:leading-relaxed"
+      >
         <div className="p-5 sm:p-6">
           {loading && !data ? (
             <LoadingSkeleton />

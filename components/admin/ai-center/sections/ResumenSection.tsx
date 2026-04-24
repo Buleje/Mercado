@@ -241,16 +241,21 @@ interface KPICardProps {
 }
 
 function KPICard({ label, value, sub, icon }: KPICardProps) {
+  // 2026-04-24: tipografia subida (text-xs -> text-[11px] uppercase tracking;
+  // text-lg -> text-2xl extrabold) + padding generoso. Hereda --section-primary
+  // del wrapper para que el valor tome el accent rotativo de la posicion.
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 h-full flex flex-col justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          {label}
+        </span>
         <span className="text-[var(--text-tertiary)]">{icon}</span>
       </div>
-      <p className="text-lg font-semibold text-[var(--text-primary)] leading-none">
+      <p className="text-2xl sm:text-3xl font-extrabold text-[color:var(--section-primary,var(--text-primary))] leading-none tabular-nums tracking-tight">
         {value}
       </p>
-      {sub && <div className="mt-1.5">{sub}</div>}
+      {sub && <div className="text-xs text-[var(--text-secondary)] font-medium">{sub}</div>}
     </div>
   );
 }
@@ -478,8 +483,14 @@ export default function ResumenSection({ data }: Props) {
         </div>
       </div>
 
-      {/* ── KPI grid ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ── KPI grid — paleta rotativa por posicion ──
+          Cada celda hereda --section-primary distinto: slate / cyan / orange /
+          green. El KPICard usa esta CSS var para colorear el numero principal
+          de manera diferenciada. Salud negocio se mantiene con su healthColor
+          dinámico (verde/amber/rojo segun valor real). */}
+      <div
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 [&>*:nth-child(1)]:[--section-primary:#0f172a] [&>*:nth-child(2)]:[--section-primary:#0891b2] [&>*:nth-child(3)]:[--section-primary:#c2410c] [&>*:nth-child(4)]:[--section-primary:#15803d]"
+      >
         <KPICard
           label="Ventas hoy"
           value={fmt(kpis.revenue.today)}
@@ -502,28 +513,28 @@ export default function ResumenSection({ data }: Props) {
           }
           icon={<Activity className="w-4 h-4" />}
         />
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-[var(--text-tertiary)]">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 h-full flex flex-col justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Salud negocio
             </span>
             <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
           </div>
           <p
             className={cn(
-              "text-lg font-semibold leading-none",
+              "text-2xl sm:text-3xl font-extrabold leading-none tabular-nums tracking-tight",
               healthColor.text
             )}
           >
             {healthScore}
-            <span className="text-xs font-normal text-[var(--text-tertiary)] ml-0.5">
+            <span className="text-sm font-bold text-[var(--text-tertiary)] ml-1">
               /100
             </span>
           </p>
-          <div className="mt-1.5">
+          <div>
             <span
               className={cn(
-                "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
+                "text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider",
                 healthColor.badge
               )}
             >
@@ -631,28 +642,34 @@ export default function ResumenSection({ data }: Props) {
         </div>
       </div>
 
-      {/* ── Oportunidades ─────────────────────────────────────────────────── */}
+      {/* ── Oportunidades — paleta rotativa ──
+          Cada card hereda --opp-accent y --opp-bg distintos para que las 3
+          oportunidades sean visualmente distinguibles a primera vista. */}
       {opportunities.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-2 px-1">
+          <div className="flex items-center gap-2 mb-3 px-1">
             <Package className="w-4 h-4 text-[var(--text-tertiary)]" />
-            <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
-              Oportunidades
+            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Oportunidades detectadas
             </CardTitle>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)]">
             {opportunities.map((opp, i) => (
               <div
                 key={i}
-                className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-lg p-4"
+                className="rounded-xl p-5 border-2 transition-transform hover:scale-[1.02]"
+                style={{
+                  backgroundColor: "var(--opp-bg, var(--accent-soft))",
+                  borderColor: "color-mix(in srgb, var(--opp-accent, var(--data-success)) 30%, transparent)",
+                }}
               >
-                <p className="text-xs font-semibold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">
+                <p className="text-sm font-extrabold mb-2 leading-tight" style={{ color: "var(--opp-accent, var(--data-success))" }}>
                   {opp.title}
                 </p>
-                <p className="text-xs text-[var(--text-secondary)] mb-1.5">
+                <p className="text-sm text-[var(--text-primary)] mb-2 leading-relaxed font-medium">
                   {opp.detail}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--data-success)] dark:text-[var(--data-success)]">
+                <p className="text-xs font-semibold leading-relaxed" style={{ color: "var(--opp-accent, var(--data-success))" }}>
                   {opp.impact}
                 </p>
               </div>
