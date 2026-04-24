@@ -113,7 +113,6 @@ export async function POST(req: NextRequest) {
       const issuesSummary = parsed.error.issues
         .map((i) => `${i.path.join(".") || "body"}: ${i.message}`)
         .join("; ");
-      // eslint-disable-next-line no-console
       console.error(
         `\n🚨 [orders 400] Validation failed\n   traceId: ${traceId}\n   issues: ${issuesSummary}\n   body: ${JSON.stringify(body).slice(0, 600)}\n`,
       );
@@ -225,7 +224,7 @@ export async function POST(req: NextRequest) {
             `Total: S/ ${order.total.toFixed(2)}\n\n` +
             `Entra a tu panel para confirmar el pedido`,
             { tenantId: store.tenantId, context: "marketplace-order-vendor-notify" },
-          ).catch(() => {});
+          ).catch((err) => logger.error("[marketplace/orders] vendor whatsapp failed", { error: String(err), tenantId: store.tenantId }));
         }
       } catch { /* silencioso */ }
     })();
@@ -299,7 +298,7 @@ export async function POST(req: NextRequest) {
               `📅 Válido por 30 días\n\n` +
               `¡Úsalo en tu próximo pedido! 🛒`,
               { tenantId: store.tenantId, context: "marketplace-welcome-coupon" },
-            ).catch(() => {});
+            ).catch((err) => logger.error("[marketplace/orders] welcome coupon whatsapp failed", { error: String(err), tenantId: store.tenantId }));
           }
         }
       } catch { /* silencioso */ }
@@ -320,6 +319,15 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (err) {
+    // Log full stack al terminal del dev server — sin esto, toErrorPayload
+    // devuelve un 500 anonimo al cliente pero el server no imprime nada util.
+    console.error(
+      `\n🔥 [orders 500] Unhandled error\n   traceId: ${traceId}\n   message: ${err instanceof Error ? err.message : String(err)}\n   stack: ${err instanceof Error ? err.stack : "(no stack)"}\n`,
+    );
+    logger.error("[marketplace/orders] unhandled error", {
+      traceId,
+      err: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
+    });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }

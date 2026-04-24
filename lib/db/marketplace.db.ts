@@ -728,6 +728,36 @@ export const MarketplaceOrdersDB = {
     const commissionRate = toNumOrZero(store.commission);
     const commission = parseFloat(((total * commissionRate) / 100).toFixed(2));
 
+    // 2.5. Garantizar que el Customer existe antes de crear el Order.
+    //     Order.customerPhone es FK a Customer.phone — sin este upsert, Postgres
+    //     rechaza el INSERT con "Foreign key constraint violated on
+    //     Order_customerPhone_fkey" (bug descubierto 2026-04-24 en smoke test).
+    //     Los marketplace orders son de compradores anónimos que pueden nunca
+    //     haber registrado cuenta, asi que garantizamos un Customer minimo.
+    if (params.customerPhone) {
+      // Race-safe: cuando el carrito tiene productos de 2+ tiendas, el frontend
+      // dispara 1 POST por tienda en paralelo. Ambos intentan upsertar el
+      // mismo Customer.phone — el primero gana, el segundo fallaria con P2002
+      // (unique). Capturamos ese caso como ok ya que el Customer ya existe.
+      try {
+        await prisma.customer.upsert({
+          where:  { phone: params.customerPhone },
+          create: {
+            phone:    params.customerPhone,
+            name:     params.customerName,
+            location: params.customerAddress,
+            tenantId: store.tenantId, // asigna al vendedor en primer contacto
+          },
+          update: {
+            // No pisar datos existentes del customer — solo crear si no existe.
+          },
+        });
+      } catch (e: unknown) {
+        const code = (e as { code?: string })?.code;
+        if (code !== "P2002") throw e; // P2002 = unique violation (race) — safe to ignore
+      }
+    }
+
     // 3. Crear el Order en el tenant del vendedor
     const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
 
