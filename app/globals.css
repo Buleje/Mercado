@@ -342,6 +342,12 @@ body {
   to { transform: scaleX(0); }
 }
 
+/* ── Moto delivery loader (izq a der con leve rotate) ── */
+@keyframes motoRide {
+  0%, 100% { transform: translateX(-10%) rotate(-1deg); }
+  50% { transform: translateX(10%) rotate(1deg); }
+}
+
 /* ── Wave animation for emoji ── */
 @keyframes wave {
   0%, 100% { transform: rotate(0deg); }
