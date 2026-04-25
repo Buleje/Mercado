@@ -22,8 +22,6 @@ import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
-import StoreAboutBlock from "./StoreAboutBlock";
-import StoreInfoCard from "./StoreInfoCard";
 import StoreCategories, { type StoreCategoryChip } from "./StoreCategories";
 import StoreCatalog from "./StoreCatalog";
 import StoreReviews from "./StoreReviews";
@@ -104,39 +102,18 @@ export default function StoreDetailClient({
         description={store.description}
         rating={store.rating ?? 0}
         reviewCount={store.reviewCount}
-        illustration={store.category?.toLowerCase().includes("bodega") ? "bodega-abriendo" : "donia-elena"}
+        scheduleLabel="Lun a Dom · 6am – 11pm"
       />
 
-      {/* ── About + Info (2 col) ────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12">
-          <StoreAboutBlock
-            storeName={store.name}
-            zone={store.zone}
-          />
-          <StoreInfoCard
-            zone={store.zone}
-            schedule="Lunes a domingo · 6am a 11pm"
+      {/* ── Categories sticky + Catalog ───────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
+        <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 bg-[var(--surface-canvas)]/90 backdrop-blur-md border-b border-[var(--rule-soft)]">
+          <StoreCategories
+            categories={categories}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
           />
         </div>
-      </div>
-
-      {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="border-t border-gray-100 dark:border-gray-800" />
-      </div>
-
-      {/* ── Categories ─────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <StoreCategories
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-      </div>
-
-      {/* ── Catalog ────────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
         <StoreCatalog
           storeSlug={store.slug}
           storeName={store.name}

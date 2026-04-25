@@ -3,8 +3,11 @@
 /**
  * StoreCategories — chips horizontales con categorías del tenant.
  *
- * "Todos" + cada categoría con count. Click en chip filtra el catálogo.
- * Scroll horizontal en mobile. Chip activo: borde teal + texto oscuro.
+ * Diseño: tabs minimalistas con underline accent en la activa.
+ * Scroll horizontal snap en mobile. Counter en pill separada para
+ * mejor lectura.
+ *
+ * Diseñado para vivir en sticky bar — sin headers ruidosos.
  */
 
 import { cn } from "@/lib/utils";
@@ -20,6 +23,45 @@ interface StoreCategoriesProps {
   onCategoryChange: (category: string | null) => void;
 }
 
+function ChipButton({
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all whitespace-nowrap",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+        active
+          ? "bg-[var(--accent)] text-white shadow-sm"
+          : "bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)]",
+      )}
+    >
+      {label}
+      <span
+        className={cn(
+          "inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums",
+          active
+            ? "bg-white/20 text-white"
+            : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
 export default function StoreCategories({
   categories,
   activeCategory,
@@ -27,84 +69,28 @@ export default function StoreCategories({
 }: StoreCategoriesProps) {
   if (categories.length === 0) return null;
 
+  const total = categories.reduce((s, c) => s + c.count, 0);
+
   return (
-    <section aria-labelledby="store-categories-heading" className="space-y-5">
-      {/* Header */}
-      <div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 mb-2">
-          Categorías
-        </p>
-        <h2
-          id="store-categories-heading"
-          className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
-        >
-          Lo que vendemos
-        </h2>
-      </div>
-
-      {/* Chips — horizontal scroll on mobile */}
-      <div
-        className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-none"
-        role="list"
-        aria-label="Categorías del catálogo"
-      >
-        {/* "Todos" chip */}
-        <button
-          type="button"
-          role="listitem"
-          onClick={() => onCategoryChange(null)}
-          aria-pressed={activeCategory === null}
-          className={cn(
-            "flex-shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400",
-            activeCategory === null
-              ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-900 dark:hover:text-white"
-          )}
-        >
-          Todos
-          <span
-            className={cn(
-              "text-xs",
-              activeCategory === null
-                ? "text-gray-300 dark:text-gray-600"
-                : "text-gray-400 dark:text-gray-500"
-            )}
-          >
-            ({categories.reduce((s, c) => s + c.count, 0)})
-          </span>
-        </button>
-
-        {/* Category chips */}
-        {categories.map((cat) => (
-          <button
-            key={cat.name}
-            type="button"
-            role="listitem"
-            onClick={() => onCategoryChange(cat.name)}
-            aria-pressed={activeCategory === cat.name}
-            className={cn(
-              "flex-shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400",
-              activeCategory === cat.name
-                ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            {cat.name}
-            <span
-              className={cn(
-                "text-xs",
-                activeCategory === cat.name
-                  ? "text-gray-300 dark:text-gray-600"
-                  : "text-gray-400 dark:text-gray-500"
-              )}
-            >
-              ({cat.count})
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
+    <nav
+      aria-label="Categorías del catálogo"
+      className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory"
+    >
+      <ChipButton
+        active={activeCategory === null}
+        label="Todos"
+        count={total}
+        onClick={() => onCategoryChange(null)}
+      />
+      {categories.map((cat) => (
+        <ChipButton
+          key={cat.name}
+          active={activeCategory === cat.name}
+          label={cat.name}
+          count={cat.count}
+          onClick={() => onCategoryChange(cat.name)}
+        />
+      ))}
+    </nav>
   );
 }

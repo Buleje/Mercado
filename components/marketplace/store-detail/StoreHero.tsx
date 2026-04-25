@@ -10,13 +10,8 @@
  * Grid: 1 col mobile → 2 col lg (60/40).
  */
 
-import Link from "next/link";
 import { MapPin, Clock, Star, Truck, Phone, Heart } from "@buleje/design-system/icons";
-import {
-  DoniaElena,
-  BodegaAbriendo,
-} from "@/components/ui-system/illustrations";
-import { cn } from "@/lib/utils";
+import StoreInfoPanel from "./StoreInfoPanel";
 
 interface StoreHeroProps {
   name: string;
@@ -31,8 +26,14 @@ interface StoreHeroProps {
   distanceLabel?: string;
   /** Horario legible (ej: "Abierto hasta 11pm") */
   scheduleLabel?: string;
-  /** Ilustración a usar: "donia-elena" | "bodega-abriendo" */
-  illustration?: "donia-elena" | "bodega-abriendo";
+  /** Dirección física para el panel de info (Google Maps) */
+  address?: string | null;
+  /** Métodos de pago habilitados — hint para el panel */
+  paymentMethods?: string[];
+  /** True si la tienda está abierta ahora */
+  isOpen?: boolean;
+  /** Delivery gratis */
+  freeDelivery?: boolean;
   whatsappNumber?: string | null;
 }
 
@@ -53,12 +54,12 @@ export default function StoreHero({
   deliveryMin = 25,
   distanceLabel = "Callería",
   scheduleLabel = "Abierto",
-  illustration = "donia-elena",
+  address,
+  paymentMethods = ["yape", "efectivo"],
+  isOpen = true,
+  freeDelivery = true,
   whatsappNumber,
 }: StoreHeroProps) {
-  const Illustration =
-    illustration === "donia-elena" ? DoniaElena : BodegaAbriendo;
-
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
 
   return (
@@ -159,17 +160,21 @@ export default function StoreHero({
           </div>
         </div>
 
-        {/* ── Right: illustration card ─────────────────────────────────────── */}
-        <div
-          className={cn(
-            "hidden lg:flex items-center justify-center",
-            "rounded-2xl border border-gray-200 dark:border-gray-800",
-            "bg-gray-50 dark:bg-gray-900",
-            "p-10 text-gray-700 dark:text-gray-200"
-          )}
-          aria-hidden
-        >
-          <Illustration size={200} strokeWidth={1.5} />
+        {/* ── Right: rich info panel ───────────────────────────────────────── */}
+        <div className="lg:sticky lg:top-24 self-start">
+          <StoreInfoPanel
+            name={name}
+            zone={zone}
+            address={address ?? null}
+            scheduleLabel={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel}
+            isOpen={isOpen}
+            rating={rating}
+            reviewCount={reviewCount}
+            deliveryMin={deliveryMin}
+            freeDelivery={freeDelivery}
+            whatsappNumber={whatsappNumber ?? null}
+            paymentMethods={paymentMethods}
+          />
         </div>
       </div>
     </section>

@@ -72,22 +72,6 @@ interface ProductPreview {
   unit: string | null;
 }
 
-/* ── Category config ────────────────────────────────────────────────────────── */
-
-/** Renderer explicito por id de categoria — cumple react-hooks/static-components. */
-function CategoryIconRenderer({ id, className }: { id: string; className?: string }) {
-  const common = { className, strokeWidth: 1.75, "aria-hidden": true } as const;
-  if (id === "bodega") return <ShoppingCart {...common} />;
-  if (id === "minimarket") return <Building2 {...common} />;
-  if (id === "fruteria") return <Apple {...common} />;
-  if (id === "carniceria") return <Beef {...common} />;
-  if (id === "panaderia") return <CroissantIcon {...common} />;
-  if (id === "licoreria") return <Wine {...common} />;
-  if (id === "farmacia") return <Pill {...common} />;
-  if (id === "restaurante") return <UtensilsCrossed {...common} />;
-  return <Store {...common} />;
-}
-
 /* ── StoreCardWrapper ──────────────────────────────────────────────────────── */
 /**
  * Envuelve StoreCardCanonical con:
@@ -107,7 +91,6 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   index: number;
   lastOrder?: LastOrderInfo;
 }) {
-  const categoryMeta = CATEGORIES.find((c) => c.id === store.category) ?? CATEGORIES[0];
   const [preview, setPreview] = useState<ProductPreview[]>([]);
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -134,107 +117,66 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     <>
       {/* Rating — primero y mas prominente (decision factor #1) */}
       {store.rating > 0 && (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)]">
-          <Star className="h-3.5 w-3.5 fill-current text-[var(--accent)]" aria-hidden="true" />
+        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
+          <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
           {store.rating.toFixed(1)}
         </span>
       )}
-      {/* TS-08 historial — badge de últimos pedidos del cliente en esta tienda */}
+      {/* Pediste hoy — historial reciente */}
       {lastOrder && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-xs font-bold text-[var(--accent)]">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+          <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--accent)]" />
           {formatDaysAgo(lastOrder.daysAgo)}
         </span>
       )}
-      {/* TS-33 ofertas activas — high attention badge */}
+      {/* Ofertas activas */}
       {store.activePromos != null && store.activePromos > 0 && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-700 dark:text-rose-300">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[length:var(--ts-2xs)] font-bold text-rose-700 dark:text-rose-300">
           {store.activePromos} {store.activePromos === 1 ? "oferta" : "ofertas"}
         </span>
       )}
-      {/* Categoria */}
-      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200">
-        <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
-        {categoryMeta.label}
-      </span>
-      {/* Free delivery / sin minimo */}
-      {store.freeDelivery && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-          Sin mínimo
-        </span>
-      )}
-      {/* TS-02 abierta ahora — solo cuando el dato está disponible y es false */}
-      {(store as { isOpenNow?: boolean }).isOpenNow === false && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-          Cerrado
-        </span>
-      )}
-      {/* Vacation — ultimo (solo si aplica, warning visual claro) */}
+      {/* Vacaciones — solo si aplica */}
       {store.vacationMode && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-xs font-bold text-[var(--data-warning)]">
-          <Plane className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
-          De vacaciones
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
+          <Plane className="h-2.5 w-2.5" strokeWidth={1.75} aria-hidden="true" />
+          Vacaciones
         </span>
       )}
     </>
   );
 
   const footer = (
-    <div className="flex flex-col gap-2">
-      {/* Description — compacta */}
-      {store.description && (
-        <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] line-clamp-1 leading-snug">
-          {store.description}
-        </p>
-      )}
-      {/* Meta row — zona + reseñas + tiempo delivery */}
-      <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex flex-col gap-1.5">
+      {/* Meta row compacta — solo zona + delivery time, sin description ni reseñas */}
+      <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         {store.zone && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            <MapPin className="h-3 w-3" aria-hidden="true" />
-            {store.zone}
+          <span className="inline-flex items-center gap-0.5 truncate">
+            <MapPin className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{store.zone}</span>
           </span>
         )}
-        {store.reviewCount > 0 && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            <ShoppingBag className="h-3 w-3" aria-hidden="true" />
-            {store.reviewCount} reseña{store.reviewCount !== 1 ? "s" : ""}
-          </span>
-        )}
-        {/* Tiempo delivery estimado — usa deliveryMinutes real si esta disponible */}
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]">
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="h-3 w-3"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
+        <span aria-hidden className="text-[var(--rule-base)]">·</span>
+        <span className="inline-flex items-center gap-0.5 font-semibold text-[var(--text-secondary)] shrink-0">
           {store.deliveryMinutes && store.deliveryMinutes > 0
             ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
             : "25–35 min"}
         </span>
       </div>
-      {/* CTA row — accion-oriented */}
-      <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
-        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)] group-hover:gap-2.5 transition-all pt-2">
-          Pedir ahora
-          <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
+      {/* CTA row — accion-oriented + estado */}
+      <div className="flex items-center justify-between pt-1.5 border-t border-[var(--rule-soft)]">
+        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] group-hover:gap-1.5 transition-all">
+          Pedir
+          <ChevronRight className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
         </span>
         {store.vacationMode ? (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)] pt-2">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning)]">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning)]" />
-            De vacaciones
+            Vacaciones
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] pt-2">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success,_#00b66a)]" />
-            Disponible
+            Activa
           </span>
         )}
       </div>
@@ -315,6 +257,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         name={ariaLabel}
         slug={store.slug}
         imageUrl={store.logo}
+        variant="compact"
         badges={badges}
         footer={footer}
         renderImage={({ src, alt, className }) => (
@@ -323,7 +266,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             alt={alt}
             fill
             className={className}
-            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+            sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
           />
         )}
         renderImageFallback={() => (
@@ -515,7 +458,7 @@ export default function MarketplaceStoresView({
         <div
           aria-busy="true"
           aria-label="Cargando tiendas..."
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mt-6"
         >
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -591,7 +534,7 @@ export default function MarketplaceStoresView({
         <div
           role="list"
           aria-label={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mt-6"
         >
           {filteredStores.map((store, i) => (
             <div key={store.id} role="listitem">
