@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   DollarSign, CheckCircle2, Clock, TrendingUp, Package,
-  AlertTriangle, XCircle, Loader2,
+  AlertTriangle, XCircle, Loader2, BarChart3,
 } from "@buleje/design-system/icons";
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
+import { AdminTabShell } from "../_components/_shared";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
 
@@ -139,12 +140,11 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Analytics de plataforma</h1>
-        <p className="text-gray-500 text-sm mt-1">Métricas globales de todos los tenants.</p>
-      </div>
-
+    <AdminTabShell
+      title="Analytics de plataforma"
+      description="Métricas globales de todos los tenants."
+      icon={BarChart3}
+    >
       {/* Growth metrics — Ola 3: removido border-top gradient semaforo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
@@ -433,6 +433,6 @@ export default function AnalyticsPage() {
           )}
         </div>
       </div>
-    </div>
+    </AdminTabShell>
   );
 }

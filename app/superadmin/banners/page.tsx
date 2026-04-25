@@ -15,9 +15,10 @@
  */
 
 import { useEffect, useState } from "react";
-import { Save, Plus, Trash2, ImageIcon, ChevronDown } from "@buleje/design-system/icons";
+import { Save, Plus, Trash2, ImageIcon, ChevronDown, Megaphone } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
+import { AdminTabShell } from "../_components/_shared";
 
 type Banner = {
   id: string;
@@ -145,17 +146,12 @@ export default function SuperadminBannersPage() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)] py-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-black text-[var(--text-primary)]">
-            Banners promocionales
-          </h1>
-          <p className="text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            Configurá los banners que aparecen rotativos en cada página del marketplace.
-            Recomendamos 3 banners por slot.
-          </p>
-        </header>
-
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <AdminTabShell
+          title="Banners promocionales"
+          description="Configurá los banners que aparecen rotativos en cada página del marketplace. Recomendamos 3 banners por slot."
+          icon={Megaphone}
+        >
         {/* Slot selector */}
         <div className="flex flex-wrap gap-2">
           {SLOTS.map((s) => (
@@ -353,6 +349,7 @@ export default function SuperadminBannersPage() {
           </a>{" "}
           rotando cada 8 segundos.
         </p>
+        </AdminTabShell>
       </div>
     </div>
   );

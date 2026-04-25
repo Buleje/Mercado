@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
+import { AdminTabShell } from "../_components/_shared";
 
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
@@ -124,18 +125,13 @@ export default function TenantsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-teal-500" /> Tenants
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {sorted.length} tienda{sorted.length !== 1 ? "s" : ""}
-            {tenants.length !== sorted.length ? ` de ${tenants.length}` : ""}
-          </p>
-        </div>
+    <AdminTabShell
+      title="Tenants"
+      description={`${sorted.length} tienda${sorted.length !== 1 ? "s" : ""}${tenants.length !== sorted.length ? ` de ${tenants.length}` : ""} — gestión de plataforma multi-tenant.`}
+      icon={Building2}
+    >
+      {/* Toggle bar (pageTab + view mode) */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 mr-2">
             {(["tiendas", "crecimiento"] as const).map((tab) => (
@@ -278,6 +274,6 @@ export default function TenantsPage() {
           onCancel={() => setNuclearResetOpen(false)}
         />
       )}
-    </div>
+    </AdminTabShell>
   );
 }

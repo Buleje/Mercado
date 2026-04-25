@@ -9,6 +9,7 @@ import { AnalyticsTab } from "@/components/superadmin/stores/AnalyticsTab";
 import { PersonalizarTab } from "@/components/superadmin/stores/PersonalizarTab";
 import { NavegacionTab } from "@/components/superadmin/stores/NavegacionTab";
 import type { StoreRow, StoreTab } from "@/components/superadmin/stores/types";
+import { AdminTabShell } from "../_components/_shared";
 
 // ─── Tabs config ──────────────────────────────────────────────────────────────
 
@@ -52,20 +53,11 @@ export default function StoresPage() {
   const handleRefresh = useCallback(() => void load(true), [load]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <ShoppingBag className="w-6 h-6 text-[var(--text-secondary)]" />
-            Administrar Marketplace
-          </h1>
-          <p className="text-[var(--text-tertiary)] text-sm mt-1">
-            Gestión completa de tiendas, pedidos, cupones y métricas del marketplace
-          </p>
-        </div>
-      </div>
-
+    <AdminTabShell
+      title="Administrar Marketplace"
+      description="Gestión completa de tiendas, pedidos, cupones y métricas del marketplace."
+      icon={ShoppingBag}
+    >
       {/* Tab bar — Ola 3: tab activo usa accent-soft (bg tenue) en vez de primary saturado */}
       <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 overflow-x-auto">
         {TABS.map((t) => (
@@ -99,6 +91,6 @@ export default function StoresPage() {
       {tab === "analytics" && <AnalyticsTab stores={stores} />}
       {tab === "personalizar" && <PersonalizarTab stores={stores} onRefresh={handleRefresh} />}
       {tab === "navegacion" && <NavegacionTab />}
-    </div>
+    </AdminTabShell>
   );
 }
