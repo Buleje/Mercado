@@ -11,9 +11,9 @@ import {
   Megaphone,
   Save,
 } from "@buleje/design-system/icons";
-import AdminTabShell from "./_shared/AdminTabShell";
-import AdminEmptyState from "./_shared/AdminEmptyState";
-import { ADMIN_TOKENS } from "./_shared/admin-tokens";
+import AdminTabShell from "../../_components/_shared/AdminTabShell";
+import AdminEmptyState from "../../_components/_shared/AdminEmptyState";
+import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
 type Promotion = {
   id: string;

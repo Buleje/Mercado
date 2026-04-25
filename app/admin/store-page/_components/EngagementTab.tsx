@@ -11,8 +11,8 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "@buleje/design-system/icons";
-import AdminTabShell from "./_shared/AdminTabShell";
-import { ADMIN_TOKENS } from "./_shared/admin-tokens";
+import AdminTabShell from "../../_components/_shared/AdminTabShell";
+import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
 type EngagementFeature = {
   id: string;

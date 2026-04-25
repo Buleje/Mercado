@@ -4,7 +4,6 @@ import { LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
-  Loader2,
   Search,
   Star,
   Eye,
@@ -13,9 +12,9 @@ import {
   Plus,
   Package,
 } from "@buleje/design-system/icons";
-import AdminTabShell from "./_shared/AdminTabShell";
-import AdminEmptyState from "./_shared/AdminEmptyState";
-import { ADMIN_TOKENS } from "./_shared/admin-tokens";
+import AdminTabShell from "../../_components/_shared/AdminTabShell";
+import AdminEmptyState from "../../_components/_shared/AdminEmptyState";
+import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
 type Override = {
   id: string;

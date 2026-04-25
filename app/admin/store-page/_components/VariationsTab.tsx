@@ -40,8 +40,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import AdminTabShell from "./_shared/AdminTabShell";
-import { ADMIN_TOKENS } from "./_shared/admin-tokens";
+import AdminTabShell from "../../_components/_shared/AdminTabShell";
+import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
 interface ProductSummary {
   id: number;

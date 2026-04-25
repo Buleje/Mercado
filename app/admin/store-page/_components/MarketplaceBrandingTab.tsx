@@ -23,8 +23,8 @@ import {
 } from "@buleje/design-system/icons";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminTabShell from "./_shared/AdminTabShell";
-import { ADMIN_TOKENS } from "./_shared/admin-tokens";
+import AdminTabShell from "../../_components/_shared/AdminTabShell";
+import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
 interface BrandingState {
   slug: string;

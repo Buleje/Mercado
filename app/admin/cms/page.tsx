@@ -1,15 +1,20 @@
 "use client";
 
-import { CardTitle, PageTitle, SectionTitle } from "@buleje/design-system";
-// ═══════════════════════════════════════════════════════
-// CMS DASHBOARD - Main entry point
-// ═══════════════════════════════════════════════════════
-
-
 import { useState, useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { Plus, FileText, Image as ImageIcon, Palette, Menu as MenuIcon } from "@buleje/design-system/icons";
+import {
+  Plus,
+  FileText,
+  Image as ImageIcon,
+  Palette,
+  Menu as MenuIcon,
+  Layout,
+} from "@buleje/design-system/icons";
+import { LoadingState } from "@buleje/design-system";
+import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
+import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
+import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
 
 interface Page {
   id: string;
@@ -21,6 +26,40 @@ interface Page {
     blocks: number;
   };
 }
+
+interface QuickLink {
+  href: string;
+  icon: typeof FileText;
+  title: string;
+  description: string;
+}
+
+const QUICK_LINKS: QuickLink[] = [
+  {
+    href: "/admin/cms/pages/new",
+    icon: FileText,
+    title: "Páginas",
+    description: "Crea y gestiona el contenido editorial",
+  },
+  {
+    href: "/admin/cms/media",
+    icon: ImageIcon,
+    title: "Medios",
+    description: "Biblioteca de imágenes y archivos",
+  },
+  {
+    href: "/admin/cms/theme",
+    icon: Palette,
+    title: "Tema",
+    description: "Colores, tipografía y estilos globales",
+  },
+  {
+    href: "/admin/cms/navigation",
+    icon: MenuIcon,
+    title: "Navegación",
+    description: "Estructura del menú y enlaces del sitio",
+  },
+];
 
 export default function CMSDashboard() {
   const [pages, setPages] = useState<Page[]>([]);
@@ -45,120 +84,109 @@ export default function CMSDashboard() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-[var(--surface-canvas)] p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <PageTitle className="text-3xl font-bold mb-2">Sistema CMS</PageTitle>
-          <p className="text-[var(--text-secondary)]">
-            Gestiona el contenido de tu sitio web
-          </p>
-        </div>
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Link
-            href="/admin/cms/pages/new"
-            className="p-6 bg-[var(--accent)] text-white rounded-lg hover:shadow-lg transition-shadow"
-          >
-            <FileText className="w-8 h-8 mb-2" />
-            <CardTitle className="font-bold">Páginas</CardTitle>
-            <p className="text-sm opacity-90">{pages.length} páginas</p>
-          </Link>
-
-          <Link
-            href="/admin/cms/media"
-            className="p-6 bg-[var(--surface-sunken)] text-white rounded-lg hover:shadow-lg transition-shadow"
-          >
-            <ImageIcon className="w-8 h-8 mb-2" />
-            <CardTitle className="font-bold">Medios</CardTitle>
-            <p className="text-sm opacity-90">Biblioteca de imágenes</p>
-          </Link>
-
-          <Link
-            href="/admin/cms/theme"
-            className="p-6 bg-[var(--surface-sunken)] text-white rounded-lg hover:shadow-lg transition-shadow"
-          >
-            <Palette className="w-8 h-8 mb-2" />
-            <CardTitle className="font-bold">Tema</CardTitle>
-            <p className="text-sm opacity-90">Colores y estilos</p>
-          </Link>
-
-          <Link
-            href="/admin/cms/navigation"
-            className="p-6 bg-[var(--accent)] text-white rounded-lg hover:shadow-lg transition-shadow"
-          >
-            <MenuIcon className="w-8 h-8 mb-2" />
-            <CardTitle className="font-bold">Navegación</CardTitle>
-            <p className="text-sm opacity-90">Menú del sitio</p>
-          </Link>
-        </div>
-
-        {/* Pages list */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-4 border-b flex justify-between items-center">
-            <SectionTitle className="text-xl font-bold">Páginas recientes</SectionTitle>
-            <Link
-              href="/admin/cms/pages/new"
-              className="px-4 py-2 bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
+        <AdminTabShell
+          title="Sistema CMS"
+          description="Gestiona el contenido editorial, páginas, medios y navegación del sitio público."
+          icon={Layout}
+          actions={
+            <Link href="/admin/cms/pages/new" className={ADMIN_TOKENS.btnPrimary}>
+              <Plus className="w-4 h-4" aria-hidden />
               Nueva página
             </Link>
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {QUICK_LINKS.map(({ href, icon: Icon, title, description }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`${ADMIN_TOKENS.card} p-5 hover:border-[var(--accent)]/40 transition-colors group`}
+              >
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors mb-3">
+                  <Icon className="w-5 h-5" aria-hidden />
+                </span>
+                <h3 className={ADMIN_TOKENS.headingH3}>{title}</h3>
+                <p className={`${ADMIN_TOKENS.bodyText} mt-1`}>{description}</p>
+                {title === "Páginas" && (
+                  <p className={`${ADMIN_TOKENS.hint} mt-2`}>
+                    {pages.length} {pages.length === 1 ? "página" : "páginas"}
+                  </p>
+                )}
+              </Link>
+            ))}
           </div>
 
-          <div className="divide-y">
+          <section className={ADMIN_TOKENS.card}>
+            <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)]">
+              <h3 className={ADMIN_TOKENS.headingH3}>Páginas recientes</h3>
+              {pages.length > 5 && (
+                <Link
+                  href="/admin/cms/pages"
+                  className={ADMIN_TOKENS.btnGhost}
+                >
+                  Ver todas →
+                </Link>
+              )}
+            </header>
+
             {loading ? (
-              <div className="p-8 text-center text-[var(--text-secondary)]">Cargando...</div>
+              <div className="p-8">
+                <LoadingState />
+              </div>
             ) : pages.length === 0 ? (
-              <div className="p-8 text-center text-[var(--text-secondary)]">
-                No hay páginas creadas. ¡Crea tu primera página!
+              <div className="p-5">
+                <AdminEmptyState
+                  icon={FileText}
+                  title="Sin páginas creadas"
+                  description="Crea tu primera página editorial para que aparezca en el sitio público."
+                  action={{
+                    label: "Crear primera página",
+                    onClick: () => {
+                      window.location.href = "/admin/cms/pages/new";
+                    },
+                  }}
+                  compact
+                />
               </div>
             ) : (
-              pages.slice(0, 5).map((page) => (
-                <Link
-                  key={page.id}
-                  href={`/admin/cms/pages/${page.id}`}
-                  className="p-4 hover:bg-gray-50 block"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="font-semibold">{page.title}</CardTitle>
-                      <p className="text-sm text-[var(--text-secondary)]">/{page.slug}</p>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                          page.status === "PUBLISHED"
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                            : page.status === "DRAFT"
-                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                            : "bg-gray-100 text-[var(--text-primary)]"
-                        }`}
-                      >
-                        {page.status}
-                      </span>
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">
-                        {page._count.blocks} bloques
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))
+              <ul className="divide-y divide-[var(--rule-soft)]">
+                {pages.slice(0, 5).map((page) => (
+                  <li key={page.id}>
+                    <Link
+                      href={`/admin/cms/pages/${page.id}`}
+                      className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-[var(--surface-sunken)]/50 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                          {page.title}
+                        </p>
+                        <p className={`${ADMIN_TOKENS.hint} truncate`}>/{page.slug}</p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className={`${ADMIN_TOKENS.hint}`}>
+                          {page._count.blocks} bloques
+                        </span>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            page.status === "PUBLISHED"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                              : page.status === "DRAFT"
+                              ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                          }`}
+                        >
+                          {page.status}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-
-          {pages.length > 5 && (
-            <div className="p-4 text-center border-t">
-              <Link
-                href="/admin/cms/pages"
-                className="text-[var(--data-success)] hover:underline"
-              >
-                Ver todas las páginas →
-              </Link>
-            </div>
-          )}
-        </div>
+          </section>
+        </AdminTabShell>
       </div>
     </div>
   );
