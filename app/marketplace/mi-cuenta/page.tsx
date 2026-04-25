@@ -25,21 +25,13 @@ import {
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { useCustomerOrders } from "@/hooks/use-customer-orders";
 import { LastOrderBanner } from "@/components/marketplace/mi-cuenta/LastOrderBanner";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type OrderStatus = "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado";
-
-interface OrderSummary {
-  id: string;
-  total: number;
-  status: OrderStatus;
-  itemsCount: number;
-  createdAt: string;
-  items: { name: string }[];
-}
 
 interface StatCard {
   label: string;
@@ -109,45 +101,15 @@ const ACTIVE_STATUSES: OrderStatus[] = ["pendiente", "confirmado", "en_camino"];
 export default function MiCuentaPage() {
   const { customer } = useCustomer();
   const { items: wishlistItems } = useWishlist();
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  // Sprint 7: singleton compartido — un solo fetch para mi-cuenta + LastOrderBanner
+  const { orders, loading: ordersLoading } = useCustomerOrders();
   const [couponsCount, setCouponsCount] = useState<number | null>(null);
 
   const favoritesCount = wishlistItems.length;
   const addressesCount = customer?.locations?.length ?? 0;
   const phone = customer?.phone;
-  const ordersCount = ordersLoaded ? orders.length : null;
+  const ordersCount = ordersLoading ? null : orders.length;
   const activeOrder = orders.find((o) => ACTIVE_STATUSES.includes(o.status));
-
-  // ── Fetch pedidos ─────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (!phone) {
-      setOrders([]);
-      setOrdersLoaded(true);
-      return;
-    }
-    let cancelled = false;
-    fetch(
-      `/api/marketplace/mi-cuenta/pedidos?phone=${encodeURIComponent(phone)}&tenantId=main`,
-      { cache: "no-store" },
-    )
-      .then((r) => (r.ok ? r.json() : { orders: [] }))
-      .then((data: { orders?: OrderSummary[] }) => {
-        if (cancelled) return;
-        setOrders(Array.isArray(data.orders) ? data.orders : []);
-        setOrdersLoaded(true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setOrders([]);
-          setOrdersLoaded(true);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [phone]);
 
   // ── Cupones (localStorage) ────────────────────────────────────────────────
 

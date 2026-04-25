@@ -12,10 +12,10 @@
  * Sprint 4 tiendas blueprint.
  */
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { Store as StoreIcon } from "@buleje/design-system/icons";
-import { useCustomer } from "@/contexts/customer-context";
+import { useCustomerOrders } from "@/hooks/use-customer-orders";
 import { cn } from "@/lib/utils";
 
 interface FrequentStore {
@@ -24,39 +24,10 @@ interface FrequentStore {
   count: number;
 }
 
-const LS_KEY = "tus-tiendas:v1";
 const MAX_STORES = 5;
-
-interface PedidoItem {
-  storeSlug?: string;
-}
-
-interface PedidoSummary {
-  id: string;
-  storeSlug?: string;
-  items?: PedidoItem[];
-}
-
-function loadFromCache(): FrequentStore[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(LS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as FrequentStore[];
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_STORES) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveToCache(list: FrequentStore[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LS_KEY, JSON.stringify(list));
-  } catch {
-    // ignorar
-  }
-}
+// Slugs reservados que no deben aparecer en "Tus tiendas" — son
+// fallbacks del backend (tenant slug por defecto), no tiendas reales.
+const RESERVED_SLUGS = new Set(["main", "default", "tenant"]);
 
 function slugToName(slug: string): string {
   return slug
@@ -66,42 +37,24 @@ function slugToName(slug: string): string {
 }
 
 export default function TusTiendasStrip({ className }: { className?: string }) {
-  const { customer } = useCustomer();
-  const phone = customer?.phone;
-  const [stores, setStores] = useState<FrequentStore[]>(() => loadFromCache());
+  const { orders } = useCustomerOrders();
 
-  useEffect(() => {
-    if (!phone) return;
-    let cancelled = false;
-    const params = new URLSearchParams({ phone, tenantId: "main" });
-    fetch(`/api/marketplace/mi-cuenta/pedidos?${params}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { orders: [] }))
-      .then((data: { orders?: PedidoSummary[] }) => {
-        if (cancelled) return;
-        const counter = new Map<string, number>();
-        for (const o of data.orders ?? []) {
-          const slug = o.storeSlug;
-          if (!slug) continue;
-          counter.set(slug, (counter.get(slug) ?? 0) + 1);
-        }
-        const ranked: FrequentStore[] = [...counter.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, MAX_STORES)
-          .map(([slug, count]) => ({
-            slug,
-            name: slugToName(slug),
-            count,
-          }));
-        setStores(ranked);
-        saveToCache(ranked);
-      })
-      .catch(() => {
-        // silencioso — fallback al cache
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [phone]);
+  const stores: FrequentStore[] = useMemo(() => {
+    const counter = new Map<string, number>();
+    for (const o of orders) {
+      const slug = o.storeSlug;
+      if (!slug || RESERVED_SLUGS.has(slug)) continue;
+      counter.set(slug, (counter.get(slug) ?? 0) + 1);
+    }
+    return [...counter.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_STORES)
+      .map(([slug, count]) => ({
+        slug,
+        name: slugToName(slug),
+        count,
+      }));
+  }, [orders]);
 
   if (stores.length === 0) return null;
 

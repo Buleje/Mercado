@@ -12,18 +12,10 @@
  * tiene teléfono, NO renderiza nada (degradación silenciosa).
  */
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCustomer } from "@/contexts/customer-context";
+import { useCustomerOrders } from "@/hooks/use-customer-orders";
 import ReorderButton from "@/components/marketplace/ReorderButton";
-
-interface LastOrder {
-  id: string;
-  total: number;
-  createdAt: string;
-  itemsCount: number;
-  items: { name: string }[];
-}
 
 function formatRelativeDate(iso: string): string {
   try {
@@ -41,30 +33,8 @@ function formatRelativeDate(iso: string): string {
 
 export function LastOrderBanner() {
   const { customer } = useCustomer();
-  const [last, setLast] = useState<LastOrder | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!customer?.phone) return;
-
-    const load = async () => {
-      try {
-        const params = new URLSearchParams({ phone: customer.phone!, tenantId: "main" });
-        const res = await fetch(`/api/marketplace/mi-cuenta/pedidos?${params}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as { orders?: LastOrder[] };
-        if (cancelled) return;
-        const first = Array.isArray(data.orders) && data.orders.length > 0 ? data.orders[0] : null;
-        setLast(first);
-      } catch {
-        /* silencioso */
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [customer?.phone]);
+  const { orders } = useCustomerOrders();
+  const last = orders[0] ?? null;
 
   // No cliente, o sin pedidos aún → no renderizamos (cuenta nueva no ve ruido).
   if (!customer?.phone || !last) return null;

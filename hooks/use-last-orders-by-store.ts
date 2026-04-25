@@ -3,106 +3,47 @@
 /**
  * useLastOrdersByStore — TS-08 mapa storeSlug → último pedido del cliente.
  *
- * Reusa /api/marketplace/mi-cuenta/pedidos (ya enriquecido con storeSlug en
- * Sprint 3). Cachea en memoria + localStorage para tabs subsiguientes.
- *
- * Sprint 6 marketplace blueprint.
+ * Sprint 7: deja de fetchear directo y consume `useCustomerOrders` (singleton)
+ * — un solo request compartido entre TusTiendasStrip + LastOrderBanner +
+ * useLastOrdersByStore.
  */
 
-import { useEffect, useState } from "react";
-import { useCustomer } from "@/contexts/customer-context";
+import { useEffect, useMemo, useState } from "react";
+import { useCustomerOrders } from "@/hooks/use-customer-orders";
 
 export interface LastOrderInfo {
   daysAgo: number;
   orderId: string;
 }
 
-const LS_KEY = "last-orders-by-store:v1";
-const TTL_MS = 5 * 60 * 1000;
-
-interface CacheShape {
-  ts: number;
-  phone: string;
-  data: Record<string, LastOrderInfo>;
-}
-
-interface PedidoSummary {
-  id: string;
-  storeSlug?: string;
-  createdAt: string;
-}
-
-function readCache(): CacheShape | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CacheShape;
-    if (!parsed.ts || Date.now() - parsed.ts > TTL_MS) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(cache: CacheShape) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LS_KEY, JSON.stringify(cache));
-  } catch {
-    // ignorar
-  }
-}
-
 export function useLastOrdersByStore(): Record<string, LastOrderInfo> {
-  const { customer } = useCustomer();
-  const phone = customer?.phone;
-  const [map, setMap] = useState<Record<string, LastOrderInfo>>(() => {
-    const c = readCache();
-    return c?.data ?? {};
-  });
-
+  const { orders } = useCustomerOrders();
+  // `now` se refresca cada minuto para que "Pediste hace X días"
+  // recompute al cruzar la medianoche sin requerir nav. Date.now() vive
+  // en el effect, no durante render — cumple react-hooks/purity.
+  const [now, setNow] = useState<number>(0);
   useEffect(() => {
-    if (!phone) {
-      setMap({});
-      return;
-    }
-    const cached = readCache();
-    if (cached && cached.phone === phone) {
-      setMap(cached.data);
-      return;
-    }
-    let cancelled = false;
-    const params = new URLSearchParams({ phone, tenantId: "main" });
-    fetch(`/api/marketplace/mi-cuenta/pedidos?${params}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { orders: [] }))
-      .then((data: { orders?: PedidoSummary[] }) => {
-        if (cancelled) return;
-        const next: Record<string, LastOrderInfo> = {};
-        const now = Date.now();
-        for (const o of data.orders ?? []) {
-          const slug = o.storeSlug;
-          if (!slug || !o.createdAt) continue;
-          const t = new Date(o.createdAt).getTime();
-          if (Number.isNaN(t)) continue;
-          const daysAgo = Math.floor((now - t) / 86_400_000);
-          const prev = next[slug];
-          if (!prev || daysAgo < prev.daysAgo) {
-            next[slug] = { daysAgo, orderId: o.id };
-          }
-        }
-        setMap(next);
-        writeCache({ ts: Date.now(), phone, data: next });
-      })
-      .catch(() => {
-        // silencioso — sin badge
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [phone]);
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
-  return map;
+  return useMemo(() => {
+    const next: Record<string, LastOrderInfo> = {};
+    if (now === 0) return next;
+    for (const o of orders) {
+      const slug = o.storeSlug;
+      if (!slug || !o.createdAt) continue;
+      const t = new Date(o.createdAt).getTime();
+      if (Number.isNaN(t)) continue;
+      const daysAgo = Math.floor((now - t) / 86_400_000);
+      const prev = next[slug];
+      if (!prev || daysAgo < prev.daysAgo) {
+        next[slug] = { daysAgo, orderId: o.id };
+      }
+    }
+    return next;
+  }, [orders, now]);
 }
 
 export function formatDaysAgo(daysAgo: number): string {
