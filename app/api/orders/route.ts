@@ -57,11 +57,6 @@ const OrderPostSchema = z.object({
 });
 
 export const GET = withApiHandler("orders-list", async (req) => {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
-  const rl = applyRateLimit(req, "GENEROUS", "orders-get");
-  if (rl) return rl;
-
   const { searchParams } = new URL(req.url);
   const statusFilter = searchParams.get("status");      // e.g. "pendiente"
   const limitParam   = searchParams.get("limit");       // default: all
@@ -69,6 +64,46 @@ export const GET = withApiHandler("orders-list", async (req) => {
   const cursorParam  = searchParams.get("cursor");      // cursor-based pagination
   const sinceParam   = searchParams.get("since");       // ISO date string
   const phoneParam   = searchParams.get("phone");       // filter by customer phone
+
+  // ── Public branch: storefront customer reading own orders by phone ────────
+  // Honors PUBLIC_WRITE_ALLOWLIST contract in lib/middleware/constants.ts.
+  // No admin session required; tenant comes from middleware-resolved
+  // x-tenant-id header (proxy.ts:60 — not client-controlled).
+  // Capped to 50 results and locked to phone+tenantId — no enumeration.
+  let tenantId: string;
+  if (phoneParam) {
+    const rl = applyRateLimit(req, "GENEROUS", "orders-get-public");
+    if (rl) return rl;
+    const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
+    tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+    const publicLimit = limitParam
+      ? Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 50)
+      : 50;
+    const { orders, nextCursor, total } = await withDbRetry(() =>
+      OrdersDB.getPage({
+        cursor: cursorParam ?? undefined,
+        limit: publicLimit,
+        status: statusFilter ?? undefined,
+        since:  sinceParam  ?? undefined,
+        phone:  phoneParam,
+        tenantId,
+      })
+    );
+    return NextResponse.json(orders, {
+      headers: {
+        "X-Total-Count":  String(total),
+        "X-Limit":        String(publicLimit),
+        "X-Next-Cursor":  nextCursor ?? "",
+      },
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  const rl = applyRateLimit(req, "GENEROUS", "orders-get");
+  if (rl) return rl;
+  tenantId = auth.tenantId;
 
   // ── Cursor-based pagination (preferred — DB-level, scales to large datasets) ──
   if (cursorParam !== null || (limitParam && !pageParam)) {
@@ -82,7 +117,7 @@ export const GET = withApiHandler("orders-list", async (req) => {
         status: statusFilter ?? undefined,
         since:  sinceParam  ?? undefined,
         phone:  phoneParam  ?? undefined,
-        tenantId: auth.tenantId,
+        tenantId,
       })
     );
     return NextResponse.json(orders, {
@@ -102,7 +137,7 @@ export const GET = withApiHandler("orders-list", async (req) => {
       status:  statusFilter  ?? undefined,
       since:   sinceParam    ?? undefined,
       phone:   phoneParam    ?? undefined,
-      tenantId: auth.tenantId,
+      tenantId,
     })
   );
 
@@ -594,7 +629,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
           `💰 Total: S/${saved.total.toFixed(2)}\n` +
           `💳 Pago: ${saved.paymentMethod === "yape" ? "Yape" : saved.paymentMethod === "efectivo" ? "Efectivo" : saved.paymentMethod ?? "—"}\n\n` +
           `Revisa tu panel de administración para confirmar el pedido.`;
-        sendWhatsAppQueued(ownerPhone, vendorMsg, { tenantId, context: "order-vendor-notify" }).catch(() => {});
+        sendWhatsAppQueued(ownerPhone, vendorMsg, { tenantId, context: "order-vendor-notify" }).catch((err) => logger.error("[orders] vendor notify failed", { error: String(err), tenantId }));
         sendPushToPhone(ownerPhone, {
           title: `🔔 Nuevo pedido — S/${saved.total.toFixed(2)}`,
           body: `${saved.customer.name} hizo un pedido: ${itemsSummary}${moreItems}`,

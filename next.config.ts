@@ -129,20 +129,23 @@ const nextConfig: NextConfig = {
   // Add long-lived cache headers for static assets and security headers
   async headers() {
     return [
-      // Cache headers for static assets
-      // En desarrollo: no-store para que el browser NUNCA cachee chunks de HMR
-      // En producción: inmutable por 1 año (los hashes cambian en cada build)
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: isProd
-              ? "public, max-age=31536000, immutable"
-              : "no-store, no-cache, must-revalidate",
-          },
-        ],
-      },
+      // Cache headers for static assets — production-only.
+      // Next.js 16 warns that custom Cache-Control on /_next/static/* breaks
+      // dev behavior (HMR + Turbopack file-system cache); leaving it unset in
+      // dev hands the chunk lifecycle back to Next.js's own defaults.
+      ...(isProd
+        ? [
+            {
+              source: "/_next/static/:path*",
+              headers: [
+                {
+                  key: "Cache-Control",
+                  value: "public, max-age=31536000, immutable",
+                },
+              ],
+            },
+          ]
+        : []),
       {
         source: "/images/:path*",
         headers: [
