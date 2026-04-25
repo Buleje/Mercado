@@ -1,13 +1,24 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   PackageCheck, Download, Search, Eye, X,
   Camera, AlertTriangle, CheckCircle2, XCircle,
-  ScanLine, ClipboardList, Plus, Check, Loader2,
+  ScanLine, ClipboardList, Plus, Check, Loader2, Sparkles,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
+
+interface PendingOC {
+  id: string;
+  supplierId?: string;
+  supplierName?: string;
+  status?: string;
+  total?: number;
+  createdAt?: string;
+  items?: Array<{ name?: string; quantity?: number; unit?: string }>;
+}
 
 type ReceptionStatus = "programada" | "en-proceso" | "aceptada" | "parcial" | "rechazada";
 
@@ -65,6 +76,10 @@ export default function ReceivingTab() {
   const [detail, setDetail]             = useState<Reception | null>(null);
   const [showNew, setShowNew]           = useState(false);
 
+  // Órdenes pendientes de recibir (para el dropdown del modal)
+  const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
+  const [selectedOcId, setSelectedOcId] = useState("");
+
   // New reception form
   const [newForm, setNewForm] = useState({
     supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "",
@@ -72,13 +87,55 @@ export default function ReceivingTab() {
   const [checklist, setChecklist] = useState<ReceptionItem[]>([{ ...EMPTY_CHECKLIST }]);
   const [saving, setSaving] = useState(false);
 
+  // Carga recepciones con cache localStorage stale-while-revalidate
   useEffect(() => {
+    const KEY = "admin-recepciones-cache";
+    const TTL = 60 * 1000;
     let active = true;
+
+    // 1. Hidratar instantaneo desde cache
+    try {
+      const cached = localStorage.getItem(KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached) as { data: Reception[]; ts: number };
+        if (Array.isArray(data)) {
+          setReceptions(data);
+          setLoading(false);
+          if (Date.now() - ts < TTL) return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // 2. Refrescar de red
     fetch("/api/compras/recepciones").then(r => r.ok ? r.json() : []).then((data: Reception[]) => {
-      if (active) { setReceptions(data); setLoading(false); }
+      if (!active) return;
+      setReceptions(data);
+      setLoading(false);
+      try { localStorage.setItem(KEY, JSON.stringify({ data, ts: Date.now() })); } catch { /* quota */ }
     }).catch(() => { if (active) setLoading(false); });
+
     return () => { active = false; };
   }, []);
+
+  // Carga OCs pendientes al abrir el modal de nueva recepción
+  const loadPendingOCs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/purchases", { credentials: "include" });
+      if (!res.ok) return;
+      const json = await res.json();
+      const all: PendingOC[] = Array.isArray(json) ? json : (json?.purchases ?? []);
+      // Solo mostrar OCs pendientes / parciales / auto_generated
+      const pending = all.filter((p) => {
+        const s = (p.status ?? "").toLowerCase();
+        return s === "pendiente" || s === "parcial" || s === "auto_generated" || s === "ordered" || s === "draft";
+      });
+      setPendingOCs(pending);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (showNew) void loadPendingOCs();
+  }, [showNew, loadPendingOCs]);
 
   const stats = useMemo(() => {
     const scheduled   = receptions.filter(r => r.status === "programada").length;
@@ -122,16 +179,47 @@ export default function ReceivingTab() {
       photos: 0,
       nonConformities,
     };
-    const res = await fetch("/api/compras/recepciones", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/compras/recepciones", {
+      method: "POST",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(body),
+    });
     if (res.ok) {
       const created: Reception = await res.json();
-      setReceptions(prev => [created, ...prev]);
+      setReceptions(prev => {
+        const next = [created, ...prev];
+        try { localStorage.setItem("admin-recepciones-cache", JSON.stringify({ data: next, ts: Date.now() })); } catch { /* quota */ }
+        return next;
+      });
     }
     setSaving(false);
     setShowNew(false);
     setNewForm({ supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "" });
     setChecklist([{ ...EMPTY_CHECKLIST }]);
+    setSelectedOcId("");
   };
+
+  // Al elegir una OC del dropdown — auto-llena proveedor + items
+  const applyOC = useCallback((ocId: string) => {
+    setSelectedOcId(ocId);
+    if (!ocId) return;
+    const oc = pendingOCs.find((p) => p.id === ocId);
+    if (!oc) return;
+    setNewForm((f) => ({
+      ...f,
+      supplier: oc.supplierName ?? f.supplier,
+      orderRef: oc.id,
+    }));
+    if (oc.items && oc.items.length > 0) {
+      setChecklist(oc.items.map((it) => ({
+        product: it.name ?? "",
+        expectedQty: Number(it.quantity ?? 0),
+        receivedQty: Number(it.quantity ?? 0),
+        condition: "ok" as ItemCondition,
+        notes: "",
+      })));
+    }
+  }, [pendingOCs]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -381,16 +469,43 @@ export default function ReceivingTab() {
               <button onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
+            {/* Dropdown OC pendiente — auto-completa todo */}
+            {pendingOCs.length > 0 && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-bold text-[var(--text-primary)]">Auto-completar desde OC pendiente</p>
+                </div>
+                <select
+                  value={selectedOcId}
+                  onChange={(e) => applyOC(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm"
+                >
+                  <option value="">— Elegir orden de compra —</option>
+                  {pendingOCs.map((oc) => (
+                    <option key={oc.id} value={oc.id}>
+                      {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · S/${oc.total.toFixed(2)}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  Al elegir, se rellenan proveedor, ref y los items del checklist con la cantidad esperada.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</label>
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
+                  placeholder="Distribuidora ABC"
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nro. Orden de Compra</label>
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  placeholder="OC-001"
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-mono" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha programada</label>
@@ -400,6 +515,7 @@ export default function ReceivingTab() {
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Inspector</label>
                 <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
+                  placeholder="Nombre del responsable"
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
               </div>
             </div>
