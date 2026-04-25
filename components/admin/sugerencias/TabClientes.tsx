@@ -187,7 +187,7 @@ export default function TabClientes() {
             </div>
           ) : (
             <>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 {recs.length} sugerencias basadas en su historial
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -205,7 +205,7 @@ export default function TabClientes() {
                         {fmt(r.price)}
                       </p>
                       {r.reason && (
-                        <p className="mt-1 text-[11px] font-medium text-[var(--text-secondary)] line-clamp-2">
+                        <p className="mt-1 text-xs font-medium text-[var(--text-secondary)] line-clamp-2">
                           {r.reason}
                         </p>
                       )}
@@ -217,7 +217,7 @@ export default function TabClientes() {
               {/* Preview WhatsApp */}
               {selected.phone && (
                 <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
                     Mensaje que se enviará
                   </p>
                   <pre className="text-xs font-medium text-[var(--text-primary)] whitespace-pre-wrap font-sans">

@@ -152,7 +152,7 @@ export default function TabEstrategias() {
                 <p className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight">
                   {next.label}
                 </p>
-                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: next.accent }}>
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: next.accent }}>
                   {next.daysAway < 0
                     ? `Hace ${Math.abs(next.daysAway)} días`
                     : next.daysAway === 0
@@ -172,7 +172,7 @@ export default function TabEstrategias() {
           {/* Tips */}
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl bg-white border border-[var(--rule-soft)] p-4">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
                 <TrendingUp className="h-3 w-3" />
                 Estrategia de venta
               </p>
@@ -186,7 +186,7 @@ export default function TabEstrategias() {
               </ul>
             </div>
             <div className="rounded-xl bg-white border border-[var(--rule-soft)] p-4">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
                 <Calendar className="h-3 w-3" />
                 Productos a stockear
               </p>
@@ -212,7 +212,7 @@ export default function TabEstrategias() {
       {/* Resto del calendario */}
       {seasons.length > 1 && (
         <section>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
             Próximas {seasons.length - 1} fechas
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -236,14 +236,14 @@ export default function TabEstrategias() {
                       {s.label}
                     </p>
                   </div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider tabular-nums text-[var(--text-tertiary)] shrink-0">
+                  <p className="text-xs font-bold uppercase tracking-wider tabular-nums text-[var(--text-tertiary)] shrink-0">
                     {s.daysAway} d
                   </p>
                 </div>
                 <p className="text-xs font-medium text-[var(--text-secondary)] line-clamp-2">
                   {s.tips[0]}
                 </p>
-                <p className="text-[11px] font-medium text-[var(--text-tertiary)] mt-2">
+                <p className="text-xs font-medium text-[var(--text-tertiary)] mt-2">
                   {fmtDate(s.date)}
                 </p>
               </article>

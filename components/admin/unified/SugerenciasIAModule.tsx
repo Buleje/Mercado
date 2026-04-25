@@ -38,7 +38,7 @@ export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
   const [tab, setTab] = useState<string>(TABS[0].id);
 
   return (
-    <div className="space-y-4 [&_.text-xs]:text-[13px] [&_.text-\\[11px\\]]:text-[12px]">
+    <div className="space-y-4">
       <AdminModuleHeader title="Sugerencias IA" icon={Sparkles} />
       <AdminTabBar
         tabs={TABS}

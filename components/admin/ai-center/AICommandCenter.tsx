@@ -289,7 +289,7 @@ export default function AICommandCenter() {
                 {badge != null && badge > 0 && (
                   <span
                     className={cn(
-                      "text-[10px] font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
+                      "text-xs font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
                       isActive
                         ? "bg-white/25 text-white"
                         : "bg-[var(--data-error)] text-white",
@@ -303,7 +303,7 @@ export default function AICommandCenter() {
           })}
         </nav>
         <div className="flex items-center gap-2 shrink-0" data-export-hide="true">
-          <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] px-2 py-1">
+          <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] px-2 py-1">
             <RefreshCw className="h-3 w-3" />
             {lastRefresh ? getRelativeTime(lastRefresh) : "Cargando…"}
           </span>
@@ -401,7 +401,7 @@ export default function AICommandCenter() {
           ilegible. Excepto badges chiquitos (.badge-xs) si los hubiera. */}
       <main
         ref={contentAreaRef}
-        className="flex-1 overflow-auto [&_.text-xs]:text-[13px] [&_p]:leading-relaxed"
+        className="flex-1 overflow-auto [&_.text-xs]:text-sm [&_p]:leading-relaxed"
       >
         <div className="p-5 sm:p-6">
           {loading && !data ? (

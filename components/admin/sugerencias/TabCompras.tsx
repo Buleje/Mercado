@@ -254,7 +254,7 @@ export default function TabCompras() {
                 )}
               >
                 <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider",
+                  "text-xs font-bold uppercase tracking-wider",
                   u ? u.text : "text-[var(--text-tertiary)]"
                 )}>
                   {k.label}
@@ -265,7 +265,7 @@ export default function TabCompras() {
                 )}>
                   {k.value}
                 </span>
-                <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                <span className="text-xs font-medium text-[var(--text-secondary)]">
                   {k.sub}
                 </span>
               </div>
@@ -314,7 +314,7 @@ export default function TabCompras() {
                         {item.product.name}
                       </p>
                       <span className={cn(
-                        "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider",
+                        "shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider",
                         u.bg, u.text,
                       )}>
                         {u.label}
@@ -344,7 +344,7 @@ export default function TabCompras() {
                   </div>
 
                   {item.bestSupplier && (
-                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">
+                    <p className="text-xs font-medium text-[var(--text-secondary)]">
                       Mejor proveedor:{" "}
                       <span className="font-bold text-[var(--text-primary)]">{item.bestSupplier}</span>
                       {" · "}
@@ -355,18 +355,18 @@ export default function TabCompras() {
 
                 <div className="hidden sm:flex flex-col items-end justify-between text-right shrink-0 gap-2 min-w-[120px]">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Comprar
                     </p>
                     <p className="text-2xl font-extrabold tabular-nums leading-none text-[var(--text-primary)]">
                       {item.suggestedQty}
                     </p>
-                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">
+                    <p className="text-xs font-medium text-[var(--text-secondary)]">
                       {item.product.unit ?? "u"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Total
                     </p>
                     <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">

@@ -127,7 +127,7 @@ function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProp
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 h-full flex flex-col justify-between gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
           {label}
         </span>
         <Icon className={cn("w-4 h-4 shrink-0", iconColor)} />
@@ -443,13 +443,13 @@ export default function FiadosSection() {
                     }
                     title="Recordar pago por WhatsApp"
                     aria-label={`Recordar pago a ${entry.customerName ?? "cliente"}`}
-                    className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 py-1 text-[11px] font-bold text-[#1a8a4a] hover:bg-[#25D366]/20 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 py-1 text-xs font-bold text-[#1a8a4a] hover:bg-[#25D366]/20 transition-colors"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
                     Cobrar
                   </button>
                 ) : (
-                  <span className="text-[11px] text-[var(--text-tertiary)] text-right">—</span>
+                  <span className="text-xs text-[var(--text-tertiary)] text-right">—</span>
                 )}
               </li>
             ))}

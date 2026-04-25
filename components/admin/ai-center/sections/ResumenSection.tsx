@@ -243,18 +243,27 @@ interface KPICardProps {
 }
 
 function KPICard({ label, value, sub, icon }: KPICardProps) {
-  // 2026-04-24: tipografia subida (text-xs -> text-[11px] uppercase tracking;
+  // 2026-04-24: tipografia subida (text-xs -> text-xs uppercase tracking;
   // text-lg -> text-2xl extrabold) + padding generoso. Hereda --section-primary
   // del wrapper para que el valor tome el accent rotativo de la posicion.
+  // 2026-04-25: empty-state ("Sin datos") usa tipografia secundaria muted
+  // para no competir visualmente con KPIs reales.
+  const isEmpty = typeof value === "string" && /sin datos/i.test(value);
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 h-full flex flex-col justify-between gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           {label}
         </span>
         <span className="text-[var(--text-tertiary)]">{icon}</span>
       </div>
-      <p className="text-2xl sm:text-3xl font-extrabold text-[color:var(--section-primary,var(--text-primary))] leading-none tabular-nums tracking-tight">
+      <p
+        className={
+          isEmpty
+            ? "text-base font-medium text-[var(--text-tertiary)] leading-none"
+            : "text-2xl sm:text-3xl font-extrabold text-[color:var(--section-primary,var(--text-primary))] leading-none tabular-nums tracking-tight"
+        }
+      >
         {value}
       </p>
       {sub && <div className="text-xs text-[var(--text-secondary)] font-medium">{sub}</div>}
@@ -527,7 +536,7 @@ export default function ResumenSection({ data }: Props) {
         />
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 h-full flex flex-col justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Salud negocio
             </span>
             <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
@@ -546,7 +555,7 @@ export default function ResumenSection({ data }: Props) {
           <div>
             <span
               className={cn(
-                "text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider",
+                "text-xs px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider",
                 healthColor.badge
               )}
             >
@@ -661,7 +670,7 @@ export default function ResumenSection({ data }: Props) {
         <div>
           <div className="flex items-center gap-2 mb-3 px-1">
             <Package className="w-4 h-4 text-[var(--text-tertiary)]" />
-            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Oportunidades detectadas
             </CardTitle>
           </div>

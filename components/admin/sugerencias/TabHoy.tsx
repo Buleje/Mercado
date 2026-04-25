@@ -186,23 +186,23 @@ export default function TabHoy({ onTabChange }: Props) {
             <div className="flex items-center justify-center gap-3">
               <div className="flex flex-col items-center gap-1">
                 <ProductImage name={snapshot.bestCombo.a} imageUrl={snapshot.bestCombo.imageA} size="md" rounded="xl" />
-                <span className="text-[11px] font-bold text-center text-[var(--text-secondary)] line-clamp-1 max-w-[80px]">
+                <span className="text-xs font-bold text-center text-[var(--text-secondary)] line-clamp-1 max-w-[80px]">
                   {snapshot.bestCombo.a}
                 </span>
               </div>
               <span className="text-2xl font-extrabold text-[var(--text-tertiary)]">+</span>
               <div className="flex flex-col items-center gap-1">
                 <ProductImage name={snapshot.bestCombo.b} imageUrl={snapshot.bestCombo.imageB} size="md" rounded="xl" />
-                <span className="text-[11px] font-bold text-center text-[var(--text-secondary)] line-clamp-1 max-w-[80px]">
+                <span className="text-xs font-bold text-center text-[var(--text-secondary)] line-clamp-1 max-w-[80px]">
                   {snapshot.bestCombo.b}
                 </span>
               </div>
             </div>
             <div className="text-center pt-1">
               <p className="text-3xl font-extrabold tabular-nums leading-none text-[var(--text-primary)]">
-                {snapshot.bestCombo.count}<span className="text-base font-bold text-[var(--text-tertiary)]"> veces</span>
+                {snapshot.bestCombo.count}<span className="text-base font-bold text-[var(--text-tertiary)]">{snapshot.bestCombo.count === 1 ? " vez" : " veces"}</span>
               </p>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-1">
                 Vendidos juntos
               </p>
             </div>
@@ -232,11 +232,15 @@ export default function TabHoy({ onTabChange }: Props) {
                   {snapshot.urgentBuy.stock}
                 </p>
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  unidades
+                  {snapshot.urgentBuy.stock === 1 ? "unidad" : "unidades"}
                 </p>
               </div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--data-error)] mt-1">
-                {snapshot.urgentBuy.daysLeft === 0 ? "Sin stock" : `${snapshot.urgentBuy.daysLeft} día restante`}
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--data-error)] mt-1">
+                {snapshot.urgentBuy.daysLeft === 0
+                  ? "Sin stock"
+                  : snapshot.urgentBuy.daysLeft === 1
+                    ? "1 día restante"
+                    : `${snapshot.urgentBuy.daysLeft} días restantes`}
               </p>
             </div>
           </div>
@@ -264,8 +268,8 @@ export default function TabHoy({ onTabChange }: Props) {
                 <p className="text-3xl font-extrabold tabular-nums leading-none text-[var(--text-primary)]">
                   {fmt(snapshot.topMover.revenue)}
                 </p>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-1">
-                  esta semana ({snapshot.topMover.weeklySales} unidades)
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-1">
+                  esta semana ({snapshot.topMover.weeklySales} {snapshot.topMover.weeklySales === 1 ? "unidad" : "unidades"})
                 </p>
               </div>
             </div>
@@ -277,7 +281,7 @@ export default function TabHoy({ onTabChange }: Props) {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-white to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--text-primary)]">
             <Sparkles className="h-5 w-5 text-white" />
@@ -323,7 +327,7 @@ export default function TabHoy({ onTabChange }: Props) {
                     <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
                       {c.label}
                     </p>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       {c.sub}
                     </p>
                   </div>
@@ -350,7 +354,7 @@ export default function TabHoy({ onTabChange }: Props) {
 
               {!loading && c.data && (
                 <footer className="flex items-center justify-between border-t border-[var(--rule-soft)] pt-3">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                     Ver detalle
                   </span>
                   <TrendingUp className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />

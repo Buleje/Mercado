@@ -265,7 +265,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
               <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                 Checklist del día
               </p>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
                 Hábitos diarios para no olvidarte de nada
               </p>
             </div>
@@ -275,7 +275,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
               {completedCount}
               <span className="text-base font-bold text-[var(--text-tertiary)]">/{total}</span>
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               {pct}% hecho
             </p>
           </div>
@@ -313,7 +313,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
               )}
               <span
                 className={cn(
-                  "text-[15px] font-semibold transition-colors",
+                  "text-sm font-semibold transition-colors",
                   done
                     ? "text-[var(--text-tertiary)] line-through"
                     : "text-[var(--text-primary)]",
@@ -376,10 +376,10 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
           <Icon className="h-4 w-4 text-[var(--text-secondary)]" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">
+          <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">
             {task.description}
           </p>
-          <p className="mt-1 text-[13px] text-[var(--text-tertiary)] leading-relaxed">
+          <p className="mt-1 text-sm text-[var(--text-tertiary)] leading-relaxed">
             {task.impact}
           </p>
         </div>
@@ -427,7 +427,7 @@ function PriorityGroup({ priority, tasks, doneTasks, onMarkDone }: PriorityGroup
         >
           {config.label}
         </span>
-        <span className="text-[13px] font-bold tabular-nums text-[var(--text-tertiary)]">
+        <span className="text-sm font-bold tabular-nums text-[var(--text-tertiary)]">
           {visible.length} {visible.length === 1 ? "tarea" : "tareas"}
         </span>
       </div>

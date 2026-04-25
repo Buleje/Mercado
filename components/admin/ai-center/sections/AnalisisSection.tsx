@@ -93,16 +93,16 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)]">
-              <th className="text-left py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+              <th className="text-left py-3 pr-4 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Producto
               </th>
-              <th className="text-right py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+              <th className="text-right py-3 pr-4 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Costo
               </th>
-              <th className="text-right py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+              <th className="text-right py-3 pr-4 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Precio
               </th>
-              <th className="text-right py-3 pr-4 text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+              <th className="text-right py-3 pr-4 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 Margen
               </th>
               <th className="text-left py-2 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">

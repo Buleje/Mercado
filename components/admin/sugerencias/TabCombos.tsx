@@ -178,7 +178,7 @@ export default function TabCombos() {
               {/* Header con badge confianza */}
               <div className="flex items-center justify-between mb-4">
                 <span
-                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider"
                   style={{
                     backgroundColor: "color-mix(in oklab, var(--combo-accent) 12%, white)",
                     color: "var(--combo-accent)",
@@ -187,7 +187,7 @@ export default function TabCombos() {
                   <TrendingUp className="h-3 w-3" />
                   {combo.confidence}% confianza
                 </span>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
                   {combo.count} veces
                 </span>
               </div>
@@ -229,13 +229,13 @@ export default function TabCombos() {
               {fullPrice > 0 && (
                 <div className="mt-4 flex items-end justify-between border-t border-[var(--rule-soft)] pt-3">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Precio combo (-10%)
                     </p>
                     <p className="text-2xl font-extrabold tabular-nums leading-none text-[var(--text-primary)]">
                       {fmt(comboPrice)}
                     </p>
-                    <p className="text-[11px] font-medium text-[var(--text-tertiary)] line-through tabular-nums mt-0.5">
+                    <p className="text-xs font-medium text-[var(--text-tertiary)] line-through tabular-nums mt-0.5">
                       {fmt(fullPrice)}
                     </p>
                   </div>
