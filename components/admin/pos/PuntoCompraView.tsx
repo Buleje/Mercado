@@ -23,6 +23,9 @@ import {
   Tag,
   Camera,
   ShoppingCart,
+  Plus,
+  X as XIcon,
+  Check as CheckIcon,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -129,6 +132,10 @@ export default function PuntoCompraView() {
   const [showOrderCreator, setShowOrderCreator] = useState(false);
   const [lotSelectorProduct, setLotSelectorProduct] = useState<Product | null>(null);
   const [cartTab, setCartTab] = useState<"carrito" | "frecuentes" | "paquetes">("carrito");
+  // ── Modal "Nuevo proveedor" inline ──
+  const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({ name: "", ruc: "", phone: "", email: "" });
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
 
   // ── Fetch inicial + cargar borrador ─────────────────────────────────────────
   useEffect(() => {
@@ -528,65 +535,119 @@ export default function PuntoCompraView() {
     setToastMsg("Borrador guardado");
   };
 
+  // ── Crear proveedor inline ───────────────────────────────────────────────────
+  const handleCreateSupplier = async () => {
+    const name = newSupplier.name.trim();
+    if (!name) {
+      setToastMsg("Falta el nombre del proveedor");
+      return;
+    }
+    setCreatingSupplier(true);
+    try {
+      const res = await fetch("/api/suppliers", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          name,
+          ruc: newSupplier.ruc.trim() || undefined,
+          phone: newSupplier.phone.trim() || undefined,
+          email: newSupplier.email.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error ? "Datos invalidos" : `Error ${res.status}`);
+      }
+      const created: Supplier = await res.json();
+      setSuppliers((prev) => [...prev, created]);
+      setSelectedSupplier(created);
+      setShowNewSupplier(false);
+      setNewSupplier({ name: "", ruc: "", phone: "", email: "" });
+      setToastMsg(`Proveedor "${created.name}" creado y seleccionado`);
+    } catch (e) {
+      setToastMsg(e instanceof Error ? e.message : "No se pudo crear el proveedor");
+    } finally {
+      setCreatingSupplier(false);
+    }
+  };
+
   // calcSuggestedQty viene de @/lib/types/purchases como calculateSuggestedQty
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="print-area">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div
-          aria-hidden="true"
-          className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center shrink-0"
-        >
-          <ShoppingBasket className="h-5 w-5" />
-        </div>
+      {/* Header minimalista — sin icono cuadrado, alineado con resto del admin */}
+      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div className="min-w-0">
-          <SectionTitle className="text-lg font-bold text-[var(--text-primary)] leading-tight">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
             Punto de Compra
           </SectionTitle>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Arma tu canasta y genera órdenes de compra
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+            Armá tu canasta, elegí proveedor y generá la orden de compra
           </p>
         </div>
-        <span className="ml-auto shrink-0 text-xs text-[var(--text-tertiary)]">
-          {products.length} productos{needsReorderCount > 0 ? ` · ${needsReorderCount} a reponer` : ""}
-        </span>
-        {needsReorderCount > 0 && (
-          <span className="shrink-0 text-xs bg-[var(--data-error-100)] text-[var(--data-error)] px-2 py-1 rounded-full font-medium">
-            {needsReorderCount} a reponer
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
+            {products.length} productos
           </span>
-        )}
-        {needsReorderCount > 5 && (
-          <div className="w-full mt-2 bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl px-3 py-2 text-xs text-[var(--data-warning)]">
-            Tienes <strong>{needsReorderCount}</strong> productos por debajo del stock mínimo.{" "}
-            <button type="button" onClick={() => { setSoloReponer(true); setPage(1); }} className="ml-1 underline font-semibold hover:text-[var(--data-warning)]">
-              Ver todos →
+          {needsReorderCount > 0 && (
+            <button
+              type="button"
+              onClick={() => { setSoloReponer(true); setPage(1); }}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--data-error)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] px-2 py-1 rounded-full transition-colors"
+              title="Ver solo los productos que necesitan reponerse"
+            >
+              {needsReorderCount} a reponer
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Aviso reposición destacado */}
+      {needsReorderCount > 5 && !soloReponer && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-[var(--data-warning)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning)]">
+          <span className="shrink-0">●</span>
+          <p>
+            Tenés <strong>{needsReorderCount}</strong> productos por debajo del stock mínimo.{" "}
+            <button type="button" onClick={() => { setSoloReponer(true); setPage(1); }} className="underline font-semibold">
+              Ver todos
+            </button>
+          </p>
+        </div>
+      )}
 
       {/* Barra de controles */}
       <div className="flex flex-wrap gap-2 mb-3">
-        {/* Selector proveedor */}
-        <select
-          value={selectedSupplier?.id ?? ""}
-          onChange={(e) => {
-            const found = suppliers.find((s) => s.id === e.target.value);
-            setSelectedSupplier(found ?? null);
-          }}
-          disabled={processing}
-          aria-label="Seleccionar proveedor"
-          className="px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <option value="">Todos los proveedores</option>
-          {suppliers.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        {/* Selector proveedor + botón crear nuevo inline */}
+        <div className="flex items-center gap-1">
+          <select
+            value={selectedSupplier?.id ?? ""}
+            onChange={(e) => {
+              const found = suppliers.find((s) => s.id === e.target.value);
+              setSelectedSupplier(found ?? null);
+            }}
+            disabled={processing}
+            aria-label="Seleccionar proveedor"
+            className="px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+          >
+            <option value="">Todos los proveedores</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setShowNewSupplier(true)}
+            disabled={processing}
+            title="Crear nuevo proveedor"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nuevo
+          </button>
+        </div>
 
         {/* Toggle solo reponer */}
         <button
@@ -1500,6 +1561,122 @@ export default function PuntoCompraView() {
             setLotSelectorProduct(null);
           }}
         />
+      )}
+
+      {/* Modal crear nuevo proveedor — mini-form vinculado a /api/suppliers */}
+      {showNewSupplier && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !creatingSupplier && setShowNewSupplier(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Se guarda en tu lista de proveedores y se selecciona en esta orden.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !creatingSupplier && setShowNewSupplier(false)}
+                aria-label="Cerrar"
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-name">
+                  Nombre <span className="text-[var(--data-error)]">*</span>
+                </label>
+                <input
+                  id="ns-name"
+                  type="text"
+                  value={newSupplier.name}
+                  onChange={(e) => setNewSupplier((s) => ({ ...s, name: e.target.value }))}
+                  onKeyDown={(e) => e.key === "Enter" && newSupplier.name.trim() && void handleCreateSupplier()}
+                  placeholder="ej. Distribuidora ABC"
+                  autoFocus
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-ruc">
+                  RUC
+                </label>
+                <input
+                  id="ns-ruc"
+                  type="text"
+                  value={newSupplier.ruc}
+                  onChange={(e) => setNewSupplier((s) => ({ ...s, ruc: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
+                  inputMode="numeric"
+                  placeholder="20XXXXXXXXX"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-phone">
+                    Teléfono
+                  </label>
+                  <input
+                    id="ns-phone"
+                    type="tel"
+                    value={newSupplier.phone}
+                    onChange={(e) => setNewSupplier((s) => ({ ...s, phone: e.target.value }))}
+                    placeholder="+51 9XX XXX XXX"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-email">
+                    Email
+                  </label>
+                  <input
+                    id="ns-email"
+                    type="email"
+                    value={newSupplier.email}
+                    onChange={(e) => setNewSupplier((s) => ({ ...s, email: e.target.value }))}
+                    placeholder="ventas@proveedor.com"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                Después podés completar dirección, persona contacto y banco desde el tab <strong>Proveedores</strong>.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => !creatingSupplier && setShowNewSupplier(false)}
+                disabled={creatingSupplier}
+                className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCreateSupplier()}
+                disabled={creatingSupplier || !newSupplier.name.trim()}
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              >
+                {creatingSupplier ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckIcon className="h-4 w-4" />
+                )}
+                {creatingSupplier ? "Creando..." : "Crear y seleccionar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
