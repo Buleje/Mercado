@@ -134,8 +134,9 @@ export default function PuntoCompraView() {
   const [cartTab, setCartTab] = useState<"carrito" | "frecuentes" | "paquetes">("carrito");
   // ── Modal "Nuevo proveedor" inline ──
   const [showNewSupplier, setShowNewSupplier] = useState(false);
-  const [newSupplier, setNewSupplier] = useState({ name: "", ruc: "", phone: "", email: "" });
+  const [newSupplier, setNewSupplier] = useState<{ name: string; ruc: string; phone: string; email: string; address: string; razonSocial: string }>({ name: "", ruc: "", phone: "", email: "", address: "", razonSocial: "" });
   const [creatingSupplier, setCreatingSupplier] = useState(false);
+  const [rucLookup, setRucLookup] = useState<{ status: "idle" | "loading" | "ok" | "notfound" | "error"; msg?: string }>({ status: "idle" });
 
   // ── Fetch inicial + cargar borrador ─────────────────────────────────────────
   useEffect(() => {
@@ -535,6 +536,53 @@ export default function PuntoCompraView() {
     setToastMsg("Borrador guardado");
   };
 
+  // ── Lookup RUC en SUNAT (auto-completar datos) ───────────────────────────────
+  const handleRucLookup = useCallback(async (ruc: string) => {
+    if (!/^[12]\d{10}$/.test(ruc)) {
+      setRucLookup({ status: "idle" });
+      return;
+    }
+    setRucLookup({ status: "loading" });
+    try {
+      const res = await fetch(`/api/sunat/lookup-ruc?ruc=${encodeURIComponent(ruc)}`, {
+        credentials: "include",
+      });
+      if (res.status === 404) {
+        setRucLookup({ status: "notfound", msg: "RUC no existe en SUNAT" });
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setRucLookup({ status: "error", msg: data?.error ?? "No se pudo consultar SUNAT" });
+        return;
+      }
+      const data = await res.json() as {
+        razonSocial?: string;
+        nombreComercial?: string;
+        direccion?: string;
+        departamento?: string;
+        provincia?: string;
+        distrito?: string;
+        estado?: string;
+      };
+      const fullAddress = [data.direccion, data.distrito, data.provincia, data.departamento]
+        .filter(Boolean).join(", ").replace(/,\s+,/g, ",");
+      setNewSupplier((s) => ({
+        ...s,
+        // Si el usuario aún no escribió un nombre, usar razón social
+        name: s.name.trim() ? s.name : (data.nombreComercial || data.razonSocial || s.name),
+        razonSocial: data.razonSocial ?? "",
+        address: fullAddress,
+      }));
+      setRucLookup({
+        status: "ok",
+        msg: data.estado === "ACTIVO" || !data.estado ? "Datos cargados de SUNAT" : `Cuidado: estado ${data.estado}`,
+      });
+    } catch {
+      setRucLookup({ status: "error", msg: "Error de red al consultar SUNAT" });
+    }
+  }, []);
+
   // ── Crear proveedor inline ───────────────────────────────────────────────────
   const handleCreateSupplier = async () => {
     const name = newSupplier.name.trim();
@@ -552,6 +600,8 @@ export default function PuntoCompraView() {
           ruc: newSupplier.ruc.trim() || undefined,
           phone: newSupplier.phone.trim() || undefined,
           email: newSupplier.email.trim() || undefined,
+          address: newSupplier.address.trim() || undefined,
+          razonSocial: newSupplier.razonSocial.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -562,7 +612,8 @@ export default function PuntoCompraView() {
       setSuppliers((prev) => [...prev, created]);
       setSelectedSupplier(created);
       setShowNewSupplier(false);
-      setNewSupplier({ name: "", ruc: "", phone: "", email: "" });
+      setNewSupplier({ name: "", ruc: "", phone: "", email: "", address: "", razonSocial: "" });
+      setRucLookup({ status: "idle" });
       setToastMsg(`Proveedor "${created.name}" creado y seleccionado`);
     } catch (e) {
       setToastMsg(e instanceof Error ? e.message : "No se pudo crear el proveedor");
@@ -1590,9 +1641,50 @@ export default function PuntoCompraView() {
             </div>
 
             <div className="space-y-3">
+              {/* RUC primero — auto-completa el resto */}
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-ruc">
+                  RUC <span className="text-[var(--text-tertiary)] font-normal">(autocompleta razón social y dirección)</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="ns-ruc"
+                    type="text"
+                    value={newSupplier.ruc}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      setNewSupplier((s) => ({ ...s, ruc: next }));
+                      if (next.length === 11) void handleRucLookup(next);
+                      else setRucLookup({ status: "idle" });
+                    }}
+                    inputMode="numeric"
+                    autoFocus
+                    placeholder="20XXXXXXXXX"
+                    className="w-full pl-3 pr-10 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
+                  />
+                  {rucLookup.status === "loading" && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
+                  )}
+                  {rucLookup.status === "ok" && (
+                    <CheckIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success)]" />
+                  )}
+                </div>
+                {rucLookup.status !== "idle" && rucLookup.msg && (
+                  <p className={cn(
+                    "text-xs mt-1 font-medium",
+                    rucLookup.status === "ok"       ? "text-[var(--data-success)]" :
+                    rucLookup.status === "notfound" ? "text-[var(--data-warning)]" :
+                    rucLookup.status === "loading"  ? "text-[var(--text-tertiary)]" :
+                    "text-[var(--data-error)]"
+                  )}>
+                    {rucLookup.status === "loading" ? "Consultando SUNAT..." : rucLookup.msg}
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-name">
-                  Nombre <span className="text-[var(--data-error)]">*</span>
+                  Nombre comercial <span className="text-[var(--data-error)]">*</span>
                 </label>
                 <input
                   id="ns-name"
@@ -1601,24 +1693,40 @@ export default function PuntoCompraView() {
                   onChange={(e) => setNewSupplier((s) => ({ ...s, name: e.target.value }))}
                   onKeyDown={(e) => e.key === "Enter" && newSupplier.name.trim() && void handleCreateSupplier()}
                   placeholder="ej. Distribuidora ABC"
-                  autoFocus
                   className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-ruc">
-                  RUC
-                </label>
-                <input
-                  id="ns-ruc"
-                  type="text"
-                  value={newSupplier.ruc}
-                  onChange={(e) => setNewSupplier((s) => ({ ...s, ruc: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
-                  inputMode="numeric"
-                  placeholder="20XXXXXXXXX"
-                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
-                />
-              </div>
+
+              {newSupplier.razonSocial && (
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-razon">
+                    Razón social
+                  </label>
+                  <input
+                    id="ns-razon"
+                    type="text"
+                    value={newSupplier.razonSocial}
+                    onChange={(e) => setNewSupplier((s) => ({ ...s, razonSocial: e.target.value }))}
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--accent-soft)]/30 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+              )}
+
+              {newSupplier.address && (
+                <div>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-address">
+                    Dirección
+                  </label>
+                  <input
+                    id="ns-address"
+                    type="text"
+                    value={newSupplier.address}
+                    onChange={(e) => setNewSupplier((s) => ({ ...s, address: e.target.value }))}
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--accent-soft)]/30 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block" htmlFor="ns-phone">
@@ -1648,7 +1756,7 @@ export default function PuntoCompraView() {
                 </div>
               </div>
               <p className="text-xs text-[var(--text-tertiary)]">
-                Después podés completar dirección, persona contacto y banco desde el tab <strong>Proveedores</strong>.
+                Después podés completar persona contacto y banco desde el tab <strong>Proveedores</strong>.
               </p>
             </div>
 
