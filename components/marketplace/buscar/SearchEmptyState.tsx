@@ -8,11 +8,20 @@
  */
 
 import Link from "next/link";
-import { Package, Beef, Apple, Wine } from "lucide-react";
+import { Package, Beef, Apple, Wine, MessageCircle } from "lucide-react";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 
 interface SearchEmptyStateProps {
   query: string;
+}
+
+// Numero de WhatsApp del soporte/admin del marketplace.
+// Si no esta configurado en env, ocultamos el CTA.
+const SUPPORT_WHATSAPP = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "51999999999";
+
+function buildWhatsAppUrl(query: string): string {
+  const text = `Hola Buleje! Buscaba *${query}* en el marketplace y no lo encontre. ¿Lo tienen disponible o pueden conseguirlo?`;
+  return `https://wa.me/${SUPPORT_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
 }
 
 const SUGGESTED_CATS = [
@@ -117,15 +126,28 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
         </div>
       </div>
 
-      {/* CTA principal */}
+      {/* CTA WhatsApp — MK-09: capturar demanda perdida */}
+      {SUPPORT_WHATSAPP && (
+        <a
+          href={buildWhatsAppUrl(query)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#1ebe57] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]"
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+          Pedir &ldquo;{query}&rdquo; por WhatsApp
+        </a>
+      )}
+
+      {/* CTA secundario */}
       <Link
         href="/marketplace/negocios"
-        className="mt-8 inline-flex items-center rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="mt-3 inline-flex items-center rounded-full border border-gray-300 px-6 py-2.5 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         Ver bodegas cerca
       </Link>
 
-      {/* Link secundario */}
+      {/* Link terciario */}
       <Link
         href="/marketplace/explorar"
         className="mt-3 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors underline underline-offset-4"

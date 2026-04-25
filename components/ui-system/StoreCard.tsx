@@ -35,6 +35,57 @@ export interface StoreCardData {
   status: "open" | "closing_soon" | "closed";
   badge?: string;
   isFavorite?: boolean;
+  // ── MK-56: Trust badges (todos opcionales — el card se adapta) ──────────────
+  verified?: boolean;        // bodega verificada por admin
+  topSeller?: boolean;       // top vendedor del mes
+  isNew?: boolean;           // nuevo (creado en últimos 30 días)
+  fastDelivery?: boolean;    // delivery promedio <30 min
+  // ── MK-58: Social proof timestamp (opcional) ────────────────────────────────
+  lastSaleAgoMinutes?: number;
+}
+
+// ── MK-56: helper para renderizar trust badges ────────────────────────────────
+function TrustBadges({ store }: { store: StoreCardData }) {
+  const items: Array<{ label: string; cls: string }> = [];
+  if (store.verified)     items.push({ label: "Verificada",   cls: "bg-blue-50 text-blue-700 border-blue-200" });
+  if (store.topSeller)    items.push({ label: "Top del mes",  cls: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)]/30" });
+  if (store.isNew)        items.push({ label: "Nuevo",        cls: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30" });
+  if (store.fastDelivery) items.push({ label: "<30 min",      cls: "bg-purple-50 text-purple-700 border-purple-200" });
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {items.map((b) => (
+        <span
+          key={b.label}
+          className={cn(
+            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border",
+            b.cls,
+          )}
+        >
+          {b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ── MK-58: "Comprado hace X min" — anonimizado, social proof ──────────────────
+function LastSaleHint({ minutes }: { minutes?: number }) {
+  if (minutes == null || minutes < 0) return null;
+  const text =
+    minutes < 1   ? "Comprado hace segundos" :
+    minutes === 1 ? "Comprado hace 1 min" :
+    minutes < 60  ? `Comprado hace ${minutes} min` :
+    minutes < 120 ? "Comprado hace 1h" :
+    minutes < 1440 ? `Comprado hace ${Math.round(minutes / 60)}h` :
+    null;
+  if (!text) return null;
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--data-success)]">
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
+      {text}
+    </span>
+  );
 }
 
 interface Props {
@@ -106,6 +157,11 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
                 {store.deliveryMinutes} min
               </span>
             )}
+            <LastSaleHint minutes={store.lastSaleAgoMinutes} />
+          </div>
+          {/* MK-56: trust badges */}
+          <div className="mt-1.5">
+            <TrustBadges store={store} />
           </div>
         </div>
       </Link>
@@ -169,8 +225,14 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
         <div className="flex items-start gap-2">
           <Link href={`/tiendas/${store.slug}`} className="flex-1 min-w-0">
             <h3 className="text-sm font-extrabold text-[var(--text-primary)] truncate">{store.name}</h3>
-            <div className="mt-1">
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              {/* MK-57: rating prominente con count */}
               <RatingStars value={store.rating} count={store.reviewCount} size="xs" />
+              <LastSaleHint minutes={store.lastSaleAgoMinutes} />
+            </div>
+            {/* MK-56: trust badges */}
+            <div className="mt-1.5">
+              <TrustBadges store={store} />
             </div>
           </Link>
           {onToggleFavorite && (

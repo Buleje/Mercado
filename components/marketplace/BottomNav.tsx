@@ -13,7 +13,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
   Search,
-  LayoutGrid,
+  Package,
   ShoppingCart,
   User,
 } from "@buleje/design-system/icons";
@@ -30,7 +30,7 @@ const MarketplaceCheckoutModal = dynamic(
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "inicio" | "buscar" | "categorias" | "carrito" | "cuenta";
+type TabId = "inicio" | "buscar" | "carrito" | "pedidos" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -38,12 +38,15 @@ interface Tab {
   Icon: React.ElementType;
 }
 
+// MK-50: BottomNav rediseñado con 5 tabs estables coherentes con apps de
+// delivery modernas. "Pedidos" reemplaza "Categorias" — más útil para
+// usuarios recurrentes que quieren ver el estado de su orden.
 const TABS: Tab[] = [
-  { id: "inicio",     label: "Inicio",     Icon: Home },
-  { id: "buscar",     label: "Buscar",     Icon: Search },
-  { id: "categorias", label: "Categorias", Icon: LayoutGrid },
-  { id: "carrito",    label: "Carrito",    Icon: ShoppingCart },
-  { id: "cuenta",     label: "Cuenta",     Icon: User },
+  { id: "inicio",  label: "Inicio",   Icon: Home },
+  { id: "buscar",  label: "Buscar",   Icon: Search },
+  { id: "carrito", label: "Carrito",  Icon: ShoppingCart },
+  { id: "pedidos", label: "Pedidos",  Icon: Package },
+  { id: "cuenta",  label: "Cuenta",   Icon: User },
 ];
 
 // ── Hook: ocultar al bajar scroll / mostrar al subir ──────────────────────────
@@ -102,13 +105,10 @@ export default function BottomNav() {
 
   // Determinar tab activo según la ruta actual
   const activeTab = useCallback((): TabId => {
-    if (pathname === "/") return "inicio";
-    if (pathname?.startsWith("/marketplace")) {
-      const params = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search)
-        : null;
-      if (params?.get("modo") === "catalogo") return "categorias";
-    }
+    if (pathname === "/" || pathname === "/marketplace") return "inicio";
+    if (pathname?.startsWith("/marketplace/buscar")) return "buscar";
+    if (pathname?.startsWith("/marketplace/mi-cuenta/pedidos")) return "pedidos";
+    if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
     return "inicio";
   }, [pathname]);
 
@@ -119,47 +119,29 @@ export default function BottomNav() {
           router.push("/marketplace");
           break;
 
-        case "buscar": {
-          // Navegar al marketplace y enfocar el input de búsqueda
-          if (pathname !== "/marketplace") {
-            router.push("/marketplace");
-            // Dar tiempo al mount antes de enfocar
-            setTimeout(() => {
-              const input = document.querySelector<HTMLInputElement>(
-                'input[type="text"][placeholder*="Buscar"]'
-              );
-              if (input) {
-                input.focus();
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }
-            }, 300);
-          } else {
-            const input = document.querySelector<HTMLInputElement>(
-              'input[type="text"][placeholder*="Buscar"]'
-            );
-            if (input) {
-              input.focus();
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }
-          break;
-        }
-
-        case "categorias":
-          router.push("/marketplace?modo=catalogo");
+        case "buscar":
+          // Llevar a la página dedicada de búsqueda con foco automático.
+          router.push("/marketplace/buscar");
           break;
 
         case "carrito":
           setCartOpen(true);
           break;
 
+        case "pedidos":
+          // Mi-cuenta hace su propio gate de auth si es necesario.
+          router.push("/marketplace/mi-cuenta/pedidos");
+          break;
+
         case "cuenta":
-          // Abrir AuthModal si no está autenticado
-          openAuthModal();
+          // Si no esta autenticado, AuthModal se encarga.
+          // Si esta auth, llevamos a mi-cuenta home (que tiene su propio gate
+          // server-side, así no rompemos nada si el cookie expira).
+          router.push("/marketplace/mi-cuenta");
           break;
       }
     },
-    [pathname, router, openAuthModal]
+    [router]
   );
 
   const currentActive = activeTab();

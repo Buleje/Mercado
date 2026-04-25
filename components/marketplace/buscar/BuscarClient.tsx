@@ -170,8 +170,11 @@ export default function BuscarClient({
         ) : hasResults ? (
           /* Con query + resultados: layout 2 columnas */
           <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-8 mt-6">
-            {/* Sidebar desktop */}
-            <aside className="hidden lg:block" aria-label="Filtros de busqueda">
+            {/* Sidebar desktop — MK-03: sticky para que no se pierdan al scroll */}
+            <aside
+              className="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+              aria-label="Filtros de busqueda"
+            >
               <SearchFilters
                 storesFacet={initialData.storesFacet}
                 categoriesFacet={initialData.categoriesFacet}

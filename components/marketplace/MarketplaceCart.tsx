@@ -1132,6 +1132,38 @@ export default function MarketplaceCart({
                           </span>
                         </div>
 
+                        {/* MK-20: Barra "Falta poco para envio gratis" — umbral S/30 default. */}
+                        {(() => {
+                          const FREE_DELIVERY_THRESHOLD = 30;
+                          const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD - storeSub);
+                          const pct = Math.min(100, (storeSub / FREE_DELIVERY_THRESHOLD) * 100);
+                          if (storeSub === 0) return null;
+                          return (
+                            <div className="mt-2 px-1">
+                              {remaining > 0 ? (
+                                <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 mb-1">
+                                  Te faltan{" "}
+                                  <strong className="text-[var(--data-warning)]">{fmt(remaining)}</strong>
+                                  {" "}para envio gratis
+                                </p>
+                              ) : (
+                                <p className="text-xs font-bold text-[var(--data-success)] mb-1 flex items-center gap-1">
+                                  ✓ Envio gratis a domicilio
+                                </p>
+                              )}
+                              <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full transition-all duration-500",
+                                    pct >= 100 ? "bg-[var(--data-success)]" : "bg-[var(--data-warning)]"
+                                  )}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* botón WhatsApp por tienda */}
                         <WhatsAppOrderButton
                           storeSlug={group.storeSlug}

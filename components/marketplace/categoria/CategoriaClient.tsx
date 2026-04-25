@@ -223,7 +223,7 @@ export default function CategoriaClient({
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm">
             <span className="text-[var(--text-tertiary)]">Buscando:</span>
-            <strong className="text-[var(--accent)]">"{query}"</strong>
+            <strong className="text-[var(--accent)]">&ldquo;{query}&rdquo;</strong>
             <button
               type="button"
               onClick={() => setQuery("")}
@@ -243,8 +243,8 @@ export default function CategoriaClient({
         className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-16"
       >
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-8">
-          {/* Sidebar desktop */}
-          <aside className="hidden lg:block">
+          {/* Sidebar desktop — MK-03: sticky para que no se pierdan al scroll */}
+          <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             <CategoryFilters
               slug={slug}
               categoria={categoria}
