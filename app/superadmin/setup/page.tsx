@@ -99,7 +99,7 @@ export default function SuperAdminSetupPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-600/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center">
             <Wrench className="w-5 h-5 text-[var(--accent)]" />
           </div>
           <div>
@@ -128,7 +128,7 @@ export default function SuperAdminSetupPage() {
             className={[
               "px-3 py-1 text-xs font-semibold rounded-full transition-colors",
               filter === f
-                ? "bg-teal-600 text-white"
+                ? "bg-[var(--accent)] text-white"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
             ].join(" ")}
           >

@@ -960,7 +960,7 @@ function FilterChipGroup({
               className={[
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors border",
                 active
-                  ? "bg-teal-600 text-white border-teal-600 shadow-sm"
+                  ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm"
                   : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-teal-500/50",
               ].join(" ")}
             >
@@ -1447,7 +1447,7 @@ function DetailModal({
                 type="button"
                 onClick={handleAddNote}
                 disabled={updating || !noteInput.trim()}
-                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
+                className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
               >
                 Agregar
               </button>
