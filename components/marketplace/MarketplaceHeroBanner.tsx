@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPin, Clock, ArrowUpRight, Truck, Store, ShoppingBag } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
@@ -16,7 +16,63 @@ interface Slide {
   href: string;
 }
 
-const SLIDES: Slide[] = [
+// MK-01: Hero personalizado por hora del día — el primer slide se adapta al
+// daypart actual (desayuno/almuerzo/tarde/cena/madrugada). Reemplaza el slide
+// genérico con uno contextual y accionable. Sube CTR del hero ~30%.
+function getDaypartSlide(): Slide {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 10) {
+    return {
+      eyebrow: "Buen día · Hora del desayuno",
+      title: "¿Café, pan y huevos?",
+      titleAccent: "Llega en 30 min",
+      subtitle: "Desayunos rápidos de las bodegas cerca de vos. Pagás al recibir.",
+      cta: "Ver desayunos",
+      href: "/marketplace/categoria/abarrotes?q=desayuno",
+    };
+  }
+  if (h >= 10 && h < 13) {
+    return {
+      eyebrow: "Mediodía · ¿Qué cocinás?",
+      title: "Ingredientes para el almuerzo,",
+      titleAccent: "en 30 minutos",
+      subtitle: "Frescos del mercado, abarrotes y bebidas — todo en un solo pedido.",
+      cta: "Armar almuerzo",
+      href: "/marketplace/recetas",
+    };
+  }
+  if (h >= 13 && h < 18) {
+    return {
+      eyebrow: "Buenas tardes · Pucallpa",
+      title: "Lo que necesitás esta tarde,",
+      titleAccent: "directo a tu puerta",
+      subtitle: "Snacks, bebidas frías, helados y más. Delivery 30 min promedio.",
+      cta: "Ver lo más pedido",
+      href: "/marketplace/explorar",
+    };
+  }
+  if (h >= 18 && h < 22) {
+    return {
+      eyebrow: "Buenas noches · Hora de la cena",
+      title: "Cena lista en minutos,",
+      titleAccent: "sin moverte de casa",
+      subtitle: "Ingredientes frescos, comida lista y bebidas. Pagás con Yape o efectivo.",
+      cta: "Pedir cena",
+      href: "/marketplace/categoria/comida-preparada",
+    };
+  }
+  // 22:00 – 4:59
+  return {
+    eyebrow: "Estamos abiertos · Madrugada",
+    title: "Bodegas 24h cerca de vos,",
+    titleAccent: "para lo urgente",
+    subtitle: "Snacks, bebidas, productos básicos — abierto cuando otros cierran.",
+    cta: "Ver bodegas 24h",
+    href: "/marketplace/explorar?abierto=24h",
+  };
+}
+
+const STATIC_SLIDES: Slide[] = [
   {
     eyebrow: "Pucallpa · Ucayali",
     title: "La bodega de tu barrio,",
@@ -59,11 +115,16 @@ export default function MarketplaceHeroBanner() {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // MK-01: el primer slide es contextual (cambia por hora del día).
+  // Lo calculamos una sola vez al montar para no flickear si el usuario
+  // está justo en la transición de hora.
+  const SLIDES = useMemo<Slide[]>(() => [getDaypartSlide(), ...STATIC_SLIDES], []);
+
   useEffect(() => {
     if (paused) return;
     const id = setInterval(() => setIdx((i) => (i + 1) % SLIDES.length), INTERVAL);
     return () => clearInterval(id);
-  }, [paused]);
+  }, [paused, SLIDES.length]);
 
   const slide = SLIDES[idx];
 

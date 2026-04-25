@@ -3,7 +3,8 @@
 /**
  * SearchSuggestions — Pantalla editorial cuando el usuario no ha escrito nada.
  *
- * 4 secciones:
+ * 5 secciones:
+ *   0. Tu historial (MK-05) — solo si hay búsquedas guardadas en localStorage
  *   1. Busquedas populares (chips teal-soft)
  *   2. Explorar por categoria (grid 8 sectores con iconos)
  *   3. Tiendas destacadas (3 cards con ilustracion)
@@ -12,6 +13,7 @@
  * Sin fotos stock. Sin emojis. Solo iconos Lucide + ilustraciones DS.
  */
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Package,
@@ -23,6 +25,8 @@ import {
   Apple,
   Candy,
   ArrowRight,
+  Clock,
+  X,
 } from "lucide-react";
 import {
   BodegaAbriendo,
@@ -156,6 +160,103 @@ function PopularSearches() {
   );
 }
 
+// MK-05: Historial de búsquedas — leído desde localStorage. Cliente-only,
+// sin tracking server. Cap a las 8 más recientes deduplicadas.
+const HISTORY_KEY = "buleje-search-history";
+const HISTORY_LIMIT = 8;
+
+function loadHistory(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as string[];
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((t) => typeof t === "string" && t.trim().length > 0).slice(0, HISTORY_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items: string[]): void {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items)); } catch { /* quota */ }
+}
+
+/**
+ * Helper público para que `SearchAutocompleteInput` pueda registrar la query
+ * cuando el usuario hace submit. Mantiene el historial deduplicado y capado.
+ */
+export function pushSearchHistory(term: string): void {
+  const t = term.trim();
+  if (!t) return;
+  const current = loadHistory();
+  const next = [t, ...current.filter((x) => x.toLowerCase() !== t.toLowerCase())].slice(0, HISTORY_LIMIT);
+  saveHistory(next);
+}
+
+function SearchHistory() {
+  const [history, setHistory] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    setHistory(loadHistory());
+    setHydrated(true);
+  }, []);
+
+  const removeItem = (term: string) => {
+    const next = history.filter((x) => x !== term);
+    setHistory(next);
+    saveHistory(next);
+  };
+
+  const clearAll = () => {
+    setHistory([]);
+    saveHistory([]);
+  };
+
+  if (!hydrated || history.length === 0) return null;
+
+  return (
+    <section aria-labelledby="historial-heading" className="mb-12">
+      <div className="flex items-center justify-between mb-6">
+        <SectionHeader label="Tu historial" title="Búsquedas recientes" />
+        <button
+          type="button"
+          onClick={clearAll}
+          className="text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+        >
+          Limpiar todo
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {history.map((term) => (
+          <span
+            key={term}
+            className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-3 pr-1.5 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-primary/40 transition-all"
+          >
+            <Link
+              href={`/marketplace/buscar?q=${encodeURIComponent(term)}`}
+              className="inline-flex items-center gap-1.5 hover:text-primary"
+            >
+              <Clock className="h-3.5 w-3.5 text-gray-400" strokeWidth={1.75} aria-hidden />
+              {term}
+            </Link>
+            <button
+              type="button"
+              onClick={() => removeItem(term)}
+              aria-label={`Borrar "${term}" del historial`}
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              <X className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+            </button>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CategoryGrid() {
   return (
     <section aria-labelledby="categorias-heading" className="mb-12">
@@ -270,6 +371,8 @@ function InspirationStrip() {
 export default function SearchSuggestions() {
   return (
     <div className="mt-8 sm:mt-10">
+      {/* MK-05: historial primero — si el usuario ya buscó antes, prioritario */}
+      <SearchHistory />
       <PopularSearches />
       <CategoryGrid />
       <TiendasDestacadas />

@@ -234,6 +234,11 @@ export default function SearchAutocompleteInput({
         return;
       }
       if (query.trim()) {
+        // MK-05: registrar en historial local para sugerir en próximas visitas.
+        // Import dinámico para no acoplar el input al SearchSuggestions.
+        void import("./SearchSuggestions")
+          .then((m) => m.pushSearchHistory(query.trim()))
+          .catch(() => {/* historial es opcional, no bloquea */});
         router.push(
           `/marketplace/buscar?q=${encodeURIComponent(query.trim())}`,
         );

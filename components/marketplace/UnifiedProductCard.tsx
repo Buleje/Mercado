@@ -359,17 +359,25 @@ export default function UnifiedProductCard({
                 </span>
               )}
             </div>
-            {/* Stock — pill mini si stock bajo (urgencia), texto sino */}
+            {/* MK-12 — Stock con jerarquía de urgencia: crítico (≤3) en rojo
+                con dot pulsante, bajo (≤5) en naranja, normal en muted. */}
             {product.stock != null && product.stock > 0 && (
               <span
                 className={cn(
-                  "mt-1 inline-flex items-center text-[length:var(--ts-2xs)] font-bold",
-                  product.stock <= 5
-                    ? "text-[var(--accent)] uppercase tracking-wider"
-                    : "text-[var(--text-tertiary)] font-medium normal-case tracking-normal",
+                  "mt-1 inline-flex items-center gap-1 text-xs font-bold",
+                  product.stock <= 3
+                    ? "text-[var(--data-error)] uppercase tracking-wider"
+                    : product.stock <= 5
+                      ? "text-[var(--data-warning)] uppercase tracking-wider"
+                      : "text-[var(--text-tertiary)] font-medium normal-case tracking-normal",
                 )}
               >
-                {product.stock <= 5 ? `Solo ${product.stock} en stock` : `Stock: ${product.stock}`}
+                {product.stock <= 3 && (
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-error)] animate-pulse" />
+                )}
+                {product.stock <= 5
+                  ? `Quedan ${product.stock}${product.stock <= 3 ? " — se agota" : ""}`
+                  : `Stock: ${product.stock}`}
               </span>
             )}
           </div>
