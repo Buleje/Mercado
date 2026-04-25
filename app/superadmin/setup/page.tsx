@@ -31,6 +31,7 @@ import { SCORES, SETUP_ITEMS } from "@/lib/superadmin/setup-data";
 import SetupStatsCard from "@/components/superadmin/setup/SetupStatsCard";
 import ScoreDashboard from "@/components/superadmin/setup/ScoreDashboard";
 import SetupItemCard from "@/components/superadmin/setup/SetupItemCard";
+import { AdminTabShell } from "../_components/_shared";
 
 export default function SuperAdminSetupPage() {
   const [statuses, setStatuses] = useState<Record<string, Status>>(() => loadStatuses());
@@ -95,22 +96,11 @@ export default function SuperAdminSetupPage() {
   }, [filteredItems, statuses]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center">
-            <Wrench className="w-5 h-5 text-[var(--accent)]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--text-primary)]">Setup Pendiente</h1>
-            <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-              Acciones que solo tú puedes hacer (tokens, OAuth, dashboards externos)
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <AdminTabShell
+      title="Setup Pendiente"
+      description="Acciones que solo tú puedes hacer (tokens, OAuth, dashboards externos)."
+      icon={Wrench}
+    >
       {/* Stats + celebración */}
       <SetupStatsCard stats={stats} allDone={allDone} />
 
@@ -118,19 +108,21 @@ export default function SuperAdminSetupPage() {
       <ScoreDashboard scores={SCORES} />
 
       {/* Filter */}
-      <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-gray-400" />
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="w-4 h-4 text-[var(--text-tertiary)]" aria-hidden />
         <span className="text-xs text-[var(--text-tertiary)] mr-2">Filtrar:</span>
         {(["all", "pending", "done", "blocked"] as const).map((f) => (
           <button
             key={f}
+            type="button"
             onClick={() => setFilter(f)}
             className={[
               "px-3 py-1 text-xs font-semibold rounded-full transition-colors",
               filter === f
                 ? "bg-[var(--accent)] text-white"
-                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
             ].join(" ")}
+            aria-pressed={filter === f}
           >
             {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : f === "done" ? "Hechos" : "Bloqueados"}
           </button>
@@ -151,9 +143,9 @@ export default function SuperAdminSetupPage() {
       </div>
 
       {/* Footer info */}
-      <div className="text-xs text-gray-400 dark:text-gray-600 text-center pt-4 border-t border-[var(--rule-base)]">
+      <p className="text-xs text-[var(--text-tertiary)] text-center pt-4 border-t border-[var(--rule-soft)]">
         El estado de cada item se guarda en tu navegador (localStorage) — no se sincroniza entre dispositivos.
-      </div>
-    </div>
+      </p>
+    </AdminTabShell>
   );
 }

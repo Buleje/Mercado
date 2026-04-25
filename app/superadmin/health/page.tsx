@@ -8,6 +8,7 @@ import {
   Activity, Timer,
 } from "@buleje/design-system/icons";
 import SAHealthScore from "@/components/superadmin/_shared/SAHealthScore";
+import { AdminTabShell } from "../_components/_shared";
 
 const TenantMonitorPanel = dynamic(() => import("@/components/superadmin/TenantMonitorPanel"), { ssr: false });
 
@@ -263,7 +264,11 @@ export default function SystemHealthPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <AdminTabShell
+      title="Salud del sistema"
+      description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 s."
+      icon={HeartPulse}
+    >
       {/* Overall Status Banner + Health Score */}
       <div className={`rounded-xl border-2 p-6 flex items-center gap-6 ${overallColors[overallStatus]}`}>
         <SAHealthScore score={healthScore} />
@@ -393,6 +398,6 @@ export default function SystemHealthPage() {
       {activeTab === "tenants" && (
         <TenantMonitorPanel />
       )}
-    </div>
+    </AdminTabShell>
   );
 }

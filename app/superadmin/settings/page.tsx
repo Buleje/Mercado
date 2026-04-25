@@ -1,9 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DollarSign, BarChart3, Settings, CheckCircle2, Loader2 } from "@buleje/design-system/icons";
+import {
+  DollarSign,
+  BarChart3,
+  Settings,
+  CheckCircle2,
+  Loader2,
+  Save,
+} from "@buleje/design-system/icons";
 import type { PlatformSettings } from "@/lib/superadmin-types";
 import { DEFAULT_SETTINGS } from "@/lib/superadmin-types";
+import {
+  ADMIN_TOKENS,
+  AdminTabShell,
+  AdminButton,
+} from "../_components/_shared";
 
 /**
  * /superadmin/settings
@@ -22,7 +34,6 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ── GET inicial desde DB ──────────────────────────────────────────────
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -35,8 +46,6 @@ export default function SettingsPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as { settings: Record<string, unknown> };
 
-        // Aplanar el shape DB (key → JSON) al shape plano PlatformSettings
-        // que usa el formulario. "plan-prices" es el único setting crítico hoy.
         const flat: Partial<PlatformSettings> = {};
         const prices = data.settings["plan-prices"] as
           | Partial<Record<"free" | "pro" | "business" | "enterprise", number>>
@@ -48,7 +57,6 @@ export default function SettingsPage() {
           if (typeof prices.enterprise === "number") flat.priceEnterprise = prices.enterprise;
         }
 
-        // Otros settings que ya se persisten bajo claves top-level en DB.
         const assignIfNumber = (k: keyof PlatformSettings, v: unknown) => {
           if (typeof v === "number") (flat as Record<string, unknown>)[k] = v;
         };
@@ -81,7 +89,6 @@ export default function SettingsPage() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  // ── POST a la API (single source of truth) ────────────────────────────
   const handleSave = async () => {
     setSaving(true);
     setError(null);
@@ -124,32 +131,37 @@ export default function SettingsPage() {
     }
   };
 
-  const inputCls =
-    "w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-teal-500/40 disabled:opacity-60";
   const labelCls =
     "block text-xs font-semibold text-[var(--text-tertiary)] mb-1 uppercase tracking-wider";
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Configuración de plataforma</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Ajusta precios, límites y controles globales. Los precios alimentan el MRR del dashboard.
+    <AdminTabShell
+      title="Configuración de plataforma"
+      description="Ajusta precios, límites y controles globales. Los precios alimentan el MRR del dashboard."
+      icon={Settings}
+      actions={
+        <AdminButton
+          variant="primary"
+          icon={saved ? CheckCircle2 : Save}
+          loading={saving}
+          disabled={loading}
+          onClick={handleSave}
+        >
+          {saving ? "Guardando…" : saved ? "Guardado" : "Guardar cambios"}
+        </AdminButton>
+      }
+    >
+      {loading && (
+        <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin" aria-hidden /> Cargando desde la base de datos…
         </p>
-        {loading && (
-          <p className="text-xs text-gray-400 mt-2 flex items-center gap-2">
-            <Loader2 className="w-3 h-3 animate-spin" /> Cargando desde la base de datos...
-          </p>
-        )}
-        {error && (
-          <p className="text-xs text-[var(--text-secondary)] mt-2">Error: {error}</p>
-        )}
-      </div>
+      )}
+      {error && <div className={ADMIN_TOKENS.errorBanner}>Error: {error}</div>}
 
       {/* Precios de planes */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-teal-500" /> Precios de planes (S/ / mes)
+      <section className={ADMIN_TOKENS.cardPadded}>
+        <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
+          <DollarSign className="w-5 h-5 text-[var(--accent)]" aria-hidden /> Precios de planes (S/ / mes)
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {([
@@ -166,19 +178,19 @@ export default function SettingsPage() {
                 disabled={loading}
                 value={settings[key]}
                 onChange={(e) => update(key, Number(e.target.value))}
-                className={inputCls}
+                className={ADMIN_TOKENS.input}
               />
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Comisión y límites */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-[var(--text-secondary)]" /> Comisión y límites
+      <section className={ADMIN_TOKENS.cardPadded}>
+        <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
+          <BarChart3 className="w-5 h-5 text-[var(--text-secondary)]" aria-hidden /> Comisión y límites
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className={labelCls}>Comisión default (%)</label>
             <input
@@ -189,15 +201,15 @@ export default function SettingsPage() {
               disabled={loading}
               value={settings.commissionDefault}
               onChange={(e) => update("commissionDefault", Number(e.target.value))}
-              className={inputCls}
+              className={ADMIN_TOKENS.input}
             />
           </div>
         </div>
 
-        <h4 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+        <h4 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
           Límites plan Free
         </h4>
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-3 gap-4">
           {([
             { key: "limitsFreeProducts" as const, label: "Productos" },
             { key: "limitsFreeUsers" as const, label: "Usuarios" },
@@ -211,13 +223,13 @@ export default function SettingsPage() {
                 disabled={loading}
                 value={settings[key]}
                 onChange={(e) => update(key, Number(e.target.value))}
-                className={inputCls}
+                className={ADMIN_TOKENS.input}
               />
             </div>
           ))}
         </div>
 
-        <h4 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+        <h4 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
           Límites plan Pro
         </h4>
         <div className="grid grid-cols-3 gap-4">
@@ -234,17 +246,17 @@ export default function SettingsPage() {
                 disabled={loading}
                 value={settings[key]}
                 onChange={(e) => update(key, Number(e.target.value))}
-                className={inputCls}
+                className={ADMIN_TOKENS.input}
               />
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Controles de plataforma */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-base font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-[var(--data-warning)]" /> Controles de plataforma
+      <section className={ADMIN_TOKENS.cardPadded}>
+        <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
+          <Settings className="w-5 h-5 text-[var(--data-warning)]" aria-hidden /> Controles de plataforma
         </h3>
         <div className="space-y-4">
           {([
@@ -261,21 +273,22 @@ export default function SettingsPage() {
           ]).map(({ key, label, desc }) => (
             <div
               key={key}
-              className="flex items-center justify-between gap-4 py-3 border-b border-[var(--rule-base)] last:border-0"
+              className="flex items-center justify-between gap-4 py-3 border-b border-[var(--rule-soft)] last:border-0"
             >
               <div>
                 <div className="text-sm font-semibold text-[var(--text-primary)]">{label}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{desc}</div>
+                <div className="text-xs text-[var(--text-tertiary)] mt-0.5">{desc}</div>
               </div>
               <button
                 type="button"
                 onClick={() => update(key, !settings[key])}
                 disabled={loading}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-60 ${
-                  settings[key] ? "bg-teal-500" : "bg-gray-200 dark:bg-gray-700"
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-60 ${
+                  settings[key] ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"
                 }`}
                 role="switch"
                 aria-checked={settings[key]}
+                aria-label={label}
               >
                 <span
                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
@@ -286,34 +299,7 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Botón guardar */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={loading || saving}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-60"
-          style={{
-            background: saved
-              ? "#22c55e"
-              : "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
-          }}
-        >
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
-            </>
-          ) : saved ? (
-            <>
-              <CheckCircle2 className="w-4 h-4" /> Guardado
-            </>
-          ) : (
-            "Guardar cambios"
-          )}
-        </button>
-      </div>
-    </div>
+      </section>
+    </AdminTabShell>
   );
 }

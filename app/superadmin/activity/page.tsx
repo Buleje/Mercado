@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, ChevronDown, Activity, Loader2 } from "@buleje/design-system/icons";
+import {
+  ADMIN_TOKENS,
+  AdminTabShell,
+  AdminEmptyState,
+} from "../_components/_shared";
 
 interface ActivityLog {
   id: string;
@@ -75,18 +80,15 @@ export default function ActivityPage() {
     new Date(d).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" });
 
   const inputCls =
-    "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+    "bg-[var(--surface-canvas)] border border-[var(--rule-soft)] text-[var(--text-primary)] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
   const selectCls = `appearance-none ${inputCls} pr-8 text-[var(--text-secondary)] cursor-pointer`;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Log de actividad</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          {pagination.total} registros — se actualiza automáticamente cada 30 s
-        </p>
-      </div>
-
+    <AdminTabShell
+      title="Log de actividad"
+      description={`${pagination.total} registros — se actualiza automáticamente cada 30 s.`}
+      icon={Activity}
+    >
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -137,7 +139,7 @@ export default function ActivityPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error)] dark:border-[var(--data-error)] text-[var(--data-error)] dark:text-[var(--data-error)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+        <div className={`${ADMIN_TOKENS.errorBanner} flex items-center justify-between`}>
           {error}
           <button
             type="button"
@@ -150,21 +152,22 @@ export default function ActivityPage() {
       )}
 
       {/* Tabla */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-        {loading ? (
-          <div className="flex items-center justify-center gap-3 py-20 text-gray-400">
-            <Loader2 className="w-5 h-5 animate-spin" /> Cargando actividad…
-          </div>
-        ) : logs.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            No hay registros de actividad
-          </div>
-        ) : (
+      {loading ? (
+        <div className={`${ADMIN_TOKENS.card} flex items-center justify-center gap-3 py-20 text-[var(--text-tertiary)]`}>
+          <Loader2 className="w-5 h-5 animate-spin" aria-hidden /> Cargando actividad…
+        </div>
+      ) : logs.length === 0 ? (
+        <AdminEmptyState
+          icon={Activity}
+          title="Sin registros de actividad"
+          description="Aún no hay eventos registrados con los filtros actuales."
+        />
+      ) : (
+        <div className={`${ADMIN_TOKENS.card} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] text-gray-400 text-xs uppercase tracking-wider">
+                <tr className="border-b border-[var(--rule-soft)] text-[var(--text-tertiary)] text-xs uppercase tracking-wider">
                   <th className="text-left px-5 py-3">Fecha</th>
                   <th className="text-left px-4 py-3">Usuario</th>
                   <th className="text-left px-4 py-3">Acción</th>
@@ -173,35 +176,35 @@ export default function ActivityPage() {
                   <th className="text-left px-4 py-3 hidden lg:table-cell">Detalle</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {logs.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-colors"
+                    className="hover:bg-[var(--surface-sunken)]/50 transition-colors"
                   >
-                    <td className="px-5 py-3 text-xs text-gray-400 whitespace-nowrap">
+                    <td className="px-5 py-3 text-xs text-[var(--text-tertiary)] whitespace-nowrap">
                       {fmtDate(log.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                       {log.user}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-50 dark:bg-teal-900/30 text-[var(--accent)]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)]">
                         {log.action}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                       <span>{log.entity}</span>
                       {log.entityId && (
-                        <span className="ml-1 font-mono text-gray-400 truncate max-w-24 inline-block align-bottom">
+                        <span className="ml-1 font-mono text-[var(--text-tertiary)] truncate max-w-24 inline-block align-bottom">
                           {log.entityId}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-400 hidden md:table-cell">
+                    <td className="px-4 py-3 text-xs font-mono text-[var(--text-tertiary)] hidden md:table-cell">
                       {log.tenantId}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell max-w-xs truncate">
+                    <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] hidden lg:table-cell max-w-xs truncate">
                       {log.detail || "—"}
                     </td>
                   </tr>
@@ -209,8 +212,8 @@ export default function ActivityPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Paginación */}
       {pagination.pages > 1 && (
@@ -219,23 +222,23 @@ export default function ActivityPage() {
             type="button"
             onClick={() => void loadActivity(pagination.page - 1)}
             disabled={pagination.page <= 1 || loading}
-            className="px-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm disabled:opacity-40 hover:bg-[var(--surface-raised)] transition-colors"
           >
             ← Anterior
           </button>
-          <span className="text-gray-400 text-sm">
+          <span className="text-[var(--text-tertiary)] text-sm">
             Página {pagination.page} de {pagination.pages}
           </span>
           <button
             type="button"
             onClick={() => void loadActivity(pagination.page + 1)}
             disabled={pagination.page >= pagination.pages || loading}
-            className="px-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm disabled:opacity-40 hover:bg-[var(--surface-raised)] transition-colors"
           >
             Siguiente →
           </button>
         </div>
       )}
-    </div>
+    </AdminTabShell>
   );
 }
