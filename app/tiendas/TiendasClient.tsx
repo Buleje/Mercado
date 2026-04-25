@@ -16,7 +16,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Store, MapPin, ArrowUpRight } from "@buleje/design-system/icons";
+import { Store, MapPin, ArrowUpRight, List, Map as MapIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 import MarketplaceStoresView, {
@@ -43,6 +43,16 @@ import StoresSortSelector, {
 } from "@/components/marketplace/StoresSortSelector";
 import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
+import dynamic from "next/dynamic";
+
+const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[60vh] min-h-[400px] rounded-xl border border-dashed border-[var(--rule-soft)] flex items-center justify-center text-sm text-[var(--text-tertiary)]">
+      Cargando mapa…
+    </div>
+  ),
+});
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -58,7 +68,12 @@ const DEFAULT_FILTERS: MarketplaceFiltersState = {
 
 /* ── Component ──────────────────────────────────────────────────────────────── */
 
-export default function TiendasClient() {
+interface TiendasClientProps {
+  /** Zona prefijada por la ruta SSG `/tiendas/[zona]`. Override de query params. */
+  initialZone?: string;
+}
+
+export default function TiendasClient({ initialZone }: TiendasClientProps = {}) {
   // ── TS-26 URL sync — leer estado inicial de query params ──
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -72,7 +87,9 @@ export default function TiendasClient() {
   const [category, setCategory] = useState(
     () => searchParams.get("cat") ?? "todos",
   );
-  const [zone, setZone] = useState(() => searchParams.get("zona") ?? "");
+  const [zone, setZone] = useState(
+    () => initialZone ?? searchParams.get("zona") ?? "",
+  );
   const [productFilters, setProductFilters] =
     useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
 
@@ -93,6 +110,12 @@ export default function TiendasClient() {
       return next;
     });
   }, []);
+
+  // ── TS-04 vista lista/mapa ──
+  const [viewMode, setViewMode] = useState<"list" | "map">(() => {
+    const v = searchParams.get("view");
+    return v === "map" ? "map" : "list";
+  });
 
   // ── TS-22 Sort selector (con persistencia) ──
   const [sortKey, setSortKey] = useState<StoresSortKey>(() => {
@@ -117,13 +140,15 @@ export default function TiendasClient() {
     const params = new URLSearchParams();
     if (search.trim()) params.set("q", search.trim());
     if (category !== "todos") params.set("cat", category);
-    if (zone) params.set("zona", zone);
+    // En /tiendas/[zona] no duplicamos zona en la query — viene del path.
+    if (zone && zone !== initialZone) params.set("zona", zone);
     if (sortKey !== "relevance") params.set("sort", sortKey);
     if (activeChips.size > 0) params.set("chips", [...activeChips].join(","));
+    if (viewMode === "map") params.set("view", "map");
     const qs = params.toString();
     const next = qs ? `${pathname}?${qs}` : pathname;
     router.replace(next, { scroll: false });
-  }, [search, category, zone, sortKey, activeChips, pathname, router]);
+  }, [search, category, zone, sortKey, activeChips, viewMode, pathname, router, initialZone]);
 
   // ── Geo hook ──
   const {
@@ -380,6 +405,44 @@ export default function TiendasClient() {
 
               <StoresSortSelector value={sortKey} onChange={setSortKey} />
 
+              {/* TS-04 toggle vista lista/mapa */}
+              <div
+                role="group"
+                aria-label="Cambiar entre vista lista y mapa"
+                className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5"
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="Vista lista"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
+                    viewMode === "list"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
+                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <List className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  aria-label="Vista mapa"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
+                    viewMode === "map"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
+                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  Mapa
+                </button>
+              </div>
+
               {hasFilters && (
                 <button
                   onClick={() => {
@@ -403,26 +466,30 @@ export default function TiendasClient() {
         </div>
 
         {/* Listado de tiendas */}
-        <MarketplaceStoresView
-          stores={stores}
-          loading={loading}
-          error={error}
-          search={search}
-          category={category}
-          zone={zone}
-          geoActive={geoActive}
-          filteredStores={sortedStores}
-          activeChips={activeChips}
-          onRetry={fetchStores}
-          onClearAll={() => {
-            setSearch("");
-            setCategory("todos");
-            setZone("");
-            setGeoActive(false);
-            setUserCoords(null);
-            setSortKey("relevance");
-          }}
-        />
+        {viewMode === "map" ? (
+          <TiendasMap stores={sortedStores} />
+        ) : (
+          <MarketplaceStoresView
+            stores={stores}
+            loading={loading}
+            error={error}
+            search={search}
+            category={category}
+            zone={zone}
+            geoActive={geoActive}
+            filteredStores={sortedStores}
+            activeChips={activeChips}
+            onRetry={fetchStores}
+            onClearAll={() => {
+              setSearch("");
+              setCategory("todos");
+              setZone("");
+              setGeoActive(false);
+              setUserCoords(null);
+              setSortKey("relevance");
+            }}
+          />
+        )}
       </section>
 
       {/* ── CTA editorial para bodegueros ───────────────────────────────── */}

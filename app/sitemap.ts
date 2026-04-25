@@ -283,6 +283,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // TS-43: Tiendas directorio + rutas por zona (long-tail SEO)
+  const TIENDAS_ZONES = ["centro", "manantay", "calleria", "yarinacocha", "campo_verde"] as const;
+  const tiendasPages: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/tiendas`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    ...TIENDAS_ZONES.map((z) => ({
+      url: `${baseUrl}/tiendas/${z}`,
+      lastModified,
+      changeFrequency: "daily" as const,
+      priority: 0.85,
+    })),
+  ];
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -293,5 +310,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...zonePages,
     ...zoneProductPages,
     ...districtPages,       // District landing + district × category
+    ...tiendasPages,        // TS-43: directorio + rutas por zona
   ];
 }

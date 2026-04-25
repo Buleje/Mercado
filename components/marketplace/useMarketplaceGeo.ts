@@ -19,6 +19,12 @@ export interface MarketplaceStore {
   lng?: number | null;
   vacationMode?: boolean;
   vacationMessage?: string | null;
+  // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
+  paymentMethods?: string[];
+  minOrderAmount?: number;
+  freeDelivery?: boolean;
+  deliveryMinutes?: number;
+  activePromos?: number;
 }
 
 /* ── Zone approximate coords for Pucallpa (geo fallback) ───────────────────── */

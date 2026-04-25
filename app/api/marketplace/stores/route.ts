@@ -123,6 +123,9 @@ export async function GET(req: NextRequest) {
           vacationMode:    true,
           vacationMessage: true,
           createdAt:       true,
+          tenantId:        true, // necesario para batched lookup (Settings/Promotion)
+          lat:             true, // TS-04 mapa
+          lng:             true,
           _count:          { select: { products: true } },
         },
         take: limit * 2,
@@ -198,11 +201,106 @@ export async function GET(req: NextRequest) {
     stores.sort((a, b) => qualityScore(b) - qualityScore(a));
     const rankedStores = stores.slice(0, limit);
 
+    // ── Backfill: paymentMethods / minOrderAmount / freeDelivery / activePromos ──
+    // Una sola query batched por tenantId distinto para no N+1.
+    type TenantId = string;
+    const tenantIds: TenantId[] = [
+      ...new Set(
+        rankedStores
+          .map((s) => (s as { tenantId?: string }).tenantId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    interface MarketplaceMeta {
+      paymentMethods: string[];
+      minOrderAmount: number;
+      freeDelivery: boolean;
+      deliveryMinutes: number;
+      activePromos: number;
+    }
+    const metaByTenant = new Map<TenantId, MarketplaceMeta>();
+
+    if (tenantIds.length > 0) {
+      const [settings, promoCounts] = await Promise.all([
+        prisma.settings
+          .findMany({
+            where: { tenantId: { in: tenantIds } },
+            select: {
+              tenantId: true,
+              freeDeliveryMin: true,
+              deliveryZonesJson: true,
+            },
+          })
+          .catch((e: unknown) => {
+            logger.warn("[marketplace/stores] settings lookup failed", { error: String(e) });
+            return [] as Array<{
+              tenantId: string;
+              freeDeliveryMin: unknown;
+              deliveryZonesJson: string | null;
+            }>;
+          }),
+        prisma.promotion
+          .groupBy({
+            by: ["tenantId"],
+            where: {
+              tenantId: { in: tenantIds },
+              active: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+            _count: { _all: true },
+          })
+          .catch((e: unknown) => {
+            logger.warn("[marketplace/stores] promo groupby failed", { error: String(e) });
+            return [] as Array<{ tenantId: string; _count: { _all: number } }>;
+          }),
+      ]);
+
+      const settingsByTenant = new Map<string, (typeof settings)[number]>();
+      for (const s of settings) settingsByTenant.set(s.tenantId, s);
+
+      const promosByTenant = new Map<string, number>();
+      for (const p of promoCounts) promosByTenant.set(p.tenantId, p._count._all);
+
+      for (const tid of tenantIds) {
+        const ts = settingsByTenant.get(tid);
+        const minOrderAmount = ts?.freeDeliveryMin ? Number(ts.freeDeliveryMin) : 0;
+        let deliveryMinutes = 30;
+        try {
+          const zones = ts?.deliveryZonesJson ? JSON.parse(ts.deliveryZonesJson) : null;
+          if (Array.isArray(zones) && zones.length > 0) {
+            const first = zones[0] as { estimatedMin?: number };
+            if (typeof first.estimatedMin === "number" && first.estimatedMin > 0) {
+              deliveryMinutes = first.estimatedMin;
+            }
+          }
+        } catch {
+          // ignorar JSON parse — usar default
+        }
+        metaByTenant.set(tid, {
+          // Default Pucallpa: bodegas aceptan Yape + efectivo. Ampliable por config futura.
+          paymentMethods: ["yape", "efectivo"],
+          minOrderAmount,
+          freeDelivery: minOrderAmount === 0,
+          deliveryMinutes,
+          activePromos: promosByTenant.get(tid) ?? 0,
+        });
+      }
+    }
+
     // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
     // already excludes tenantId, but explicit destructuring ensures it can never
     // leak even if a mock, migration, or refactor adds the field back)
     const safeStores = rankedStores.map((s) => {
       const trust = buildTrustSnapshot(s);
+      const tid = (s as { tenantId?: string }).tenantId;
+      const meta = (tid && metaByTenant.get(tid)) || {
+        paymentMethods: ["yape", "efectivo"],
+        minOrderAmount: 0,
+        freeDelivery: true,
+        deliveryMinutes: 30,
+        activePromos: 0,
+      };
       return {
         id: s.id,
         slug: s.slug,
@@ -215,11 +313,19 @@ export async function GET(req: NextRequest) {
         description: s.description,
         vacationMode: s.vacationMode,
         vacationMessage: s.vacationMessage,
+        lat: s.lat,
+        lng: s.lng,
         productCount: trust.productCount,
         trustScore: trust.trustScore,
         trustLevel: trust.trustLevel,
         trustLabel: trust.trustLabel,
         trustReason: trust.trustReason,
+        // Marketplace meta (backfill — sin nuevas columnas)
+        paymentMethods:  meta.paymentMethods,
+        minOrderAmount:  meta.minOrderAmount,
+        freeDelivery:    meta.freeDelivery,
+        deliveryMinutes: meta.deliveryMinutes,
+        activePromos:    meta.activePromos,
       };
     });
 

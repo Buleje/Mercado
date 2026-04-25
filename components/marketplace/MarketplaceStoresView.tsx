@@ -24,6 +24,7 @@ import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGe
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { Plane } from "lucide-react";
 import { StoreCardCanonical } from "@buleje/design-system";
+import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 
 /* ── Category config ───────────────────────────────────────────────────────── */
 
@@ -124,14 +125,26 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
           {store.rating.toFixed(1)}
         </span>
       )}
+      {/* TS-33 ofertas activas — high attention badge */}
+      {store.activePromos != null && store.activePromos > 0 && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-700 dark:text-rose-300">
+          {store.activePromos} {store.activePromos === 1 ? "oferta" : "ofertas"}
+        </span>
+      )}
       {/* Categoria */}
-      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-gray-200 dark:border-gray-800 text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-gray-200">
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200">
         <CategoryIconRenderer id={categoryMeta.id} className="h-3 w-3" />
         {categoryMeta.label}
       </span>
+      {/* Free delivery / sin minimo */}
+      {store.freeDelivery && (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+          Sin mínimo
+        </span>
+      )}
       {/* Vacation — ultimo (solo si aplica, warning visual claro) */}
       {store.vacationMode && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning)]">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning)]/40 text-xs font-bold text-[var(--data-warning)]">
           <Plane className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
           De vacaciones
         </span>
@@ -161,8 +174,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
             {store.reviewCount} reseña{store.reviewCount !== 1 ? "s" : ""}
           </span>
         )}
-        {/* Tiempo delivery estimado — generico, valor percibido */}
-        <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
+        {/* Tiempo delivery estimado — usa deliveryMinutes real si esta disponible */}
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]">
           <svg
             aria-hidden
             viewBox="0 0 24 24"
@@ -174,7 +187,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
-          25–35 min
+          {store.deliveryMinutes && store.deliveryMinutes > 0
+            ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
+            : "25–35 min"}
         </span>
       </div>
       {/* CTA row — accion-oriented */}
@@ -261,6 +276,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
       transition={{ duration: 0.35, delay: index * 0.05 }}
       onMouseEnter={loadPreview}
       onFocus={loadPreview}
+      className="relative"
     >
       {/* StoreCardCanonical: aria-label override via href hack not needed —
           the canonical already sets aria-label={name} on the <a>. The richer
@@ -283,6 +299,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
           />
         )}
       />
+      {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
+      <div className="absolute top-3 right-3 z-10">
+        <FollowStoreButton slug={store.slug} storeName={store.name} />
+      </div>
     </m.div>
   );
 }, (prev, next) =>
