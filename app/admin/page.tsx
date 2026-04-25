@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
+import { useAdminPrefetch } from "@/hooks/use-admin-prefetch";
 import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
@@ -79,6 +80,12 @@ function AdminPage() {
 
   const { favoriteTabs, toggleFavorite, recentTabs, addRecent } = useFavoritesAndRecent();
   const { tab, navigateTab } = useAdminTabs(addRecent);
+
+  // Prefetch global de APIs admin más usadas (products, suppliers, customers,
+  // sales, dashboard, goals) en background al montar. Resultado: cualquier
+  // sub-tab que el usuario abra después tiene los datos en localStorage —
+  // hidratación instantánea en lugar de esperar 5-7s al cold compile.
+  useAdminPrefetch();
 
   const {
     showShortcuts, setShowShortcuts,
