@@ -221,27 +221,57 @@ export default function PuntoCompraView() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // ── Fetch products ───────────────────────────────────────────────────────────
+  // ── Fetch products (stale-while-revalidate via localStorage) ─────────────────
   const fetchProducts = useCallback(async () => {
+    const KEY = "poc-products-cache";
+    const TTL = 5 * 60 * 1000; // 5 min
+    // 1. Hidratar instantaneo desde cache si existe
+    try {
+      const cached = localStorage.getItem(KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached) as { data: Product[]; ts: number };
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+          setLoading(false);
+          if (Date.now() - ts < TTL) return; // cache fresco, no revalidar
+        }
+      }
+    } catch { /* ignore */ }
+    // 2. Refrescar de red
     try {
       const res = await fetch("/api/products");
       if (!res.ok) return;
       const json = await res.json();
       const raw: Product[] = Array.isArray(json) ? json : json.products ?? [];
-      setProducts(raw.filter((p) => p.active !== false));
+      const filtered = raw.filter((p) => p.active !== false);
+      setProducts(filtered);
+      try { localStorage.setItem(KEY, JSON.stringify({ data: filtered, ts: Date.now() })); } catch { /* quota */ }
     } catch {
-      // Silencioso
+      // Silencioso — keep cache
     }
   }, []);
 
-  // ── Fetch suppliers ──────────────────────────────────────────────────────────
+  // ── Fetch suppliers (stale-while-revalidate, TTL 30min) ──────────────────────
   const fetchSuppliers = useCallback(async () => {
+    const KEY = "poc-suppliers-cache";
+    const TTL = 30 * 60 * 1000;
+    try {
+      const cached = localStorage.getItem(KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached) as { data: Supplier[]; ts: number };
+        if (Array.isArray(data) && data.length > 0) {
+          setSuppliers(data);
+          if (Date.now() - ts < TTL) return;
+        }
+      }
+    } catch { /* ignore */ }
     try {
       const res = await fetch("/api/suppliers");
       if (!res.ok) return;
       const json = await res.json();
       const raw: Supplier[] = json.suppliers ?? (Array.isArray(json) ? json : []);
       setSuppliers(raw);
+      try { localStorage.setItem(KEY, JSON.stringify({ data: raw, ts: Date.now() })); } catch { /* quota */ }
     } catch {
       // Silencioso
     }
@@ -609,7 +639,12 @@ export default function PuntoCompraView() {
         throw new Error(err?.error ? "Datos invalidos" : `Error ${res.status}`);
       }
       const created: Supplier = await res.json();
-      setSuppliers((prev) => [...prev, created]);
+      setSuppliers((prev) => {
+        const next = [...prev, created];
+        // Actualizar cache localStorage para que persista entre sesiones
+        try { localStorage.setItem("poc-suppliers-cache", JSON.stringify({ data: next, ts: Date.now() })); } catch { /* quota */ }
+        return next;
+      });
       setSelectedSupplier(created);
       setShowNewSupplier(false);
       setNewSupplier({ name: "", ruc: "", phone: "", email: "", address: "", razonSocial: "" });

@@ -40,27 +40,35 @@ export async function GET(req: NextRequest) {
       salesMap.set(row.productId, (row._sum.quantity ?? 0) / 30);
     }
 
-    // 3. Get last purchase info for each product
-    const lastPurchases = await prisma.purchaseItem.findMany({
-      where: { productId: { in: productIds }, purchaseOrder: { tenantId } },
-      include: { purchaseOrder: { include: { supplier: true } } },
-      orderBy: { purchaseOrder: { createdAt: "desc" } },
-    });
-
-    // Group by productId, take first (most recent)
+    // 3. Get last purchase info for each product (graceful — tolera schema drift)
     const lastPurchaseMap = new Map<
       number,
       { supplierId: string; supplierName: string; lastPrice: number }
     >();
-    for (const pi of lastPurchases) {
-      if (!lastPurchaseMap.has(pi.productId)) {
-        lastPurchaseMap.set(pi.productId, {
-          supplierId: pi.purchaseOrder.supplierId,
-          supplierName: pi.purchaseOrder.supplier?.name ?? pi.purchaseOrder.supplierName,
-          // TD-018: unitCost es Decimal
-          lastPrice: toNumOrZero(pi.unitCost),
-        });
+    try {
+      const lastPurchases = await prisma.purchaseItem.findMany({
+        where: { productId: { in: productIds }, purchaseOrder: { tenantId } },
+        include: { purchaseOrder: { include: { supplier: true } } },
+        orderBy: { purchaseOrder: { createdAt: "desc" } },
+      });
+
+      for (const pi of lastPurchases) {
+        if (!lastPurchaseMap.has(pi.productId)) {
+          lastPurchaseMap.set(pi.productId, {
+            supplierId: pi.purchaseOrder.supplierId,
+            supplierName: pi.purchaseOrder.supplier?.name ?? pi.purchaseOrder.supplierName,
+            // TD-018: unitCost es Decimal
+            lastPrice: toNumOrZero(pi.unitCost),
+          });
+        }
       }
+    } catch (e) {
+      // Schema drift en PurchaseItem (CLAUDE.md regla 14) — degrada graceful:
+      // calcula sugerencias sin info de proveedor anterior. Mejor que 500.
+      console.warn(
+        "[compras/sugerencias] purchaseItem query failed (schema drift):",
+        e instanceof Error ? e.message : String(e),
+      );
     }
 
     // 4. Calculate suggestions

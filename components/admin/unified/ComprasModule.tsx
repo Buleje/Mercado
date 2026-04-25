@@ -556,6 +556,27 @@ export default function ComprasModule() {
     return () => window.removeEventListener("compras-navigate-tab", handler);
   }, []);
 
+  // Pre-fetch de products + suppliers al montar el módulo Compras —
+  // así cuando el usuario entra a Punto de Compra/Sugerencias/Proveedores
+  // los datos ya están cacheados (warmup en background, no bloquea render).
+  useEffect(() => {
+    const logFail = (ctx: string) => (err: unknown) =>
+      console.warn(`[compras-prefetch] ${ctx} failed`, err instanceof Error ? err.message : String(err));
+    void Promise.allSettled([
+      fetch("/api/products").then(r => r.ok ? r.json() : null).then(json => {
+        if (!json) return;
+        const raw = Array.isArray(json) ? json : json.products ?? [];
+        const filtered = raw.filter((p: { active?: boolean }) => p.active !== false);
+        try { localStorage.setItem("poc-products-cache", JSON.stringify({ data: filtered, ts: Date.now() })); } catch { /* quota */ }
+      }).catch(logFail("products")),
+      fetch("/api/suppliers").then(r => r.ok ? r.json() : null).then(json => {
+        if (!json) return;
+        const raw = json.suppliers ?? (Array.isArray(json) ? json : []);
+        try { localStorage.setItem("poc-suppliers-cache", JSON.stringify({ data: raw, ts: Date.now() })); } catch { /* quota */ }
+      }).catch(logFail("suppliers")),
+    ]);
+  }, []);
+
 
 
   return (
