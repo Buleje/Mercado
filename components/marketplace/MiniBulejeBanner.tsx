@@ -13,6 +13,7 @@
  * Sin imágenes externas — 100% CSS+SVG inline. Carga instantánea.
  */
 
+import { m as motion } from "framer-motion";
 import { Sparkles } from "@buleje/design-system/icons";
 
 /**
@@ -54,7 +55,7 @@ export default function MiniBulejeBanner({
   const patternId = `mini-buleje-dots-${initial}-${(category ?? "x").replace(/[^a-z]/gi, "")}`;
   return (
     <div
-      className="absolute inset-0 overflow-hidden"
+      className="group/mini absolute inset-0 overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${base} 0%, color-mix(in oklch, ${base} 65%, #051418) 70%, #051418 100%)`,
       }}
@@ -74,22 +75,32 @@ export default function MiniBulejeBanner({
       <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full border border-white/15" />
       <div className="absolute -top-4 -right-2 h-20 w-20 rounded-full bg-white/10 backdrop-blur-sm" />
 
-      {/* Wordmark top-left */}
+      {/* Wordmark top-left — sparkle gira/escala en hover de la card */}
       <div className="absolute top-3 left-3 inline-flex items-center gap-1.5">
-        <span className="inline-flex items-center justify-center h-5 w-5 rounded-md bg-white/20 backdrop-blur-sm">
+        <motion.span
+          className="inline-flex items-center justify-center h-5 w-5 rounded-md bg-white/20 backdrop-blur-sm"
+          initial={false}
+          whileHover={{ rotate: 18, scale: 1.12 }}
+          transition={{ type: "spring", stiffness: 320, damping: 16 }}
+        >
           <Sparkles className="h-3 w-3 text-white" strokeWidth={2} />
-        </span>
+        </motion.span>
         <span className="text-[10px] font-bold uppercase tracking-[0.32em] text-white/85">
           Tienda Buleje
         </span>
       </div>
 
-      {/* Big initial center */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Big initial center — sutil scale en hover */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        initial={false}
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 240, damping: 22 }}
+      >
         <span className="text-6xl sm:text-7xl font-black tracking-[-0.04em] text-white drop-shadow-md">
           {initial}
         </span>
-      </div>
+      </motion.div>
 
       {/* Bottom-right wordmark */}
       <div className="absolute bottom-2 right-3 text-[9px] font-black uppercase tracking-[0.4em] text-white/40">
