@@ -14,9 +14,17 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Save, Loader2, ImageIcon, Trash2 } from "@buleje/design-system/icons";
+import {
+  Save,
+  Loader2,
+  ImageIcon,
+  Trash2,
+  Sparkles,
+} from "@buleje/design-system/icons";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminTabShell from "./_shared/AdminTabShell";
+import { ADMIN_TOKENS } from "./_shared/admin-tokens";
 
 interface BrandingState {
   slug: string;
@@ -124,17 +132,11 @@ export default function MarketplaceBrandingTab() {
   const initial = state.name.trim().charAt(0).toUpperCase();
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
-          Branding del Marketplace
-        </h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Personaliza cómo se ve <span className="font-semibold">{state.name}</span> en el directorio público.
-          Si no subes nada, mostramos el banner default de Buleje con la inicial de tu tienda.
-        </p>
-      </header>
-
+    <AdminTabShell
+      title="Branding del Marketplace"
+      description={`Personaliza cómo se ve "${state.name}" en el directorio público. Si no subes nada, mostramos el banner default de Buleje con la inicial de tu tienda.`}
+      icon={Sparkles}
+    >
       {/* Preview lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PreviewCard label="Banner de la tienda" subLabel="Aparece arriba del catálogo y en cards del directorio">
@@ -177,7 +179,7 @@ export default function MarketplaceBrandingTab() {
       </div>
 
       {/* Inputs */}
-      <div className="space-y-4 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
+      <div className={`${ADMIN_TOKENS.cardPadded}`}>
         <UrlField
           label="URL del banner"
           hint="Tamaño recomendado: 1600 × 600 px. Formatos JPG, PNG, WebP."
@@ -195,13 +197,9 @@ export default function MarketplaceBrandingTab() {
       </div>
 
       {/* Errors / saved feedback */}
-      {error && (
-        <div className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </div>
-      )}
+      {error && <div className={ADMIN_TOKENS.errorBanner}>{error}</div>}
       {savedAt && !error && (
-        <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+        <div className={ADMIN_TOKENS.successBanner}>
           Branding guardado · cambios visibles en el marketplace en unos segundos.
         </div>
       )}
@@ -214,7 +212,7 @@ export default function MarketplaceBrandingTab() {
             setLogoInput(state.logo ?? "");
             setBannerInput(state.banner ?? "");
           }}
-          className="text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className={ADMIN_TOKENS.btnGhost}
         >
           Descartar
         </button>
@@ -222,7 +220,7 @@ export default function MarketplaceBrandingTab() {
           type="button"
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold shadow-sm hover:bg-[var(--accent)] disabled:opacity-60 transition-colors"
+          className={ADMIN_TOKENS.btnPrimary}
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -232,7 +230,7 @@ export default function MarketplaceBrandingTab() {
           Guardar branding
         </button>
       </div>
-    </div>
+    </AdminTabShell>
   );
 }
 

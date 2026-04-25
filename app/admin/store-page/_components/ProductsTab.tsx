@@ -3,7 +3,19 @@
 import { LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Loader2, Search, Star, Eye, EyeOff, Trash2, Plus } from "@buleje/design-system/icons";
+import {
+  Loader2,
+  Search,
+  Star,
+  Eye,
+  EyeOff,
+  Trash2,
+  Plus,
+  Package,
+} from "@buleje/design-system/icons";
+import AdminTabShell from "./_shared/AdminTabShell";
+import AdminEmptyState from "./_shared/AdminEmptyState";
+import { ADMIN_TOKENS } from "./_shared/admin-tokens";
 
 type Override = {
   id: string;
@@ -103,57 +115,85 @@ export default function ProductsTab() {
     .slice(0, 50);
 
   return (
-    <div className="space-y-6">
+    <AdminTabShell
+      title="Productos destacados"
+      description="Productos del catálogo con precio exclusivo, badge o destacado en tu página individual."
+      icon={Package}
+      actions={
+        <button
+          type="button"
+          onClick={async () => {
+            if (catalog.length === 0) await loadCatalog();
+            setShowPicker((v) => !v);
+          }}
+          className={ADMIN_TOKENS.btnPrimary}
+        >
+          <Plus className="w-4 h-4" aria-hidden />
+          Agregar producto
+        </button>
+      }
+    >
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar producto…"
-            className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+            className={`${ADMIN_TOKENS.input} pl-10`}
           />
         </div>
-        <button
-          onClick={async () => {
-            if (catalog.length === 0) await loadCatalog();
-            setShowPicker((v) => !v);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white font-semibold text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar producto
-        </button>
       </div>
 
       {/* Picker modal inline */}
       {showPicker && (
-        <section className="p-4 rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] space-y-2 max-h-96 overflow-y-auto">
-          <h4 className="font-bold text-sm mb-2">Selecciona un producto del inventario</h4>
+        <section
+          className={`${ADMIN_TOKENS.cardPadded} max-h-96 overflow-y-auto`}
+        >
+          <h3 className={ADMIN_TOKENS.headingH3}>
+            Selecciona un producto del inventario
+          </h3>
           {catalogFiltered.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)]">Sin resultados</p>
+            <p className={ADMIN_TOKENS.bodyText}>Sin resultados</p>
           ) : (
             catalogFiltered.map((p) => (
               <button
                 key={p.id}
+                type="button"
                 onClick={async () => {
                   await upsert({ productId: p.id, visible: true });
                   setShowPicker(false);
                 }}
-                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 text-left"
+                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-[var(--surface-sunken)] text-left transition-colors"
               >
-                <div className="relative w-10 h-10 rounded bg-gray-200 overflow-hidden flex-shrink-0">
-                  {p.image && <Image src={p.image} alt="" fill sizes="40px" className="object-cover" />}
+                <div className="relative w-10 h-10 rounded bg-[var(--surface-sunken)] overflow-hidden flex-shrink-0">
+                  {p.image && (
+                    <Image
+                      src={p.image}
+                      alt=""
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm truncate">{p.name}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    S/{p.price.toFixed(2)} · {p.category}
+                  <p className="font-semibold text-sm truncate text-[var(--text-primary)]">
+                    {p.name}
+                  </p>
+                  <p className={ADMIN_TOKENS.hint}>
+                    S/ {p.price.toFixed(2)} · {p.category}
                   </p>
                 </div>
-                <Plus className="w-4 h-4 text-[var(--data-success)]" />
+                <Plus
+                  className="w-4 h-4 text-[var(--accent)]"
+                  aria-hidden
+                />
               </button>
             ))
           )}
@@ -164,9 +204,18 @@ export default function ProductsTab() {
       {loading ? (
         <LoadingState />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-          Todavía no hay productos destacados. Agrega uno con el botón arriba.
-        </div>
+        <AdminEmptyState
+          icon={Package}
+          title="Sin productos destacados"
+          description="Selecciona productos de tu catálogo para destacarlos en tu página individual con precio exclusivo o badges."
+          action={{
+            label: "Agregar primer producto",
+            onClick: async () => {
+              if (catalog.length === 0) await loadCatalog();
+              setShowPicker(true);
+            },
+          }}
+        />
       ) : (
         <div className="space-y-2">
           {filtered.map((o) => (
@@ -179,7 +228,7 @@ export default function ProductsTab() {
           ))}
         </div>
       )}
-    </div>
+    </AdminTabShell>
   );
 }
 
@@ -205,7 +254,7 @@ function OverrideRow({
   const [dirty, setDirty] = useState(false);
 
   return (
-    <div className="p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center gap-4 flex-wrap">
+    <div className={`${ADMIN_TOKENS.card} p-4 flex items-center gap-4 flex-wrap`}>
       <div className="relative w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
         {override.productImage && (
           <Image

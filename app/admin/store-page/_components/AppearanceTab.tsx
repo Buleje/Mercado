@@ -2,7 +2,9 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, Save, Eye, EyeOff } from "@buleje/design-system/icons";
+import { Loader2, Save, Eye, EyeOff, Palette } from "@buleje/design-system/icons";
+import AdminTabShell from "./_shared/AdminTabShell";
+import { ADMIN_TOKENS } from "./_shared/admin-tokens";
 
 type Customization = {
   published: boolean;
@@ -141,7 +143,11 @@ export default function AppearanceTab() {
   }
 
   return (
-    <div className="space-y-8">
+    <AdminTabShell
+      title="Apariencia"
+      description="Personaliza colores, hero, datos de contacto y SEO de tu página individual."
+      icon={Palette}
+    >
       {/* Published toggle */}
       <section className="flex items-center justify-between p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div>
@@ -363,12 +369,12 @@ export default function AppearanceTab() {
         <button
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-semibold text-sm transition-colors"
+          className={ADMIN_TOKENS.btnPrimary}
         >
           {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
           ) : (
-            <Save className="w-4 h-4" />
+            <Save className="w-4 h-4" aria-hidden />
           )}
           Guardar cambios
         </button>
@@ -397,7 +403,7 @@ export default function AppearanceTab() {
           border-color: rgb(55 65 81);
         }
       `}</style>
-    </div>
+    </AdminTabShell>
   );
 }
 

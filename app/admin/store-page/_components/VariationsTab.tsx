@@ -40,6 +40,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import AdminTabShell from "./_shared/AdminTabShell";
+import { ADMIN_TOKENS } from "./_shared/admin-tokens";
 
 interface ProductSummary {
   id: number;
@@ -180,35 +182,17 @@ export default function VariationsTab() {
   const selected = products.find((p) => p.id === selectedProductId) ?? null;
 
   return (
-    <div className="space-y-5">
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
-            <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden />
-            Variaciones de productos
-          </h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)] max-w-3xl">
-            Configura opciones que el cliente elige antes de agregar al
-            carrito: cremas, presa, talla, color, sabor, extras. Funciona
-            para <span className="font-semibold">polleria, ropa, farmacia, restaurante</span> y
-            cualquier negocio.
-          </p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-          <Sparkles className="h-3 w-3" aria-hidden />
-          Universal
-        </span>
-      </header>
-
-      {error && (
-        <div className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20 px-4 py-2 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </div>
-      )}
+    <AdminTabShell
+      title="Variaciones de productos"
+      description="Configura opciones que el cliente elige antes de agregar al carrito: cremas, presa, talla, color, sabor, extras. Funciona para pollería, ropa, farmacia, restaurante y cualquier negocio."
+      icon={Layers}
+      chip={{ label: "Universal", icon: Sparkles, tone: "accent" }}
+    >
+      {error && <div className={ADMIN_TOKENS.errorBanner}>{error}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
         {/* Lista de productos */}
-        <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden flex flex-col max-h-[80vh]">
           <div className="p-3 border-b border-[var(--rule-soft)]">
             <div className="relative">
               <Search
@@ -283,7 +267,7 @@ export default function VariationsTab() {
         </div>
 
         {/* Editor */}
-        <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+        <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
           {selected ? (
             <ProductModifierEditor
               product={selected}
@@ -296,7 +280,7 @@ export default function VariationsTab() {
           )}
         </div>
       </div>
-    </div>
+    </AdminTabShell>
   );
 }
 
@@ -881,7 +865,7 @@ function OptionRow({
           className="text-sm font-semibold text-[var(--text-primary)] bg-transparent focus:outline-none"
         />
         <input
-          value={imageUrl.startsWith("data:") ? "imagen subida ✓" : imageUrl}
+          value={imageUrl.startsWith("data:") ? "Imagen subida" : imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
           onBlur={commit}
           readOnly={imageUrl.startsWith("data:")}

@@ -1,8 +1,19 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Power, PowerOff } from "@buleje/design-system/icons";
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  Power,
+  PowerOff,
+  Megaphone,
+  Save,
+} from "@buleje/design-system/icons";
+import AdminTabShell from "./_shared/AdminTabShell";
+import AdminEmptyState from "./_shared/AdminEmptyState";
+import { ADMIN_TOKENS } from "./_shared/admin-tokens";
 
 type Promotion = {
   id: string;
@@ -99,23 +110,26 @@ export default function PromotionsTab() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <CardTitle className="font-bold">Promociones de la página individual</CardTitle>
+    <AdminTabShell
+      title="Promociones"
+      description="Banners y promociones que aparecen en tu página pública. Pueden tener fecha de inicio y fin."
+      icon={Megaphone}
+      actions={
         <button
+          type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white font-semibold text-sm"
+          className={ADMIN_TOKENS.btnPrimary}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden />
           Nueva promoción
         </button>
-      </div>
-
+      }
+    >
       {showForm && (
-        <section className="p-5 rounded-xl border-2 border-[var(--data-success)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] space-y-4">
+        <section className={ADMIN_TOKENS.cardPadded}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block">
-              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
                 Título
               </span>
               <input
@@ -123,12 +137,12 @@ export default function PromotionsTab() {
                 maxLength={200}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+                className={ADMIN_TOKENS.input}
                 placeholder="Oferta del mes"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
                 Tipo de descuento
               </span>
               <select
@@ -139,7 +153,7 @@ export default function PromotionsTab() {
                     discountType: e.target.value as Promotion["discountType"],
                   })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+                className={ADMIN_TOKENS.input}
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="amount">Monto fijo (S/)</option>
@@ -147,7 +161,7 @@ export default function PromotionsTab() {
               </select>
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
                 Valor del descuento
               </span>
               <input
@@ -158,11 +172,11 @@ export default function PromotionsTab() {
                 onChange={(e) =>
                   setForm({ ...form, discountValue: Number(e.target.value) })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono"
+                className={`${ADMIN_TOKENS.input} font-mono`}
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
                 Banner (URL)
               </span>
               <input
@@ -171,11 +185,11 @@ export default function PromotionsTab() {
                 onChange={(e) =>
                   setForm({ ...form, bannerImageUrl: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+                className={ADMIN_TOKENS.input}
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
                 Inicio (opcional)
               </span>
               <input
@@ -189,11 +203,11 @@ export default function PromotionsTab() {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+                className={ADMIN_TOKENS.input}
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
                 Fin (opcional)
               </span>
               <input
@@ -207,7 +221,7 @@ export default function PromotionsTab() {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+                className={ADMIN_TOKENS.input}
               />
             </label>
           </div>
@@ -222,22 +236,29 @@ export default function PromotionsTab() {
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
+              className={ADMIN_TOKENS.input}
             />
           </label>
-          {error && <p className="text-sm text-[var(--data-error)]">{error}</p>}
+          {error && <div className={ADMIN_TOKENS.errorBanner}>{error}</div>}
           <div className="flex gap-2 justify-end">
             <button
+              type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-semibold"
+              className={ADMIN_TOKENS.btnGhost}
             >
               Cancelar
             </button>
             <button
+              type="button"
               onClick={create}
               disabled={saving || !form.title.trim()}
-              className="px-4 py-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-semibold text-sm"
+              className={ADMIN_TOKENS.btnPrimary}
             >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="h-4 w-4" aria-hidden />
+              )}
               {saving ? "Creando…" : "Crear promoción"}
             </button>
           </div>
@@ -247,15 +268,18 @@ export default function PromotionsTab() {
       {loading ? (
         <LoadingState />
       ) : list.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-          Sin promociones activas. Crea la primera con el botón arriba.
-        </div>
+        <AdminEmptyState
+          icon={Megaphone}
+          title="Sin promociones activas"
+          description="Crea tu primera promoción con el botón de arriba para que aparezca destacada en tu tienda."
+          action={{ label: "Nueva promoción", onClick: () => setShowForm(true) }}
+        />
       ) : (
         <div className="space-y-2">
           {list.map((p) => (
             <div
               key={p.id}
-              className="p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center gap-4 flex-wrap"
+              className={`${ADMIN_TOKENS.card} p-4 flex items-center gap-4 flex-wrap`}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -310,6 +334,6 @@ export default function PromotionsTab() {
           ))}
         </div>
       )}
-    </div>
+    </AdminTabShell>
   );
 }
