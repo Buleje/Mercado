@@ -474,7 +474,7 @@ export default function DevolucionesProveedorModule() {
                       <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                         {dev.proveedorNombre}
                       </span>
-                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
                         {dev.estado}
                       </span>
                     </div>

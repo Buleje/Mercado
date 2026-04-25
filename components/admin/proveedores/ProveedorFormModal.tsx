@@ -3,7 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2 } from "@buleje/design-system/icons";
+import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Check } from "@buleje/design-system/icons";
 import { cn } from '@/lib/utils';
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
@@ -146,7 +146,53 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
   const [form, setForm] = useState<SupplierFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [rucLookup, setRucLookup] = useState<{ status: "idle" | "loading" | "ok" | "notfound" | "error"; msg?: string }>({ status: "idle" });
   const isEdit = !!supplier;
+
+  // ── Lookup RUC en SUNAT ───────────────────────────────────────────────────
+  const handleRucLookup = useCallback(async (ruc: string) => {
+    if (!/^[12]\d{10}$/.test(ruc)) {
+      setRucLookup({ status: "idle" });
+      return;
+    }
+    setRucLookup({ status: "loading" });
+    try {
+      const res = await fetch(`/api/sunat/lookup-ruc?ruc=${encodeURIComponent(ruc)}`, { credentials: "include" });
+      if (res.status === 404) {
+        setRucLookup({ status: "notfound", msg: "RUC no existe en SUNAT" });
+        return;
+      }
+      if (!res.ok) {
+        setRucLookup({ status: "error", msg: "No se pudo consultar SUNAT" });
+        return;
+      }
+      const data = await res.json() as {
+        razonSocial?: string;
+        nombreComercial?: string;
+        direccion?: string;
+        departamento?: string;
+        provincia?: string;
+        distrito?: string;
+        estado?: string;
+      };
+      setForm((f) => ({
+        ...f,
+        razonSocial: data.razonSocial ?? f.razonSocial,
+        name: f.name || data.nombreComercial || data.razonSocial || f.name,
+        direccion: data.direccion?.trim() || f.direccion,
+        departamento: data.departamento || f.departamento,
+        provincia: data.provincia || f.provincia,
+        distrito: data.distrito || f.distrito,
+        tipoPersona: f.tipoPersona === 'natural' ? f.tipoPersona : 'juridica',
+      }));
+      setRucLookup({
+        status: "ok",
+        msg: data.estado === "ACTIVO" || !data.estado ? "Datos cargados de SUNAT" : `Estado: ${data.estado}`,
+      });
+    } catch {
+      setRucLookup({ status: "error", msg: "Error de red al consultar SUNAT" });
+    }
+  }, []);
 
   // Populate form when editing
   useEffect(() => {
@@ -344,14 +390,40 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
               {/* RUC + Teléfono */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>RUC</label>
-                  <input
-                    value={form.documento}
-                    onChange={e => set('documento', e.target.value)}
-                    placeholder="20xxxxxxxxx"
-                    maxLength={11}
-                    className={cn(inputCls, "font-mono")}
-                  />
+                  <label className={labelCls}>
+                    RUC <span className="text-[var(--text-tertiary)] font-normal text-xs">(autocompleta SUNAT)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      value={form.documento}
+                      onChange={(e) => {
+                        const next = e.target.value.replace(/\D/g, "").slice(0, 11);
+                        set('documento', next);
+                        if (next.length === 11) void handleRucLookup(next);
+                        else setRucLookup({ status: "idle" });
+                      }}
+                      placeholder="20xxxxxxxxx"
+                      maxLength={11}
+                      className={cn(inputCls, "font-mono pr-9")}
+                    />
+                    {rucLookup.status === "loading" && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
+                    )}
+                    {rucLookup.status === "ok" && (
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success)]" />
+                    )}
+                  </div>
+                  {rucLookup.status !== "idle" && rucLookup.msg && (
+                    <p className={cn(
+                      "text-xs mt-1 font-medium",
+                      rucLookup.status === "ok"       ? "text-[var(--data-success)]" :
+                      rucLookup.status === "notfound" ? "text-[var(--data-warning)]" :
+                      rucLookup.status === "loading"  ? "text-[var(--text-tertiary)]" :
+                      "text-[var(--data-error)]"
+                    )}>
+                      {rucLookup.status === "loading" ? "Consultando SUNAT..." : rucLookup.msg}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Teléfono</label>

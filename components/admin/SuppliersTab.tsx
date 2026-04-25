@@ -3,7 +3,7 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award } from "@buleje/design-system/icons";
+import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
@@ -42,6 +42,8 @@ export default function SuppliersTab() {
   const [expandedScorecard, setExpandedScorecard] = useState<string | null>(null);
   const [showProveedorModal, setShowProveedorModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<DbSupplier | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"todos" | "con-deuda" | "con-ruc" | "sin-ruc">("todos");
   useScrollLock(showAdd);
 
   const load = useCallback(async () => {
@@ -317,6 +319,96 @@ export default function SuppliersTab() {
         </div>
       )}
 
+      {/* KPI summary */}
+      {!loading && suppliers.length > 0 && (() => {
+        const supplierIdsWithDebt = new Set(payables.filter(p => p.status !== "pagado" && (p.amount - p.paidAmount) > 0).map(p => p.supplierId));
+        const totalDebt = payables.reduce((s, p) => s + (p.amount - p.paidAmount), 0);
+        const conRuc = suppliers.filter(s => (s.ruc ?? "").length === 11).length;
+        return (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">proveedores registrados</p>
+              </div>
+              <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+            </div>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con RUC</p>
+                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{conRuc}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">{suppliers.length - conRuc} sin documentar</p>
+              </div>
+              <Building2 className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+            </div>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con deuda</p>
+                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]")}>{supplierIdsWithDebt.size}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">cuentas pendientes</p>
+              </div>
+              <CreditCard className={cn("h-5 w-5 shrink-0", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")} />
+            </div>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Deuda total</p>
+                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]")}>S/{totalDebt.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">{overduePayables.length > 0 ? `${overduePayables.length} vencida${overduePayables.length === 1 ? "" : "s"}` : "al día"}</p>
+              </div>
+              <DollarSign className={cn("h-5 w-5 shrink-0", totalDebt > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Filtros + búsqueda */}
+      {!loading && suppliers.length > 0 && (() => {
+        const supplierIdsWithDebt = new Set(payables.filter(p => p.status !== "pagado" && (p.amount - p.paidAmount) > 0).map(p => p.supplierId));
+        const counts = {
+          todos: suppliers.length,
+          "con-deuda": suppliers.filter(s => supplierIdsWithDebt.has(s.id)).length,
+          "con-ruc": suppliers.filter(s => (s.ruc ?? "").length === 11).length,
+          "sin-ruc": suppliers.filter(s => !s.ruc || s.ruc.length !== 11).length,
+        };
+        return (
+          <div className="flex items-center gap-2 flex-wrap">
+            {([
+              { id: "todos",     label: "Todos",        count: counts["todos"]     },
+              { id: "con-deuda", label: "Con deuda",    count: counts["con-deuda"] },
+              { id: "con-ruc",   label: "Con RUC",      count: counts["con-ruc"]   },
+              { id: "sin-ruc",   label: "Sin RUC",      count: counts["sin-ruc"]   },
+            ] as const).map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setFilter(p.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
+                  filter === p.id
+                    ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
+                    : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                {p.label}
+                <span className={cn(
+                  "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
+                  filter === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
+                )}>
+                  {p.count}
+                </span>
+              </button>
+            ))}
+            <input
+              type="search"
+              placeholder="Buscar por nombre, RUC o teléfono..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ml-auto px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] outline-none focus:border-primary w-64"
+            />
+          </div>
+        );
+      })()}
+
       {/* Suppliers list */}
       {loading ? (
         <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
@@ -328,9 +420,31 @@ export default function SuppliersTab() {
           action={{ label: "Nuevo proveedor", onClick: () => { setEditingSupplier(null); setShowProveedorModal(true); } }}
           className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl"
         />
-      ) : (
+      ) : (() => {
+        const supplierIdsWithDebt = new Set(payables.filter(p => p.status !== "pagado" && (p.amount - p.paidAmount) > 0).map(p => p.supplierId));
+        const visible = suppliers.filter((s) => {
+          if (filter === "con-deuda" && !supplierIdsWithDebt.has(s.id)) return false;
+          if (filter === "con-ruc"   && (s.ruc ?? "").length !== 11) return false;
+          if (filter === "sin-ruc"   && (s.ruc ?? "").length === 11) return false;
+          if (search.trim()) {
+            const q = search.toLowerCase();
+            if (!s.name.toLowerCase().includes(q) &&
+                !(s.ruc ?? "").includes(search) &&
+                !(s.phone ?? "").includes(search)) return false;
+          }
+          return true;
+        });
+        if (visible.length === 0) {
+          return (
+            <div className="text-center py-10 border-2 border-dashed border-[var(--rule-base)] rounded-xl">
+              <p className="text-sm font-semibold text-[var(--text-secondary)]">No hay proveedores en este filtro</p>
+              <button onClick={() => { setFilter("todos"); setSearch(""); }} className="mt-2 text-xs text-primary font-semibold hover:underline">Ver todos</button>
+            </div>
+          );
+        }
+        return (
         <div className="space-y-3">
-          {suppliers.map((s) => (
+          {visible.map((s) => (
             <div key={s.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
               {editingId === s.id ? (
                 <div className="space-y-3">
@@ -491,7 +605,8 @@ export default function SuppliersTab() {
             </div>
           ))}
         </div>
-      )}
+        );
+      })()}
 
       {/* ── Add supplier modal ── */}
       <ConfirmDeleteDialog

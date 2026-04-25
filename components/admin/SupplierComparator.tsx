@@ -272,7 +272,7 @@ export default function SupplierComparator() {
           className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="flex items-center gap-1.5">
-          <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
+          <span className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
           {(["score", "name", "precio"] as const).map(s => (
             <button
               key={s}
@@ -303,13 +303,13 @@ export default function SupplierComparator() {
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
-                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
-                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
-                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Tiempo</th>
-                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)] hidden lg:table-cell">Pago</th>
-                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Score</th>
-                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">OC</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Tiempo</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)] hidden lg:table-cell">Pago</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">Score</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">OC</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -332,7 +332,7 @@ export default function SupplierComparator() {
                           <div>
                             <p className="text-xs font-bold text-[var(--text-primary)]">{s.name}</p>
                             {s.categoria && (
-                              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{s.categoria}</p>
+                              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{s.categoria}</p>
                             )}
                           </div>
                         </div>
@@ -358,13 +358,13 @@ export default function SupplierComparator() {
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
                           <ScoreBadge score={s.score} />
-                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">{s.score.toFixed(0)}pts</span>
+                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{s.score.toFixed(0)}pts</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={e => { e.stopPropagation(); handleCreateOC(s); }}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
                           title="Crear orden de compra"
                         >
                           <ShoppingCart className="h-3 w-3" /> OC
@@ -403,7 +403,7 @@ export default function SupplierComparator() {
                 { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning)]" },
               ].map(({ label, value, icon: Icon, color }) => (
                 <div key={label} className="space-y-1">
-                  <div className="flex items-center justify-between text-[length:var(--ts-2xs)]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted font-medium">
                       <Icon className="h-3 w-3" /> {label}
                     </span>

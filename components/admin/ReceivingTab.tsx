@@ -163,41 +163,59 @@ export default function ReceivingTab() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* KPI summary minimalista */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Programadas",       value: stats.scheduled,   color: "text-[var(--data-success)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    icon: ClipboardList },
-          { label: "En proceso",        value: stats.inProgress,  color: "text-[var(--data-warning)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",  icon: ScanLine },
-          { label: "Aceptadas",         value: stats.accepted,    color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
-          { label: "No conformidades",  value: stats.totalNonConf,color: "text-[var(--data-error)]",     bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",      icon: AlertTriangle },
-        ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
-            <Icon className={cn("h-5 w-5 mt-0.5 shrink-0", color)} />
-            <div>
-              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{label}</p>
-              <p className={cn("text-xl font-extrabold", color)}>{value}</p>
+          { label: "Programadas",      value: stats.scheduled,    icon: ClipboardList, color: "text-[var(--text-primary)]"  },
+          { label: "En proceso",       value: stats.inProgress,   icon: ScanLine,      color: "text-[var(--data-warning)]"  },
+          { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success)]"  },
+          { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error)]" : "text-[var(--text-primary)]" },
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
+              <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", color)}>{value}</p>
             </div>
+            <Icon className={cn("h-5 w-5 shrink-0", color)} />
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
+      {/* Filter pills + buscador */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {([
+          { id: "todos",       label: "Todos",      count: receptions.length },
+          { id: "programada",  label: "Programadas", count: stats.scheduled  },
+          { id: "en-proceso",  label: "En proceso",  count: stats.inProgress },
+          { id: "aceptada",    label: "Aceptadas",   count: stats.accepted   },
+        ] as const).map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setFilterStatus(p.id as typeof filterStatus)}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
+              filterStatus === p.id
+                ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
+                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+            )}
+          >
+            {p.label}
+            <span className={cn(
+              "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
+              filterStatus === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
+            )}>
+              {p.count}
+            </span>
+          </button>
+        ))}
+        <div className="relative ml-auto flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar proveedor, ref, OC..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-lg bg-white text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
-        <select
-          value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
-          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
-        >
-          <option value="todos">Todos los estados</option>
-          {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
       </div>
 
       {/* Table */}
