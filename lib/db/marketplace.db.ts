@@ -23,6 +23,24 @@ export type DbStore = {
   createdAt: string;
 };
 
+export interface DbStoreProductModifierOption {
+  id: string;
+  name: string;
+  priceDelta: number;
+  isDefault: boolean;
+  imageUrl: string | null;
+}
+
+export interface DbStoreProductModifierGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  required: boolean;
+  minSelect: number;
+  maxSelect: number;
+  options: DbStoreProductModifierOption[];
+}
+
 export type DbStoreProduct = {
   id: string;
   storeId: string;
@@ -36,6 +54,7 @@ export type DbStoreProduct = {
   productImage: string | null;
   productCategory: string;
   productUnit: string;
+  modifierGroups: DbStoreProductModifierGroup[];
 };
 
 export type DbVendorDashboard = {
@@ -400,7 +419,23 @@ export const MarketplaceStoreProductsDB = {
         },
         include: {
           product: {
-            select: { id: true, name: true, image: true, category: true, unit: true },
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              category: true,
+              unit: true,
+              modifierGroups: {
+                where: { isActive: true },
+                orderBy: { position: "asc" },
+                include: {
+                  options: {
+                    where: { isActive: true },
+                    orderBy: { position: "asc" },
+                  },
+                },
+              },
+            },
           },
         },
         orderBy,
@@ -421,6 +456,21 @@ export const MarketplaceStoreProductsDB = {
         productImage:       r.product.image,
         productCategory:    r.product.category,
         productUnit:        r.product.unit,
+        modifierGroups: r.product.modifierGroups.map((g) => ({
+          id: g.id,
+          name: g.name,
+          description: g.description,
+          required: g.required,
+          minSelect: g.minSelect,
+          maxSelect: g.maxSelect,
+          options: g.options.map((o) => ({
+            id: o.id,
+            name: o.name,
+            priceDelta: toNumOrZero(o.priceDelta),
+            isDefault: o.isDefault,
+            imageUrl: o.imageUrl,
+          })),
+        })),
       }));
     });
   },
@@ -483,6 +533,7 @@ export const MarketplaceStoreProductsDB = {
       productImage:       product.image,
       productCategory:    product.category,
       productUnit:        product.unit,
+      modifierGroups:     [], // upsert no fetcha modifierGroups; usar list() para refresh
     };
   },
 

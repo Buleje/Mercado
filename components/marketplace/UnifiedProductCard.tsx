@@ -15,10 +15,12 @@ import {
 import { MarketplaceItemPlaceholder } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
 import { QuickViewModal } from "@/components/customer/journey";
+import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
+import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -40,6 +42,8 @@ export interface UnifiedProductCardProduct {
   discount?: number;
   /** Indica si el producto es peruano/nacional — muestra badge "PERUANO" */
   isPeruvian?: boolean;
+  /** Grupos de modificadores configurados — si presente, abre selector pre-add. */
+  modifierGroups?: DbStoreProductModifierGroup[];
 }
 
 export type UnifiedProductCardVariant = "default" | "flash" | "top" | "liquidation";
@@ -101,6 +105,7 @@ export default function UnifiedProductCard({
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [modifierModalOpen, setModifierModalOpen] = useState(false);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
 
   // Cantidad ya en el carrito de ESTA tienda — se usa para mostrar contador
@@ -145,8 +150,16 @@ export default function UnifiedProductCard({
     });
   }, [inCompare, addToCompare, removeFromCompare, compareItems, compareMax, product]);
 
+  const hasModifiers =
+    Array.isArray(product.modifierGroups) && product.modifierGroups.length > 0;
+
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
+    if (hasModifiers) {
+      // Abre selector — el cliente debe elegir antes de agregar al carrito.
+      setModifierModalOpen(true);
+      return;
+    }
     addItemWithUndo({
       storeId: product.storeId ?? "",
       storeName: product.storeName ?? "",
@@ -155,13 +168,14 @@ export default function UnifiedProductCard({
       productId: product.id,
       name: product.name,
       price: product.price,
+      basePrice: product.price,
       image: product.image ?? null,
       unit: product.unit ?? null,
       description: product.description ?? null,
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
-  }, [addItemWithUndo, product, isOutOfStock]);
+  }, [addItemWithUndo, product, isOutOfStock, hasModifiers]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
@@ -488,6 +502,49 @@ export default function UnifiedProductCard({
           storeName={product.storeName}
           onAddToCart={async (qty) => {
             for (let i = 0; i < qty; i++) handleAdd();
+          }}
+        />
+      )}
+
+      {/* Modal de variaciones — solo si el producto las tiene configuradas */}
+      {hasModifiers && (
+        <ProductModifierModal
+          open={modifierModalOpen}
+          onClose={() => setModifierModalOpen(false)}
+          product={{
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image ?? null,
+            unit: product.unit ?? null,
+            category: product.category,
+            storeId: product.storeId ?? "",
+            storeName: product.storeName ?? "",
+            storeSlug: product.storeSlug ?? "",
+            storeProductId: product.storeProductId ?? String(product.id),
+            description: product.description ?? null,
+          }}
+          groups={product.modifierGroups ?? []}
+          onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
+            addItemWithUndo({
+              storeId: product.storeId ?? "",
+              storeName: product.storeName ?? "",
+              storeSlug: product.storeSlug ?? "",
+              storeProductId: product.storeProductId ?? String(product.id),
+              productId: product.id,
+              name: product.name,
+              price: finalUnitPrice,
+              basePrice: product.price,
+              image: product.image ?? null,
+              unit: product.unit ?? null,
+              description: product.description ?? null,
+              modifiers,
+              modifierHash: modifierHashOf(modifiers),
+              quantity,
+            });
+            setModifierModalOpen(false);
+            setJustAdded(true);
+            setTimeout(() => setJustAdded(false), 1200);
           }}
         />
       )}

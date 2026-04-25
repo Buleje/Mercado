@@ -4,6 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 
 // ---------- tipos ----------
 
+export interface SelectedModifier {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  priceDelta: number;
+}
+
 export interface CartItem {
   storeId: string;
   storeName: string;
@@ -11,12 +19,35 @@ export interface CartItem {
   storeProductId: string;
   productId: number;
   name: string;
+  /** Precio total = basePrice + sum(priceDelta). Lo que ve el cliente y va a checkout (server re-valida). */
   price: number;
   quantity: number;
   image: string | null;
   unit: string | null;
   category?: string | null;
   storeZone?: string | null;
+  /** Precio del producto sin modifiers; sirve para mostrar breakdown. */
+  basePrice?: number;
+  /** Opciones de variaciones elegidas por el cliente. */
+  modifiers?: SelectedModifier[];
+  /** Hash de modifier ids para deduplicar cart entries. */
+  modifierHash?: string;
+}
+
+/** Crea un hash determinístico a partir de los optionIds elegidos. */
+export function modifierHashOf(modifiers?: SelectedModifier[]): string {
+  if (!modifiers || modifiers.length === 0) return "";
+  return modifiers
+    .map((m) => m.optionId)
+    .sort()
+    .join("|");
+}
+
+/** Compara dos items para decidir si son la misma "linea" del carrito. */
+export function sameCartLine(a: CartItem, b: CartItem): boolean {
+  if (a.storeId !== b.storeId) return false;
+  if (a.productId !== b.productId) return false;
+  return (a.modifierHash ?? "") === (b.modifierHash ?? "");
 }
 
 interface CartState {
@@ -114,9 +145,21 @@ export function useMarketplaceCart() {
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+      const incomingHash = item.modifierHash ?? modifierHashOf(item.modifiers);
+      const normalized: CartItem = {
+        ...item,
+        quantity: item.quantity ?? 1,
+        modifierHash: incomingHash,
+      };
+
       setItems((prev) => {
+        // Unicidad por (storeId, productId, modifierHash) — mismo producto con
+        // modifiers distintos = lineas distintas en el carrito.
         const idx = prev.findIndex(
-          (i) => i.storeId === item.storeId && i.productId === item.productId
+          (i) =>
+            i.storeId === normalized.storeId &&
+            i.productId === normalized.productId &&
+            (i.modifierHash ?? "") === incomingHash,
         );
         if (idx !== -1) {
           const updated = [...prev];
@@ -126,30 +169,43 @@ export function useMarketplaceCart() {
           };
           return updated;
         }
-        return [...prev, { ...item, quantity: item.quantity ?? 1 }];
+        return [...prev, normalized];
       });
     },
     []
   );
 
-  const removeItem = useCallback((storeId: string, productId: number) => {
-    setItems((prev) =>
-      prev.filter((i) => !(i.storeId === storeId && i.productId === productId))
-    );
-  }, []);
+  const removeItem = useCallback(
+    (storeId: string, productId: number, modifierHash?: string) => {
+      setItems((prev) =>
+        prev.filter((i) => {
+          if (i.storeId !== storeId || i.productId !== productId) return true;
+          // Si se pasa modifierHash, solo borra esa linea especifica.
+          if (modifierHash !== undefined) {
+            return (i.modifierHash ?? "") !== modifierHash;
+          }
+          // Sin modifierHash: borra TODAS las lineas de ese producto (compat).
+          return false;
+        }),
+      );
+    },
+    [],
+  );
 
   const updateQuantity = useCallback(
-    (storeId: string, productId: number, quantity: number) => {
+    (storeId: string, productId: number, quantity: number, modifierHash?: string) => {
       if (quantity <= 0) {
-        removeItem(storeId, productId);
+        removeItem(storeId, productId, modifierHash);
         return;
       }
       setItems((prev) =>
-        prev.map((i) =>
-          i.storeId === storeId && i.productId === productId
-            ? { ...i, quantity }
-            : i
-        )
+        prev.map((i) => {
+          if (i.storeId !== storeId || i.productId !== productId) return i;
+          if (modifierHash !== undefined && (i.modifierHash ?? "") !== modifierHash) {
+            return i;
+          }
+          return { ...i, quantity };
+        }),
       );
     },
     [removeItem]

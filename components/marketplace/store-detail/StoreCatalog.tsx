@@ -245,6 +245,7 @@ export default function StoreCatalog({
                 storeName,
                 storeSlug,
                 storeProductId: p.id,
+                modifierGroups: p.modifierGroups,
               }}
             />
           ))}

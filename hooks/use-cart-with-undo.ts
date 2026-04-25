@@ -35,9 +35,22 @@ export function useCartWithUndo(): UseCartWithUndoReturn {
   const addItemWithUndo = useCallback(
     (item: AddItemArg) => {
       const { description, variations, ...forCart } = item;
-      void description;
-      void variations;
       addItem(forCart);
+
+      // Si el cliente eligio modifiers en el ProductModifierModal, los
+      // mapeamos a la prop `variations` del drawer para que se muestren.
+      // Las variations explicitas (legacy) tienen prioridad.
+      const drawerVariations =
+        variations ??
+        (item.modifiers && item.modifiers.length > 0
+          ? item.modifiers.map((m) => ({
+              label: m.groupName,
+              value:
+                m.priceDelta > 0
+                  ? `${m.optionName} (+S/${m.priceDelta.toFixed(2)})`
+                  : m.optionName,
+            }))
+          : undefined);
 
       openDrawer({
         storeId: item.storeId,
@@ -50,7 +63,7 @@ export function useCartWithUndo(): UseCartWithUndoReturn {
         image: item.image,
         unit: item.unit,
         description: description ?? null,
-        variations: variations,
+        variations: drawerVariations,
       });
     },
     [addItem, openDrawer]

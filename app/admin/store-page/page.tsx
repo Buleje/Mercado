@@ -13,9 +13,11 @@ import {
   Boxes,
   Gamepad2,
   Sparkles,
+  Layers,
 } from "@buleje/design-system/icons";
 import AppearanceTab from "./_components/AppearanceTab";
 import MarketplaceBrandingTab from "./_components/MarketplaceBrandingTab";
+import VariationsTab from "./_components/VariationsTab";
 import ProductsTab from "./_components/ProductsTab";
 import PromotionsTab from "./_components/PromotionsTab";
 import AnalyticsTab from "./_components/AnalyticsTab";
@@ -24,12 +26,13 @@ import DiscountsTab from "./_components/DiscountsTab";
 import EngagementTab from "./_components/EngagementTab";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 
-type TabId = "appearance" | "branding" | "products" | "promotions" | "combos" | "discounts" | "engagement" | "analytics";
+type TabId = "appearance" | "branding" | "products" | "variations" | "promotions" | "combos" | "discounts" | "engagement" | "analytics";
 
 const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
   { id: "appearance", label: "Apariencia", icon: Palette },
   { id: "branding", label: "Branding Marketplace", icon: Sparkles },
   { id: "products", label: "Productos", icon: Package },
+  { id: "variations", label: "Variaciones", icon: Layers },
   { id: "combos", label: "Combos", icon: Boxes },
   { id: "discounts", label: "Descuentos", icon: Percent },
   { id: "promotions", label: "Promociones", icon: Megaphone },
@@ -106,6 +109,7 @@ export default function StorePageAdminPage() {
         {tab === "appearance" && <AppearanceTab />}
         {tab === "branding" && <MarketplaceBrandingTab />}
         {tab === "products" && <ProductsTab />}
+        {tab === "variations" && <VariationsTab />}
         {tab === "combos" && <CombosTab />}
         {tab === "discounts" && <DiscountsTab />}
         {tab === "promotions" && <PromotionsTab />}

@@ -23,6 +23,11 @@ import { createDefaultDiscountEngine } from "@/lib/pricing/discount-strategies";
 import type { OrderContext } from "@/lib/pricing/discount-strategies";
 import { withApiHandler } from "@/lib/api-handler";
 
+const OrderItemModifierSchema = z.object({
+  groupId: z.string().min(1).max(50),
+  optionId: z.string().min(1).max(50),
+});
+
 const OrderItemSchema = z.object({
   id: z.number(),
   name: z.string().min(1).max(200),
@@ -32,6 +37,8 @@ const OrderItemSchema = z.object({
   image: z.string().max(500).optional(),
   category: z.string().optional(),
   badge: z.string().nullable().optional(),
+  /** Modifiers elegidos por el cliente — server re-valida y recomputa price. */
+  modifiers: z.array(OrderItemModifierSchema).max(40).optional(),
 });
 
 const OrderPostSchema = z.object({
@@ -260,10 +267,94 @@ export const POST = withApiHandler("orders-create", async (req) => {
       }
     }
 
+    // ── Modifiers: re-validar server-side y mapear priceDelta ──────────────
+    // El cliente envia { groupId, optionId } solamente; el server fetcha la
+    // opcion desde DB scoped por tenantId y recomputa el priceDelta autoritativo.
+    const allOptionIds = body.items.flatMap(
+      (i) => i.modifiers?.map((m) => m.optionId) ?? [],
+    );
+    const optionMap = new Map<
+      string,
+      { id: string; name: string; groupId: string; priceDelta: number }
+    >();
+    if (allOptionIds.length > 0) {
+      const { ProductModifiersDB } = await import("@/lib/db/product-modifiers.db");
+      const opts = await ProductModifiersDB.getOptionsByIds(tenantId, allOptionIds);
+      for (const o of opts) {
+        optionMap.set(o.id, {
+          id: o.id,
+          name: o.name,
+          groupId: o.groupId,
+          priceDelta: o.priceDelta,
+        });
+      }
+    }
+    // Group meta lookup para snapshot
+    const groupNameMap = new Map<string, string>();
+    if (allOptionIds.length > 0) {
+      const groupIds = Array.from(
+        new Set(Array.from(optionMap.values()).map((o) => o.groupId)),
+      );
+      if (groupIds.length > 0) {
+        const groups = await prismaForTenant(tenantId).productModifierGroup.findMany({
+          where: { tenantId, id: { in: groupIds } },
+          select: { id: true, name: true },
+        });
+        for (const g of groups) groupNameMap.set(g.id, g.name);
+      }
+    }
+    // Calcular priceDelta por item (suma de modifiers validos)
+    const itemPriceDeltaMap = new Map<number, number>();
+    const itemModifierSnapshotMap = new Map<
+      number,
+      Array<{
+        groupId: string;
+        groupName: string;
+        optionId: string;
+        optionName: string;
+        priceDelta: number;
+      }>
+    >();
+    for (let idx = 0; idx < body.items.length; idx++) {
+      const item = body.items[idx];
+      const mods = item.modifiers ?? [];
+      let delta = 0;
+      const snapshot: Array<{
+        groupId: string;
+        groupName: string;
+        optionId: string;
+        optionName: string;
+        priceDelta: number;
+      }> = [];
+      for (const m of mods) {
+        const opt = optionMap.get(m.optionId);
+        if (!opt) {
+          return NextResponse.json(
+            { error: "invalid_modifier", optionId: m.optionId },
+            { status: 400 },
+          );
+        }
+        delta += opt.priceDelta;
+        snapshot.push({
+          groupId: opt.groupId,
+          groupName: groupNameMap.get(opt.groupId) ?? "",
+          optionId: opt.id,
+          optionName: opt.name,
+          priceDelta: opt.priceDelta,
+        });
+      }
+      itemPriceDeltaMap.set(idx, delta);
+      if (snapshot.length > 0) itemModifierSnapshotMap.set(idx, snapshot);
+    }
+
     // ── Server-side total recomputation ─────────────────────────────────────
     // Always computed from DB prices × quantities — never from the client.
+    // Now includes priceDelta from validated modifiers.
     const itemsTotal = body.items.reduce(
-      (sum, i) => sum + (serverPriceMap.get(i.id) ?? 0) * i.quantity,
+      (sum, i, idx) =>
+        sum +
+        ((serverPriceMap.get(i.id) ?? 0) + (itemPriceDeltaMap.get(idx) ?? 0)) *
+          i.quantity,
       0,
     );
 
@@ -370,15 +461,22 @@ export const POST = withApiHandler("orders-create", async (req) => {
 
     // HOTFIX-001: price comes from serverPriceMap (DB), NOT body.items[i].price.
     // costMap was already populated above from the same authoritative query.
-    const orderItems = body.items.map(i => ({
-      id: i.id,
-      name: i.name,
-      price: serverPriceMap.get(i.id) ?? 0,
-      costPrice: costMap.get(i.id),
-      quantity: i.quantity,
-      unit: i.unit ?? "und",
-      image: i.image ?? "",
-    }));
+    // priceDelta de modifiers se suma al unit price autoritativo.
+    const orderItems = body.items.map((i, idx) => {
+      const basePrice = serverPriceMap.get(i.id) ?? 0;
+      const delta = itemPriceDeltaMap.get(idx) ?? 0;
+      const modifiersSnapshot = itemModifierSnapshotMap.get(idx);
+      return {
+        id: i.id,
+        name: i.name,
+        price: basePrice + delta,
+        costPrice: costMap.get(i.id),
+        quantity: i.quantity,
+        unit: i.unit ?? "und",
+        image: i.image ?? "",
+        modifiers: modifiersSnapshot,
+      };
+    });
     const totalCogs = orderItems.reduce((sum, i) => sum + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
 
     const order: DbOrder = {
