@@ -6,7 +6,7 @@
  * logo/banner propio.
  *
  * Composición compacta:
- *   - Gradient teal→ink + dot pattern
+ *   - Gradient tonal por categoría → ink + dot pattern
  *   - Avatar grande con la inicial del store
  *   - Wordmark "TIENDA BULEJE" arriba
  *
@@ -15,32 +15,59 @@
 
 import { Sparkles } from "@buleje/design-system/icons";
 
-export default function MiniBulejeBanner({ storeName }: { storeName: string }) {
+/**
+ * Mapeo categoría → tonalidad. Diferenciación visual instantánea sin
+ * crear nuevos colores en el DS — solo elige el var ya existente.
+ *
+ * Default: bodega usa --accent (teal) que sigue siendo la marca.
+ */
+const CATEGORY_BASE: Record<string, string> = {
+  bodega: "var(--accent)",
+  panaderia: "#d97706", // amber 600 — pan recién horneado
+  panaderías: "#d97706",
+  farmacia: "#0284c7", // sky 600 — confianza médica
+  licoreria: "#be123c", // rose 700 — vino/licor
+  licorería: "#be123c",
+  minimarket: "#7c3aed", // violet 600
+  abarrotes: "var(--accent)",
+  bebidas: "#0d9488", // teal 600
+  limpieza: "#0891b2", // cyan 600
+  frescos: "#16a34a", // green 600
+};
+
+function resolveBase(category?: string | null): string {
+  if (!category) return CATEGORY_BASE.bodega;
+  const key = category.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return CATEGORY_BASE[key] ?? CATEGORY_BASE.bodega;
+}
+
+export default function MiniBulejeBanner({
+  storeName,
+  category,
+}: {
+  storeName: string;
+  category?: string | null;
+}) {
   const initial = storeName.trim().charAt(0).toUpperCase();
+  const base = resolveBase(category);
+  // ID único por banner para evitar colisión de patterns SVG
+  const patternId = `mini-buleje-dots-${initial}-${(category ?? "x").replace(/[^a-z]/gi, "")}`;
   return (
     <div
       className="absolute inset-0 overflow-hidden"
       style={{
-        background:
-          "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 65%, #051418) 70%, #051418 100%)",
+        background: `linear-gradient(135deg, ${base} 0%, color-mix(in oklch, ${base} 65%, #051418) 70%, #051418 100%)`,
       }}
       aria-hidden
     >
       {/* Dot pattern */}
       <svg className="absolute inset-0 h-full w-full opacity-[0.18] mix-blend-soft-light">
         <defs>
-          <pattern
-            id={`mini-buleje-dots-${initial}`}
-            x="0"
-            y="0"
-            width="18"
-            height="18"
-            patternUnits="userSpaceOnUse"
-          >
+          <pattern id={patternId} x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
             <circle cx="2" cy="2" r="1.2" fill="white" />
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill={`url(#mini-buleje-dots-${initial})`} />
+        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
       </svg>
 
       {/* Decorative circles */}

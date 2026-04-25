@@ -314,24 +314,21 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         storeId={store.id || store.slug}
         name={ariaLabel}
         slug={store.slug}
-        // Sentinel para que el DS dispare renderImage incluso sin logo real;
-        // renderImage detecta el sentinel y muestra MiniBulejeBanner en su lugar.
-        imageUrl={store.logo || "__buleje_default__"}
+        imageUrl={store.logo}
         badges={badges}
         footer={footer}
-        renderImage={({ src, alt, className }) =>
-          src && src !== "__buleje_default__" ? (
-            <Image
-              src={src}
-              alt={alt}
-              fill
-              className={className}
-              sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
-            />
-          ) : (
-            <MiniBulejeBanner storeName={store.name} />
-          )
-        }
+        renderImage={({ src, alt, className }) => (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className={className}
+            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+          />
+        )}
+        renderImageFallback={() => (
+          <MiniBulejeBanner storeName={store.name} category={store.category} />
+        )}
       />
       {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
       <div className="absolute top-3 right-3 z-10">

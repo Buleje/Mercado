@@ -75,6 +75,13 @@ export interface StoreCardCanonicalProps {
    *   )}
    */
   renderImage?: (args: { src: string; alt: string; className: string }) => ReactNode;
+  /**
+   * Slot opcional usado cuando `imageUrl` es null/undefined.
+   * Reemplaza el StoreImagePlaceholder por el contenido custom — útil
+   * para mostrar un mini-banner de marca, color por categoría, etc.
+   * El consumidor recibe un wrapper con aspect-ratio fijo del card.
+   */
+  renderImageFallback?: () => ReactNode;
   /** Override de clases del contenedor raiz. */
   className?: string;
 }
@@ -109,6 +116,7 @@ export function StoreCardCanonical({
   variant = "default",
   href,
   renderImage,
+  renderImageFallback,
   className,
 }: StoreCardCanonicalProps) {
   const resolvedHref = href ?? `/marketplace/${slug}`;
@@ -152,6 +160,16 @@ export function StoreCardCanonical({
               className={imgClass}
             />
           )}
+        </div>
+      ) : renderImageFallback ? (
+        <div
+          className={cn(
+            "relative w-full overflow-hidden",
+            `aspect-[${STORE_CARD_RATIO}]`,
+            "bg-[var(--surface-sunken)]",
+          )}
+        >
+          {renderImageFallback()}
         </div>
       ) : (
         <StoreImagePlaceholder
