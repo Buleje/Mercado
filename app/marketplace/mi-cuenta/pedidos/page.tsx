@@ -4,17 +4,28 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import ReorderButton from "@/components/marketplace/ReorderButton";
+import ReorderOrderButton from "@/components/marketplace/ReorderOrderButton";
 import { EmptyState } from "@/components/ui-system/EmptyState";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface OrderItem {
+  productId: number;
+  name: string;
+  price: number;
+  quantity: number;
+  unit: string;
+  image?: string | null;
+}
 
 interface OrderSummary {
   id: string;
   total: number;
   status: "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado";
   itemsCount: number;
-  items: { name: string; quantity: number; unit: string }[];
+  storeSlug: string;
+  items: OrderItem[];
   createdAt: string;
 }
 
@@ -169,40 +180,54 @@ export default function PedidosPage() {
       </div>
 
       <ul className="space-y-3" aria-label="Lista de pedidos">
-        {orders.map((order) => (
-          <li
-            key={order.id}
-            className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {formatDate(order.createdAt)}
-                </p>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                  {order.itemsCount === 1
-                    ? "1 producto"
-                    : `${order.itemsCount} productos`}
-                  {order.items[0] ? ` — ${order.items[0].name}${order.itemsCount > 1 ? "..." : ""}` : ""}
-                </p>
+        {orders.map((order) => {
+          const canReorder = order.status !== "cancelado" && order.items.length > 0;
+          return (
+            <li
+              key={order.id}
+              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {formatDate(order.createdAt)}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    {order.itemsCount === 1
+                      ? "1 producto"
+                      : `${order.itemsCount} productos`}
+                    {order.items[0] ? ` — ${order.items[0].name}${order.itemsCount > 1 ? "..." : ""}` : ""}
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    S/ {order.total.toFixed(2)}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs font-medium",
+                      STATUS_STYLES[order.status] ?? STATUS_STYLES.pendiente,
+                    )}
+                  >
+                    {STATUS_LABELS[order.status] ?? order.status}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  S/ {order.total.toFixed(2)}
-                </span>
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-xs font-medium",
-                    STATUS_STYLES[order.status] ?? STATUS_STYLES.pendiente,
-                  )}
-                >
-                  {STATUS_LABELS[order.status] ?? order.status}
-                </span>
-              </div>
-            </div>
-          </li>
-        ))}
+              {/* MK-28: re-pedir un click */}
+              {canReorder && (
+                <div className="mt-3 flex justify-end border-t border-gray-100 pt-3 dark:border-gray-800">
+                  <ReorderOrderButton
+                    orderId={order.id}
+                    storeSlug={order.storeSlug}
+                    items={order.items}
+                  />
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

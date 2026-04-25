@@ -85,7 +85,7 @@ export default function OfferCountdown({
       >
         <Flame className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         <div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
+          <p className="text-xs font-bold uppercase tracking-wider">
             Termina en
           </p>
           <p className="text-2xl font-extrabold tabular-nums leading-none mt-0.5">
@@ -100,7 +100,7 @@ export default function OfferCountdown({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold tabular-nums",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
         isUrgent
           ? "bg-[var(--data-error,_#e11d48)]/10 text-[var(--data-error,_#e11d48)]"
           : "bg-[var(--accent-soft)] text-[var(--accent)]",

@@ -83,7 +83,7 @@ export function LastOrderBanner() {
       className="mb-6 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:flex sm:items-center sm:justify-between sm:gap-4"
     >
       <div className="min-w-0">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           Tu último pedido · {formatRelativeDate(last.createdAt)}
         </p>
         <p className="mt-1 truncate text-sm text-[var(--text-primary)]">

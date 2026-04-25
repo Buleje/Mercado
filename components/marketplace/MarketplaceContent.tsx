@@ -43,6 +43,7 @@ import AhorraMasMegaSection from "@/components/marketplace/home/AhorraMasMegaSec
 import ComparedProductsSection from "@/components/marketplace/home/ComparedProductsSection";
 import AsistenteHomeBanner from "@/components/marketplace/home/AsistenteHomeBanner";
 import VenderMiniCTA from "@/components/marketplace/home/VenderMiniCTA";
+import LiveOrderCounter from "@/components/marketplace/LiveOrderCounter";
 
 // Removidos (ronda A) — ahora en /tiendas o ronda B nav secundaria:
 // import MarketplaceFilters, { type MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
@@ -211,6 +212,11 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
           </Link>
         </section>
       )}
+
+      {/* MK-62: live counter de pedidos como social proof city-level */}
+      <div className="border-t border-[var(--rule-soft)]">
+        <LiveOrderCounter variant="footer" />
+      </div>
 
       {/* ── CTA editorial: Register Your Store ─────────────────────────── */}
       <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">

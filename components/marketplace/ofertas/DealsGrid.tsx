@@ -22,27 +22,50 @@ const pen = new Intl.NumberFormat("es-PE", {
   currency: "PEN",
 });
 
+// MK-38: countdown con tiers de urgencia.
+//   • >1d: gris, "Termina en Xd Yh"
+//   • 1h-24h: accent, "HH:MM restantes"
+//   • <1h: rojo + pulse + segundos visibles
+//   • Vencida: tachado discreto
 function DealTimeLabel({ endsAt }: { endsAt: string }) {
-  const { days, hours, minutes, expired } = useDealsCountdown(endsAt);
+  const { days, hours, minutes, seconds, expired } = useDealsCountdown(endsAt);
+
   if (expired) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
+        <Clock className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
         Vencida
       </span>
     );
   }
+
   if (days > 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
-        <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
+        <Clock className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
         Termina en {days}d {hours}h
       </span>
     );
   }
+
+  // ── Última hora — modo urgente ──
+  if (hours === 0 && minutes < 60) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2 py-1 text-xs font-bold tabular-nums uppercase tracking-wider text-rose-600 dark:bg-rose-950/30 dark:text-rose-400"
+        aria-live="polite"
+      >
+        <Clock className="h-3.5 w-3.5 animate-pulse" strokeWidth={2} aria-hidden />
+        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+        <span className="font-semibold">restantes</span>
+      </span>
+    );
+  }
+
+  // ── Mismo día, fuera de la última hora — accent ──
   return (
-    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)] uppercase tracking-wider">
-      <Clock className="h-3 w-3" strokeWidth={2} aria-hidden />
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold tabular-nums uppercase tracking-wider text-[var(--accent)]">
+      <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
       {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")} restantes
     </span>
   );
@@ -100,13 +123,13 @@ export default function DealsGrid({ deals }: DealsGridProps) {
               className="group relative block rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5 transition-all duration-300 motion-reduce:hover:translate-y-0"
             >
               {/* Badge descuento — accent solido */}
-              <span className="absolute top-2 left-2 z-10 inline-flex items-center justify-center rounded-md px-2 py-1 text-[length:var(--ts-xs)] font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md">
+              <span className="absolute top-2 left-2 z-10 inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md">
                 -{deal.discountPct}%
               </span>
 
               {/* Flash badge (top-right) — solo para deals con isFlash */}
               {deal.isFlash && (
-                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--surface-canvas)]">
+                <span className="absolute top-2 right-2 z-10 inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--surface-canvas)]">
                   Flash
                 </span>
               )}
@@ -120,20 +143,20 @@ export default function DealsGrid({ deals }: DealsGridProps) {
 
               {/* Info */}
               <div className="p-3 sm:p-4">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   {deal.category}
                 </p>
-                <h3 className="mt-0.5 text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
+                <h3 className="mt-0.5 text-sm font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
                   {deal.name}
                 </h3>
-                <p className="mt-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-clamp-1">
+                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] line-clamp-1">
                   {deal.storeName} &middot; {deal.unit}
                 </p>
                 <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
-                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-through tabular-nums">
+                  <span className="text-xs text-[var(--text-tertiary)] line-through tabular-nums">
                     {pen.format(deal.previousPrice)}
                   </span>
-                  <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent)]">
+                  <span className="text-xs font-bold tabular-nums text-[var(--accent)]">
                     Ahorra {pen.format(ahorro)}
                   </span>
                 </div>

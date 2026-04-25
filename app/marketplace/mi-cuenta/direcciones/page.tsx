@@ -2,10 +2,31 @@
 
 import { useState, useCallback } from "react";
 import { z } from "zod/v4";
+import { Home, Briefcase, Heart, MapPin, Star } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import type { SavedLocation } from "@/contexts/customer-context";
 import { EmptyState } from "@/components/ui-system/EmptyState";
 import { cn } from "@/lib/utils";
+
+// MK-33: detección heurística de etiqueta + icono según el nombre.
+// Sin cambios de schema — funciona client-only sobre el campo `location`.
+function getLocationKind(label: string): {
+  Icon: React.ElementType;
+  tag: string;
+  color: string;
+} {
+  const t = label.toLowerCase();
+  if (/\bcasa\b|\bhome\b|\bdepa\b|\bdepartamento\b/.test(t)) {
+    return { Icon: Home, tag: "Casa", color: "text-[var(--data-success)]" };
+  }
+  if (/\boficina\b|\btrabajo\b|\boffice\b|\bwork\b/.test(t)) {
+    return { Icon: Briefcase, tag: "Trabajo", color: "text-blue-600" };
+  }
+  if (/\bmam[aá]\b|\bpap[aá]\b|\babuel[oa]\b|\bfamilia\b/.test(t)) {
+    return { Icon: Heart, tag: "Familia", color: "text-pink-600" };
+  }
+  return { Icon: MapPin, tag: "Otro", color: "text-[var(--text-tertiary)]" };
+}
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
@@ -221,6 +242,8 @@ export default function DireccionesPage() {
         <ul className="space-y-3" aria-label="Direcciones guardadas">
           {locations.map((loc) => {
             const isActive = customer?.activeLocationId === loc.id;
+            const kind = getLocationKind(loc.location);
+            const KindIcon = kind.Icon;
             return (
               <li
                 key={loc.id}
@@ -231,16 +254,35 @@ export default function DireccionesPage() {
                     : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900",
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {loc.location}
-                    </p>
+                <div className="flex items-start gap-3">
+                  {/* MK-33: icono por tipo de dirección */}
+                  <div className={cn(
+                    "shrink-0 h-10 w-10 rounded-xl border flex items-center justify-center",
+                    isActive
+                      ? "bg-white border-[#2d6a4f]/30 dark:bg-gray-900"
+                      : "bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700",
+                  )}>
+                    <KindIcon className={cn("h-4 w-4", kind.color)} strokeWidth={1.75} aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {loc.location}
+                      </p>
+                      <span className={cn(
+                        "inline-flex items-center text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5",
+                        kind.color,
+                        "bg-current/10",
+                      )}>
+                        {kind.tag}
+                      </span>
+                    </div>
                     <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                       {loc.reference}
                     </p>
                     {isActive && (
-                      <span className="mt-1 inline-block text-xs font-medium text-[#2d6a4f] dark:text-[#52b788]">
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#2d6a4f] dark:text-[#52b788]">
+                        <Star className="h-3 w-3 fill-current" strokeWidth={1.75} aria-hidden />
                         Principal
                       </span>
                     )}
