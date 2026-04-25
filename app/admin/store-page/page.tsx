@@ -12,8 +12,10 @@ import {
   Percent,
   Boxes,
   Gamepad2,
+  Sparkles,
 } from "@buleje/design-system/icons";
 import AppearanceTab from "./_components/AppearanceTab";
+import MarketplaceBrandingTab from "./_components/MarketplaceBrandingTab";
 import ProductsTab from "./_components/ProductsTab";
 import PromotionsTab from "./_components/PromotionsTab";
 import AnalyticsTab from "./_components/AnalyticsTab";
@@ -22,10 +24,11 @@ import DiscountsTab from "./_components/DiscountsTab";
 import EngagementTab from "./_components/EngagementTab";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 
-type TabId = "appearance" | "products" | "promotions" | "combos" | "discounts" | "engagement" | "analytics";
+type TabId = "appearance" | "branding" | "products" | "promotions" | "combos" | "discounts" | "engagement" | "analytics";
 
 const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
   { id: "appearance", label: "Apariencia", icon: Palette },
+  { id: "branding", label: "Branding Marketplace", icon: Sparkles },
   { id: "products", label: "Productos", icon: Package },
   { id: "combos", label: "Combos", icon: Boxes },
   { id: "discounts", label: "Descuentos", icon: Percent },
@@ -101,6 +104,7 @@ export default function StorePageAdminPage() {
       {/* Tab content */}
       <div>
         {tab === "appearance" && <AppearanceTab />}
+        {tab === "branding" && <MarketplaceBrandingTab />}
         {tab === "products" && <ProductsTab />}
         {tab === "combos" && <CombosTab />}
         {tab === "discounts" && <DiscountsTab />}
