@@ -12,7 +12,9 @@
 import { useCallback } from "react";
 import { Heart } from "@buleje/design-system/icons";
 import { useFollowedStores } from "@/hooks/use-followed-stores";
+import { useCustomer } from "@/contexts/customer-context";
 import { useToast } from "@/contexts/toast-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -29,6 +31,7 @@ export default function FollowStoreButton({
   className,
 }: Props) {
   const { isFollowing, toggle } = useFollowedStores();
+  const { customer } = useCustomer();
   const { showToast } = useToast();
   const following = isFollowing(slug);
 
@@ -42,8 +45,21 @@ export default function FollowStoreButton({
         willFollow ? `Sigues a ${storeName}` : `Dejaste de seguir a ${storeName}`,
         willFollow ? "Te avisaremos cuando tenga ofertas." : "",
       );
+      // TS-15-svr fire-and-forget — server registra para analytics + push futuro
+      const phone = customer?.phone ?? null;
+      fetch(`/api/marketplace/follow/${encodeURIComponent(slug)}`, {
+        method: willFollow ? "POST" : "DELETE",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(phone ? { phone } : {}),
+        keepalive: true,
+      }).catch((err: unknown) => {
+        // ignorar — UX no bloqueada por errores de red, localStorage ya guardó
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[follow-store] sync failed", err);
+        }
+      });
     },
-    [following, showToast, slug, storeName, toggle],
+    [customer?.phone, following, showToast, slug, storeName, toggle],
   );
 
   if (variant === "labeled") {

@@ -274,6 +274,13 @@ export function getLiveNow(): LiveSession | null {
   return LIVES_MOCK.find((l) => l.status === "live") ?? null;
 }
 
+/** Todos los lives activos. Para strips multi-store. */
+export function getLivesNow(): LiveSession[] {
+  return LIVES_MOCK.filter((l) => l.status === "live").sort(
+    (a, b) => (b.viewers ?? 0) - (a.viewers ?? 0),
+  );
+}
+
 export function getUpcomingLives(): LiveSession[] {
   return LIVES_MOCK.filter((l) => l.status === "upcoming").sort(
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),

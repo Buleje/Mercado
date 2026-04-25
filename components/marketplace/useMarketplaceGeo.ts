@@ -25,6 +25,9 @@ export interface MarketplaceStore {
   freeDelivery?: boolean;
   deliveryMinutes?: number;
   activePromos?: number;
+  // ── TS-02 horarios derivados de Settings.autoCloseTime ──
+  openHours?: Array<{ open: number; openMin: number; close: number; closeMin: number }> | null;
+  isOpenNow?: boolean;
 }
 
 /* ── Zone approximate coords for Pucallpa (geo fallback) ───────────────────── */

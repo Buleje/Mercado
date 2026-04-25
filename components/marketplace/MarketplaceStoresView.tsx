@@ -25,6 +25,11 @@ import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { Plane } from "lucide-react";
 import { StoreCardCanonical } from "@buleje/design-system";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
+import {
+  useLastOrdersByStore,
+  formatDaysAgo,
+  type LastOrderInfo,
+} from "@/hooks/use-last-orders-by-store";
 
 /* ── Category config ───────────────────────────────────────────────────────── */
 
@@ -92,7 +97,15 @@ function CategoryIconRenderer({ id, className }: { id: string; className?: strin
  * No reemplaza la logica de negocio de hover-preview: esa logica vive aqui
  * porque es especifica de esta vista y el DS canonical no la incluye.
  */
-const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { store: MarketplaceStore; index: number }) {
+const StoreCardWrapper = memo(function StoreCardWrapper({
+  store,
+  index,
+  lastOrder,
+}: {
+  store: MarketplaceStore;
+  index: number;
+  lastOrder?: LastOrderInfo;
+}) {
   const categoryMeta = CATEGORIES.find((c) => c.id === store.category) ?? CATEGORIES[0];
   const [preview, setPreview] = useState<ProductPreview[]>([]);
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -125,6 +138,13 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
           {store.rating.toFixed(1)}
         </span>
       )}
+      {/* TS-08 historial — badge de últimos pedidos del cliente en esta tienda */}
+      {lastOrder && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-xs font-bold text-[var(--accent)]">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          {formatDaysAgo(lastOrder.daysAgo)}
+        </span>
+      )}
       {/* TS-33 ofertas activas — high attention badge */}
       {store.activePromos != null && store.activePromos > 0 && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-700 dark:text-rose-300">
@@ -140,6 +160,13 @@ const StoreCardWrapper = memo(function StoreCardWrapper({ store, index }: { stor
       {store.freeDelivery && (
         <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300">
           Sin mínimo
+        </span>
+      )}
+      {/* TS-02 abierta ahora — solo cuando el dato está disponible y es false */}
+      {(store as { isOpenNow?: boolean }).isOpenNow === false && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+          Cerrado
         </span>
       )}
       {/* Vacation — ultimo (solo si aplica, warning visual claro) */}
@@ -449,6 +476,9 @@ export default function MarketplaceStoresView({
 }: MarketplaceStoresViewProps) {
   const chips = activeChips ?? new Set<QuickChipId>();
 
+  // TS-08 — mapa storeSlug → último pedido del cliente (cache 5min)
+  const lastOrdersByStore = useLastOrdersByStore();
+
   // Apply chip filters on top of whatever geo/category filtering already happened
   const filteredStores =
     chips.size === 0
@@ -561,7 +591,11 @@ export default function MarketplaceStoresView({
         >
           {filteredStores.map((store, i) => (
             <div key={store.id} role="listitem">
-              <StoreCardWrapper store={store} index={i} />
+              <StoreCardWrapper
+                store={store}
+                index={i}
+                lastOrder={lastOrdersByStore[store.slug]}
+              />
             </div>
           ))}
         </div>

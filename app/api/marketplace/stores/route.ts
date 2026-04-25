@@ -212,14 +212,59 @@ export async function GET(req: NextRequest) {
       ),
     ];
 
+    interface DayHours {
+      open: number;
+      openMin: number;
+      close: number;
+      closeMin: number;
+    }
+
     interface MarketplaceMeta {
       paymentMethods: string[];
       minOrderAmount: number;
       freeDelivery: boolean;
       deliveryMinutes: number;
       activePromos: number;
+      openHours: DayHours[] | null;
+      isOpenNow: boolean;
     }
     const metaByTenant = new Map<TenantId, MarketplaceMeta>();
+
+    // ── TS-02 helpers ────────────────────────────────────────────────────────
+    function parseHHMM(s: string | null | undefined): { h: number; m: number } | null {
+      if (!s || typeof s !== "string") return null;
+      const m = /^([0-2]?\d):([0-5]\d)$/.exec(s.trim());
+      if (!m) return null;
+      const h = Number(m[1]);
+      const min = Number(m[2]);
+      if (h > 24 || min > 59) return null;
+      return { h, m: min };
+    }
+
+    function buildOpenHours(close: string | null | undefined): DayHours[] | null {
+      const c = parseHHMM(close);
+      if (!c) return null;
+      // Bodegas Pucallpa default: abre 08:00, cierra autoCloseTime.
+      // Mismo horario los 7 días — heurística realista hasta que cada Store
+      // configure horarios propios.
+      return Array.from({ length: 7 }, () => ({
+        open: 8,
+        openMin: 0,
+        close: c.h,
+        closeMin: c.m,
+      }));
+    }
+
+    function computeIsOpenNow(hours: DayHours[] | null): boolean {
+      if (!hours) return true; // sin info, no penalizar
+      const now = new Date();
+      const today = hours[now.getDay()];
+      if (!today) return false;
+      const minutesNow = now.getHours() * 60 + now.getMinutes();
+      const open = today.open * 60 + today.openMin;
+      const close = today.close * 60 + today.closeMin;
+      return minutesNow >= open && minutesNow < close;
+    }
 
     if (tenantIds.length > 0) {
       const [settings, promoCounts] = await Promise.all([
@@ -230,6 +275,7 @@ export async function GET(req: NextRequest) {
               tenantId: true,
               freeDeliveryMin: true,
               deliveryZonesJson: true,
+              autoCloseTime: true,
             },
           })
           .catch((e: unknown) => {
@@ -238,6 +284,7 @@ export async function GET(req: NextRequest) {
               tenantId: string;
               freeDeliveryMin: unknown;
               deliveryZonesJson: string | null;
+              autoCloseTime: string | null;
             }>;
           }),
         prisma.promotion
@@ -277,6 +324,10 @@ export async function GET(req: NextRequest) {
         } catch {
           // ignorar JSON parse — usar default
         }
+
+        const openHours = buildOpenHours(ts?.autoCloseTime ?? "22:00");
+        const isOpenNow = computeIsOpenNow(openHours);
+
         metaByTenant.set(tid, {
           // Default Pucallpa: bodegas aceptan Yape + efectivo. Ampliable por config futura.
           paymentMethods: ["yape", "efectivo"],
@@ -284,6 +335,8 @@ export async function GET(req: NextRequest) {
           freeDelivery: minOrderAmount === 0,
           deliveryMinutes,
           activePromos: promosByTenant.get(tid) ?? 0,
+          openHours,
+          isOpenNow,
         });
       }
     }
@@ -300,6 +353,8 @@ export async function GET(req: NextRequest) {
         freeDelivery: true,
         deliveryMinutes: 30,
         activePromos: 0,
+        openHours: null,
+        isOpenNow: true,
       };
       return {
         id: s.id,
@@ -326,6 +381,8 @@ export async function GET(req: NextRequest) {
         freeDelivery:    meta.freeDelivery,
         deliveryMinutes: meta.deliveryMinutes,
         activePromos:    meta.activePromos,
+        openHours:       meta.openHours,
+        isOpenNow:       meta.isOpenNow,
       };
     });
 

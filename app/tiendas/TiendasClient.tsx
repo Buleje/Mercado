@@ -43,6 +43,7 @@ import StoresSortSelector, {
 } from "@/components/marketplace/StoresSortSelector";
 import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
+import LivesStrip from "@/components/marketplace/LivesStrip";
 import dynamic from "next/dynamic";
 
 const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), {
@@ -305,6 +306,9 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
           </div>
         </div>
       </section>
+
+      {/* ── TS-30 Lives en vivo (silencioso si no hay) ──────────────────── */}
+      <LivesStrip />
 
       {/* ── TS-16 Tus tiendas frecuentes ──────────────────────────────── */}
       <TusTiendasStrip />
