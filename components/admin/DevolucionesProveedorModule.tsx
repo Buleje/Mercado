@@ -1,9 +1,10 @@
 "use client";
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download } from "@buleje/design-system/icons";
+import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
@@ -81,14 +82,29 @@ export default function DevolucionesProveedorModule() {
   const [guardando, setGuardando] = useState(false);
   const [showReportes, setShowReportes] = useState(false);
 
-  // Cargar devoluciones desde la API
+  // Cargar devoluciones con cache localStorage SWR (TTL 60s)
   const fetchDevoluciones = useCallback(async () => {
+    const KEY = "admin-devoluciones-cache";
+    const TTL = 60 * 1000;
+    // Hidratar de cache primero
+    try {
+      const cached = localStorage.getItem(KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached) as { data: Devolucion[]; ts: number };
+        if (Array.isArray(data)) {
+          setDevoluciones(data);
+          setLoading(false);
+          if (Date.now() - ts < TTL) return;
+        }
+      }
+    } catch { /* ignore */ }
     setLoading(true);
     try {
       const res = await fetch("/api/supplier-returns");
       if (res.ok) {
         const data = await res.json();
         setDevoluciones(data);
+        try { localStorage.setItem(KEY, JSON.stringify({ data, ts: Date.now() })); } catch { /* quota */ }
       }
     } catch {
       // silencioso
@@ -194,7 +210,7 @@ export default function DevolucionesProveedorModule() {
       const proveedor = proveedores.find(p => p.id === proveedorId);
       const res = await fetch("/api/supplier-returns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           proveedorId,
           proveedorNombre: proveedor?.name ?? proveedorId,
@@ -227,7 +243,7 @@ export default function DevolucionesProveedorModule() {
     try {
       const res = await fetch(`/api/supplier-returns/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ estado: siguiente }),
       });
       if (res.ok) {
@@ -244,7 +260,7 @@ export default function DevolucionesProveedorModule() {
   async function eliminar(id: string) {
     setActionId(id);
     try {
-      const res = await fetch(`/api/supplier-returns/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/supplier-returns/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (res.ok) {
         setDevoluciones(prev => prev.filter(d => d.id !== id));
       }
@@ -294,20 +310,74 @@ export default function DevolucionesProveedorModule() {
         </div>
       </AdminModuleHeader>
 
-      {/* KPI chips */}
+      {/* KPI summary 4 cards minimalistas */}
+      {!loading && devoluciones.length > 0 && (() => {
+        const totalItems = devoluciones.reduce((s, d) => s + d.items.reduce((a, i) => a + i.cantidad, 0), 0);
+        const mesActual = new Date().toISOString().slice(0, 7);
+        const totalMes = devoluciones.filter(d => d.createdAt.startsWith(mesActual)).length;
+        return (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{devoluciones.length}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">devoluciones registradas</p>
+              </div>
+              <RotateCcw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+            </div>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
+                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">{conteos.ENVIADA} enviadas</p>
+              </div>
+              <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning)]" : "text-[var(--text-tertiary)]")} />
+            </div>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resueltas</p>
+                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success)]">{conteos.RESUELTA}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">{devoluciones.length > 0 ? Math.round((conteos.RESUELTA / devoluciones.length) * 100) : 0}% completadas</p>
+              </div>
+              <CheckCircle2 className="h-5 w-5 text-[var(--data-success)] shrink-0" />
+            </div>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Items mes</p>
+                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{totalItems}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">{totalMes} devoluciones este mes</p>
+              </div>
+              <Package className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Filter pills uniformes */}
       <div className="flex flex-wrap gap-2">
-        {(["", "PENDIENTE", "ENVIADA", "RESUELTA"] as const).map(estado => (
+        {([
+          { id: "",          label: "Todas",     count: devoluciones.length    },
+          { id: "PENDIENTE", label: "Pendientes", count: conteos.PENDIENTE      },
+          { id: "ENVIADA",   label: "Enviadas",   count: conteos.ENVIADA        },
+          { id: "RESUELTA",  label: "Resueltas",  count: conteos.RESUELTA       },
+        ] as const).map(p => (
           <button
-            key={estado}
-            onClick={() => setFiltroEstado(estado as DevolucionEstado | "")}
+            key={p.id}
+            onClick={() => setFiltroEstado(p.id as DevolucionEstado | "")}
             className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors min-h-[36px]",
-              filtroEstado === estado
-                ? "bg-primary text-white border-primary"
-                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:bg-gray-50"
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
+              filtroEstado === p.id
+                ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
+                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
-            {estado === "" ? `Todas (${devoluciones.length})` : `${estado} (${conteos[estado as DevolucionEstado]})`}
+            {p.label}
+            <span className={cn(
+              "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
+              filtroEstado === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
+            )}>
+              {p.count}
+            </span>
           </button>
         ))}
       </div>

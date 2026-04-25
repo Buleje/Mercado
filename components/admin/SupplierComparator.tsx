@@ -224,6 +224,25 @@ export default function SupplierComparator() {
     }
   }, []);
 
+  // KPIs globales del scoring (antes de los early returns para no violar
+  // rules-of-hooks)
+  const kpis = useMemo(() => {
+    if (suppliers.length === 0) return { topName: "—", topScore: 0, avgScore: 0, lowestPrice: null as number | null, lowestPriceName: "—" };
+    const sortedByScore = [...suppliers].sort((a, b) => b.score - a.score);
+    const top = sortedByScore[0];
+    const avgScore = Math.round(suppliers.reduce((s, x) => s + x.score, 0) / suppliers.length);
+    const withPrice = suppliers.filter(s => (s.averagePurchasePrice ?? 0) > 0);
+    const sortedByPrice = [...withPrice].sort((a, b) => (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0));
+    const cheapest = sortedByPrice[0];
+    return {
+      topName: top.name,
+      topScore: Math.round(top.score),
+      avgScore,
+      lowestPrice: cheapest?.averagePurchasePrice ?? null,
+      lowestPriceName: cheapest?.name ?? "—",
+    };
+  }, [suppliers]);
+
   // ── Loading ──
   if (loading) {
     return (
@@ -261,6 +280,47 @@ export default function SupplierComparator() {
           <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
         </button>
       </div>
+
+      {/* KPI summary 4 cards */}
+      {suppliers.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Top proveedor</p>
+              <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">Score {kpis.topScore}/100</p>
+            </div>
+            <Star className="h-5 w-5 text-[var(--data-warning)] fill-[var(--data-warning)] shrink-0" />
+          </div>
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Score promedio</p>
+              <p className={cn(
+                "text-2xl font-extrabold tabular-nums leading-none mt-1.5",
+                kpis.avgScore >= 70 ? "text-[var(--data-success)]" : kpis.avgScore >= 50 ? "text-[var(--data-warning)]" : "text-[var(--data-error)]"
+              )}>{kpis.avgScore}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">de 100 puntos</p>
+            </div>
+            <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+          </div>
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">proveedores evaluados</p>
+            </div>
+            <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+          </div>
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
+              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${kpis.lowestPrice.toFixed(2)}` : "—"}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1 truncate">{kpis.lowestPriceName}</p>
+            </div>
+            <RefreshCw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+          </div>
+        </div>
+      )}
 
       {/* Filter & Sort */}
       <div className="flex flex-wrap gap-3 items-center">
