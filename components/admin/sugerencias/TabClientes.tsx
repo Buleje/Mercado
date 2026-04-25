@@ -18,6 +18,7 @@ interface Recommendation {
   price: number;
   reason?: string;
   imageUrl?: string;
+  image?: string;
 }
 
 function fmt(n: number): string {
@@ -195,7 +196,7 @@ export default function TabClientes() {
                     key={String(r.productId)}
                     className="rounded-xl border border-[var(--rule-base)] bg-white p-4 flex items-center gap-3"
                   >
-                    <ProductImage name={r.name} imageUrl={r.imageUrl} size="md" rounded="lg" />
+                    <ProductImage name={r.name} imageUrl={r.imageUrl ?? r.image} size="md" rounded="lg" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">
                         {r.name}

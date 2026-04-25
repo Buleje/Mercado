@@ -9,6 +9,7 @@ interface SaleItem {
   name?: string;
   price?: number;
   imageUrl?: string;
+  image?: string;
 }
 
 interface SaleRecord {
@@ -39,8 +40,8 @@ function buildCombos(sales: SaleRecord[]): ComboPair[] {
         const ia = items[a];
         const ib = items[b];
         const sorted = [
-          { name: ia.name!, price: ia.price ?? 0, image: ia.imageUrl },
-          { name: ib.name!, price: ib.price ?? 0, image: ib.imageUrl },
+          { name: ia.name!, price: ia.price ?? 0, image: ia.imageUrl ?? ia.image },
+          { name: ib.name!, price: ib.price ?? 0, image: ib.imageUrl ?? ib.image },
         ].sort((x, y) => x.name.localeCompare(y.name));
         const key = `${sorted[0].name}|||${sorted[1].name}`;
         const prev = coMap[key];

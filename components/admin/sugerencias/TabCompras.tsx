@@ -22,6 +22,7 @@ interface Product {
   category: string;
   unit?: string;
   imageUrl?: string;
+  image?: string;
 }
 
 interface SaleData {
@@ -302,7 +303,7 @@ export default function TabCompras() {
               >
                 <ProductImage
                   name={item.product.name}
-                  imageUrl={item.product.imageUrl}
+                  imageUrl={item.product.imageUrl ?? item.product.image}
                   size="lg"
                   rounded="xl"
                 />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Sparkles, GitMerge, ShoppingCart, Megaphone, Users, Home } from "@buleje/design-system/icons";
+import { Sparkles, GitMerge, ShoppingCart, Megaphone, Users, Home, Calendar } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
@@ -17,15 +17,17 @@ const TabCombos = dynamic(() => import("@/components/admin/sugerencias/TabCombos
 const TabCompras = dynamic(() => import("@/components/admin/sugerencias/TabCompras"), { ssr: false, loading: Spinner });
 const TabVentas = dynamic(() => import("@/components/admin/sugerencias/TabVentas"), { ssr: false, loading: Spinner });
 const TabClientes = dynamic(() => import("@/components/admin/sugerencias/TabClientes"), { ssr: false, loading: Spinner });
+const TabEstrategias = dynamic(() => import("@/components/admin/sugerencias/TabEstrategias"), { ssr: false, loading: Spinner });
 
 const MODULE_ID = "sugerencias-ia";
 
 const TABS = [
-  { id: "hoy",      label: "Hoy",            icon: Home },
-  { id: "combos",   label: "Combos",         icon: GitMerge },
-  { id: "compras",  label: "Qué comprar",    icon: ShoppingCart },
-  { id: "ventas",   label: "Qué vender",     icon: Megaphone },
-  { id: "clientes", label: "Para clientes",  icon: Users },
+  { id: "hoy",          label: "Hoy",            icon: Home },
+  { id: "combos",       label: "Combos",         icon: GitMerge },
+  { id: "compras",      label: "Qué comprar",    icon: ShoppingCart },
+  { id: "ventas",       label: "Qué vender",     icon: Megaphone },
+  { id: "estrategias",  label: "Estrategias",    icon: Calendar },
+  { id: "clientes",     label: "Para clientes",  icon: Users },
 ];
 
 interface Props {
@@ -45,11 +47,12 @@ export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
         moduleId={MODULE_ID}
       >
         <div className="pt-4">
-          {tab === "hoy"      && <TabHoy onTabChange={setTab} />}
-          {tab === "combos"   && <TabCombos />}
-          {tab === "compras"  && <TabCompras />}
-          {tab === "ventas"   && <TabVentas />}
-          {tab === "clientes" && <TabClientes />}
+          {tab === "hoy"          && <TabHoy onTabChange={setTab} />}
+          {tab === "combos"       && <TabCombos />}
+          {tab === "compras"      && <TabCompras />}
+          {tab === "ventas"       && <TabVentas />}
+          {tab === "estrategias"  && <TabEstrategias />}
+          {tab === "clientes"     && <TabClientes />}
         </div>
       </AdminTabBar>
     </div>

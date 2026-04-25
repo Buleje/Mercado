@@ -12,6 +12,7 @@ interface Product {
   price: number;
   cost?: number;
   imageUrl?: string;
+  image?: string;
 }
 
 interface SaleData {
@@ -158,7 +159,7 @@ export default function TabVentas() {
                   <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--text-primary)] text-white text-xs font-extrabold tabular-nums">
                     {idx + 1}
                   </span>
-                  <ProductImage name={i.product.name} imageUrl={i.product.imageUrl} size="sm" rounded="lg" />
+                  <ProductImage name={i.product.name} imageUrl={i.product.imageUrl ?? i.product.image} size="sm" rounded="lg" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] truncate">{i.product.name}</p>
                     <p className="text-[11px] font-medium text-[var(--text-secondary)]">
@@ -216,7 +217,7 @@ export default function TabVentas() {
                     key={String(i.product.id)}
                     className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3"
                   >
-                    <ProductImage name={i.product.name} imageUrl={i.product.imageUrl} size="sm" rounded="lg" />
+                    <ProductImage name={i.product.name} imageUrl={i.product.imageUrl ?? i.product.image} size="sm" rounded="lg" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">{i.product.name}</p>
                       <p className="text-[11px] font-medium text-[var(--text-secondary)]">

@@ -19,6 +19,7 @@ interface SaleItem {
   price?: number;
   quantity?: number;
   imageUrl?: string;
+  image?: string;
 }
 
 interface SaleRecord {
@@ -67,15 +68,15 @@ function buildSnapshot(sales: SaleRecord[]): DailySnapshot {
       productSales[k] = {
         qty: prev.qty + (it.quantity ?? 1),
         rev: prev.rev + (it.price ?? 0) * (it.quantity ?? 1),
-        image: prev.image ?? it.imageUrl,
+        image: prev.image ?? it.imageUrl ?? it.image,
       };
     }
     if (items.length < 2) continue;
     for (let a = 0; a < items.length; a++) {
       for (let b = a + 1; b < items.length; b++) {
         const sorted = [
-          { name: items[a].name!, price: items[a].price ?? 0, image: items[a].imageUrl },
-          { name: items[b].name!, price: items[b].price ?? 0, image: items[b].imageUrl },
+          { name: items[a].name!, price: items[a].price ?? 0, image: items[a].imageUrl ?? items[a].image },
+          { name: items[b].name!, price: items[b].price ?? 0, image: items[b].imageUrl ?? items[b].image },
         ].sort((x, y) => x.name.localeCompare(y.name));
         const key = `${sorted[0].name}|||${sorted[1].name}`;
         const prev = co[key];
@@ -137,7 +138,7 @@ export default function TabHoy({ onTabChange }: Props) {
 
       if (prodRes.ok) {
         const data = await prodRes.json();
-        const prods = (data.products ?? []) as Array<{ name: string; stock?: number; stockMin?: number; imageUrl?: string }>;
+        const prods = (data.products ?? []) as Array<{ name: string; stock?: number; stockMin?: number; imageUrl?: string; image?: string }>;
         const urgent = prods
           .filter((p) => (p.stock ?? 0) < (p.stockMin ?? 0))
           .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))[0];
@@ -146,7 +147,7 @@ export default function TabHoy({ onTabChange }: Props) {
             name: urgent.name,
             stock: urgent.stock ?? 0,
             daysLeft: Math.max(0, Math.floor((urgent.stock ?? 0) / 2)),
-            imageUrl: urgent.imageUrl,
+            imageUrl: urgent.imageUrl ?? urgent.image,
           };
         }
       }
