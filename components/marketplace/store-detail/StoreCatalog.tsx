@@ -5,23 +5,26 @@
  *
  * Filtros: categoría (chips externos via prop), sort, búsqueda.
  * Grid: 2 cols mobile / 3 tablet / 4 desktop.
- * Product tile reutilizable, CanastaVacia cuando vacío.
+ * Reutiliza UnifiedProductCard del marketplace para tener el mismo
+ * carrito + AddedToCartDrawer modal en toda la PDP de tienda.
  *
  * REGLA: No calcula totales — usa retailPrice directo (backend lo validó).
  * Evitar setState en useEffect — usar event handlers (lint rule hooks/set-state-in-effect).
  */
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { Search, LayoutGrid, List, Star, Plus } from "@buleje/design-system/icons";
-import { ProductPrice, ProductBadge } from "@buleje/design-system";
+import Link from "next/link";
+import { Search, LayoutGrid, List } from "@buleje/design-system/icons";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { cn } from "@/lib/utils";
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import type { DbStoreProduct } from "@/lib/db/marketplace.db";
 
 interface StoreCatalogProps {
   storeSlug: string;
+  storeName: string;
+  storeId: string;
   products: DbStoreProduct[];
   /** Categoría activa desde StoreCategories (prop-driven, no local state) */
   activeCategory: string | null;
@@ -39,107 +42,48 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
-function ProductTile({
+function ProductListRow({
   product,
   storeSlug,
-  view,
 }: {
   product: DbStoreProduct;
   storeSlug: string;
-  view: "grid" | "list";
 }) {
   const href = `/marketplace/${storeSlug}/producto/${product.id}`;
-  const price = product.retailPrice;
-
-  if (view === "list") {
-    return (
-      <Link
-        href={href}
-        className="flex gap-4 items-center p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 transition-colors group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-      >
-        {/* Image */}
-        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-          {product.productImage ? (
-            <Image
-              src={product.productImage}
-              alt={product.productName}
-              width={64}
-              height={64}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-gray-600 text-center leading-tight px-1">
-              {product.productCategory}
-            </span>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
-            {product.productName}
-          </p>
-          {product.productUnit && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              {product.productUnit}
-            </p>
-          )}
-        </div>
-
-        {/* Price */}
-        <div className="flex-shrink-0 text-right">
-          <p className="text-sm font-bold text-gray-900 dark:text-white">
-            {fmt(price)}
-          </p>
-        </div>
-      </Link>
-    );
-  }
-
   return (
     <Link
       href={href}
-      className="group flex flex-col rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+      className="flex gap-4 items-center p-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
     >
-      {/* Image / fallback */}
-      <div className="relative aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
         {product.productImage ? (
           <Image
             src={product.productImage}
             alt={product.productName}
-            fill
-            className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            width={64}
+            height={64}
+            className="object-cover w-full h-full"
           />
         ) : (
-          <span className="text-xs font-semibold text-gray-400 dark:text-gray-600 text-center leading-tight px-3">
+          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 text-center leading-tight px-1">
             {product.productCategory}
           </span>
         )}
       </div>
-
-      {/* Body */}
-      <div className="flex flex-col flex-1 p-3 gap-2">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
           {product.productName}
         </p>
         {product.productUnit && (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             {product.productUnit}
           </p>
         )}
-
-        <div className="mt-auto flex items-center justify-between">
-          <span className="text-sm font-bold text-gray-900 dark:text-white">
-            {fmt(price)}
-          </span>
-          <span
-            aria-hidden
-            className="flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 group-hover:border-gray-400 dark:group-hover:border-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </span>
-        </div>
+      </div>
+      <div className="flex-shrink-0 text-right">
+        <p className="text-sm font-bold text-[var(--text-primary)]">
+          {fmt(product.retailPrice)}
+        </p>
       </div>
     </Link>
   );
@@ -147,6 +91,8 @@ function ProductTile({
 
 export default function StoreCatalog({
   storeSlug,
+  storeName,
+  storeId,
   products,
   activeCategory,
 }: StoreCatalogProps) {
@@ -282,15 +228,31 @@ export default function StoreCatalog({
           )}
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((p) => (
-            <ProductTile key={p.id} product={p} storeSlug={storeSlug} view="grid" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {filtered.map((p, idx) => (
+            <UnifiedProductCard
+              key={p.id}
+              index={idx}
+              href={`/marketplace/${storeSlug}/producto/${p.id}`}
+              product={{
+                id: p.productId,
+                name: p.productName,
+                price: p.retailPrice,
+                image: p.productImage,
+                unit: p.productUnit,
+                category: p.productCategory,
+                storeId,
+                storeName,
+                storeSlug,
+                storeProductId: p.id,
+              }}
+            />
           ))}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((p) => (
-            <ProductTile key={p.id} product={p} storeSlug={storeSlug} view="list" />
+            <ProductListRow key={p.id} product={p} storeSlug={storeSlug} />
           ))}
         </div>
       )}

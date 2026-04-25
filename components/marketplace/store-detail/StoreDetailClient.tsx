@@ -129,6 +129,8 @@ export default function StoreDetailClient({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
         <StoreCatalog
           storeSlug={store.slug}
+          storeName={store.name}
+          storeId={store.id}
           products={products}
           activeCategory={activeCategory}
         />
