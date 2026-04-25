@@ -200,10 +200,17 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
           setStores(json.data ?? []);
         }
       } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        setError("No pudimos cargar las tiendas. Intentá de nuevo.");
+        if ((err as Error).name !== "AbortError") {
+          setError("No pudimos cargar las tiendas. Intentá de nuevo.");
+        }
+        // Importante: NO retornamos en AbortError — caemos al setLoading(false)
+        // de abajo (sin el guard) para que el state no se quede stuck en
+        // loading=true cuando el browser nos vuelve a renderizar.
       }
-      if (!controller.signal.aborted) setLoading(false);
+      // Reset loading siempre — si el component fue unmount, el setState es
+      // no-op silencioso (React 18+); si fue preservado por router cache,
+      // queremos liberar el flag para que el retry-on-mount funcione.
+      setLoading(false);
     }, 300);
     return () => {
       clearTimeout(timer);
@@ -212,6 +219,40 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
   }, [search, category, zone, retryKey]);
 
   const fetchStores = useCallback(() => setRetryKey((k) => k + 1), []);
+
+  // Back-nav recovery — Next.js puede rehidratar el client component con
+  // state previo (loading=true, stores=[]) si la fetch anterior fue abortada
+  // por el cleanup del unmount. popstate/pageshow cubren back-nav del browser.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const retry = () => {
+      setLoading(false);
+      setRetryKey((k) => k + 1);
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) retry();
+    };
+    window.addEventListener("popstate", retry);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("popstate", retry);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
+
+  // Safety net — si tras 4s no hay stores ni error declarado, asumimos
+  // rehidratación con state stuck y forzamos full page reload. Peor caso
+  // UX puntual pero el cliente NUNCA ve un skeleton infinito.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const safety = setTimeout(() => {
+      if (stores.length === 0 && !error && !loading) {
+        window.location.reload();
+      }
+    }, 4500);
+    return () => clearTimeout(safety);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── TS-22 sort: deriva la lista ordenada de filteredStores ──
   const sortedStores = (() => {

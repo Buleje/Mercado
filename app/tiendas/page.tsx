@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cacheLife, cacheTag } from "next/cache";
 import TiendasClient from "./TiendasClient";
 
 const BASE_URL = "https://www.buleje.pe";
@@ -38,8 +37,8 @@ export const metadata: Metadata = {
  * mover a app/marketplace/tiendas/ en ronda B.
  */
 export default async function TiendasPage() {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("tiendas-directorio");
+  // Sin "use cache" — el page se renderiza fresh cada nav. El client
+  // component detecta state stuck (loading=true sin stores tras 4s) y
+  // hace window.location.reload como salvavidas. Ver TiendasClient.
   return <TiendasClient />;
 }
