@@ -97,6 +97,9 @@ export default function PurchaseOrdersTab() {
   const [showSupplierHistory, setShowSupplierHistory] = useState(false);
   const [expandedHistorySupplier, setExpandedHistorySupplier] = useState<string | null>(null);
 
+  // Status filter pills
+  const [statusFilter, setStatusFilter] = useState<"todas" | "pendiente" | "parcial" | "recibido" | "cancelado">("todas");
+
   // Create form
   const [supplierId, setSupplierId] = useState("");
   const [items, setItems] = useState<ItemDraft[]>([]);
@@ -344,10 +347,31 @@ export default function PurchaseOrdersTab() {
 
   const itemsTotal = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
 
-  // Filter orders by supplier
-  const filteredOrders = selectedSupplierId
-    ? orders.filter(o => o.supplierId === selectedSupplierId)
-    : orders;
+  // Filter orders by supplier + status
+  const filteredOrders = orders.filter((o) => {
+    if (selectedSupplierId && o.supplierId !== selectedSupplierId) return false;
+    if (statusFilter !== "todas") {
+      if (statusFilter === "pendiente"  && o.status !== "pendiente") return false;
+      if (statusFilter === "parcial"    && o.status !== "parcial") return false;
+      if (statusFilter === "recibido"   && o.status !== "recibido") return false;
+      if (statusFilter === "cancelado"  && o.status !== "cancelado") return false;
+    }
+    return true;
+  });
+
+  // KPIs por estado (sobre todas las órdenes, no filtradas — para que el chip mantenga el counter)
+  const kpis = useMemo(() => {
+    const counts = { pendiente: 0, parcial: 0, recibido: 0, cancelado: 0, auto_generated: 0 };
+    let totalAcumulado = 0;
+    let totalMes = 0;
+    const mesActual = new Date().toISOString().slice(0, 7);
+    for (const o of orders) {
+      if (counts[o.status as keyof typeof counts] != null) counts[o.status as keyof typeof counts] += 1;
+      totalAcumulado += o.total;
+      if (o.createdAt.startsWith(mesActual)) totalMes += o.total;
+    }
+    return { counts, totalAcumulado, totalMes, total: orders.length };
+  }, [orders]);
 
   // Supplier analytics
   const getSupplierStats = (supplierId: string) => {
@@ -400,7 +424,6 @@ export default function PurchaseOrdersTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Órdenes de Compra</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{filteredOrders.length} órdenes · S/{filteredOrders.reduce((s, o) => s + o.total, 0).toFixed(2)} acumulado</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <select
@@ -442,20 +465,75 @@ export default function PurchaseOrdersTab() {
         </div>
       </div>
 
-      {/* Mejora 15 (R3): Resumen compras del mes */}
-      {!loading && orders.length > 0 && (() => {
-        const mesActual = new Date().toISOString().slice(0, 7);
-        const ocsMes = orders.filter(o => o.createdAt.startsWith(mesActual));
-        const totalMes = ocsMes.reduce((s, o) => s + o.total, 0);
-        const provMes = new Set(ocsMes.map(o => o.supplierId)).size;
-        return (
-          <div className="flex items-center justify-between bg-[var(--surface-sunken)]/50 rounded-xl px-4 py-2.5 text-xs">
-            <span>Este mes: <strong>{ocsMes.length} OCs</strong></span>
-            <span>Total: <strong>S/{totalMes.toFixed(2)}</strong></span>
-            <span>{provMes} proveedor{provMes !== 1 ? "es" : ""}</span>
+      {/* KPI summary 4 cards minimalistas */}
+      {!loading && orders.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.total}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">órdenes registradas</p>
+            </div>
+            <FileText className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-        );
-      })()}
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
+              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-warning)]">{kpis.counts.pendiente}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">{kpis.counts.parcial} parcial{kpis.counts.parcial === 1 ? "" : "es"}</p>
+            </div>
+            <Package className="h-5 w-5 text-[var(--data-warning)] shrink-0" />
+          </div>
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Recibidas</p>
+              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success)]">{kpis.counts.recibido}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">cerradas con éxito</p>
+            </div>
+            <PackageCheck className="h-5 w-5 text-[var(--data-success)] shrink-0" />
+          </div>
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total mes</p>
+              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">S/{kpis.totalMes.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">acum. S/{kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+            </div>
+            <TrendingUp className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+          </div>
+        </div>
+      )}
+
+      {/* Filter pills por estado */}
+      {!loading && orders.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {([
+            { id: "todas",      label: "Todas",      count: kpis.total            },
+            { id: "pendiente",  label: "Pendientes", count: kpis.counts.pendiente },
+            { id: "parcial",    label: "Parciales",  count: kpis.counts.parcial   },
+            { id: "recibido",   label: "Recibidas",  count: kpis.counts.recibido  },
+            { id: "cancelado",  label: "Canceladas", count: kpis.counts.cancelado },
+          ] as const).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setStatusFilter(p.id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
+                statusFilter === p.id
+                  ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
+                  : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              {p.label}
+              <span className={cn(
+                "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
+                statusFilter === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
+              )}>
+                {p.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Mejora 15: Badge y cards de pedidos recurrentes */}
       {upcomingRecurring.length > 0 && (

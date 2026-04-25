@@ -214,7 +214,6 @@ export default function SuppliersTab() {
       <div className="flex items-center justify-between">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Proveedores</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{suppliers.length} registrados</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button

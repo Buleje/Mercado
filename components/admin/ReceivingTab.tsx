@@ -138,11 +138,9 @@ export default function ReceivingTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-            <PackageCheck className="h-6 w-6 text-primary" />
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
             Recepción de Mercadería
           </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Verificación de calidad y registro de discrepancias</p>
         </div>
         <div className="flex items-center gap-2">
           <button

@@ -249,12 +249,8 @@ export default function SupplierComparator() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
-            <Users className="h-5 w-5" />
-          </div>
           <div>
-            <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Comparador de Proveedores</SectionTitle>
-            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Score: calidad (40%) + precio (30%) + tiempo (20%) + pago (10%)</p>
+            <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Comparador de Proveedores</SectionTitle>
           </div>
         </div>
         <button

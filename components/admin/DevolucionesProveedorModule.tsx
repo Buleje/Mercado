@@ -273,9 +273,7 @@ export default function DevolucionesProveedorModule() {
     <div className="space-y-6">
       <AdminModuleHeader
         title="Devoluciones a Proveedores"
-        description="Registra y da seguimiento a devoluciones de mercadería"
         icon={RotateCcw}
-        iconColor="#f97316"
       >
         <div className="flex items-center gap-2">
           <button

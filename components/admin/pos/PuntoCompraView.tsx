@@ -662,15 +662,12 @@ export default function PuntoCompraView() {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="print-area">
-      {/* Header minimalista — sin icono cuadrado, alineado con resto del admin */}
+      {/* Header minimalista — sin subtítulo, el tab indica la función */}
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div className="min-w-0">
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
             Punto de Compra
           </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Armá tu canasta, elegí proveedor y generá la orden de compra
-          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-[var(--text-tertiary)] tabular-nums">

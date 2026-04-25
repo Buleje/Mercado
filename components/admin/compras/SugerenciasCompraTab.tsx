@@ -305,15 +305,12 @@ export default function SugerenciasCompraTab() {
 
   return (
     <div className="space-y-6 pb-32">
-      {/* Header */}
+      {/* Header — sin subtítulo, el tab indica la función */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">
             Sugerencias de compra
           </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {sugerencias.length} {sugerencias.length === 1 ? "producto" : "productos"} por reponer — calculado por consumo diario y stock mínimo
-          </p>
         </div>
         <button
           onClick={() => void load(true)}
