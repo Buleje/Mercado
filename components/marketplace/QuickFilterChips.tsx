@@ -1,6 +1,15 @@
 "use client";
 
-import { Clock, Truck, Tag, Star, Sparkles } from "@buleje/design-system/icons";
+import {
+  Clock,
+  Truck,
+  Tag,
+  Star,
+  Sparkles,
+  Smartphone,
+  Sun,
+  Coins,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Chip definitions ──────────────────────────────────────────────────────── */
@@ -10,7 +19,10 @@ export type QuickChipId =
   | "free_delivery"
   | "has_offers"
   | "top_rated"
-  | "new_stores";
+  | "new_stores"
+  | "accepts_yape"
+  | "no_min_order"
+  | "open_24h";
 
 interface ChipDef {
   id: QuickChipId;
@@ -19,11 +31,14 @@ interface ChipDef {
 }
 
 const CHIPS: ChipDef[] = [
-  { id: "open_now",      label: "Abierto ahora",  Icon: Clock     },
-  { id: "free_delivery", label: "Delivery gratis", Icon: Truck     },
-  { id: "has_offers",    label: "Con ofertas",     Icon: Tag       },
-  { id: "top_rated",     label: "4.5 o mas",       Icon: Star      },
-  { id: "new_stores",    label: "Nuevos",           Icon: Sparkles  },
+  { id: "open_now",      label: "Abierto ahora",   Icon: Clock      },
+  { id: "free_delivery", label: "Delivery gratis", Icon: Truck      },
+  { id: "has_offers",    label: "Con ofertas",     Icon: Tag        },
+  { id: "top_rated",     label: "4.5 o más",       Icon: Star       },
+  { id: "new_stores",    label: "Nuevos",          Icon: Sparkles   },
+  { id: "accepts_yape",  label: "Acepta Yape",     Icon: Smartphone },
+  { id: "no_min_order",  label: "Sin mínimo",      Icon: Coins      },
+  { id: "open_24h",      label: "Abre 24 h",       Icon: Sun        },
 ];
 
 /* ── Props ──────────────────────────────────────────────────────────────────── */

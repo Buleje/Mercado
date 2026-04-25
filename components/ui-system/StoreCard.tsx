@@ -42,15 +42,24 @@ export interface StoreCardData {
   fastDelivery?: boolean;    // delivery promedio <30 min
   // ── MK-58: Social proof timestamp (opcional) ────────────────────────────────
   lastSaleAgoMinutes?: number;
+  // ── TS-33: badge de ofertas activas en card ─────────────────────────────────
+  activePromos?: number;
 }
 
-// ── MK-56: helper para renderizar trust badges ────────────────────────────────
+// ── MK-56 + TS-33: helper para trust badges + ofertas activas ─────────────────
 function TrustBadges({ store }: { store: StoreCardData }) {
   const items: Array<{ label: string; cls: string }> = [];
   if (store.verified)     items.push({ label: "Verificada",   cls: "bg-blue-50 text-blue-700 border-blue-200" });
   if (store.topSeller)    items.push({ label: "Top del mes",  cls: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-[var(--data-warning)]/30" });
   if (store.isNew)        items.push({ label: "Nuevo",        cls: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30" });
   if (store.fastDelivery) items.push({ label: "<30 min",      cls: "bg-purple-50 text-purple-700 border-purple-200" });
+  // TS-33: ofertas activas — color rojo para llamar atención
+  if (store.activePromos && store.activePromos > 0) {
+    items.push({
+      label: `${store.activePromos} ${store.activePromos === 1 ? "oferta" : "ofertas"}`,
+      cls: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800",
+    });
+  }
   if (items.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-1">
@@ -58,7 +67,7 @@ function TrustBadges({ store }: { store: StoreCardData }) {
         <span
           key={b.label}
           className={cn(
-            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border",
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide border",
             b.cls,
           )}
         >
@@ -81,7 +90,7 @@ function LastSaleHint({ minutes }: { minutes?: number }) {
     null;
   if (!text) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--data-success)]">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-success)]">
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success)] animate-pulse" />
       {text}
     </span>
@@ -131,7 +140,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{store.name}</h3>
             {store.badge && (
-              <span className="shrink-0 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
+              <span className="shrink-0 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
                 {store.badge}
               </span>
             )}
@@ -144,7 +153,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
               {cfg.label}
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          <div className="mt-1 flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
             {store.distanceKm !== undefined && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />
@@ -196,14 +205,14 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
           )}
           {/* Badge */}
           {store.badge && (
-            <span className="absolute top-2 left-2 rounded-full bg-[var(--surface-canvas)] text-[var(--text-primary)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide shadow-sm">
+            <span className="absolute top-2 left-2 rounded-full bg-[var(--surface-canvas)] text-[var(--text-primary)] px-2.5 py-1 text-xs font-bold uppercase tracking-wide shadow-sm">
               {store.badge}
             </span>
           )}
           {/* Status chip */}
           <span
             className={cn(
-              "absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold",
+              "absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-bold",
               cfg.color,
             )}
           >
@@ -212,7 +221,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
           </span>
           {/* Delivery time chip */}
           {store.deliveryMinutes && (
-            <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold">
+            <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-2 py-0.5 text-xs font-bold">
               <Clock className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
               {store.deliveryMinutes} min
             </span>
@@ -259,7 +268,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
             {store.categories?.slice(0, 3).map((c) => (
               <span
                 key={c}
-                className="inline-block rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
+                className="inline-block rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)]"
               >
                 {c}
               </span>
@@ -267,7 +276,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
           </div>
         )}
         {/* Meta */}
-        <div className="mt-2 flex items-center gap-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
           {store.distanceKm !== undefined && (
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />

@@ -364,6 +364,31 @@ function passesChips(
         if (age >= thirtyDaysMs) return false;
         break;
       }
+      // ── TS-05 chips nuevos ──
+      case "accepts_yape": {
+        if (!("paymentMethods" in store)) break;
+        const methods = store.paymentMethods;
+        if (!Array.isArray(methods) || !methods.includes("yape")) return false;
+        break;
+      }
+      case "no_min_order": {
+        if (!("minOrderAmount" in store)) break;
+        if ((store.minOrderAmount ?? 0) > 0) return false;
+        break;
+      }
+      case "open_24h": {
+        if (!("openHours" in store) || store.openHours == null) break;
+        // Una tienda es 24h si todos los días tiene open=0 close=24 (o equivalente).
+        const all24h = store.openHours.every(
+          (h) =>
+            h != null &&
+            h.open === 0 &&
+            h.openMin === 0 &&
+            (h.close === 24 || (h.close === 23 && h.closeMin === 59)),
+        );
+        if (!all24h) return false;
+        break;
+      }
     }
   }
   return true;
@@ -385,6 +410,8 @@ interface StoreChipFields {
   hasOffers: boolean;
   activePromos: number;
   createdAt: string | Date;
+  paymentMethods: string[];
+  minOrderAmount: number;
 }
 
 export default function MarketplaceStoresView({

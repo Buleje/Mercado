@@ -13,8 +13,9 @@
  *   - Integrar mapa Leaflet para zona visual
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Store, MapPin, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
@@ -36,6 +37,12 @@ import MarketplaceFilters, {
 import QuickFilterChips, {
   type QuickChipId,
 } from "@/components/marketplace/QuickFilterChips";
+import StoresSortSelector, {
+  loadStoredSort,
+  type StoresSortKey,
+} from "@/components/marketplace/StoresSortSelector";
+import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
+import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -52,17 +59,31 @@ const DEFAULT_FILTERS: MarketplaceFiltersState = {
 /* ── Component ──────────────────────────────────────────────────────────────── */
 
 export default function TiendasClient() {
+  // ── TS-26 URL sync — leer estado inicial de query params ──
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialSyncDone = useRef(false);
+
   const [stores, setStores] = useState<MarketplaceStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("todos");
-  const [zone, setZone] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [category, setCategory] = useState(
+    () => searchParams.get("cat") ?? "todos",
+  );
+  const [zone, setZone] = useState(() => searchParams.get("zona") ?? "");
   const [productFilters, setProductFilters] =
     useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
 
   // ── Quick-filter chips ──
-  const [activeChips, setActiveChips] = useState<Set<QuickChipId>>(new Set());
+  const [activeChips, setActiveChips] = useState<Set<QuickChipId>>(() => {
+    const raw = searchParams.get("chips");
+    if (!raw) return new Set();
+    return new Set(
+      raw.split(",").filter(Boolean) as QuickChipId[],
+    );
+  });
 
   const handleChipToggle = useCallback((chipId: QuickChipId) => {
     setActiveChips((prev) => {
@@ -72,6 +93,37 @@ export default function TiendasClient() {
       return next;
     });
   }, []);
+
+  // ── TS-22 Sort selector (con persistencia) ──
+  const [sortKey, setSortKey] = useState<StoresSortKey>(() => {
+    const fromUrl = searchParams.get("sort");
+    if (fromUrl) return fromUrl as StoresSortKey;
+    return "relevance";
+  });
+  useEffect(() => {
+    // Hidratar desde localStorage solo si la URL no trae sort
+    if (!searchParams.get("sort")) {
+      setSortKey(loadStoredSort());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── TS-26 URL sync — escribir back cuando cambia el estado ──
+  useEffect(() => {
+    if (!initialSyncDone.current) {
+      initialSyncDone.current = true;
+      return;
+    }
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("q", search.trim());
+    if (category !== "todos") params.set("cat", category);
+    if (zone) params.set("zona", zone);
+    if (sortKey !== "relevance") params.set("sort", sortKey);
+    if (activeChips.size > 0) params.set("chips", [...activeChips].join(","));
+    const qs = params.toString();
+    const next = qs ? `${pathname}?${qs}` : pathname;
+    router.replace(next, { scroll: false });
+  }, [search, category, zone, sortKey, activeChips, pathname, router]);
 
   // ── Geo hook ──
   const {
@@ -135,12 +187,58 @@ export default function TiendasClient() {
 
   const fetchStores = useCallback(() => setRetryKey((k) => k + 1), []);
 
+  // ── TS-22 sort: deriva la lista ordenada de filteredStores ──
+  const sortedStores = (() => {
+    if (sortKey === "relevance") return filteredStores;
+    const arr = [...filteredStores];
+    switch (sortKey) {
+      case "delivery":
+        arr.sort(
+          (a, b) =>
+            ((a as { deliveryMinutes?: number }).deliveryMinutes ?? 99) -
+            ((b as { deliveryMinutes?: number }).deliveryMinutes ?? 99),
+        );
+        break;
+      case "rating":
+        arr.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+        break;
+      case "distance":
+        arr.sort(
+          (a, b) =>
+            ((a as { distanceKm?: number }).distanceKm ?? 999) -
+            ((b as { distanceKm?: number }).distanceKm ?? 999),
+        );
+        break;
+      case "newest":
+        arr.sort((a, b) => {
+          const aT = (a as { createdAt?: string | Date }).createdAt;
+          const bT = (b as { createdAt?: string | Date }).createdAt;
+          return new Date(bT ?? 0).getTime() - new Date(aT ?? 0).getTime();
+        });
+        break;
+    }
+    return arr;
+  })();
+
   const hasFilters =
-    category !== "todos" || zone || geoActive || activeChips.size > 0 || search.trim().length > 0;
+    category !== "todos" ||
+    zone ||
+    geoActive ||
+    activeChips.size > 0 ||
+    search.trim().length > 0 ||
+    sortKey !== "relevance";
+
+  // ── TS-47 breadcrumb: zona como label legible ──
+  const zonaLabel = zone
+    ? ZONES.find((z) => z.id === zone)?.label
+    : undefined;
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
+
+      {/* ── TS-47 breadcrumb visible + JSON-LD ──────────────────────────── */}
+      <TiendasBreadcrumb zonaLabel={zonaLabel} />
 
       {/* ── Hero editorial compacto — reemplaza el banner promocional ─── */}
       <section className="relative overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
@@ -182,6 +280,9 @@ export default function TiendasClient() {
           </div>
         </div>
       </section>
+
+      {/* ── TS-16 Tus tiendas frecuentes ──────────────────────────────── */}
+      <TusTiendasStrip />
 
       {/* ── Destacadas — solo si hay recomendaciones ──────────────────── */}
       <RevealOnScroll>
@@ -277,6 +378,8 @@ export default function TiendasClient() {
                 onRequestGeo={handleGeoSort}
               />
 
+              <StoresSortSelector value={sortKey} onChange={setSortKey} />
+
               {hasFilters && (
                 <button
                   onClick={() => {
@@ -287,6 +390,7 @@ export default function TiendasClient() {
                     setUserCoords(null);
                     setProductFilters(DEFAULT_FILTERS);
                     setActiveChips(new Set());
+                    setSortKey("relevance");
                   }}
                   aria-label="Limpiar todos los filtros activos"
                   className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors px-2"
@@ -307,7 +411,7 @@ export default function TiendasClient() {
           category={category}
           zone={zone}
           geoActive={geoActive}
-          filteredStores={filteredStores}
+          filteredStores={sortedStores}
           activeChips={activeChips}
           onRetry={fetchStores}
           onClearAll={() => {
@@ -316,6 +420,7 @@ export default function TiendasClient() {
             setZone("");
             setGeoActive(false);
             setUserCoords(null);
+            setSortKey("relevance");
           }}
         />
       </section>
