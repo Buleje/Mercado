@@ -3,7 +3,6 @@
 import { LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import {
-  Loader2,
   Plus,
   Trash2,
   Power,
@@ -11,9 +10,16 @@ import {
   Megaphone,
   Save,
 } from "@buleje/design-system/icons";
-import AdminTabShell from "../../_components/_shared/AdminTabShell";
-import AdminEmptyState from "../../_components/_shared/AdminEmptyState";
-import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
+import {
+  ADMIN_TOKENS,
+  AdminTabShell,
+  AdminEmptyState,
+  AdminButton,
+  AdminField,
+  AdminInput,
+  AdminTextarea,
+  AdminSelect,
+} from "../../_components/_shared";
 
 type Promotion = {
   id: string;
@@ -115,37 +121,29 @@ export default function PromotionsTab() {
       description="Banners y promociones que aparecen en tu página pública. Pueden tener fecha de inicio y fin."
       icon={Megaphone}
       actions={
-        <button
-          type="button"
+        <AdminButton
+          variant="primary"
+          icon={Plus}
           onClick={() => setShowForm((v) => !v)}
-          className={ADMIN_TOKENS.btnPrimary}
         >
-          <Plus className="w-4 h-4" aria-hidden />
           Nueva promoción
-        </button>
+        </AdminButton>
       }
     >
       {showForm && (
         <section className={ADMIN_TOKENS.cardPadded}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block">
-              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
-                Título
-              </span>
-              <input
+            <AdminField label="Título" required>
+              <AdminInput
                 type="text"
                 maxLength={200}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className={ADMIN_TOKENS.input}
                 placeholder="Oferta del mes"
               />
-            </label>
-            <label className="block">
-              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
-                Tipo de descuento
-              </span>
-              <select
+            </AdminField>
+            <AdminField label="Tipo de descuento">
+              <AdminSelect
                 value={form.discountType}
                 onChange={(e) =>
                   setForm({
@@ -153,18 +151,14 @@ export default function PromotionsTab() {
                     discountType: e.target.value as Promotion["discountType"],
                   })
                 }
-                className={ADMIN_TOKENS.input}
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="amount">Monto fijo (S/)</option>
                 <option value="fixed">Precio fijo (S/)</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
-                Valor del descuento
-              </span>
-              <input
+              </AdminSelect>
+            </AdminField>
+            <AdminField label="Valor del descuento">
+              <AdminInput
                 type="number"
                 step="0.01"
                 min="0"
@@ -172,27 +166,20 @@ export default function PromotionsTab() {
                 onChange={(e) =>
                   setForm({ ...form, discountValue: Number(e.target.value) })
                 }
-                className={`${ADMIN_TOKENS.input} font-mono`}
+                className="font-mono"
               />
-            </label>
-            <label className="block">
-              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
-                Banner (URL)
-              </span>
-              <input
+            </AdminField>
+            <AdminField label="Banner (URL)" hint="Imagen de fondo opcional">
+              <AdminInput
                 type="url"
                 value={form.bannerImageUrl ?? ""}
                 onChange={(e) =>
                   setForm({ ...form, bannerImageUrl: e.target.value })
                 }
-                className={ADMIN_TOKENS.input}
               />
-            </label>
-            <label className="block">
-              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
-                Inicio (opcional)
-              </span>
-              <input
+            </AdminField>
+            <AdminField label="Inicio" hint="Opcional">
+              <AdminInput
                 type="datetime-local"
                 value={form.startAt?.slice(0, 16) ?? ""}
                 onChange={(e) =>
@@ -203,14 +190,10 @@ export default function PromotionsTab() {
                       : null,
                   })
                 }
-                className={ADMIN_TOKENS.input}
               />
-            </label>
-            <label className="block">
-              <span className={`${ADMIN_TOKENS.label} block mb-1.5`}>
-                Fin (opcional)
-              </span>
-              <input
+            </AdminField>
+            <AdminField label="Fin" hint="Opcional">
+              <AdminInput
                 type="datetime-local"
                 value={form.endAt?.slice(0, 16) ?? ""}
                 onChange={(e) =>
@@ -221,46 +204,33 @@ export default function PromotionsTab() {
                       : null,
                   })
                 }
-                className={ADMIN_TOKENS.input}
               />
-            </label>
+            </AdminField>
           </div>
-          <label className="block">
-            <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-              Descripción
-            </span>
-            <textarea
+          <AdminField label="Descripción">
+            <AdminTextarea
               rows={3}
               maxLength={1000}
               value={form.description ?? ""}
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              className={ADMIN_TOKENS.input}
             />
-          </label>
+          </AdminField>
           {error && <div className={ADMIN_TOKENS.errorBanner}>{error}</div>}
           <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className={ADMIN_TOKENS.btnGhost}
-            >
+            <AdminButton variant="ghost" onClick={() => setShowForm(false)}>
               Cancelar
-            </button>
-            <button
-              type="button"
+            </AdminButton>
+            <AdminButton
+              variant="primary"
+              icon={Save}
+              loading={saving}
+              disabled={!form.title.trim()}
               onClick={create}
-              disabled={saving || !form.title.trim()}
-              className={ADMIN_TOKENS.btnPrimary}
             >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              ) : (
-                <Save className="h-4 w-4" aria-hidden />
-              )}
               {saving ? "Creando…" : "Crear promoción"}
-            </button>
+            </AdminButton>
           </div>
         </section>
       )}
