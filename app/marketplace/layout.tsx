@@ -8,6 +8,7 @@ import MotionProvider from "@/components/MotionProvider";
 // initial del layout en ~300-500kb de framer-motion.
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import MarketplaceSecondaryNav from "@/components/marketplace/MarketplaceSecondaryNav";
+import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
@@ -60,6 +61,8 @@ export default function MarketplaceLayout({
               {/* 4 widgets floating (compare, quick-add, storage doctor)
                   lazy-loadeados — descarga diferida post-FCP. */}
               <MarketplaceFloatingWidgets />
+              {/* Sticky cart bar — solo mobile/tablet, aparece cuando hay items. */}
+              <StickyCartBar />
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>

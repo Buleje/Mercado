@@ -24,6 +24,7 @@ import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGe
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { Plane } from "lucide-react";
 import { StoreCardCanonical } from "@buleje/design-system";
+import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 import {
   useLastOrdersByStore,
@@ -313,18 +314,24 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         storeId={store.id || store.slug}
         name={ariaLabel}
         slug={store.slug}
-        imageUrl={store.logo}
+        // Sentinel para que el DS dispare renderImage incluso sin logo real;
+        // renderImage detecta el sentinel y muestra MiniBulejeBanner en su lugar.
+        imageUrl={store.logo || "__buleje_default__"}
         badges={badges}
         footer={footer}
-        renderImage={({ src, alt, className }) => (
-          <Image
-            src={src}
-            alt={alt}
-            fill
-            className={className}
-            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
-          />
-        )}
+        renderImage={({ src, alt, className }) =>
+          src && src !== "__buleje_default__" ? (
+            <Image
+              src={src}
+              alt={alt}
+              fill
+              className={className}
+              sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+            />
+          ) : (
+            <MiniBulejeBanner storeName={store.name} />
+          )
+        }
       />
       {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
       <div className="absolute top-3 right-3 z-10">

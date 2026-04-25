@@ -5,6 +5,7 @@ import MarketplacePromoBar from "@/components/marketplace/MarketplacePromoBar";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import MarketplaceSecondaryNav from "@/components/marketplace/MarketplaceSecondaryNav";
 import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
+import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
 import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
@@ -44,6 +45,7 @@ export default function TiendasLayout({
               <Suspense fallback={null}>
                 <QuickAddDrawer />
               </Suspense>
+              <StickyCartBar />
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>

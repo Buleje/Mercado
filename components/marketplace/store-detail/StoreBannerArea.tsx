@@ -15,6 +15,7 @@
  */
 
 import Image from "next/image";
+import { m as motion } from "framer-motion";
 import { Store as StoreIcon, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +48,12 @@ export default function StoreBannerArea({
       className="relative w-full overflow-hidden"
     >
       {/* ── Banner background ─────────────────────────────────────────────── */}
-      <div className="relative h-44 sm:h-56 lg:h-72 w-full">
+      <motion.div
+        initial={{ opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="relative h-44 sm:h-56 lg:h-72 w-full"
+      >
         {hasBanner ? (
           <Image
             src={banner!}
@@ -65,10 +71,15 @@ export default function StoreBannerArea({
           aria-hidden
           className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent"
         />
-      </div>
+      </motion.div>
 
       {/* ── Floating identity row ─────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <div className="-mt-12 sm:-mt-14 relative z-10 flex items-end gap-4">
           {/* Avatar */}
           <div
@@ -110,7 +121,7 @@ export default function StoreBannerArea({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
