@@ -318,12 +318,36 @@ export function AddedToCartDrawerProvider({
                       {/* Variaciones */}
                       {product.variations && product.variations.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
-                            Variaciones
-                          </p>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                              Variaciones
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // Despacha evento que el card del producto en
+                                // el catalogo escucha para reabrir el modal
+                                // con seleccion inicial.
+                                if (typeof window !== "undefined") {
+                                  window.dispatchEvent(
+                                    new CustomEvent("buleje:reedit-modifiers", {
+                                      detail: {
+                                        storeId: product.storeId,
+                                        productId: product.productId,
+                                      },
+                                    }),
+                                  );
+                                }
+                                close();
+                              }}
+                              className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"
+                            >
+                              Editar
+                            </button>
+                          </div>
                           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[length:var(--ts-xs)]">
-                            {product.variations.map((v) => (
-                              <div key={v.label} className="flex flex-col min-w-0">
+                            {product.variations.map((v, i) => (
+                              <div key={`${v.label}-${i}`} className="flex flex-col min-w-0">
                                 <dt className="text-[var(--text-tertiary)] truncate">
                                   {v.label}
                                 </dt>

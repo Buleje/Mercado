@@ -21,9 +21,25 @@ import {
   Loader2,
   Save,
   Sparkles,
+  GripVertical,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface ProductSummary {
   id: number;
@@ -475,17 +491,50 @@ function ProductModifierEditor({
               </div>
             )}
 
-            {groups.map((g) => (
-              <GroupCard
-                key={g.id}
-                group={g}
-                onUpdate={(patch) => updateGroup(g.id, patch)}
-                onDelete={() => deleteGroup(g.id)}
-                onAddOption={() => addOption(g.id)}
-                onUpdateOption={updateOption}
-                onDeleteOption={deleteOption}
-              />
-            ))}
+            <SortableGroupList
+              groups={groups}
+              onReorder={async (ids) => {
+                // Optimistic — actualizamos el orden en local primero
+                const reordered = ids
+                  .map((id) => groups.find((g) => g.id === id))
+                  .filter((g): g is ModifierGroup => Boolean(g));
+                setGroups(reordered);
+                await fetch(
+                  `/api/admin/products/${product.id}/modifier-groups/reorder`,
+                  {
+                    method: "POST",
+                    headers: csrfHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({ ids }),
+                  },
+                ).catch((err) => {
+                  // eslint-disable-next-line no-console
+                  console.warn("[reorder-groups] silent fail", err);
+                });
+              }}
+              renderGroup={(g) => (
+                <GroupCard
+                  group={g}
+                  onUpdate={(patch) => updateGroup(g.id, patch)}
+                  onDelete={() => deleteGroup(g.id)}
+                  onAddOption={() => addOption(g.id)}
+                  onUpdateOption={updateOption}
+                  onDeleteOption={deleteOption}
+                  onReorderOptions={async (optionIds) => {
+                    await fetch(
+                      `/api/admin/modifier-groups/${g.id}/options/reorder`,
+                      {
+                        method: "POST",
+                        headers: csrfHeaders({ "Content-Type": "application/json" }),
+                        body: JSON.stringify({ ids: optionIds }),
+                      },
+                    ).catch((err) => {
+                      // eslint-disable-next-line no-console
+                      console.warn("[reorder-options] silent fail", err);
+                    });
+                  }}
+                />
+              )}
+            />
 
             {/* Presets */}
             <div className="border-t border-[var(--rule-soft)] pt-4 mt-4">
@@ -558,6 +607,7 @@ function GroupCard({
   onAddOption,
   onUpdateOption,
   onDeleteOption,
+  onReorderOptions,
 }: {
   group: ModifierGroup;
   onUpdate: (patch: Partial<Pick<ModifierGroup, "name" | "required" | "minSelect" | "maxSelect" | "isActive">>) => Promise<void> | void;
@@ -565,6 +615,7 @@ function GroupCard({
   onAddOption: () => void;
   onUpdateOption: (id: string, patch: Partial<Pick<ModifierOption, "name" | "priceDelta" | "isDefault" | "isActive" | "imageUrl">>) => Promise<void> | void;
   onDeleteOption: (id: string) => void;
+  onReorderOptions?: (ids: string[]) => Promise<void> | void;
 }) {
   const [name, setName] = useState(group.name);
   const [required, setRequired] = useState(group.required);
@@ -660,14 +711,28 @@ function GroupCard({
             Sin opciones — agregá la primera con el botón de abajo.
           </p>
         )}
-        {group.options.map((o) => (
-          <OptionRow
-            key={o.id}
-            option={o}
-            onChange={(patch) => onUpdateOption(o.id, patch)}
-            onDelete={() => onDeleteOption(o.id)}
+        {group.options.length > 0 && onReorderOptions ? (
+          <SortableOptionList
+            options={group.options}
+            onReorder={onReorderOptions}
+            renderOption={(o) => (
+              <OptionRow
+                option={o}
+                onChange={(patch) => onUpdateOption(o.id, patch)}
+                onDelete={() => onDeleteOption(o.id)}
+              />
+            )}
           />
-        ))}
+        ) : (
+          group.options.map((o) => (
+            <OptionRow
+              key={o.id}
+              option={o}
+              onChange={(patch) => onUpdateOption(o.id, patch)}
+              onDelete={() => onDeleteOption(o.id)}
+            />
+          ))
+        )}
       </div>
 
       {/* Footer */}
@@ -745,24 +810,69 @@ function OptionRow({
     }
   }
 
+  // Drop / file → dataURL (max 800KB para no hinchar la DB).
+  const MAX_BYTES = 800 * 1024;
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      alert("Solo imagenes (JPG, PNG, WebP)");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      alert(`Imagen muy grande. Maximo 800KB; subiste ${(file.size / 1024).toFixed(0)}KB`);
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      setImageUrl(dataUrl);
+      await onChange({ imageUrl: dataUrl });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="grid grid-cols-[40px_1fr_90px_auto] items-center gap-2 rounded-lg border border-[var(--rule-soft)] px-2 py-2">
-      <div className="h-9 w-9 rounded-md overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center">
+    <div className="grid grid-cols-[44px_1fr_90px_auto] items-center gap-2 rounded-lg border border-[var(--rule-soft)] px-2 py-2">
+      <label
+        className="relative h-10 w-10 rounded-md overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--accent)]/40 transition"
+        title="Subir imagen"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const f = e.dataTransfer.files?.[0];
+          if (f) void handleFile(f);
+        }}
+      >
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt={name}
-            width={36}
-            height={36}
+            width={40}
+            height={40}
             className="object-cover w-full h-full"
             onError={() => setImageUrl("")}
+            unoptimized={imageUrl.startsWith("data:")}
           />
         ) : (
           <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
             {name.slice(0, 2).toUpperCase()}
           </span>
         )}
-      </div>
+        <input
+          type="file"
+          accept="image/*"
+          className="absolute inset-0 opacity-0 cursor-pointer"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleFile(f);
+          }}
+        />
+      </label>
       <div className="flex flex-col gap-1 min-w-0">
         <input
           value={name}
@@ -771,10 +881,11 @@ function OptionRow({
           className="text-sm font-semibold text-[var(--text-primary)] bg-transparent focus:outline-none"
         />
         <input
-          value={imageUrl}
+          value={imageUrl.startsWith("data:") ? "imagen subida ✓" : imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
           onBlur={commit}
-          placeholder="URL imagen (opcional)"
+          readOnly={imageUrl.startsWith("data:")}
+          placeholder="URL imagen o arrastrá un archivo"
           className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-transparent focus:outline-none truncate"
         />
       </div>
@@ -822,6 +933,154 @@ function OptionRow({
           )}
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ── SortableGroupList ───────────────────────────────────────────────────── */
+
+function SortableGroupList({
+  groups,
+  onReorder,
+  renderGroup,
+}: {
+  groups: ModifierGroup[];
+  onReorder: (ids: string[]) => void;
+  renderGroup: (g: ModifierGroup) => React.ReactNode;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = groups.findIndex((g) => g.id === active.id);
+    const newIndex = groups.findIndex((g) => g.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(groups, oldIndex, newIndex);
+    onReorder(next.map((g) => g.id));
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={groups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3">
+          {groups.map((g) => (
+            <SortableGroupItem key={g.id} id={g.id}>
+              {renderGroup(g)}
+            </SortableGroupItem>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableGroupItem({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-stretch gap-2">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Arrastrar para reordenar"
+        className="shrink-0 self-stretch flex items-center px-1 rounded-lg cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+      >
+        <GripVertical className="h-4 w-4" aria-hidden />
+      </button>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/* ── SortableOptionList ──────────────────────────────────────────────────── */
+
+function SortableOptionList({
+  options,
+  onReorder,
+  renderOption,
+}: {
+  options: ModifierOption[];
+  onReorder: (ids: string[]) => void | Promise<void>;
+  renderOption: (o: ModifierOption) => React.ReactNode;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = options.findIndex((o) => o.id === active.id);
+    const newIndex = options.findIndex((o) => o.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(options, oldIndex, newIndex);
+    void onReorder(next.map((o) => o.id));
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={options.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2">
+          {options.map((o) => (
+            <SortableOptionItem key={o.id} id={o.id}>
+              {renderOption(o)}
+            </SortableOptionItem>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableOptionItem({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-stretch gap-1.5">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Arrastrar opcion"
+        className="shrink-0 self-stretch flex items-center px-0.5 rounded cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+      >
+        <GripVertical className="h-3.5 w-3.5" aria-hidden />
+      </button>
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
   );
 }

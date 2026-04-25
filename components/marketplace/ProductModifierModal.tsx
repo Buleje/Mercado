@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
@@ -47,6 +48,11 @@ interface ProductModifierModalProps {
     description?: string | null;
   };
   groups: DbStoreProductModifierGroup[];
+  /**
+   * Selección inicial para reabrir el modal en modo "edit" (re-edit
+   * desde el AddedToCartDrawer). Map groupId → array de optionIds.
+   */
+  initialSelection?: Record<string, string[]>;
   /** Llamado cuando el cliente confirma la seleccion. */
   onConfirm: (args: {
     quantity: number;
@@ -75,20 +81,22 @@ export default function ProductModifierModal({
   onClose,
   product,
   groups,
+  initialSelection,
   onConfirm,
 }: ProductModifierModalProps) {
   const [selection, setSelection] = useState<SelectionState>(() =>
-    defaultSelectionFor(groups),
+    initialSelection ?? defaultSelectionFor(groups),
   );
   const [quantity, setQuantity] = useState(1);
 
-  // Resetear seleccion cuando el modal se abre / cambian los grupos
+  // Resetear seleccion cuando el modal se abre / cambian los grupos.
+  // Si hay initialSelection (modo re-edit), usar ese; sino, defaults.
   useEffect(() => {
     if (open) {
-      setSelection(defaultSelectionFor(groups));
+      setSelection(initialSelection ?? defaultSelectionFor(groups));
       setQuantity(1);
     }
-  }, [open, groups]);
+  }, [open, groups, initialSelection]);
 
   // Escape cierra
   useEffect(() => {
@@ -181,11 +189,15 @@ export default function ProductModifierModal({
     });
   };
 
-  return (
+  // Portal a document.body para escapar stacking contexts del catalogo
+  // (sticky categorias z-20, motion.article whileHover transforms, etc.).
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -209,7 +221,7 @@ export default function ProductModifierModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative w-full sm:max-w-lg max-h-[92vh] flex flex-col bg-[var(--surface-canvas)] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+            className="relative z-10 w-full sm:max-w-lg max-h-[92vh] flex flex-col bg-[var(--surface-canvas)] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="relative">
@@ -421,6 +433,7 @@ export default function ProductModifierModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

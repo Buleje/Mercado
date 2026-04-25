@@ -106,6 +106,24 @@ export default function UnifiedProductCard({
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [modifierModalOpen, setModifierModalOpen] = useState(false);
+  // Re-edit: cuando el cliente clickea "Editar" en el AddedToCartDrawer,
+  // capturamos el evento global y abrimos nuestro modal con la selección
+  // inicial poblada desde la línea actual del cart.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ storeId: string; productId: number }>).detail;
+      if (
+        detail &&
+        detail.storeId === (product.storeId ?? "") &&
+        detail.productId === product.id
+      ) {
+        setModifierModalOpen(true);
+      }
+    };
+    window.addEventListener("buleje:reedit-modifiers", handler);
+    return () => window.removeEventListener("buleje:reedit-modifiers", handler);
+  }, [product.storeId, product.id]);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
 
   // Cantidad ya en el carrito de ESTA tienda — se usa para mostrar contador
