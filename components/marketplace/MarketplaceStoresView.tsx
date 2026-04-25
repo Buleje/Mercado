@@ -254,7 +254,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           text rendered inside the footer slot, which screen readers will read. */}
       <StoreCardCanonical
         storeId={store.id || store.slug}
-        name={ariaLabel}
+        name={store.name}
         slug={store.slug}
         imageUrl={store.logo}
         variant="compact"
@@ -272,6 +272,26 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         renderImageFallback={() => (
           <MiniBulejeBanner storeName={store.name} category={store.category} />
         )}
+        avatar={
+          <div
+            className="h-10 w-10 rounded-xl overflow-hidden bg-[var(--surface-raised)] border-2 border-[var(--surface-canvas)] shadow-md flex items-center justify-center"
+            aria-label={ariaLabel}
+          >
+            {store.logo ? (
+              <Image
+                src={store.logo}
+                alt=""
+                width={40}
+                height={40}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-sm font-black text-white bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+                {store.name.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+        }
       />
       {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
       <div className="absolute top-3 right-3 z-10">

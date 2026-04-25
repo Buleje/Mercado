@@ -34,10 +34,25 @@ function ChipButton({
   count: number;
   onClick: () => void;
 }) {
+  const handleClick = () => {
+    onClick();
+    // Scroll suave al inicio del catálogo después del filtrado.
+    if (typeof document !== "undefined") {
+      const target = document.getElementById("catalogo");
+      if (target) {
+        // setTimeout para que el filter aplique antes del scroll y no
+        // se interrumpa la animación al cambiar el layout.
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
+      }
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       aria-pressed={active}
       className={cn(
         "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all whitespace-nowrap",

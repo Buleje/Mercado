@@ -38,6 +38,10 @@ interface StoreDetailClientProps {
   categories: StoreCategoryChip[];
   reviewSummary: MockStoreRatingSummary;
   reviews: MockStoreReview[];
+  /** Calculado server-side desde openHours; default true si null. */
+  isOpen?: boolean;
+  /** Métodos de pago expuestos por la tienda. Por ahora yape+efectivo. */
+  paymentMethods?: string[];
 }
 
 export default function StoreDetailClient({
@@ -46,6 +50,8 @@ export default function StoreDetailClient({
   categories,
   reviewSummary,
   reviews,
+  isOpen = true,
+  paymentMethods = ["yape", "efectivo"],
 }: StoreDetailClientProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -102,7 +108,9 @@ export default function StoreDetailClient({
         description={store.description}
         rating={store.rating ?? 0}
         reviewCount={store.reviewCount}
-        scheduleLabel="Lun a Dom · 6am – 11pm"
+        scheduleLabel="Lun a Dom · 7am – 11pm"
+        isOpen={isOpen}
+        paymentMethods={paymentMethods}
       />
 
       {/* ── Categories sticky + Catalog ───────────────────────────────────── */}

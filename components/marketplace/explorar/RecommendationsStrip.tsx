@@ -15,6 +15,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "@buleje/design-system/icons";
 import { StoreCardCanonical } from "@buleje/design-system";
+import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -129,6 +130,12 @@ export default function RecommendationsStrip() {
                         fill
                         className={className}
                         sizes="(max-width:640px) 192px, 240px"
+                      />
+                    )}
+                    renderImageFallback={() => (
+                      <MiniBulejeBanner
+                        storeName={store.name}
+                        category={store.category}
                       />
                     )}
                   />

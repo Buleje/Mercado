@@ -10,6 +10,7 @@ import {
   MOCK_STORE_RATING_SUMMARY,
 } from "@/lib/mock-store-reviews";
 import type { StoreCategoryChip } from "@/components/marketplace/store-detail/StoreCategories";
+import { computeIsOpenNow } from "@/lib/marketplace/store-hours";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -181,6 +182,7 @@ export default async function StoreDetailPage({ params }: Props) {
         categories={categories}
         reviewSummary={MOCK_STORE_RATING_SUMMARY}
         reviews={MOCK_STORE_REVIEWS}
+        isOpen={computeIsOpenNow()}
       />
 
       {/*

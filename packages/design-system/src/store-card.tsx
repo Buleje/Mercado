@@ -82,6 +82,12 @@ export interface StoreCardCanonicalProps {
    * El consumidor recibe un wrapper con aspect-ratio fijo del card.
    */
   renderImageFallback?: () => ReactNode;
+  /**
+   * Avatar/logo opcional renderizado encima del banner, semi-overlap
+   * con el área de contenido. Estilo Rappi/PedidosYa: provee identidad
+   * fuerte de la tienda incluso con banner genérico.
+   */
+  avatar?: ReactNode;
   /** Override de clases del contenedor raiz. */
   className?: string;
 }
@@ -94,8 +100,8 @@ const CARD_PADDING: Record<NonNullable<StoreCardCanonicalProps["variant"]>, stri
 };
 
 const NAME_SIZE: Record<NonNullable<StoreCardCanonicalProps["variant"]>, string> = {
-  default: "text-[length:var(--ts-base)] font-bold",
-  compact: "text-[length:var(--ts-sm)] font-semibold",
+  default: "text-[length:var(--ts-lg)] font-black tracking-tight",
+  compact: "text-[length:var(--ts-base)] font-bold tracking-tight",
 };
 
 // ── Componente ────────────────────────────────────────────────────────────────
@@ -117,6 +123,7 @@ export function StoreCardCanonical({
   href,
   renderImage,
   renderImageFallback,
+  avatar,
   className,
 }: StoreCardCanonicalProps) {
   const resolvedHref = href ?? `/marketplace/${slug}`;
@@ -179,8 +186,15 @@ export function StoreCardCanonical({
         />
       )}
 
+      {/* Avatar overlay — semi-overlap entre banner y body, estilo Rappi */}
+      {avatar != null && (
+        <div className="relative">
+          <div className="absolute -top-5 left-3 z-10">{avatar}</div>
+        </div>
+      )}
+
       {/* Info ──────────────────────────────────────────────────────────────── */}
-      <div className={cn("flex flex-col gap-1", padding)}>
+      <div className={cn("flex flex-col gap-1", padding, avatar != null && "pt-7")}>
         {/* Slot badges — encima del nombre */}
         {badges != null && (
           <div className="flex flex-wrap gap-1">{badges}</div>

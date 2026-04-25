@@ -42,6 +42,7 @@ import StoresSortSelector, {
   type StoresSortKey,
 } from "@/components/marketplace/StoresSortSelector";
 import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
+import MisTiendasFavoritasStrip from "@/components/marketplace/MisTiendasFavoritasStrip";
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 import dynamic from "next/dynamic";
 
@@ -305,6 +306,9 @@ export default function TiendasClient({ initialZone }: TiendasClientProps = {}) 
           </div>
         </div>
       </section>
+
+      {/* ── Mis tiendas favoritas — solo activa con 5+ pedidos en 5+ tiendas ── */}
+      <MisTiendasFavoritasStrip />
 
       {/* ── TS-16 Tus tiendas frecuentes ──────────────────────────────── */}
       <TusTiendasStrip />
