@@ -20,6 +20,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
+import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 import StoreAboutBlock from "./StoreAboutBlock";
 import StoreInfoCard from "./StoreInfoCard";
@@ -52,10 +53,19 @@ export default function StoreDetailClient({
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
+      {/* ── Banner area (custom o default Buleje) ──────────────────────────── */}
+      <StoreBannerArea
+        banner={store.banner ?? null}
+        logo={store.logo ?? null}
+        name={store.name}
+        category={store.category}
+        zone={store.zone}
+      />
+
       {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
       <nav
         aria-label="Ruta de navegacion"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6"
       >
         <ol className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
           <li>

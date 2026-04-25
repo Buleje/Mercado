@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { m as motion } from "framer-motion";
@@ -15,6 +15,7 @@ import {
 import { MarketplaceItemPlaceholder } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
 import { QuickViewModal } from "@/components/customer/journey";
@@ -95,11 +96,22 @@ export default function UnifiedProductCard({
   index = 0,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
+  const { items: cartItems } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
+
+  // Cantidad ya en el carrito de ESTA tienda — se usa para mostrar contador
+  // visible en la card y dar feedback inmediato sin abrir el drawer.
+  const inCartQty = useMemo(() => {
+    if (!product.storeId) return 0;
+    const found = cartItems.find(
+      (i) => i.productId === product.id && i.storeId === product.storeId,
+    );
+    return found?.quantity ?? 0;
+  }, [cartItems, product.id, product.storeId]);
 
   const productHref =
     href ??
@@ -382,32 +394,64 @@ export default function UnifiedProductCard({
             )}
           </div>
 
-          {/* CTA circular AGRANDADO h-12 w-12 + icono h-5 w-5 — resalta la accion */}
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={isOutOfStock}
-            aria-label={
-              isOutOfStock
-                ? `${product.name} — agotado`
-                : `Agregar ${product.name} al carrito`
-            }
-            className={cn(
-              "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-200 ring-1",
-              isOutOfStock
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
-                : justAdded
-                  ? "bg-emerald-500 text-white scale-90 ring-emerald-600/30"
-                  : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
+          {/* CTA circular AGRANDADO h-12 w-12 + icono h-5 w-5 — resalta la accion.
+              Cuando el producto ya está en el carrito, mostramos un badge
+              superpuesto con la cantidad — el usuario sabe al instante qué
+              ya agregó sin abrir el drawer. */}
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={isOutOfStock}
+              aria-label={
+                isOutOfStock
+                  ? `${product.name} — agotado`
+                  : inCartQty > 0
+                    ? `Agregar otro ${product.name} al carrito (${inCartQty} en carrito)`
+                    : `Agregar ${product.name} al carrito`
+              }
+              className={cn(
+                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ring-1",
+                isOutOfStock
+                  ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
+                  : justAdded
+                    ? "bg-emerald-500 text-white scale-90 ring-emerald-600/30"
+                    : inCartQty > 0
+                      ? "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/40"
+                      : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
+              )}
+            >
+              {justAdded ? (
+                <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+              ) : (
+                <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
+              )}
+            </button>
+            {/* Badge cantidad en carrito */}
+            {inCartQty > 0 && !justAdded && (
+              <motion.span
+                key={inCartQty}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                aria-hidden
+                className="absolute -top-1.5 -right-1.5 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] shadow-md ring-2 ring-[var(--surface-raised)]"
+              >
+                {inCartQty > 99 ? "99+" : inCartQty}
+              </motion.span>
             )}
-          >
-            {justAdded ? (
-              <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-            ) : (
-              <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
-            )}
-          </button>
+          </div>
         </div>
+
+        {/* Pill "✓ Ya pediste N" — feedback secundario debajo del precio. */}
+        {inCartQty > 0 && (
+          <div className="mt-2 -mb-1 flex items-center justify-end">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+              <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              Ya pediste {inCartQty}
+            </span>
+          </div>
+        )}
 
         {/* Aviso limite comparar */}
         {compareLimitMsg && (
